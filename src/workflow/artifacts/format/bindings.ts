@@ -78,12 +78,22 @@ export function uxCompanionBodyLines(companions: readonly CompanionArtifactRef[]
  * is no feedback (the renderer then omits the section — absent-safe/forward-only,
  * k6), so an artifact with no feedback renders byte-identically to before.
  */
+/** An inline comment's quoted text on one line, cut to 120 characters. */
+function cutQuote(quote: string): string {
+	const oneLine = quote.replace(/\s+/g, ' ').trim();
+	return oneLine.length > 120 ? `${oneLine.slice(0, 120)}…` : oneLine;
+}
+
 export function feedbackBodyLines(feedback: FeedbackRecord | undefined): string[] {
 	if (feedback === undefined || feedback.length === 0) return [];
 	return feedback.map(f => {
 		const seg = f.target.segment !== undefined ? `:${f.target.segment.startLine}-${f.target.segment.endLine}` : '';
 		const kind = f.kind !== undefined ? ` \`${f.kind}\`` : '';
-		return `- **${f.author}** (${f.timestamp})${kind} — \`${f.target.file}${seg}\`: ${f.comment}`;
+		// Story E202610138d4b90c9:S001: the decision an entry was saved with, and the text an
+		// inline comment was made on. An entry with neither renders exactly as before.
+		const decision = f.decision !== undefined ? ` \`${f.decision}\`` : '';
+		const quote = f.anchor !== undefined ? `on "${cutQuote(f.anchor.quote)}": ` : '';
+		return `- **${f.author}** (${f.timestamp})${kind}${decision} — \`${f.target.file}${seg}\`: ${quote}${f.comment}`;
 	});
 }
 

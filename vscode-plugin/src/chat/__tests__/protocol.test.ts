@@ -32,7 +32,7 @@ test('every existing WebviewToHost message still constructs with its original sh
     { type: 'open-chat', chatId: 'c1' },
     { type: 'set-edit-mode', mode: 'auto' },
     { type: 'edit-decision', path: 'a.ts', accept: true },
-    { type: 'docs-decision', artifactId: 'x', accept: false },
+    { type: 'docs-decision', artifactId: 'x', decision: 'feedback', comments: [{ comment: 'c' }] },
     { type: 'open-doc', artifactId: 'x' },
   ];
   assert.equal(samples.length, 7);
@@ -166,4 +166,53 @@ test('protocol: transcript-row is a host message and edit-prompt is not', () => 
   assert.deepEqual([diff.type, marker.type], ['transcript-row', 'transcript-row']);
   // The webview still sends its (inert) edit-decision.
   assert.ok(WEBVIEW_TO_HOST_TYPES.includes('edit-decision'));
+});
+
+// Story E202610138d4b90c9:S001 t7: the review pane's decision, its result, and the HTML documents.
+test("plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list", () => {
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('docs-decision-result'));
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('docs-companion'));
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-companion'));
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('docs-decision'), "'docs-decision' keeps its name");
+  // Each is listed once, and on its own side only.
+  for (const k of ['docs-decision-result', 'docs-companion']) {
+    assert.equal(HOST_TO_WEBVIEW_TYPES.filter((t) => t === k).length, 1);
+    assert.equal((WEBVIEW_TO_HOST_TYPES as readonly string[]).includes(k), false);
+  }
+  assert.equal(WEBVIEW_TO_HOST_TYPES.filter((t) => t === 'open-companion').length, 1);
+  assert.equal((HOST_TO_WEBVIEW_TYPES as readonly string[]).includes('open-companion'), false);
+  // Every kind that was listed before still is.
+  for (const k of ['turn-event', 'session-restored', 'history-list', 'transcript-row', 'docs-list', 'docs-content', 'user-row', 'theme', 'transcript-page', 'attachments-pending']) {
+    assert.ok(HOST_TO_WEBVIEW_TYPES.includes(k as HostToWebviewType), `${k} is still a host message`);
+  }
+  for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'open-doc', 'cancel-turn', 'permission-decision', 'set-permission-mode', 'selection-decision', 'ready', 'load-older', 'attach-image', 'pick-attachments', 'remove-attachment', 'open-attachment']) {
+    assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k as WebviewToHostType), `${k} is still a webview message`);
+  }
+
+  // The shapes, as the compiler accepts them.
+  const decisions: WebviewToHost[] = [
+    { type: 'docs-decision', artifactId: 'LLD-1', decision: 'approve', comments: [] },
+    { type: 'docs-decision', artifactId: 'LLD-1', decision: 'reject', comments: [{ comment: 'whole document' }] },
+    {
+      type: 'docs-decision', artifactId: 'LLD-1', decision: 'feedback',
+      comments: [{ comment: 'inline', file: 'docs/x/LLD.md', version: '0123456789abcdef', anchor: { quote: 'q', sectionSlug: 's', prefix: 'p', suffix: 'x' } }],
+    },
+  ];
+  for (const d of decisions) {
+    assert.equal(d.type, 'docs-decision');
+    if (d.type !== 'docs-decision') continue;
+    assert.ok(['approve', 'reject', 'feedback'].includes(d.decision));
+    assert.ok(Array.isArray(d.comments));
+    assert.equal('accept' in d, false, 'the earlier accept/note shape is gone');
+    assert.equal('note' in d, false);
+  }
+  const open: WebviewToHost = { type: 'open-companion', artifactId: 'LLD-1', relPath: 'docs/x/sequence-diagram.html' };
+  assert.deepEqual(Object.keys(open).sort(), ['artifactId', 'relPath', 'type']);
+  const results: HostToWebview[] = [
+    { type: 'docs-decision-result', artifactId: 'LLD-1', ok: true, outcome: 'approved', recorded: 2, message: 'Approved. 2 comments saved.' },
+    { type: 'docs-decision-result', artifactId: 'LLD-1', ok: false, message: 'The decision was not recorded: daemon down' },
+    { type: 'docs-companion', artifactId: 'LLD-1', relPath: 'docs/x/sequence-diagram.html', html: '<!doctype html>' },
+    { type: 'docs-companion', artifactId: 'LLD-1', relPath: 'docs/x/missing.html' },
+  ];
+  assert.deepEqual(results.map((r) => r.type), ['docs-decision-result', 'docs-decision-result', 'docs-companion', 'docs-companion']);
 });

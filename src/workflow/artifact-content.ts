@@ -24,8 +24,9 @@
  * Read-only: it opens no write path and mutates nothing.
  */
 
+import { createHash } from 'node:crypto';
 import { readFileSync, realpathSync } from 'node:fs';
-import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { jsonPathForMd } from './gates.js';
 import { openQuestions, type OpenQuestionStatus } from './questions.js';
@@ -36,6 +37,8 @@ import type { ErDefinition } from './artifacts/companion/er.js';
 import type { SequenceDefinition } from './artifacts/companion/sequence.js';
 import type { UxDefinition } from './artifacts/companion/ux.js';
 import type { CompanionArtifactRef } from './artifacts/companion/types.js';
+import { resolveReviewer, type Reviewer, type ReviewerDeps } from './artifacts/companion/header.js';
+import type { FeedbackEntry } from './artifacts/provenance/types.js';
 
 // ---------------------------------------------------------------------------
 // sc2 contract types (internal-shared; mirrored as Kotlin data classes plugin-side)
@@ -75,6 +78,25 @@ export interface ArtifactReviewView {
 	readonly sequenceDefinition?:   SequenceDefinition | undefined;
 	readonly uxDefinition?:         UxDefinition | undefined;
 	readonly companions?:           readonly CompanionArtifactRef[] | undefined;
+	// Story 8d4b90c9/S001 — what the review pane needs to save and show comments.
+	// Additive: a consumer reading only the fields above is unaffected.
+	/** The .md's repo-relative path, with forward slashes. */
+	readonly docPath:        string;
+	/** First 16 hex characters of the SHA-256 of `renderedMarkdown`. */
+	readonly contentVersion: string;
+	/** body.feedback as stored; absent when the artifact has none. */
+	readonly feedback?:      readonly FeedbackEntry[] | undefined;
+	/** The name a comment saved now would carry. */
+	readonly reviewer:       Reviewer;
+	/** From meta.approvedAt, else meta.rejectedAt, else pending. */
+	readonly state:          ArtifactReviewState;
+}
+
+export type ArtifactReviewState = 'pending' | 'approved' | 'rejected';
+
+/** The version a comment records for the document text it was made on. */
+export function contentVersionOf(markdown: string): string {
+	return createHash('sha256').update(markdown, 'utf8').digest('hex').slice(0, 16);
 }
 
 /** Structured failure the daemon relays verbatim; DISTINCT from a partial view
@@ -142,6 +164,7 @@ export function resolveDocsMarkdown(
 export function handleArtifactContent(
 	params: { repo?: string; mdPath?: string } | undefined,
 	repoEnv: string | undefined,
+	deps: ReviewerDeps = {},
 ): ArtifactReviewView | ArtifactContentError {
 	const p = params ?? {};
 	const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv) ?? '';
@@ -202,6 +225,8 @@ export function handleArtifactContent(
 	const reviewResolutions = meta['reviewResolutions'] as Parameters<typeof effectiveReviewVerdict>[1];
 	const blocked = review !== undefined && effectiveReviewVerdict(review, reviewResolutions) === 'block';
 
+	const feedback = Array.isArray(body['feedback']) ? body['feedback'] as readonly FeedbackEntry[] : [];
+
 	return {
 		artifactId,
 		kind,
@@ -210,7 +235,27 @@ export function handleArtifactContent(
 		approvable: !blocked,
 		...(blocked ? { blockReason: summarizeBlock(review!) } : {}),
 		...structuredRecords(body),
+		docPath: docPathOf(repoPath, realMd),
+		contentVersion: contentVersionOf(renderedMarkdown),
+		...(feedback.length > 0 ? { feedback } : {}),
+		reviewer: resolveReviewer(repoPath, deps),
+		state: nonEmptyString(meta['approvedAt']) ? 'approved' : nonEmptyString(meta['rejectedAt']) ? 'rejected' : 'pending',
 	};
+}
+
+function nonEmptyString(v: unknown): boolean {
+	return typeof v === 'string' && v.length > 0;
+}
+
+/** The canonical .md path relative to the canonical repo root, with forward slashes. */
+export function docPathOf(repoPath: string, realMd: string): string {
+	let root: string;
+	try {
+		root = realpathSync(repoPath);
+	} catch {
+		root = resolve(repoPath);
+	}
+	return relative(root, realMd).split(sep).join('/');
 }
 
 /**

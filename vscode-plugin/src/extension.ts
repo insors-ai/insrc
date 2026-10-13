@@ -59,6 +59,7 @@ import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitl
 import type { DiffView } from './chat/edit-governor.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
+import { createCompanionReader } from './chat/companion-reader.js';
 import { createGitBaseline } from './chat/git-baseline.js';
 import { registerDeliveryBoard } from './delivery/board-wiring.js';
 import { webviewChannel } from './chat/webview-channel.js';
@@ -661,14 +662,19 @@ export function activate(context: vscode.ExtensionContext): void {
     );
 
     // S007: the docs-review pane — a thin, passthrough (k8) observer over the daemon's
-    // existing review IPCs (workflow.pending/artifactContent/approve/resolveComment, built
-    // by the JetBrains ide-artifact-review-panel epic). It only reads + acts on
+    // review IPCs (workflow.pending/artifactContent/reviewDecision). It only reads + acts on
     // daemon-tracked pending artifacts (k5), reuses the same webview channel seam, and
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
     const reviewHost = createDocsReviewHost({
       client: createDocsReviewClient(client),
       createPanel: ({ viewType, title }) =>
         webviewChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true })),
+      // Story E202610138d4b90c9:S001: a decision and its comments are handed to the chat as
+      // one message, which waits its turn there; and an artifact's HTML documents are read
+      // from the workspace folder's docs/ directory for the pane's frame. The two hosts
+      // meet only here: neither knows of the other.
+      notifyChat: (text) => chatHost.submitExternal(text),
+      readCompanion: createCompanionReader({ root: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath }),
     });
     commands.register({ id: 'insrc.chat.docsReview', title: 'insrc: Review pending documents' }, async () => {
       reviewHost.open();

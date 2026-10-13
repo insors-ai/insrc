@@ -13,6 +13,7 @@ import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
 import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DEGRADE_NOTICE, SECTION_INDEX_NOTICE, companionVisualKind } from '../docs-review-panel.js';
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
+import { DOCS_COMMENTS_SOURCE } from '../docs-review-comments.js';
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -21,9 +22,8 @@ import { fileURLToPath } from 'node:url';
 import { deriveSectionIndex } from '../docs-sections.js';
 import { allOf, bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
-import type { DocsReviewClient, DocsContent } from '../docs-review-client.js';
+import type { DocsReviewClient, DocsContent, ReviewDecisionComment, ReviewDecisionResult } from '../docs-review-client.js';
 import type { DocsArtifactSummary } from '../protocol.js';
-import type { WorkflowApproveResult } from '../../../../src/workflow/gates.js';
 // S004/t2 — the SHARED parity fixtures, consumed by BOTH the daemon renderer and
 // the client one, so the structural diff compares two RENDERERS rather than two
 // authors' intentions. They live in the plugin test tree because S004 must touch
@@ -136,27 +136,40 @@ function fakeChannel(): FakeChannel {
 const env = (type: string, extra: Record<string, unknown> = {}) => ({ v: 1, payload: { type, ...extra } });
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
+/** The repo-relative path the fake client's default content names its document by. */
+const DOC_PATH = 'docs/epics/x/S007/LLD.md';
+interface DecideCall { path: string; decision: string; comments: readonly ReviewDecisionComment[] }
 interface ClientCalls {
   pending: number;
   content: string[];
-  approve: string[];
-  comment: Array<{ id: string; note: string }>;
+  decide: DecideCall[];
 }
+/** What the daemon answers a decision with when the test does not say otherwise. */
+const decided = (call: DecideCall): ReviewDecisionResult => ({
+  artifactId: 'LLD-abc-s7',
+  decision: call.decision as ReviewDecisionResult['decision'],
+  outcome: call.decision === 'approve' ? 'approved' : call.decision === 'reject' ? 'rejected' : 'recorded',
+  recorded: call.comments.length,
+  entryIds: call.comments.map((_, i) => `e${i + 1}`),
+  author: 'Rev Iewer',
+});
 function fakeClient(over: {
   pending?: (() => DocsArtifactSummary[]) | undefined;
   content?: ((id: string) => DocsContent) | undefined;
-  approve?: ((id: string) => WorkflowApproveResult) | undefined;
-  comment?: ((id: string, note: string) => void) | undefined;
+  decide?: ((call: DecideCall) => ReviewDecisionResult) | undefined;
 } = {}): { client: DocsReviewClient; calls: ClientCalls } {
-  const calls: ClientCalls = { pending: 0, content: [], approve: [], comment: [] };
+  const calls: ClientCalls = { pending: 0, content: [], decide: [] };
   const defPending: DocsArtifactSummary[] = [
     { id: 'LLD-abc-s7', kind: 'LLD', title: 'Docs review pane', status: 'pending' },
   ];
   const client: DocsReviewClient = {
     async pending() { calls.pending++; return (over.pending ?? (() => defPending))(); },
-    async content(id) { calls.content.push(id); return (over.content ?? (() => ({ markdown: '# body', openQuestions: ['q?'], blocked: false })))(id); },
-    async approve(id) { calls.approve.push(id); return (over.approve ?? (() => ({ approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult)))(id); },
-    async comment(id, note) { calls.comment.push({ id, note }); (over.comment ?? (() => {}))(id, note); },
+    async content(id) { calls.content.push(id); return (over.content ?? (() => ({ markdown: '# body', openQuestions: ['q?'], blocked: false, docPath: DOC_PATH })))(id); },
+    async decide(path, decision, comments) {
+      const call = { path, decision, comments };
+      calls.decide.push(call);
+      return (over.decide ?? decided)(call);
+    },
   };
   return { client, calls };
 }
@@ -201,45 +214,79 @@ test('open-doc for a stale/unknown id does NOT fetch content — it refreshes th
   assert.ok(calls.pending > pendingBefore, 're-fetched pending instead');
 });
 
-test('docs-decision accept approves via the client and re-fetches pending', async () => {
+test("docs-decision approve records the decision through client.decide by the document's path and re-fetches pending", async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  const pendingBefore = calls.pending;
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approved the artifact');
+  const pendingBefore = calls.pending;
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
+  await tick();
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }], 'one call, by the path the content named');
   assert.ok(calls.pending > pendingBefore, 're-fetched pending after the decision');
 });
 
-test('a blocked approve (skipped[], nothing approved) surfaces the reason non-lossily and stays pending', async () => {
+test('a docs-decision in the earlier accept/note shape, or for a document that was never opened, reaches no daemon call', async () => {
+  const fc = fakeChannel();
+  const { client, calls } = fakeClient();
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  host.open();
+  await tick();
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'maybe', comments: [] }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve' }));
+  await tick();
+  assert.deepEqual(calls.decide, [], 'a malformed decision is dropped');
+  // Pending, but its content was never read: there is no path to send it by.
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
+  await tick();
+  assert.deepEqual(calls.decide, []);
+  const refused = fc.posted.filter((p) => p.payload.type === 'docs-decision-result').at(-1)!;
+  assert.equal(refused.payload['ok'], false);
+  assert.match(String(refused.payload['message']), /Nothing was recorded: open the document before deciding on it/);
+});
+
+test('a withheld approval surfaces the reason non-lossily and stays pending', async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeClient({
-    approve: () => ({ approved: [], skipped: [{ path: 'docs/x/S007/LLD.md', reason: 'unresolved HIGH finding' }], codeReview: [] } as unknown as WorkflowApproveResult),
+    decide: (call) => ({ ...decided(call), outcome: 'withheld', reason: 'unresolved HIGH finding' }),
   });
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  const blocked = fc.posted.filter((p) => p.payload.type === 'docs-content').find((p) => p.payload.blocked === true);
-  assert.ok(blocked, 'posted a blocked docs-content notice');
-  assert.match(String(blocked!.payload.markdown), /unresolved HIGH finding/, 'relays the daemon skip reason');
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
+  await tick();
+  const result = fc.posted.filter((p) => p.payload.type === 'docs-decision-result').at(-1)!;
+  assert.equal(result.payload['ok'], true, 'a withheld approval is an answer, not a failure');
+  assert.equal(result.payload['outcome'], 'withheld');
+  assert.match(String(result.payload['message']), /Not approved: unresolved HIGH finding\./, 'relays the daemon skip reason');
   assert.ok(calls.pending >= 2, 'still re-fetches pending (artifact stays pending)');
 });
 
-test('docs-decision reject records the reviewer note via client.comment and re-fetches', async () => {
+test('docs-decision reject and feedback send their comments through the same client.decide call and re-fetch', async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'tighten error paths' }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.comment, [{ id: 'LLD-abc-s7', note: 'tighten error paths' }]);
-  assert.equal(calls.approve.length, 0, 'reject never approves');
+  const pendingBefore = calls.pending;
+  const comments = [{ comment: 'tighten error paths' }, { comment: 'say which', anchor: { quote: 'the pane' } }];
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'reject', comments }));
+  await tick();
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'feedback', comments: [comments[0]] }));
+  await tick();
+  assert.deepEqual(calls.decide, [
+    { path: DOC_PATH, decision: 'reject', comments },
+    { path: DOC_PATH, decision: 'feedback', comments: [comments[0]] },
+  ], 'the decision and every comment, in one call each');
+  assert.ok(calls.pending > pendingBefore);
 });
 
 test('a stale decision (id no longer pending) is dropped, not sent to the client', async () => {
@@ -248,9 +295,9 @@ test('a stale decision (id no longer pending) is dropped, not sent to the client
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'GHOST-s9', accept: true }));
+  fc.send(env('docs-decision', { artifactId: 'GHOST-s9', decision: 'approve', comments: [] }));
   await tick();
-  assert.equal(calls.approve.length, 0, 'never approved a non-pending id');
+  assert.equal(calls.decide.length, 0, 'never approved a non-pending id');
 });
 
 test('client.pending() throwing yields an empty list + an inline unavailable notice (never a blank pane)', async () => {
@@ -311,8 +358,7 @@ test('MED-3: a slow refresh response cannot overwrite a newer one (sequence guar
   const client: DocsReviewClient = {
     pending: () => new Promise<DocsArtifactSummary[]>((resolve) => { gates[call++] = resolve; }),
     async content() { return { markdown: 'b', openQuestions: [], blocked: false }; },
-    async approve(id) { return { approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult; },
-    async comment() {},
+    async decide(path, decision, comments) { return decided({ path, decision, comments }); },
   };
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();            // triggers refresh #1 (index 0)
@@ -341,8 +387,7 @@ function openRaceHarness() {
   const client: DocsReviewClient = {
     async pending() { return docs; },
     content: (id) => new Promise<DocsContent>((resolve, reject) => { gates.set(id, { resolve, reject }); }),
-    async approve(id) { return { approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult; },
-    async comment() {},
+    async decide(path, decision, comments) { return decided({ path, decision, comments }); },
   };
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   const body = (id: string): DocsContent => ({ markdown: `body of ${id}`, openQuestions: [], blocked: false });
@@ -434,7 +479,7 @@ test('ISSUE-605c7057: a list refresh does not discard an in-flight open', async 
 // blanket doesNotMatch(/innerHTML/) passes if someone deletes the render, while
 // this fails if someone deletes the guard. Named for what it now checks, rather
 // than inheriting the stale-name drift the chat-panel precedent carries.
-test('rendered shell: one nonce, unwidened CSP, docs-review surface, guardMd present, no remote origin', () => {
+test('rendered shell: one nonce, unwidened CSP, the review pane body, guardMd present, no remote origin', () => {
   const fc = fakeChannel();
   const { client } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'NONCE123' });
@@ -451,9 +496,11 @@ test('rendered shell: one nonce, unwidened CSP, docs-review surface, guardMd pre
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'exactly one inline script tag even after MARKED_SRC is injected');
 
-  assert.match(html, /class="insrc-term-review"/, 'renders the docs-review surface class');
-  // The --it-* tokens are scoped to .insrc-term, so the surface must sit inside one.
-  assert.match(html, /<body class="insrc-term">/, 'the surface is nested in an .insrc-term element so its CSS variables resolve');
+  // The --it-* tokens are defined on the body from VS Code theme variables, so every
+  // var(--it-…) in the pane resolves without a terminal wrapper.
+  assert.match(html, /<body class="insrc-rv">/, "the pane's body");
+  assert.match(html, /body\{--it-bg:var\(--vscode-editor-background\);/, 'the tokens are defined on the body');
+  assert.doesNotMatch(html, /insrc-term/, 'no terminal surface class is left');
 
   assert.match(html, /guardMd\(/, 'the rendered markdown is scrubbed via guardMd — asserted PRESENT, so removing the guard fails this test');
   assert.doesNotMatch(html, /(src|href)="https?:/, 'no remote resource is referenced by the shell');
@@ -921,25 +968,29 @@ test('t6: the shell still has exactly ONE markup-injection site after the choose
   assert.doesNotMatch(html, /insertAdjacentHTML|outerHTML|document\.write/, 'no other markup path');
 });
 
-test('t6: approve and request-changes still reach workflow.approve / workflow.resolveComment unchanged, and the COMMENTABLE_KINDS gate holds', async () => {
+test('t6: approve and send feedback reach the daemon through client.decide, and the COMMENTABLE_KINDS gate holds', async () => {
   // approve path
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still passes the artifact id unchanged');
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
+  await tick();
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }], "approve is sent by the document's path");
 
-  // request-changes path
+  // feedback path
   const fc2 = fakeChannel();
   const { client: c2, calls: calls2 } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc2.channel, client: c2 }).open();
   await tick();
-  fc2.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'tighten it' }));
+  fc2.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls2.comment, [{ id: 'LLD-abc-s7', note: 'tighten it' }], 'resolveComment params unchanged');
+  fc2.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'feedback', comments: [{ comment: 'tighten it' }] }));
+  await tick();
+  assert.deepEqual(calls2.decide, [{ path: DOC_PATH, decision: 'feedback', comments: [{ comment: 'tighten it' }] }], 'the comment is sent with the decision');
 
   // the gate: DEF/HLD/LLD commentable, others not
   for (const [kind, expected] of [['DEF', true], ['HLD', true], ['LLD', true], ['PLAN', false], ['ISSUE', false]] as const) {
@@ -1146,8 +1197,28 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   E2 S004/t3 (+172 chars, +172 bytes): the read-only branch of the decision
  *       controls. An artifact the delivery board opens that is not awaiting review
  *       arrives with readOnly, and the webview shows a 'read-only: not awaiting
- *       review' note in place of approve and request-changes. Declared below as
- *       BOOTSTRAP_DELTA_E2_S004_T3 so the accounting still closes.
+ *       review' note in place of approve and request-changes.
+ *   E202610138d4b90c9:S001/t9 (the shell REBUILT, not extended): the pane's own
+ *       style replaces the terminal style, with every colour a VS Code theme
+ *       variable and the --it-* tokens defined from them; the body becomes a
+ *       column with the header and the comment panel outside one scrolling
+ *       region; the list of buttons becomes a select; and the approve /
+ *       request-changes controls become the comment panel's field, its three
+ *       round buttons and its result line. The five source strings are inlined
+ *       unchanged. The earlier arithmetic (a base pin plus each declared delta)
+ *       ended here: a rebuilt shell has no base to add to, so the test that
+ *       summed it now checks what still holds, that each source string is
+ *       inlined verbatim and once.
+ *   E202610138d4b90c9:S001/t10 (+3297 chars, +3303 bytes): one tab per document of the
+ *       artifact in the header, and the view of an HTML document (its path, a
+ *       line when it cannot be shown, and the host of its sandboxed frame).
+ *   E202610138d4b90c9:S001/t11 (+17462 chars, +17470 bytes): DOCS_COMMENTS_SOURCE, the sixth source
+ *       string (the text model of the rendered document, anchors and the inline
+ *       drafts), its styles, the comment button a selection offers, and the line
+ *       that counts the drafts.
+ *   E202610138d4b90c9:S001/t12 (+8232 chars, +8238 bytes): the saved comments. The comment source
+ *       gains the threads of saved comments, the margin markers and the strip; the
+ *       shell gains the strip's markup above the comment panel and their styles.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1161,47 +1232,10 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  87416,
-  bytes:  87476,
-  sha256: 'ad3fbbad6ad13d76316612be6b72a957b7d9d6e95a1893626959131800d61177',
+  chars:  121296,
+  bytes:  121361,
+  sha256: '194ae044e5f5e4ef164a73b02f51b170fd9fad085422d28fe204ced39d4d2336',
 } as const;
-
-/**
- * The pin BEFORE S004/t2, kept so the move can be ACCOUNTED FOR arithmetically
- * rather than merely declared. S004/t1 was data-only and did not touch it; t2 adds
- * the fifth source string and its CSS fragment; t6 additionally touches the
- * BOOTSTRAP, which is the one task in this Story licensed to. The test below proves
- * the sum closes EXACTLY:
- *
- *   79530  the pin before S004 touched the shell
- * +  4870  DOCS_UX_SOURCE, measured from the string itself
- * +  2346  the ux CSS fragment, measured from the emitted shell
- * +   498  the t6 BOOTSTRAP delta, declared below
- * = 87244
- *
- * so nothing slipped in alongside them.
- *
- * Every value here was COMPUTED at the fixed nonce and copied from the computation,
- * never typed. A number typed into a pin is a number nobody checked.
- */
-const SHELL_BASELINE_BEFORE_S004_T2 = { chars: 79530, bytes: 79582 } as const;
-
-/**
- * The t6 BOOTSTRAP delta, declared rather than absorbed. t1-t5 added only source
- * text; t6 is the task that changes the surface, and it does so in four places:
- * the `insrc-docs-experience` host div, the `uxHostEl` lookup, the slot build plus
- * mount call, and the frame's noun becoming kind-aware. Those are not measurable
- * from a single artefact the way a source string is, so the number is pinned here
- * and the accounting test makes it close — which is the point: a bootstrap change
- * that cannot be named would otherwise hide inside a moved hash.
- */
-const BOOTSTRAP_DELTA_S004_T6 = 498;
-
-/**
- * E2 S004/t3's BOOTSTRAP delta, declared the same way: the read-only branch ahead of
- * the decision controls (one note element, no control). Computed at the fixed nonce.
- */
-const BOOTSTRAP_DELTA_E2_S004_T3 = 172;
 
 function renderShellFor(nonce: string): string {
   const fc = fakeChannel();
@@ -1219,7 +1253,7 @@ test('t1: the emitted shell is byte-identical to the captured fixed-nonce baseli
   assert.equal(
     createHash('sha256').update(html, 'utf8').digest('hex'),
     SHELL_BASELINE.sha256,
-    't1 is data-only: the emitted shell is unchanged from the captured pre-S002 baseline',
+    'the emitted shell matches the current pin',
   );
   // Reported alongside the hash so a failure says HOW it moved, not just that it did.
   assert.equal(html.length, SHELL_BASELINE.chars, 'shell length in characters');
@@ -1770,16 +1804,42 @@ interface WebviewRun {
   body: BodyStub;
   notice: BodyStub;
   sections: BodyStub;
-  actions: BodyStub;
   oq: BodyStub;
   posted: unknown[];
   diagram: BodyStub;
   experience: BodyStub;
   created: string[];
   deliver(payload: Record<string, unknown>): void;
+  /** Any host message, by its type. */
+  send(type: string, payload: Record<string, unknown>): void;
+  /** The select of documents in the header. */
+  list: BodyStub;
+  /** The comment panel and the header's text. */
+  bar: { approve: BodyStub; reject: BodyStub; feedback: BodyStub; field: BodyStub; result: BodyStub; state: BodyStub; kind: BodyStub; who: BodyStub };
+  /** The comment button a selection offers, its own button, and the line that counts the drafts. */
+  pop: BodyStub;
+  popBtn: BodyStub;
+  drafts: BodyStub;
+  /** The strip of saved comments with no passage: the element, its summary line and its list. */
+  hist: BodyStub;
+  histSum: BodyStub;
+  histList: BodyStub;
+  /** Make a selection (or clear it with null) and let the script hear of it, as a mouse-up does. */
+  select(range: { startContainer: BodyStub; startOffset: number; endContainer: BodyStub; endOffset: number } | null): void;
+  /** The webview's saved state. */
+  saved: { state: unknown };
+  /** The tabs in the header, and the two views of the scrolling region. */
+  tabs: BodyStub;
+  md: BodyStub;
+  html: BodyStub;
+  htmlPath: BodyStub;
+  htmlNote: BodyStub;
+  frameHost: BodyStub;
+  /** How each decision button stands. */
+  controls(): { approve: ControlMode; reject: ControlMode; feedback: ControlMode };
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
-function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined } = {}): WebviewRun {
+function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined; saved?: { state: unknown } | undefined; textNodes?: boolean | undefined } = {}): WebviewRun {
   const fc = fakeChannel();
   const { client } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
@@ -1803,23 +1863,50 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
     script = script.replace('function uxBuildMockSlot(', 'function uxBuildMockSlot(){throw new Error("ux slot build blew up");}\nfunction _unusedUx(');
   }
 
-  const ids = ['insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq', 'insrc-docs-note',
-    'insrc-docs-actions', 'insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram',
-    'insrc-docs-experience'];
+  const ids = ['insrc-docs-list', 'insrc-docs-body', 'insrc-docs-oq',
+    'insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram',
+    'insrc-docs-experience',
+    // The header and the comment panel of the rebuilt shell (E202610138d4b90c9:S001).
+    'insrc-rv-kind', 'insrc-rv-state', 'insrc-rv-who', 'insrc-rv-field', 'insrc-rv-result',
+    'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback',
+    'insrc-rv-tabs', 'insrc-rv-md', 'insrc-rv-html', 'insrc-rv-html-path', 'insrc-rv-html-note', 'insrc-rv-frame',
+    'insrc-rv-pop', 'insrc-rv-pop-btn', 'insrc-rv-drafts',
+    'insrc-rv-hist', 'insrc-rv-hist-sum', 'insrc-rv-hist-list'];
   const byId: Record<string, BodyStub> = {};
   for (const id of ids) byId[id] = bodyStub('div', id);
-  (byId['insrc-docs-note'] as unknown as { value: string }).value = '';
+  byId['insrc-rv-field']!.value = '';
+  // The stub's innerHTML makes elements that hold their text but no text NODE, where a
+  // real page has one. The inline comments work on text nodes, so a test of them asks
+  // for each rendered block to be given its text as a node, as the real DOM has it.
+  if (opts.textNodes) {
+    const body = byId['insrc-docs-body']!;
+    const own = Object.getOwnPropertyDescriptor(body, 'innerHTML')!;
+    Object.defineProperty(body, 'innerHTML', {
+      configurable: true,
+      get: () => own.get!.call(body) as string,
+      set: (v: string) => {
+        own.set!.call(body, v);
+        for (const c of body.children) if (c.nodeType === 1 && c.children.length === 0 && c.textContent !== '') c.appendChild(textNode(c.textContent));
+      },
+    });
+  }
 
   const posted: unknown[] = [];
   const created: string[] = [];
   let onMessage: ((e: { data: unknown }) => void) | undefined;
+  // What the script reads as the page's selection, and the listeners it puts on the document.
+  let selection: unknown = null;
+  const docListeners: Record<string, Array<(e?: unknown) => void>> = {};
+  // The webview's saved state: a test passes one store to two runs to rebuild the shell.
+  const saved = opts.saved ?? { state: undefined };
   const doc = {
+    addEventListener: (type: string, l: (e?: unknown) => void) => { (docListeners[type] ??= []).push(l); },
+    createTextNode: (data: string) => textNode(data),
     getElementById: (id: string) => byId[id] ?? null,
+    // The stub records listeners, so a test can fire a created control (a tab).
     createElement: (t: string) => {
       created.push(t);
-      const n = bodyStub(t) as BodyStub & { addEventListener(): void; innerHTML: string };
-      n.addEventListener = () => {};
-      return n;
+      return bodyStub(t);
     },
     // Present so an SVG build inside the real bootstrap works, and so a test can
     // count what the slot path created — ac2 is proved by the ABSENCE of calls.
@@ -1830,7 +1917,10 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
       return n;
     },
   };
-  const win = { addEventListener: (_t: string, l: (e: { data: unknown }) => void) => { onMessage = l; } };
+  const win = {
+    addEventListener: (_t: string, l: (e: { data: unknown }) => void) => { onMessage = l; },
+    getSelection: () => selection,
+  };
   // `undefined` here is the POINT of the degraded case, so it is selected by an
   // explicit flag rather than by passing undefined — which would fall through to
   // the default and silently test the happy path instead.
@@ -1848,17 +1938,50 @@ function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?
   };
   // eslint-disable-next-line no-new-func
   new Function('document', 'window', 'marked', 'acquireVsCodeApi', script)(
-    doc, win, marked, () => ({ postMessage: (m: unknown) => { posted.push(m); } }),
+    doc, win, marked, () => ({
+      postMessage: (m: unknown) => { posted.push(m); },
+      getState: () => saved.state,
+      setState: (v: unknown) => { saved.state = JSON.parse(JSON.stringify(v)); },
+    }),
   );
 
   return {
     body: byId['insrc-docs-body']!, notice: byId['insrc-docs-notice']!,
-    sections: byId['insrc-docs-sections']!, actions: byId['insrc-docs-actions']!,
+    sections: byId['insrc-docs-sections']!,
     oq: byId['insrc-docs-oq']!, posted,
     diagram: byId['insrc-docs-diagram']!, experience: byId['insrc-docs-experience']!, created,
     deliver: (payload) => onMessage?.({ data: { v: 1, payload: { type: 'docs-content', ...payload } } }),
+    send: (type, payload) => onMessage?.({ data: { v: 1, payload: { type, ...payload } } }),
+    list: byId['insrc-docs-list']!,
+    bar: {
+      approve: byId['insrc-rv-approve']!, reject: byId['insrc-rv-reject']!, feedback: byId['insrc-rv-feedback']!,
+      field: byId['insrc-rv-field']!, result: byId['insrc-rv-result']!,
+      state: byId['insrc-rv-state']!, kind: byId['insrc-rv-kind']!, who: byId['insrc-rv-who']!,
+    },
+    pop: byId['insrc-rv-pop']!, popBtn: byId['insrc-rv-pop-btn']!, drafts: byId['insrc-rv-drafts']!,
+    hist: byId['insrc-rv-hist']!, histSum: byId['insrc-rv-hist-sum']!, histList: byId['insrc-rv-hist-list']!,
+    select: (range) => {
+      selection = range === null ? null : { isCollapsed: false, rangeCount: 1, getRangeAt: () => range, removeAllRanges: () => { selection = null; } };
+      for (const l of docListeners['mouseup'] ?? []) l({ target: byId['insrc-docs-body'] });
+    },
+    saved,
+    tabs: byId['insrc-rv-tabs']!, md: byId['insrc-rv-md']!, html: byId['insrc-rv-html']!,
+    htmlPath: byId['insrc-rv-html-path']!, htmlNote: byId['insrc-rv-html-note']!, frameHost: byId['insrc-rv-frame']!,
+    controls: () => ({
+      approve: controlMode(byId['insrc-rv-approve']!),
+      reject: controlMode(byId['insrc-rv-reject']!),
+      feedback: controlMode(byId['insrc-rv-feedback']!),
+    }),
   };
 }
+
+/** How a decision button stands: usable, shown but disabled, or not shown. */
+type ControlMode = 'on' | 'off' | 'hidden';
+function controlMode(b: BodyStub): ControlMode {
+  if (b.style['display'] === 'none') return 'hidden';
+  return (b as unknown as { disabled?: boolean }).disabled === true ? 'off' : 'on';
+}
+const ALL_ON = { approve: 'on', reject: 'on', feedback: 'on' } as const;
 
 test('t5: DOCS_FR_SOURCE is inlined into the single nonce\'d script and the placement call sits after stampSlugs and before the chooser / notice', () => {
   const fc = fakeChannel();
@@ -1945,8 +2068,7 @@ test('t5: the renderContent try/catch backstop — a forced throw inside placeme
   // being proved. A backstop that silently cost the reviewer the chooser would
   // have passed the earlier version of this test.
   assert.equal(w.oq.children.length, 1, 'open questions still render');
-  assert.equal(w.actions.children.length, 2, 'approve + request-changes still render');
-  assert.deepEqual(w.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+  assert.deepEqual(w.controls(), ALL_ON, 'the three decision controls are still usable');
   assert.equal(w.sections.children.length, 1, 'the section CHOOSER still renders');
   assert.equal(w.sections.children[0]!.tagName, 'select');
   assert.equal(w.notice.children.length, 0,
@@ -2013,30 +2135,32 @@ test('t5: idempotence — two consecutive docs-content messages with the same re
   assert.equal(containers(w).length, 0, 'the previously placed block is gone');
 });
 
-test('t5: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner behave identically to before this Story', async () => {
+test('t5: approve and feedback reach the daemon, and the COMMENTABLE_KINDS gate and the blocked banner behave as before', async () => {
   // Host-side behaviour, through the real client doubles — unchanged by t5.
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still reaches workflow.approve');
-
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'please fix' }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
-  assert.deepEqual(calls.comment, [{ id: 'LLD-abc-s7', note: 'please fix' }], 'request-changes still records a comment');
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }], 'approve reaches the daemon');
 
-  // Webview side: the blocked banner replaces approve, request-changes survives.
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'feedback', comments: [{ comment: 'please fix' }] }));
+  await tick();
+  assert.deepEqual(calls.decide.at(-1), { path: DOC_PATH, decision: 'feedback', comments: [{ comment: 'please fix' }] }, 'feedback records the comment');
+
+  // Webview side: a blocked document cannot be approved; reject and feedback stay.
   const w = runWebview();
   w.deliver({ artifactId: 'a', markdown: 'unavailable: boom', openQuestions: [], blocked: true, commentable: true });
-  assert.equal(w.actions.children[0]!.textContent, 'blocked — not approvable');
-  assert.equal(w.actions.children.length, 2, 'blocked banner + request-changes');
-  // And a non-commentable kind still hides request-changes.
+  assert.deepEqual(w.controls(), { approve: 'off', reject: 'on', feedback: 'on' });
+  assert.equal(w.bar.state.textContent, 'pending review · blocked: it cannot be approved');
+  // Every kind takes comments now: the kind no longer hides a control.
   const w2 = runWebview();
   w2.deliver({ artifactId: 'a', markdown: '# Doc', openQuestions: [], blocked: false, commentable: false });
-  assert.deepEqual(w2.actions.children.map((c) => c.textContent), ['approve']);
+  assert.deepEqual(w2.controls(), ALL_ON);
 });
 
 test('t5: ordering — stamp, place, then re-read every heading id proves no slug was disturbed', () => {
@@ -3334,28 +3458,27 @@ test('t6 resilience: a forced throw in the slot build leaves all five other surf
   assert.ok(r.body.children.length >= 4, 'the body still rendered');
   assert.ok(r.sections.children.length > 0, 'the chooser still rendered');
   assert.equal(r.oq.children.length, 1, 'the open question still rendered');
-  const labels = r.actions.children.map((c) => c.textContent);
-  assert.deepEqual(labels, ['approve', 'request changes'], 'both controls still rendered');
+  assert.deepEqual(r.controls(), ALL_ON, 'the decision controls are still usable');
   assert.equal(dgSlotsIn(r).length, 0, 'and no half-built slot was left behind');
 });
 
-test('t6 regression: approve / request-changes, the COMMENTABLE_KINDS gate and the blocked banner are unchanged', () => {
+test('t6 regression: the decision controls and the blocked state are the same with a diagram present', () => {
   // With a diagram present, so the regression is checked on the NEW path.
   const r = runWebview();
   const base = { markdown: DG_MD, openQuestions: [], sections: DG_SECTIONS, erDefinition: DG_ER, companions: [DG_REF] };
 
   r.deliver({ ...base, artifactId: 'LLD-x', blocked: false, commentable: true });
-  assert.deepEqual(r.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+  assert.deepEqual(r.controls(), ALL_ON);
 
   r.deliver({ ...base, artifactId: 'LLD-x', blocked: false, commentable: false });
-  assert.deepEqual(r.actions.children.map((c) => c.textContent), ['approve'], 'the COMMENTABLE_KINDS gate still hides request-changes');
+  assert.deepEqual(r.controls(), ALL_ON, 'every kind takes comments: the kind hides no control');
 
   r.deliver({ ...base, artifactId: 'LLD-x', blocked: true, commentable: true });
-  assert.equal(r.actions.children[0]!.textContent, 'blocked — not approvable');
-  assert.equal(r.actions.children.map((c) => c.textContent).includes('approve'), false, 'approve stays suppressed');
+  assert.deepEqual(r.controls(), { approve: 'off', reject: 'on', feedback: 'on' }, 'approve stays suppressed');
+  assert.match(r.bar.state.textContent, /blocked: it cannot be approved/);
 });
 
-test('t6 regression: the HOST decision path still reaches the daemon unchanged', async () => {
+test('t6 regression: the HOST decision path still reaches the daemon', async () => {
   // The webview harness makes addEventListener a no-op on created elements, so a
   // click cannot be driven through a button there. The host end is where the
   // behaviour actually lives, and it is exercised through the real client doubles.
@@ -3363,12 +3486,14 @@ test('t6 regression: the HOST decision path still reaches the daemon unchanged',
   const { client, calls } = fakeClient();
   createDocsReviewHost({ createPanel: () => fc.channel, client }).open();
   await tick();
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('open-doc', { artifactId: 'LLD-abc-s7' }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7'], 'approve still reaches workflow.approve');
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: false, note: 'please fix' }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
-  assert.deepEqual(calls.comment, [{ id: 'LLD-abc-s7', note: 'please fix' }], 'request-changes still records a comment');
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }], 'approve reaches the daemon');
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'feedback', comments: [{ comment: 'please fix' }] }));
+  await tick();
+  assert.deepEqual(calls.decide.at(-1), { path: DOC_PATH, decision: 'feedback', comments: [{ comment: 'please fix' }] }, 'feedback records the comment');
 });
 
 test('t6: the fail-closed arm shows the blocked banner and NO slot', () => {
@@ -3377,7 +3502,8 @@ test('t6: the fail-closed arm shows the blocked banner and NO slot', () => {
   const r = runWebview();
   r.deliver({ artifactId: 'LLD-x', markdown: 'unavailable: daemon unreachable', openQuestions: [], blocked: true, commentable: true });
   assert.equal(dgSlotsIn(r).length, 0);
-  assert.equal(r.actions.children[0]!.textContent, 'blocked — not approvable');
+  assert.equal(r.controls().approve, 'off', 'and it cannot be approved');
+  assert.match(r.bar.state.textContent, /blocked: it cannot be approved/);
 });
 
 test('t6: DOCS_DIAGRAM_SOURCE is inlined in the single nonce\'d script and the call sits between stampSlugs and the chooser', () => {
@@ -3806,38 +3932,27 @@ test('t1/t2: the shell matches the pin, and NOTHING reads either new field yet',
   assert.match(html, /function uxRenderCard\(/, 'the renderer is inlined');
 });
 
-test('t2: the pin moved by EXACTLY the declared source string and CSS fragment — nothing else slipped in', () => {
+test('the shell inlines each of its source strings verbatim and exactly once, with the ux CSS fragment', () => {
   const html = renderShellFor(SHELL_BASELINE.nonce);
 
-  // The two additions, measured from the artefacts themselves rather than from
-  // numbers typed here: the source string's own length, and the CSS fragment
-  // located in the emitted shell between its first and last rule.
+  // Until E202610138d4b90c9:S001 rebuilt the shell this test summed a base pin and
+  // each declared delta. A rebuilt shell has no base to add to. What still holds, and
+  // is still worth holding, is that the source strings are INLINED VERBATIM — which
+  // is what lets a test evaluate a string and know it evaluated what ships.
+  for (const [name, source] of [
+    ['DOCS_BODY_RENDERER_SOURCE', DOCS_BODY_RENDERER_SOURCE], ['DOCS_SECTIONS_SOURCE', DOCS_SECTIONS_SOURCE],
+    ['DOCS_FR_SOURCE', DOCS_FR_SOURCE], ['DOCS_DIAGRAM_SOURCE', DOCS_DIAGRAM_SOURCE], ['DOCS_UX_SOURCE', DOCS_UX_SOURCE],
+    ['DOCS_COMMENTS_SOURCE', DOCS_COMMENTS_SOURCE],
+  ] as const) {
+    assert.equal(html.split(source).length - 1, 1, `${name} is inlined verbatim, once`);
+  }
+  // In the order the bootstrap relies on: each later string may call an earlier one.
+  const at = [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE, DOCS_UX_SOURCE, DOCS_COMMENTS_SOURCE].map((x) => html.indexOf(x));
+  assert.deepEqual([...at].sort((a, b) => a - b), at, 'in their declared order');
+  // And the ux CSS fragment is still in the shell, between its first and last rule.
   const cssStart = html.indexOf('.ux-card{');
   const cssEnd = html.indexOf('}', html.indexOf('.ux-unknown{')) + 1;
   assert.ok(cssStart > 0 && cssEnd > cssStart, 'the ux CSS fragment is in the shell');
-  const cssChars = cssEnd - cssStart;
-
-  // ARITHMETIC, not assertion: if anything OTHER than these two had joined the
-  // shell, this sum would not close. That is what turns a moved pin from "I changed
-  // it" into "here is what changed and why it is all of it".
-  assert.equal(
-    SHELL_BASELINE_BEFORE_S004_T2.chars + DOCS_UX_SOURCE.length + cssChars + BOOTSTRAP_DELTA_S004_T6 + BOOTSTRAP_DELTA_E2_S004_T3,
-    SHELL_BASELINE.chars,
-    'the delta is exactly the source string, its CSS fragment, the declared t6 bootstrap change and the E2 S004/t3 read-only branch',
-  );
-  // The bootstrap delta is SMALL on purpose — t6 is one call and one host. If this
-  // ever needed to grow materially, the Story would be doing something other than
-  // mounting a slot.
-  assert.ok(BOOTSTRAP_DELTA_S004_T6 < 1000,
-    'the surface change stays a mount, not a rewrite');
-  // The source string really is inlined verbatim, which is what licenses using its
-  // length as the script half of the delta.
-  assert.ok(html.includes(DOCS_UX_SOURCE), 'DOCS_UX_SOURCE is inlined verbatim');
-  // And the shell still has the four earlier strings, so the delta is an ADDITION
-  // rather than a swap that happens to balance.
-  for (const earlier of [DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, DOCS_FR_SOURCE, DOCS_DIAGRAM_SOURCE]) {
-    assert.ok(html.includes(earlier), 'each earlier source string is still inlined');
-  }
 });
 
 test('t1: NO file under src/ is modified — the fact that makes S004 need no daemon rebuild', (t) => {
@@ -5349,7 +5464,7 @@ test('t6: a forced throw in the experience slot build leaves SIX other surfaces 
   assert.ok(allOf(r.body).length > 0, '1. the body still rendered');
   assert.ok(allOf(r.sections).length > 0, '2. the section chooser');
   assert.ok(allOf(r.oq).length > 0, '3. the open questions');
-  assert.ok(allOf(r.actions).length > 0, '4. the approval controls');
+  assert.deepEqual(r.controls(), ALL_ON, '4. the decision controls');
   assert.equal(uxSlotsIn(r).length, 0, '5. and the experience slot simply did not appear');
   assert.equal(dgSlotsIn(r).length, 1, '6. THE DIAGRAM SLOT IS UNTOUCHED — one peer cannot take the other down');
 });
@@ -5436,7 +5551,7 @@ test('t6: docs-sections.ts is BYTE-IDENTICAL — this Story mints no section ide
 
 // E2 S004/t3 — the delivery board's entry point: open the pane on one artifact,
 // read-only when it is not awaiting review.
-test('openArtifact opens a non-pending artifact without approve or request-changes, and a pending one as its list row does', async () => {
+test('openArtifact opens a non-pending artifact with feedback only, and a pending one as its list row does', async () => {
   const fc = fakeChannel();
   const { client, calls } = fakeClient();
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
@@ -5448,9 +5563,9 @@ test('openArtifact opens a non-pending artifact without approve or request-chang
   assert.equal(ro.payload.artifactId, 'BUILD-abc-s7');
   assert.equal(ro.payload['readOnly'], true);
   // A decision on it is dropped by the existing guard: it is not pending.
-  fc.send(env('docs-decision', { artifactId: 'BUILD-abc-s7', accept: true }));
+  fc.send(env('docs-decision', { artifactId: 'BUILD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
-  assert.deepEqual(calls.approve, []);
+  assert.deepEqual(calls.decide, []);
 
   // The pending one opens as a list-row click: no readOnly key, its actions intact.
   host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' });
@@ -5461,17 +5576,19 @@ test('openArtifact opens a non-pending artifact without approve or request-chang
   assert.equal(live.payload.artifactId, 'LLD-abc-s7');
   assert.equal('readOnly' in live.payload, false);
   assert.equal(live.payload['commentable'], true);
-  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', accept: true }));
+  fc.send(env('docs-decision', { artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }));
   await tick();
-  assert.deepEqual(calls.approve, ['LLD-abc-s7']);
+  assert.deepEqual(calls.decide, [{ path: DOC_PATH, decision: 'approve', comments: [] }]);
 
-  // Webview side: read-only shows the note and no decision control; without the flag the controls stay.
+  // Webview side: read-only says so and offers feedback only; without the flag all three stay.
   const w = runWebview();
   w.deliver({ artifactId: 'BUILD-abc-s7', markdown: '# Build', openQuestions: [], blocked: false, commentable: false, readOnly: true });
-  assert.deepEqual(w.actions.children.map((c) => c.textContent), ['read-only: not awaiting review']);
+  assert.deepEqual(w.controls(), { approve: 'hidden', reject: 'hidden', feedback: 'on' });
+  assert.equal(w.bar.state.textContent, 'not awaiting review · feedback only');
   const w2 = runWebview();
   w2.deliver({ artifactId: 'LLD-abc-s7', markdown: '# Doc', openQuestions: [], blocked: false, commentable: true });
-  assert.deepEqual(w2.actions.children.map((c) => c.textContent), ['approve', 'request changes']);
+  assert.deepEqual(w2.controls(), ALL_ON);
+  assert.equal(w2.bar.state.textContent, 'pending review');
 });
 
 test('openArtifact on a cold pane decides pending from its own pending read, even when the boot ping\'s refresh is superseded', async () => {
@@ -5482,8 +5599,7 @@ test('openArtifact on a cold pane decides pending from its own pending read, eve
   const client: DocsReviewClient = {
     pending: () => new Promise<DocsArtifactSummary[]>((resolve) => { gates.push(resolve); }),
     async content(id) { contents.push(id); return { markdown: '# body', openQuestions: [], blocked: false }; },
-    async approve(id) { return { approved: [{ path: id, result: {} }], skipped: [], codeReview: [] } as unknown as WorkflowApproveResult; },
-    async comment() {},
+    async decide(path, decision, comments) { return decided({ path, decision, comments }); },
   };
   const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
   host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' }); // open()'s refresh #0, openArtifact's read #1
@@ -5594,4 +5710,977 @@ test('history and compiler checks skip with a stated reason when what they need 
   assert.equal(count(/\bgitIn\(/g), 4, 'gitIn is declared once and bound only by git(t, need), and by this test for the git binary and its fixture');
   assert.equal(count(/\b(?:const|let|function)\s+git\b/g), 1, 'git(t, need) is the one history runner');
   assert.equal(count(/existsSync\(\s*tsc\b/g), 0, 'no test asserts the compiler is present');
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t9 — the rebuilt shell: a column with a fixed comment
+// panel, in VS Code theme variables.
+// ---------------------------------------------------------------------------
+
+/** Every <style> block of the emitted shell, joined. */
+function shellCss(html: string): string {
+  return [...html.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1]).join('\n');
+}
+
+test("docs review shell: the comment panel and the header are outside the one scrolling region, and the shell's styles use --vscode-* variables with no terminal style and no theme switch", async () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient();
+  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'N' }).open();
+  await tick();
+  const html = fc.html();
+  const markup = html.slice(html.indexOf('<body'), html.indexOf('<script'));
+
+  // THE LAYOUT, by position in the markup: header, then the scrolling region, then the
+  // comment panel; each of the first and last OUTSIDE the region.
+  const iHead = markup.indexOf('<div class="rv-head">');
+  const iScroll = markup.indexOf('<div id="insrc-rv-scroll" class="rv-scroll">');
+  const iHist = markup.indexOf('<details id="insrc-rv-hist" class="rv-hist">');
+  const iBar = markup.indexOf('<div id="insrc-rv-bar" class="rv-bar">');
+  assert.ok(iHead > 0 && iScroll > iHead && iHist > iScroll && iBar > iHist, 'header, scrolling region, the strip of earlier comments, comment panel, in that order');
+  const head = markup.slice(iHead, iScroll);
+  const region = markup.slice(iScroll, iHist);
+  const strip = markup.slice(iHist, iBar);
+  const bar = markup.slice(iBar);
+  assert.ok(strip.endsWith('</details>'), 'the strip is closed before the panel opens');
+  assert.ok(strip.includes('id="insrc-rv-hist-list"') && !region.includes('insrc-rv-hist'), 'and it too is outside the scrolling region');
+  // The region closes before the panel begins: its two closing tags end the slice.
+  assert.ok(region.endsWith('</div></div>'), 'the region is closed before the panel opens');
+  const count = (text: string, re: RegExp): number => (text.match(re) ?? []).length;
+  assert.equal(count(region, /<div\b/g), count(region, /<\/div>/g), 'and it is balanced, so nothing after it is inside it');
+  assert.equal(count(head, /<div\b/g), count(head, /<\/div>/g), 'the header is closed before the region opens');
+  for (const id of ['insrc-docs-sections', 'insrc-docs-notice', 'insrc-docs-diagram', 'insrc-docs-experience', 'insrc-docs-body', 'insrc-docs-oq']) {
+    assert.ok(region.includes(`id="${id}"`), `${id} is inside the scrolling region`);
+    assert.ok(!head.includes(`id="${id}"`) && !bar.includes(`id="${id}"`));
+  }
+  for (const id of ['insrc-docs-list', 'insrc-rv-kind', 'insrc-rv-state']) {
+    assert.ok(head.includes(`id="${id}"`), `${id} is in the header`);
+    assert.ok(!region.includes(`id="${id}"`), `${id} is outside the scrolling region`);
+  }
+  for (const id of ['insrc-rv-field', 'insrc-rv-approve', 'insrc-rv-reject', 'insrc-rv-feedback', 'insrc-rv-result', 'insrc-rv-who']) {
+    assert.ok(bar.includes(`id="${id}"`), `${id} is in the comment panel`);
+    assert.ok(!region.includes(`id="${id}"`), `${id} is outside the scrolling region`);
+  }
+
+  // THE RULES that make it so. The body is a column the height of the pane and does
+  // not scroll; the header and the panel keep their own height; ONE element scrolls.
+  const css = shellCss(html);
+  assert.ok(css.includes('html,body{height:100%;margin:0;}'));
+  const bodyRule = /(?:^|\})body\{([^}]*)\}/.exec(css)?.[1] ?? '';
+  assert.match(bodyRule, /display:flex;flex-direction:column;overflow:hidden;/, 'the body is a column and does not scroll');
+  assert.ok(css.includes('.rv-head{flex:0 0 auto;'), 'the header keeps its own height');
+  assert.ok(css.includes('.rv-bar{flex:0 0 auto;'), 'the comment panel keeps its own height');
+  assert.ok(css.includes('.rv-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;}'), 'the region takes the rest and scrolls');
+  // The one other element that may scroll is the LIST inside the strip of earlier
+  // comments, which is capped so a long history cannot take the document's room.
+  assert.ok(css.includes('.rv-hist-list{max-height:170px;overflow-y:auto;'), "the strip's list is capped and scrolls on its own");
+  assert.ok(css.includes('.rv-hist{flex:0 0 auto;'), 'and the strip keeps its own height');
+  assert.equal(count(css, /overflow-y\s*:/g), 2, 'the document region and that list are the only vertical scrollers');
+  assert.equal(count(css, /overflow\s*:\s*(?:auto|scroll)/g), 0, 'and nothing else scrolls both ways');
+  assert.doesNotMatch(css, /position\s*:\s*(?:fixed|sticky)/, 'the panel is held by the layout, not pinned over the document');
+
+  // THE THEME. Every --it-* token a rule uses is defined on the body from a VS Code
+  // theme variable, so none can resolve to nothing.
+  const defined = new Set([...bodyRule.matchAll(/(--it-[a-z-]+):var\(--vscode-[A-Za-z-]+\)/g)].map((m) => m[1]));
+  const used = new Set([...css.matchAll(/var\((--it-[a-z-]+)/g)].map((m) => m[1]));
+  assert.ok(used.size >= 8, 'the renderers still use the tokens');
+  for (const token of used) assert.ok(defined.has(token!), `${token} is defined from a theme variable`);
+  assert.ok(count(css, /var\(--vscode-/g) > 40, 'colours, fonts and borders come from theme variables');
+
+  // No literal colour in any declaration: not a hex, not rgb()/hsl(), not a colour name.
+  // Values are read with their var(...) calls removed, so a variable's NAME (which may
+  // contain "green" or "background") is not mistaken for a colour.
+  const NAMED = ['white', 'black', 'red', 'green', 'blue', 'grey', 'gray', 'orange', 'yellow', 'purple', 'pink', 'silver', 'navy', 'teal', 'transparent'];
+  let declarations = 0;
+  for (const m of css.matchAll(/[{;]\s*([a-z-]+)\s*:\s*([^;{}]+)/g)) {
+    declarations += 1;
+    const value = m[2]!.replace(/var\([^()]*\)/g, '');
+    assert.doesNotMatch(value, /#[0-9a-fA-F]{3,8}\b/, `no hex colour in ${m[1]}:${m[2]}`);
+    assert.doesNotMatch(value, /\b(?:rgba?|hsla?)\(/, `no rgb()/hsl() in ${m[1]}:${m[2]}`);
+    for (const named of NAMED) assert.doesNotMatch(value, new RegExp(`(?:^|[\\s,])${named}(?:$|[\\s,!])`), `no named colour in ${m[1]}:${m[2]}`);
+  }
+  assert.ok(declarations > 200, 'the scan read the declarations');
+
+  // No terminal style: neither its class, nor its import, nor its values.
+  assert.doesNotMatch(html, /insrc-term/);
+  const src = readFileSync(join(fileURLToPath(new URL('.', import.meta.url)), '..', 'docs-review-panel.ts'), 'utf8');
+  assert.doesNotMatch(src, /design-tokens|renderTerminalStyle|terminalTheme/, 'the host no longer reads the terminal theme');
+  // No theme message and no switch of its own: the host posts none, and the shell has
+  // neither a handler for one, nor a control, nor a colour-scheme rule.
+  assert.deepEqual(fc.posted.filter((p) => p.payload.type === 'theme'), [], 'no theme message is posted');
+  assert.doesNotMatch(html, /type==='theme'|prefers-color-scheme|data-theme/);
+  // The one place a colour scheme is named is the FRAME of an HTML document: that page is
+  // a standalone document with its own palette, written for a light page, so its frame
+  // is given the system's page colour for a light scheme. It is not a switch: it does
+  // not follow, or change, the theme of the pane.
+  assert.equal(count(html, /color-scheme/g), 1);
+  assert.match(css, /\.rv-frame\{[^}]*color-scheme:light;background:Canvas;\}/);
+  assert.equal(count(css, /\bCanvas\b/g), 1, 'and the system page colour is used nowhere else');
+  assert.doesNotMatch(markup, /theme/i, 'no theme control in the markup');
+});
+
+test('docs review shell: each of the three buttons posts one docs-decision with the whole-document comment and is disabled until the result arrives, the result line is shown, and feedback with no comment posts nothing', () => {
+  const DOC = { artifactId: 'LLD-abc-s7', markdown: '# Doc', openQuestions: [], blocked: false, contentVersion: '0123456789abcdef', state: 'pending', reviewer: { name: 'Rev Iewer', source: 'git' } };
+  const decisions = (w: WebviewRun): unknown[] =>
+    w.posted.map((p) => (p as { payload: { type: string } }).payload).filter((p) => p.type === 'docs-decision');
+  const ALL_OFF = { approve: 'off', reject: 'off', feedback: 'off' };
+
+  for (const decision of ['approve', 'reject', 'feedback'] as const) {
+    const w = runWebview();
+    w.deliver(DOC);
+    assert.deepEqual(w.controls(), ALL_ON);
+    assert.equal(w.bar.who.textContent, 'as Rev Iewer (git user)');
+    assert.equal(w.bar.kind.textContent, 'LLD');
+    w.bar.field.value = '  Needs an owner.  ';
+    fire(w.bar[decision], 'click');
+    assert.deepEqual(decisions(w), [{
+      type: 'docs-decision', artifactId: 'LLD-abc-s7', decision,
+      comments: [{ comment: 'Needs an owner.', version: '0123456789abcdef' }],
+    }], `${decision}: one decision, with the whole-document comment`);
+    assert.deepEqual(w.controls(), ALL_OFF, `${decision}: all three are disabled until the result arrives`);
+    assert.equal(w.bar.result.textContent, 'Sending…');
+    // Pressing again while it is unanswered posts nothing more.
+    fire(w.bar.approve, 'click');
+    fire(w.bar.reject, 'click');
+    fire(w.bar.feedback, 'click');
+    assert.equal(decisions(w).length, 1);
+    // A result for another document is not this one's answer.
+    w.send('docs-decision-result', { artifactId: 'PLAN-abc-s7', ok: true, recorded: 1, message: 'Approved.' });
+    assert.deepEqual(w.controls(), ALL_OFF);
+
+    w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'recorded', recorded: 1, message: 'Done. 1 comment saved. The chat has been told.' });
+    assert.deepEqual(w.controls(), ALL_ON, `${decision}: the buttons work again`);
+    assert.equal(w.bar.result.textContent, 'Done. 1 comment saved. The chat has been told.', 'the result line is shown');
+    assert.equal(w.bar.result.className, 'rv-result rv-ok');
+    assert.equal(w.bar.field.value, '', 'the comment was saved, so the field is cleared');
+    // The host posts the document again after a decision: the result line stays.
+    w.deliver(DOC);
+    assert.equal(w.bar.result.textContent, 'Done. 1 comment saved. The chat has been told.');
+  }
+
+  // Send feedback with no comment posts nothing, and says why.
+  for (const blank of ['', '   \n ']) {
+    const w = runWebview();
+    w.deliver(DOC);
+    w.bar.field.value = blank;
+    fire(w.bar.feedback, 'click');
+    assert.deepEqual(decisions(w), []);
+    assert.equal(w.bar.result.textContent, 'Write a comment before sending feedback.');
+    assert.equal(w.bar.result.className, 'rv-result rv-err');
+    assert.deepEqual(w.controls(), ALL_ON, 'nothing is waiting for an answer');
+    // Approve and reject need no comment: the decision goes with an empty list.
+    fire(w.bar.approve, 'click');
+    assert.deepEqual(decisions(w), [{ type: 'docs-decision', artifactId: 'LLD-abc-s7', decision: 'approve', comments: [] }]);
+  }
+
+  // A decision that was not recorded, or whose comment was not saved, keeps the field.
+  for (const result of [
+    { ok: false, message: 'Nothing was recorded: daemon down' },
+    { ok: true, outcome: 'approved', recorded: 0, message: 'Approved. The comment was not saved: cannot write the artifact.' },
+  ]) {
+    const w = runWebview();
+    w.deliver(DOC);
+    w.bar.field.value = 'Keep me.';
+    fire(w.bar.reject, 'click');
+    w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ...result });
+    assert.equal(w.bar.field.value, 'Keep me.');
+    assert.equal(w.bar.result.textContent, result.message);
+    assert.equal(w.bar.result.className, result.ok ? 'rv-result rv-ok' : 'rv-result rv-err');
+    assert.deepEqual(w.controls(), ALL_ON);
+  }
+
+  // Another document: the field, the result line and an unanswered decision were the earlier one's.
+  const w = runWebview();
+  w.deliver(DOC);
+  w.bar.field.value = 'For the LLD.';
+  fire(w.bar.feedback, 'click');
+  w.deliver({ ...DOC, artifactId: 'PLAN-abc-s7' });
+  assert.equal(w.bar.field.value, '');
+  assert.equal(w.bar.result.textContent, '');
+  assert.deepEqual(w.controls(), ALL_ON);
+  assert.equal(w.bar.kind.textContent, 'PLAN');
+  // No document: nothing can be sent.
+  const none = runWebview();
+  assert.deepEqual(none.controls(), { approve: 'off', reject: 'off', feedback: 'off' });
+  fire(none.bar.approve, 'click');
+  assert.deepEqual(decisions(none), []);
+  // A document the daemon says is approved takes feedback only.
+  const done = runWebview();
+  done.deliver({ ...DOC, state: 'approved' });
+  assert.deepEqual(done.controls(), { approve: 'hidden', reject: 'hidden', feedback: 'on' });
+  assert.equal(done.bar.state.textContent, 'approved · feedback only');
+});
+
+test('docs review shell: the existing section chooser, functional-requirement, diagram and experience renderers still draw', () => {
+  const w = runWebview();
+  const md = '# Low-level design\n\nIntro.\n\n## Functional requirements\n\nOld text.\n\n## Data model changes\n\nBody.\n';
+  const sections = deriveSectionIndex(md);
+  w.deliver({
+    artifactId: 'LLD-abc-s7', markdown: md, openQuestions: ['Is the limit right?'], blocked: false, sections,
+    functionalDefinition: { requirements: [{ id: 'E:FR001', statement: 'The panel stays in view.', scope: 'doc' }] },
+    erDefinition: DG_ER, companions: [DG_REF, UX_REF_T6], uxDefinition: UX_CARD_T6,
+  });
+
+  // The body, through the guarded markdown path.
+  assert.ok(w.body.children.some((c) => c.tagName === 'h1'), 'the markdown body is rendered');
+  // The section chooser: one select with an entry per section.
+  assert.equal(w.sections.children.length, 1);
+  assert.equal(w.sections.children[0]!.tagName, 'select');
+  assert.ok(w.sections.children[0]!.children.length >= sections.anchors.length, 'one entry per section');
+  // The functional requirements, as a list with the requirement's id and statement.
+  const fr = allOf(w.body).filter((n) => n.className === 'insrc-fr-item');
+  assert.equal(fr.length, 1, 'the functional requirement is drawn');
+  assert.ok(allOf(fr[0]!).some((n) => n.textContent === 'E:FR001'));
+  // The diagram and the experience mock, each in its own slot.
+  assert.equal(dgSlotsIn(w).length, 1, 'the diagram slot');
+  assert.ok(allOf(dgSlotsIn(w)[0]!).some((n) => n.tagName === 'svg'), 'with its drawing');
+  assert.equal(uxSlotsIn(w).length, 1, 'the experience slot');
+  assert.ok(allOf(uxSlotsIn(w)[0]!).some((n) => n.className === 'ux-card'), 'with its card');
+  // The open questions and the notice host are where they were.
+  assert.deepEqual(w.oq.children.map((c) => c.textContent), ['? Is the limit right?']);
+  assert.equal(w.notice.children.length, 0, 'nothing degraded');
+  // And the header and the comment panel are filled for the same document.
+  assert.deepEqual(w.controls(), ALL_ON);
+  assert.equal(w.list.value, 'LLD-abc-s7', 'the select names the document shown');
+});
+
+test('docs review shell: the shell is one inline script under a nonce CSP with no remote origin, and its recorded baseline is that of the new shell', async () => {
+  const { createHash } = await import('node:crypto');
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+
+  // One inline script, carrying the nonce the CSP names.
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'exactly one script element');
+  assert.ok(html.includes(`<script nonce="${SHELL_BASELINE.nonce}">`), 'and it carries the nonce');
+  assert.doesNotMatch(html, /<script[^>]*\bsrc=/, 'inline, not loaded');
+  // The CSP, exactly: nothing by default, inline styles, scripts by the nonce only.
+  const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]*)">/.exec(html)?.[1];
+  assert.equal(csp, `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${SHELL_BASELINE.nonce}';`);
+  // No remote origin: nothing is loaded by address, and the markup has no element that could.
+  assert.doesNotMatch(html, /(?:src|href|action)="https?:/, 'no remote resource is referenced');
+  const markup = html.slice(html.indexOf('<body'), html.indexOf('<script'));
+  assert.doesNotMatch(markup, /<(?:link|img|iframe|object|embed|form|a)\b/, 'the markup has nothing that loads or navigates');
+  assert.doesNotMatch(shellCss(html), /url\(|@import/, 'and the styles load nothing');
+
+  // The recorded baseline is the NEW shell's: the hash, and the two lengths that say
+  // how it moved when it does.
+  assert.equal(createHash('sha256').update(html, 'utf8').digest('hex'), SHELL_BASELINE.sha256, 'the emitted shell matches the recorded baseline');
+  assert.equal(html.length, SHELL_BASELINE.chars, 'shell length in characters');
+  assert.equal(Buffer.byteLength(html, 'utf8'), SHELL_BASELINE.bytes, 'shell length in UTF-8 bytes');
+  // And it is this shell: the comment panel is in it, the old controls are not.
+  assert.ok(html.includes('<div id="insrc-rv-bar" class="rv-bar">'));
+  assert.ok(html.includes('<body class="insrc-rv">'));
+  for (const gone of ['insrc-docs-actions', 'insrc-docs-note', 'request changes', 'insrc-term']) {
+    assert.ok(!html.includes(gone), `${gone} is not in the rebuilt shell`);
+  }
+  // A pure function of its nonce, which is what a recorded baseline rests on.
+  assert.equal(html, renderShellFor(SHELL_BASELINE.nonce));
+  assert.notEqual(html, renderShellFor('OTHER-NONCE'));
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t10 — one tab per document; an HTML document is shown
+// as the page itself, in a sandboxed frame.
+// ---------------------------------------------------------------------------
+
+const TAB_SEQ = 'docs/epics/x/S007/sequence-diagram.html';
+const TAB_UX = 'docs/epics/x/S007/ux-mock.html';
+const TAB_DOC = {
+  artifactId: 'LLD-abc-s7', markdown: '# Doc\n\nBody.\n', openQuestions: [], blocked: false,
+  contentVersion: '0123456789abcdef', state: 'pending',
+  documents: [
+    { title: 'LLD.md', type: 'markdown', relPath: 'docs/epics/x/S007/LLD.md' },
+    { title: 'Sequence diagram', type: 'html', relPath: TAB_SEQ },
+    { title: 'UX mock', type: 'html', relPath: TAB_UX },
+  ],
+};
+const TAB_PAGE = '<!doctype html><html><body><h1>Sequence</h1><script nonce="WV">draw()</script></body></html>';
+const postedOf = (w: WebviewRun, type: string): Array<Record<string, unknown>> =>
+  w.posted.map((p) => (p as { payload: Record<string, unknown> }).payload).filter((p) => p['type'] === type);
+const shownView = (w: WebviewRun): 'markdown' | 'html' | 'both' | 'neither' => {
+  const md = w.md.style['display'] !== 'none';
+  const html = w.html.style['display'] !== 'none';
+  return md && html ? 'both' : md ? 'markdown' : html ? 'html' : 'neither';
+};
+
+test("docs review shell: an HTML document's tab posts open-companion, and docs-companion sets the text as the srcdoc of a frame with sandbox allow-scripts and shows the file's path; with no html it shows the path and a line of text", () => {
+  const w = runWebview();
+  assert.equal(shownView(w), 'markdown', 'before any document, the markdown view');
+  w.deliver(TAB_DOC);
+  assert.equal(shownView(w), 'markdown', 'a document opens on its markdown');
+  assert.deepEqual(postedOf(w, 'open-companion'), [], 'nothing is asked for until a tab is chosen');
+
+  // Choosing the HTML document's tab asks the host for that file.
+  fire(w.tabs.children[1]!, 'click');
+  assert.deepEqual(postedOf(w, 'open-companion'), [{ type: 'open-companion', artifactId: 'LLD-abc-s7', relPath: TAB_SEQ }]);
+  assert.equal(shownView(w), 'html');
+  assert.equal(w.htmlPath.textContent, TAB_SEQ, "the file's path is shown");
+  assert.equal(w.htmlNote.textContent, 'Loading…');
+  assert.equal(w.frameHost.children.length, 0, 'no frame until the text arrives');
+
+  // An answer for another file, or another artifact, is not this tab's.
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_UX, html: TAB_PAGE });
+  w.send('docs-companion', { artifactId: 'PLAN-abc-s7', relPath: TAB_SEQ, html: TAB_PAGE });
+  assert.equal(w.frameHost.children.length, 0);
+
+  // The text becomes the srcdoc of ONE frame that may run scripts and nothing else.
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_SEQ, html: TAB_PAGE });
+  assert.equal(w.frameHost.children.length, 1);
+  const frame = w.frameHost.children[0]!;
+  assert.equal(frame.tagName, 'iframe');
+  assert.equal(frame.attrs['sandbox'], 'allow-scripts', 'scripts, and nothing else: no same-origin, forms, popups or navigation');
+  assert.equal(frame.attrs['srcdoc'], TAB_PAGE, 'the posted text, unchanged');
+  assert.equal(frame.attrs['src'], undefined, 'set from the text, not loaded by address');
+  const order = frame.writes.map((x) => x.prop);
+  assert.ok(order.indexOf('attr:sandbox') >= 0 && order.indexOf('attr:sandbox') < order.indexOf('attr:srcdoc'), 'the sandbox is set before the text');
+  assert.equal(w.htmlNote.textContent, '', 'the loading line is gone');
+  assert.equal(w.htmlPath.textContent, TAB_SEQ, 'the path stays above the frame');
+  // The page's markup exists only as the frame's srcdoc: it never became markup of the shell.
+  for (const n of [w.html, w.htmlPath, w.htmlNote, w.frameHost, frame, w.body, w.md]) {
+    assert.ok(!n.writes.some((x) => x.prop === 'innerHTML' && String(x.value).includes('Sequence')), 'never assigned as markup');
+  }
+  assert.ok(!allOf(w.html).some((n) => n.textContent.includes('<h1>')), 'and never set as text either');
+
+  // The host posts the artifact again (after a decision): the tab and its frame stay.
+  w.deliver(TAB_DOC);
+  assert.equal(shownView(w), 'html');
+  assert.equal(w.frameHost.children[0], frame, 'the same frame: the page is not loaded again');
+  assert.equal(postedOf(w, 'open-companion').length, 1);
+
+  // With no html: the path, and a line of text; no frame.
+  fire(w.tabs.children[2]!, 'click');
+  assert.deepEqual(postedOf(w, 'open-companion').at(-1), { type: 'open-companion', artifactId: 'LLD-abc-s7', relPath: TAB_UX });
+  assert.equal(w.frameHost.children.length, 0, 'the earlier page is gone at once');
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_SEQ, html: TAB_PAGE }); // a late answer for the tab just left
+  assert.equal(w.frameHost.children.length, 0);
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_UX });
+  assert.equal(w.htmlPath.textContent, TAB_UX);
+  assert.equal(w.htmlNote.textContent, 'This document cannot be shown here. Open the file to see it.');
+  assert.equal(w.frameHost.children.length, 0);
+  // Text that is not a string is treated the same way.
+  w.send('docs-companion', { artifactId: 'LLD-abc-s7', relPath: TAB_UX, html: 7 });
+  assert.equal(w.frameHost.children.length, 0);
+
+  // Back to the markdown: the frame is dropped and nothing is asked for.
+  const asked = postedOf(w, 'open-companion').length;
+  fire(w.tabs.children[0]!, 'click');
+  assert.equal(shownView(w), 'markdown');
+  assert.equal(w.frameHost.children.length, 0);
+  assert.equal(postedOf(w, 'open-companion').length, asked);
+  // Another artifact opens on its markdown, whatever tab the last one was on.
+  fire(w.tabs.children[1]!, 'click');
+  w.deliver({ ...TAB_DOC, artifactId: 'HLD-abc' });
+  assert.equal(shownView(w), 'markdown');
+  // And an HTML document that is no longer listed goes back to the markdown too.
+  fire(w.tabs.children[1]!, 'click');
+  w.deliver({ ...TAB_DOC, artifactId: 'HLD-abc', documents: [TAB_DOC.documents[0], TAB_DOC.documents[2]] });
+  assert.equal(shownView(w), 'markdown');
+});
+
+test('docs review shell: there is one tab per document, the markdown first, and a comment sent from an HTML tab names that file and has no anchor', () => {
+  const w = runWebview();
+  w.deliver(TAB_DOC);
+  const tabs = (): Array<{ text: string; on: boolean; selected: string | undefined; title: string | undefined; role: string | undefined }> =>
+    w.tabs.children.map((b) => ({ text: b.textContent, on: b.className === 'rv-tab rv-on', selected: b.attrs['aria-selected'], title: b.attrs['title'], role: b.attrs['role'] }));
+  assert.deepEqual(tabs(), [
+    { text: 'LLD.md', on: true, selected: 'true', title: undefined, role: 'tab' },
+    { text: 'Sequence diagram', on: false, selected: 'false', title: TAB_SEQ, role: 'tab' },
+    { text: 'UX mock', on: false, selected: 'false', title: TAB_UX, role: 'tab' },
+  ], 'one tab per document, the markdown first, each HTML document by its title');
+  assert.ok(w.tabs.children.every((b) => b.tagName === 'button' && !b.writes.some((x) => x.prop === 'innerHTML')), 'titles are set as text');
+  assert.notEqual(w.tabs.style['display'], 'none');
+
+  // A comment written on an HTML document's tab is on that file: no anchor, no version.
+  fire(w.tabs.children[1]!, 'click');
+  assert.deepEqual(tabs().map((t) => t.on), [false, true, false]);
+  assert.equal(w.bar.field.attrs['placeholder'], `Comment on ${TAB_SEQ} (optional)…`);
+  w.bar.field.value = 'The arrow to the daemon is missing.';
+  fire(w.bar.feedback, 'click');
+  assert.deepEqual(postedOf(w, 'docs-decision'), [{
+    type: 'docs-decision', artifactId: 'LLD-abc-s7', decision: 'feedback',
+    comments: [{ comment: 'The arrow to the daemon is missing.', file: TAB_SEQ }],
+  }]);
+  const sent = postedOf(w, 'docs-decision')[0]!['comments'] as Array<Record<string, unknown>>;
+  assert.deepEqual(Object.keys(sent[0]!).sort(), ['comment', 'file'], 'the file, and neither an anchor nor a version');
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'recorded', recorded: 1, message: 'Feedback sent.' });
+
+  // On the markdown the same field is a comment on the document: its version, and no file.
+  fire(w.tabs.children[0]!, 'click');
+  assert.equal(w.bar.field.attrs['placeholder'], 'Comment on the whole document (optional)…');
+  w.bar.field.value = 'Needs an owner.';
+  fire(w.bar.reject, 'click');
+  assert.deepEqual(postedOf(w, 'docs-decision').at(-1), {
+    type: 'docs-decision', artifactId: 'LLD-abc-s7', decision: 'reject',
+    comments: [{ comment: 'Needs an owner.', version: '0123456789abcdef' }],
+  });
+
+  // One document, none listed, or a list that is not a list: nothing to choose, so no tab.
+  for (const documents of [[TAB_DOC.documents[0]], [], undefined, 'x']) {
+    const one = runWebview();
+    one.deliver({ ...TAB_DOC, documents });
+    assert.equal(one.tabs.children.length, 0);
+    assert.equal(one.tabs.style['display'], 'none');
+    assert.equal(shownView(one), 'markdown');
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t11 — inline comments as drafts.
+// ---------------------------------------------------------------------------
+
+const INLINE_LONG = 'Before the passage there is rather a lot of text, more than forty characters of it; the passage itself; and after it there is again a good deal more text than forty characters.';
+const INLINE_MD = [
+  '# Low-level design', '', 'Intro.', '',
+  '## Summary', '', 'The header is cut to 8 lines until expanded.', '', 'Second paragraph here.', '', INLINE_LONG, '',
+  '## Feedback', '', 'A saved comment is listed here.', '',
+  '## After', '', 'Text after the feedback section.', '',
+].join('\n');
+const INLINE_DOC = {
+  artifactId: 'LLD-abc-s7', markdown: INLINE_MD, openQuestions: [], blocked: false,
+  sections: deriveSectionIndex(INLINE_MD), contentVersion: '0123456789abcdef', state: 'pending',
+  reviewer: { name: 'Rev Iewer', source: 'git' },
+};
+/** The rendered block whose text is exactly this. */
+const blockOf = (w: WebviewRun, text: string): BodyStub => {
+  const b = w.body.children.find((c) => c.nodeType === 1 && inlineText(c) === text);
+  assert.ok(b, `a block with the text: ${text}`);
+  return b!;
+};
+/** A block's text as the page shows it: its text nodes and those inside its marks, in order. */
+const inlineText = (n: BodyStub): string =>
+  n.nodeType === 3 ? n.data : n.children.length === 0 ? n.textContent : n.children.map(inlineText).join('');
+const marksIn = (n: BodyStub): BodyStub[] => allOf(n).filter((x) => x.tagName === 'mark');
+const cardsIn = (w: WebviewRun): BodyStub[] => w.body.children.filter((c) => c.className === 'rv-thread');
+/** Select a piece of a block's text, which is one text node while the block has no mark. */
+function selectIn(w: WebviewRun, block: BodyStub, piece: string): void {
+  const node = block.children.find((c) => c.nodeType === 3 && c.data.includes(piece));
+  assert.ok(node, `a text node holding: ${piece}`);
+  const at = node!.data.indexOf(piece);
+  w.select({ startContainer: node!, startOffset: at, endContainer: node!, endOffset: at + piece.length });
+}
+/** Select text, press the comment button, write a comment in the thread and add it. */
+function draftOn(w: WebviewRun, blockText: string, piece: string, comment: string): BodyStub {
+  const block = blockOf(w, blockText);
+  selectIn(w, block, piece);
+  assert.equal(w.pop.style['display'], 'block', `the comment button is offered for: ${piece}`);
+  fire(w.popBtn, 'click');
+  const card = cardsIn(w).at(-1)!;
+  addInCard(card, comment);
+  return block;
+}
+/** Write a comment in an open thread card and press its add button. */
+function addInCard(card: BodyStub, comment: string): void {
+  const field = allOf(card).find((n) => n.tagName === 'textarea')!;
+  field.value = comment;
+  fire(allOf(card).find((n) => n.attrs['aria-label'] === 'Add this comment as a draft')!, 'click');
+}
+const SUMMARY_P = 'The header is cut to 8 lines until expanded.';
+const NO_DRAFTS = 'Select text in the document to comment on it.';
+
+test('docs review shell: selecting text in one block and adding a comment makes a draft with a quote, section, prefix and suffix; a selection across blocks, in the Feedback section or cutting an existing mark offers no button', () => {
+  const w = runWebview({ textNodes: true });
+  w.deliver(INLINE_DOC);
+  assert.equal(w.pop.style['display'], 'none', 'no button before there is a selection');
+  assert.equal(w.drafts.textContent, NO_DRAFTS);
+
+  // A selection inside one block offers the button; pressing it marks the passage and
+  // opens its thread card under the block, with a field.
+  const p = blockOf(w, SUMMARY_P);
+  selectIn(w, p, 'cut to 8 lines');
+  assert.equal(w.pop.style['display'], 'block');
+  fire(w.popBtn, 'click');
+  assert.equal(w.pop.style['display'], 'none', 'the button goes once it is pressed');
+  assert.deepEqual(p.children.map((c) => (c.nodeType === 3 ? `text:${c.data}` : `${c.tagName}.${c.className}:${inlineText(c)}`)),
+    ['text:The header is ', 'mark.rv-anno rv-draft:cut to 8 lines', 'text: until expanded.'], 'the passage is marked, and the text around it is unchanged');
+  assert.equal(inlineText(p), SUMMARY_P);
+  const card = cardsIn(w)[0]!;
+  assert.equal(p.nextSibling, card, 'the thread card is under the block');
+  assert.equal(card.children[0]!.textContent, '\u201ccut to 8 lines\u201d', 'it quotes the passage');
+  assert.ok(allOf(card).some((n) => n.tagName === 'textarea'), 'and has a field');
+  assert.deepEqual(allOf(card).filter((n) => n.tagName === 'button').map((b) => b.attrs['aria-label']), ['Add this comment as a draft', 'Close'], 'with round add and close buttons, named by their labels');
+  assert.equal(w.drafts.textContent, NO_DRAFTS, 'a marked passage with no comment is not yet a draft');
+
+  // An added comment is a draft: tagged, under the reviewer's name, removable.
+  addInCard(card, 'Say what the <b>header</b> shows.');
+  const open = cardsIn(w)[0]!;
+  const row = open.children[1]!;
+  assert.deepEqual(row.children.map((c) => [c.tagName, c.className, c.textContent]), [
+    ['button', 'rv-x', '\u2715'],
+    ['span', 'rv-who', 'Rev Iewer'],
+    ['span', 'rv-tag rv-tag-draft', 'draft, not sent'],
+    ['div', 'rv-text', 'Say what the <b>header</b> shows.'],
+  ]);
+  assert.equal(row.children[0]!.attrs['aria-label'], 'Remove this draft');
+  assert.equal(w.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+  // Comment and quote are set as text: nothing in the card, the mark or the body was assigned as markup.
+  for (const n of [...allOf(open), ...marksIn(p)]) assert.ok(!n.writes.some((x) => x.prop === 'innerHTML' || x.prop === 'outerHTML'), 'no markup is assigned');
+  assert.ok(!w.body.writes.some((x) => x.prop === 'innerHTML' && String(x.value).includes('<b>header</b>')));
+
+  // The draft is sent with its anchor: the quote, the section above it, and the text on each side.
+  fire(w.bar.feedback, 'click');
+  assert.deepEqual(postedOf(w, 'docs-decision'), [{
+    type: 'docs-decision', artifactId: 'LLD-abc-s7', decision: 'feedback',
+    comments: [{
+      comment: 'Say what the <b>header</b> shows.',
+      anchor: { quote: 'cut to 8 lines', sectionSlug: 'summary', prefix: 'The header is ', suffix: ' until expanded.' },
+      version: '0123456789abcdef',
+    }],
+  }]);
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: false, message: 'Nothing was recorded: daemon down' });
+
+  // The text on each side is at most 40 characters, and a selection's outer spaces are not part of the quote.
+  const long = blockOf(w, INLINE_LONG);
+  selectIn(w, long, ' the passage itself; ');
+  fire(w.popBtn, 'click');
+  addInCard(cardsIn(w).at(-1)!, 'Which passage?');
+  fire(w.bar.feedback, 'click');
+  const second = (postedOf(w, 'docs-decision').at(-1)!['comments'] as Array<{ anchor: Record<string, string> }>)[1]!.anchor;
+  const at = INLINE_LONG.indexOf('the passage itself;');
+  assert.deepEqual(second, {
+    quote: 'the passage itself;', sectionSlug: 'summary',
+    prefix: INLINE_LONG.slice(at - 40, at), suffix: INLINE_LONG.slice(at + 'the passage itself;'.length, at + 'the passage itself;'.length + 40),
+  });
+  assert.equal(second['prefix']!.length, 40);
+  assert.equal(second['suffix']!.length, 40);
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: false, message: 'Nothing was recorded.' });
+
+  // NO BUTTON: across two blocks.
+  const p2 = blockOf(w, 'Second paragraph here.');
+  w.select({ startContainer: p.children[0]!, startOffset: 4, endContainer: p2.children[0]!, endOffset: 6 });
+  assert.equal(w.pop.style['display'], 'none', 'a selection across blocks');
+  // In the document's own Feedback section.
+  selectIn(w, blockOf(w, 'A saved comment is listed here.'), 'saved comment');
+  assert.equal(w.pop.style['display'], 'none', 'a selection in the Feedback section');
+  // The section after it is ordinary text again.
+  selectIn(w, blockOf(w, 'Text after the feedback section.'), 'after the feedback');
+  assert.equal(w.pop.style['display'], 'block', 'the section after Feedback can be commented on');
+  w.select(null);
+  assert.equal(w.pop.style['display'], 'none', 'no selection');
+  // Cutting an existing mark: starting inside it, ending inside it, or spanning it.
+  const mark = marksIn(p)[0]!;
+  const inMark = mark.children[0]!;
+  const before = p.children[0]!;
+  const after = p.children[2]!;
+  w.select({ startContainer: inMark, startOffset: 2, endContainer: after, endOffset: 4 });
+  assert.equal(w.pop.style['display'], 'none', 'starting inside a mark');
+  w.select({ startContainer: before, startOffset: 4, endContainer: inMark, endOffset: 3 });
+  assert.equal(w.pop.style['display'], 'none', 'ending inside a mark');
+  w.select({ startContainer: before, startOffset: 4, endContainer: after, endOffset: 4 });
+  assert.equal(w.pop.style['display'], 'none', 'spanning a mark');
+  w.select({ startContainer: after, startOffset: 1, endContainer: after, endOffset: 6 });
+  assert.equal(w.pop.style['display'], 'block', 'beside the mark, in the same block, is fine');
+  // Blank, and longer than a quote may be.
+  w.select({ startContainer: after, startOffset: 0, endContainer: after, endOffset: 1 });
+  assert.equal(w.pop.style['display'], 'none', 'only a space');
+  const big = runWebview({ textNodes: true });
+  const bigText = 'x'.repeat(600);
+  big.deliver({ ...INLINE_DOC, markdown: `# T\n\n${bigText}\n`, sections: deriveSectionIndex(`# T\n\n${bigText}\n`) });
+  const bigNode = blockOf(big, bigText).children[0]!;
+  big.select({ startContainer: bigNode, startOffset: 0, endContainer: bigNode, endOffset: 501 });
+  assert.equal(big.pop.style['display'], 'none', 'more than 500 characters');
+  big.select({ startContainer: bigNode, startOffset: 0, endContainer: bigNode, endOffset: 500 });
+  assert.equal(big.pop.style['display'], 'block', '500 characters is allowed');
+
+  // A click on a marked passage closes its thread, and opens it again. (A plain click
+  // leaves no selection; with text still selected the click is the end of a selection.)
+  assert.equal(cardsIn(w).length, 2);
+  fire(w.body, 'click', { target: inMark });
+  assert.equal(cardsIn(w).length, 2, 'while text is selected, a click on a mark does nothing');
+  w.select(null);
+  fire(w.body, 'click', { target: inMark });
+  assert.equal(cardsIn(w).length, 1);
+  fire(w.body, 'click', { target: mark });
+  assert.equal(cardsIn(w).length, 2);
+  assert.equal(p.nextSibling!.className, 'rv-thread');
+  // Removing a passage's only draft takes the thread and the mark away; the text is whole again.
+  fire(allOf(p.nextSibling!).find((n) => n.className === 'rv-x')!, 'click');
+  assert.equal(marksIn(p).length, 0);
+  assert.equal(inlineText(p), SUMMARY_P);
+  assert.equal(cardsIn(w).length, 1);
+  assert.equal(w.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+  // Closing a thread that has no comment takes its mark away too.
+  selectIn(w, p2, 'paragraph');
+  fire(w.popBtn, 'click');
+  assert.equal(marksIn(p2).length, 1);
+  fire(allOf(p2.nextSibling!).find((n) => n.attrs['aria-label'] === 'Close')!, 'click');
+  assert.equal(marksIn(p2).length, 0);
+  assert.equal(inlineText(p2), 'Second paragraph here.');
+});
+
+test('docs review shell: the three buttons post one docs-decision with every draft and the whole-document comment, are disabled until the result arrives, and feedback with no comment posts nothing', () => {
+  const ALL_OFF = { approve: 'off', reject: 'off', feedback: 'off' };
+  for (const decision of ['approve', 'reject', 'feedback'] as const) {
+    const w = runWebview({ textNodes: true });
+    w.deliver(INLINE_DOC);
+    const p = draftOn(w, SUMMARY_P, 'cut to 8 lines', 'First on the header.');
+    addInCard(p.nextSibling!, 'Second on the header.');
+    draftOn(w, 'Second paragraph here.', 'paragraph', 'On the second paragraph.');
+    assert.equal(w.drafts.textContent, '3 inline comments drafted. Sent with the button you press.');
+    w.bar.field.value = 'On the whole document.';
+    fire(w.bar[decision], 'click');
+    const header = { quote: 'cut to 8 lines', sectionSlug: 'summary', prefix: 'The header is ', suffix: ' until expanded.' };
+    assert.deepEqual(postedOf(w, 'docs-decision'), [{
+      type: 'docs-decision', artifactId: 'LLD-abc-s7', decision,
+      comments: [
+        { comment: 'First on the header.', anchor: header, version: '0123456789abcdef' },
+        { comment: 'Second on the header.', anchor: header, version: '0123456789abcdef' },
+        { comment: 'On the second paragraph.', anchor: { quote: 'paragraph', sectionSlug: 'summary', prefix: 'Second ', suffix: ' here.' }, version: '0123456789abcdef' },
+        { comment: 'On the whole document.', version: '0123456789abcdef' },
+      ],
+    }], `${decision}: one decision with every draft, then the whole-document comment`);
+    assert.deepEqual(w.controls(), ALL_OFF, `${decision}: disabled until the result arrives`);
+    fire(w.bar.approve, 'click');
+    fire(w.bar.feedback, 'click');
+    assert.equal(postedOf(w, 'docs-decision').length, 1, 'nothing more is posted meanwhile');
+    w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'recorded', recorded: 4, message: 'Done. 4 comments saved.' });
+    assert.deepEqual(w.controls(), ALL_ON);
+  }
+
+  // Send feedback with no comment of either kind posts nothing.
+  const none = runWebview({ textNodes: true });
+  none.deliver(INLINE_DOC);
+  fire(none.bar.feedback, 'click');
+  assert.deepEqual(postedOf(none, 'docs-decision'), []);
+  assert.equal(none.bar.result.textContent, 'Write a comment before sending feedback.');
+  // A passage that is marked but has no comment is not a comment.
+  selectIn(none, blockOf(none, SUMMARY_P), 'cut to 8 lines');
+  fire(none.popBtn, 'click');
+  fire(none.bar.feedback, 'click');
+  assert.deepEqual(postedOf(none, 'docs-decision'), []);
+  // One inline draft is enough: the whole-document field may stay empty.
+  addInCard(cardsIn(none)[0]!, 'Only inline.');
+  fire(none.bar.feedback, 'click');
+  assert.deepEqual((postedOf(none, 'docs-decision')[0]!['comments'] as unknown[]).length, 1);
+});
+
+test('docs review shell: drafts are cleared on a successful result, kept on a failed one or one with commentsError, and restored from the saved state when the shell is rebuilt', () => {
+  const stored = (w: WebviewRun): unknown => ((w.saved.state as { rv?: Record<string, unknown> } | undefined)?.rv ?? {})['LLD-abc-s7'];
+
+  // Kept on a failed result, and on one whose comments were not saved.
+  for (const result of [
+    { ok: false, message: 'Nothing was recorded: daemon down' },
+    { ok: true, outcome: 'approved', recorded: 0, message: 'Approved. The comments were not saved: cannot write the artifact.' },
+  ]) {
+    const w = runWebview({ textNodes: true });
+    w.deliver(INLINE_DOC);
+    const p = draftOn(w, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+    w.bar.field.value = 'Overall.';
+    fire(w.bar.approve, 'click');
+    w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ...result });
+    assert.equal(marksIn(p).length, 1, 'the mark stays');
+    assert.equal(cardsIn(w).length, 1, 'and its thread');
+    assert.equal(w.bar.field.value, 'Overall.');
+    assert.equal(w.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+    assert.ok(stored(w), 'and it is still in the saved state');
+    // So the same comments can be sent again.
+    fire(w.bar.feedback, 'click');
+    assert.deepEqual(postedOf(w, 'docs-decision').at(-1)!['comments'], postedOf(w, 'docs-decision')[0]!['comments']);
+  }
+
+  // Cleared on a successful result: from the document, the panel and the saved state.
+  const w = runWebview({ textNodes: true });
+  w.deliver(INLINE_DOC);
+  const p = draftOn(w, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+  draftOn(w, 'Second paragraph here.', 'paragraph', 'And this.');
+  w.bar.field.value = 'Overall.';
+  fire(w.bar.field, 'input');
+  assert.deepEqual(stored(w), {
+    field: 'Overall.',
+    drafts: [
+      { anchor: { quote: 'cut to 8 lines', sectionSlug: 'summary', prefix: 'The header is ', suffix: ' until expanded.' }, text: 'Say what the header shows.' },
+      { anchor: { quote: 'paragraph', sectionSlug: 'summary', prefix: 'Second ', suffix: ' here.' }, text: 'And this.' },
+    ],
+  }, 'the drafts and the field are kept in the saved state, under the artifact');
+  fire(w.bar.reject, 'click');
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'rejected', recorded: 3, message: 'Rejected. 3 comments saved.' });
+  assert.equal(marksIn(w.body).length, 0, 'no mark is left');
+  assert.equal(cardsIn(w).length, 0, 'no thread');
+  assert.equal(inlineText(p), SUMMARY_P, 'the text is whole again');
+  assert.equal(w.bar.field.value, '');
+  assert.equal(w.drafts.textContent, NO_DRAFTS);
+  assert.equal(stored(w), undefined, 'and nothing of them in the saved state');
+  fire(w.bar.feedback, 'click');
+  assert.equal(postedOf(w, 'docs-decision').length, 1, 'there is nothing left to send');
+
+  // Restored when the shell is rebuilt: a new run over the same saved state.
+  const first = runWebview({ textNodes: true });
+  first.deliver(INLINE_DOC);
+  draftOn(first, SUMMARY_P, 'cut to 8 lines', 'Say what the header shows.');
+  first.bar.field.value = 'Overall.';
+  fire(first.bar.field, 'input');
+  const rebuilt = runWebview({ textNodes: true, saved: first.saved });
+  assert.equal(marksIn(rebuilt.body).length, 0);
+  rebuilt.deliver(INLINE_DOC); // the host posts the open document again
+  const rp = blockOf(rebuilt, SUMMARY_P);
+  assert.deepEqual(marksIn(rp).map((m) => [m.className, inlineText(m)]), [['rv-anno rv-draft', 'cut to 8 lines']], 'the draft is back on its passage');
+  assert.equal(rebuilt.bar.field.value, 'Overall.', 'and the whole-document field');
+  assert.equal(rebuilt.drafts.textContent, '1 inline comment drafted. Sent with the button you press.');
+  fire(rebuilt.body, 'click', { target: marksIn(rp)[0]! });
+  assert.equal(allOf(cardsIn(rebuilt)[0]!).find((n) => n.className === 'rv-text')!.textContent, 'Say what the header shows.');
+  fire(rebuilt.bar.approve, 'click');
+  assert.deepEqual(postedOf(rebuilt, 'docs-decision')[0]!['comments'], [
+    { comment: 'Say what the header shows.', anchor: { quote: 'cut to 8 lines', sectionSlug: 'summary', prefix: 'The header is ', suffix: ' until expanded.' }, version: '0123456789abcdef' },
+    { comment: 'Overall.', version: '0123456789abcdef' },
+  ]);
+  rebuilt.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: false, message: 'Nothing was recorded.' });
+
+  // Kept per artifact: another document has its own, and coming back finds these again.
+  rebuilt.deliver({ ...INLINE_DOC, artifactId: 'PLAN-abc-s7' });
+  assert.equal(marksIn(rebuilt.body).length, 0);
+  assert.equal(rebuilt.bar.field.value, '');
+  assert.equal(rebuilt.drafts.textContent, NO_DRAFTS);
+  rebuilt.deliver(INLINE_DOC);
+  assert.equal(marksIn(rebuilt.body).length, 1);
+  assert.equal(rebuilt.bar.field.value, 'Overall.');
+
+  // The same document posted again (after a decision): the marks and an open thread are put back.
+  fire(rebuilt.body, 'click', { target: marksIn(blockOf(rebuilt, SUMMARY_P))[0]! });
+  assert.equal(cardsIn(rebuilt).length, 1);
+  rebuilt.deliver(INLINE_DOC);
+  assert.equal(marksIn(rebuilt.body).length, 1);
+  assert.equal(cardsIn(rebuilt).length, 1, 'the thread that was open is open again');
+
+  // The document was revised and the passage is gone: the draft is kept, said to be without a place, and still sent.
+  const revised = INLINE_MD.replace('cut to 8 lines', 'folded');
+  rebuilt.deliver({ ...INLINE_DOC, markdown: revised, sections: deriveSectionIndex(revised), contentVersion: 'fedcba9876543210' });
+  assert.equal(marksIn(rebuilt.body).length, 0);
+  assert.equal(rebuilt.drafts.textContent, '1 inline comment drafted (1 on text that is no longer in the document). Sent with the button you press.');
+  fire(rebuilt.bar.feedback, 'click');
+  assert.equal((postedOf(rebuilt, 'docs-decision').at(-1)!['comments'] as Array<{ anchor?: { quote: string } }>)[0]!.anchor!.quote, 'cut to 8 lines');
+});
+
+// ---------------------------------------------------------------------------
+// Story E202610138d4b90c9:S001 t12 — the saved comments of a document.
+// ---------------------------------------------------------------------------
+
+const MD_FILE = 'docs/epics/x/S007/LLD.md';
+/** A saved comment, as the daemon stores it. */
+const savedEntry = (o: {
+  id: string; at: string; comment: string; author?: string; decision?: string; kind?: string;
+  quote?: string; slug?: string; version?: string; file?: string;
+}): Record<string, unknown> => ({
+  id: o.id, author: o.author ?? 'Rev Iewer', timestamp: o.at,
+  target: { file: o.file ?? MD_FILE, ...(o.version !== undefined ? { version: o.version } : {}) },
+  comment: o.comment,
+  ...(o.kind !== undefined ? { kind: o.kind } : {}),
+  ...(o.quote !== undefined ? { anchor: { quote: o.quote, ...(o.slug !== undefined ? { sectionSlug: o.slug } : {}) } } : {}),
+  ...(o.decision !== undefined ? { decision: o.decision } : {}),
+});
+/** The time of a saved comment as the pane shows it: the reader's own time, to the minute. */
+const shownWhen = (iso: string): string => {
+  const d = new Date(iso);
+  const p = (n: number): string => (n < 10 ? '0' : '') + n;
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+const NOW_VERSION = '0123456789abcdef';
+const markersOf = (w: WebviewRun): BodyStub[] => w.md.children.filter((c) => c.className.split(' ')[0] === 'rv-marker');
+/** A saved comment's row as text: who, when, the tag, then its quote (if shown) and its text. */
+const rowText = (row: BodyStub): string[] => row.children.map((c) => c.textContent);
+const stripRows = (w: WebviewRun): string[][] => w.histList.children.map(rowText);
+
+const HISTORY = [
+  // Stored out of time order, to show that the pane orders them.
+  savedEntry({ id: 'new', at: '2026-10-13T03:45:00.000Z', author: 'Priya N', comment: 'Header now lists path and counts. OK.', decision: 'feedback', quote: 'cut to 8 lines', slug: 'summary', version: NOW_VERSION }),
+  savedEntry({ id: 'whole-late', at: '2026-10-13T05:00:00.000Z', comment: 'Approved as it stands.', decision: 'approve', version: NOW_VERSION }),
+  savedEntry({ id: 'old', at: '2026-10-12T10:35:00.000Z', comment: 'Say what the header shows when folded.', decision: 'reject', quote: 'cut to 8 lines', slug: 'summary', version: 'aaaa' }),
+  savedEntry({ id: 'gone', at: '2026-10-12T11:00:00.000Z', comment: 'This limit was fine.', decision: 'feedback', quote: 'a passage that was removed', slug: 'summary', version: 'aaaa' }),
+  savedEntry({ id: 'whole-first', at: '2026-10-11T09:00:00.000Z', author: 'Priya N', comment: 'Consider a shorter summary.', kind: 'suggestion', version: 'aaaa' }),
+  savedEntry({ id: 'on-html', at: '2026-10-13T06:00:00.000Z', comment: 'The arrow to the daemon is missing.', decision: 'feedback', file: TAB_SEQ }),
+  // Its words are in the document, but only in the document's own Feedback section.
+  savedEntry({ id: 'in-feedback', at: '2026-10-13T07:00:00.000Z', comment: 'Quoting the list itself.', decision: 'feedback', quote: 'A saved comment is listed here.', version: NOW_VERSION }),
+];
+
+test('docs review shell: saved inline entries are placed on their quotes with a margin marker and count and open oldest first; an entry whose quote is gone is listed as on an earlier revision; entries without an anchor are listed in the whole-document strip in time order', () => {
+  const w = runWebview({ textNodes: true });
+  w.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: HISTORY });
+
+  // The two entries on one passage share ONE mark, solid (nothing on it is a draft).
+  const p = blockOf(w, SUMMARY_P);
+  assert.deepEqual(p.children.map((c) => (c.nodeType === 3 ? `text:${c.data}` : `${c.tagName}.${c.className}:${inlineText(c)}`)),
+    ['text:The header is ', 'mark.rv-anno:cut to 8 lines', 'text: until expanded.']);
+  assert.equal(marksIn(w.body).length, 1, 'no other passage is marked');
+  // A margin marker beside it, with the number of its comments.
+  const markers = markersOf(w);
+  assert.equal(markers.length, 1);
+  assert.equal(markers[0]!.className, 'rv-marker');
+  assert.equal(markers[0]!.tagName, 'button');
+  assert.equal(allOf(markers[0]!).find((n) => n.className === 'rv-n')!.textContent, '2', 'the count');
+  assert.equal(markers[0]!.attrs['aria-label'], '2 comments on this text');
+  assert.equal(cardsIn(w).length, 0, 'the thread is closed until it is asked for');
+
+  // A click on the marker opens the thread: the quote, then the comments OLDEST FIRST.
+  fire(markers[0]!, 'click');
+  const card = cardsIn(w)[0]!;
+  assert.equal(p.nextSibling, card);
+  assert.equal(card.children[0]!.textContent, '\u201ccut to 8 lines\u201d');
+  const saved = card.children.filter((c) => c.className === 'rv-c');
+  assert.deepEqual(saved.map(rowText), [
+    ['Rev Iewer', shownWhen('2026-10-12T10:35:00.000Z'), 'rejected \u00b7 on an earlier revision', 'Say what the header shows when folded.'],
+    ['Priya N', shownWhen('2026-10-13T03:45:00.000Z'), 'feedback', 'Header now lists path and counts. OK.'],
+  ], 'author, time and decision; the one made on another version says so');
+  assert.deepEqual(saved.map((r) => r.children[2]!.className), ['rv-tag rv-tag-reject', 'rv-tag']);
+  // The marker closes it again, and a click on the mark opens it.
+  fire(markersOf(w)[0]!, 'click');
+  assert.equal(cardsIn(w).length, 0);
+  fire(w.body, 'click', { target: marksIn(p)[0]! });
+  assert.equal(cardsIn(w).length, 1);
+
+  // THE STRIP: the entries with no passage, in time order.
+  assert.notEqual(w.hist.style['display'], 'none');
+  assert.equal(w.histSum.textContent, 'Earlier comments on the whole document (5)');
+  assert.deepEqual(stripRows(w), [
+    ['Priya N', shownWhen('2026-10-11T09:00:00.000Z'), 'suggestion \u00b7 on an earlier revision', 'Consider a shorter summary.'],
+    // Its quote is gone: listed as on an earlier revision, WITH the quote it was made on.
+    ['Rev Iewer', shownWhen('2026-10-12T11:00:00.000Z'), 'feedback \u00b7 on an earlier revision', '\u201ca passage that was removed\u201d', 'This limit was fine.'],
+    ['Rev Iewer', shownWhen('2026-10-13T05:00:00.000Z'), 'approved', 'Approved as it stands.'],
+    ['Rev Iewer', shownWhen('2026-10-13T06:00:00.000Z'), 'feedback \u00b7 on sequence-diagram.html', 'The arrow to the daemon is missing.'],
+    // The document's own Feedback section is never searched, so this one has no passage either.
+    ['Rev Iewer', shownWhen('2026-10-13T07:00:00.000Z'), 'feedback \u00b7 on an earlier revision', '\u201cA saved comment is listed here.\u201d', 'Quoting the list itself.'],
+  ]);
+  assert.equal(marksIn(blockOf(w, 'A saved comment is listed here.')).length, 0);
+  assert.deepEqual(w.histList.children.map((r) => r.children[2]!.className), ['rv-tag', 'rv-tag', 'rv-tag rv-tag-approve', 'rv-tag', 'rv-tag']);
+
+  // A reply on a saved thread is a draft on the same passage: dashed, counted, and sent with that anchor.
+  addInCard(cardsIn(w)[0]!, 'Agreed.');
+  assert.equal(marksIn(p)[0]!.className, 'rv-anno rv-draft');
+  assert.equal(markersOf(w)[0]!.className, 'rv-marker rv-draft');
+  assert.equal(allOf(markersOf(w)[0]!).find((n) => n.className === 'rv-n')!.textContent, '3');
+  assert.equal(markersOf(w)[0]!.attrs['aria-label'], '3 comments on this text, 1 not sent');
+  fire(w.bar.feedback, 'click');
+  assert.deepEqual(postedOf(w, 'docs-decision')[0]!['comments'], [
+    { comment: 'Agreed.', anchor: { quote: 'cut to 8 lines', sectionSlug: 'summary' }, version: NOW_VERSION },
+  ]);
+  // Once it is saved the thread stays, with its saved comments, and is solid again.
+  w.send('docs-decision-result', { artifactId: 'LLD-abc-s7', ok: true, outcome: 'recorded', recorded: 1, message: 'Feedback sent.' });
+  assert.equal(marksIn(p)[0]!.className, 'rv-anno');
+  assert.equal(allOf(markersOf(w)[0]!).find((n) => n.className === 'rv-n')!.textContent, '2');
+  // The host then posts the document again with the new entry: three on the passage.
+  w.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: [...HISTORY, savedEntry({ id: 'reply', at: '2026-10-13T08:00:00.000Z', comment: 'Agreed.', decision: 'feedback', quote: 'cut to 8 lines', slug: 'summary', version: NOW_VERSION })] });
+  assert.equal(marksIn(blockOf(w, SUMMARY_P)).length, 1);
+  assert.equal(allOf(markersOf(w)[0]!).find((n) => n.className === 'rv-n')!.textContent, '3');
+  assert.equal(markersOf(w).length, 1, 'the earlier marker is replaced, not added to');
+  assert.deepEqual(cardsIn(w)[0]!.children.filter((c) => c.className === 'rv-c').map((r) => r.children[3]!.textContent),
+    ['Say what the header shows when folded.', 'Header now lists path and counts. OK.', 'Agreed.'], 'the open thread is open again, oldest first');
+
+  // A document with no saved comments: no mark, no marker, and no strip.
+  const none = runWebview({ textNodes: true });
+  none.deliver({ ...INLINE_DOC, docPath: MD_FILE });
+  assert.equal(marksIn(none.body).length, 0);
+  assert.equal(markersOf(none).length, 0);
+  assert.equal(none.hist.style['display'], 'none');
+});
+
+test('docs review shell: a document that is not awaiting review shows its history and offers send feedback only', () => {
+  for (const state of [{ state: 'approved' }, { state: 'rejected' }, { state: 'pending', readOnly: true }]) {
+    const w = runWebview({ textNodes: true });
+    w.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: HISTORY, ...state });
+    // Its history is all there: the passage, its marker and thread, and the strip.
+    assert.equal(marksIn(blockOf(w, SUMMARY_P)).length, 1);
+    assert.equal(markersOf(w).length, 1);
+    fire(markersOf(w)[0]!, 'click');
+    assert.equal(cardsIn(w)[0]!.children.filter((c) => c.className === 'rv-c').length, 2);
+    assert.equal(w.histList.children.length, 5);
+    // Send feedback is the only decision offered.
+    assert.deepEqual(w.controls(), { approve: 'hidden', reject: 'hidden', feedback: 'on' });
+    assert.match(w.bar.state.textContent, /feedback only$/);
+    // And it still works: an inline reply and a whole-document comment go as feedback.
+    addInCard(cardsIn(w)[0]!, 'A late note.');
+    w.bar.field.value = 'And one on the whole.';
+    fire(w.bar.feedback, 'click');
+    const sent = postedOf(w, 'docs-decision');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0]!['decision'], 'feedback');
+    assert.equal((sent[0]!['comments'] as unknown[]).length, 2);
+    // Approve and reject are not shown, and pressing them would post nothing more.
+    fire(w.bar.approve, 'click');
+    fire(w.bar.reject, 'click');
+    assert.equal(postedOf(w, 'docs-decision').length, 1);
+  }
+});
+
+test('docs review shell: author, comment and quote text are set as text, never as markup', () => {
+  const HOSTILE_AUTHOR = '<img src=x onerror=alert(1)>';
+  const HOSTILE_COMMENT = '<script>alert(1)</script><b>bold</b>';
+  const HOSTILE_QUOTE = '<i>gone</i> & "quoted"';
+  const w = runWebview({ textNodes: true });
+  const created = w.created.length;
+  w.deliver({
+    ...INLINE_DOC, docPath: MD_FILE, reviewer: { name: HOSTILE_AUTHOR, source: 'git' },
+    feedback: [
+      savedEntry({ id: 'a', at: '2026-10-12T10:00:00.000Z', author: HOSTILE_AUTHOR, comment: HOSTILE_COMMENT, decision: 'reject', quote: 'cut to 8 lines', slug: 'summary' }),
+      savedEntry({ id: 'b', at: '2026-10-12T11:00:00.000Z', author: HOSTILE_AUTHOR, comment: HOSTILE_COMMENT, decision: 'feedback', quote: HOSTILE_QUOTE }),
+      savedEntry({ id: 'c', at: '2026-10-12T12:00:00.000Z', author: HOSTILE_AUTHOR, comment: HOSTILE_COMMENT, decision: '<u>approve</u>', kind: '<u>kind</u>' }),
+      savedEntry({ id: 'd', at: '<time>', author: HOSTILE_AUTHOR, comment: HOSTILE_COMMENT, file: 'docs/x/<b>.html' }),
+    ],
+  });
+  fire(markersOf(w)[0]!, 'click');
+  addInCard(cardsIn(w)[0]!, HOSTILE_COMMENT); // a draft, shown under the reviewer's name
+
+  // Each string is shown character for character.
+  const card = cardsIn(w)[0]!;
+  const rows = card.children.filter((c) => c.className === 'rv-c');
+  assert.equal(rows[0]!.children[0]!.textContent, HOSTILE_AUTHOR);
+  assert.equal(rows[0]!.children[3]!.textContent, HOSTILE_COMMENT);
+  assert.equal(allOf(rows[1]!).find((n) => n.className === 'rv-who')!.textContent, HOSTILE_AUTHOR, "the draft's author");
+  assert.equal(allOf(rows[1]!).find((n) => n.className === 'rv-text')!.textContent, HOSTILE_COMMENT, "the draft's text");
+  const strip = stripRows(w);
+  assert.deepEqual(strip.find((r) => r.includes(`\u201c${HOSTILE_QUOTE}\u201d`))?.slice(0, 1), [HOSTILE_AUTHOR], 'the quote of an entry with no passage');
+  assert.ok(strip.every((r) => r[0] === HOSTILE_AUTHOR && r.at(-1) === HOSTILE_COMMENT));
+  assert.ok(strip.some((r) => r[2] === '<u>kind</u>'), 'an unknown decision falls back to the kind, as text');
+  assert.ok(strip.some((r) => r[1] === '<time>' && r[2] === 'comment \u00b7 on <b>.html'), 'a time that is not a time, and a file name, as text');
+  assert.equal(w.bar.who.textContent, `as ${HOSTILE_AUTHOR} (git user)`);
+
+  // NEVER as markup: nothing the comments touch was assigned innerHTML or outerHTML,
+  const touched = [...allOf(card), ...allOf(w.histList), w.histSum, w.hist, ...markersOf(w).flatMap(allOf), ...marksIn(w.body), w.bar.who, w.drafts];
+  assert.ok(touched.length > 30);
+  for (const n of touched) assert.ok(!n.writes.some((x) => x.prop === 'innerHTML' || x.prop === 'outerHTML'), `${n.tagName}.${n.className} was never assigned markup`);
+  // the body's own markup assignment (the guarded markdown path) carries none of it,
+  for (const x of w.body.writes.filter((y) => y.prop === 'innerHTML')) {
+    for (const hostile of [HOSTILE_AUTHOR, HOSTILE_COMMENT, HOSTILE_QUOTE]) assert.ok(!String(x.value).includes(hostile));
+  }
+  // and no element was made from their text: only the pane's own element kinds exist.
+  const made = new Set(w.created.slice(created));
+  for (const tag of ['script', 'img', 'b', 'i', 'u', 'time', 'iframe', 'a']) assert.ok(!made.has(tag), `no <${tag}> element was created`);
+  // No attribute carries their text either, other than the names the pane itself gives.
+  for (const n of touched) {
+    for (const [k, v] of Object.entries(n.attrs)) assert.ok(!/[<>]/.test(v), `attribute ${k} of ${n.tagName} holds no comment text`);
+  }
+});
+
+test('docs review shell: a saved entry with no string author, timestamp or comment is skipped and the strip says how many could not be shown', () => {
+  const good = savedEntry({ id: 'ok', at: '2026-10-12T10:00:00.000Z', comment: 'Readable.', decision: 'feedback' });
+  const placed = savedEntry({ id: 'ok2', at: '2026-10-12T11:00:00.000Z', comment: 'On the header.', decision: 'feedback', quote: 'cut to 8 lines', slug: 'summary' });
+  const bad = [
+    { ...good, author: 7 },
+    { ...good, author: undefined },
+    { ...good, timestamp: null },
+    { ...good, comment: { text: 'x' } },
+    { ...placed, comment: 42 },
+    null,
+    'a string',
+    [],
+  ];
+  const w = runWebview({ textNodes: true });
+  w.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: [bad[0], good, bad[1], bad[2], placed, bad[3], bad[4], bad[5], bad[6], bad[7]] });
+  assert.deepEqual(stripRows(w).map((r) => r.at(-1)), ['Readable.'], 'the readable whole-document entry is listed');
+  assert.equal(marksIn(blockOf(w, SUMMARY_P)).length, 1, 'and the readable inline one is placed');
+  assert.equal(allOf(markersOf(w)[0]!).find((n) => n.className === 'rv-n')!.textContent, '1', 'counted without the unreadable one on the same passage');
+  assert.equal(w.histSum.textContent, 'Earlier comments on the whole document (1) \u00b7 8 saved comments could not be shown');
+
+  // One unreadable entry reads in the singular.
+  const one = runWebview({ textNodes: true });
+  one.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: [good, bad[0]] });
+  assert.equal(one.histSum.textContent, 'Earlier comments on the whole document (1) \u00b7 1 saved comment could not be shown');
+  // Only unreadable entries: the strip is still shown, to say so.
+  const only = runWebview({ textNodes: true });
+  only.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback: [bad[5], bad[0]] });
+  assert.notEqual(only.hist.style['display'], 'none');
+  assert.equal(only.histSum.textContent, 'Earlier comments on the whole document (0) \u00b7 2 saved comments could not be shown');
+  assert.equal(only.histList.children.length, 0);
+  // A feedback value that is not a list is no history at all, and breaks nothing.
+  for (const feedback of ['x', 7, { a: 1 }, null]) {
+    const odd = runWebview({ textNodes: true });
+    odd.deliver({ ...INLINE_DOC, docPath: MD_FILE, feedback });
+    assert.equal(odd.hist.style['display'], 'none');
+    assert.deepEqual(odd.controls(), ALL_ON, 'the document is still shown and can be decided on');
+    assert.ok(odd.body.children.length > 3);
+  }
 });

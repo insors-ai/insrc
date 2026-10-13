@@ -15,7 +15,7 @@
  * UNUSED in s1 — no reader/writer references it yet, and it is defined only so
  * s2 extends this vocabulary rather than redefining it.
  *
- * Types ONLY — no logic, no runtime deps — so the artifact body modules + the
+ * Types and three constants — no logic, no runtime deps — so the artifact body modules + the
  * render binding import them without a cycle. The additive optional `feedback?`
  * body field is added (additively + absent-safe) to each XBody in its own module.
  */
@@ -33,12 +33,37 @@ export interface ProvenanceAuthorship {
 	readonly timestamp: string;
 }
 
+/** Where an inline comment sits in a document: the text it was made on, and enough
+ *  around it to find that text again after the document is revised. */
+export interface FeedbackAnchor {
+	/** The selected text (at most FEEDBACK_QUOTE_MAX characters). */
+	readonly quote:        string;
+	/** The slug of the nearest heading above the selection. */
+	readonly sectionSlug?: string | undefined;
+	/** Up to FEEDBACK_CONTEXT_MAX characters of the block's text before / after the quote. */
+	readonly prefix?:      string | undefined;
+	readonly suffix?:      string | undefined;
+}
+
+/** The review decision a feedback entry was saved with. */
+export type FeedbackDecision = 'approve' | 'reject' | 'feedback';
+
+export const FEEDBACK_DECISIONS: readonly FeedbackDecision[] = ['approve', 'reject', 'feedback'];
+export const FEEDBACK_QUOTE_MAX = 500;
+export const FEEDBACK_CONTEXT_MAX = 40;
+
 /** One post-hoc feedback/suggestion/comment entry attached to an artifact. */
 export interface FeedbackEntry extends ProvenanceAuthorship {
 	readonly id:      string;
 	readonly target:  ProvenanceTarget;
 	readonly comment: string;
 	readonly kind?:   'feedback' | 'suggestion' | 'comment' | undefined;
+	/** Present on an inline comment (Story E202610138d4b90c9:S001). */
+	readonly anchor?:   FeedbackAnchor | undefined;
+	/** The decision this entry was saved with, when it came from a review decision. */
+	readonly decision?: FeedbackDecision | undefined;
+	/** Shared by the entries saved by one decision. */
+	readonly batchId?:  string | undefined;
 }
 
 /** One change-log entry (declared for s2 — unused in s1). */

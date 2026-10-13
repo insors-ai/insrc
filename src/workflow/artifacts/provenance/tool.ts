@@ -18,7 +18,7 @@ import type { Tool, ToolInput, ToolResult } from '../../../daemon/tools/types.js
 import { getLogger } from '../../../shared/logger.js';
 
 import { appendFeedback, ArtifactFeedbackError, type AppendFeedbackRequest } from './writer.js';
-import type { FeedbackEntry, ProvenanceTarget } from './types.js';
+import type { FeedbackAnchor, FeedbackEntry, ProvenanceTarget } from './types.js';
 
 const log = getLogger('artifacts:provenance:tool');
 
@@ -32,7 +32,7 @@ export const artifactFeedbackTool: Tool = {
 		'Append one post-hoc, human-authored feedback entry to a workflow artifact JSON ' +
 		'(DEF/HLD/LLD/PLAN). Append-only: existing entries are never edited or removed, and ' +
 		'every other artifact key is preserved byte-for-byte. Inputs: { artifactPath, author, ' +
-		'comment, target: { file, version?, segment? }, kind? }. Returns { artifactPath, entryId, total }.',
+		'comment, target: { file, version?, segment? }, kind?, anchor?, decision?, batchId? }. Returns { artifactPath, entryId, total }.',
 	inputSchema: {
 		type: 'object',
 		required: ['artifactPath', 'author', 'comment', 'target'],
@@ -43,6 +43,19 @@ export const artifactFeedbackTool: Tool = {
 			comment:      { type: 'string', minLength: 1 },
 			timestamp:    { type: 'string', description: 'ISO-8601; defaults to now when omitted.' },
 			kind:         { enum: ['feedback', 'suggestion', 'comment'] },
+			anchor: {
+				type: 'object',
+				required: ['quote'],
+				additionalProperties: false,
+				properties: {
+					quote:       { type: 'string' },
+					sectionSlug: { type: 'string' },
+					prefix:      { type: 'string' },
+					suffix:      { type: 'string' },
+				},
+			},
+			decision:  { enum: ['approve', 'reject', 'feedback'] },
+			batchId:   { type: 'string' },
 			target: {
 				type: 'object',
 				required: ['file'],
@@ -102,8 +115,30 @@ export function coerceRequest(input: ToolInput): AppendFeedbackRequest {
 		target,
 		...(typeof input['timestamp'] === 'string' ? { timestamp: input['timestamp'] } : {}),
 		...(kind === 'feedback' || kind === 'suggestion' || kind === 'comment' ? { kind } : {}),
+		...reviewFields(input),
 	};
 	return { artifactPath, entry };
+}
+
+/** The optional anchor / decision / batchId of a request, each kept only when well-formed. */
+function reviewFields(input: ToolInput): Pick<AppendFeedbackRequest['entry'], 'anchor' | 'decision' | 'batchId'> {
+	const a = input['anchor'];
+	const str = (v: unknown): v is string => typeof v === 'string';
+	const anchor: FeedbackAnchor | undefined = typeof a === 'object' && a !== null && str((a as { quote?: unknown }).quote)
+		? {
+			quote: (a as { quote: string }).quote,
+			...(str((a as { sectionSlug?: unknown }).sectionSlug) ? { sectionSlug: (a as { sectionSlug: string }).sectionSlug } : {}),
+			...(str((a as { prefix?: unknown }).prefix) ? { prefix: (a as { prefix: string }).prefix } : {}),
+			...(str((a as { suffix?: unknown }).suffix) ? { suffix: (a as { suffix: string }).suffix } : {}),
+		}
+		: undefined;
+	const decision = input['decision'];
+	const batchId = input['batchId'];
+	return {
+		...(anchor !== undefined ? { anchor } : {}),
+		...(decision === 'approve' || decision === 'reject' || decision === 'feedback' ? { decision } : {}),
+		...(str(batchId) && batchId.length > 0 ? { batchId } : {}),
+	};
 }
 
 function isSegment(v: unknown): v is NonNullable<FeedbackEntry['target']['segment']> {

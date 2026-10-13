@@ -2,11 +2,11 @@
  * Story E20260925edb76e2e:S007 / t2 — the daemon-backed DocsReviewClient.
  *
  * The VS-Code-free boundary that maps the docs-review pane's needs onto the
- * EXISTING daemon review IPCs (built by the JetBrains ide-artifact-review-panel
- * epic): `pending()` -> `workflow.pending`, `content()` -> `workflow.artifactContent`,
- * `approve()` -> `workflow.approve`, `comment()` -> `workflow.resolveComment`.
- * No new daemon capability is introduced (k5 — acts only on daemon-tracked
- * artifacts) and there is no cloud path (k2). Each call normalizes the daemon's
+ * daemon's review IPCs: `pending()` -> `workflow.pending`, `content()` ->
+ * `workflow.artifactContent`, and (Story E202610138d4b90c9:S001) `decide()` ->
+ * `workflow.reviewDecision`, the one call that records approve, reject or
+ * feedback together with the reviewer's comments. It acts only on daemon-tracked
+ * artifacts (k5) and there is no cloud path (k2). Each call normalizes the daemon's
  * structured `{ error }` arm into a thrown Error the host catches and renders as
  * an inline "unavailable" note — never a silent empty result. Mirrors
  * createDaemonConfigGateway; constructed in extension.ts from the shared client.
@@ -17,7 +17,8 @@
 import type { IpcClient } from '../../../src/shared/ipc-client.js';
 import type { PendingArtifact } from '../../../src/workflow/pending.js';
 import type { ArtifactReviewView } from '../../../src/workflow/artifact-content.js';
-import type { WorkflowApproveResult } from '../../../src/workflow/gates.js';
+import type { ReviewDecisionComment, ReviewDecisionOutcome, ReviewDecisionResult } from '../../../src/workflow/review-decision.js';
+import type { FeedbackDecision } from '../../../src/workflow/artifacts/provenance/types.js';
 import type { DocsArtifactSummary } from './protocol.js';
 
 /** One pending artifact's reviewable body, adapted from the daemon's ArtifactReviewView. */
@@ -36,7 +37,19 @@ export interface DocsContent {
   readonly sequenceDefinition?: ArtifactReviewView['sequenceDefinition'];
   readonly uxDefinition?: ArtifactReviewView['uxDefinition'];
   readonly companions?: ArtifactReviewView['companions'];
+  // Story E202610138d4b90c9:S001: what the pane saves and shows comments with,
+  // forwarded unchanged on the same terms. Each is an absent key when the daemon
+  // sent none (a daemon older than the plugin).
+  readonly docPath?: ArtifactReviewView['docPath'];
+  readonly contentVersion?: ArtifactReviewView['contentVersion'];
+  readonly feedback?: ArtifactReviewView['feedback'];
+  readonly reviewer?: ArtifactReviewView['reviewer'];
+  readonly state?: ArtifactReviewView['state'];
 }
+
+/** The button the reviewer pressed. */
+export type ReviewDecision = FeedbackDecision;
+export type { ReviewDecisionComment, ReviewDecisionOutcome, ReviewDecisionResult };
 
 /** The vscode-free client the docs-review host drives over the shared daemon IPC. */
 export interface DocsReviewClient {
@@ -48,10 +61,13 @@ export interface DocsReviewClient {
    * daemon needs from the id->mdPath map pending() retained; a raw path is accepted too).
    */
   content(idOrPath: string): Promise<DocsContent>;
-  /** Approve the artifact (the daemon's flow); a blocked one comes back in skipped[]. */
-  approve(idOrPath: string): Promise<WorkflowApproveResult>;
-  /** Record a review note; the artifact stays pending (the request-changes path). */
-  comment(artifactId: string, note: string): Promise<void>;
+  /**
+   * Record one review decision with its comments, in one daemon call. `mdPath` is the
+   * repo-relative path of the artifact's .md, taken from the content's docPath: a path
+   * only, never an id (so it works for a document that is no longer pending). An approval
+   * the review gate withheld is not an error: it comes back as outcome 'withheld'.
+   */
+  decide(mdPath: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<ReviewDecisionResult>;
 }
 
 /** The `{ error }` arm every daemon review IPC may return in place of a result. */
@@ -67,11 +83,11 @@ function isError(v: unknown): v is DaemonError {
  * Build the DocsReviewClient over the shared daemon client. Every method throws
  * on the daemon's structured `{ error }` arm (repo unresolved / unreadable store
  * / path guard) or a socket rejection, so the host renders "unavailable" rather
- * than a blank pane. A review-blocked artifact is NOT an error — approve()
- * surfaces it non-lossily in the WorkflowApproveResult.skipped[] the host relays.
+ * than a blank pane. A review-blocked artifact is NOT an error — decide()
+ * surfaces it as outcome 'withheld' with the reason, which the host relays.
  */
 export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
-  // id -> mdPath, retained across pending() so content()/approve() can resolve the .md
+  // id -> mdPath, retained across pending() so content() can resolve the .md
   // path the daemon requires from the artifactId the host holds (k5, daemon-tracked only).
   const mdPathById = new Map<string, string>();
   const resolvePath = (idOrPath: string): string => mdPathById.get(idOrPath) ?? idOrPath;
@@ -112,27 +128,23 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
         ...(res.sequenceDefinition !== undefined ? { sequenceDefinition: res.sequenceDefinition } : {}),
         ...(res.uxDefinition !== undefined ? { uxDefinition: res.uxDefinition } : {}),
         ...(res.companions !== undefined ? { companions: res.companions } : {}),
+        ...(res.docPath !== undefined ? { docPath: res.docPath } : {}),
+        ...(res.contentVersion !== undefined ? { contentVersion: res.contentVersion } : {}),
+        ...(res.feedback !== undefined ? { feedback: res.feedback } : {}),
+        ...(res.reviewer !== undefined ? { reviewer: res.reviewer } : {}),
+        ...(res.state !== undefined ? { state: res.state } : {}),
       };
     },
 
-    async approve(idOrPath: string): Promise<WorkflowApproveResult> {
-      const res = await client.rpc<WorkflowApproveResult | DaemonError>(
-        'workflow.approve',
-        { artifactPath: resolvePath(idOrPath) },
+    async decide(mdPath: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<ReviewDecisionResult> {
+      // The path as given: the id map is not consulted, so a document that is no
+      // longer in the pending list can still be sent feedback.
+      const res = await client.rpc<ReviewDecisionResult | DaemonError>(
+        'workflow.reviewDecision',
+        { mdPath, decision, comments: [...comments] },
       );
       if (isError(res)) throw new Error(res.error);
       return res;
-    },
-
-    async comment(artifactId: string, note: string): Promise<void> {
-      const res = await client.rpc<{ recorded: number } | DaemonError>(
-        'workflow.resolveComment',
-        {
-          artifactId,
-          comments: [{ id: `c-${Date.now()}`, anchor: {}, body: note }],
-        },
-      );
-      if (isError(res)) throw new Error(res.error);
     },
   };
 }

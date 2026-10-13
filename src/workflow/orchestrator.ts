@@ -128,6 +128,8 @@ import { SEQUENCE_DEFINITION_PROPERTY_SCHEMA, SEQUENCE_CONTENT_GATE_RULE } from 
 import { COMPONENT_DEFINITION_PROPERTY_SCHEMA, COMPONENT_CONTENT_GATE_RULE } from './artifacts/companion/component-schema.js';
 import { ADHERENCE_PROPERTY_SCHEMA } from './artifacts/companion/adherence.js';
 import { FEEDBACK_PROPERTY_SCHEMA, FEEDBACK_NEVER_AUTHOR_RULE } from './artifacts/provenance/schema.js';
+import { priorFeedback } from './artifacts/provenance/writer.js';
+import type { FeedbackRecord } from './artifacts/provenance/types.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { patchTrackerMeta } from './tracker/refs.js';
 import { existsSync, readFileSync } from 'node:fs';
@@ -1739,6 +1741,16 @@ function withCompanions<T extends { readonly companions?: readonly CompanionArti
 	return refs.reduce((b, ref) => withCompanion(b, ref), body);
 }
 
+/** Carry a document's saved comments into its re-authored version: the feedback
+ *  list of the JSON at `jsonPath` (the artifact's own path, read before the new
+ *  version is written over it) replaces the new body's. Read-only. Returns the
+ *  artifact unchanged when there is none, so a first authoring is what it was. */
+function withPriorFeedback<A extends { readonly body: { readonly feedback?: FeedbackRecord | undefined } }>(artifact: A, jsonPath: string): A {
+	const prior = priorFeedback(jsonPath);
+	if (prior.length === 0) return artifact;
+	return { ...artifact, body: { ...artifact.body, feedback: prior } };
+}
+
 async function finalizeDesignEpic(
 	intent:      WorkflowIntent,
 	stepOutputs: Readonly<Record<string, unknown>>,
@@ -1852,16 +1864,20 @@ async function finalizeDesignEpic(
 	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
 	// component-dependency companions when the LLM authored either (content-gated).
 	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(hldMd), intent.repoPath, companionHeader);
-	const artifact: HldArtifact = {
+	const authored: HldArtifact = {
 		meta,
 		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),
 		citations,
 	};
-	const renderedBody = renderHldMarkdown(artifact);
-	const check = validateBodyAndCitations(artifact, renderedBody);
+	const renderedBody = renderHldMarkdown(authored);
+	const check = validateBodyAndCitations(authored, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
+	// The comments saved on the earlier version of this document are carried into
+	// the new one. They are added after the checks above, which judge the
+	// authored text only: a reviewer's wording must not fail an authoring.
+	const artifact = withPriorFeedback(authored, artifactJsonPath(intent.repoPath, hldArtifactId(epicHash)));
 	// sc3 (S002): the renderer emits an in-body References section (no separate append).
-	const renderedMd = renderedBody;
+	const renderedMd = artifact === authored ? renderedBody : renderHldMarkdown(artifact);
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 	log.info(
 		{ workflow: 'design.epic', runId, size: renderedMd.length, citations: citations.length, contracts: body.sharedContracts.length },
@@ -2226,16 +2242,20 @@ async function finalizeDesignStory(
 	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
 	// component-dependency companions when the LLM authored either (content-gated).
 	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(lldMd), intent.repoPath, companionHeader);
-	const artifact: LldArtifact = {
+	const authored: LldArtifact = {
 		meta,
 		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),
 		citations,
 	};
-	const renderedBody = renderLldMarkdown(artifact);
-	const check = validateBodyAndCitations({ meta: artifact.meta, body: artifact.body as LldBody, citations: artifact.citations }, renderedBody);
+	const renderedBody = renderLldMarkdown(authored);
+	const check = validateBodyAndCitations({ meta: authored.meta, body: authored.body as LldBody, citations: authored.citations }, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
+	// The comments saved on the earlier version of this document are carried into
+	// the new one. They are added after the checks above, which judge the
+	// authored text only: a reviewer's wording must not fail an authoring.
+	const artifact = withPriorFeedback(authored, artifactJsonPath(intent.repoPath, lldArtifactId(epicHash, storyId)));
 	// sc3 (S002): the renderer emits an in-body References section (no separate append).
-	const renderedMd = renderedBody;
+	const renderedMd = artifact === authored ? renderedBody : renderLldMarkdown(artifact);
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 
 	// Collect any amendment proposals from s4 / s5 outputs + persist
@@ -2410,19 +2430,23 @@ async function finalizeStandaloneLld(
 	// sc3 (S003, artifact-companion-wiring): render + attach the sequence /
 	// component-dependency companions when the LLM authored either (content-gated).
 	const diagramRefs = await renderDiagramCompanionsForBody(body, dirname(lldMd), intent.repoPath, companionHeader);
-	const artifact: LldArtifact = {
+	const authored: LldArtifact = {
 		meta,
 		body: withCompanions(withCompanion(withCompanion(body, companionRef), uxCompanionRef), diagramRefs),
 		citations,
 	};
-	const renderedBody = renderLldMarkdown(artifact);
+	const renderedBody = renderLldMarkdown(authored);
 	const check = validateBodyAndCitations(
-		{ meta: artifact.meta, body: artifact.body as LldBody, citations: artifact.citations },
+		{ meta: authored.meta, body: authored.body as LldBody, citations: authored.citations },
 		renderedBody,
 	);
 	if (!check.ok) return { ok: false, failure: check };
+	// The comments saved on the earlier version of this document are carried into
+	// the new one. They are added after the checks above, which judge the
+	// authored text only: a reviewer's wording must not fail an authoring.
+	const artifact = withPriorFeedback(authored, artifactJsonPath(intent.repoPath, lldArtifactId(epicHash, storyId)));
 	// sc3 (S002): the renderer emits an in-body References section (no separate append).
-	const renderedMd = renderedBody;
+	const renderedMd = artifact === authored ? renderedBody : renderLldMarkdown(artifact);
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 
 	log.info(
@@ -2643,7 +2667,7 @@ function finalizePlan(
 	// would relocate a standalone record's markdown and orphan the original.
 	const standaloneFlag = inheritedStandalone(intent.repoPath, epicHash, lld.meta.standalone);
 
-	const artifact: PlanArtifact = {
+	const authored: PlanArtifact = {
 		meta: {
 			workflow:      'plan',
 			runId,
@@ -2666,11 +2690,15 @@ function finalizePlan(
 		body,
 		citations,
 	};
-	const renderedBody = renderPlanMarkdown(artifact);
-	const check = validateBodyAndCitations({ meta: artifact.meta, body: artifact.body as PlanBody, citations: artifact.citations }, renderedBody);
+	const renderedBody = renderPlanMarkdown(authored);
+	const check = validateBodyAndCitations({ meta: authored.meta, body: authored.body as PlanBody, citations: authored.citations }, renderedBody);
 	if (!check.ok) return { ok: false, failure: check };
+	// The comments saved on the earlier version of this document are carried into
+	// the new one. They are added after the checks above, which judge the
+	// authored text only: a reviewer's wording must not fail an authoring.
+	const artifact = withPriorFeedback(authored, artifactJsonPath(intent.repoPath, planArtifactId(epicHash, storyId)));
 	// sc3 (S002): the renderer emits an in-body References section (no separate append).
-	const renderedMd = renderedBody;
+	const renderedMd = artifact === authored ? renderedBody : renderPlanMarkdown(artifact);
 	const renderedJson = JSON.stringify(artifact, null, 2) + '\n';
 	log.info(
 		{ workflow: 'plan', runId, epicHash, storyId, tasks: body.tasks.length, citations: citations.length },

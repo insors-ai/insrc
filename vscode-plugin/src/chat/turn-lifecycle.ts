@@ -54,9 +54,15 @@ export interface TurnSink {
 export interface FollowSink {
   /** Every event of the turn, whether or not the session is shown. */
   onEvent(ev: TurnEvent): void;
-  /** The turn was read to its end: its cursor has been cleared and the session saved. */
-  onEnd(): void;
+  /**
+   * The follow is over, called once. 'ended': the turn was read to its end, its cursor has been
+   * cleared and the session saved. 'failed': the resume failed, and the cursor stays saved so a
+   * later follow tries again. Not called for a follow that stop() or detach() ended.
+   */
+  onEnd(outcome: FollowOutcome): void;
 }
+
+export type FollowOutcome = 'ended' | 'failed';
 
 export interface TurnLifecycle {
   /**
@@ -84,6 +90,14 @@ export interface TurnLifecycle {
   detach(): Promise<void>;
   /** The current turn stops reporting (a chat switch). */
   invalidate(): void;
+  /**
+   * Whether a turn is in progress: a turn begun by start() that is waiting for its lease, setting
+   * up or being read, or a turn begun by follow() that is being read. False once the turn's
+   * terminal event has been handed to the sink (before onTerminal), before a turn's error is
+   * reported (onError), once a follow is over (before onEnd), after stop(), detach() or invalidate(), and when follow() returned without following.
+   * A superseded turn does not make it false: the turn that superseded it keeps it true.
+   */
+  busy(): boolean;
   /** The turn being read live, once its first event arrived. */
   readonly live: { readonly provider: ProviderId; readonly turnId: string } | undefined;
 }
@@ -143,6 +157,12 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   // The saved turn this host is following after a reload (resume), if any.
   let following: { readonly sessionId: string; readonly ctl: AbortController } | undefined;
   let resumedProc: TurnProcess | undefined;
+  // The generation of the turn begun by start() that is in progress (see busy()).
+  let busyGen: number | undefined;
+  /** That turn is no longer in progress; a superseded turn's end leaves its successor in progress. */
+  const idle = (gen: number): void => {
+    if (busyGen === gen) busyGen = undefined;
+  };
 
   /** Forgets which turn is being read live (the one place these refs are reset together). */
   const clearLiveRefs = (): void => {
@@ -153,7 +173,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   const trySave = (target: ChatSession): void => trySaveSession(deps.store, log, target);
   const isCurrent = (gen: number): boolean => deps.isOpen() && gen === generation;
   /** Reports a turn error to the panel; a failing report is logged, never thrown (start never rejects). */
-  const reportError = (sink: TurnSink, message: string, turnId: string): void => {
+  const reportError = (sink: TurnSink, message: string, turnId: string, gen: number): void => {
+    idle(gen); // the turn is over: not in progress when the panel is told
     try {
       sink.onError(message, turnId);
     } catch (err) {
@@ -206,7 +227,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       if (err instanceof LockWaitAborted || err instanceof LockWaitSuperseded) return undefined;
       const message = `could not lock chat session: ${err instanceof Error ? err.message : String(err)}`;
       log.error(`[chat] session ${s.id}: ${message}`);
-      if (isCurrent(myGen)) reportError(sink, message, 'none');
+      if (isCurrent(myGen)) reportError(sink, message, 'none', myGen);
       return undefined;
     } finally {
       if (waitCtl === ctl) waitCtl = undefined;
@@ -225,12 +246,20 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     waitCtl?.abort();
     waitCtl = undefined;
     const myGen = ++generation;
+    busyGen = myGen;
+    try {
+      await run(s, req, sink, myGen);
+    } finally {
+      idle(myGen);
+    }
+  }
 
+  async function run(s: ChatSession, req: TurnRequest, sink: TurnSink, myGen: number): Promise<void> {
     let adapter;
     try {
       adapter = deps.providers.get(s.provider);
     } catch {
-      if (isCurrent(myGen)) reportError(sink, `no adapter for provider ${s.provider}`, 'none');
+      if (isCurrent(myGen)) reportError(sink, `no adapter for provider ${s.provider}`, 'none', myGen);
       return;
     }
 
@@ -317,6 +346,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
               const ev: TurnEvent = { kind: 'error', turnId, message: 'the CLI ended without finishing the turn' };
               activeTurnId = turnId;
               sink.onEvent(ev);
+              idle(myGen);
               try {
                 sink.onTerminal(ev);
               } catch (err) {
@@ -344,6 +374,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           sink.onEvent(ev);
           if (isTerminal(ev)) {
             endTurn(ev, it);
+            idle(myGen);
             try {
               sink.onTerminal(ev);
             } catch (err) {
@@ -357,7 +388,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // unread CLI could block on a full pipe and hold the lease until the lock timeout).
         if (iterator !== undefined) finishIterator(iterator);
         if (isCurrent(myGen)) {
-          reportError(sink, err instanceof Error ? err.message : String(err), activeTurnId ?? 'none');
+          reportError(sink, err instanceof Error ? err.message : String(err), activeTurnId ?? 'none', myGen);
           trySave(s);
         }
       } finally {
@@ -386,6 +417,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     const turnId = live.cursor.turnId;
     let attached: TurnProcess | undefined;
     void (async () => {
+      let outcome: FollowOutcome | undefined;
       try {
         const events = adapter.resume(
           { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null },
@@ -413,14 +445,22 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         if (!ctl.signal.aborted) {
           clearCursor(s, turnId);
           trySave(s);
-          sink.onEnd();
+          outcome = 'ended';
         }
       } catch (err) {
         log.warn(`[chat] session ${s.id}: could not resume turn ${turnId}: ${err instanceof Error ? err.message : String(err)}`);
+        if (!ctl.signal.aborted) outcome = 'failed';
       } finally {
         if (following?.ctl === ctl) following = undefined;
         // Only this follow's process: a newer follow (another session) may have attached its own.
         if (attached !== undefined && resumedProc === attached) resumedProc = undefined;
+      }
+      // The follow is over on either path: tell the panel once, after it is no longer in progress.
+      if (outcome === undefined) return;
+      try {
+        sink.onEnd(outcome);
+      } catch (err) {
+        log.warn(`[chat] session ${s.id}: after the follow of turn ${turnId} ${outcome}: ${err instanceof Error ? err.message : String(err)}`);
       }
     })();
   }
@@ -431,6 +471,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
    * once the process has exited (or there was none). Idempotent.
    */
   const stopLive = async (): Promise<void> => {
+    busyGen = undefined;
     waitCtl?.abort();
     waitCtl = undefined;
     setupCtl?.abort();
@@ -468,6 +509,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   };
 
   const detach = async (): Promise<void> => {
+    busyGen = undefined;
     waitCtl?.abort();
     waitCtl = undefined;
     following?.ctl.abort(); // a resumed turn: its process is not ours to stop here
@@ -490,6 +532,10 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     detach,
     invalidate(): void {
       ++generation;
+      busyGen = undefined;
+    },
+    busy(): boolean {
+      return busyGen !== undefined || (following !== undefined && !following.ctl.signal.aborted);
     },
     get live() {
       return activeProvider !== undefined && activeTurnId !== undefined ? { provider: activeProvider, turnId: activeTurnId } : undefined;

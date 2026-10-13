@@ -1,22 +1,25 @@
 /**
- * Story E20260925edb76e2e:S007 / t3 — the docs-review webview host.
+ * Story E20260925edb76e2e:S007 / t3 — the docs-review webview host; reworked by
+ * Story E202610138d4b90c9:S001.
  *
  * A vscode-free, deps-injected factory (mirrors createChatPanelHost): it renders
- * the terminal-styled 'docs-review' surface (one nonce'd inline script under a
- * strict per-render CSP, textContent/className only — the S003 shell invariants),
- * lists the daemon's PENDING tracked artifacts, opens one on demand, and drives
- * the approve / request-changes decision through the DocsReviewClient. It is a
- * PASSTHROUGH observer of the tracked-workflow flow (k8): it never runs a
- * workflow itself — it only reads pending()/content() and calls the daemon's own
- * approve()/comment() IPCs on daemon-tracked artifacts (k5). Persists nothing (k3).
+ * the review pane (one nonce'd inline script under a strict per-render CSP,
+ * textContent/className only — the S003 shell invariants; a column with a fixed
+ * comment panel under one scrolling document, in VS Code theme variables), lists
+ * the daemon's PENDING tracked artifacts, opens one on demand, and sends the
+ * reviewer's decision and comments through the DocsReviewClient's one decide()
+ * call. It is a PASSTHROUGH observer of the tracked-workflow flow (k8): it never
+ * runs a workflow itself — it only reads pending()/content() and calls the
+ * daemon's own review-decision IPC on daemon-tracked artifacts (k5). It keeps
+ * which document is open and nothing else (k3).
  * All vscode API lives behind the injected {@link ChatPanelChannel}.
  */
-import { renderTerminalStyle, surfaceClass, terminalTheme, type TerminalTheme } from './design-tokens.js';
-import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation } from './protocol.js';
+import { envelope, type WebviewToHost, type HostToWebview, type DocsArtifactSummary, type RenderDegradation, type DocsDocumentTab } from './protocol.js';
 import { attr, type ChatPanelChannel, type ChatPanelLogger } from './chat-panel.js';
-import type { DocsReviewClient, DocsContent } from './docs-review-client.js';
+import type { DocsReviewClient, DocsContent, ReviewDecision, ReviewDecisionComment, ReviewDecisionResult } from './docs-review-client.js';
 import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
+import { DOCS_COMMENTS_SOURCE } from './docs-review-comments.js';
 import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './docs-sections.js';
 
 /**
@@ -30,10 +33,33 @@ const COMMENTABLE_KINDS = new Set(['DEF', 'HLD', 'LLD']);
 export interface DocsReviewHostDeps {
   createPanel(opts: { viewType: string; title: string }): ChatPanelChannel;
   readonly client: DocsReviewClient;
-  readonly renderStyle?: (theme?: TerminalTheme) => string;
-  readonly theme?: TerminalTheme;
   readonly logger?: ChatPanelLogger;
   readonly genNonce?: () => string;
+  /**
+   * Story E202610138d4b90c9:S001: hands a decision message to the chat. Absent means no
+   * chat message is sent. It never undoes a decision: a throw or 'unavailable' is only
+   * reported in the pane.
+   */
+  readonly notifyChat?: ((text: string) => 'sent' | 'queued' | 'unavailable') | undefined;
+  /**
+   * Story E202610138d4b90c9:S001: the text of an HTML companion, by its repo-relative
+   * path; undefined when it may not or cannot be read. Absent means no companion is shown.
+   */
+  readonly readCompanion?: ((relPath: string) => Promise<string | undefined>) | undefined;
+}
+
+/** What the chat hand-over of a decision came to. */
+type ChatHandOver = 'sent' | 'queued' | 'unavailable' | 'failed' | 'none';
+
+/** The document the pane shows, as the host last read it. */
+interface OpenDocument {
+  readonly artifactId: string;
+  /** Repo-relative .md path: what the document is re-read and decided by. */
+  readonly docPath: string | undefined;
+  /** Repo-relative paths of its HTML companions. */
+  readonly companions: readonly string[];
+  readonly kind: string | undefined;
+  readonly title: string | undefined;
 }
 
 export interface DocsReviewHost {
@@ -1219,8 +1245,6 @@ export function companionVisualKind(kind: CompanionRefKind): CompanionVisualKind
 
 export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   const log = deps.logger ?? NOOP_LOGGER;
-  const renderStyle = deps.renderStyle ?? renderTerminalStyle;
-  const theme = deps.theme ?? terminalTheme;
   const genNonce =
     deps.genNonce ?? (() => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`);
 
@@ -1239,6 +1263,13 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   // LAST, not whichever content IPC completes last. A separate counter from refreshSeq,
   // because a list refresh (every decision triggers one) must not discard an open.
   let openSeq = 0;
+  // Story E202610138d4b90c9:S001: the document the pane shows. A decision is acted on for
+  // this document only and is sent, like its re-read, by its path, never by its id, so
+  // neither depends on the document still being pending.
+  let opened: OpenDocument | undefined;
+  // The nonce of the shell last rendered: an HTML companion's scripts run in its frame only
+  // when they carry it.
+  let shellNonce = '';
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -1339,6 +1370,19 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     try {
       const content = await deps.client.content(opts.path ?? artifactId);
       if (mySeq !== openSeq) return; // superseded by a newer open — drop this response
+      const docPath = content.docPath !== undefined && content.docPath !== '' ? content.docPath : opts.path;
+      const htmlCompanions = htmlCompanionsOf(content.companions);
+      opened = {
+        artifactId,
+        docPath,
+        companions: htmlCompanions.map((c) => c.relPath),
+        kind: opts.kind ?? pending.get(artifactId)?.kind ?? (opened?.artifactId === artifactId ? opened.kind : undefined),
+        title: pending.get(artifactId)?.title ?? (opened?.artifactId === artifactId ? opened.title : undefined),
+      };
+      const documents: DocsDocumentTab[] = [
+        { title: docPath !== undefined ? baseName(docPath) : 'Document', type: 'markdown', ...(docPath !== undefined ? { relPath: docPath } : {}) },
+        ...htmlCompanions.map((c): DocsDocumentTab => ({ title: c.title, type: 'html', relPath: c.relPath })),
+      ];
       // t5 — derive the index ONCE per opened document (not per interaction) and
       // post it on the SAME message as the markdown it came from. Deriving it
       // here, from `content.markdown`, is what makes the two inseparable.
@@ -1419,12 +1463,24 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
           ? { uxDefinition: content.uxDefinition }
           : {}),
         ...(experienceAnchorSlug !== undefined ? { experienceAnchorSlug } : {}),
+        // Story E202610138d4b90c9:S001 — the saved comments and what the pane needs to
+        // save new ones, forwarded by reference like the records above, and one entry per
+        // document of the artifact.
+        ...(content.docPath !== undefined ? { docPath: content.docPath } : {}),
+        ...(content.contentVersion !== undefined ? { contentVersion: content.contentVersion } : {}),
+        ...(content.feedback !== undefined ? { feedback: content.feedback } : {}),
+        ...(content.reviewer !== undefined ? { reviewer: content.reviewer } : {}),
+        ...(content.state !== undefined ? { state: content.state } : {}),
+        documents,
       });
     } catch (err) {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);
       // A superseded open's failure is not the CURRENT document's failure: posting it
       // would replace the document the reviewer is on with another one's error.
       if (mySeq !== openSeq) return;
+      // The pane now shows this failure. A failed re-read of the open document keeps what
+      // the host knows of it; a failed open of another one leaves nothing open.
+      if (opened?.artifactId !== artifactId) opened = undefined;
       // A content-load failure means the reviewer never saw the body — suppress approve
       // (blocked:true) so the review gate is not defeated; request-changes stays available.
       post({
@@ -1439,49 +1495,223 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
-  async function decide(artifactId: string, accept: boolean, note: string | undefined): Promise<void> {
-    const commentable = COMMENTABLE_KINDS.has(pending.get(artifactId)?.kind ?? '');
+  /**
+   * Re-read the open document by its path, after the pending list was re-read: read-only
+   * when it is no longer awaiting review. Used after a decision and when a rebuilt shell
+   * sends its boot ping.
+   */
+  async function reopen(): Promise<void> {
+    const o = opened;
+    if (o === undefined) return;
+    const awaiting = pending.get(o.artifactId);
+    const kind = awaiting?.kind ?? o.kind;
+    if (o.docPath !== undefined) {
+      await openDoc(o.artifactId, { path: o.docPath, ...(kind !== undefined ? { kind } : {}), readOnly: awaiting === undefined });
+    } else if (awaiting !== undefined) {
+      await openDoc(o.artifactId);
+    }
+  }
+
+  /** A decision that was not recorded: one line for the pane. Nothing was written. */
+  function refuse(artifactId: string, message: string): void {
+    post({ type: 'docs-decision-result', artifactId, ok: false, message });
+  }
+
+  /** Hand the chat a decision message; whatever happens, the decision stays recorded. */
+  function handOver(text: string): ChatHandOver {
+    if (deps.notifyChat === undefined) return 'none';
     try {
-      if (accept) {
-        const res = await deps.client.approve(artifactId);
-        // A review block-verdict is NOT an error — it comes back non-lossily in skipped[]
-        // (k5, daemon-enforced). The host approves ONE artifact, so a non-empty skipped[]
-        // with nothing approved means this one was withheld; surface the reason inline and
-        // the artifact stays pending.
-        if (res.approved.length === 0 && res.skipped.length > 0) {
-          const skip = res.skipped[0]!;
-          post({
-            type: 'docs-content',
-            artifactId,
-            markdown: `not approved (blocked): ${skip.reason}`,
-            openQuestions: [],
-            blocked: true,
-            commentable,
-          });
-        }
-      } else {
-        // request-changes: record the reviewer's note; the artifact stays pending (there
-        // is no daemon reject IPC — mirrors the JetBrains annotate flow).
-        await deps.client.comment(artifactId, note && note.trim() !== '' ? note : 'changes requested');
-      }
+      return deps.notifyChat(text);
+    } catch (err) {
+      log.warn(`[docs-review] the chat could not be told of a decision: ${String(err)}`);
+      return 'failed';
+    }
+  }
+
+  /**
+   * Story E202610138d4b90c9:S001: one decision, one daemon call. The daemon records the
+   * decision first and then the comments, so nothing here is done in two steps. It is acted
+   * on for the open document only; approve and reject also need it to be awaiting review,
+   * and send feedback does not.
+   */
+  async function decide(artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
+    const o = opened;
+    if (o === undefined || o.artifactId !== artifactId) {
+      log.warn(`[docs-review] docs-decision: ${artifactId} is not the open document`);
+      refuse(artifactId, 'Nothing was recorded: open the document before deciding on it.');
+      void refreshPending();
+      return;
+    }
+    if (decision !== 'feedback' && !pending.has(artifactId)) {
+      log.warn(`[docs-review] docs-decision: ${artifactId} is not awaiting review`);
+      refuse(artifactId, `Nothing was recorded: this document is not awaiting review, so it cannot be ${decision === 'approve' ? 'approved' : 'rejected'}. Feedback can still be sent.`);
+      await refreshPending();
+      await reopen();
+      return;
+    }
+    if (o.docPath === undefined) {
+      refuse(artifactId, "Nothing was recorded: the daemon did not name this document's path. Update the daemon and try again.");
+      return;
+    }
+    let res: ReviewDecisionResult;
+    try {
+      res = await deps.client.decide(o.docPath, decision, comments);
     } catch (err) {
       log.warn(`[docs-review] decision ${artifactId} failed: ${String(err)}`);
-      post({
-        type: 'docs-content',
-        artifactId,
-        markdown: `decision failed: ${errText(err)}`,
-        openQuestions: [],
-        blocked: true,
-        commentable,
-      });
+      refuse(artifactId, `Nothing was recorded: ${errText(err)}`);
+      // Re-fetch so the list reflects real approval state (k5 — never a client-side guess).
+      // The document is re-read only when its place in the list changed, so a daemon that
+      // is down does not replace the document the reviewer is on with an error.
+      const was = pending.has(artifactId);
+      await refreshPending();
+      if (pending.has(artifactId) !== was) await reopen();
+      return;
     }
-    // Re-fetch so the list reflects real approval state (k5 — never a client-side guess).
+    const chat = handOver(decisionChatMessage(o, res, comments));
+    post({
+      type: 'docs-decision-result',
+      artifactId,
+      ok: true,
+      outcome: res.outcome,
+      recorded: res.recorded,
+      message: decisionResultLine(res, comments.length, chat),
+    });
     await refreshPending();
+    await reopen();
+  }
+
+  /**
+   * Story E202610138d4b90c9:S001: the text of one HTML document of the open artifact, for
+   * the pane's frame. Only a companion the open document lists is read. The frame inherits
+   * the shell's CSP, so the page's scripts are given the shell's nonce. Any other path, an
+   * absent reader or a failed read is answered with no html, and the pane shows the path.
+   */
+  async function openCompanion(artifactId: string, relPath: string): Promise<void> {
+    const o = opened;
+    let html: string | undefined;
+    if (o === undefined || o.artifactId !== artifactId || !o.companions.includes(relPath)) {
+      log.warn(`[docs-review] open-companion: ${relPath} is not a document of the open artifact`);
+    } else if (deps.readCompanion !== undefined) {
+      try {
+        const text = await deps.readCompanion(relPath);
+        if (typeof text === 'string') html = stampScriptNonce(text, shellNonce);
+      } catch (err) {
+        log.warn(`[docs-review] companion ${relPath} could not be read: ${String(err)}`);
+      }
+    }
+    post({ type: 'docs-companion', artifactId, relPath, ...(html !== undefined ? { html } : {}) });
   }
 
   const renderShell = (): string => {
     const nonce = genNonce();
-    const style = renderStyle(theme);
+    shellNonce = nonce;
+    // Story E202610138d4b90c9:S001 — the pane's own style. Every colour, font and border is
+    // a VS Code theme variable, so the pane follows whichever theme is active and has no
+    // switch of its own. The `--it-*` tokens the body, functional-requirement, diagram and
+    // experience rules below are written in are DEFINED here from theme variables, so those
+    // rules are unchanged. No literal colour anywhere: a hex or a colour name would be
+    // wrong in one theme or another.
+    //
+    // LAYOUT: the body is a column the height of the pane. The header and the comment
+    // panel take their own height and `.rv-scroll` takes the rest; it is the ONLY element
+    // that scrolls, which is what keeps the comment panel in view at every scroll position.
+    const style = `<style>` +
+      `html,body{height:100%;margin:0;}*{box-sizing:border-box;}` +
+      `body{` +
+      `--it-bg:var(--vscode-editor-background);--it-fg:var(--vscode-editor-foreground);` +
+      `--it-dim:var(--vscode-descriptionForeground);--it-accent:var(--vscode-textLink-foreground);` +
+      `--it-warn:var(--vscode-editorWarning-foreground);--it-err:var(--vscode-errorForeground);` +
+      `--it-ok:var(--vscode-charts-green);--it-sel:var(--vscode-editor-selectionBackground);` +
+      `--it-border:var(--vscode-panel-border);--it-font:var(--vscode-font-family);` +
+      `display:flex;flex-direction:column;overflow:hidden;padding:0;` +
+      `background:var(--vscode-editor-background);color:var(--vscode-foreground);` +
+      `font-family:var(--vscode-font-family);font-size:var(--vscode-font-size);line-height:1.5;}` +
+      `.rv-dim{color:var(--vscode-descriptionForeground);}.rv-sp{flex:1;}` +
+      `.rv-badge{background:var(--vscode-badge-background);color:var(--vscode-badge-foreground);border-radius:10px;padding:0 7px;font-size:11px;}` +
+      // The header: which document, its kind and its state.
+      `.rv-head{flex:0 0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 14px;border-bottom:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);}` +
+      `.rv-head select{background:var(--vscode-dropdown-background);color:var(--vscode-dropdown-foreground);border:1px solid var(--vscode-dropdown-border);border-radius:2px;padding:3px 6px;font:inherit;max-width:60%;}` +
+      // One tab per document of the artifact: the markdown, then each HTML document.
+      `.rv-tabs{display:flex;gap:2px;flex-wrap:wrap;}` +
+      `.rv-tab{background:none;color:var(--vscode-descriptionForeground);border:0;border-bottom:2px solid var(--vscode-sideBar-background);border-radius:0;padding:3px 8px;font:inherit;cursor:pointer;}` +
+      `.rv-tab.rv-on{color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);}` +
+      `.rv-tab:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:-1px;}` +
+      // An HTML document fills the region: its path, a line when it cannot be shown, and
+      // the frame that holds the page.
+      `.rv-html{height:100%;display:flex;flex-direction:column;gap:6px;padding:8px 14px 10px;}` +
+      `.rv-html-note{color:var(--vscode-descriptionForeground);}` +
+      `.rv-frame-host{flex:1 1 auto;min-height:0;}` +
+      // The page in the frame is a STANDALONE document with its own palette, written for
+      // a light page, and most set no background of their own: over the pane's dark
+      // editor background their dark text would be unreadable. So the frame is given the
+      // system's own page colour for a light scheme (`Canvas`), which is what such a page
+      // gets when it is opened by itself. A system colour, not a literal one.
+      `.rv-frame{display:block;width:100%;height:100%;border:1px solid var(--vscode-panel-border);border-radius:4px;color-scheme:light;background:Canvas;}` +
+      // The document: the one scrolling region.
+      `.rv-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;}` +
+      `.rv-doc{position:relative;max-width:900px;margin:0 auto;padding:12px 56px 40px 28px;color:var(--vscode-editor-foreground);}` +
+      `.insrc-docs-oq-item{color:var(--it-warn);margin:4px 0;}` +
+      // The comment panel, styled as the chat panel's input: one rounded box holding the
+      // field and round, icon-only buttons (the name is in the tooltip and the aria-label).
+      `.rv-bar{flex:0 0 auto;border-top:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);padding:8px 14px 10px;}` +
+      `.rv-meta{display:flex;gap:10px;align-items:center;margin-bottom:6px;font-size:12px;}` +
+      `.rv-row{display:flex;gap:6px;align-items:flex-end;border:1px solid var(--vscode-input-border);border-radius:12px;background:var(--vscode-input-background);padding:6px 8px 6px 10px;}` +
+      `.rv-row:focus-within{border-color:var(--vscode-focusBorder);}` +
+      `.rv-row textarea{flex:1;min-width:0;resize:none;background:none;color:var(--vscode-input-foreground);border:0;outline:none;padding:5px 4px;font:inherit;line-height:1.5;}` +
+      `.rv-row textarea::placeholder{color:var(--vscode-input-placeholderForeground);}` +
+      `.rv-ic{width:30px;height:30px;padding:0;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer;` +
+      `background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground);border:1px solid var(--vscode-panel-border);}` +
+      `.rv-ic:hover{background:var(--vscode-button-secondaryHoverBackground);}` +
+      `.rv-ic:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px;}` +
+      `.rv-ic:disabled{opacity:.45;cursor:default;}` +
+      `.rv-ic svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}` +
+      `.rv-ic.rv-approve{background:var(--vscode-button-background);color:var(--vscode-button-foreground);border-color:var(--vscode-button-background);}` +
+      `.rv-ic.rv-approve:hover{background:var(--vscode-button-hoverBackground);}` +
+      `.rv-ic.rv-reject{background:none;color:var(--vscode-errorForeground);border-color:var(--vscode-errorForeground);}` +
+      `.rv-result{margin-top:6px;font-size:12px;min-height:18px;color:var(--vscode-descriptionForeground);}` +
+      `.rv-result.rv-ok{color:var(--vscode-charts-green);}.rv-result.rv-err{color:var(--vscode-errorForeground);}` +
+      // Inline comments. A marked passage, dashed while its comment is a draft; the round
+      // button a selection offers; and the thread card under the passage's block.
+      `mark.rv-anno{background:var(--vscode-editor-findMatchHighlightBackground);color:inherit;border-bottom:2px solid var(--vscode-editorWarning-foreground);border-radius:2px;cursor:pointer;}` +
+      `mark.rv-anno.rv-draft{border-bottom-style:dashed;}` +
+      `.rv-pop{position:absolute;z-index:5;display:none;background:var(--vscode-editorWidget-background);border:1px solid var(--vscode-editorWidget-border);box-shadow:0 2px 8px var(--vscode-widget-shadow);border-radius:16px;padding:3px;}` +
+      `.rv-thread{margin:6px 0 10px;border:1px solid var(--vscode-editorWidget-border);border-radius:10px;overflow:hidden;background:var(--vscode-editorWidget-background);` +
+      `color:var(--vscode-foreground);font-family:var(--vscode-font-family);font-size:13px;line-height:1.45;white-space:normal;}` +
+      `.rv-q{padding:6px 10px;color:var(--vscode-descriptionForeground);border-bottom:1px solid var(--vscode-editorWidget-border);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}` +
+      `.rv-c{padding:7px 10px;border-bottom:1px solid var(--vscode-editorWidget-border);}` +
+      `.rv-who{font-weight:600;}` +
+      `.rv-tag{color:var(--vscode-descriptionForeground);font-size:11px;margin-left:6px;}` +
+      `.rv-tag-draft{color:var(--vscode-editorWarning-foreground);}` +
+      `.rv-text{white-space:pre-wrap;overflow-wrap:anywhere;}` +
+      `.rv-x{float:right;background:none;color:var(--vscode-descriptionForeground);border:0;padding:0 4px;cursor:pointer;font:inherit;}` +
+      `.rv-compose{padding:6px 8px;display:flex;gap:6px;align-items:center;}` +
+      `.rv-compose textarea{flex:1;min-width:0;resize:none;height:30px;background:none;color:var(--vscode-input-foreground);border:0;outline:none;padding:5px 4px;font:inherit;line-height:1.5;}` +
+      `.rv-ic.rv-sm{width:24px;height:24px;}.rv-ic.rv-sm svg{width:13px;height:13px;}` +
+      // Saved comments: when and with which decision; the margin marker beside a commented
+      // passage; and the strip of those with no passage, whose list is capped and scrolls
+      // on its own so a long history cannot take the document's room.
+      `.rv-when{color:var(--vscode-descriptionForeground);font-size:11px;margin-left:6px;}` +
+      `.rv-tag-approve{color:var(--vscode-charts-green);}.rv-tag-reject{color:var(--vscode-errorForeground);}` +
+      `.rv-hq{color:var(--vscode-descriptionForeground);font-style:italic;overflow-wrap:anywhere;}` +
+      `.rv-marker{position:absolute;right:6px;height:22px;min-width:34px;padding:0 6px;display:flex;align-items:center;justify-content:center;gap:3px;font:inherit;font-size:11px;border-radius:11px;cursor:pointer;` +
+      `background:var(--vscode-button-secondaryBackground);color:var(--vscode-button-secondaryForeground);border:1px solid var(--vscode-editorWidget-border);}` +
+      `.rv-marker svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;}` +
+      `.rv-marker.rv-draft{border-color:var(--vscode-editorWarning-foreground);color:var(--vscode-editorWarning-foreground);}` +
+      `.rv-hist{flex:0 0 auto;border-top:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);}` +
+      `.rv-hist summary{padding:5px 14px;cursor:pointer;color:var(--vscode-descriptionForeground);font-size:12px;}` +
+      `.rv-hist-list{max-height:170px;overflow-y:auto;border-top:1px solid var(--vscode-panel-border);background:var(--vscode-editor-background);}` +
+      // The rendered document reads as an editor preview: headings in the editor's own
+      // foreground with a rule under the first two levels, code in the editor's font.
+      `#insrc-docs-body{font-size:14px;line-height:1.6;}` +
+      `#insrc-docs-body h1,#insrc-docs-body h2,#insrc-docs-body h3,#insrc-docs-body h4,#insrc-docs-body h5,#insrc-docs-body h6{color:var(--vscode-editor-foreground);}` +
+      `#insrc-docs-body h1,#insrc-docs-body h2{padding-bottom:4px;border-bottom:1px solid var(--vscode-panel-border);}` +
+      `#insrc-docs-body code,#insrc-docs-body pre{font-family:var(--vscode-editor-font-family);}` +
+      `#insrc-docs-body code{background:var(--vscode-textCodeBlock-background);border:0;color:var(--vscode-textPreformat-foreground);}` +
+      `#insrc-docs-body pre{background:var(--vscode-textCodeBlock-background);}` +
+      `#insrc-docs-body pre code{color:var(--vscode-editor-foreground);}` +
+      `#insrc-docs-body th{background:var(--vscode-sideBar-background);}` +
+      `#insrc-docs-body blockquote{border-left-color:var(--vscode-textBlockQuote-border);}` +
+      `</style>`;
     // The markdown element rules the rendered body needs. renderStyle emits CSS
     // custom properties and surface classes only — no element rules — and the
     // .insrc-md stylesheet is not in scope on this surface, so they come from the
@@ -1559,14 +1789,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.ux-size-medium{font-size:15px;}.ux-size-large{font-size:18px;}.ux-size-extraLarge{font-size:22px;}` +
       // The four Adaptive Cards colour roles map onto the theme ROLES rather than
       // onto a palette, so emphasis still means what the author meant in either
-      // theme. Three map directly. `good` has no counterpart: the shipped token set
-      // (design-tokens.ts:187-195) defines bg/fg/dim/accent/warn/err/sel and NO
-      // success role, so `--it-ok` does not exist — writing it bare would be the
-      // S001 gotcha exactly, a var() that resolves to nothing and silently drops
-      // the declaration, which is how a border once vanished here. The fallback
-      // keeps it valid: `good` reads as accent today and starts reading as itself
-      // the day a success token is added. Minting one now would mean editing the
-      // token set every chat surface shares — a different surface than this Task.
+      // theme. Three map directly. `good` maps onto `--it-ok`, which this pane
+      // defines from the theme's green (Story E202610138d4b90c9:S001). The fallback
+      // to the accent is kept: a var() that resolved to nothing would silently drop
+      // the declaration, which is how a border once vanished here.
       `.ux-color-accent{color:var(--it-accent);}.ux-color-good{color:var(--it-ok,var(--it-accent));}` +
       `.ux-color-warning{color:var(--it-warn);}.ux-color-attention{color:var(--it-err);}` +
       `.ux-container{border:1px solid var(--it-border);border-radius:5px;padding:10px;}` +
@@ -1609,29 +1835,129 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.ux-unknown{border:1px dashed var(--it-err);border-radius:5px;padding:8px;color:var(--it-err);font-size:11px;white-space:normal;}` +
       `</style>`;
     const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';`;
-    const cls = surfaceClass('docs-review');
-    const listCls = surfaceClass('history-dropdown');
     const bootstrap =
       `const vs=acquireVsCodeApi();` +
       `const listEl=document.getElementById('insrc-docs-list');` +
       `const bodyEl=document.getElementById('insrc-docs-body');` +
       `const oqEl=document.getElementById('insrc-docs-oq');` +
-      `const noteEl=document.getElementById('insrc-docs-note');` +
-      `const actEl=document.getElementById('insrc-docs-actions');` +
       `const secEl=document.getElementById('insrc-docs-sections');` +
       `const noticeEl=document.getElementById('insrc-docs-notice');` +
       `const dgHostEl=document.getElementById('insrc-docs-diagram');` +
       `const uxHostEl=document.getElementById('insrc-docs-experience');` +
-      `var current='';` +
-      // docs-list: one clickable row per pending artifact (textContent only, no innerHTML).
-      `function renderList(items){while(listEl.firstChild)listEl.removeChild(listEl.firstChild);` +
-      `(items||[]).forEach(function(a){var b=document.createElement('button');b.className='insrc-docs-item';` +
-      `b.textContent='['+a.kind+'] '+(a.title||a.id)+' — '+a.status;` +
-      `b.addEventListener('click',function(){current=a.id;vs.postMessage({v:1,payload:{type:'open-doc',artifactId:a.id}});});` +
-      `listEl.appendChild(b);});` +
-      `if(!(items&&items.length)){var e=document.createElement('div');e.className='insrc-diff-ctx';e.textContent='no pending artifacts';listEl.appendChild(e);}}` +
-      // docs-content: render the verbatim body + open questions + block banner + the
-      // approve/request-changes controls (controls hidden while blocked).
+      // Story E202610138d4b90c9:S001 — the header and the comment panel. Every element is
+      // in the shell's markup; the script only sets text, values and state on them.
+      `const kindEl=document.getElementById('insrc-rv-kind');` +
+      `const stateEl=document.getElementById('insrc-rv-state');` +
+      `const whoEl=document.getElementById('insrc-rv-who');` +
+      `const fieldEl=document.getElementById('insrc-rv-field');` +
+      `const resultEl=document.getElementById('insrc-rv-result');` +
+      `const btn={approve:document.getElementById('insrc-rv-approve'),reject:document.getElementById('insrc-rv-reject'),feedback:document.getElementById('insrc-rv-feedback')};` +
+      // The tabs, and the two views of the region: the markdown document's hosts, and an
+      // HTML document's path, note and frame.
+      `const tabsEl=document.getElementById('insrc-rv-tabs');` +
+      `const mdEl=document.getElementById('insrc-rv-md');` +
+      `const htmlEl=document.getElementById('insrc-rv-html');` +
+      `const htmlPathEl=document.getElementById('insrc-rv-html-path');` +
+      `const htmlNoteEl=document.getElementById('insrc-rv-html-note');` +
+      `const frameHostEl=document.getElementById('insrc-rv-frame');` +
+      // Inline comments: the button a selection offers, and the line that counts the drafts.
+      `const popEl=document.getElementById('insrc-rv-pop');` +
+      `const popBtn=document.getElementById('insrc-rv-pop-btn');` +
+      `const draftsEl=document.getElementById('insrc-rv-drafts');` +
+      // The strip of saved comments that have no passage, above the comment panel.
+      `const histEl=document.getElementById('insrc-rv-hist');` +
+      `const histSumEl=document.getElementById('insrc-rv-hist-sum');` +
+      `const histListEl=document.getElementById('insrc-rv-hist-list');` +
+      // current: the id of the document shown. shown: its last docs-content message.
+      // busy: a decision was posted and its result has not arrived. sent: how many
+      // comments that decision carried.
+      `var current='';var items=[];var shown=null;var busy=false;var sent=0;` +
+      // docs: the documents of the artifact shown. tab: the repo-relative path of the HTML
+      // document on show, or '' for the markdown.
+      `var docs=[];var tab='';` +
+      // docs-list: one option per document awaiting review (textContent only, no markup).
+      // The document shown is always an option, so the select names it even when it is
+      // not awaiting review.
+      `function rvOption(value,text){var o=document.createElement('option');o.value=value;o.textContent=text;return o;}` +
+      `function renderList(list){items=list||[];while(listEl.firstChild)listEl.removeChild(listEl.firstChild);` +
+      `var known=false;` +
+      `if(!current)listEl.appendChild(rvOption('',items.length?'Choose a document ('+items.length+' awaiting review)':'No documents are awaiting review'));` +
+      `items.forEach(function(a){if(a.id===current)known=true;listEl.appendChild(rvOption(a.id,a.kind+' · '+(a.title||a.id)+' · '+a.status));});` +
+      `if(current&&!known)listEl.appendChild(rvOption(current,current+' · not awaiting review'));` +
+      `listEl.value=current;}` +
+      `listEl.addEventListener('change',function(){var id=listEl.value;if(!id||id===current)return;` +
+      `vs.postMessage({v:1,payload:{type:'open-doc',artifactId:id}});});` +
+      `function rvKind(id){var i=id.indexOf('-');return i<0?id:id.slice(0,i);}` +
+      `function rvSetResult(text,cls){resultEl.textContent=text;resultEl.className='rv-result'+(cls?' '+cls:'');}` +
+      // Awaiting review: the document can be approved or rejected. A read-only open, or one
+      // the daemon says is approved or rejected, takes feedback only.
+      `function rvAwaiting(m){return !!m&&!!m.artifactId&&!m.readOnly&&(m.state===undefined||m.state==='pending');}` +
+      `function renderBar(){var m=shown;var has=!!(m&&m.artifactId);var pend=rvAwaiting(m);` +
+      `btn.feedback.disabled=busy||!has;` +
+      `btn.reject.disabled=busy||!pend;` +
+      // A blocked document was not seen in full, or its review stands against it: it is
+      // not approvable from here.
+      `btn.approve.disabled=busy||!pend||!!m.blocked;` +
+      `btn.reject.style.display=(has&&!pend)?'none':'';btn.approve.style.display=(has&&!pend)?'none':'';` +
+      `fieldEl.disabled=!has;` +
+      `kindEl.textContent=has?rvKind(m.artifactId):'';kindEl.style.display=has?'':'none';` +
+      `stateEl.textContent=!has?'':pend?(m.blocked?'pending review · blocked: it cannot be approved':'pending review'):` +
+      `((m.state==='approved'?'approved':m.state==='rejected'?'rejected':'not awaiting review')+' · feedback only');` +
+      `var r=m&&m.reviewer;whoEl.textContent=(r&&typeof r.name==='string')?('as '+r.name+(r.source==='git'?' (git user)':r.source==='os'?' (OS user)':'')):'';}` +
+      // One decision: the button pressed, every inline draft, and the comment on the whole
+      // document when there is one. Nothing is posted while an earlier decision is
+      // unanswered, and send feedback with no comment at all posts nothing.
+      `function rvSend(decision){if(busy||!shown||!shown.artifactId)return;` +
+      // Every draft goes with the decision, then the comment on the whole document.
+      `var text=String(fieldEl.value||'').trim();var comments=rvDraftComments();` +
+      // On an HTML document's tab the comment is on that file: it names the file and has
+      // no anchor and no version (the version is the markdown's). On the markdown it
+      // carries the version the reviewer saw.
+      `if(text){var c={comment:text};if(tab)c.file=tab;else if(typeof shown.contentVersion==='string')c.version=shown.contentVersion;comments.push(c);}` +
+      `if(decision==='feedback'&&!comments.length){rvSetResult('Write a comment before sending feedback.','rv-err');return;}` +
+      `busy=true;sent=comments.length;renderBar();rvSetResult('Sending…','');` +
+      `vs.postMessage({v:1,payload:{type:'docs-decision',artifactId:shown.artifactId,decision:decision,comments:comments}});}` +
+      `btn.approve.addEventListener('click',function(){rvSend('approve');});` +
+      `btn.reject.addEventListener('click',function(){rvSend('reject');});` +
+      `btn.feedback.addEventListener('click',function(){rvSend('feedback');});` +
+      // The tabs: one per document, the markdown first. With one document there is
+      // nothing to choose and no tab is shown. Titles are set as text.
+      `function rvTabs(){while(tabsEl.firstChild)tabsEl.removeChild(tabsEl.firstChild);` +
+      `tabsEl.style.display=docs.length>1?'':'none';if(docs.length<2)return;` +
+      `docs.forEach(function(d){var rel=d.type==='html'?String(d.relPath||''):'';var on=rel===tab;` +
+      `var b=document.createElement('button');b.className='rv-tab'+(on?' rv-on':'');b.textContent=String(d.title||rel||'Document');` +
+      `b.setAttribute('type','button');b.setAttribute('role','tab');b.setAttribute('aria-selected',on?'true':'false');` +
+      `if(rel)b.setAttribute('title',rel);` +
+      `b.addEventListener('click',function(){rvShowTab(rel);});tabsEl.appendChild(b);});}` +
+      `function rvDropFrame(){while(frameHostEl.firstChild)frameHostEl.removeChild(frameHostEl.firstChild);}` +
+      // Show the markdown ('') or one HTML document. An HTML document is asked for from
+      // the host each time its tab is chosen; until the answer arrives the tab shows its
+      // path and a line.
+      `function rvShowTab(rel){tab=rel;rvTabs();mdEl.style.display=rel?'none':'';htmlEl.style.display=rel?'':'none';rvDropFrame();` +
+      `fieldEl.setAttribute('placeholder',rel?'Comment on '+rel+' (optional)…':'Comment on the whole document (optional)…');` +
+      `rvHidePop();rvSync();` +
+      `if(!rel||!shown)return;` +
+      `htmlPathEl.textContent=rel;htmlNoteEl.textContent='Loading…';` +
+      `vs.postMessage({v:1,payload:{type:'open-companion',artifactId:shown.artifactId,relPath:rel}});}` +
+      // The host's answer. The page's text becomes the srcdoc of a frame that may run
+      // scripts and NOTHING else: no same-origin, no forms, no popups, no top navigation.
+      // The sandbox is set before the text, and both before the frame joins the document.
+      // The frame inherits this page's CSP, so the page's scripts run only because the
+      // host gave them this page's nonce, and it can load nothing from the network. With
+      // no text the tab says the document cannot be shown and keeps its path.
+      `function rvCompanion(m){if(!shown||m.artifactId!==shown.artifactId||m.relPath!==tab||!tab)return;rvDropFrame();` +
+      `if(typeof m.html!=='string'){htmlNoteEl.textContent='This document cannot be shown here. Open the file to see it.';return;}` +
+      `htmlNoteEl.textContent='';` +
+      `var f=document.createElement('iframe');f.className='rv-frame';f.setAttribute('sandbox','allow-scripts');f.setAttribute('title',tab);` +
+      `f.setAttribute('srcdoc',m.html);frameHostEl.appendChild(f);}` +
+      // The result of a decision: the buttons work again and the line says what happened.
+      `function rvResult(m){if(!shown||m.artifactId!==shown.artifactId)return;busy=false;` +
+      // Recorded with every comment: the drafts and the field are done with. Otherwise
+      // (not recorded, or the comments were not saved) they are all kept, to send again.
+      `if(m.ok&&m.recorded===sent){rvClearDrafts();fieldEl.value='';rvSync();}` +
+      `renderBar();rvSetResult(String(m.message||''),m.ok?'rv-ok':'rv-err');}` +
+      // docs-content: render the verbatim body + open questions, then the header and
+      // the comment panel for this document.
       DOCS_BODY_RENDERER_SOURCE +
       DOCS_SECTIONS_SOURCE +
       // S002/t2 — inlined after its two siblings, since its placement step (t5)
@@ -1646,6 +1972,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // calls them yet, so the rendered surface is unchanged but for the added
       // source text — which is why SHELL_BASELINE moves in THIS commit.
       DOCS_UX_SOURCE +
+      // Story E202610138d4b90c9:S001 — the SIXTH source string in the same single nonce'd
+      // script: the text model of the rendered document, anchors, and the inline drafts.
+      DOCS_COMMENTS_SOURCE +
       `function renderContent(m){var r=renderMarkdownBody(bodyEl,m.markdown||'');` +
       // Stamp FIRST, and let the stamped count gate the chooser. On the degraded
       // path the body is plain text with no heading elements, so nothing can be
@@ -1723,32 +2052,47 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `renderDegradationNotice(noticeEl,(m.degradation&&m.degradation.degraded)?m.degradation:(r.degradation&&r.degradation.degraded)?r.degradation:(fr.degradation||r.degradation));` +
       `while(oqEl.firstChild)oqEl.removeChild(oqEl.firstChild);` +
       `(m.openQuestions||[]).forEach(function(q){var d=document.createElement('div');d.className='insrc-docs-oq-item';d.textContent='? '+q;oqEl.appendChild(d);});` +
-      `while(actEl.firstChild)actEl.removeChild(actEl.firstChild);` +
-      // E2 S004 — a read-only open (not awaiting review) shows a note and no decision control.
-      `if(m.artifactId&&m.readOnly){var ro=document.createElement('div');ro.className='insrc-diff-ctx';ro.textContent='read-only: not awaiting review';actEl.appendChild(ro);}` +
-      `else if(m.artifactId){` +
-      `if(m.blocked){var w=document.createElement('div');w.className='insrc-diff-del';w.textContent='blocked — not approvable';actEl.appendChild(w);}` +
-      `else{var ok=document.createElement('button');ok.textContent='approve';ok.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'docs-decision',artifactId:m.artifactId,accept:true}});});actEl.appendChild(ok);}` +
-      // request-changes only for kinds the daemon can record a comment on (commentable !== false).
-      `if(m.commentable!==false){var rc=document.createElement('button');rc.textContent='request changes';rc.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'docs-decision',artifactId:m.artifactId,accept:false,note:noteEl.value}});noteEl.value='';});actEl.appendChild(rc);}}}` +
+      // The document shown changed: an unanswered decision and the result line belonged to
+      // the earlier one. A re-post of the SAME document (after a decision, or to a rebuilt
+      // shell) keeps them, and the field and the drafts with them.
+      `var same=!!shown&&shown.artifactId===m.artifactId;shown=m;current=m.artifactId||'';` +
+      // Its field and its drafts come from the saved state, where they are kept per artifact.
+      `if(!same){busy=false;rvSetResult('','');rvLoad();}` +
+      // The documents of this artifact. Another artifact, or an HTML document that is no
+      // longer listed, goes back to the markdown; a re-post of the same artifact keeps the
+      // tab on show, and its frame.
+      `docs=Array.isArray(m.documents)?m.documents:[];` +
+      `if(!same||!tab||!docs.some(function(d){return d&&d.type==='html'&&d.relPath===tab;})){rvShowTab('');}else{rvTabs();}` +
+      // The body was rendered again: the saved comments and the drafts are put on their
+      // passages, and the rest of the saved comments in the strip.
+      `rvHidePop();rvPlaceAll();rvSync();` +
+      `renderList(items);renderBar();}` +
       `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
-      `else if(m.type==='docs-content'){renderContent(m);}});` +
+      `else if(m.type==='docs-content'){renderContent(m);}` +
+      `else if(m.type==='docs-decision-result'){rvResult(m);}` +
+      `else if(m.type==='docs-companion'){rvCompanion(m);}});` +
+      `listEl.appendChild(rvOption('','Loading the documents awaiting review…'));rvShowTab('');renderBar();` +
       // request the pending list as soon as the script is live.
       `vs.postMessage({v:1,payload:{type:'open-doc',artifactId:''}});`;
     return (
       `<!DOCTYPE html><html><head><meta charset="utf-8">` +
       `<meta http-equiv="Content-Security-Policy" content="${attr(csp)}">` +
       `${style}${mdStyle}</head>` +
-      // The `--it-*` tokens renderTerminalStyle emits are scoped to `.insrc-term`,
-      // so the surface div has to sit INSIDE an .insrc-term element to inherit
-      // them — exactly as the reviewed mock does
-      // (mocks/docs-review.html: <body class="insrc-term"><div class="insrc-term-review">).
-      // The shell previously put the surface class straight on <body>, leaving
-      // every var(--it-…) in this pane undefined.
-      `<body class="insrc-term">` +
-      `<div class="${cls}">` +
-      `<div id="insrc-docs-list" class="${listCls}" aria-label="pending artifacts"></div>` +
+      `<body class="insrc-rv">` +
+      // The header: outside the scrolling region.
+      `<div class="rv-head">` +
+      `<select id="insrc-docs-list" aria-label="document"></select>` +
+      `<span id="insrc-rv-kind" class="rv-badge"></span>` +
+      `<span id="insrc-rv-state" class="rv-dim"></span>` +
+      `<span class="rv-sp"></span>` +
+      `<span id="insrc-rv-tabs" class="rv-tabs" role="tablist" aria-label="documents of this artifact"></span>` +
+      `</div>` +
+      // The one scrolling region: everything of the document, and nothing else.
+      `<div id="insrc-rv-scroll" class="rv-scroll"><div id="insrc-rv-md" class="rv-doc">` +
+      // The round button a selection offers; placed at the selection by the script.
+      `<div id="insrc-rv-pop" class="rv-pop"><button id="insrc-rv-pop-btn" type="button" class="rv-ic" aria-label="Comment on the selected text" title="Comment on the selected text">` +
+      `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z"/></svg></button></div>` +
       // t6: the section chooser and the ac3 notice. Both are filled by DOM
       // construction with textContent — never markup — and the chooser host stays
       // EMPTY (no control at all) for a document with no headings.
@@ -1765,8 +2109,33 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<div id="insrc-docs-experience" aria-label="experience mock"></div>` +
       `<div id="insrc-docs-body" class="insrc-docs-content" aria-label="artifact body"></div>` +
       `<div id="insrc-docs-oq" aria-label="open questions"></div>` +
-      `<textarea id="insrc-docs-note" rows="2" aria-label="request-changes note"></textarea>` +
-      `<div id="insrc-docs-actions"></div>` +
+      `</div>` +
+      // An HTML document of the artifact: its path, a line when it cannot be shown, and
+      // the host its frame is put into. The frame itself is made by the script, so the
+      // markup holds no element that loads anything.
+      `<div id="insrc-rv-html" class="rv-html">` +
+      `<div id="insrc-rv-html-path" class="rv-dim"></div>` +
+      `<div id="insrc-rv-html-note" class="rv-html-note" aria-live="polite"></div>` +
+      `<div id="insrc-rv-frame" class="rv-frame-host"></div>` +
+      `</div></div>` +
+      // The saved comments that have no passage, collapsed until opened. Outside the
+      // scrolling region, like the comment panel under it.
+      `<details id="insrc-rv-hist" class="rv-hist"><summary id="insrc-rv-hist-sum"></summary>` +
+      `<div id="insrc-rv-hist-list" class="rv-hist-list"></div></details>` +
+      // The comment panel: outside the scrolling region, so it is in view at every scroll
+      // position. Icon-only buttons; each one's name is its title and aria-label.
+      `<div id="insrc-rv-bar" class="rv-bar">` +
+      `<div class="rv-meta"><span id="insrc-rv-drafts" class="rv-dim"></span><span class="rv-sp"></span><span id="insrc-rv-who" class="rv-dim"></span></div>` +
+      `<div class="rv-row">` +
+      `<textarea id="insrc-rv-field" rows="2" maxlength="10000" aria-label="Comment on the whole document" placeholder="Comment on the whole document (optional)…"></textarea>` +
+      `<button id="insrc-rv-feedback" type="button" class="rv-ic" aria-label="Send feedback" title="Send feedback: sends the comment; the document's state does not change">` +
+      `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 8l11-5-4 11-2-4.5z"/></svg></button>` +
+      `<button id="insrc-rv-reject" type="button" class="rv-ic rv-reject" aria-label="Reject" title="Reject: sends the comment and rejects this revision">` +
+      `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>` +
+      `<button id="insrc-rv-approve" type="button" class="rv-ic rv-approve" aria-label="Approve" title="Approve: sends the comment and approves">` +
+      `<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3.2L13 5"/></svg></button>` +
+      `</div>` +
+      `<div id="insrc-rv-result" class="rv-result" aria-live="polite"></div>` +
       `</div>` +
       `<script nonce="${nonce}">${MARKED_SRC}\n;${bootstrap}</script></body></html>`
     );
@@ -1783,8 +2152,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       case 'open-doc':
         if (typeof msg.artifactId !== 'string') return;
         // The webview's boot ping (empty id) means "load the list"; a real id opens a doc.
+        // A rebuilt shell (the pane hidden and shown again) sends the ping too and has lost
+        // its document: the open one is posted again, by its path, pending or not.
         if (msg.artifactId === '') {
-          void refreshPending();
+          void refreshPending().then(reopen);
         } else if (pending.has(msg.artifactId)) {
           void openDoc(msg.artifactId);
         } else {
@@ -1794,14 +2165,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         }
         return;
       case 'docs-decision':
-        if (typeof msg.artifactId !== 'string' || typeof msg.accept !== 'boolean') return;
-        // Only act on a live pending artifact (k5); a stale decision -> refresh, drop.
-        if (!pending.has(msg.artifactId)) {
-          log.warn(`[docs-review] docs-decision: unknown/stale artifact ${msg.artifactId}`);
-          void refreshPending();
-          return;
-        }
-        void decide(msg.artifactId, msg.accept, typeof msg.note === 'string' ? msg.note : undefined);
+        if (typeof msg.artifactId !== 'string' || !isReviewDecision(msg.decision) || !Array.isArray(msg.comments)) return;
+        void decide(msg.artifactId, msg.decision, msg.comments);
+        return;
+      case 'open-companion':
+        if (typeof msg.artifactId !== 'string' || typeof msg.relPath !== 'string') return;
+        void openCompanion(msg.artifactId, msg.relPath);
         return;
       default:
         // any chat-slice / forward variant: accepted-but-ignored seam — never an error.
@@ -1822,10 +2191,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         disposed = true;
         channel = undefined;
         pending.clear();
+        opened = undefined;
       });
       channel.onMessage(handleMessage);
       channel.setHtml(renderShell());
-      post({ type: 'theme', theme });
       // The webview boot ping also triggers refreshPending; post one now so a fast
       // consumer (test double) sees the list without waiting for the ping.
       void refreshPending();
@@ -1839,9 +2208,108 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       channel?.dispose();
       channel = undefined;
       pending.clear();
+      opened = undefined;
     },
   };
   return host;
+}
+
+function isReviewDecision(v: unknown): v is ReviewDecision {
+  return v === 'approve' || v === 'reject' || v === 'feedback';
+}
+
+function baseName(path: string): string {
+  return path.slice(path.lastIndexOf('/') + 1);
+}
+
+/**
+ * The HTML companions among an artifact's companion refs, each once, in order. The refs
+ * are not validated on the read path, so anything that is not a ref with a path ending in
+ * .html is skipped rather than trusted.
+ */
+function htmlCompanionsOf(companions: DocsContent['companions']): Array<{ readonly relPath: string; readonly title: string }> {
+  const out: Array<{ readonly relPath: string; readonly title: string }> = [];
+  if (!Array.isArray(companions)) return out;
+  for (const c of companions as readonly unknown[]) {
+    if (typeof c !== 'object' || c === null) continue;
+    const relPath = (c as { relPath?: unknown }).relPath;
+    const title = (c as { title?: unknown }).title;
+    if (typeof relPath !== 'string' || !/\.html$/i.test(relPath)) continue;
+    if (out.some((x) => x.relPath === relPath)) continue;
+    out.push({ relPath, title: typeof title === 'string' && title.trim() !== '' ? title : baseName(relPath) });
+  }
+  return out;
+}
+
+/**
+ * Give every script tag that has no nonce the given one. An HTML companion is shown as the
+ * srcdoc of a frame that inherits the pane's CSP, so only scripts carrying the pane's nonce
+ * run there.
+ */
+export function stampScriptNonce(html: string, nonce: string): string {
+  return html.replace(/<script\b(?![^>]*\bnonce\s*=)/gi, `<script nonce="${attr(nonce)}"`);
+}
+
+const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+const noFullStop = (text: string): string => text.trim().replace(/\.+$/, '');
+const oneLine = (text: string, max: number): string => {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max)}…` : flat;
+};
+
+/** The line the pane shows after a decision the daemon recorded. */
+function decisionResultLine(res: ReviewDecisionResult, sent: number, chat: ChatHandOver): string {
+  const parts: string[] = [];
+  const asFeedback = res.outcome === 'withheld' ? ' as feedback' : '';
+  switch (res.outcome) {
+    case 'approved': parts.push('Approved.'); break;
+    case 'rejected': parts.push('Rejected.'); break;
+    case 'withheld': parts.push(`Not approved: ${noFullStop(res.reason ?? 'the review gate withheld the approval')}.`); break;
+    case 'recorded': parts.push('Feedback sent.'); break;
+  }
+  if (res.commentsError !== undefined) {
+    parts.push(`The ${sent === 1 ? 'comment was' : 'comments were'} not saved: ${noFullStop(res.commentsError)}.`);
+  } else if (sent > 0) {
+    parts.push(`${plural(res.recorded, 'comment')} saved${asFeedback}.`);
+  }
+  switch (chat) {
+    case 'sent': parts.push('The chat has been told.'); break;
+    case 'queued': parts.push('The chat will be told when it is free.'); break;
+    case 'unavailable': parts.push('The chat could not be told: no chat is available.'); break;
+    case 'failed': parts.push('The chat could not be told.'); break;
+    case 'none': parts.push('No chat message was sent.'); break;
+  }
+  return parts.join(' ');
+}
+
+/**
+ * The one message the chat is handed after a decision: the decision and its outcome, the
+ * artifact, the reviewer, and the new comments numbered in order, each with its quote and
+ * section when it has them. With no comments it is the decision line alone.
+ */
+function decisionChatMessage(o: OpenDocument, res: ReviewDecisionResult, comments: readonly ReviewDecisionComment[]): string {
+  const what = `${res.artifactId}${o.title !== undefined && o.title !== '' ? ` "${o.title}"` : ''}${o.docPath !== undefined ? ` (${o.docPath})` : ''}`;
+  let head: string;
+  switch (res.outcome) {
+    case 'approved': head = `Review decision: approved ${what}, by ${res.author}.`; break;
+    case 'rejected': head = `Review decision: rejected ${what}, by ${res.author}.`; break;
+    case 'withheld': head = `Review decision: the approval of ${what} by ${res.author} was withheld: ${noFullStop(res.reason ?? 'the review gate withheld it')}.`; break;
+    case 'recorded': head = `Review feedback on ${what}, by ${res.author}.`; break;
+  }
+  if (comments.length === 0) return head;
+  const lines = [head];
+  if (res.commentsError !== undefined) lines.push(`The comments below could not be saved: ${noFullStop(res.commentsError)}.`);
+  else if (res.outcome === 'withheld') lines.push('The comments below were saved as feedback.');
+  lines.push('Comments:');
+  comments.forEach((c, i) => {
+    const quote = typeof c.anchor?.quote === 'string' ? c.anchor.quote : undefined;
+    const section = typeof c.anchor?.sectionSlug === 'string' && c.anchor.sectionSlug !== '' ? ` (section ${c.anchor.sectionSlug})` : '';
+    const where = quote !== undefined
+      ? `On "${oneLine(quote, 120)}"${section}: `
+      : typeof c.file === 'string' && c.file !== '' && c.file !== o.docPath ? `On ${c.file}: ` : '';
+    lines.push(`${i + 1}. ${where}${String(c.comment).trim()}`);
+  });
+  return lines.join('\n');
 }
 
 function errText(err: unknown): string {

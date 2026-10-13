@@ -27,7 +27,204 @@
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive story under a single design: the daemon side extends the existing feedback record, reject function and user lookup; the plugin side reworks one pane and adds one path to the chat host.",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The eight acceptance criteria ac1 to ac8 (citation c37, user decisions in chat on 2026-10-13) are each designed, and no non-goal is built.",
+          "evidence": "The upstream is a chat conversation quoted in c37, not a file in the repository, so I could not compare the design with the original decisions. Within the document, each of ac1 to ac8 as quoted in c37 has a contract section (2.3 to 2.7) and a row in the acceptance mapping. This is a standalone story, so there is no DEF or HLD to read for non-goals.",
+          "action": "None needed if the user confirms c37 quotes their decisions correctly.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The chat host has no session until its webview has posted 'ready' (section 2.7 drain condition, and 'State before' in section 7).",
+          "evidence": "open() calls wireChannel, which calls postInitialState() synchronously (chat-panel.ts:1651), and postInitialState drafts the session at once: `if (session === undefined) session = deps.store.draft(available[0]!);` (line 631). The comment at 1631-1638 says this is deliberate: 'Calling it here too keeps the session drafted synchronously (the open()-yields-a-turnable-session invariant)'. dispose() (1678-1685) does not clear `session` either. The session is undefined only before the first open, or when no CLI is installed (postInitialState returns at 625-628), and that case answers 'unavailable'. So with the drain condition 'the host has a session', a message handed to a closed panel is run immediately inside submitExternal, before the webview has attached its listener, and answers 'sent', not 'queued'. The edge case 'the message waits, and it is run at the end of postInitialState once the session exists; the pane reports it as waiting' does not happen as written. [files: vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "Either make the drain condition 'the webview has posted ready since the channel was wired' (a new flag, reset in wireChannel and on dispose), or accept that the message runs at open and change section 2.7, the edge-case row and the test to say 'sent'.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the pane approves through workflow.approve, sends request-changes through workflow.resolveComment with an empty anchor for DEF, HLD and LLD only, resolves a document's path only while it is pending, and reject exists only as a function the CLI calls.",
+          "evidence": "docs-review-client.ts:118-136: approve() calls 'workflow.approve'; comment() calls 'workflow.resolveComment' with `anchor: {}`. mdPathById is cleared and refilled in pending() only (lines 85-88). docs-review-panel.ts:28 `COMMENTABLE_KINDS = new Set(['DEF', 'HLD', 'LLD'])`; the host's decide() at 1442-1480 says 'there is no daemon reject IPC'. The only non-test caller of rejectArtifactByJsonPath is src/cli/services/workflow.ts:174. The pane uses renderTerminalStyle (1222) and posts a 'theme' message (1828).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The design finalizers write nothing; the artifact files are written by the synthesize phase (invariant in section 5, and postcondition 'the finalizers stay free of writes' in 2.1).",
+          "evidence": "finalizeDesignEpic awaits renderErCompanionForBody, renderUxCompanionForBody and renderDiagramCompanionsForBody (orchestrator.ts:1848-1854). These write the companion HTML files during finalize: render.ts:78-79 `mkdirSync(dirname(destPath), { recursive: true }); writeFileSync(destPath, html, 'utf8');`. Only the artifact .json and .md are left to the synthesize phase. The carry-forward itself adds only a read, so the code built from 2.1 is not affected; the stated invariant is wrong as a description of today. [files: src/workflow/orchestrator.ts, src/workflow/artifacts/companion/render.ts]",
+          "action": "Reword the invariant to 'the finalizers do not write the artifact .json or .md; the carry-forward adds a read only'.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A re-authored Define gets a new epic hash, so there is no earlier artifact at its path to carry feedback from.",
+          "evidence": "orchestrator.ts:1186-1190: 'Every Define artifact mints the canonical Epic hash (deterministic from the runId minted at start-time)' and `const epicHash = computeEpicHash(runId);`. The HLD, LLD and PLAN finalizers take the hash from the intent (`requireEpicHash(intent)`, lines 1789 and 2617), so their artifact ids are stable across re-authoring.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "appendFeedbackBatch, priorFeedback, resolveReviewer, TurnLifecycle.busy and ChatPanelHost.submitExternal do not exist yet, and the user-name fallback is inline in resolveCompanionHeader.",
+          "evidence": "writer.ts exports only ArtifactFeedbackError, writeArtifactJson and appendFeedback. header.ts:87-89 has the fallback inline (`nonEmpty((deps.gitUserName ?? defaultGitUserName)(input.repoPath)) ?? nonEmpty((deps.osUserName ?? defaultOsUserName)()) ?? 'unknown'`) with gitUserName and osUserName already injectable through CompanionHeaderDeps. The TurnLifecycle interface (turn-lifecycle.ts:61-89) has start, follow, stop, detach, invalidate and live, and no busy. ChatPanelHost (chat-panel.ts:124-135) has open, adopt and dispose. A grep of orchestrator.ts for priorFeedback finds nothing.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused functions have the stated shape: approveWorkflowTarget reports a withheld approval in skipped[], rejectArtifactByJsonPath takes a JSON path and a non-empty reason, and a companion's relPath is repo-relative.",
+          "evidence": "gates.ts:826-901: approveWorkflowTarget returns { approved, skipped, codeReview }; a code-review block or a ReviewBlockedError pushes to skipped[] with a reason (855-873). gates.ts:971-990: rejectArtifactByJsonPath(jsonPath, reason) throws on an empty reason, so the design's default reason is needed and is supplied. companion/types.ts:31 'Repo-relative path to the companion file' and render.ts:88 `relPath: toRepoRelative(destPath, opts.repoPath)`. Note: the bugfix follow-on in 'workflow.approve' needs the daemon's db handle (daemon/index.ts:665-670), so it must be injected into handleReviewDecision from the handler; the design's test level already speaks of injected approve and reject functions.",
+          "action": "None. Keep the follow-on as an injected function so src/workflow/review-decision.ts stays free of the db.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "appendFeedback stays unchanged while coerceRequest and 'artifact.feedback.append' accept the new anchor, decision and batchId fields (2.1 and 3.1).",
+          "evidence": "appendFeedback builds the stored entry from a fixed set of keys (writer.ts:134-141): id, author, timestamp, target, comment and `...(req.entry.kind !== undefined ? { kind: req.entry.kind } : {})`. If coerceRequest passes anchor, decision or batchId through and appendFeedback is unchanged, the single-entry path accepts them and silently drops them. The tool's own inputSchema is also `additionalProperties: false` (tool.ts:39) with no such properties, and the design names only coerceRequest, not that schema. The pane itself is not affected, because it writes through appendFeedbackBatch. [files: src/workflow/artifacts/provenance/writer.ts, src/workflow/artifacts/provenance/tool.ts]",
+          "action": "Decide one way and say so: either appendFeedback also copies the three optional fields and the tool's inputSchema lists them, or coerceRequest keeps rejecting or ignoring them and the single-entry path is documented as not carrying them. Adjust the test 'accepted by the schema and by coerceRequest' to match.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Draining after runCompletedBatch in onTerminal and in the follow sink's onEnd leaves a waiting message behind an approval follow-up, because the follow-up is already in progress by then.",
+          "evidence": "runCompletedBatch calls `void runTurn(prompt, approvals.grantChain(), { suppressEcho: true })` (chat-panel.ts:550). runTurn has no await before `await turns.start(s, req, sink)` (1278), and start() runs synchronously into acquireSessionLease, which sets `waitCtl = ctl` before its first await (turn-lifecycle.ts:192-196). So the lifecycle can report busy by the time runCompletedBatch returns. Two things for the build to respect: onEnd returns early when `session !== s` (chat-panel.ts:614), before any drain placed at its end; and with the attachment seams present (extension.ts passes them) a typed message goes through submitTurn, where supersedeQueuedApprovals is called outside runTurn (1300), so a drain must call it itself to match 'queued approvals are superseded'.",
+          "action": "None to the design; state in the plan that the drain calls supersedeQueuedApprovals before runTurn.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "extension.ts can wire notifyChat: (text) => chatHost.submitExternal(text) into createDocsReviewHost without the two hosts importing each other.",
+          "evidence": "extension.ts:566 creates chatHost and extension.ts:668 creates reviewHost later in the same block, under the same insrc.chat.enabled gate, so chatHost is in scope. createDocsReviewHost is given only client and createPanel today (668-672).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Feedback entries already saved stay valid, and entries with the new optional fields do not break the other readers of body.feedback.",
+          "evidence": "FEEDBACK_PROPERTY_SCHEMA has `additionalProperties: false` on the entry (schema.ts:28), so a re-authored body carrying new-field entries would be rejected unless that schema is extended; the design lists schema.ts as a change site. The delivery board reader (src/workflow/delivery/describe.ts:105-124) picks id, author, timestamp, comment, target and kind by name and ignores other keys, and 'comment' is in its kind set (line 102), so new entries read there without a notice. feedbackBodyLines (bindings.ts:81-88) is also used by the standalone build record (standalone-record.ts:206); neither that file nor describe.ts is in the 3.1 call-site list, but neither needs a change.",
+          "action": "Optionally add describe.ts and standalone-record.ts to the 3.1 list as readers that are unaffected.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The JetBrains plugin reads the review view by named keys, so the five added fields do not affect it.",
+          "evidence": "DaemonGateway.kt:1531-1544 parseView reads data[\"openQuestions\"], data[\"artifactId\"], data[\"kind\"], data[\"renderedMarkdown\"], data[\"approvable\"] and data[\"blockReason\"] from a Map and nothing else.",
+          "action": "None. Note that handleArtifactContent will run `git config user.name` (execFileSync, header.ts:129) on every read once reviewer is added; it is synchronous in the daemon.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A withheld approval, a non-pending artifact and a failing approve or reject are each detectable from what the reused functions return or throw.",
+          "evidence": "Withheld: approveWorkflowTarget returns nothing in approved[] and an entry in skipped[] with the reason (gates.ts:855-873). Non-pending: pending means neither meta.approvedAt nor meta.rejectedAt is a non-empty string (pending.ts:127-128), the same test handleReviewDecision is to make. Throwing: approveWorkflowTarget throws ArtifactMissingError (885) and rethrows non-review errors (871); rejectArtifactByJsonPath throws on a missing file, an empty reason or no meta (972-983). An older daemon answers an unknown-method error that the client throws, as isError/throw does for the other methods (docs-review-client.ts:62-64).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The test 'chat host: submitExternal on a host with no session yet opens the panel, answers queued, and the message is run after the webview's ready' (proving ac8) can be written against the host as designed.",
+          "evidence": "With a CLI available, opening the panel drafts the session synchronously (chat-panel.ts:631 through wireChannel at 1651), so after 'the panel is opened' the three drain conditions of 2.7 hold at once and the message is run and answered 'sent'. The state 'no session yet' cannot be reached after open() except with no CLI, which the design answers 'unavailable'. The test as named would fail, or would pass only by building something other than section 2.7. [files: vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "Fix together with the current-behaviour finding: once the drain condition is 'webview ready', keep this test; otherwise rename it to expect 'sent' and drop the closed-panel 'waiting' row.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion ac1 to ac8 has at least one named test, in the repository's test framework.",
+          "evidence": "The acceptance mapping in section 6 has a row for each of ac1 to ac8, and every test it names appears among the subjects of a test level above it. The framework named (node:test through tsx, tests in __tests__ beside the code) matches CLAUDE.md ('npx tsx --test src/**/__tests__/*.test.ts') and the existing tests found in src/workflow/artifacts/provenance/__tests__ and src/workflow/__tests__. ac1 and ac2 rest partly on a headless render and a hand check, which the design states.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 4,
+        "low": 11,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-13T11:40:55.470Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

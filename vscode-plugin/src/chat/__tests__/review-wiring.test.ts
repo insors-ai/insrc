@@ -27,6 +27,8 @@ test("review wiring: the review host is given notifyChat bound to the chat host'
   assert.match(block!, /notifyChat: \(text\) => chatHost\.submitExternal\(text\),/, "notifyChat hands the message to the chat host's submitExternal");
   assert.match(block!, /readCompanion: createCompanionReader\(\{ root: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \}\),/, 'readCompanion reads under the first workspace folder');
   assert.match(ext, /import \{ createCompanionReader \} from '\.\/chat\/companion-reader\.js';/);
+  // The pane names the workspace folder to the daemon on every call, so it does not depend on the daemon's default.
+  assert.match(block!, /client: createDocsReviewClient\(client, \{ repo: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \}\),/);
   // Both hosts are built in the same gated block, the chat host first, so the binding is to a host that exists.
   assert.ok(ext.indexOf('const chatHost = createChatPanelHost({') > 0);
   assert.ok(ext.indexOf('const chatHost = createChatPanelHost({') < ext.indexOf('const reviewHost = createDocsReviewHost({'));

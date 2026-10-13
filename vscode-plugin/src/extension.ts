@@ -666,7 +666,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // daemon-tracked pending artifacts (k5), reuses the same webview channel seam, and
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
     const reviewHost = createDocsReviewHost({
-      client: createDocsReviewClient(client),
+      client: createDocsReviewClient(client, { repo: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath }),
       createPanel: ({ viewType, title }) =>
         webviewChannel(vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true })),
       // Story E202610138d4b90c9:S001: a decision and its comments are handed to the chat as

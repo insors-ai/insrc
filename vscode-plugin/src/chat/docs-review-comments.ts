@@ -93,9 +93,9 @@ return marks;}
 function rvUnwrap(marks){(marks||[]).forEach(function(m){var p=m.parentNode;if(!p)return;
 while(m.firstChild)p.insertBefore(m.firstChild,m);p.removeChild(m);});}
 /* The passage a selection covers, with its anchor; null when no comment can be made on
-   it: it is not inside one block of the markdown document, it is in the Feedback
+   it: no document is open (a notice is shown instead), it is not inside one block of the markdown document, it is in the Feedback
    section, it is blank or longer than RV_QUOTE_MAX, or it touches a marked passage. */
-function rvPassage(range){if(!range||tab)return null;
+function rvPassage(range){if(!range||tab||!shown||!shown.artifactId)return null;
 var block=rvBlockOf(range.startContainer);if(!block||block!==rvBlockOf(range.endContainer))return null;
 var top=rvTopOf(block);if(!top)return null;var place=rvPlaceOf(top);if(place.feedback)return null;
 var s=rvOffsetIn(block,range.startContainer,range.startOffset),e=rvOffsetIn(block,range.endContainer,range.endOffset);

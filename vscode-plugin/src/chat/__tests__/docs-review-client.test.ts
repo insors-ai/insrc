@@ -314,3 +314,31 @@ test('t2/s3: DocsContent indexes sequenceDefinition off ArtifactReviewView rathe
     );
   }
 });
+
+// Found in the hand check of E202610138d4b90c9:S001: a daemon started outside the IDE has
+// no default repository, and the pane sent none, so its list read failed with "repo is required".
+test('every call names the repository it is given, and none when no folder is open', async () => {
+  const answer = (m: string): unknown =>
+    m === 'workflow.pending' ? PENDING
+      : m === 'workflow.artifactContent' ? { artifactId: 'x', kind: 'LLD', renderedMarkdown: 'b', openQuestions: [], approvable: true }
+        : { artifactId: 'x', decision: 'feedback', outcome: 'recorded', recorded: 1, entryIds: ['e1'], author: 'A' };
+  const { client, calls } = fakeIpc(answer);
+  let repo: string | undefined = '/work/repo';
+  const c = createDocsReviewClient(client, { repo: () => repo });
+  await c.pending();
+  await c.content('LLD-abc-s7');
+  await c.decide('docs/x/LLD.md', 'feedback', [{ comment: 'c' }]);
+  assert.deepEqual(calls.map((x) => x.params), [
+    { repo: '/work/repo' },
+    { repo: '/work/repo', mdPath: 'docs/epics/x/S007/LLD.md' },
+    { repo: '/work/repo', mdPath: 'docs/x/LLD.md', decision: 'feedback', comments: [{ comment: 'c' }] },
+  ]);
+  // No folder open: the key is absent, so the daemon's own default (or its error) applies.
+  for (const none of [undefined, '']) {
+    repo = none;
+    calls.length = 0;
+    await c.pending();
+    await c.content('docs/x/LLD.md');
+    assert.deepEqual(calls.map((x) => x.params), [{}, { mdPath: 'docs/x/LLD.md' }]);
+  }
+});

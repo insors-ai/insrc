@@ -1219,6 +1219,8 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   E202610138d4b90c9:S001/t12 (+8232 chars, +8238 bytes): the saved comments. The comment source
  *       gains the threads of saved comments, the margin markers and the strip; the
  *       shell gains the strip's markup above the comment panel and their styles.
+ *   E202610138d4b90c9:S001/t14 hand check (+76 chars): no comment button is offered
+ *       while no document is open (the pane then shows a notice, not a document).
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1232,9 +1234,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  121296,
-  bytes:  121361,
-  sha256: '194ae044e5f5e4ef164a73b02f51b170fd9fad085422d28fe204ced39d4d2336',
+  chars:  121372,
+  bytes:  121437,
+  sha256: '3bd1f084df869a38451a4f1d7ef7016638974e70883a9450d73033828627f104',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -6683,4 +6685,20 @@ test('docs review shell: a saved entry with no string author, timestamp or comme
     assert.deepEqual(odd.controls(), ALL_ON, 'the document is still shown and can be decided on');
     assert.ok(odd.body.children.length > 3);
   }
+});
+
+// Found in the hand check of E202610138d4b90c9:S001: with no document open the pane shows
+// a notice as its body, and selecting that text offered the comment button.
+test('docs review shell: no comment button is offered while no document is open', () => {
+  const w = runWebview({ textNodes: true });
+  w.deliver({ artifactId: '', markdown: 'docs-review unavailable: workflow.pending: repo is required', openQuestions: [], blocked: false });
+  const notice = w.body.children.find((c) => c.nodeType === 1)!;
+  const text = notice.children[0]!;
+  w.select({ startContainer: text, startOffset: 0, endContainer: text, endOffset: 11 });
+  assert.equal(w.pop.style['display'], 'none');
+  assert.deepEqual(w.controls(), { approve: 'off', reject: 'off', feedback: 'off' });
+  // With a document open the same kind of selection is offered it.
+  w.deliver(INLINE_DOC);
+  selectIn(w, blockOf(w, SUMMARY_P), 'cut to 8 lines');
+  assert.equal(w.pop.style['display'], 'block');
 });

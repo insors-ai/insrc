@@ -70,6 +70,11 @@ export interface DocsReviewClient {
   decide(mdPath: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<ReviewDecisionResult>;
 }
 
+export interface DocsReviewClientOptions {
+  /** The repository the pane reviews: the workspace folder. */
+  readonly repo?: (() => string | undefined) | undefined;
+}
+
 /** The `{ error }` arm every daemon review IPC may return in place of a result. */
 interface DaemonError {
   readonly error: string;
@@ -86,7 +91,14 @@ function isError(v: unknown): v is DaemonError {
  * than a blank pane. A review-blocked artifact is NOT an error — decide()
  * surfaces it as outcome 'withheld' with the reason, which the host relays.
  */
-export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
+export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClientOptions = {}): DocsReviewClient {
+  // Every call names the repository, so the pane does not depend on the daemon having a
+  // default one (a daemon started outside the IDE has none). Absent when no folder is open:
+  // the daemon then answers with its own "repo is required" error, which the pane shows.
+  const where = (): { repo?: string } => {
+    const repo = opts.repo?.();
+    return typeof repo === 'string' && repo !== '' ? { repo } : {};
+  };
   // id -> mdPath, retained across pending() so content() can resolve the .md
   // path the daemon requires from the artifactId the host holds (k5, daemon-tracked only).
   const mdPathById = new Map<string, string>();
@@ -96,6 +108,7 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
     async pending(): Promise<DocsArtifactSummary[]> {
       const res = await client.rpc<{ artifacts: readonly PendingArtifact[] } | DaemonError>(
         'workflow.pending',
+        where(),
       );
       if (isError(res)) throw new Error(res.error);
       mdPathById.clear();
@@ -113,7 +126,7 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
     async content(idOrPath: string): Promise<DocsContent> {
       const res = await client.rpc<ArtifactReviewView | DaemonError>(
         'workflow.artifactContent',
-        { mdPath: resolvePath(idOrPath) },
+        { ...where(), mdPath: resolvePath(idOrPath) },
       );
       if (isError(res)) throw new Error(res.error);
       return {
@@ -141,7 +154,7 @@ export function createDocsReviewClient(client: IpcClient): DocsReviewClient {
       // longer in the pending list can still be sent feedback.
       const res = await client.rpc<ReviewDecisionResult | DaemonError>(
         'workflow.reviewDecision',
-        { mdPath, decision, comments: [...comments] },
+        { ...where(), mdPath, decision, comments: [...comments] },
       );
       if (isError(res)) throw new Error(res.error);
       return res;

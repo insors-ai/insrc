@@ -4,7 +4,7 @@
     "epicHash": "8d4b90c9ab301e66",
     "storyId": "S001",
     "createdAt": "2026-10-13T12:12:45.679Z",
-    "updatedAt": "2026-10-13T12:19:23.527Z",
+    "updatedAt": "2026-10-13T12:22:06.311Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T11:21:58.998Z",
@@ -19,70 +19,102 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "The HLD, epic LLD, standalone LLD and PLAN finalizers read the feedback list of the JSON at the artifact's own path (priorFeedback, read-only) and put it into the new body, which is then rendered and serialized. The checks on the authored text (scope boundary, citations) run on the document without the carried comments, so a reviewer's wording cannot fail an authoring; the returned markdown and JSON are rendered from the body with the comments. finalizeDefine is unchanged. Suite note: with each test file in its own process the workflow and MCP suites pass (1864 tests, 0 fail, 3 skipped); run in one process (--test-isolation=none) 15 brainstorm/MCP tests fail, and they fail the same way on the commit before this task.",
+    "summary": "resolveReviewer(repoPath, deps?) is exported from the companion header module (git user.name, else OS login, else unknown, with its source) and resolveCompanionHeader's user now comes from it. ArtifactReviewView gains docPath (repo-relative .md path), contentVersion (first 16 hex of the SHA-256 of the markdown; contentVersionOf is exported), feedback (absent when none), reviewer and state; handleArtifactContent takes an optional third argument with the reviewer lookups so tests can pin them. Suites: workflow, MCP and daemon tests with one process per file: 3004 tests, 2984 pass, 19 skipped, 1 fail. The one failure is src/daemon/db/__tests__/sqlite-driver.test.ts \"temporalTrend recovers slope/intercept/R²\", which fails the same way on the commit before this task and does not touch this code. Daemon and plugin typechecks are clean.",
     "testRecord": {
       "md": "docs/standalone/rework-document-review-pane-fixed-decision-E202610138d4b90c9/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": "src/workflow/__tests__/artifact-content.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:22:06.311Z"
+      },
+      {
+        "target": {
           "file": "src/workflow/__tests__/feedback-carry-finalize.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:19:23.527Z"
+        "timestamp": "2026-10-13T12:22:06.311Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-content.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:22:06.311Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/header.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:22:06.311Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/header.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-13T12:22:06.311Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/format/bindings.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:19:23.527Z"
+        "timestamp": "2026-10-13T12:22:06.311Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/__tests__/review-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:19:23.527Z"
+        "timestamp": "2026-10-13T12:22:06.311Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:19:23.527Z"
+        "timestamp": "2026-10-13T12:22:06.311Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/tool.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:19:23.527Z"
+        "timestamp": "2026-10-13T12:22:06.311Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:19:23.527Z"
+        "timestamp": "2026-10-13T12:22:06.311Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/writer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:19:23.527Z"
+        "timestamp": "2026-10-13T12:22:06.311Z"
       },
       {
         "target": {
           "file": "src/workflow/orchestrator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-13T12:19:23.527Z"
+        "timestamp": "2026-10-13T12:22:06.311Z"
       }
     ],
-    "commit": "bb5afca9"
+    "commit": "b4760e14"
   }
 }

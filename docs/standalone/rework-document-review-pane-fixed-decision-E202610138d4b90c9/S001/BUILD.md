@@ -2,28 +2,33 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-13T12:12:45.679Z  ·  **Updated:** 2026-10-13T12:19:23.527Z
+**Standalone:** yes  ·  **Created:** 2026-10-13T12:12:45.679Z  ·  **Updated:** 2026-10-13T12:22:06.311Z
 
-**Commit:** bb5afca9
+**Commit:** b4760e14
 
 ## Summary
 
-The HLD, epic LLD, standalone LLD and PLAN finalizers read the feedback list of the JSON at the artifact's own path (priorFeedback, read-only) and put it into the new body, which is then rendered and serialized. The checks on the authored text (scope boundary, citations) run on the document without the carried comments, so a reviewer's wording cannot fail an authoring; the returned markdown and JSON are rendered from the body with the comments. finalizeDefine is unchanged. Suite note: with each test file in its own process the workflow and MCP suites pass (1864 tests, 0 fail, 3 skipped); run in one process (--test-isolation=none) 15 brainstorm/MCP tests fail, and they fail the same way on the commit before this task.
+resolveReviewer(repoPath, deps?) is exported from the companion header module (git user.name, else OS login, else unknown, with its source) and resolveCompanionHeader's user now comes from it. ArtifactReviewView gains docPath (repo-relative .md path), contentVersion (first 16 hex of the SHA-256 of the markdown; contentVersionOf is exported), feedback (absent when none), reviewer and state; handleArtifactContent takes an optional third argument with the reviewer lookups so tests can pin them. Suites: workflow, MCP and daemon tests with one process per file: 3004 tests, 2984 pass, 19 skipped, 1 fail. The one failure is src/daemon/db/__tests__/sqlite-driver.test.ts "temporalTrend recovers slope/intercept/R²", which fails the same way on the commit before this task and does not touch this code. Daemon and plugin typechecks are clean.
 
 ## Tasks validated
 
 - ✓ `t1`
 - ✓ `t2`
+- ✓ `t3`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/workflow/__tests__/feedback-carry-finalize.test.ts` — **insrc-build** (2026-10-13T12:19:23.527Z)
-- `src/workflow/artifacts/format/bindings.ts` — **insrc-build** (2026-10-13T12:19:23.527Z)
-- `src/workflow/artifacts/provenance/__tests__/review-fields.test.ts` — **insrc-build** (2026-10-13T12:19:23.527Z)
-- `src/workflow/artifacts/provenance/schema.ts` — **insrc-build** (2026-10-13T12:19:23.527Z)
-- `src/workflow/artifacts/provenance/tool.ts` — **insrc-build** (2026-10-13T12:19:23.527Z)
-- `src/workflow/artifacts/provenance/types.ts` — **insrc-build** (2026-10-13T12:19:23.527Z)
-- `src/workflow/artifacts/provenance/writer.ts` — **insrc-build** (2026-10-13T12:19:23.527Z)
-- `src/workflow/orchestrator.ts` — **insrc-build** (2026-10-13T12:19:23.527Z)
+- `src/workflow/__tests__/artifact-content.test.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/__tests__/feedback-carry-finalize.test.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifact-content.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifacts/companion/__tests__/header.test.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifacts/companion/header.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifacts/format/bindings.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifacts/provenance/__tests__/review-fields.test.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifacts/provenance/schema.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifacts/provenance/tool.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifacts/provenance/types.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/artifacts/provenance/writer.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)
+- `src/workflow/orchestrator.ts` — **insrc-build** (2026-10-13T12:22:06.311Z)

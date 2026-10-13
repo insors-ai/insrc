@@ -4,7 +4,7 @@
     "epicHash": "8d4b90c9ab301e66",
     "storyId": "S001",
     "createdAt": "2026-10-13T12:12:45.679Z",
-    "updatedAt": "2026-10-13T12:19:23.527Z",
+    "updatedAt": "2026-10-13T12:22:06.311Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T11:21:58.998Z",
     "epicSlug": "rework-document-review-pane-fixed-decision"
@@ -161,6 +161,214 @@
               },
               {
                 "title": "finalize: the prior artifact JSON is byte-identical after the finalizer has run",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "b4760e14",
+        "ranAt": "2026-10-13T12:22:06.311Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "reviewer: resolveReviewer gives the trimmed git name with source git, else the OS login with source os, else unknown, and resolveCompanionHeader's user is unchanged for the same inputs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "reviewer: resolveReviewer gives the trimmed git name with source git, else the OS login with source os, else unknown, and resolveCompanionHeader's user is unchanged for the same inputs",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+                "title": "d9f85b3c t4 — user is git user.name, else the OS login, else unknown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-content.test.ts",
+                "title": "review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-content.test.ts",
+                "title": "t1: the six pre-existing ArtifactReviewView members keep their names, types and meanings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-content.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 540,
+            "titles": [
+              {
+                "title": "handleArtifactContent: happy path — renderedMarkdown byte-equal to the .md; kind/artifactId; openQuestions; approvable",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: a standing review block-verdict -> approvable=false + blockReason",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: openQuestions absent -> empty list (not an error)",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: mdPath escaping docs/ -> { error }, and no read outside docs/",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: missing/unreadable .md -> { error }",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: missing sibling .json -> { error }",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: malformed sibling .json -> { error }",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: repo unresolved / empty mdPath -> { error } (never a partial view)",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: a symlink under docs/ escaping the tree -> { error }, target not read",
+                "result": "pass"
+              },
+              {
+                "title": "handleArtifactContent: read-only — no file created or mutated over the fixture",
+                "result": "pass"
+              },
+              {
+                "title": "t1: handleArtifactContent projects all four structured records verbatim from an HLD body carrying them",
+                "result": "pass"
+              },
+              {
+                "title": "t1: an absent body field projects as ABSENT — not null, not an empty object",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a DEF body projects functionalDefinition only and never companions",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a PLAN body's functionalDefinition projects too — the field is not gated on kind",
+                "result": "pass"
+              },
+              {
+                "title": "t1: the six pre-existing ArtifactReviewView members keep their names, types and meanings",
+                "result": "pass"
+              },
+              {
+                "title": "t1: source-scan — the daemon handler map registers no new method; workflow.artifactContent is the single read path",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a malformed structured record travels through rather than failing the read",
+                "result": "pass"
+              },
+              {
+                "title": "t1: structuredRecords projects sequenceDefinition VERBATIM from the REAL S002 ledger body",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a body WITHOUT sequenceDefinition yields no such key — never null, never {}",
+                "result": "pass"
+              },
+              {
+                "title": "t1: adding sequenceDefinition left every pre-existing projected record unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "t1: a malformed sequenceDefinition travels through as written — the read path validates nothing",
+                "result": "pass"
+              },
+              {
+                "title": "review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/header.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 497,
+            "titles": [
+              {
+                "title": "d9f85b3c t4 — projectName comes from .insrc/config.json when set",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — projectName falls back to the repo folder name with no config, or no / an empty / a non-string projectName",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — a malformed config is ignored, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — user is git user.name, else the OS login, else unknown",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — the real lookups do not throw outside a git repo",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — the date comes from the injected clock as YYYY-MM-DD HH:mm local time",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — the source doc is the artifact id linked to its markdown beside the companion",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — a well-formed source gets the hierarchical story or epic id",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — a malformed createdAt, epicHash or storyId falls back to the plain id without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — an HLD context line is the Epic plus the first sentence of its summary",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — an epic Story's LLD context line is its placement, title and value",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — a standalone LLD's context line is the story title and the LLD summary's first sentence",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t4 — with nothing to say, the context line is placement only",
+                "result": "pass"
+              },
+              {
+                "title": "reviewer: resolveReviewer gives the trimmed git name with source git, else the OS login with source os, else unknown, and resolveCompanionHeader's user is unchanged for the same inputs",
                 "result": "pass"
               }
             ],

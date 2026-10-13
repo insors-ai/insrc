@@ -2146,8 +2146,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // it is inserted; what the guard buys is that no failure here costs the
       // reviewer the body, the chooser, the notice, the open questions or the
       // controls.
+      // Found in the hand check of E202610138d4b90c9:S001: a companion that has its own tab
+      // was ALSO drawn inside the markdown. One that is offered as a tab is shown there only;
+      // the slot in the body is for a diagram or mock that has no HTML document to open.
+      `var tabbed=function(ref){return !!ref&&Array.isArray(m.documents)&&m.documents.some(function(d){return d&&d.type==='html'&&d.relPath===ref.relPath;});};` +
       `var dgSlot={state:'absent'};` +
-      `try{dgSlot=dgBuildDiagramSlot(` +
+      `try{if(!tabbed(dgPickRef(m.companions)))dgSlot=dgBuildDiagramSlot(` +
       `{erDefinition:m.erDefinition,sequenceDefinition:m.sequenceDefinition},` +
       `dgPickRef(m.companions),m.diagramAnchorSlug);}catch(e){dgSlot={state:'absent'};}` +
       `var dgPlaced='none';try{dgPlaced=dgMountSlot(dgHostEl,bodyEl,dgSlot);}catch(e){dgPlaced='none';}` +
@@ -2169,7 +2173,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // what the guard buys is that no failure here costs the reviewer the body, the
       // chooser, the notice, the open questions, the controls or the DIAGRAM.
       `var uxSlot={state:'absent'};` +
-      `try{uxSlot=uxBuildMockSlot(m.uxDefinition,uxPickRef(m.companions),m.experienceAnchorSlug);}` +
+      `try{if(!tabbed(uxPickRef(m.companions)))uxSlot=uxBuildMockSlot(m.uxDefinition,uxPickRef(m.companions),m.experienceAnchorSlug);}` +
       `catch(e){uxSlot={state:'absent'};}` +
       `var uxPlaced='none';try{uxPlaced=dgMountSlot(uxHostEl,bodyEl,uxSlot);}catch(e){uxPlaced='none';}` +
       `renderSectionChooser(secEl,stamped>0?m.sections:{anchors:[]},jumpToSection);` +

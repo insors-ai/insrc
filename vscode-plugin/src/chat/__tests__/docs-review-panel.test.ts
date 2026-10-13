@@ -1229,6 +1229,8 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  *   E202610131f74c81f:S001/t5 (+283 chars): the reload in place. A content for the document
  *       already shown keeps the scroll position of the document region, and one marked
  *       changed with a different version says the document changed on disk.
+ *   E202610138d4b90c9:S001 hand check (+224 chars): a diagram or mock that has its own tab is
+ *       not also drawn inside the markdown.
  *
  * A task that legitimately changes the shell updates these constants in the same
  * commit and says why, as t2 does here. That is the point.
@@ -1242,9 +1244,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  131697,
-  bytes:  131761,
-  sha256: 'f472bc975268cf06e5692d2cdb7dcd30e9a629d36ed1741dcc0354a25aff0a09',
+  chars:  131921,
+  bytes:  131985,
+  sha256: '832b34e59721345683d125a52b1acffc48ed700311096e057577d7592a1ce25e',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -7201,4 +7203,40 @@ test("docs review shell: a reload marked changed keeps the scroll position and t
   w.deliver({ ...DOC, contentVersion: '1111111111111111', changed: true });
   assert.equal(w.bar.result.textContent, CHANGED_LINE);
   assert.equal(scroll.scrollTop, 250);
+});
+
+// Found in the hand check of E202610138d4b90c9:S001: the diagram and the mock were drawn
+// inside the markdown as well as offered as tabs.
+test('docs review shell: a diagram or mock that has its own tab is not also drawn inside the markdown; one with no tab still is', () => {
+  const [UX, SEQ] = COMPANIONS as [typeof COMPANIONS[number], typeof COMPANIONS[number]];
+  const BASE = {
+    artifactId: 'LLD-abc-s7', markdown: '# Doc\n\nBody.\n', openQuestions: [], blocked: false,
+    sequenceDefinition: SEQ_RECORD, uxDefinition: UX_RECORD, companions: COMPANIONS,
+  };
+  const MD = { title: 'LLD.md', type: 'markdown', relPath: 'docs/epics/x/S002/LLD.md' };
+  const tabOf = (c: { relPath: string; title: string }): Record<string, unknown> => ({ title: c.title, type: 'html', relPath: c.relPath });
+  const drawn = (documents?: unknown): [boolean, boolean, number] => {
+    const w = runWebview();
+    w.deliver({ ...BASE, ...(documents !== undefined ? { documents } : {}) });
+    return [w.diagram.children.length > 0, w.experience.children.length > 0, w.tabs.children.length];
+  };
+  // No tabs (a host that sends no documents, or only the markdown): both are drawn in the body, as before.
+  assert.deepEqual(drawn(), [true, true, 0]);
+  assert.deepEqual(drawn([MD]), [true, true, 0]);
+  // Both offered as tabs: neither is drawn in the body.
+  assert.deepEqual(drawn([MD, tabOf(UX), tabOf(SEQ)]), [false, false, 3]);
+  // One offered as a tab: only the other is drawn in the body.
+  assert.deepEqual(drawn([MD, tabOf(SEQ)]), [false, true, 2]);
+  assert.deepEqual(drawn([MD, tabOf(UX)]), [true, false, 2]);
+  // A tab for some other file does not hide either; nor does a documents value of another shape.
+  assert.deepEqual(drawn([MD, { title: 'Other', type: 'html', relPath: 'docs/epics/x/S002/other.html' }]), [true, true, 2]);
+  assert.deepEqual(drawn('x').slice(0, 2), [true, true]);
+  assert.deepEqual(drawn([{ title: 'x', type: 'markdown', relPath: SEQ.relPath }]).slice(0, 2), [true, true], 'a markdown tab of that path is not its HTML tab');
+
+  // The same document posted again with its tabs: what was drawn in the body is taken out.
+  const w = runWebview();
+  w.deliver(BASE);
+  assert.ok(w.diagram.children.length > 0 && w.experience.children.length > 0);
+  w.deliver({ ...BASE, documents: [MD, tabOf(UX), tabOf(SEQ)] });
+  assert.deepEqual([w.diagram.children.length, w.experience.children.length], [0, 0]);
 });

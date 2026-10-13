@@ -36,7 +36,7 @@ import type { ExecutedExploration } from '../../explore/types.js';
 /** The five classes mapped before this contract grew, then the five new ones. */
 const CASES: ReadonlyArray<readonly [Error, string]> = [
 	[new ScopeNotIndexedError('/r/unindexed', undefined, 'no entities'), 'scope-not-indexed'],
-	[new ShaperLlmUnavailableError('down'),                              'shaper-llm-unavailable'],
+	[new ShaperLlmUnavailableError('down', 'tool loop'),                              'shaper-llm-unavailable'],
 	[new ShaperToolLoopExhausted(40),                                    'shaper-tool-loop-exhausted'],
 	[new ShaperSchemaUnrecoverable(3, ['bad schema']),                   'shaper-schema-unrecoverable'],
 	[new ShaperPromptMissingError('/p'),                                 'shaper-prompt-missing'],
@@ -181,9 +181,9 @@ test('one function maps the three scope error classes to their codes and data, a
 	}
 	// Any other error is not a scope error: the shared function says so, and the
 	// two mappings go on to their own cases.
-	for (const other of [new Error('boom'), new ShaperLlmUnavailableError('down'), 'a string', undefined, null]) {
+	for (const other of [new Error('boom'), new ShaperLlmUnavailableError('down', 'tool loop'), 'a string', undefined, null]) {
 		assert.equal(scopeErrorMapping(other), undefined);
 	}
-	assert.equal(planTreeClassify(new ShaperLlmUnavailableError('down')).code, 'shaper-llm-unavailable');
+	assert.equal(planTreeClassify(new ShaperLlmUnavailableError('down', 'tool loop')).code, 'shaper-llm-unavailable');
 	assert.equal(daemonClassify(new Error('boom')).code, 'internal-error');
 });

@@ -17,7 +17,7 @@ import {
 } from '../driver.js';
 import { ScopeKindTargetMismatchError, ScopeRefUnresolvedError } from '../invariants.js';
 
-test('ShaperLlmUnavailableError message with and without a call', () => {
+test('ShaperLlmUnavailableError message names the call, never a provider', () => {
 	const planning = new ShaperLlmUnavailableError('claude exited with 1', 'planning');
 	assert.equal(planning.message, 'The model call for planning failed: claude exited with 1');
 	assert.ok(!planning.message.includes('Ollama'));
@@ -25,10 +25,12 @@ test('ShaperLlmUnavailableError message with and without a call', () => {
 	const answer = new ShaperLlmUnavailableError('codex exited with 2', 'answer writing');
 	assert.equal(answer.message, 'The model call for answer writing failed: codex exited with 2');
 
-	// No call: the tool loop's message, unchanged.
-	const bare = new ShaperLlmUnavailableError('ECONNREFUSED');
-	assert.equal(bare.message, 'Local Ollama unavailable for shaper invocation: ECONNREFUSED');
-	assert.equal(bare.name, 'ShaperLlmUnavailableError');
+	// The tool loop and its final emit are named like the others, with no provider.
+	const loop = new ShaperLlmUnavailableError('ECONNREFUSED', 'tool loop');
+	assert.equal(loop.message, 'The model call for the tool loop failed: ECONNREFUSED');
+	assert.equal(loop.name, 'ShaperLlmUnavailableError');
+	const emit = new ShaperLlmUnavailableError('codex exited with 2', 'final structured emit');
+	assert.equal(emit.message, 'The model call for the final structured emit failed: codex exited with 2');
 });
 
 test('ShaperAnswerStepFailedError states its reason, keeps what the lookups found, and never reports retries', () => {

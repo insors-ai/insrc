@@ -26,6 +26,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
+import type { LLMProvider } from '../../../shared/types.js';
+import { registerBuiltinTools } from '../../../daemon/tools/builtins/index.js';
 
 import {
 	ShaperLlmUnavailableError,
@@ -34,6 +36,8 @@ import {
 	ShaperToolLoopExhausted,
 	_classifyOllamaErrorForTest,
 	_deriveEmptyLayersForTest,
+	_runFinalStructuredEmitForTest,
+	_runToolLoopForTest,
 	_renderUpstreamSectionForTest,
 	_stableStringifyForTest,
 } from '../driver.js';
@@ -84,26 +88,26 @@ test('stable stringify is deterministic for arrays (insertion order matters)', (
 
 test('classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError', () => {
 	const err = new ModelCallFailedError('connect ECONNREFUSED 127.0.0.1:11434');
-	const out = _classifyOllamaErrorForTest(err);
+	const out = _classifyOllamaErrorForTest(err, 'tool loop');
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 	assert.match(out.message, /ECONNREFUSED/);
 });
 
 test('classifyOllamaError("Ollama is not running. Start it...") -> ShaperLlmUnavailableError', () => {
 	const err = new ModelCallFailedError('Ollama is not running. Start it with: ollama serve');
-	const out = _classifyOllamaErrorForTest(err);
+	const out = _classifyOllamaErrorForTest(err, 'tool loop');
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError("Model not found ...") -> ShaperLlmUnavailableError', () => {
 	const err = new ModelCallFailedError('Model not found in Ollama. Pull it with: ollama pull qwen3-coder');
-	const out = _classifyOllamaErrorForTest(err);
+	const out = _classifyOllamaErrorForTest(err, 'tool loop');
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError("fetch failed") -> ShaperLlmUnavailableError (retries exhausted by provider)', () => {
 	const err = new ModelCallFailedError('fetch failed');
-	const out = _classifyOllamaErrorForTest(err);
+	const out = _classifyOllamaErrorForTest(err, 'tool loop');
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
@@ -112,30 +116,30 @@ test('classifyOllamaError("Did not receive done...") -> ShaperLlmUnavailableErro
 	// through its transient-retry budget -- so the failure is terminal
 	// from the driver's perspective.
 	const err = new ModelCallFailedError('Did not receive done or success response in stream');
-	const out = _classifyOllamaErrorForTest(err);
+	const out = _classifyOllamaErrorForTest(err, 'tool loop');
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError("ECONNRESET") -> ShaperLlmUnavailableError', () => {
 	const err = new ModelCallFailedError('socket ECONNRESET');
-	const out = _classifyOllamaErrorForTest(err);
+	const out = _classifyOllamaErrorForTest(err, 'tool loop');
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError("socket hang up") -> ShaperLlmUnavailableError', () => {
 	const err = new ModelCallFailedError('socket hang up');
-	const out = _classifyOllamaErrorForTest(err);
+	const out = _classifyOllamaErrorForTest(err, 'tool loop');
 	assert.ok(out instanceof ShaperLlmUnavailableError);
 });
 
 test('classifyOllamaError(arbitrary other Error) -> original error', () => {
 	const err = new Error('something unrelated');
-	const out = _classifyOllamaErrorForTest(err);
+	const out = _classifyOllamaErrorForTest(err, 'tool loop');
 	assert.equal(out, err);
 });
 
 test('classifyOllamaError(non-Error value) -> wraps in Error', () => {
-	const out = _classifyOllamaErrorForTest('string thrown');
+	const out = _classifyOllamaErrorForTest('string thrown', 'tool loop');
 	assert.ok(out instanceof Error);
 	assert.equal(out.message, 'string thrown');
 });
@@ -203,11 +207,10 @@ test('deriveEmptyLayers preserves the spec render order in its return', () => {
 // Typed error classes
 // ---------------------------------------------------------------------------
 
-test('ShaperLlmUnavailableError carries the cause in its message', () => {
-	const e = new ShaperLlmUnavailableError('ECONNREFUSED');
+test('ShaperLlmUnavailableError carries the call and the cause in its message', () => {
+	const e = new ShaperLlmUnavailableError('ECONNREFUSED', 'tool loop');
 	assert.equal(e.name, 'ShaperLlmUnavailableError');
-	assert.match(e.message, /Local Ollama unavailable/);
-	assert.match(e.message, /ECONNREFUSED/);
+	assert.equal(e.message, 'The model call for the tool loop failed: ECONNREFUSED');
 });
 
 test('ShaperToolLoopExhausted carries the turn count in its message', () => {
@@ -350,4 +353,55 @@ test('renderUpstreamSection: upstream task ids are sorted alphabetically', () =>
 	assert.ok(aaIdx >= 0 && bbIdx >= 0 && ccIdx >= 0);
 	assert.ok(aaIdx < bbIdx);
 	assert.ok(bbIdx < ccIdx);
+});
+
+// ---------------------------------------------------------------------------
+// The failed call is named by the call that failed (Story s5, Task t3)
+// ---------------------------------------------------------------------------
+
+/** A provider whose every model call rejects with `err`. */
+function rejectingProvider(err: unknown): LLMProvider {
+	return {
+		complete:           async () => { throw err; },
+		completeStructured: async () => { throw err; },
+	} as unknown as LLMProvider;
+}
+
+async function rejection(run: () => Promise<unknown>): Promise<unknown> {
+	try { await run(); } catch (err) { return err; }
+	assert.fail('expected the call to reject');
+}
+
+test("classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept", async () => {
+	registerBuiltinTools();   // the tool loop offers the read-only tools
+	const cli = await rejection(() => _runToolLoopForTest(
+		rejectingProvider(new Error('claude exited with 1. stderr=overloaded stdout=')),
+		[{ role: 'user', content: 'go' }], {} as Parameters<typeof _runToolLoopForTest>[2], 3,
+	));
+	assert.ok(cli instanceof ShaperLlmUnavailableError, String(cli));
+	assert.equal(cli.message, 'The model call for the tool loop failed: claude exited with 1. stderr=overloaded stdout=');
+	assert.ok(!cli.message.includes('Ollama'), 'no provider is named that the failure did not come from');
+
+	const local = await rejection(() => _runToolLoopForTest(
+		rejectingProvider(new ModelCallFailedError('Ollama is not running. Start it with: ollama serve')),
+		[{ role: 'user', content: 'go' }], {} as Parameters<typeof _runToolLoopForTest>[2], 3,
+	));
+	assert.ok(local instanceof ShaperLlmUnavailableError);
+	assert.equal(local.message, 'The model call for the tool loop failed: Ollama is not running. Start it with: ollama serve');
+});
+
+test("classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'", async () => {
+	const cli = await rejection(() => _runFinalStructuredEmitForTest(
+		rejectingProvider(new Error('codex exited with 2. stderr=boom')),
+		[{ role: 'user', content: 'go' }], 1, 1024,
+	));
+	assert.ok(cli instanceof ShaperLlmUnavailableError, String(cli));
+	assert.equal(cli.message, 'The model call for the final structured emit failed: codex exited with 2. stderr=boom');
+
+	const local = await rejection(() => _runFinalStructuredEmitForTest(
+		rejectingProvider(new ModelCallFailedError('socket hang up')),
+		[{ role: 'user', content: 'go' }], 1, 1024,
+	));
+	assert.ok(local instanceof ShaperLlmUnavailableError);
+	assert.equal(local.message, 'The model call for the final structured emit failed: socket hang up');
 });

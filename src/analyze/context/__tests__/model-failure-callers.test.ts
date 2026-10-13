@@ -78,7 +78,7 @@ test('each of the five callers classifies a CLI call failure as its model-unavai
 		assert.match(aggregatorClassify(err).message, /^aggregator-llm-unavailable: /, `aggregator: ${label}`);
 		assert.ok(classifierClassify(err) instanceof ClassifierLlmUnavailableError, `classifier: ${label}`);
 		assert.equal(summariserClassify(err), 'llm-unavailable', `summariser: ${label}`);
-		assert.ok(toolLoopClassify(err) instanceof ShaperLlmUnavailableError, `tool loop: ${label}`);
+		assert.ok(toolLoopClassify(err, 'tool loop') instanceof ShaperLlmUnavailableError, `tool loop: ${label}`);
 	}
 	for (const err of SHAPE_FAILURES) {
 		const label = err.message;
@@ -96,7 +96,7 @@ test('each of the five callers classifies a CLI call failure as its model-unavai
 		);
 		// The tool loop has no schema class of its own: it hands back
 		// the error it was given for its caller to wrap.
-		assert.equal(toolLoopClassify(err), err, `tool loop: ${label}`);
+		assert.equal(toolLoopClassify(err, 'tool loop'), err, `tool loop: ${label}`);
 	}
 });
 
@@ -106,5 +106,5 @@ test('a typed sampling failure reaches each caller\'s error as the client\'s own
 	assert.ok(!plannerClassify(err).message.includes('Model call failed:'), 'no doubled prefix');
 	assert.equal(aggregatorClassify(err).message, 'aggregator-llm-unavailable: client declined');
 	assert.match(classifierClassify(err).message, /client declined$/);
-	assert.match(toolLoopClassify(err).message, /client declined$/);
+	assert.match(toolLoopClassify(err, 'tool loop').message, /client declined$/);
 });

@@ -143,22 +143,26 @@ export interface RunShaperArgs {
 	readonly scopeDeps?:     ScopeDeps | undefined;
 }
 
-/** The call of the lookup pipeline whose model failed. */
-export type ShaperModelCall = 'planning' | 'answer writing';
+/** The shaper's model call that failed: the lookup pipeline's two calls,
+ *  or the tool loop and its final structured emit. */
+export type ShaperModelCall = 'planning' | 'answer writing' | 'tool loop' | 'final structured emit';
+
+/** How each call is named in a message. */
+const SHAPER_CALL_WORDING: Readonly<Record<ShaperModelCall, string>> = {
+	'planning':              'planning',
+	'answer writing':        'answer writing',
+	'tool loop':             'the tool loop',
+	'final structured emit': 'the final structured emit',
+};
 
 export class ShaperLlmUnavailableError extends Error {
 	/**
-	 * `call` names the pipeline call that failed. With it the message
-	 * is provider-neutral (the planning + answer-writing providers are
-	 * role-routed and need not be Ollama); without it the message is
-	 * the tool loop's, where the provider is the local one.
+	 * `call` names the call that failed. The message names no provider:
+	 * every call is role-routed and need not be Ollama, so the provider
+	 * appears only through the failure's own words in `cause`.
 	 */
-	constructor(cause: string, call?: ShaperModelCall) {
-		super(
-			call !== undefined
-				? `The model call for ${call} failed: ${cause}`
-				: `Local Ollama unavailable for shaper invocation: ${cause}`,
-		);
+	constructor(cause: string, call: ShaperModelCall) {
+		super(`The model call for ${SHAPER_CALL_WORDING[call]} failed: ${cause}`);
 		this.name = 'ShaperLlmUnavailableError';
 	}
 }
@@ -790,7 +794,7 @@ async function runToolLoop(
 				disableThinking: true,
 			});
 		} catch (err) {
-			throw classifyOllamaError(err);
+			throw classifyOllamaError(err, 'tool loop');
 		}
 
 		const toolCalls = response.toolCalls ?? [];
@@ -956,7 +960,7 @@ async function runFinalStructuredEmit(
 		);
 		return raw;
 	} catch (err) {
-		const errClass = classifyOllamaError(err);
+		const errClass = classifyOllamaError(err, 'final structured emit');
 		// classifyOllamaError returns either a ShaperLlmUnavailableError or
 		// the original error; if it's the original, treat it as a schema
 		// failure that the retry budget already burned through.
@@ -1016,7 +1020,7 @@ function previewToolOutput(output: unknown): string {
 	return oneLine.length > 200 ? oneLine.slice(0, 197) + '...' : oneLine;
 }
 
-function classifyOllamaError(err: unknown): Error {
+function classifyOllamaError(err: unknown, call: ShaperModelCall): Error {
 	if (!(err instanceof Error)) {
 		return new Error(String(err));
 	}
@@ -1026,7 +1030,7 @@ function classifyOllamaError(err: unknown): Error {
 	// What counts as a failed call is decided in one place, for every
 	// provider (model-failure.ts).
 	if (isModelCallFailure(err)) {
-		return new ShaperLlmUnavailableError(modelCallFailureDetail(err));
+		return new ShaperLlmUnavailableError(modelCallFailureDetail(err), call);
 	}
 	return err;
 }
@@ -1681,6 +1685,7 @@ function extractSoleFreeformResult(
 export const _stableStringifyForTest = stableStringify;
 export const _computeCacheKeyForTest = computeCacheKey;
 export const _classifyOllamaErrorForTest = classifyOllamaError;
+export const _runFinalStructuredEmitForTest = runFinalStructuredEmit;
 export const _deriveEmptyLayersForTest = deriveEmptyLayers;
 export const _resolveRepoLastIndexedAtForTest = resolveRepoLastIndexedAt;
 export const _buildToolDepsForTest = buildToolDeps;

@@ -11,7 +11,7 @@
  * Rows are identified by their absolute index in the transcript: rows are only ever appended, so
  * an index is stable for the life of a session.
  */
-import type { TranscriptEntry } from './session-store.js';
+import type { DiffRow, TranscriptEntry } from './session-store.js';
 
 /** Rows in a page. Fixed: not a setting. */
 export const PAGE_ROWS = 100;
@@ -45,5 +45,33 @@ export function latestWindow(transcript: readonly TranscriptEntry[], pageRows: n
 export function pageBefore(transcript: readonly TranscriptEntry[], before: number, pageRows: number = PAGE_ROWS): TranscriptPage {
   const end = Math.min(Math.max(0, Math.trunc(before)), transcript.length);
   const firstIndex = pageStart(transcript, end, Math.max(1, Math.trunc(pageRows)));
-  return { firstIndex, rows: transcript.slice(firstIndex, end) };
+  return { firstIndex, rows: latestDiffVersions(transcript, firstIndex, end) };
+}
+
+/**
+ * Story E20261013b2e8109f:S001: the rows firstIndex..end with each diff section in its latest
+ * version. A diff row that has a sid and no `replaces` is given with the content of the last row
+ * anywhere later in the transcript whose `replaces` is that sid, keeping its own sid; a row that
+ * has `replaces` is given as it is (it draws nothing). The match is on the id, never on position.
+ */
+function latestDiffVersions(transcript: readonly TranscriptEntry[], firstIndex: number, end: number): readonly TranscriptEntry[] {
+  const page = transcript.slice(firstIndex, end);
+  const wanted = new Set<string>();
+  for (const row of page) {
+    if (row.role === 'diff' && row.sid !== undefined && row.replaces === undefined) wanted.add(row.sid);
+  }
+  if (wanted.size === 0) return page;
+  const latest = new Map<string, DiffRow>();
+  for (let i = firstIndex; i < transcript.length; i++) {
+    const row = transcript[i]!;
+    if (row.role === 'diff' && row.replaces !== undefined && wanted.has(row.replaces)) latest.set(row.replaces, row);
+  }
+  if (latest.size === 0) return page;
+  return page.map((row): TranscriptEntry => {
+    if (row.role !== 'diff' || row.sid === undefined || row.replaces !== undefined) return row;
+    const newer = latest.get(row.sid);
+    if (newer === undefined) return row;
+    const { replaces: _replaces, ...content } = newer;
+    return { ...content, sid: row.sid };
+  });
 }

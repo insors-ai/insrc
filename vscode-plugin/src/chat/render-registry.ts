@@ -43,6 +43,7 @@ export type RowKind =
   | 'tool-command'
   | 'tool-result'
   | 'inline-diff'
+  | 'diff'
   | 'approval'
   | 'permission-outcome'
   | 'selection-request'
@@ -98,6 +99,7 @@ export interface RenderRegistry {
  * - transcript role 'user'      -> { kind:'user', role:'user' }        (collapsible; `meta.attachments` when it carried files)
  * - transcript role 'assistant' -> { kind:'assistant-text', role:'assistant' } (collapsible)
  * - transcript role 'marker'    -> { kind:'fallback', cssClass }       (the sc1 marker row)
+ * - transcript role 'diff'      -> { kind:'diff', meta: the row }      (the diff widget)
  *   (a persisted tool-call marker -> { kind:'tool-command' } so a replay pairs with its result)
  * - event 'assistant-delta'     -> { kind:'assistant-text', role:'assistant' } (ac2)
  * - event 'tool-call'           -> { kind:'tool-command', text: command ?? tool/mcp } (ac3; long commands collapse)
@@ -114,6 +116,8 @@ export function toViewModel(entry: TranscriptEntry | TurnEvent): RowViewModel {
         : { kind: 'user', role: 'user', text: entry.text, collapsible: true };
     }
     if (entry.role === 'assistant') return { kind: 'assistant-text', role: 'assistant', text: entry.text, collapsible: true };
+    // Story E20261013b2e8109f:S001: a diff row -> the diff widget; the row itself rides on `meta`.
+    if (entry.role === 'diff') return { kind: 'diff', text: entry.path, collapsible: false, meta: entry };
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model
     // (command line + separator + collapsed output). Single-sourced with the live-event branch below.
     if (entry.role === 'tool-result') {
@@ -396,6 +400,8 @@ export function renderRegistryWebviewSource(): string {
     `if('role' in entry){` +
     `if(entry.role==='user')return entry.attachments!==undefined&&entry.attachments.length>0?{kind:'user',role:'user',text:entry.text,collapsible:true,meta:{attachments:entry.attachments}}:{kind:'user',role:'user',text:entry.text,collapsible:true};` +
     `if(entry.role==='assistant')return {kind:'assistant-text',role:'assistant',text:entry.text,collapsible:true};` +
+    // Story E20261013b2e8109f:S001: a diff row -> the diff widget; the row itself rides on meta.
+    `if(entry.role==='diff')return {kind:'diff',text:entry.path,collapsible:false,meta:entry};` +
     // S001 (dev-chat ux polish): a replayed tool-result row -> the structured tool-result view-model.
     `if(entry.role==='tool-result')return {kind:'tool-result',text:entry.command!=null?entry.command:'',collapsible:true,meta:{command:entry.command,output:entry.output}};` +
     // S003 (dev-chat ux polish): a replayed permission-outcome row -> the resolved-chip view-model.

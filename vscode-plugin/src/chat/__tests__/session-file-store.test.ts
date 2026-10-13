@@ -7,6 +7,7 @@
  *   npx tsx --test src/chat/__tests__/session-file-store.test.ts
  */
 import { test } from 'node:test';
+import { pageBefore } from '../transcript-window.js';
 import assert from 'node:assert/strict';
 import { createFileChatSessionStore, HEAD_SUFFIX, migrateChatSessionsFromMemento, ROWS_SUFFIX } from '../session-file-store.js';
 import { sessionFileName } from '../session-output.js';
@@ -794,4 +795,45 @@ test('session file store: a user row with attachments round-trips unchanged', ()
   reopened.save(read);
   assert.deepEqual(rowsOnDisk(fake, s.id).slice(0, 3), [withFiles, blank, plain]);
   assert.deepEqual(makeStore({ fake }).store.get(s.id)!.transcript.slice(0, 3), [withFiles, blank, plain]);
+});
+
+// Story E20261013b2e8109f:S001 / t4 — diff rows through the store the extension uses.
+test("session file store: a diff row, a row that replaces it and a withdrawing row are appended by separate saves, with another writer's rows appended between them, and a new store over the same files reads them back so that pageBefore gives the latest version at the first row's place", () => {
+  const fake = fakeSessionFs();
+  const a = makeStore({ fake }).store; // this window
+  const b = makeStore({ fake }).store; // another window
+  const diff = (over: Record<string, unknown>): TranscriptEntry =>
+    ({ role: 'diff', path: 'src/a.ts', oldStart: 3, oldLines: 2, newStart: 3, newLines: 3, added: 1, removed: 0, lines: [' x', '+v1', ' y'], at: '2026-10-13T00:00:00.000Z', ...over }) as TranscriptEntry;
+  const first = diff({ sid: 'k-0' });
+  const other = diff({ sid: 'k-1', path: 'src/b.ts' });
+  const second = diff({ replaces: 'k-0', lines: [' x', '+v2', ' y'] });
+  const gone = diff({ replaces: 'k-1', path: 'src/b.ts', lines: [], added: 0, withdrawn: true });
+
+  const held = a.draft('claude');
+  held.transcript.push(say('go'), first, other);
+  a.save(held);
+  // The other window appends to the same chat, so this window's later rows land after its rows.
+  const theirs = b.get(held.id)!;
+  theirs.transcript.push(say('b1'), say('b2'));
+  b.save(theirs);
+  fake.clear();
+
+  held.transcript.push(second);
+  a.save(held);
+  held.transcript.push(gone);
+  a.save(held);
+  // Each save only appended its one new row; the rows file was never replaced.
+  assert.deepEqual(fake.ops('appendText').map((c) => c.data), [`${JSON.stringify(second)}\n`, `${JSON.stringify(gone)}\n`]);
+  assert.equal(rowsFileReplaced(fake, held.id), false);
+  // In the file the replacing rows sit after the other window's rows: positions 5 and 6, not 3 and 4.
+  assert.deepEqual(rowsOnDisk(fake, held.id), [say('go'), first, other, say('b1'), say('b2'), second, gone]);
+
+  // A store that never held the object reads every row, and the window shows each section's latest version.
+  const read = makeStore({ fake }).store.get(held.id)!;
+  assert.equal(read.transcript.length, 7);
+  const page = pageBefore(read.transcript, read.transcript.length);
+  assert.equal(page.firstIndex, 0);
+  assert.deepEqual(page.rows[1], diff({ sid: 'k-0', lines: [' x', '+v2', ' y'] }));
+  assert.deepEqual(page.rows[2], diff({ sid: 'k-1', path: 'src/b.ts', lines: [], added: 0, withdrawn: true }));
+  assert.deepEqual(page.rows.slice(3), [say('b1'), say('b2'), second, gone]);
 });

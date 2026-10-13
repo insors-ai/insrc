@@ -89,3 +89,47 @@ test('walking pageBefore from the latest window down to 0 reproduces the whole t
     assert.deepEqual(pageBefore(t, 0), { firstIndex: 0, rows: [] }, 'nothing older than index 0');
   }
 });
+
+// Story E20261013b2e8109f:S001 / t4 — a diff section is shown in its latest version.
+test('transcript window: a diff row is given with the content of the last later row that replaces its sid, wherever those rows sit; a withdrawn one as withdrawn; a row with replaces as it is; firstIndex and the row count do not change', () => {
+  const diff = (over: Record<string, unknown>): TranscriptEntry =>
+    ({ role: 'diff', path: 'a.ts', oldStart: 1, oldLines: 1, newStart: 1, newLines: 1, added: 1, removed: 0, lines: ['+v1'], at: 't', ...over }) as TranscriptEntry;
+  const say = (text: string): TranscriptEntry => ({ role: 'assistant', text, at: 't' });
+  const t: TranscriptEntry[] = [
+    { role: 'user', text: 'go', at: 't' },
+    diff({ sid: 'k-0' }), // 1: replaced twice
+    diff({ sid: 'k-1', path: 'b.ts' }), // 2: never replaced
+    say('between'),
+    diff({ replaces: 'k-0', lines: ['+v2'] }), // 4
+    diff({ sid: 'k-2', path: 'c.ts' }), // 5: withdrawn later
+    say('rows of another window'),
+    diff({ replaces: 'k-0', lines: ['+v3'], added: 3 }), // 7: the latest version of k-0
+    diff({ replaces: 'k-2', path: 'c.ts', lines: [], withdrawn: true }), // 8
+    diff({ replaces: 'k-9', lines: ['+orphan'] }), // 9: names no first row
+  ];
+  const before = JSON.stringify(t);
+  const w = latestWindow(t);
+  assert.equal(w.firstIndex, 0);
+  assert.equal(w.rows.length, t.length);
+  // The first row of k-0 carries the latest content, keeps its sid and has no replaces.
+  assert.deepEqual(w.rows[1], diff({ sid: 'k-0', lines: ['+v3'], added: 3 }));
+  assert.equal('replaces' in w.rows[1]!, false);
+  assert.deepEqual(w.rows[2], t[2]);
+  // The withdrawn section's first row is given as withdrawn.
+  assert.deepEqual(w.rows[5], diff({ sid: 'k-2', path: 'c.ts', lines: [], withdrawn: true }));
+  // Rows with replaces, the orphan included, are given as they are.
+  for (const i of [4, 7, 8, 9]) assert.deepEqual(w.rows[i], t[i]);
+  assert.equal(JSON.stringify(t), before, 'the transcript is not changed');
+
+  // An older page whose replacing rows lie in a later page still shows the latest version.
+  const page = pageBefore(t, 3);
+  assert.equal(page.firstIndex, 0);
+  assert.equal(page.rows.length, 3);
+  assert.deepEqual(page.rows[1], diff({ sid: 'k-0', lines: ['+v3'], added: 3 }));
+  // A page that starts after the first row: its replacing rows pass through, nothing to substitute.
+  const tail = pageBefore(t, 10, 3);
+  assert.deepEqual(tail.rows, t.slice(tail.firstIndex, 10));
+  // A transcript with no diff rows is cut exactly as before.
+  const plain = rows(250, (i) => i % 20 === 0);
+  assert.deepEqual(pageBefore(plain, 250).rows, plain.slice(pageBefore(plain, 250).firstIndex, 250));
+});

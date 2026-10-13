@@ -68,7 +68,42 @@ export type TranscriptEntry =
       /** The chosen option labels (in confirm order). */
       readonly chosen: readonly string[];
       readonly at: string;
+    }
+  | {
+      /**
+       * Story E20261013b2e8109f:S001: one section of the diff of what a turn changed, drawn as a
+       * widget. Rows are only ever pushed, so a section that changes again is saved as a NEW row:
+       * the section's first row carries `sid`, unique in the transcript, and each later version
+       * carries `replaces` with that sid (and no sid of its own). A row with `replaces` is never
+       * drawn at its own place; the window cut (transcript-window.ts) gives the latest version at
+       * the first row's place. The link is by id, never by position: another window's rows can sit
+       * before this window's new rows in the file.
+       */
+      readonly role: 'diff';
+      readonly sid?: string;
+      readonly replaces?: string;
+      /** As git names it: relative to the workspace folder, with forward slashes. */
+      readonly path: string;
+      readonly oldStart: number;
+      readonly oldLines: number;
+      readonly newStart: number;
+      readonly newLines: number;
+      /** Added and removed lines of the whole section, also when `lines` is cut. */
+      readonly added: number;
+      readonly removed: number;
+      /** The diff lines with their ' ', '+', '-' or '\\' prefix (at most 400). */
+      readonly lines: readonly string[];
+      /** How many diff lines were left out of `lines`. */
+      readonly omitted?: number;
+      readonly binary?: true;
+      readonly fileState?: 'new' | 'deleted';
+      /** The section is gone (the change was undone): the widget is not drawn. */
+      readonly withdrawn?: true;
+      readonly at: string;
     };
+
+/** The saved row of one diff section. */
+export type DiffRow = Extract<TranscriptEntry, { role: 'diff' }>;
 
 export interface ChatSession {
   readonly id: string;

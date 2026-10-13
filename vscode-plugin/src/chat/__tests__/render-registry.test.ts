@@ -239,6 +239,10 @@ test('parity: eval(webview toViewModel) equals host toViewModel for every sample
     { role: 'assistant', text: 'yo', at: 't' },
     { role: 'marker', text: 'done', cssClass: 'insrc-term__marker--done', at: 't' },
     { role: 'marker', text: 'plain', at: 't' },
+    // Story E20261013b2e8109f:S001: a diff row, a later version of one and a withdrawn one.
+    { role: 'diff', sid: 'k-0', path: 'src/a.ts', oldStart: 1, oldLines: 2, newStart: 1, newLines: 3, added: 1, removed: 0, lines: [' a', '+b', ' c'], at: 't' },
+    { role: 'diff', replaces: 'k-0', path: 'src/a.ts', oldStart: 1, oldLines: 2, newStart: 1, newLines: 2, added: 1, removed: 1, lines: ['-a', '+b', ' c'], omitted: 3, fileState: 'new', at: 't' },
+    { role: 'diff', replaces: 'k-0', path: 'i.png', oldStart: 0, oldLines: 0, newStart: 0, newLines: 0, added: 0, removed: 0, lines: [], binary: true, withdrawn: true, at: 't' },
     // ISSUE-1163888072faa9f2: a persisted tool-call marker replays as the tool row.
     { role: 'marker', text: 'Bash', cssClass: 'insrc-term__marker--tool', at: 't' },
     { kind: 'assistant-delta', turnId: 't', text: 'd' },
@@ -1097,4 +1101,17 @@ test("render registry: a user row with attachments renders a chip per attachment
   // An assistant row never shows chips, whatever its meta holds.
   const assistant = reg.renderRow({ kind: 'assistant-text', role: 'assistant', text: 'yo', collapsible: true, meta: { attachments: [image] } })!;
   assert.equal(findByClass(assistant, 'insrc-attchips'), undefined);
+});
+
+// Story E20261013b2e8109f:S001 / t4 — the diff row's view-model.
+test('toViewModel: a diff row maps to the diff kind in the host and in the webview mirror', () => {
+  const row: TranscriptEntry = { role: 'diff', sid: 'k-3', path: 'src/x y.ts', oldStart: 4, oldLines: 2, newStart: 4, newLines: 3, added: 1, removed: 0, lines: [' a', '+b', ' c'], at: 't' };
+  const vm = toViewModel(row);
+  assert.deepEqual(vm, { kind: 'diff', text: 'src/x y.ts', collapsible: false, meta: row });
+  const { reg } = makeRegistry();
+  assert.deepEqual(reg.toViewModel(row), vm);
+  // A later version and a withdrawn one keep their fields for the renderer to act on.
+  const later: TranscriptEntry = { ...row, sid: undefined, replaces: 'k-3', withdrawn: true, lines: [] } as TranscriptEntry;
+  assert.deepEqual(reg.toViewModel(later), toViewModel(later));
+  assert.equal((toViewModel(later).meta as { replaces: string }).replaces, 'k-3');
 });

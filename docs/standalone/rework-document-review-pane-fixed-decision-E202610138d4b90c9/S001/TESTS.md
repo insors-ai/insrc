@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -150,3 +150,26 @@ Run at 2026-10-13T12:28:11.942Z on commit `4e4fca41`. Tests check: **passed**. 8
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/__tests__/review-decision.test.ts` | 0 | 8 | 0.5 s |  |
+
+## t5
+
+Run at 2026-10-13T12:31:31.992Z on commit `7fda274d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` |
+
+**unit: turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` |
+| pass | a failing resume keeps the cursor saved | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` | 0 | 30 | 1.6 s |  |

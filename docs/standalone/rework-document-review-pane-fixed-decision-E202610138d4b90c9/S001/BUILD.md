@@ -2,13 +2,13 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-13T12:12:45.679Z  ·  **Updated:** 2026-10-13T12:28:11.942Z
+**Standalone:** yes  ·  **Created:** 2026-10-13T12:12:45.679Z  ·  **Updated:** 2026-10-13T12:31:31.992Z
 
-**Commit:** 4e4fca41
+**Commit:** 7fda274d
 
 ## Summary
 
-New src/workflow/review-decision.ts with handleReviewDecision(params, repoEnv, deps?) and the 'workflow.reviewDecision' handler in src/daemon/index.ts. It resolves the artifact from its .md with the same docs/ guard as workflow.artifactContent, validates the whole request first (decision, comments list, 200 comments, 10,000 characters, file is the .md or a listed companion, anchor shape, feedback needs a comment, approve and reject need a pending artifact), resolves the author with resolveReviewer, records the decision (approveWorkflowTarget for the one artifact, rejectArtifactByJsonPath with the first comment that has no anchor or the default reason, nothing for feedback) and then appends the comments in one appendFeedbackBatch call with kind comment, one batch id and the decision that took effect. Two things beyond the design's wording, both additive: the result carries an optional followOn (what the approval of a bugfix issue set off, as workflow.approve reports it), run after the comments are saved and never failing the decision; and docPathOf is exported from artifact-content.ts so the two modules compute the document path the same way. A malformed anchor is refused as an invalid request. Suites (workflow, MCP, daemon; one process per file): 1 failure, src/daemon/db/__tests__/sqlite-driver.test.ts "temporalTrend recovers slope/intercept/R²", which fails the same way without this task's changes. The runner's total count varied between runs of the same code (2958 to 3004 with --test-force-exit); the failure count did not.
+vscode-plugin/src/chat/turn-lifecycle.ts: TurnLifecycle gains busy(). It is true from start() until the turn's terminal event has been handed to the sink (set false before onTerminal), or until start returns on any other path; a superseded turn's end leaves it true because the newer turn owns it; stop(), detach() and invalidate() set it false at once; a follow counts while it is read and not aborted. FollowSink.onEnd now takes the outcome 'ended' or 'failed' and is called once on either path, after the follow is no longer in progress; a follow that stop() or detach() ended is not reported. A throwing onEnd is logged. The chat host's follow sink returns early on 'failed', so its behaviour is unchanged in this task (task 6 adds the drain). The existing test 'a failing resume keeps the cursor saved' was updated: it now expects the failed end to be reported, and still checks that the cursor stays saved. Plugin typecheck clean. Plugin suite: 1208 tests, 1198 pass, 8 skipped, 2 fail; both failures are in src/config/__tests__/manifest-catalog.test.ts and fail the same way without this task's changes.
 
 ## Tasks validated
 
@@ -16,23 +16,27 @@ New src/workflow/review-decision.ts with handleReviewDecision(params, repoEnv, d
 - ✓ `t2`
 - ✓ `t3`
 - ✓ `t4`
+- ✓ `t5`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/daemon/index.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/__tests__/artifact-content.test.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/__tests__/feedback-carry-finalize.test.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/__tests__/review-decision.test.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifact-content.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifacts/companion/__tests__/header.test.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifacts/companion/header.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifacts/format/bindings.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifacts/provenance/__tests__/review-fields.test.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifacts/provenance/schema.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifacts/provenance/tool.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifacts/provenance/types.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/artifacts/provenance/writer.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/orchestrator.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
-- `src/workflow/review-decision.ts` — **insrc-build** (2026-10-13T12:28:11.942Z)
+- `src/daemon/index.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/__tests__/artifact-content.test.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/__tests__/feedback-carry-finalize.test.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/__tests__/review-decision.test.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifact-content.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifacts/companion/__tests__/header.test.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifacts/companion/header.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifacts/format/bindings.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifacts/provenance/__tests__/review-fields.test.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifacts/provenance/schema.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifacts/provenance/tool.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifacts/provenance/types.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/artifacts/provenance/writer.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/orchestrator.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `src/workflow/review-decision.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)
+- `vscode-plugin/src/chat/turn-lifecycle.ts` — **insrc-build** (2026-10-13T12:31:31.992Z)

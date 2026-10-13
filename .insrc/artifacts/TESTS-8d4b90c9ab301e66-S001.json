@@ -4,7 +4,7 @@
     "epicHash": "8d4b90c9ab301e66",
     "storyId": "S001",
     "createdAt": "2026-10-13T12:12:45.679Z",
-    "updatedAt": "2026-10-13T12:28:11.942Z",
+    "updatedAt": "2026-10-13T12:31:31.992Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-13T11:21:58.998Z",
     "epicSlug": "rework-document-review-pane-fixed-decision"
@@ -524,6 +524,176 @@
               },
               {
                 "title": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "7fda274d",
+        "ranAt": "2026-10-13T12:31:31.992Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
+                "title": "turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
+                "title": "turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
+                "title": "a failing resume keeps the cursor saved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1578,
+            "titles": [
+              {
+                "title": "start waits for the session lease, reports waiting, runs, and releases the lease when the process exits",
+                "result": "pass"
+              },
+              {
+                "title": "a second start drops a turn still waiting for its lease",
+                "result": "pass"
+              },
+              {
+                "title": "a superseded turn reports nothing, reads to its end and clears its cursor",
+                "result": "pass"
+              },
+              {
+                "title": "a lease granted after the turn stopped being current is released",
+                "result": "pass"
+              },
+              {
+                "title": "a lock failure and a missing adapter are reported through onError",
+                "result": "pass"
+              },
+              {
+                "title": "a beforeRun failure is reported, the session saved and the lease released",
+                "result": "pass"
+              },
+              {
+                "title": "the cursor is saved on spawn, throttled on progress and cleared before onTerminal",
+                "result": "pass"
+              },
+              {
+                "title": "invalidate and a closed panel suppress all sink calls; live names the turn being read",
+                "result": "pass"
+              },
+              {
+                "title": "a panel closed while a turn is read is told nothing more",
+                "result": "pass"
+              },
+              {
+                "title": "stop cancels the provider turn and stops the live process; idempotent with nothing running",
+                "result": "pass"
+              },
+              {
+                "title": "stop and detach drop a turn waiting for its lease",
+                "result": "pass"
+              },
+              {
+                "title": "detach leaves a session-file turn running with its cursor saved and stops a pipe turn",
+                "result": "pass"
+              },
+              {
+                "title": "stop continues past a failing cancel or process stop",
+                "result": "pass"
+              },
+              {
+                "title": "follow skips a running turn, a turn already followed and a turn owned by a live host",
+                "result": "pass"
+              },
+              {
+                "title": "follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd",
+                "result": "pass"
+              },
+              {
+                "title": "a failing resume keeps the cursor saved",
+                "result": "pass"
+              },
+              {
+                "title": "stop ends a followed turn's process; detach leaves it running",
+                "result": "pass"
+              },
+              {
+                "title": "a detached session-file turn is resumed by follow",
+                "result": "pass"
+              },
+              {
+                "title": "trySaveSession logs a failing save and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "a generator whose cleanup throws when the turn finishes it is not an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "a turn superseded or stopped while beforeRun runs starts no CLI",
+                "result": "pass"
+              },
+              {
+                "title": "a superseded turn's end saves its cleared cursor and keeps its native session",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing onTerminal is logged, still finishes the generator and is not a turn error",
+                "result": "pass"
+              },
+              {
+                "title": "an aborted follow unwinding late does not drop the next follow's process, so Stop still ends it",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing onEvent is reported and the turn's generator is finished",
+                "result": "pass"
+              },
+              {
+                "title": "a failing onError report is logged and start never rejects",
+                "result": "pass"
+              },
+              {
+                "title": "a failing follow onEvent is logged and the follow still ends the turn",
+                "result": "pass"
+              },
+              {
+                "title": "a turn whose output ends without a done or error event ends as an error",
+                "result": "pass"
+              },
+              {
+                "title": "turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true",
+                "result": "pass"
+              },
+              {
+                "title": "turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called",
                 "result": "pass"
               }
             ],

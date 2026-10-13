@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791894330682-kjiql9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-13T12:25:30.726Z",
+    "model": "claude:opus",
+    "elapsedMs": 31404,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c9d0c355d4719346",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-13T11:57:18.047Z",
+    "epicSlug": "release-review-wait-timer-when-transport",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "c9d0c355d4719346",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/shared/__tests__/review-stream.test.ts",
+        "src/shared/review-stream.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/shared/review-stream.ts:225",
+            "message": "The new branch in runReviewStream (a transport that throws while opening now settles as 'unreachable' and releases the wait timer and abort listener) has a test, but its pass-state cannot be confirmed, so treat it as present but unverified. The graph shows no tests reaching this symbol (testsReaching is empty), but the entity is a diff-level file node (entityId 'diff:…'), so that empty edge list reflects how the change was indexed, not a missing test. The same change adds the test 'shared review request: a transport that throws while opening settles unreachable and releases its wait timer and abort listener' in src/shared/__tests__/review-stream.test.ts:106. That test calls runReviewStream with a transport that throws on open. It checks the 'unreachable' failure and its exact message, that clearTimer ran once, and that the abort-listener count returned to 0. So the new catch path is directly exercised. There is no build record, so it is not known whether this test passes.",
+            "expectationRef": "runReviewStream: try/catch around transport(sink), the throws-while-opening path",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

@@ -487,6 +487,8 @@ A new file .insrc/artifacts/COMMENTS-<artifactId>.json holds review threads: eac
 
 - `q9bc28512` — Should comments saved by the pane's earlier request-changes button, which are stored as resolved open questions, be shown in the new history? Recommended: no; they stay in the document's resolved questions.
   - **resolved**: Exclude legacy comments — Chosen by the user in chat on 2026-10-13 (option 1): the history shows only comments saved the new way; the older request-changes notes stay in the document's resolved questions. _(2026-10-13T12:00:26.006Z)_
+- `qf55cf7b1` — The frame was run in VS Code with one sequence-diagram companion. The other companion kinds (er-model, ux-mock, component-dependency, mocks) were not each run. Recommended: check one of each in the build's hand check; a page that does not draw still shows its path.
+  - **resolved**: Hand-check one of each kind in the build — Answered by the user in chat on 2026-10-13: apart from the UI mocks, the other companions are mermaid diagrams and should behave like the sequence diagram that was run. So the build's hand check opens a UI mock and one other mermaid diagram besides the sequence diagram, and records the result. The user also confirmed the display: each additional artifact is its own tab, with the full HTML loaded in it. _(2026-10-13T12:03:08.537Z)_
 
 ## Citations
 

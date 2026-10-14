@@ -70,6 +70,7 @@ settleQueued(): void  // in chat-panel.ts; resolves the queued message's TurnOut
 **Postconditions:**
 - acted:false only when no acting event was seen before the failure
 - the 'the chat no longer exists' failure stays acted:false with no cause, so it is never retried
+- every failed turn's cause and error text are logged through the chat's logger, so a missed classifier pattern is visible; an unmatched text is 'other' and ends failed
 
 ### 2.3 `finish`
 
@@ -158,7 +159,7 @@ runTurn(text: string, ..., opts?: { attachments?: ...; suppressEcho?: boolean; s
 - the message is a retried queued message (attempts > 0)
 
 **Postconditions:**
-- the stored transcript holds one user row for the message after any number of retries
+- with this version's runner on every window, the stored transcript holds one user row for the message after any number of retries (a retry run by a previous-plugin window adds a second row; see Backward compat)
 - suppressEcho alone is not used for this: it guards only the live echo, startTurn still pushes the row
 - the prompt is still sent to the CLI (a retry must re-send it), also on a resumed native session
 - existing: runTurn as S001 and earlier built it; the option is new and additive
@@ -196,6 +197,26 @@ persistInfo(s: ChatSession, turnId: string, text: string): void  // new helper i
 - additive: every existing consumer of 'done' ignores the new field and renders as before
 - cli-adapter.ts's two mappers set it (claude: obj.result when is_error is true; codex: the error text of a result with an error) and both doneEvent wrappers (live and resumed turn) carry it through with the session id
 - onTerminal in chat-panel.ts treats done with ok:false as a failure: q.error = message ?? 'the turn ended with an error', so settleQueued resolves failed, not done
+
+### 2.10 `finishNow`
+
+```typescript
+finishNow(seq: number, outcome: TurnOutcome): boolean  // existing in chat-queue-worker.ts; BUSY_GIVE_UP_MS is the constant S004 adds
+```
+
+**Parameters:**
+- `seq: number` — the message whose outcome is written
+- `outcome: TurnOutcome` — the outcome to write
+
+**Returns:** `boolean` — true when finish and release were written; false when the store was busy, and the worker keeps the outcome in pendingFinish and tries again each tick
+
+**Errors:**
+- `StoreBusy` when the write waited past the busy timeout
+
+**Postconditions:**
+- the retry of a busy outcome write is bounded: after BUSY_GIVE_UP_MS (60000 ms) of failed attempts the worker stops retrying, logs an error and shows one chat note saying the queue could not record the message's result and that reloading the window recovers it
+- after the give-up the message stays processing and the lease unheartbeated; a reload recovers it through S003's rule (same windowKey, the old process gone: the lease is freed at once, the message fails with a resend, the queue moves on)
+- existing behaviour (keep the outcome, retry each tick, before any new message is taken) is unchanged inside the bound
 
 ## 3. Data model changes
 
@@ -245,10 +266,10 @@ No schema change (schema version stays 2). attempts and next_attempt_at already 
   - Detection: finish sees attempts already at MAX_INFRA_RETRIES (3) when the third retry fails
   - Response: failed with the error; the next message becomes the head and runs (ac3)
   - User impact: failed with the error and a resend
-- **The store is busy when the failed outcome is written** (recoverable)
-  - Detection: StoreBusy from finish; finishNow keeps the outcome in pendingFinish and tries again each tick, before any new message is taken
-  - Response: the retrying row appears a poll later; nothing is half written because state, attempts, time and lease are one transaction
-  - User impact: the retry wait starts a poll late
+- **The store stays busy when a turn's outcome is written** (recoverable)
+  - Detection: StoreBusy from finish; finishNow keeps the outcome in pendingFinish and tries again each tick, before any new message is taken, for at most BUSY_GIVE_UP_MS (60 s)
+  - Response: inside the bound the retrying row simply appears a poll later (state, attempts, time and lease are one transaction, nothing is half written); at the bound the worker stops retrying, logs an error and shows a chat note asking the user to reload the window. The reloaded window frees the lease at once (S003's same-windowKey rule), the message fails with a resend and the queue moves on
+  - User impact: a brief conflict delays the retry wait by a poll; a persistent one shows a note after 60 s and one reload recovers
 - **The user presses retry-now on a row that has meanwhile been taken, cancelled or finished** (recoverable)
   - Detection: retryNow's UPDATE matches only a row still in state retrying
   - Response: retryNow returns false and act answers with a note; nothing changes
@@ -294,7 +315,7 @@ No schema change (schema version stays 2). attempts and next_attempt_at already 
   - Subjects: `finish: an infrastructure failure before acting becomes retrying with attempts 1 and nextAttemptAt now plus 10 s, keeps its seq and error, and releases the lease`, `finish: attempts 1 and 2 use 1 min and 5 min, and a failure at attempts 3 becomes failed with the error`, `finish: acted true, cause auth, cause other or a missing cause becomes failed with the error and is never retrying`, `retryNow: a retrying row becomes due at once with attempts unchanged; any other row returns false`
   - Fixtures: `repo() helper opening several stores on one file with a controllable clock`
 - **unit** — Prove the worker and the runner carry the outcome and the action through, with fake timers
-  - Subjects: `worker: a retrying head is not taken before its due time, holds the queue behind it, and runs when due`, `worker: a message that fails three infrastructure retries ends failed and the next message runs`, `worker: act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note`, `runner: a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause`, `runner: a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI`, `runner: a retry stores and posts one 'retrying (attempt n of 3)' line, still in the stored transcript after a reload,, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text`, `runner: an auth failure stores and posts a sign-in line in the chat`, `cli-adapter: a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message`, `runner: a claude is_error result with an overload text before any tool call is reported failed with the overload cause and is retried; the same after a file edit ends failed`
+  - Subjects: `worker: a retrying head is not taken before its due time, holds the queue behind it, and runs when due`, `worker: a message that fails three infrastructure retries ends failed and the next message runs`, `worker: act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note`, `runner: a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause`, `runner: a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI`, `runner: a retry stores and posts one 'retrying (attempt n of 3)' line, still in the stored transcript after a reload,, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text`, `runner: an auth failure stores and posts a sign-in line in the chat`, `cli-adapter: a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message`, `runner: a claude is_error result with an overload text before any tool call is reported failed with the overload cause and is retried; the same after a file edit ends failed`, `worker: a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend`, `runner: every failed turn's cause and error text are logged`
   - Fixtures: `fakeTime`, `gatedRunner`, `the chat host test harness of chat-queue-runner.test.ts`
 - **unit** — Prove the outbox row and the webview draw a retrying message
   - Subjects: `outbox projection: a retrying row carries attempt and nextAttemptAt`, `webview: a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq`
@@ -316,7 +337,7 @@ No schema change (schema version stays 2). attempts and next_attempt_at already 
 
 **State before:** Every queued turn that ends with an error is final: settleQueued reports failed with acted always true and no cause, and the store's finish() writes failed for every failed outcome, so the retrying state, attempts and next_attempt_at exist in the schema and in the readers (LIVE_HEAD, acknowledge, the outbox projection) but nothing writes them (read:runner-failure-path, read:store-retry-surface). The outbox draws a cancel button for a retrying row but no retry-now, attempt text or countdown, and the worker's act has no retry-now (read:worker-and-outbox). A claude or codex result with is_error is mapped to done ok:false with its text dropped, so a provider failure that arrives as a result is recorded as done (read:failure-sources, cli-adapter.ts mappers; chat-panel.ts onTerminal).
 
-**State after:** A pure classifier and an acted tracker feed the failed outcome; finish() writes retrying (attempts+1, due 10 s, 1 min or 5 min later, error kept, lease released) for an infrastructure failure that has not acted and has used fewer than 3 retries, and failed otherwise; retryNow and the worker's retry-now action make a retrying row due at once; the outbox row shows attempt n of 3, a countdown, retry-now and cancel; a retried turn is started with the new skipUserRow option (so the stored transcript keeps one user row); an auth failure stores a sign-in line in the chat. Schema version stays 2. A done event with ok:false carries the provider's text and is treated as a failed turn.
+**State after:** A pure classifier and an acted tracker feed the failed outcome; finish() writes retrying (attempts+1, due 10 s, 1 min or 5 min later, error kept, lease released) for an infrastructure failure that has not acted and has used fewer than 3 retries, and failed otherwise; retryNow and the worker's retry-now action make a retrying row due at once; the outbox row shows attempt n of 3, a countdown, retry-now and cancel; a retried turn is started with the new skipUserRow option (so the stored transcript keeps one user row); an auth failure stores a sign-in line in the chat. Schema version stays 2. A done event with ok:false carries the provider's text and is treated as a failed turn. A persistently busy outcome write stops after 60 s with a chat note.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
@@ -327,9 +348,10 @@ No schema change (schema version stays 2). attempts and next_attempt_at already 
 3. Carry the provider's error text on done(ok:false) in both result mappers and the doneEvent wrappers, and make onTerminal treat done ok:false as a failure so settleQueued resolves failed; this alone turns a failed claude or codex turn from done into failed (a defect fix) before any retry exists — ↩ rollbackable
 4. Make the chat host's runner track acted from the turn's events, classify the error and report acted and cause; add the skipUserRow option to runTurn/startTurn and use it for a retried message; store and post the retry line and the sign-in line (a new persistInfo helper, since postInfo is live-only) — ↩ rollbackable
 5. Add retry-now to the worker's act and to the chat host's outbox action handling, and draw attempt text, a countdown and a retry-now button on a retrying row in the webview — ↩ rollbackable
-6. Hand check with a real provider failure: wait, countdown, retry-now, and a failure after an edit staying failed — ↩ rollbackable
+6. Bound the worker's retry of a busy outcome write at BUSY_GIVE_UP_MS (60 s) with a chat note and reload recovery, and log every failed turn's cause and text — ↩ rollbackable
+7. Hand check with a real provider failure: wait, countdown, retry-now, and a failure after an edit staying failed — ↩ rollbackable
 
-**Backward compat:** No schema change and no change to a signature another story or the host calls: finish() keeps its signature and its outcomes (a failed outcome without a cause or with acted true ends failed as before), retryNow and the 'retry-now' action are additive. Mixed versions, stated explicitly: a window still on the previous plugin never writes a retrying row and ends every failure as failed; it reads and runs a retrying row written by a new window exactly as S001 built it (a retrying head waits until its due time, then runs), so the two versions interoperate on one file.
+**Backward compat:** No schema change and no change to a signature another story or the host calls: finish() keeps its signature and its outcomes (a failed outcome without a cause or with acted true ends failed as before), retryNow and the 'retry-now' action are additive. Mixed versions, stated explicitly: a window still on the previous plugin never writes a retrying row and ends every failure as failed; it reads and runs a retrying row written by a new window exactly as S001 built it (a retrying head waits until its due time, then runs), so the two versions interoperate on one file. One mixed-version caveat: a retrying message that a previous-plugin window takes (a retrying row written by a new window, run by an old one) is started by the old runner without skipUserRow, so that run adds a second user row to the transcript. Queue state is unaffected. It is accepted: it needs a window left on the old plugin after an update, VS Code asks for the reload, and the duplicate is a cosmetic transcript row.
 
 ## 8. Alternatives considered
 
@@ -367,14 +389,14 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
 
 ## 10. Open questions
 
-- Decision for the owner: a turn that streamed assistant text but made no tool call, command or edit before an infrastructure failure is retried (nothing it did repeats), and its partial text stays in the transcript next to the retried output with a 'retrying' line between. The alternative is to treat any streamed output as acting, which would never retry a turn that failed mid-answer. This LLD retries it.
-- Decision for the owner: a CLI that is not installed (ENOENT, 'CLI not found') is classified 'other' and fails at once, although the Story says a CLI that could not start is retried. Waiting 10 s, 1 min and 5 min cannot install a binary, so only passing start-up failures (for example EAGAIN or a busy system) are 'spawn'. Confirm this reading.
-- The classifier's patterns are a judgment call written from the messages cli-adapter.ts produces and the daemon's isTransientCliError; they should be checked against real provider failure texts at the hand check, and an unmatched text fails (is never retried) rather than guessing.
-- FR004 (a persisting conflict on the queue's own store is refused with a note) is met for enqueue (a busy store is refused with BUSY_NOTE after the busy timeout) but a failed outcome's write is retried each tick without a limit while the lease stays held; this LLD keeps that S001 behaviour and does not add a refusal for finish.
-- Epic constraints k1-k5 were not scored individually against the alternatives; none is contradicted.
-- The invariantsToPreserve cite HLD assumption ids (c11, c12, c13, c3) rather than analyze-bundle ids.
-- retryNow on sc1 and the 'retry-now' action on sc4 are additive to the HLD sketches, and completing 'outbox-retry-now' on sc5 (owned by S002, named but not built there) is done here; amendments to record these are to be filed for the owner's approval.
-- Behaviour change to confirm: with S004 a claude or codex turn that ends with an is_error result is now recorded as failed (with a resend) instead of done. Until now such a turn was deleted from the queue as if it had succeeded (the user saw the error in the chat only).
+- RESOLVED by the owner: a turn that streamed text but made no tool call, command or edit before an infrastructure failure is retried; anything the agent did with a tool call, command or edit is never retried. The partial text stays in the transcript with a stored 'retrying' line before the retried output.
+- RESOLVED by the owner: a CLI that is not installed (ENOENT, 'CLI not found') is classified 'other' and fails at once with the install hint and a resend, not retried.
+- RESOLVED by the owner: the retry of a busy outcome write is bounded at 60 s, then a chat note asks for a reload, and the reload frees the lease through S003's rule (FR004; enqueue was already bounded by the busy timeout and refused with a note).
+- RESOLVED by the owner: the classifier ships with conservative patterns written from the adapter's messages and the daemon's isTransientCliError; an unmatched text is never retried, every failed turn's cause and text are logged, and the live hand check confirms the patterns against real failures.
+- RESOLVED by the owner: a claude or codex turn that ends with an is_error result is recorded as failed with a resend (the text carried on done ok:false), not as done as S001 recorded it.
+- RESOLVED by the owner: the additive additions (retryNow on sc1, the retry-now action on sc4, completing outbox-retry-now on sc5, and S003's) stay recorded in the LLDs; HLD amendments are filed in one batch at the end of the Epic.
+- RESOLVED by the owner: Epic constraints k1-k5 are scored in the plan's closing task, not in the LLD.
+- RESOLVED by the owner: the invariantsToPreserve keep the HLD assumption ids (c11, c12, c13, c3); the plan carries a crosswalk to the analyze bundles.
 
 <!-- insrc:review -->
 
@@ -382,7 +404,7 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
 
 ### ✅ Review `PASS` — design.story (design.story)
 
-**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-14T16:33:25.066Z
+**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-14T17:02:45.193Z
 
 Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
 

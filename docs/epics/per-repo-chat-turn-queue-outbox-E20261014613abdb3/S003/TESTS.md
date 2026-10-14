@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -182,13 +182,13 @@ Run at 2026-10-14T15:15:55.601Z on commit `4a477cb3`. Tests check: **passed**. 5
 
 ## t7
 
-Run at 2026-10-14T16:13:06.155Z on commit `8bf26ad9`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-14T16:16:20.391Z on commit `fca9d67c`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
-**integration: chat-queue-store.test.ts: enqueue and resendFrom at QUEUE_RECORD_BOUND are refused with FULL_NOTE and leave every row**
+**integration: chat-queue-store.test.ts: at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces its own old row, and no row is lost**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | enqueue and resendFrom at QUEUE_RECORD_BOUND are refused with FULL_NOTE and leave every row | `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` |
+| pass | at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces its own old row, and no row is lost | `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` |
 
 **unit: chat-queue-worker.test.ts: submit at the bound returns ok:false reason full**
 
@@ -205,13 +205,11 @@ Run at 2026-10-14T16:13:06.155Z on commit `8bf26ad9`. Tests check: **passed**. 6
 | pass | after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
 | pass | a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over | `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` |
 
-Reported by the builder, not run by the gate: **pass**. Evidence: PARTIAL, not the full three-leg check. Observed by the builder on 2026-10-14 in one window: after a reload with a message queued behind a running turn, the queue file (~/.insrc/chat-queue/e49cade17d555e50.sqlite) showed the new extension host pid holding the lease with a fresh heartbeat, the earlier queued message finished, and no failed or not-delivered row from the reload. Not run, deferred by the owner until the repo path bug that blocks multi-window use is fixed: (1) reload mid-turn with the CLI alive across two windows, (2) reload with a message waiting while a second window ticks, (3) close a window with queued messages. The S001 follow tests mapped here are run by the gate and carry the display half of ac3.
-
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 165 | 5 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 165 | 4.9 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` | 0 | 14 | 1.1 s |  |
-| `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` | 0 | 16 | 1.1 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` | 0 | 16 | 1 s |  |
 | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` | 0 | 32 | 1.8 s |  |

@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s2",
+    "createdAt": "2026-10-14T12:57:26.478Z",
+    "updatedAt": "2026-10-14T12:57:26.478Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicSlug": "per-repo-chat-turn-queue-outbox"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "22a97654",
+        "ranAt": "2026-10-14T12:57:26.478Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty, and a newer file is still refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty, and a newer file is still refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "markWaiting sets and clears waitingOn on a processing row only",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "markWaiting sets and clears waitingOn on a processing row only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 910,
+            "titles": [
+              {
+                "title": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows",
+                "result": "pass"
+              },
+              {
+                "title": "chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once",
+                "result": "pass"
+              },
+              {
+                "title": "schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting",
+                "result": "pass"
+              },
+              {
+                "title": "schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty, and a newer file is still refused",
+                "result": "pass"
+              },
+              {
+                "title": "markWaiting sets and clears waitingOn on a processing row only",
+                "result": "pass"
+              },
+              {
+                "title": "resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s1",
     "createdAt": "2026-10-14T11:13:11.458Z",
-    "updatedAt": "2026-10-14T11:25:37.825Z",
+    "updatedAt": "2026-10-14T11:30:19.422Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -252,6 +252,42 @@
               },
               {
                 "title": "turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "4d70623d",
+        "ranAt": "2026-10-14T11:30:19.422Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 668,
+            "titles": [
+              {
+                "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
                 "result": "pass"
               }
             ],

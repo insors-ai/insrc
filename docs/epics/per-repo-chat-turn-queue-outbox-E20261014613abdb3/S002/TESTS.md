@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -90,3 +90,43 @@ Run at 2026-10-14T13:02:08.162Z on commit `29e9f12f`. Tests check: **passed**. 3
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` | 0 | 2 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 12 | 0.3 s |  |
+
+## t4
+
+Run at 2026-10-14T13:05:44.767Z on commit `e50dffe3`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead | `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` |
+
+**integration: chat host outbox: cancelling a waiting message removes it from the queue and the outbox, and it never runs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host outbox: cancelling a waiting message removes it from the queue and the outbox, and it never runs | `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` |
+
+**integration: chat host outbox: resending a failed message queues the same text and attachments at the back under this window's key, and it runs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host outbox: resending a failed message queues the same text and attachments at the back under this window's key, and it runs | `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` |
+
+**integration: chat host outbox: a refused action is re-posted with its note, a seq of another chat is ignored, and a taken message leaves the outbox**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host outbox: a refused action is re-posted with its note, a seq of another chat is ignored, and a taken message leaves the outbox | `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` |
+
+**integration: chat host outbox: after the host is rebuilt over the same queue file and its webview is ready, the outbox shows the same messages in the same places**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat host outbox: after the host is rebuilt over the same queue file and its webview is ready, the outbox shows the same messages in the same places | `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` | 0 | 5 | 1.7 s |  |

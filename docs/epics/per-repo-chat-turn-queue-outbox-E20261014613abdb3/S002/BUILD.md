@@ -2,30 +2,33 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-10-14T12:57:26.478Z  ·  **Updated:** 2026-10-14T13:02:08.162Z
+**Standalone:** no  ·  **Created:** 2026-10-14T12:57:26.478Z  ·  **Updated:** 2026-10-14T13:05:44.767Z
 
-**Commit:** 29e9f12f
+**Commit:** e50dffe3
 
 ## Summary
 
-New vscode-plugin/src/chat/chat-outbox.ts (sc5, pure, vscode-free): OutboxRow, OutboxView (runningChat, blockedBy, note), OutboxAction and projectOutbox(rows, sessionId, { titleOf, here?, note? }). Positions are 1-based among every queued/retrying row; processing (and done) rows never appear; failed/not-delivered rows have no position; aheadFromOtherChats counts other chats' waiting rows before this chat's first waiting row (all of them when it has none); runningChat names another chat's processing row ('another chat' when untitled; here from ctx.here); blockedBy comes from that row's waitingOn; attempts>0 and nextAttemptAt pass through for s4. protocol.ts: HostToWebview gains { type:'outbox', view }, WebviewToHost gains OutboxAction; HOST_TO_WEBVIEW_TYPES adds 'outbox' and WEBVIEW_TO_HOST_TYPES adds the four outbox-* types. The protocol tests assert inclusion, not exact lists, so none needed changing; a new named test pins the additions. Mutations (ahead counting every other row, keeping processing rows, naming the shown chat as running, ignoring here) each fail a test. Plugin suite: 1295 tests, 1285 pass, 8 skipped, 2 fail (pre-existing manifest-catalog). Typecheck clean.
+vscode-plugin/src/chat/chat-panel.ts: outboxRows holds the rows from worker.onChange (undefined while the queue is off or unread); postOutbox(note?) projects them with projectOutbox for the shown chat (titles from deps.store, here = the row is this host's running queued message) and posts { type:'outbox', view }. It is called on every onChange, from postRestored (so every path that shows a chat — postInitialState on 'ready', new-chat, open-chat, the queue runner's showSession — posts the chat's outbox), and after a refused action with its note. handleMessage routes 'outbox-cancel' / 'outbox-dismiss' / 'outbox-resend' to outboxAction, which ignores a seq that is not a row of the shown chat (logged) and calls worker.act; 'outbox-retry-now' falls to the default (ignored until s4). Without deps.queue nothing is posted. Tests: five named tests in the new chat-queue-outbox-host.test.ts over real queue files and hosts (the resend test checks the attachment path reaches the CLI prompt; the rebuild test disposes the host mid-turn and builds a second over the same file with the same window key); the first also checks a switch posts the new chat's outbox at once with runningChat.here, and a no-queue host posts no outbox. Mutations: dropping the post from postRestored, dropping the refusal note, accepting another chat's seq, and here always false each fail a test. Plugin suite without force-exit: 1300 tests, 1290 pass, 8 skipped, 2 fail (pre-existing manifest-catalog). Typecheck clean.
 
 ## Tasks validated
 
 - ✓ `t1`
 - ✓ `t2`
 - ✓ `t3`
+- ✓ `t4`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-613abdb351c2c738-s2.json` — **insrc-build** (2026-10-14T13:02:08.162Z)
-- `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` — **insrc-build** (2026-10-14T13:02:08.162Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` — **insrc-build** (2026-10-14T13:02:08.162Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` — **insrc-build** (2026-10-14T13:02:08.162Z)
-- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-10-14T13:02:08.162Z)
-- `vscode-plugin/src/chat/chat-outbox.ts` — **insrc-build** (2026-10-14T13:02:08.162Z)
-- `vscode-plugin/src/chat/chat-queue-store.ts` — **insrc-build** (2026-10-14T13:02:08.162Z)
-- `vscode-plugin/src/chat/chat-queue-worker.ts` — **insrc-build** (2026-10-14T13:02:08.162Z)
-- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-14T13:02:08.162Z)
+- `.insrc/artifacts/PLAN-613abdb351c2c738-s2.json` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/chat-outbox.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/chat-queue-store.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/chat-queue-worker.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)
+- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-14T13:05:44.767Z)

@@ -252,7 +252,9 @@
         "rationale": "User chose (2026-10-14): keep Cmd/Ctrl+Enter, and while a turn runs show the hint \"⌘/Ctrl+Enter to queue\" next to the message box.",
         "resolvedAt": "2026-10-14T12:53:04.442Z"
       }
-    }
+    },
+    "staleAckedAt": "2026-10-14T12:53:26.899Z",
+    "staleAckedReason": "The HLD changed only by AMD-3, 4, 7 and 8, which this LLD itself proposed and already designs against; approved by the user together with the LLD."
   },
   "body": {
     "summary": {

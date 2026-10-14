@@ -1012,7 +1012,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `@keyframes insrc-blink{0%,100%{opacity:.30;transform:translateY(0);}40%{opacity:1;transform:translateY(-2px);}}` +
       // ISSUE (always visible): the idle state when no turn runs: the same three dots, breathing slowly (a longer,
       // gentler cycle than the working blink, no vertical movement).
-      `#insrc-progress.idle .spin i{animation:insrc-breathe 3.6s ease-in-out infinite;}` +
+      `#insrc-progress.idle .spin i{background:var(--muted);animation:insrc-breathe 3.6s ease-in-out infinite;}` +
       `#insrc-progress.idle .spin i:nth-child(2){animation-delay:.3s;}#insrc-progress.idle .spin i:nth-child(3){animation-delay:.6s;}` +
       `@keyframes insrc-breathe{0%,100%{opacity:.20;}50%{opacity:.65;}}` +
       `@media (prefers-reduced-motion:reduce){#insrc-progress .spin i,#insrc-progress.idle .spin i{animation:none;opacity:.7;}}` +
@@ -1259,7 +1259,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const sendBtn=document.getElementById('insrc-prompt');` +
       `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}${queueOn ? `var ib=document.getElementById('insrc-input');if(ib)ib.placeholder=r?${JSON.stringify(QUEUE_PLACEHOLDER)}:${JSON.stringify(IDLE_PLACEHOLDER)};` : ''}}` +
       // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
-      // #insrc-progress label (gated on running by the caller); setIdle puts it in its idle state (it is never hidden). It is never
+      // #insrc-progress label (gated on running by the caller); setIdle puts it in its idle state (it is never hidden). It is
       // written to the transcript (the host status-skip stays as-is, k4).
       `const prog=document.getElementById('insrc-progress');` +
       `const progLabel=prog?prog.querySelector('.plabel'):null;` +

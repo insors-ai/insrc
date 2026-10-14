@@ -450,7 +450,7 @@ test('chat theme: the progress widget keeps its colours, and its idle variant ha
   const css = ownStyle(shellHtml());
   assert.ok(css.includes('#insrc-progress{') && css.includes('background:var(--bg-inset)') && css.includes('border-top:1px solid var(--border-lit)'), 'the widget keeps its inset background and lit border');
   assert.ok(css.includes('#insrc-progress .spin i{width:6px;height:6px;border-radius:50%;background:var(--progress)'), 'the dots keep the progress colour');
-  assert.ok(css.includes('#insrc-progress.idle .spin i{animation:insrc-breathe 3.6s'), 'the idle variant has its own animation');
+  assert.ok(css.includes('#insrc-progress.idle .spin i{background:var(--muted);animation:insrc-breathe 3.6s'), 'the idle variant has its own animation, in the muted colour');
   assert.ok(css.includes('@keyframes insrc-breathe{0%,100%{opacity:.20;}50%{opacity:.65;}}'), 'a gentle breathing, with no vertical movement');
   assert.ok(!/insrc-breathe\{[^}]*translate/.test(css), 'no vertical movement while idle');
   assert.ok(/prefers-reduced-motion:reduce\)\{[^}]*#insrc-progress\.idle \.spin i\{animation:none/.test(css), 'reduced motion stops the idle animation');

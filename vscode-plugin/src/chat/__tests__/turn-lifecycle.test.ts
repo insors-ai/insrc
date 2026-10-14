@@ -202,31 +202,42 @@ test('start waits for the session lease, reports waiting, runs, and releases the
   assert.deepEqual(b.calls, ['waiting', 'beforeRun', 'event:done', 'terminal:done']);
 });
 
-test('a second start drops a turn still waiting for its lease', async () => {
+// Epic E20261014613abdb3 Story S001: the newest message no longer wins. (Was: 'a second start
+// drops a turn still waiting for its lease'.)
+test('a start made while another waits for its lease runs after it instead of dropping it', async () => {
   const { adapter, runs } = scriptedAdapter();
   const h = harness({ providers: registry(adapter) });
-  const first = h.lc.start(h.session, REQ, recSink().sink);
+  const first = h.lc.start(h.session, { ...REQ, prompt: 'first' }, recSink().sink);
   await waitFor(() => runs.length === 1);
   runs[0]!.feed.push(done('t1'));
   await first;
 
   const b = recSink();
-  const second = h.lc.start(h.session, REQ, b.sink);
+  const second = h.lc.start(h.session, { ...REQ, prompt: 'second' }, b.sink);
   await waitFor(() => b.calls.includes('waiting'));
   const c = recSink();
-  const third = h.lc.start(h.session, REQ, c.sink);
-  await second; // dropped: it returns without running
-  assert.deepEqual(b.calls, ['waiting'], 'the dropped turn is told nothing more');
+  const third = h.lc.start(h.session, { ...REQ, prompt: 'third' }, c.sink);
+  assert.deepEqual(c.calls, ['waiting'], 'the third waits behind the second');
 
   runs[0]!.proc.exitNow();
   await waitFor(() => runs.length === 2);
+  assert.equal(runs[1]!.req.prompt, 'second', 'the second was not dropped');
   runs[1]!.feed.push(done('t2'));
+  await second;
+  assert.deepEqual(b.calls, ['waiting', 'beforeRun', 'event:done', 'terminal:done']);
+  runs[1]!.proc.exitNow();
+  await waitFor(() => runs.length === 3);
+  assert.equal(runs[2]!.req.prompt, 'third');
+  runs[2]!.feed.push(done('t3'));
   await third;
-  assert.equal(runs.length, 2, 'only the newest turn ran');
-  assert.deepEqual(c.calls, ['waiting', 'beforeRun', 'event:done', 'terminal:done']);
+  // It waited twice: behind the second turn, then for the session lease while the second's process ran.
+  assert.deepEqual(c.calls, ['waiting', 'waiting', 'beforeRun', 'event:done', 'terminal:done']);
+  runs[2]!.proc.exitNow();
 });
 
-test('a superseded turn reports nothing, reads to its end and clears its cursor', async () => {
+// Epic E20261014613abdb3 Story S001: a later start no longer silences the turn being read. (Was:
+// 'a superseded turn reports nothing, reads to its end and clears its cursor'.)
+test('a turn being read when another start is made keeps reporting to its end and clears its cursor', async () => {
   const { adapter, runs } = scriptedAdapter();
   const h = harness({ providers: registry(adapter) });
   const a = recSink();
@@ -237,15 +248,17 @@ test('a superseded turn reports nothing, reads to its end and clears its cursor'
   assert.equal(h.session.liveTurn?.cursor.turnId, 't1');
 
   const b = recSink();
-  void h.lc.start(h.session, REQ, b.sink); // waits for t1's process
+  const second = h.lc.start(h.session, REQ, b.sink); // waits for the first turn
   await waitFor(() => b.calls.includes('waiting'));
   runs[0]!.feed.push(delta('t1', 'late'));
   runs[0]!.feed.push(done('t1'));
-  await first; // the superseded turn read to its terminal event
-  assert.deepEqual(a.calls, ['beforeRun', 'event:assistant-delta'], 'nothing after the supersede is reported');
-  assert.equal(h.session.liveTurn, undefined, "the superseded turn's cursor is cleared at its terminal event");
+  await first;
+  assert.deepEqual(a.calls, ['beforeRun', 'event:assistant-delta', 'event:assistant-delta', 'event:done', 'terminal:done'], 'the first turn reports to its end');
+  assert.equal(h.session.liveTurn, undefined, "the first turn's cursor is cleared at its terminal event");
   runs[0]!.proc.exitNow();
   await waitFor(() => runs.length === 2);
+  runs[1]!.feed.push(done('t2'));
+  await second;
   runs[1]!.proc.exitNow();
 });
 
@@ -725,7 +738,9 @@ test("a generator whose cleanup throws when the turn finishes it is not an unhan
   }
 });
 
-test('a turn superseded or stopped while beforeRun runs starts no CLI', async () => {
+// Epic E20261014613abdb3 Story S001: a start made while the first sets up waits for it and runs
+// after it. (Was: 'a turn superseded or stopped while beforeRun runs starts no CLI'.)
+test('a start made while beforeRun runs waits for that turn; a turn stopped while beforeRun runs starts no CLI', async () => {
   let releaseA!: () => void;
   const gateA = new Promise<void>((r) => (releaseA = r));
   const { adapter, runs } = scriptedAdapter();
@@ -736,12 +751,16 @@ test('a turn superseded or stopped while beforeRun runs starts no CLI', async ()
   const pb = h.lc.start(h.session, { ...REQ, prompt: 'second' }, b.sink);
   await waitFor(() => b.calls.includes('waiting'));
   releaseA();
-  await Promise.race([pa, tick(100)]);
   await waitFor(() => runs.length === 1);
-  assert.equal(runs[0]!.req.prompt, 'second', 'the superseded turn never started its CLI');
+  assert.equal(runs[0]!.req.prompt, 'first', 'the first turn starts its CLI');
   runs[0]!.feed.push(done('t1'));
-  await pb;
+  await pa;
   runs[0]!.proc.exitNow();
+  await waitFor(() => runs.length === 2);
+  assert.equal(runs[1]!.req.prompt, 'second', 'then the second');
+  runs[1]!.feed.push(done('t2'));
+  await pb;
+  runs[1]!.proc.exitNow();
 
   let releaseC!: () => void;
   const gateC = new Promise<void>((r) => (releaseC = r));
@@ -763,7 +782,8 @@ test('a turn superseded or stopped while beforeRun runs starts no CLI', async ()
   c.runs[0]!.proc.exitNow();
 });
 
-test("a superseded turn's end saves its cleared cursor and keeps its native session", async () => {
+// Epic E20261014613abdb3 Story S001. (Was: "a superseded turn's end saves its cleared cursor ...".)
+test("a turn's end with another start waiting saves its cleared cursor and keeps its native session; Stop drops the waiting start", async () => {
   const { adapter, runs } = scriptedAdapter();
   const h = harness({ providers: registry(adapter) });
   const pa = h.lc.start(h.session, REQ, recSink().sink);
@@ -775,10 +795,12 @@ test("a superseded turn's end saves its cleared cursor and keeps its native sess
   await waitFor(() => b.calls.includes('waiting'));
   runs[0]!.feed.push(done('t1', 'native-A'));
   await pa;
-  assert.equal(h.saves.at(-1), undefined, 'the session is saved with the cursor cleared');
+  // The turn is current to its end, so its cursor is cleared as any turn's is (the panel saves it).
+  assert.equal(h.session.liveTurn, undefined, 'the cursor is cleared');
   assert.equal(h.session.nativeSessionId, 'native-A');
   await h.lc.stop(); // drops the waiting turn and ends the first process
   await pb;
+  assert.equal(runs.length, 1, 'the waiting start never ran');
 });
 
 test('a throwing onTerminal is logged, still finishes the generator and is not a turn error', async () => {
@@ -956,7 +978,8 @@ test('a turn whose output ends without a done or error event ends as an error', 
   assert.deepEqual(a.calls, ['beforeRun', 'event:assistant-delta', 'event:error', 'terminal:error'], 'the panel is told the turn ended');
   assert.equal(h.session.liveTurn, undefined, 'its cursor is cleared, so a reload does not follow it');
 
-  // A superseded turn whose output ends that way: its cursor is cleared and saved, nothing reported.
+  // Epic E20261014613abdb3 Story S001: a turn whose output ends that way while another start waits
+  // still reports its error, and the waiting turn runs after it. (Was: a superseded turn, unreported.)
   const s2 = scriptedAdapter();
   const h2 = harness({ providers: registry(s2.adapter) });
   const b = recSink();
@@ -969,8 +992,8 @@ test('a turn whose output ends without a done or error event ends as an error', 
   await waitFor(() => c.calls.includes('waiting'));
   s2.runs[0]!.proc.exitNow();
   await pb;
-  assert.deepEqual(b.calls, ['beforeRun', 'event:assistant-delta']);
-  assert.ok(h2.saves.includes(undefined), 'the cleared cursor is saved');
+  assert.deepEqual(b.calls, ['beforeRun', 'event:assistant-delta', 'event:error', 'terminal:error']);
+  assert.equal(h2.session.liveTurn, undefined, 'its cursor is cleared');
   await waitFor(() => s2.runs.length === 2);
   s2.runs[1]!.feed.push(done('t2'));
   await pc;
@@ -981,7 +1004,7 @@ test('a turn whose output ends without a done or error event ends as an error', 
 // Story E202610138d4b90c9:S001 t5 — busy(), and a follow that fails reports its end
 // ---------------------------------------------------------------------------
 
-test('turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a superseding turn keeps it true', async () => {
+test('turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a chained turn keeps it true', async () => {
   // A started turn: setting up, being read, and its terminal event.
   {
     const { adapter, runs } = scriptedAdapter();
@@ -1012,25 +1035,29 @@ test('turn lifecycle: busy is true while a started turn waits, sets up or is rea
     assert.deepEqual(seen, ['beforeRun:true', 'event:assistant-delta:true', 'event:done:true', 'terminal:done:false'], 'false once the terminal event is handed over, before onTerminal');
     assert.equal(h.lc.busy(), false);
 
-    // Waiting for its lease behind the first turn's process, then superseded by a third turn.
+    // Waiting for its lease behind the first turn's process, with a third start chained behind it
+    // (Epic E20261014613abdb3 Story S001: no longer superseded; both run, in order).
     const b = recSink();
     const second = h.lc.start(h.session, REQ, b.sink);
     await waitFor(() => b.calls.includes('waiting'));
     assert.equal(h.lc.busy(), true, 'while it waits for its lease');
     const c = recSink();
     const third = h.lc.start(h.session, REQ, c.sink);
-    await second; // dropped while waiting
-    assert.equal(h.lc.busy(), true, 'the superseding turn keeps it true');
     runs[0]!.proc.exitNow();
     await waitFor(() => runs.length === 2);
     assert.equal(h.lc.busy(), true);
     runs[1]!.feed.push(done('t2'));
+    await second;
+    runs[1]!.proc.exitNow();
+    await waitFor(() => runs.length === 3);
+    assert.equal(h.lc.busy(), true, 'the chained turn keeps it true');
+    runs[2]!.feed.push(done('t3'));
     await third;
     assert.equal(h.lc.busy(), false);
-    runs[1]!.proc.exitNow();
+    runs[2]!.proc.exitNow();
   }
 
-  // A turn superseded while it is read: its end does not make busy false.
+  // A turn with another start chained behind it while it is read: its end does not make busy false.
   {
     const { adapter, runs } = scriptedAdapter({ pipe: true });
     const h = harness({ providers: registry(adapter) });
@@ -1041,9 +1068,9 @@ test('turn lifecycle: busy is true while a started turn waits, sets up or is rea
     const b = recSink();
     const second = h.lc.start(h.session, REQ, b.sink);
     await waitFor(() => b.calls.includes('waiting'));
-    runs[0]!.feed.push(done('t1')); // the superseded turn ends, unreported
+    runs[0]!.feed.push(done('t1')); // the first turn ends
     await first;
-    assert.equal(h.lc.busy(), true, 'the superseded turn ended; its successor is still in progress');
+    assert.equal(h.lc.busy(), true, 'the first turn ended; the chained one is still in progress');
     runs[0]!.proc.exitNow();
     await waitFor(() => runs.length === 2);
     runs[1]!.feed.push(done('t2'));
@@ -1266,4 +1293,107 @@ test('turn lifecycle: busy is false when a turn\'s error is reported', async () 
   await c.lc.start(c.session, REQ, errSink(c));
 
   assert.deepEqual(seen, ['setup failed:false', 'no adapter for provider claude:false', 'spawn failed:false']);
+});
+
+// ---------------------------------------------------------------------------
+// Epic E20261014613abdb3 Story S001 t3 — chained starts, and the CLI process reported to the sinks.
+// ---------------------------------------------------------------------------
+
+test('turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach', async () => {
+  // A second start while the first is read: the first reports to its end, then the second runs.
+  {
+    const { adapter, runs } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter) });
+    const a = recSink();
+    const first = h.lc.start(h.session, { ...REQ, prompt: 'first' }, a.sink);
+    await waitFor(() => runs.length === 1);
+    runs[0]!.feed.push(delta('t1'));
+    const b = recSink();
+    const second = h.lc.start(h.session, { ...REQ, prompt: 'second' }, b.sink);
+    assert.deepEqual(b.calls, ['waiting'], 'it waits, and says so');
+    runs[0]!.feed.push(done('t1'));
+    await first;
+    assert.deepEqual(a.calls, ['beforeRun', 'event:assistant-delta', 'event:done', 'terminal:done'], 'the first turn was not superseded');
+    runs[0]!.proc.exitNow();
+    await waitFor(() => runs.length === 2);
+    assert.equal(runs[1]!.req.prompt, 'second');
+    runs[1]!.feed.push(done('t2'));
+    await second;
+    runs[1]!.proc.exitNow();
+  }
+
+  // A start waiting in the chain is dropped by Stop and by detach, and never spawns.
+  for (const end of ['stop', 'detach', 'invalidate'] as const) {
+    const { adapter, runs } = scriptedAdapter({ pipe: end === 'stop' });
+    const h = harness({ providers: registry(adapter) });
+    const first = h.lc.start(h.session, REQ, recSink().sink);
+    await waitFor(() => runs.length === 1);
+    runs[0]!.feed.push(delta('t1'));
+    const b = recSink();
+    const chained = h.lc.start(h.session, REQ, b.sink);
+    assert.deepEqual(b.calls, ['waiting']);
+    if (end === 'invalidate') h.lc.invalidate();
+    else await h.lc[end]();
+    runs[0]!.feed.push(done('t1'));
+    runs[0]!.proc.exitNow();
+    await Promise.race([first, tick(50)]);
+    await chained;
+    await tick(20);
+    assert.equal(runs.length, 1, `${end}: the chained start never spawned`);
+    assert.deepEqual(b.calls, ['waiting'], `${end}: and was told nothing more`);
+  }
+
+  // onSpawn: a live turn's CLI with its pid, start time and an exit promise that survives detach.
+  {
+    const { adapter, runs } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter) });
+    const spawned: { pid?: number; startedAt?: number; exited: Promise<void> }[] = [];
+    const a = recSink({ onSpawn: (cli) => void spawned.push(cli) });
+    void h.lc.start(h.session, REQ, a.sink);
+    await waitFor(() => runs.length === 1);
+    assert.equal(spawned.length, 1);
+    assert.equal(spawned[0]!.pid, runs[0]!.proc.pid);
+    assert.equal(typeof spawned[0]!.startedAt, 'number');
+    runs[0]!.feed.push(delta('t1'));
+    await waitFor(() => h.lc.live !== undefined);
+    await h.lc.detach(); // a session-file turn: its process keeps running
+    let exited = false;
+    void spawned[0]!.exited.then(() => (exited = true));
+    await tick(20);
+    assert.equal(exited, false, 'still running after detach');
+    runs[0]!.proc.exitNow();
+    await spawned[0]!.exited;
+    assert.equal(exited, true, 'the exit is seen after detach');
+  }
+
+  // A process without a pid is still reported, with no pid.
+  {
+    const { adapter, runs } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter) });
+    const spawned: { pid?: number }[] = [];
+    const realRun = adapter.run.bind(adapter);
+    adapter.run = (req, o) => realRun(req, { ...o, onSpawn: (proc) => o?.onSpawn?.(Object.assign(proc, { pid: undefined })) });
+    void h.lc.start(h.session, REQ, recSink({ onSpawn: (cli) => void spawned.push(cli) }).sink);
+    await waitFor(() => runs.length === 1);
+    assert.equal(spawned.length, 1, 'reported');
+    assert.equal('pid' in spawned[0]!, false, 'with no pid');
+    runs[0]!.feed.push(done('t1'));
+    runs[0]!.proc.exitNow();
+  }
+
+  // A followed turn's CLI is reported when the resume attaches to it.
+  {
+    const { adapter, resumes } = scriptedAdapter();
+    const h = harness({ providers: registry(adapter), isAlive: () => false });
+    h.session.liveTurn = savedTurn(99);
+    const spawned: { pid?: number; exited: Promise<void> }[] = [];
+    const f = followSink(h);
+    h.lc.follow(h.session, { ...f.sink, onSpawn: (cli) => void spawned.push(cli) });
+    await waitFor(() => resumes.length === 1);
+    assert.equal(spawned.length, 1);
+    assert.equal(spawned[0]!.pid, resumes[0]!.proc.pid);
+    resumes[0]!.feed.push(done('t1'));
+    resumes[0]!.proc.exitNow();
+    await spawned[0]!.exited;
+  }
 });

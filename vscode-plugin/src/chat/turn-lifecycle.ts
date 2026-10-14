@@ -34,8 +34,21 @@ export interface TurnLifecycleDeps {
   readonly logger: ChatPanelLogger;
 }
 
+/**
+ * Epic E20261014613abdb3 Story S001: a turn's CLI process as the chat host sees it. `exited`
+ * settles when the process exits, whether or not the turn is still being read (it survives
+ * detach()). The pid is absent for a process without one.
+ */
+export interface SpawnedCli {
+  readonly pid?: number | undefined;
+  readonly startedAt?: number | undefined;
+  readonly exited: Promise<void>;
+}
+
 /** The panel's side of a live turn. Called only while the turn is current. */
 export interface TurnSink {
+  /** Every CLI process the turn starts, as it starts (Story S001: the queue's lease records it). */
+  onSpawn?(cli: SpawnedCli): void;
   /** The turn is queued behind the session's previous process. */
   onWaiting(): void;
   /** Runs inside the turn, before the CLI starts (a failure is a turn error). */
@@ -52,6 +65,8 @@ export interface TurnSink {
 
 /** The panel's side of a followed turn (resumed from a saved cursor). */
 export interface FollowSink {
+  /** The followed turn's CLI process, once the resume has attached to it (Story S001). */
+  onSpawn?(cli: SpawnedCli): void;
   /** Every event of the turn, whether or not the session is shown. */
   onEvent(ev: TurnEvent): void;
   /**
@@ -159,6 +174,13 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   let resumedProc: TurnProcess | undefined;
   // The generation of the turn begun by start() that is in progress (see busy()).
   let busyGen: number | undefined;
+  // Epic E20261014613abdb3 Story S001: starts run one after another. A start made while a turn of
+  // this lifecycle is in progress waits for it; stop(), detach() and invalidate() bump the epoch,
+  // which drops every start still waiting in the chain before it spawns anything.
+  let chain: Promise<void> = Promise.resolve();
+  let chainEpoch = 0;
+  /** Starts begun and not yet over, the one running included. */
+  let inFlight = 0;
   /** That turn is no longer in progress; a superseded turn's end leaves its successor in progress. */
   const idle = (gen: number): void => {
     if (busyGen === gen) busyGen = undefined;
@@ -240,19 +262,54 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   }
 
   async function start(s: ChatSession, req: TurnRequest, sink: TurnSink): Promise<void> {
-    // Single-in-flight: the newest message wins. A turn still waiting for the lock is dropped,
-    // and the generation bump stops the previous loop reporting. The previous turn's process is
-    // NOT killed: this turn waits for it below.
-    waitCtl?.abort();
-    waitCtl = undefined;
-    const myGen = ++generation;
-    busyGen = myGen;
+    // Epic E20261014613abdb3 Story S001: the newest message no longer wins. The chat's queue hands
+    // the host one message at a time; a start made while a turn is still in progress (a grant re-run
+    // started from the turn's own end) waits for it here, and only then takes the generation, so the
+    // earlier turn is never dropped. A Stop, chat switch or invalidate drops it while it waits. A
+    // start with nothing in progress begins at once, as before.
+    const epoch = chainEpoch;
+    const previous = inFlight > 0 ? chain : undefined;
+    inFlight += 1;
+    let release!: () => void;
+    chain = new Promise<void>((r) => (release = r));
     try {
-      await run(s, req, sink, myGen);
+      if (previous !== undefined) {
+        try {
+          sink.onWaiting();
+        } catch (err) {
+          log.warn(`[chat] onWaiting failed: ${err instanceof Error ? err.message : String(err)}`);
+        }
+        await previous;
+        if (epoch !== chainEpoch) return;
+      }
+      const myGen = ++generation;
+      busyGen = myGen;
+      try {
+        await run(s, req, sink, myGen);
+      } finally {
+        idle(myGen);
+      }
     } finally {
-      idle(myGen);
+      inFlight -= 1;
+      release();
     }
   }
+
+  /** Tells a sink about a spawned CLI process; a failing callback is logged, never thrown. */
+  const reportSpawn = (sink: { onSpawn?(cli: SpawnedCli): void }, proc: TurnProcess): void => {
+    if (sink.onSpawn === undefined) return;
+    const startedAt = proc.pid !== undefined ? deps.processStartTime(proc.pid) : undefined;
+    const settled = (): void => {};
+    try {
+      sink.onSpawn({
+        ...(proc.pid !== undefined ? { pid: proc.pid } : {}),
+        ...(startedAt !== undefined ? { startedAt } : {}),
+        exited: proc.exit.then(settled, settled),
+      });
+    } catch (err) {
+      log.warn(`[chat] onSpawn failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
 
   async function run(s: ChatSession, req: TurnRequest, sink: TurnSink, myGen: number): Promise<void> {
     let adapter;
@@ -273,6 +330,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       // when its answer ends.
       const onSpawn = (proc: TurnProcess): void => {
         attachLease(proc);
+        reportSpawn(sink, proc);
         if (myGen === generation) liveProc = proc;
         const forget = (): void => {
           if (liveProc === proc) liveProc = undefined;
@@ -426,6 +484,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             onAttach: (p) => {
               attached = p;
               resumedProc = p;
+              reportSpawn(sink, p);
             },
             onProgress: cursor.progress,
           },
@@ -472,6 +531,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
    */
   const stopLive = async (): Promise<void> => {
     busyGen = undefined;
+    chainEpoch += 1; // a start waiting in the chain is dropped
     waitCtl?.abort();
     waitCtl = undefined;
     setupCtl?.abort();
@@ -510,6 +570,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
 
   const detach = async (): Promise<void> => {
     busyGen = undefined;
+    chainEpoch += 1; // a start waiting in the chain is dropped
     waitCtl?.abort();
     waitCtl = undefined;
     following?.ctl.abort(); // a resumed turn: its process is not ours to stop here
@@ -532,6 +593,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     detach,
     invalidate(): void {
       ++generation;
+      chainEpoch += 1; // a start waiting in the chain is dropped
       busyGen = undefined;
     },
     busy(): boolean {

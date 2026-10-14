@@ -77,7 +77,7 @@ import {
 	writeBundle,
 	type CacheKey,
 } from './cache.js';
-import { ensureNonEmptyClosure, ensureRepoQueryable } from './invariants.js';
+import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
 import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
@@ -366,16 +366,15 @@ function checksScopeState(invocationMode: RunShaperArgs['invocationMode'], shape
 
 /**
  * The check a checked request's scope gets, on a hit and on a miss alike: the
- * code source needs a non-empty graph closure (the not-indexed check, which
- * makes the under-index check first); every other checked source is refused
- * only for a repository under index.
+ * analyze run's own per-source rule (ensureScopeQueryable), so the sources
+ * that read the stored graph (code and docs) need the scope indexed, and every
+ * other checked source is refused only for a repository under index
+ * (ISSUE-0c845762). Classification and generic requests are never checked
+ * (checksScopeState).
  */
 async function checkScopeState(shaperId: RunShaperArgs['shaperId'], scope: ResolvedScope): Promise<void> {
-	if (shaperId === 'code') {
-		await ensureNonEmptyClosure(scope);
-	} else {
-		await ensureRepoQueryable(scope);
-	}
+	if (shaperId === 'classification' || shaperId === 'generic') return;
+	await ensureScopeQueryable(scope, shaperId);
 }
 
 /**

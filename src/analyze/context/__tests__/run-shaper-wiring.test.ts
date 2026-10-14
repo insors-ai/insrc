@@ -19,6 +19,7 @@ import { registerBuiltinTools } from '../../../daemon/tools/builtins/index.js';
 import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo, removeRepo, updateRepoStatus } from '../../../db/repos.js';
+import { resolveTaskScope } from '../../runtimes/shared/task-scope.js';
 import { useTemporaryLance } from '../../../db/lance/__tests__/helpers/temp-lance.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { PATHS } from '../../../shared/paths.js';
@@ -447,7 +448,7 @@ function forbiddenScopeDeps(): { deps: NonNullable<Parameters<typeof runShaper>[
 	return { deps: { listRepos: no('listRepos'), findEntitiesByFile: no('findEntitiesByFile'), listEntitiesForRepo: no('listEntitiesForRepo'), loadConnections: no('loadConnections') }, reached };
 }
 
-function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, extra: Partial<Parameters<typeof runShaper>[0]> = {}, shaper: 'code' | 'data' | 'generic' = 'code') {
+function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, extra: Partial<Parameters<typeof runShaper>[0]> = {}, shaper: 'code' | 'docs' | 'data' | 'infra' | 'generic' = 'code') {
 	return runShaper({
 		promptPath: `prompts/analyze/${shaper}.system.md`, invocationMode: 'run', shaperId: shaper,
 		inputs: { intent }, opts: { runId: id }, provider: forbiddenLoop().provider, pipelineSteps: steps, ...extra,
@@ -455,7 +456,7 @@ function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, ex
 }
 
 /** A cached bundle for `intent` in `id`'s run slot, written the way runShaper writes one. */
-function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'data' | 'generic' = 'code'): void {
+function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'docs' | 'data' | 'infra' | 'generic' = 'code'): void {
 	const prompt = readFileSync(join(REPO_ROOT, `src/prompts/analyze/${shaper}.system.md`), 'utf8');
 	const bundle = { ...RAW, summary: 'CACHED', meta: { mode: 'run', shaper, toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, ...meta } };
 	writeBundle(id, { mode: 'run', hash: _computeCacheKeyForTest(prompt, { intent }) }, bundle as unknown as AnalyzeContextBundle);
@@ -592,4 +593,35 @@ test('runShaper: a cache hit on a code run whose recorded repository the index n
 	const cold = await callWith(intent, runId('cache-removed-cold'), standIns().steps).then(() => undefined, (e: unknown) => e);
 	assert.ok(cold instanceof ScopeNotIndexedError, `cold: ${String(cold)}`);
 	assert.equal((hit as Error).message, (cold as Error).message, 'the same refusal warm and cold');
+});
+
+test("runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold (in no registered repository, or in a registered repository with no stored entities) is refused as not indexed before any lookup or model call, cold and warm, with the run's message; a caller that checked the scope already is not checked again", async () => {
+	const loop = forbiddenLoop();
+	const outside = join(sandbox, 'elsewhere');
+	mkdirSync(outside, { recursive: true });
+	const empty = join(sandbox, 'empty');
+	mkdirSync(empty, { recursive: true });
+	await addRepo(null, { path: empty, name: 'empty', addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+	for (const path of [outside, empty]) {
+		const intent = unfocused({ kind: 'repo', value: path }, 'docs');
+		const expected = await resolveTaskScope({ kind: 'repo', value: path }, 'docs', 'the run').then(() => undefined, (e: unknown) => e);
+		assert.ok(expected instanceof ScopeNotIndexedError, `the run refuses ${path}`);
+		const cold = standIns();
+		const refused = await callWith(intent, runId('docs-unindexed'), cold.steps, { provider: loop.provider }, 'docs').then(() => undefined, (e: unknown) => e);
+		assert.ok(refused instanceof ScopeNotIndexedError, `cold ${path}: ${String(refused)}`);
+		assert.equal(refused.message, (expected as Error).message, 'the run\'s message');
+		assert.deepEqual(cold.seen, { decompose: [], executePlan: [], synthesize: 0 }, 'no lookup');
+	}
+	assert.equal(loop.used(), false, 'no model call');
+
+	// Warm: a docs bundle cached for a repository the index no longer holds is refused too.
+	const intent = unfocused({ kind: 'repo', value: empty }, 'docs');
+	const wid = runId('docs-warm');
+	seedBundle(wid, intent, { repoPath: empty }, 'docs');
+	const warm = await callWith(intent, wid, standIns().steps, {}, 'docs').then(() => undefined, (e: unknown) => e);
+	assert.ok(warm instanceof ScopeNotIndexedError, `warm: ${String(warm)}`);
+
+	// A caller that checked the scope already (runAnalyze) is served from the cache, not checked again.
+	const served = await callWith(intent, wid, standIns().steps, { opts: { runId: wid, scopeChecked: true } }, 'docs');
+	assert.equal(served.summary, 'CACHED');
 });

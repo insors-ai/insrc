@@ -21,7 +21,11 @@
     "epicSlug": "refuse-docs-request-scope-index-does",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-14T04:32:51.461Z",
+    "parentRef": {
+      "slug": "refuse-docs-request-scope-index-does"
+    }
   },
   "body": {
     "title": "Refuse a docs request on a scope the index does not hold at every run entry point",

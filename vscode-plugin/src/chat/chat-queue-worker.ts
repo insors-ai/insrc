@@ -18,7 +18,7 @@ import { REAL_TIMERS, type Timers } from './async-util.js';
 import type { AttachmentRef } from './attachment-store.js';
 import type { ChatPanelLogger } from './chat-panel.js';
 import {
-  BUSY_NOTE, LEASE_HEARTBEAT_MS, LEASE_TAKEOVER_MS, StoreBusy,
+  BUSY_NOTE, LEASE_HEARTBEAT_MS, LEASE_TAKEOVER_MS, PRESENCE_GRACE_MS, StoreBusy,
   type ChatQueueLeases, type ChatQueueStore, type EnqueueResult, type LeaseClaim, type QueuedMessage, type RepoLease, type TurnOutcome,
 } from './chat-queue-store.js';
 
@@ -266,6 +266,18 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
     log?.warn(`[chat-queue] the reclaimed turn of message ${lease.seq} has ended`);
   }
 
+  /**
+   * Epic E20261014613abdb3 Story S003: whether the window a head message belongs to is closed. A window is closed only when
+   * its presence row has not been refreshed for PRESENCE_GRACE_MS AND its recorded process is gone; a window with no
+   * presence row at all is judged closed only once the message itself is older than PRESENCE_GRACE_MS (a reloading window's
+   * row is kept by dispose, so it is still fresh; a previous-plugin window's dispose deleted it).
+   */
+  function windowClosed(head: QueuedMessage, at: number): boolean {
+    const presence = store.presenceOf(head.windowKey);
+    if (presence === undefined) return at - head.createdAt > PRESENCE_GRACE_MS;
+    return at - presence.heartbeatAt > PRESENCE_GRACE_MS && !deps.isAlive(presence.pid, presence.pidStartedAt);
+  }
+
   function tick(): void {
     pollHandle = undefined;
     if (disposed) return;
@@ -287,6 +299,13 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
         if (head !== undefined && due && head.windowKey === claim.windowKey && store.acknowledge(head.seq, claim)) {
           void runMessage({ ...head, state: 'processing' });
           noticeChanges();
+        } else if (head !== undefined && head.windowKey !== claim.windowKey && store.lease() === undefined && windowClosed(head, at)) {
+          // The head's window is closed: it is marked not delivered (the outbox offers resend) so the queue moves on. A false
+          // return means another window took, cancelled or finished it first.
+          if (store.markNotDeliveredIfHead(head.seq)) {
+            log?.warn(`[chat-queue] message ${head.key} is not delivered: its window ${head.windowKey} is closed`);
+            noticeChanges();
+          }
         }
       }
     } catch (err) {

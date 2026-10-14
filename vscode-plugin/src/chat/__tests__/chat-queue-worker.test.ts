@@ -506,3 +506,211 @@ test('dispose leaves the presence row in place and windowAlive stays true until 
     r.done();
   }
 });
+
+// Epic E20261014613abdb3 Story S003 t6 — the closed-window head rule. Window w-A is the one ticking; w-B owns the head.
+const bMsg = (text: string, seq = 'a') => ({ key: `sB::${seq}`, sessionId: 'sB', turnId: seq, windowKey: 'w-B', origin: 'typed' as const, text, attachments: [] });
+
+test('a head whose window stopped refreshing presence and whose pid is dead is marked not-delivered after PRESENCE_GRACE_MS and the next message runs', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const other = r.open(t.now);
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    other.presence({ windowKey: 'w-B', pid: 303 });
+    const b = other.enqueue(bMsg('from the closed window'));
+    assert.ok(b.ok);
+    assert.ok(w.submit(sub('sA', 'mine')).ok);
+    await t.advance(PRESENCE_GRACE_MS - ACTIVE_POLL_MS * 2);
+    assert.equal(store.list().find((m) => m.text === 'from the closed window')?.state, 'queued', 'inside the grace');
+    assert.equal(R.runs.length, 0);
+    await t.advance(ACTIVE_POLL_MS * 6);
+    const marked = store.list().find((m) => m.text === 'from the closed window');
+    assert.equal(marked?.state, 'not-delivered');
+    assert.equal(marked?.error, 'its window was closed');
+    assert.equal(R.runs.length, 1, 'the next message runs');
+    assert.equal(R.runs[0]!.message.text, 'mine');
+    assert.ok(store.resendFrom(b.message.seq, 'r1', 'w-A').ok, 'resendable');
+  } finally {
+    w.dispose();
+    store.close();
+    other.close();
+    r.done();
+  }
+});
+
+test('a head whose window has a fresh presence row or a live pid is never marked; no presence row and a message younger than PRESENCE_GRACE_MS is not marked', async () => {
+  // Fresh row, the pid looks gone to this window: refreshed every heartbeat, never marked.
+  {
+    const r = repo();
+    const t = fakeTime();
+    const other = r.open(t.now);
+    const store = r.open(t.now);
+    const R = gatedRunner();
+    const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+    try {
+      assert.ok(other.enqueue(bMsg('fresh')).ok);
+      for (let i = 0; i < (PRESENCE_GRACE_MS * 3) / LEASE_HEARTBEAT_MS; i++) {
+        other.presence({ windowKey: 'w-B', pid: 303 });
+        await t.advance(LEASE_HEARTBEAT_MS);
+      }
+      assert.equal(store.list().find((m) => m.text === 'fresh')?.state, 'queued');
+    } finally {
+      w.dispose();
+      store.close();
+      other.close();
+      r.done();
+    }
+  }
+  // Stale row but the recorded pid is alive: not marked.
+  {
+    const r = repo();
+    const t = fakeTime();
+    const other = r.open(t.now);
+    const store = r.open(t.now);
+    const R = gatedRunner();
+    const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: (p) => p === 303, now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+    try {
+      other.presence({ windowKey: 'w-B', pid: 303 });
+      assert.ok(other.enqueue(bMsg('alive pid')).ok);
+      await t.advance(PRESENCE_GRACE_MS * 3);
+      assert.equal(store.list().find((m) => m.text === 'alive pid')?.state, 'queued');
+    } finally {
+      w.dispose();
+      store.close();
+      other.close();
+      r.done();
+    }
+  }
+  // No presence row at all: a message younger than the grace is left, an older one is marked.
+  {
+    const r = repo();
+    const t = fakeTime();
+    const other = r.open(t.now);
+    const store = r.open(t.now);
+    const R = gatedRunner();
+    const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+    try {
+      assert.ok(other.enqueue(bMsg('no row')).ok);
+      await t.advance(PRESENCE_GRACE_MS - ACTIVE_POLL_MS * 4);
+      assert.equal(store.list().find((m) => m.text === 'no row')?.state, 'queued', 'younger than the grace');
+      await t.advance(ACTIVE_POLL_MS * 8);
+      assert.equal(store.list().find((m) => m.text === 'no row')?.state, 'not-delivered', 'older than the grace');
+    } finally {
+      w.dispose();
+      store.close();
+      other.close();
+      r.done();
+    }
+  }
+});
+
+test('dispose-and-recreate a worker with the same windowKey while a second window ticks, the head is not marked not-delivered', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const storeA = r.open(t.now);
+  const storeB1 = r.open(t.now);
+  const storeB2 = r.open(t.now);
+  const A = gatedRunner();
+  const B1 = gatedRunner();
+  const B2 = gatedRunner();
+  const alive = new Set<number>([101]);
+  const wA = createChatQueueWorker({ store: storeA, claim: { windowKey: 'w-A', pid: 101 }, runner: A.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'a1' });
+  const wB1 = createChatQueueWorker({ store: storeB1, claim: { windowKey: 'w-B', pid: 303 }, runner: B1.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'b1' });
+  let wB2: ReturnType<typeof createChatQueueWorker> | undefined;
+  try {
+    // w-A runs a long turn; w-B's message waits behind it for longer than the presence grace.
+    assert.ok(wA.submit(sub('sA', 'long')).ok);
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(A.runs.length, 1);
+    assert.ok(wB1.submit(sub('sB', 'waits')).ok);
+    await t.advance(PRESENCE_GRACE_MS + 10_000);
+    // w-B reloads: its worker is disposed (the row is kept) and the old pid is gone.
+    wB1.dispose();
+    alive.delete(303);
+    await t.advance(1_000);
+    // w-A's turn ends: the lease is free while w-B has no worker. w-A ticks over w-B's head.
+    A.runs[0]!.end({ kind: 'done' });
+    await t.advance(ACTIVE_POLL_MS * 4);
+    assert.equal(storeA.list().find((m) => m.text === 'waits')?.state, 'queued', 'not marked while the reloading window comes back');
+    // The new worker of the same window takes it.
+    alive.add(304);
+    wB2 = createChatQueueWorker({ store: storeB2, claim: { windowKey: 'w-B', pid: 304 }, runner: B2.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'b2' });
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(B2.runs.length, 1);
+    assert.equal(B2.runs[0]!.message.text, 'waits');
+    assert.equal(B1.runs.length, 0, 'the old worker never ran it');
+  } finally {
+    wA.dispose();
+    wB1.dispose();
+    wB2?.dispose();
+    storeA.close();
+    storeB1.close();
+    storeB2.close();
+    r.done();
+  }
+});
+
+test('a reload slower than PRESENCE_GRACE_MS ends as not-delivered with a resend and no row is lost', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const storeA = r.open(t.now);
+  const storeB = r.open(t.now);
+  const A = gatedRunner();
+  const B = gatedRunner();
+  const alive = new Set<number>([101, 303]);
+  const wA = createChatQueueWorker({ store: storeA, claim: { windowKey: 'w-A', pid: 101 }, runner: A.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'a1' });
+  const wB = createChatQueueWorker({ store: storeB, claim: { windowKey: 'w-B', pid: 303 }, runner: B.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'b1' });
+  try {
+    assert.ok(wA.submit(sub('sA', 'long')).ok);
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.ok(wB.submit(sub('sB', 'waits')).ok);
+    await t.advance(ACTIVE_POLL_MS * 2);
+    wB.dispose();
+    alive.delete(303); // the window reloads and takes longer than the grace to come back
+    A.runs[0]!.end({ kind: 'done' });
+    await t.advance(PRESENCE_GRACE_MS + 5_000);
+    const rows = storeA.list();
+    const marked = rows.find((m) => m.text === 'waits');
+    assert.equal(marked?.state, 'not-delivered', 'marked once the row is stale and the pid is dead');
+    assert.equal(rows.length, 1, 'no row is lost');
+    // Resend: handed to the window that resends it.
+    const again = storeA.resendFrom(marked!.seq, 'r1', 'w-A');
+    assert.ok(again.ok);
+    assert.equal(again.message.text, 'waits');
+  } finally {
+    wA.dispose();
+    storeA.close();
+    storeB.close();
+    r.done();
+  }
+});
+
+test("a previous-plugin window's dispose deleting its presence row: a head younger than PRESENCE_GRACE_MS is not marked, an older one is marked once", async () => {
+  const r = repo();
+  const t = fakeTime();
+  const prev = r.open(t.now);
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    // The previous plugin's dispose ran leave(): the row is gone.
+    prev.presence({ windowKey: 'w-B', pid: 303 });
+    prev.leave({ windowKey: 'w-B', pid: 303 });
+    assert.ok(prev.enqueue(bMsg('young', 'y')).ok);
+    await t.advance(PRESENCE_GRACE_MS - ACTIVE_POLL_MS * 4);
+    assert.equal(store.list().find((m) => m.text === 'young')?.state, 'queued', 'younger than the grace');
+    await t.advance(ACTIVE_POLL_MS * 8);
+    assert.equal(store.list().find((m) => m.text === 'young')?.state, 'not-delivered', 'an older one is marked');
+    // Marked once: it stays one row, and later ticks leave it.
+    await t.advance(PRESENCE_GRACE_MS);
+    assert.equal(store.list().filter((m) => m.state === 'not-delivered').length, 1);
+    assert.equal(store.list().length, 1);
+  } finally {
+    w.dispose();
+    store.close();
+    prev.close();
+    r.done();
+  }
+});

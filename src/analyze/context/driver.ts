@@ -385,7 +385,7 @@ async function checkScopeState(shaperId: RunShaperArgs['shaperId'], scope: Resol
  *   - a repository: for a request whose scope runShaper checks
  *     (checksScopeState), the recorded repository gets the check a miss makes
  *     (checkScopeState): refused when it is under index, and for the code
- *     source when the index no longer holds it; a miss when its last-indexed
+ *     and docs sources when the index no longer holds it; a miss when its last-indexed
  *     time has moved past the bundle's.
  */
 async function servedFromCache(
@@ -465,8 +465,8 @@ export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBund
 	// already (runAnalyze, before it measured):
 	//   - a run of any source but the generic one is refused when the
 	//     scope's repository is being indexed or its last index failed;
-	//   - the code source also needs a non-empty graph closure (the
-	//     empty-closure check, which makes the under-index check first).
+	//   - the code and docs sources also need a non-empty graph closure
+	//     (the empty-closure check, which makes the under-index check first).
 	// classification + task modes skip both: by the time a task fires,
 	// the run-mode invocation has already checked its scope.
 	if (checksScopeState(invocationMode, shaperId, opts)) await checkScopeState(shaperId, scope);

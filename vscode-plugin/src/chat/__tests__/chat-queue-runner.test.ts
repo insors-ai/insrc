@@ -430,7 +430,7 @@ test('an auth failure stores and posts a sign-in line in the chat', async () => 
   h.runs[0]!.proc.exitNow();
   const sign = h.store.get(s.id)!.transcript.filter((r) => r.role === 'assistant' && /not signed in/.test(r.text));
   assert.equal(sign.length, 1, 'one stored sign-in line');
-  assert.match(sign[0]!.text, /`claude`/);
+  assert.match(sign[0]!.text, /run `claude` in a terminal and sign in with \/login/);
   assert.ok(h.fc.posted.some((p) => p.payload.type === 'turn-event' && JSON.stringify(p.payload).includes('not signed in')), 'posted');
   h.fc.send('ready');
   const restored = h.fc.posted.filter((p) => p.payload.type === 'session-restored').at(-1)!;
@@ -454,4 +454,23 @@ test('a normal turn still pushes and echoes its user row exactly as before', asy
   assert.equal(echoes[0]!.payload['text'], 'first words');
   assert.equal(h.store.get(s.id)!.title, 'first words', 'the title is still derived');
   assert.equal(h.fc.posted.some((p) => JSON.stringify(p.payload).includes('retrying')), false, 'no retrying line on a first attempt');
+});
+
+test('the worker give-up note is shown live and is not stored in the transcript', async () => {
+  const h = harness();
+  h.host.open();
+  h.fc.send('ready');
+  const s = h.store.create('claude');
+  h.store.save(s);
+  const before = h.store.get(s.id)!.transcript.length;
+  const out = h.host.queueRunner.run(message(s.id, 'x'), () => {});
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed(done('t1'));
+  await out;
+  h.runs[0]!.proc.exitNow();
+  const afterTurn = h.store.get(s.id)!.transcript.length;
+  h.host.queueRunner.note!(message(s.id, 'x'), 'the queue could not record the result');
+  assert.equal(h.store.get(s.id)!.transcript.length, afterTurn, 'nothing stored');
+  assert.ok(afterTurn > before);
+  assert.ok(h.fc.posted.some((p) => p.payload.type === 'turn-event' && JSON.stringify(p.payload).includes('the queue could not record the result')), 'shown live');
 });

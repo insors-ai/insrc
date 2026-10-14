@@ -687,7 +687,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       log.warn(`[chat-queue] message ${q.message.key} failed: cause ${cause}, acted ${q.acted}, attempt ${q.message.attempts}: ${error}`);
       if (cause === 'auth' && !disposed) {
         const cli = /\b(claude|codex)\b/i.exec(error)?.[1]?.toLowerCase();
-        persistInfo(q.session, `queue-signin-${q.message.turnId}`, `${cli ?? 'The CLI'} is not signed in — run \`${cli ?? 'the CLI'}\` in a terminal to sign in, then resend this message.`);
+        const how = cli === 'codex' ? 'run `codex login` in a terminal' : cli === 'claude' ? 'run `claude` in a terminal and sign in with /login' : 'sign in to the CLI in a terminal';
+        persistInfo(q.session, `queue-signin-${q.message.turnId}`, `${cli ?? 'The CLI'} is not signed in — ${how}, then resend this message.`);
       }
       return endQueued({ kind: 'failed', error, acted: q.acted, cause });
     }
@@ -2112,7 +2113,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const queueRunner: QueuedTurnRunner = {
     note(message, text) {
       if (disposed || session === undefined || session.id !== message.sessionId) return log.warn(`[chat-queue] note for ${message.key} not shown (its chat is not open): ${text}`);
-      persistInfo(session, `queue-note-${message.turnId}-${Date.now()}`, text);
+      postInfo(`queue-giveup-${message.turnId}`, text); // live only: it is about the queue, not the conversation
     },
     run(message, onSpawn, onWaiting) {
       return new Promise<TurnOutcome>((resolve) => {

@@ -18,7 +18,7 @@ import { REAL_TIMERS, type Timers } from './async-util.js';
 import type { AttachmentRef } from './attachment-store.js';
 import type { ChatPanelLogger } from './chat-panel.js';
 import {
-  LEASE_HEARTBEAT_MS,
+  BUSY_NOTE, LEASE_HEARTBEAT_MS, StoreBusy,
   type ChatQueueLeases, type ChatQueueStore, type EnqueueResult, type LeaseClaim, type QueuedMessage, type TurnOutcome,
 } from './chat-queue-store.js';
 
@@ -27,10 +27,31 @@ export const ACTIVE_POLL_MS = 500;
 /** How often it is checked otherwise. */
 export const IDLE_POLL_MS = 5_000;
 
+/** The card a running queued message waits on (Epic E20261014613abdb3 Story S002), or undefined when none. */
+export type WaitingOn = 'approval' | 'selection' | undefined;
+
 /** Runs one acknowledged message in this window (the chat host's runQueued, HLD sc3). */
 export interface QueuedTurnRunner {
-  run(message: QueuedMessage, onSpawn: (cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }) => void): Promise<TurnOutcome>;
+  /**
+   * Story S002 (AMD-8): `onWaiting` is called when the message's first approval or selection card
+   * appears, and with undefined once none of its cards waits; the worker records it on the message.
+   */
+  run(
+    message: QueuedMessage,
+    onSpawn: (cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }) => void,
+    onWaiting?: (on: WaitingOn) => void,
+  ): Promise<TurnOutcome>;
 }
+
+/** An outbox action on one message (Story S002, AMD-3). */
+export type QueueAction = 'cancel' | 'dismiss' | 'resend';
+export type QueueActionResult = { readonly ok: true } | { readonly ok: false; readonly note: string };
+
+/** The sentence a refused action shows in the outbox. */
+export const ACTION_NOTES = {
+  started: 'That message has already started; it is in the chat now.',
+  gone: 'That message is no longer in the outbox.',
+} as const;
 
 export interface ChatQueueSubmission {
   readonly sessionId: string;
@@ -47,6 +68,12 @@ export interface ChatQueueWorker {
   liveSessionIds(): ReadonlySet<string>;
   /** Whether this window is running a queued message now. */
   running(): boolean;
+  /**
+   * Story S002 (AMD-3): an outbox action. cancel a queued or retrying message, dismiss a failed or
+   * not-delivered one, or resend it at the back as this window's. The change is noticed at once; a
+   * refusal carries a sentence for the user and is never thrown.
+   */
+  act(seq: number, action: QueueAction): QueueActionResult;
   dispose(): void;
 }
 
@@ -81,6 +108,8 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
   let lastPresence = Number.NEGATIVE_INFINITY;
   let pollHandle: unknown;
   let beatHandle: unknown;
+  /** Story S002: a card state of the running message that could not be written yet; written on the next tick. */
+  let pendingWaiting: { readonly seq: number; readonly on: WaitingOn } | undefined;
 
   function emit(): void {
     let rows: readonly QueuedMessage[];
@@ -131,24 +160,44 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
     beatHandle = timers.setTimeout(beat, LEASE_HEARTBEAT_MS);
   }
 
+  /** Story S002: records the card the running message waits on; a failed write is kept for the next tick. */
+  function writeWaiting(seq: number, on: WaitingOn): void {
+    pendingWaiting = undefined;
+    try {
+      store.markWaiting(seq, on);
+    } catch (err) {
+      log?.warn(`[chat-queue] the card of message ${seq} could not be recorded yet: ${errText(err)}`);
+      pendingWaiting = { seq, on };
+    }
+  }
+
   async function runMessage(m: QueuedMessage): Promise<void> {
     current = m;
     startHeartbeat();
     let outcome: TurnOutcome;
     try {
-      outcome = await deps.runner.run(m, (cli) => {
-        try {
-          store.attachCli(claim, cli);
-        } catch (err) {
-          log?.warn(`[chat-queue] the CLI of message ${m.seq} could not be recorded: ${errText(err)}`);
-        }
-      });
+      outcome = await deps.runner.run(
+        m,
+        (cli) => {
+          try {
+            store.attachCli(claim, cli);
+          } catch (err) {
+            log?.warn(`[chat-queue] the CLI of message ${m.seq} could not be recorded: ${errText(err)}`);
+          }
+        },
+        (on) => {
+          if (disposed || current?.seq !== m.seq) return;
+          writeWaiting(m.seq, on);
+          schedule(0);
+        },
+      );
     } catch (err) {
       // A runner that rejects instead of resolving: failed, and never retried.
       outcome = { kind: 'failed', error: errText(err), acted: true };
     }
     timers.clearTimeout(beatHandle);
     current = undefined;
+    if (pendingWaiting?.seq === m.seq) pendingWaiting = undefined; // the flag ends with the message
     if (disposed) return;
     if (!finishNow(m.seq, outcome)) pendingFinish = { seq: m.seq, outcome };
     schedule(0);
@@ -166,6 +215,7 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
       if (pendingFinish !== undefined) {
         if (finishNow(pendingFinish.seq, pendingFinish.outcome)) pendingFinish = undefined;
       }
+      if (pendingWaiting !== undefined && current?.seq === pendingWaiting.seq) writeWaiting(pendingWaiting.seq, pendingWaiting.on);
       noticeChanges();
       if (current === undefined && pendingFinish === undefined) {
         const head = store.head();
@@ -228,6 +278,25 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
     },
     running() {
       return current !== undefined;
+    },
+    act(seq, action) {
+      if (disposed) return { ok: false, note: ACTION_NOTES.gone };
+      let res: QueueActionResult;
+      try {
+        if (action === 'resend') {
+          const sent = store.resendFrom(seq, newTurnId(), claim.windowKey);
+          res = sent.ok ? { ok: true } : { ok: false, note: sent.note };
+        } else if (action === 'cancel') {
+          res = store.cancel(seq) ? { ok: true } : { ok: false, note: store.list().some((r) => r.seq === seq && r.state === 'processing') ? ACTION_NOTES.started : ACTION_NOTES.gone };
+        } else {
+          res = store.dismiss(seq) ? { ok: true } : { ok: false, note: ACTION_NOTES.gone };
+        }
+      } catch (err) {
+        log?.warn(`[chat-queue] ${action} of message ${seq} failed: ${errText(err)}`);
+        res = { ok: false, note: err instanceof StoreBusy ? BUSY_NOTE : `The chat queue could not change the message: ${errText(err)}` };
+      }
+      if (res.ok) schedule(0);
+      return res;
     },
     dispose() {
       if (disposed) return;

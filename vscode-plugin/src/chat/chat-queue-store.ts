@@ -441,6 +441,8 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
             db.prepare(`UPDATE messages SET state = 'not-delivered', error = ?, updated_at = ? WHERE seq = ?`).run('its window was closed', at, seq);
             break;
         }
+        // Story S002: the card it waited on ends with the run.
+        db.prepare(`UPDATE messages SET waiting_on = NULL WHERE seq = ?`).run(seq);
         db.prepare(`DELETE FROM lease WHERE id = 1 AND seq = ?`).run(seq);
         return bySeq(seq);
       });

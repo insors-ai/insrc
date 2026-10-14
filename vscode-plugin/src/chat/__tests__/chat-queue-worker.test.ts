@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Timers } from '../async-util.js';
-import { createChatQueueStore, LEASE_HEARTBEAT_MS, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
-import { ACTIVE_POLL_MS, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
+import { createChatQueueStore, LEASE_HEARTBEAT_MS, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
+import { ACTION_NOTES, ACTIVE_POLL_MS, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 
 /** Fake timers over a fake clock: advance() runs what is due, in order. */
 function fakeTime() {
@@ -168,6 +168,110 @@ test("chat queue worker: the window whose message is at the front takes the leas
     wB.dispose();
     storeA.close();
     storeB.close();
+    r.done();
+  }
+});
+
+// Epic E20261014613abdb3 Story S002 t2 — the worker's act and the runner's onWaiting.
+test("worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once", async () => {
+  const r = repo();
+  const t = fakeTime();
+  const store = r.open(t.now);
+  const other = r.open(t.now);
+  const R = gatedRunner();
+  let turn = 0;
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => `n${++turn}` });
+  const seen: string[][] = [];
+  w.onChange((rows) => seen.push(rows.map((m) => `${m.text}:${m.state}`)));
+  try {
+    const first = w.submit(sub('s1', 'first'));
+    const second = w.submit(sub('s1', 'second'));
+    assert.ok(first.ok && second.ok);
+    await t.advance(0);
+    assert.equal(R.runs.length, 1, 'the first message runs');
+
+    // Cancel: a waiting message leaves the queue; a started one is refused with a sentence.
+    assert.deepEqual(w.act(first.message.seq, 'cancel'), { ok: false, note: ACTION_NOTES.started });
+    const before = seen.length;
+    assert.deepEqual(w.act(second.message.seq, 'cancel'), { ok: true });
+    await t.advance(0); // the immediate tick, well before a poll
+    assert.ok(seen.length > before, 'onChange fired at once');
+    assert.deepEqual(seen.at(-1), ['first:processing']);
+    assert.deepEqual(w.act(second.message.seq, 'cancel'), { ok: false, note: ACTION_NOTES.gone });
+
+    // Dismiss and resend refuse a row in the wrong state.
+    assert.equal(w.act(first.message.seq, 'dismiss').ok, false, 'a processing message is not dismissed');
+    assert.equal(w.act(first.message.seq, 'resend').ok, false, 'a processing message is not resent');
+
+    // A not-delivered message of another (closed) window, resent here, becomes this window's.
+    R.runs[0]!.end({ kind: 'stopped' });
+    await t.advance(0);
+    const lost = other.enqueue({ key: 's2::x', sessionId: 's2', turnId: 'x', windowKey: 'w-gone', origin: 'typed', text: 'lost', attachments: [] });
+    assert.ok(lost.ok);
+    assert.equal(other.acknowledge(lost.message.seq, { windowKey: 'w-gone', pid: 9 }), true);
+    other.finish(lost.message.seq, { kind: 'not-delivered', reason: 'window-closed' });
+    assert.deepEqual(w.act(lost.message.seq, 'resend'), { ok: true });
+    const resent = store.list().find((m) => m.text === 'lost');
+    assert.equal(resent?.windowKey, 'w-A');
+    assert.equal(resent?.state, 'queued');
+    assert.equal(resent?.key, `s2::n${turn}`);
+
+    // The stopped first message is dismissed.
+    assert.deepEqual(w.act(first.message.seq, 'dismiss'), { ok: true });
+    assert.equal(store.list().some((m) => m.seq === first.message.seq), false);
+  } finally {
+    w.dispose();
+    store.close();
+    other.close();
+    r.done();
+  }
+});
+
+test("worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick", async () => {
+  const r = repo();
+  const t = fakeTime();
+  const real = r.open(t.now);
+  let busy = 0;
+  // A store whose next markWaiting fails as busy, as another window's long write would.
+  const store: Store = Object.assign(Object.create(real) as Store, {
+    markWaiting: (seq: number, on: 'approval' | 'selection' | undefined) => {
+      if (busy > 0) {
+        busy -= 1;
+        throw new StoreBusy('database is locked');
+      }
+      return real.markWaiting(seq, on);
+    },
+  });
+  const runs: { message: QueuedMessage; waiting?: ((on: 'approval' | 'selection' | undefined) => void) | undefined; end: (o: TurnOutcome) => void }[] = [];
+  const runner: QueuedTurnRunner = { run: (message, _spawn, waiting) => new Promise<TurnOutcome>((end) => { runs.push({ message, waiting, end }); }) };
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner, isAlive: () => false, now: t.now, timers: t.timers });
+  try {
+    assert.ok(w.submit(sub('s1', 'runs')).ok);
+    await t.advance(0);
+    assert.equal(runs.length, 1);
+    assert.equal(typeof runs[0]!.waiting, 'function', 'the runner is given onWaiting');
+    const seq = runs[0]!.message.seq;
+
+    runs[0]!.waiting!('approval');
+    assert.equal(real.list()[0]?.waitingOn, 'approval');
+    runs[0]!.waiting!(undefined);
+    assert.equal(real.list()[0]?.waitingOn, undefined, 'cleared');
+
+    // A busy write is kept and written on the next tick.
+    busy = 1;
+    runs[0]!.waiting!('selection');
+    assert.equal(real.list()[0]?.waitingOn, undefined, 'not written yet');
+    await t.advance(ACTIVE_POLL_MS);
+    assert.equal(real.list()[0]?.waitingOn, 'selection', 'written on the next tick');
+
+    // After the message ends, a late report is ignored.
+    runs[0]!.end({ kind: 'stopped' });
+    await t.advance(0);
+    runs[0]!.waiting!('approval');
+    assert.equal(real.list().find((m) => m.seq === seq)?.waitingOn, undefined);
+  } finally {
+    w.dispose();
+    real.close();
     r.done();
   }
 });

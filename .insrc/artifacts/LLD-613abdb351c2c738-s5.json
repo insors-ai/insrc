@@ -51,6 +51,13 @@
         "choice": "Moot: the owner's hard-cap ruling removes liveSessionIdsOfAllQueues and the keepSessionIds dependency from the design, so no new names remain to ground. The LLD is amended to drop them.",
         "rationale": "Follows from the hard-cap decision.",
         "resolvedAt": "2026-10-14T18:29:42.904Z"
+      },
+      "qbabde9a5": {
+        "question": "ep3 (partial): the invariantsToPreserve cite the HLD assumption ids c3, c11 and c12 as the schema requires; the behaviours are shown by the read:queue-surface and read:current-behaviour bundles, but the ids do not name a bundle directly.",
+        "status": "resolved",
+        "choice": "Add a bundle crosswalk in the plan: keep the HLD c-ids (c3, c11, c12) in the LLD and map them to the read:queue-surface and read:current-behaviour bundles in the plan's closing task, as ruled for s4.",
+        "rationale": "Same ruling as Story s4 (option A there).",
+        "resolvedAt": "2026-10-14T18:30:06.224Z"
       }
     }
   },

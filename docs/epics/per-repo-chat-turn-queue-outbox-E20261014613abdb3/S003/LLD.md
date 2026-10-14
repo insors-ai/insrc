@@ -341,6 +341,8 @@ takeOver and reclaim are implemented in the store with the liveness decision pas
   - **resolved**: File a fieldAdd HLD amendment — Both additions are additive; amendment keeps sc1 and sc2 accurate for sibling Stories. _(2026-10-14T15:03:44.495Z)_
 - `q4fa42c10` — sc2 additions: presenceOf(windowKey) is a new read on sc2 and takeOver skips the staleness wait for the claim's own windowKey; both are additive to the HLD sketch, and sc2 is owned by S001.
   - **resolved**: File an sc2 HLD amendment — presenceOf and the own-windowKey takeOver skip are additions to a contract S001 owns. _(2026-10-14T15:04:06.402Z)_
+- `q502dda2e` — Decision for the owner: the line between a slow reload and a closed window is PRESENCE_GRACE_MS (30 s, the HLD's value). A reload slower than that marks the window's head message not delivered, with a resend, never lost. Using a longer grace for the head rule (for example LEASE_TAKEOVER_MS, 10 minutes) would avoid that but would hold the queue behind a genuinely closed window for up to that long. This LLD keeps the HLD's 30 s.
+  - **resolved**: Keep 30 s grace (HLD value) — Owner review comment: locking the queue for 10 minutes is not an option. _(2026-10-14T15:04:17.544Z)_
 
 ## Citations
 

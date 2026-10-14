@@ -270,6 +270,13 @@
         "choice": "File an sc2 HLD amendment",
         "rationale": "presenceOf and the own-windowKey takeOver skip are additions to a contract S001 owns.",
         "resolvedAt": "2026-10-14T15:04:06.402Z"
+      },
+      "q502dda2e": {
+        "question": "Decision for the owner: the line between a slow reload and a closed window is PRESENCE_GRACE_MS (30 s, the HLD's value). A reload slower than that marks the window's head message not delivered, with a resend, never lost. Using a longer grace for the head rule (for example LEASE_TAKEOVER_MS, 10 minutes) would avoid that but would hold the queue behind a genuinely closed window for up to that long. This LLD keeps the HLD's 30 s.",
+        "status": "resolved",
+        "choice": "Keep 30 s grace (HLD value)",
+        "rationale": "Owner review comment: locking the queue for 10 minutes is not an option.",
+        "resolvedAt": "2026-10-14T15:04:17.544Z"
       }
     }
   },

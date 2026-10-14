@@ -335,6 +335,8 @@ takeOver and reclaim are implemented in the store with the liveness decision pas
   - **resolved**: Confirm, and amend the HLD wording — No deleting flush; HLD wording becomes bounded by delete-on-finish plus refuse-when-full. _(2026-10-14T15:01:26.398Z)_
 - `qb1c54e0f` — Epic constraints k1-k5 were not scored individually against the alternatives; none is contradicted.
   - **resolved**: Score k1-k5 in the plan — A short constraint matrix in the plan; the approved LLD stays untouched. _(2026-10-14T15:02:20.295Z)_
+- `qf24e0656` — The invariantsToPreserve cite HLD assumption ids (c11, c12, c13, c3) rather than analyze-bundle ids.
+  - **resolved**: Keep HLD c-ids + crosswalk note — Consistent with the decision for Story s1. _(2026-10-14T15:03:04.902Z)_
 
 ## Citations
 

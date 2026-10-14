@@ -249,6 +249,13 @@
         "choice": "Score k1-k5 in the plan",
         "rationale": "A short constraint matrix in the plan; the approved LLD stays untouched.",
         "resolvedAt": "2026-10-14T15:02:20.295Z"
+      },
+      "qf24e0656": {
+        "question": "The invariantsToPreserve cite HLD assumption ids (c11, c12, c13, c3) rather than analyze-bundle ids.",
+        "status": "resolved",
+        "choice": "Keep HLD c-ids + crosswalk note",
+        "rationale": "Consistent with the decision for Story s1.",
+        "resolvedAt": "2026-10-14T15:03:04.902Z"
       }
     }
   },

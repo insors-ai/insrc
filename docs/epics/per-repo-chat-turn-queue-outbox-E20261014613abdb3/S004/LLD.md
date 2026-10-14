@@ -406,6 +406,8 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
   - **resolved**: Classify 'other', fail fast with install hint + resend (owner's resolution) — Owner decision: a missing CLI cannot be fixed by waiting. _(2026-10-14T17:17:06.008Z)_
 - `q2ee914d5` — RESOLVED by the owner: the retry of a busy outcome write is bounded at 60 s, then a chat note asks for a reload, and the reload frees the lease through S003's rule (FR004; enqueue was already bounded by the busy timeout and refused with a note).
   - **resolved**: Bounded 60 s retry, then a reload note (owner's decision) — Owner decision: retries cannot be indefinite. _(2026-10-14T17:19:05.046Z)_
+- `q823f47b9` — RESOLVED by the owner: the classifier ships with conservative patterns written from the adapter's messages and the daemon's isTransientCliError; an unmatched text is never retried, every failed turn's cause and text are logged, and the live hand check confirms the patterns against real failures.
+  - **resolved**: Conservative seeded patterns + log + live check (owner's resolution) — Owner decision. _(2026-10-14T17:19:48.958Z)_
 
 ## Citations
 

@@ -261,6 +261,13 @@
         "choice": "Bounded 60 s retry, then a reload note (owner's decision)",
         "rationale": "Owner decision: retries cannot be indefinite.",
         "resolvedAt": "2026-10-14T17:19:05.046Z"
+      },
+      "q823f47b9": {
+        "question": "RESOLVED by the owner: the classifier ships with conservative patterns written from the adapter's messages and the daemon's isTransientCliError; an unmatched text is never retried, every failed turn's cause and text are logged, and the live hand check confirms the patterns against real failures.",
+        "status": "resolved",
+        "choice": "Conservative seeded patterns + log + live check (owner's resolution)",
+        "rationale": "Owner decision.",
+        "resolvedAt": "2026-10-14T17:19:48.958Z"
       }
     }
   },

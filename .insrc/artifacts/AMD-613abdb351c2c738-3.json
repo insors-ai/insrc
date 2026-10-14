@@ -1,0 +1,36 @@
+{
+  "id": "AMD-613abdb351c2c738-3",
+  "epicHash": "613abdb351c2c738",
+  "epicSlug": "per-repo-chat-turn-queue-outbox",
+  "hldBaseRunId": "wf-1791967985926-oydluz",
+  "amendment": {
+    "type": "sharedContract.methodAdd",
+    "contractId": "sc4",
+    "method": {
+      "name": "act",
+      "signature": "act(seq: number, action: 'cancel' | 'dismiss' | 'resend'): { readonly ok: true } | { readonly ok: false; readonly note: string }",
+      "purpose": "The outbox's actions: cancel a queued or retrying message, dismiss a failed or not-delivered one, or resend it at the back under a new turn id; the change is noticed at once (an immediate tick), and a refusal carries a sentence for the user"
+    }
+  },
+  "rationale": "The outbox (s2) must cancel, dismiss and resend messages, and the chat host holds only the worker (chat-panel.ts:1985), not the store. Routing these writes through the worker keeps every queue write behind the one object that already owns the new-turn-id rule and the immediate tick, so the outbox in every window updates within a tick. It is additive: no existing sc4 member changes, and sc1 already has cancel/dismiss/resend.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1791981295513-kg3r1m",
+    "storyId": "s2",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-14T12:34:59.241Z",
+  "status": "pending"
+}

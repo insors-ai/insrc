@@ -1,0 +1,1193 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1791981822071-v8q2gp",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T12:43:46.463Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 4389,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1791967985926-oydluz",
+    "hldEffectiveHash": "e1a7250f3a6ddaa96975cbfbe8ef9268fa78412430804b83447e10d03a26a6e9",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S002's four acceptance criteria (ac1 places + 'N from other chats ahead', ac2 cancel, ac3 resend with attachments to the back, ac4 same after reload) and FR002 (a message leaves the outbox when taken) are each designed",
+          "evidence": "DEF.md:127-130 lists ac1-ac4 and FR001-FR004 (lines 46-49). The LLD covers them: projectOutbox gives positions and aheadFromOtherChats and drops processing rows (FR002), act handles cancel/dismiss/resend, resendFrom keeps text and attachment refs and re-inserts with a new AUTOINCREMENT seq so the row joins the back, and the outbox is projected from the queue file on 'ready' and on the worker's first tick (ac4).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No non-goal is built: there is no editing or reordering of waiting messages, no interrupt, and nothing is run again without the user",
+          "evidence": "DEF.md:76-78 rules out interrupting, editing or reordering, and unattended re-runs. The only actions in the LLD are cancel, dismiss and an explicit user resend. 'outbox-retry-now' is declared for s4 and ignored by the host here. The blockedBy line (HLD.md:211 assigns it to s2) only displays state.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The store's cancel deletes only queued or retrying rows and returns false otherwise; dismiss deletes only failed or not-delivered rows; resend refuses a missing row or one in another state with 'That message can no longer be sent again.'; and an open of a newer schema throws StoreUnavailable('made by a newer plugin')",
+          "evidence": "chat-queue-store.ts:407-409: `DELETE FROM messages WHERE seq = ? AND state IN ('queued', 'retrying')` ... `=== 1`. :411-413 is the same for ('failed','not-delivered'). :419-420 refuses with 'That message can no longer be sent again.'. :303-304 `version > SCHEMA_VERSION` throws StoreUnavailable(`...made by a newer plugin...`).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The worker's emit catches a list() error, logs it and delivers no rows; it emits after its own writes as well as other connections' commits; and its first tick emits the file's rows (which the reload case relies on)",
+          "evidence": "chat-queue-worker.ts:85-91: emit catches store.list() errors, logs a warning and returns. noticeChanges (:103-108) compares `${dataVersion()}:${ownWrites()}` against `stamp`, which starts as '', so the first tick always emits. The store's write() increments `own` (chat-queue-store.ts:280).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The webview's doSubmit marks the turn running locally on submit, and the host already posts 'turn-running' when a queued message starts",
+          "evidence": "chat-panel.ts:1236: doSubmit posts submit-turn and then calls `setRunning(true);setProgress('working…')`. chat-panel.ts:1971 has queueRunner.run post `{ type: 'turn-running', sessionId: s.id }`, and :1207 shows the webview handling 'turn-running'.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "resendFrom, markWaiting, act, onWaiting, waitingOn and projectOutbox are new, and the reused worker/store members exist with the stated shape (submit / onChange / liveSessionIds / running / dispose; cancel / dismiss / resend(seq, newTurnId) / list)",
+          "evidence": "The ChatQueueWorker interface (chat-queue-worker.ts:42-51) has exactly submit, onChange, liveSessionIds, running and dispose. The ChatQueueStore interface (chat-queue-store.ts:92-113) has cancel, dismiss, `resend(seq, newTurnId)` (which keeps old.windowKey at :428) and list, with no resendFrom or markWaiting. QueuedMessage (:34-54) has no waitingOn. QueuedTurnRunner.run (worker.ts:31-33) takes (message, onSpawn) only.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The host can supply runningChat.here even though it does not hold the window key",
+          "evidence": "The ChatPanelHost deps carry only `queue?: (runner) => ChatQueueWorker` (chat-panel.ts:128), so the host has no claim or windowKey. Because one message runs per repository, worker.running() (chat-queue-worker.ts:229-231) is enough for the `here` predicate. resendFrom's window key comes from the worker's own claim, which the LLD states.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adding an optional third parameter onWaiting to QueuedTurnRunner.run is compatible with its single implementer and its caller",
+          "evidence": "The only implementation is chat-panel.ts:1955-1982 `run(message, onSpawn)`. The only caller is runMessage at chat-queue-worker.ts:139. An optional trailing parameter does not break either. Card detection already exists in the host: settleQueued's `cardsWaiting = approvals.head() !== undefined || pendingSelections.size > 0` (chat-panel.ts:614) and selection-request tracking (:1456-1457).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The protocol additions go into HOST_TO_WEBVIEW_TYPES / WEBVIEW_TO_HOST_TYPES at the cited lines, which existing protocol tests check as additive",
+          "evidence": "protocol.ts:309 `export const HOST_TO_WEBVIEW_TYPES = [`, :325 `export const WEBVIEW_TO_HOST_TYPES = [`. protocol.test.ts asserts that prior kinds are still present and that there are no duplicates (lines 113-120), so new types only extend the lists.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A fresh file can be created at version 2 with waiting_on through SCHEMA, and a version-1 file can be upgraded with ALTER TABLE inside the open transaction",
+          "evidence": "chat-queue-store.ts:297-306 runs every SCHEMA statement (`CREATE TABLE IF NOT EXISTS`) inside write() (BEGIN IMMEDIATE) and writes schema_version only when it is missing. That is why the LLD needs a separate ALTER for an existing version-1 file: IF NOT EXISTS will not add the column. An ALTER TABLE ADD COLUMN of a nullable TEXT in that same transaction is sound. insert() names its columns explicitly (:331) and rowToMessage reads by name (:213-239), so older rows stay readable with waiting_on NULL.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A window on the previous plugin that opens a version-2 file falls back to running messages directly, with a notice",
+          "evidence": "chat-queue-setup.ts:84-91: when createChatQueueStore throws, the factory logs 'not available, messages run directly', calls notify with 'The chat queue was made by a newer insrc plugin; reload this window. Messages run as before.' for /newer plugin/, and returns undefined. The host then runs without the queue. An old-plugin window that is already open keeps its connection: its SELECT * ignores the extra column and its INSERT names its columns. This is compatible, but the LLD does not say so.",
+          "action": "Optional: state that already-open previous-plugin windows keep using the upgraded file, since they check the version only at open.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The changes to s1-owned contracts (sc4 act and onWaiting; sc1 resendFrom, markWaiting and the waiting_on column with the version bump) are proposed as HLD amendments, not redesigned in place",
+          "evidence": "Open questions §11 lists the four as HLD amendments. The untracked .insrc/artifacts/AMD-613abdb351c2c738-{3,4,7,8}.json each mention markWaiting / resendFrom / onWaiting / act. HLD.md:184 makes s2 the owner of sc5, and HLD.md:211 assigns blockedBy to s2. s3 takeover, s4 retry logic and s5 review-pane routing are left to their owners (retry-now is a no-op).",
+          "action": "Approve the four amendments before this LLD so sc1/sc4 match.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "StoreBusy from cancel or dismiss is caught by worker.act, because the store's cancel and dismiss do not catch it themselves",
+          "evidence": "chat-queue-store.ts:407-413: cancel and dismiss call write() directly, and write throws StoreBusy on SQLITE_BUSY (:274, :288). The LLD says act catches StoreBusy and StoreUnavailable and returns { ok:false, note: BUSY_NOTE or the unavailable note }. BUSY_NOTE is exported at :172. resend/resendFrom already catch it internally (:433-436).",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A waiting card that holds a running queued message ends by an answer or by CONTINUATION_WAIT_MS as 'stopped', so the waiting_on flag is cleared when finish rewrites or deletes the row",
+          "evidence": "chat-panel.ts:614-624: settleQueued arms waitTimer for continuationWaitMs and ends 'stopped' with 'no answer to the approval'. finish (chat-queue-store.ts:384-404) deletes the row on done or detached-ended, or sets it to failed. Since markWaiting writes only on a processing row, a failed row's stale waiting_on is never projected (projectOutbox reads waitingOn only from processing rows). The LLD's 'ends with the row' holds as long as projectOutbox ignores waitingOn on non-processing rows, which its postcondition states.",
+          "action": "Optional: have finish also clear waiting_on so a resent or failed row never carries it.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1-ac4 maps to at least one named test at the right level, using the existing store/worker test fixtures",
+          "evidence": "The §6 acceptance mapping lists projection, host and worker/store tests for ac1-ac4. The fixtures named exist: chat-queue-store.test.ts and chat-queue-worker.test.ts already use real temp SQLite files and fake timers. tempQueue() exists at chat-panel.test.ts:34, but it is a local, unexported function. The new chat-queue-outbox-host.test.ts must define its own copy or have it extracted, as chat-queue-routing.test.ts and chat-queue-runner.test.ts already build their own harnesses.",
+          "action": "When building, extract tempQueue into a shared test helper or copy it into chat-queue-outbox-host.test.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 15,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-14T12:43:54.657Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The chat panel gains an outbox: a band above the message box listing this chat's messages that are waiting in the repository's queue (with their place in line), and those that failed or could not be delivered (with the reason). One line says how many other chats' messages are ahead and which chat is running, and, in every window, when that chat is waiting for an approval or a choice. Each waiting row can be cancelled, and each failed or undelivered row dismissed or resent as it was, attachments included. The outbox is drawn from the queue file, so a reload or restart shows the same rows.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A shared per-repository SQLite queue (node:sqlite, WAL, busy timeout) under ~/.insrc, written only in short IMMEDIATE transactions, with three tables: messages in queue order, a single-row repo lease with a heartbeat, and window presence keyed by a window key that survives a reload. A deps-injected queue worker in each window decides from the database alone when to take the lease, acknowledges the head message (queued -> processing) in the same transaction, and hands the turn to the existing turn lifecycle with its newest-wins rule removed; the per-session lease stays underneath as a guard against two CLI processes on one session. Takeover, not-delivered marking, retries and the flush are rules over these tables, and the outbox is a projection of them posted to the chat webview.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "OutboxView",
+          "purpose": "What the chat webview shows for the shown session: its live messages with positions and states, and the count of other chats' messages ahead; and the actions it can post back.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s4",
+            "s5"
+          ],
+          "assumptions": [],
+          "interfaceSketch": "interface OutboxRow { readonly seq: number; readonly position?: number | undefined; readonly state: Exclude<QueueState, 'done' | 'processing'>; // a taken message is shown in the transcript, not the outbox (DEF S002:FR002) readonly text: string; readonly attachments: number; readonly origin: 'typed' | 'review-pane'; readonly error?: string | undefined; readonly attempt?: number | undefined; readonly nextAttemptAt?: number | undefined }\ninterface OutboxView { readonly sessionId: string; readonly rows: readonly OutboxRow[]; readonly aheadFromOtherChats: number; readonly blockedBy?: { readonly chatTitle: string; readonly reason: 'approval' | 'selection' } | undefined; readonly note?: string | undefined }\ntype OutboxAction = { readonly type: 'outbox-cancel' | 'outbox-dismiss' | 'outbox-resend' | 'outbox-retry-now'; readonly seq: number };\n// host -> webview: { type: 'outbox', view: OutboxView }"
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ChatQueueStore",
+          "purpose": "The per-repository store and every transaction on it: enqueue with the bound check, the acknowledgement, state changes, cancel and dismiss, resend, the flush, and reading the queue for a view.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c11",
+            "c12"
+          ],
+          "interfaceSketch": "import type { AttachmentRef } from './attachment-store.js';\ntype QueueState = 'queued' | 'processing' | 'retrying' | 'done' | 'failed' | 'not-delivered';\ninterface QueuedMessage {\n  readonly seq: number;            // queue order (row id)\n  readonly key: string;            // `${sessionId}::${turnId}`\n  readonly sessionId: string;\n  readonly turnId: string;\n  readonly windowKey: string;      // the window that sent it; stable across reloads\n  readonly origin: 'typed' | 'review-pane';\n  readonly text: string;\n  readonly attachments: readonly AttachmentRef[];   // the attachment store's own ref, kept as is: { id, name, kind, size, path }\n  readonly state: QueueState;\n  readonly attempts: number;       // infrastructure retries made\n  readonly nextAttemptAt?: number | undefined;\n  readonly error?: string | undefined;\n  readonly createdAt: number;\n  readonly updatedAt: number;\n}\ntype EnqueueResult = { readonly ok: true; readonly message: QueuedMessage } | { readonly ok: false; readonly reason: 'full' | 'busy' | 'unavailable'; readonly note: string };\ninterface ChatQueueStore {\n  enqueue(m: Omit<QueuedMessage, 'seq' | 'state' | 'attempts' | 'createdAt' | 'updatedAt'>): EnqueueResult;\n  head(): QueuedMessage | undefined;                          // the first row in seq order that is queued or retrying (never processing, failed or not-delivered); a retrying head that is not yet due holds the queue: the worker waits for it and never takes a later row\n  acknowledge(seq: number, lease: LeaseClaim): boolean;     // queued|retrying -> processing, with the lease, in one transaction\n  finish(seq: number, outcome: TurnOutcome): QueuedMessage | undefined; // done and detached-ended -> deleted; stopped -> failed ('stopped by the user'); failed -> retrying or failed; not-delivered kept\n  cancel(seq: number): boolean;                             // a queued or retrying message leaves the queue\n  dismiss(seq: number): boolean;                            // a failed or not-delivered message is deleted\n  resend(seq: number, newTurnId: string): EnqueueResult;   // a failed or not-delivered message is queued again at the back\n  list(): readonly QueuedMessage[];                         // every live row, in queue order\n  dataVersion(): number;                                    // changes when another window commits\n  close(): void;\n}\nconst QUEUE_RECORD_BOUND = 500;"
+        },
+        {
+          "id": "sc4",
+          "name": "ChatQueueWorker",
+          "purpose": "The per-window loop that watches the store, keeps presence and the lease fresh, decides what runs next and asks the chat host to run it; and the enqueue entry point every sender uses.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ],
+          "interfaceSketch": "interface ChatQueueWorker {\n  submit(m: { readonly sessionId: string; readonly text: string; readonly origin: 'typed' | 'review-pane'; readonly attachments: QueuedMessage['attachments'] }): EnqueueResult;\n  onChange(listener: (rows: readonly QueuedMessage[]) => void): { dispose(): void }; // after any commit, in any window\n  liveSessionIds(): ReadonlySet<string>;            // sessions with a queued, processing, retrying, failed or not-delivered message: kept by the attachment sweep and by onEvict\n  dispose(): void;\n}\n// A message is this window's when message.windowKey === claim.windowKey; nothing else decides ownership.\ninterface ChatQueueWorkerDeps {\n  readonly store: ChatQueueStore & ChatQueueLeases;\n  readonly claim: LeaseClaim;\n  readonly runner: QueuedTurnRunner;\n  readonly isAlive: (pid: number, startedAt?: number) => boolean;\n  readonly now: () => number;\n  readonly timers?: unknown;\n}"
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc4"
+        ],
+        "internal": "The outbox's markup, styles (VS Code theme variables, the chat panel's rounded style) and its live updates in the webview, the projection from queue rows to OutboxView for the shown session (processing rows are dropped: the running message is in the transcript), and the handling of the four outbox actions in the chat host. When the queue is held by a waiting approval or selection card, other chats' outboxes say which chat it is waiting on (blockedBy)."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The SQLite schema, its migrations and pragmas (WAL, busy_timeout), the repo key and the store's file location, the window key kept in workspace storage, the worker's polling cadence and timers, and the chat host's change from starting turns to submitting them. Every caller of runTurn is accounted for: the webview's submit-turn and the attachment submit enqueue a 'typed' message; the approval grant's re-run (chat-panel.ts:578, with allowedTools and suppressEcho) and the selection continuation (:1671, suppressEcho) are continuations of the turn already holding the lease and run under it, off the queue; submitExternal enqueues a 'review-pane' message (s5). The runner opens the panel and shows the message's chat when needed, and reports the lease's CLI process at spawn. turn-lifecycle.ts gains onSpawn with an exit promise that survives detach(), for live and followed turns (the tests that pin newest-wins or the supersede change: turn-lifecycle.test.ts:205 'a second start drops a turn still waiting for its lease', :229, :252, :728, :766, :984; chat-panel.test.ts:138 'single-in-flight: a second submit supersedes the first', :1318 (its 'a newer turn's start' leg: a submit no longer ends the running turn's diff state, since runTurn's start no longer calls endDiffTurn for a queued message), :2854 'Stop ends the running process at once and cancels a waiting message' (now: the waiting message runs after Stop), :4745, :5018, and the presenter tests of a superseded turn at :5302 and :5455 (now: there are no superseded turns); the rest stand). Sending a message never touches the running turn: submit and enqueue no longer call supersedeQueuedApprovals (chat-panel.ts:1432 and :1506, and drainExternal's call at :702 goes with the list in s5), so a typed message waits behind a waiting card, which the user answers; chat-panel.test.ts:4745 changes to assert the card stays. A waiting approval or selection card of the running turn ends at an answer, Stop, a chat switch, the panel closing or CONTINUATION_WAIT_MS; the message then finishes 'stopped', which leaves it failed with a resend, and the lease is released. A head message whose session no longer exists fails with that reason. Mixed plugin versions: a window still running the previous plugin after an update starts turns outside the queue until it is reloaded; VS Code asks for that reload after an extension update, the store records the plugin version that created it, and s1's hand check covers reloading every window. The plugin's test runtime is pinned to a Node with unflagged node:sqlite (engines.node >= 22.13). The newest-wins supersede in turn-lifecycle.ts is removed; a chat switch, the panel closing or adopt() detach the view only, and the runner then resolves 'detached-ended' when the detached CLI exits, the window holding and heartbeating the lease until then; a pipe turn, which detach() stops (turn-lifecycle.ts:517-525), resolves 'stopped' and so stays as a failed message with a resend. Stop ends the running turn and releases the lease. The minimum VS Code version and the plain 'unsupported VS Code' message when node:sqlite cannot load are part of s1."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The takeover rule (lease stale for LEASE_TAKEOVER_MS and both the holder window's process and the lease's CLI process gone), marking a processing message failed when its window died with no CLI left, re-attaching a turn whose CLI survived a reload (the reloaded window, same window key, reclaims the lease with reclaim() and follows the turn through the session's saved cursor), the not-delivered rule for a head message whose window is closed (no live presence past PRESENCE_GRACE_MS and its process gone), and the flush that keeps the stored records within QUEUE_RECORD_BOUND."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "The classification of a failed turn's error into an InfraCause, the 'acted' tracking from the turn's tool-call, file-edit and tool-result events, the retry schedule (10 s, 1 min, 5 min; at most 3), the retrying state's row in the outbox with its countdown, retry-now and cancel, and the authentication message."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "A pane decision goes to the chat the review pane hands over to today: the chat shown in this window's panel, or, when the panel is closed, the chat the panel opens on (this window's last active chat). It is submitted through ChatQueueWorker.submit with origin 'review-pane', and the panel is opened. submitExternal returns ExternalSubmitResult = 'queued' | { readonly kind: 'unavailable'; readonly note: string } (from EnqueueResult: ok -> 'queued', full / busy / unavailable -> unavailable with the queue's note; 'sent' is no longer returned since every message queues), and the review host's notifyChat type, ChatHandOver and decisionResultLine carry the note so the pane shows why a decision was refused; the change sites are ExternalSubmitResult in chat-panel.ts:148-154, the review host's notifyChat dep type and ChatHandOver in docs-review-panel.ts:45 and :65 with the hand-over sentence at :2452 (the 'sent' branch goes; 'queued' reads 'Sent to the chat; it waits its turn in the outbox.'; 'unavailable' shows the queue's note), the binding in extension.ts:712, and the tests review-wiring.test.ts, docs-review-decision.test.ts (its default notifyChat returning 'sent' at :126 and the result lines at :457-462) and chat-panel.test.ts's submitExternal suite (:4931-5235), which assert 'sent', the wording and the drain order. The waitingExternal list and drainExternal are removed. Attachments: liveSessionIds() across every repository's queue file under ~/.insrc/chat-queue is added to the start-up sweep's keep set (which takes session ids, extension.ts:470, attachment-store.ts:199), and session eviction skips any session with live rows in any queue: createFileChatSessionStore (session-file-store.ts: FileStoreDeps at :98-105, evictBeyondCap at :285-313, built at extension.ts:459) gains a keep predicate dependency: the oldest-first eviction skips kept sessions and evicts other sessions instead to respect the cap, since onEvict runs after the eviction and cannot veto it."
+        }
+      ],
+      "rolloutPhase": "Phase B — the outbox and a dead window",
+      "nonFunctional": {
+        "performance": "Enqueue, acknowledge and finish are each one IMMEDIATE transaction of a few rows, under 10 ms on a local disk; a window polls data_version every 500 ms while its repository has live rows or it holds the lease, and every 5 s otherwise; a waiting message starts within about one poll interval of the turn ahead of it ending.",
+        "security": "The store holds message text and attachment paths in the user's home directory with the same permissions as the chat sessions under ~/.insrc; no new network surface; no credentials are stored.",
+        "observability": "Every acknowledgement, takeover, not-delivered marking, retry and refusal is logged through the chat's logger with the message key and window key; the outbox shows each message's state and error to the user.",
+        "durability": "WAL mode with synchronous=NORMAL; a crashed window leaves at most an uncommitted transaction, which SQLite rolls back; done rows are deleted at once and the store never holds more than QUEUE_RECORD_BOUND live rows. The store records the plugin version that created it and its schema version; a newer schema is migrated in one transaction on open."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "OutboxView",
+          "signature": "interface OutboxView { readonly sessionId: string; readonly rows: readonly OutboxRow[]; readonly aheadFromOtherChats: number; readonly runningChat?: { readonly title: string; readonly here: boolean } | undefined; readonly blockedBy?: { readonly chatTitle: string; readonly reason: 'approval' | 'selection' } | undefined; readonly note?: string | undefined }",
+          "parameters": [],
+          "returns": {
+            "type": "OutboxView",
+            "meaning": "What the webview draws for the shown chat (sc5). runningChat names the chat whose message is being processed when it is not this one (here: true when it runs in this window); blockedBy names that chat and the card kind when its processing row carries waitingOn, in every window; note is a one-off sentence (an action that was refused)."
+          },
+          "errors": [],
+          "preconditions": [
+            "sessionId is the chat shown in the panel"
+          ],
+          "postconditions": [
+            "rows hold only this chat's queued, retrying, failed and not-delivered messages, in queue order; never a processing row"
+          ]
+        },
+        {
+          "name": "OutboxRow",
+          "signature": "interface OutboxRow { readonly seq: number; readonly position?: number | undefined; readonly state: 'queued' | 'retrying' | 'failed' | 'not-delivered'; readonly text: string; readonly attachments: number; readonly origin: 'typed' | 'review-pane'; readonly error?: string | undefined; readonly attempt?: number | undefined; readonly nextAttemptAt?: number | undefined }",
+          "parameters": [],
+          "returns": {
+            "type": "OutboxRow",
+            "meaning": "One message as the outbox shows it (sc5). position is the 1-based place among every waiting (queued or retrying) message in the repository's queue, 1 being the next to run; absent on failed and not-delivered rows. attachments is a count; the refs stay in the queue."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "position is set exactly when state is queued or retrying"
+          ]
+        },
+        {
+          "name": "OutboxAction",
+          "signature": "type OutboxAction = { readonly type: 'outbox-cancel' | 'outbox-dismiss' | 'outbox-resend' | 'outbox-retry-now'; readonly seq: number }",
+          "parameters": [],
+          "returns": {
+            "type": "OutboxAction",
+            "meaning": "The webview's request for one row (sc5). 'outbox-retry-now' is declared for s4 and ignored by the host until then."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "projectOutbox",
+          "signature": "function projectOutbox(rows: readonly QueuedMessage[], sessionId: string, ctx: { readonly titleOf: (sessionId: string) => string | undefined; readonly here?: ((m: QueuedMessage) => boolean) | undefined; readonly note?: string | undefined }): OutboxView",
+          "parameters": [
+            {
+              "name": "rows",
+              "type": "readonly QueuedMessage[]",
+              "purpose": "Every live row of the repository's queue in seq order, as ChatQueueWorker.onChange delivers them",
+              "optional": false
+            },
+            {
+              "name": "sessionId",
+              "type": "string",
+              "purpose": "The chat shown in this window's panel",
+              "optional": false
+            },
+            {
+              "name": "ctx",
+              "type": "{ titleOf, here?, note? }",
+              "purpose": "Chat titles from the session store; whether a row belongs to this window (for runningChat.here); a note to carry",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "OutboxView",
+            "meaning": "The sc5 view for sessionId (pure; no I/O)"
+          },
+          "errors": [],
+          "preconditions": [
+            "rows are in seq order"
+          ],
+          "postconditions": [
+            "aheadFromOtherChats counts the other chats' waiting (queued or retrying) rows with a seq below this chat's first waiting row (all other chats' waiting rows when this chat has none waiting); processing rows are never counted",
+            "runningChat is set when a processing row belongs to another chat; blockedBy is set from that processing row's waitingOn, so it is the same in every window"
+          ]
+        },
+        {
+          "name": "ChatQueueWorker.act",
+          "signature": "act(seq: number, action: 'cancel' | 'dismiss' | 'resend'): { readonly ok: true } | { readonly ok: false; readonly note: string }",
+          "parameters": [
+            {
+              "name": "seq",
+              "type": "number",
+              "purpose": "The row the user acted on",
+              "optional": false
+            },
+            {
+              "name": "action",
+              "type": "'cancel' | 'dismiss' | 'resend'",
+              "purpose": "Which of the store's cancel / dismiss / resendFrom to apply",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ ok: true } | { ok: false; note: string }",
+            "meaning": "ok after the store changed the row; otherwise a sentence for the outbox (the message already started, was already removed, or the queue is full or busy)"
+          },
+          "errors": [
+            {
+              "type": "StoreBusy / StoreUnavailable (caught)",
+              "condition": "The store could not be written; returned as { ok: false, note } with the queue's note, never thrown"
+            }
+          ],
+          "preconditions": [
+            "the worker is not disposed"
+          ],
+          "postconditions": [
+            "on ok, the worker ticks at once, so onChange listeners in this window see the change before the next poll and other windows within one poll",
+            "resend calls store.resendFrom(seq, newTurnId(), claim.windowKey), so the row keeps its text and attachment refs, joins the back of the queue and is this window's to run"
+          ]
+        },
+        {
+          "name": "HostToWebview 'outbox'",
+          "signature": "{ readonly type: 'outbox'; readonly view: OutboxView }",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Posted by the chat host after every queue change, on a chat switch and on 'ready'; added to HOST_TO_WEBVIEW_TYPES"
+          },
+          "errors": [],
+          "preconditions": [
+            "the queue is in use (deps.queue present)"
+          ],
+          "postconditions": [
+            "the webview redraws #insrc-outbox from view alone"
+          ]
+        },
+        {
+          "name": "WebviewToHost outbox actions",
+          "signature": "OutboxAction (added to the WebviewToHost union and WEBVIEW_TO_HOST_TYPES as 'outbox-cancel' | 'outbox-dismiss' | 'outbox-resend' | 'outbox-retry-now')",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "The host calls worker.act and, on refusal, re-posts the outbox with the note"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "a seq that is not the shown chat's row is ignored"
+          ]
+        },
+        {
+          "name": "ChatQueueStore.markWaiting",
+          "signature": "markWaiting(seq: number, on: 'approval' | 'selection' | undefined): boolean",
+          "parameters": [
+            {
+              "name": "seq",
+              "type": "number",
+              "purpose": "The processing message",
+              "optional": false
+            },
+            {
+              "name": "on",
+              "type": "'approval' | 'selection' | undefined",
+              "purpose": "The kind of card it waits on, or undefined when none waits",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "true when the processing row was updated; false when the row is not processing (finished, or taken over)"
+          },
+          "errors": [
+            {
+              "type": "StoreBusy",
+              "condition": "The write could not take the lock within the busy timeout; thrown to the worker, which logs it and keeps the last value to write again on its next tick"
+            }
+          ],
+          "preconditions": [
+            "schema version 2"
+          ],
+          "postconditions": [
+            "list() returns the row with waitingOn set or cleared; other windows see it at their next poll"
+          ]
+        },
+        {
+          "name": "QueuedTurnRunner.run (onWaiting)",
+          "signature": "run(message: QueuedMessage, onSpawn: (cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }) => void, onWaiting?: (on: 'approval' | 'selection' | undefined) => void): Promise<TurnOutcome>",
+          "parameters": [
+            {
+              "name": "onWaiting",
+              "type": "(on: 'approval' | 'selection' | undefined) => void",
+              "purpose": "Called by the chat host when the running queued message's first approval or selection card appears, and with undefined once no card of it waits",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<TurnOutcome>",
+            "meaning": "Unchanged"
+          },
+          "errors": [],
+          "preconditions": [
+            "called only for the message the runner is running"
+          ],
+          "postconditions": [
+            "the worker writes each call with markWaiting(message.seq, on)"
+          ]
+        }
+      ],
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "sharedContract.methodAdd",
+            "contractId": "sc1",
+            "method": {
+              "name": "markWaiting",
+              "signature": "markWaiting(seq: number, on: 'approval' | 'selection' | undefined): boolean",
+              "purpose": "Sets or clears the waiting_on column of a processing message (schema version 2; QueuedMessage gains waitingOn?: 'approval' | 'selection'), so every window's list() shows that the running message waits on a card; false when the row is not processing"
+            }
+          },
+          "rationale": "The HLD's s2 boundary says other chats' outboxes say which chat a waiting card holds the queue for. Only the window running the message knows of the card, and the lease row has no such field (chat-queue-store.ts lease table); putting the flag on the processing message row means every window gets it in the rows it already reads through list() / onChange, and it ends with the message. Additive: a nullable column added by a version-1 to version-2 upgrade on open.",
+          "citations": [
+            {
+              "id": "c1",
+              "kind": "code",
+              "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
+            }
+          ]
+        }
+      }
+    },
+    "dataModelChanges": [
+      {
+        "entity": "OutboxView / OutboxRow (sc5)",
+        "change": "new",
+        "details": "View-only types in the new module vscode-plugin/src/chat/chat-outbox.ts, projected from the queue's rows; nothing new is stored. runningChat is added to the HLD sketch (s2 owns sc5).",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/protocol.ts"
+        ]
+      },
+      {
+        "entity": "Chat host outbox state",
+        "change": "field-add",
+        "details": "createChatPanelHost keeps the last rows from worker.onChange and a pending note; it posts the projected view for the shown session on change, in showSession, in postInitialState ('ready'), and after an action. The webview's doSubmit stops marking the turn running when the queue is on (the host's 'turn-running' does), so a message that waits shows in the outbox instead of a 'working…' that has not begun. The queue runner also calls onWaiting when the running queued message's first approval or selection card appears and when none is left.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      },
+      {
+        "entity": "ChatQueueWorker",
+        "change": "field-add",
+        "details": "act(seq, action) added (proposed sc4 amendment AMD act); delegates to store.cancel / dismiss / resendFrom (proposed sc1 amendment) and schedules an immediate tick. runMessage passes onWaiting to the runner and writes each value with store.markWaiting (proposed sc1 amendment).",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-queue-worker.ts",
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      },
+      {
+        "entity": "messages.waiting_on (QueuedMessage.waitingOn)",
+        "change": "field-add",
+        "details": "Nullable TEXT column on messages ('approval' | 'selection'), schema version 2. The SCHEMA's CREATE TABLE messages gains `waiting_on TEXT`, so a fresh file is created with the column and recorded as version 2; a version-1 file is upgraded in the open transaction (ALTER TABLE adds the column, version 2 recorded). rowToMessage maps it to waitingOn. Set only on a processing row through markWaiting; it ends with the row.",
+        "schemaDiff": "CREATE TABLE messages (... , waiting_on TEXT) for a fresh file; ALTER TABLE messages ADD COLUMN waiting_on TEXT for a version-1 file; meta.schema_version 1 -> 2",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-queue-store.ts",
+          "vscode-plugin/src/chat/chat-queue-worker.ts",
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "chat-outbox.ts defines OutboxRow, OutboxView (adding runningChat) and OutboxAction and projectOutbox; protocol.ts carries 'outbox' and the four actions; the chat webview draws #insrc-outbox. s4 will fill attempt / nextAttemptAt and handle 'outbox-retry-now'; s5's review-pane rows appear with origin 'review-pane'."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "The host subscribes to onChange for the rows, calls the proposed act(seq, action) for the three actions, and reports the running message's card through the runner's new onWaiting argument; submit is used as S001 left it."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Through the worker only: list() rows via onChange (now carrying waitingOn), cancel / dismiss / resendFrom via act, and markWaiting from the runner's onWaiting. Additive: resendFrom, markWaiting and the waiting_on column (schema version 2 with an upgrade on open)."
+      }
+    ],
+    "errorPaths": {
+      "hld": {
+        "amendmentProposal": {
+          "amendment": {
+            "type": "sharedContract.fieldAdd",
+            "contractId": "sc4",
+            "breaking": false,
+            "field": {
+              "name": "onWaiting",
+              "type": "(on: 'approval' | 'selection' | undefined) => void",
+              "optional": true,
+              "purpose": "third argument of QueuedTurnRunner.run: the chat host reports that the running queued message waits on an approval or selection card (undefined when none waits); the worker writes it with markWaiting so every window's outbox can show blockedBy"
+            }
+          },
+          "rationale": "Only the chat host sees the cards; the worker is the only queue writer. A callback beside onSpawn, which the runner already receives, carries the card state to the worker without the host holding the store. Additive and optional.",
+          "citations": [
+            {
+              "id": "c1",
+              "kind": "code",
+              "ref": "vscode-plugin/src/chat/chat-queue-worker.ts"
+            }
+          ]
+        }
+      },
+      "errorCases": [
+        {
+          "scenario": "Cancel of a message that started between the user's click and the write",
+          "detection": "store.cancel deletes only `WHERE state IN ('queued','retrying')` and returns false when no row changed (chat-queue-store.ts:407-409); worker.act maps false to { ok: false }",
+          "response": "The host re-posts the outbox with the note 'That message has already started; it is in the chat now.'",
+          "userImpact": "The message runs; the user can Stop it",
+          "recoverable": true
+        },
+        {
+          "scenario": "Dismiss or resend of a row another window already dismissed or resent",
+          "detection": "store.dismiss returns false; store.resendFrom refuses with 'That message can no longer be sent again.' when the row is missing or not failed / not-delivered",
+          "response": "{ ok: false, note } re-posted in the outbox; the next onChange drops the stale row",
+          "userImpact": "A one-line note; nothing is sent twice",
+          "recoverable": true
+        },
+        {
+          "scenario": "The store is busy or unavailable when an action is written",
+          "detection": "write() throws StoreBusy / the open fails; worker.act catches it and returns { ok: false, note: BUSY_NOTE or the unavailable note }",
+          "response": "Note in the outbox; the row is unchanged and the action can be pressed again",
+          "userImpact": "The action did not happen, and the outbox says so",
+          "recoverable": true
+        },
+        {
+          "scenario": "The rows cannot be read for a change (list() throws)",
+          "detection": "the worker's emit catches the read error and logs it, delivering no rows (chat-queue-worker.ts:85-91)",
+          "response": "The host keeps the last rows it posted; the next successful change redraws",
+          "userImpact": "The outbox may lag until the next readable poll",
+          "recoverable": true
+        },
+        {
+          "scenario": "An outbox action arrives for a seq that is not the shown chat's row (a stale webview after a chat switch)",
+          "detection": "the host looks the seq up in its last rows and checks sessionId === the shown session",
+          "response": "Ignored and logged at debug",
+          "userImpact": "None",
+          "recoverable": true
+        },
+        {
+          "scenario": "The waiting flag cannot be written (the store is busy)",
+          "detection": "markWaiting throws StoreBusy inside the worker's onWaiting handler",
+          "response": "The worker logs it and keeps the latest value, writing it on its next tick while the message runs",
+          "userImpact": "Other windows may show the card a poll later",
+          "recoverable": true
+        },
+        {
+          "scenario": "A window still on the previous plugin opens a version-2 queue file",
+          "detection": "its store sees schema_version 2 > 1 on open and throws StoreUnavailable ('made by a newer plugin')",
+          "response": "That window's chat runs messages directly, with the notice, until it is reloaded onto the new plugin",
+          "userImpact": "Messages from that window skip the queue until the reload VS Code asks for after the update",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The shown chat has no live rows",
+          "expected": "The outbox band is hidden, or shows only the 'N messages from other chats are ahead' / running line when those are non-zero"
+        },
+        {
+          "input": "The shown chat's message is being processed and two more of its messages wait",
+          "expected": "The processing row is not shown (it is in the transcript); the two waiting rows show positions 1 and 2 when nothing else waits"
+        },
+        {
+          "input": "Another chat's message is processing and one of its messages waits ahead of this chat's two",
+          "expected": "runningChat names that chat; aheadFromOtherChats = 1; this chat's rows show positions 2 and 3 (ac1)"
+        },
+        {
+          "input": "A retrying head (s4) that is not yet due",
+          "expected": "It counts as waiting with position 1; its row shows state retrying (s4 fills attempt and nextAttemptAt)"
+        },
+        {
+          "input": "A failed row whose chat was switched away and back",
+          "expected": "showSession re-posts the outbox; the failed row is shown with its error and Resend / Dismiss"
+        },
+        {
+          "input": "A window reload while rows wait or failed",
+          "expected": "On 'ready' the host posts the outbox from the last rows; the worker's first tick after start emits the rows from the file, so the same rows and positions are shown (ac4)"
+        },
+        {
+          "input": "The queue is off (node:sqlite could not load)",
+          "expected": "No outbox band is rendered and no 'outbox' message is posted; doSubmit keeps marking the turn running as before"
+        },
+        {
+          "input": "A message with only attachments and no text",
+          "expected": "The row shows the attachment count with an empty text line, e.g. '2 attachments'"
+        },
+        {
+          "input": "A very long message",
+          "expected": "The row shows the first line, clipped with an ellipsis by CSS; the full text is in the row's title tooltip"
+        },
+        {
+          "input": "Resending a not-delivered message from a different window than the one that sent it",
+          "expected": "resendFrom gives it this window's key, so this window runs it when it reaches the front"
+        },
+        {
+          "input": "Another window's running message waits on an approval card",
+          "expected": "Every window's outbox for another chat says the queue is waiting for an approval in that chat (blockedBy); the line clears when the card is answered or the message ends"
+        },
+        {
+          "input": "The window running the message dies with a card showing",
+          "expected": "The flag stays with the processing row until s3 fails the message; until then other windows still say it waits on that card, which is true"
+        },
+        {
+          "input": "A version-1 queue file from S001",
+          "expected": "Upgraded on open in one transaction (column added, version 2 recorded); its rows are kept"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Only the worker writes the queue in the chat host; the host holds the worker, not the store (chat-panel.ts:1985).",
+          "source": "c1"
+        },
+        {
+          "text": "A message the user sends never touches the running turn or its waiting cards (S001: sendTyped enqueues without supersedeQueuedApprovals).",
+          "source": "c1"
+        },
+        {
+          "text": "The webview draws only what the host posts, with textContent (no innerHTML), and re-sends nothing on its own; every view is re-posted on 'ready' (chat-panel.ts handleMessage 'ready' -> postInitialState).",
+          "source": "c2"
+        },
+        {
+          "text": "Without the queue (deps.queue absent) the chat behaves exactly as before: direct runTurn and the local running state on submit.",
+          "source": "c1"
+        },
+        {
+          "text": "Protocol message types are additive and listed in HOST_TO_WEBVIEW_TYPES / WEBVIEW_TO_HOST_TYPES (protocol.ts:309, :325).",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via `npx tsx --test` (vscode-plugin/src/**/__tests__/*.test.ts), with node:assert/strict; real SQLite files in a temp dir and fake timers, as chat-queue-store.test.ts and chat-queue-worker.test.ts do",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The projection rules, independent of SQLite and the webview",
+          "subjects": [
+            "projectOutbox: processing rows dropped, positions among waiting rows, aheadFromOtherChats, runningChat, blockedBy from another chat's processing row's waitingOn, failed / not-delivered rows without position, attachment count, note carried"
+          ],
+          "fixturesNeeded": [
+            "plain QueuedMessage arrays"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The worker's act and the store's resendFrom over a real queue file",
+          "subjects": [
+            "ChatQueueWorker.act cancel / dismiss / resend and their refusals; an immediate onChange after an act",
+            "ChatQueueStore.resendFrom keeps text and attachment refs, joins the back, takes the given window key",
+            "ChatQueueStore.markWaiting sets and clears waitingOn on a processing row only; a version-1 file is upgraded to version 2 on open with its rows kept",
+            "a fresh file is created at version 2 with waiting_on, and markWaiting works on it"
+          ],
+          "fixturesNeeded": [
+            "temp dir store",
+            "fake timers"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The chat host's outbox over a real store and worker (tempQueue())",
+          "subjects": [
+            "'outbox' posted after a change, on showSession and on 'ready'",
+            "outbox-cancel / -dismiss / -resend routed to worker.act; a refusal re-posts with the note; a seq of another chat is ignored",
+            "a queued message leaves the outbox when it is taken (its row is processing)"
+          ],
+          "fixturesNeeded": [
+            "FakeChannel",
+            "tempQueue()",
+            "two hosts over one queue file for the other-chat leg"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The wire contract and the shell",
+          "subjects": [
+            "protocol.ts lists 'outbox' and the four action types",
+            "renderShell includes #insrc-outbox only when the queue is on; doSubmit does not mark running when the queue is on"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "By hand in VS Code",
+          "subjects": [
+            "Send two messages mid-turn: both appear in the outbox with places 1 and 2 and leave it as they run; cancel one; a stopped message shows failed with Resend / Dismiss; Resend runs it again; reload the window: the outbox shows the same rows"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "chat-outbox.test.ts: 'outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named'",
+            "chat-queue-outbox-host.test.ts: 'chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead'",
+            "chat-queue-outbox-host.test.ts: 'chat host outbox: while another window's running message waits on an approval, this window's outbox says which chat it waits on, and the line clears once the card is answered'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "chat-queue-outbox-host.test.ts: 'chat host outbox: cancelling a waiting message removes it from the queue and the outbox, and it never runs'",
+            "chat-queue-worker.test.ts: 'worker act: cancel removes a waiting message and is refused once the message has started'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "chat-queue-outbox-host.test.ts: 'chat host outbox: resending a failed message queues the same text and attachments at the back under this window's key, and it runs'",
+            "chat-queue-store.test.ts: 'resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "chat-queue-outbox-host.test.ts: 'chat host outbox: after the host is rebuilt over the same queue file and its webview is ready, the outbox shows the same messages in the same places'",
+            "chat-queue-store.test.ts: 'schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty'",
+            "chat-queue-store.test.ts: 'schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "After S001 (read:queue-contracts, read:chat-webview): messages go through the repository's queue, but the chat shows nothing of it. A waiting message is invisible until it runs; a stopped or failed message stays in the queue file as failed with no way to see, dismiss or resend it; the webview marks a turn running as soon as a message is submitted, even when it only waits. The worker offers submit / onChange / liveSessionIds / running / dispose; the store has cancel / dismiss / resend (old window key) and list.",
+      "stateAfter": "The chat shows an outbox for the shown chat, projected from the queue's rows on every change, chat switch and webview ready; its rows can be cancelled, dismissed or resent through ChatQueueWorker.act; resend hands the message to the resending window through ChatQueueStore.resendFrom. The webview marks a turn running only when the host says it started ('turn-running') when the queue is on. The running message's row carries waitingOn while it waits on a card, so every window's outbox can show blockedBy; the queue file is schema version 2.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Raise the store's schema to version 2: the CREATE TABLE messages in SCHEMA gains the nullable waiting_on column, so a fresh file is created with it at version 2; on open, a version-1 file gets the column by ALTER TABLE in the open transaction and records version 2; add markWaiting and resendFrom",
+          "rollbackable": false
+        },
+        {
+          "order": 2,
+          "action": "Add act to the worker and pass onWaiting to the runner, writing it with markWaiting",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add chat-outbox.ts (types and projectOutbox) and the 'outbox' / outbox-* protocol types additively",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Wire the chat host: keep the last rows from onChange, post 'outbox' on change / showSession / ready / after an action, route the four actions, report the running message's cards through onWaiting; render #insrc-outbox and stop the local running mark on submit only when the queue is on",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive except the schema version. A version-1 queue file is upgraded in place on open and keeps its rows; S001's failed rows appear in the outbox as they are. A window still on the previous plugin refuses a version-2 file (it was written for that: 'made by a newer plugin') and runs messages directly until reloaded, which VS Code asks for after an update; rolling the plugin back leaves a version-2 file the older plugin refuses, so a rollback needs the queue file removed (it holds only live messages). Without the queue nothing changes. Existing worker and store members are unchanged; resend stays. Protocol additions are new types only.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Pure projection module + additive worker actions",
+        "oneLineSummary": "A new vscode-free chat-outbox.ts projects queue rows to OutboxView; the worker gains one act(seq, action) that applies cancel / dismiss / resend through the store and ticks at once; the host posts 'outbox' on every change, chat switch and ready.",
+        "approach": "New module vscode-plugin/src/chat/chat-outbox.ts owns sc5: the OutboxRow / OutboxView / OutboxAction types and projectOutbox(rows, sessionId, ctx) -> OutboxView, a pure function (processing rows dropped; positions are 1-based places among the queue's waiting (queued or retrying) rows; aheadFromOtherChats counts other chats' waiting (queued or retrying) rows ahead of this chat's first waiting row, never processing rows, and a processing row of another chat is named in runningChat instead; blockedBy filled from ctx when this window's running message waits on a card). ChatQueueWorker gains one additive method, act(seq, action: 'cancel' | 'dismiss' | 'resend') -> { ok: true } | { ok: false; note }, which applies store.cancel, store.dismiss or store.resendFrom(seq, newTurnId(), claim.windowKey) and schedules an immediate tick so every listener sees the change at once. The chat host subscribes to worker.onChange, keeps the last rows, and posts {type:'outbox', view} for the shown session after every change, on showSession and on 'ready'; it handles 'outbox-cancel' / 'outbox-dismiss' / 'outbox-resend' (and accepts 'outbox-retry-now' as a no-op until s4). The webview gains an #insrc-outbox band above the input bar, drawn with textContent and role=button spans, styled with the chat's theme variables. protocol.ts gains the 'outbox' and four action types additively.",
+        "pros": [
+          "The projection is a pure function, testable over plain rows with no SQLite or webview.",
+          "All queue writes stay behind the worker, which already owns the immediate tick and change detection, so the outbox updates within one tick in every window.",
+          "The host keeps holding one queue object (the worker), as S001 wired it."
+        ],
+        "cons": [
+          "Extends sc4 and sc1, which s1 owns: one additive worker method (act) and one additive store method (resendFrom), raised as amendments.",
+          "blockedBy is only known in the window running the message; other windows cannot say which chat holds the queue."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Satisfies the acceptance criteria, but delivers blockedBy only in the window running the message, so the HLD's s2 boundary decision is met only in part; the user chose the cross-window flag (a3)."
+      },
+      {
+        "id": "a2",
+        "name": "Host holds the store beside the worker",
+        "oneLineSummary": "The queue factory hands the host both the worker and the store; the host calls store.cancel/dismiss/resend directly and projects with the same pure module.",
+        "approach": "chat-queue-setup.ts's factory returns { worker, store } (or the host deps gain queueStore). The host calls the store's cancel/dismiss/resend itself, generating the resend turn id, and nudges a re-post of the outbox from store.list() after each action since the worker only notices the write on its next poll. Projection as in a1.",
+        "pros": [
+          "sc4's interface is unchanged.",
+          "The host can read store.list() on demand for 'ready' without caching rows."
+        ],
+        "cons": [
+          "The queue surface splits across two objects in the host, and writes bypass the worker's immediate tick, so other listeners lag by up to a poll (500 ms active, 5 s idle).",
+          "Changes the factory shape S001 just shipped and its tests (chat-queue-setup.test.ts, extension wiring), which is s1's surface too.",
+          "The host must duplicate the new-turn-id rule the worker already has."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Avoids extending sc4 but changes s1's factory instead, splits the queue across two objects and duplicates the turn-id rule; no acceptance criterion gains."
+      },
+      {
+        "id": "a3",
+        "name": "a1 plus a cross-window 'waiting on' flag on the running message",
+        "oneLineSummary": "As a1, and the running message's row records when it waits on an approval or selection card, so every window's outbox can say which chat holds the queue and why.",
+        "approach": "As a1, plus: the messages table gains a nullable waiting_on column (schema version 2, added on open in one transaction by an upgrade step from version 1), carried on QueuedMessage as waitingOn?: 'approval' | 'selection'. The store gains markWaiting(seq, on) that sets or clears it only on a processing row. The chat host reports a card of the running queued message through a third argument of QueuedTurnRunner.run, onWaiting(on | undefined), called when the first approval or selection card of the run appears and again (undefined) when no card waits; the worker writes it with markWaiting, so the worker stays the only writer. Every window receives the flag in the rows of onChange, and projectOutbox fills blockedBy from the processing row of another chat: { chatTitle, reason }. The flag ends with the row (finish deletes or fails it).",
+        "pros": [
+          "blockedBy is shown in every window, as the HLD's s2 boundary says.",
+          "The flag travels in the rows every window already reads (list / onChange): no new read path and no lease change.",
+          "The flag ends with the message, so it cannot outlive it."
+        ],
+        "cons": [
+          "Changes s1's schema (version 2 with an upgrade step) and adds two s1-owned members (markWaiting on sc1, the onWaiting argument on sc4's runner), raised as amendments.",
+          "A window still on the previous plugin refuses a version-2 file and runs messages directly until it is reloaded.",
+          "A window that dies with a card showing leaves the flag until s3 fails the message."
+        ],
+        "costEstimate": "M"
+      }
+    ],
+    "chosenAlternative": "a3",
+    "openQuestions": [
+      "cd1 (partial): projectOutbox is a new function of the sc5 module, not an existing symbol; it is the projection the HLD boundary for s2 names.",
+      "Four additive changes to s1-owned contracts need approval as HLD amendments: sc4 act(seq, action) and sc1 resendFrom(seq, newTurnId, windowKey) (filed by the first run of this design), and sc1 markWaiting(seq, on) with the waiting_on column and sc4's runner onWaiting argument (filed by this run).",
+      "The schema moves to version 2: a window still on the previous plugin refuses the file and runs messages directly until it is reloaded, and a plugin rollback needs the queue file removed.",
+      "While a turn runs, the send control is Stop, so a message can be queued mid-turn only with Cmd/Ctrl+Enter; whether to offer a separate send while running is left to a later change."
+    ],
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "narrative": "The chat panel with the outbox band between the transcript and the message box: this chat's waiting messages with their place in line and a Cancel action, a failed message with its reason and Resend / Dismiss, and the line about other chats.",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "insrc chat — outbox (Epic 613abdb3 S002)",
+          "weight": "bolder",
+          "size": "medium",
+          "wrap": true
+        },
+        {
+          "type": "Container",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "… transcript: the running message and its answer …",
+              "isSubtle": true,
+              "wrap": true
+            }
+          ],
+          "description": "The transcript; the running message is here, not in the outbox"
+        },
+        {
+          "type": "Container",
+          "description": "The outbox band (#insrc-outbox), shown only while this chat has rows or others are ahead",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Outbox · 1 message from another chat is ahead · running: “fix the board search” — waiting for an approval there",
+              "isSubtle": true,
+              "size": "small",
+              "wrap": true,
+              "description": "The summary line: aheadFromOtherChats and runningChat"
+            },
+            {
+              "type": "ColumnSet",
+              "description": "A waiting row: place in line, first line of the text, attachment count, Cancel",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "#2",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "also add a test for the empty case",
+                      "wrap": false
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "📎1",
+                      "isSubtle": true
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "✕ Cancel",
+                      "color": "accent"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ColumnSet",
+              "description": "A second waiting row",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "#3",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "then update the docs",
+                      "wrap": false
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "✕ Cancel",
+                      "color": "accent"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "ColumnSet",
+              "description": "A failed row: its reason, Resend and Dismiss",
+              "columns": [
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "failed",
+                      "color": "attention",
+                      "weight": "bolder"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "stretch",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "refactor the store — stopped by the user",
+                      "wrap": false
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "↻ Resend",
+                      "color": "accent"
+                    }
+                  ]
+                },
+                {
+                  "type": "Column",
+                  "width": "auto",
+                  "items": [
+                    {
+                      "type": "TextBlock",
+                      "text": "Dismiss",
+                      "isSubtle": true
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "❯  message claude… (⌘↵ send · ^C interrupt)",
+              "isSubtle": true,
+              "wrap": true
+            }
+          ],
+          "description": "The input bar, unchanged"
+        },
+        {
+          "type": "TextBlock",
+          "text": "Theme colours only (VS Code variables); rows are drawn with textContent; actions are role=button spans reachable by keyboard.",
+          "isSubtle": true,
+          "size": "small",
+          "wrap": true
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S002/ux-mock.html",
+        "title": "UX mock"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "HLD-613abdb351c2c738"
+    }
+  ]
+}

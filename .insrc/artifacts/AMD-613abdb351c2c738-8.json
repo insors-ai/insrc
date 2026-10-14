@@ -1,0 +1,33 @@
+{
+  "id": "AMD-613abdb351c2c738-8",
+  "epicHash": "613abdb351c2c738",
+  "epicSlug": "per-repo-chat-turn-queue-outbox",
+  "hldBaseRunId": "wf-1791967985926-oydluz",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc4",
+    "breaking": false,
+    "field": {
+      "name": "onWaiting",
+      "type": "(on: 'approval' | 'selection' | undefined) => void",
+      "optional": true,
+      "purpose": "third argument of QueuedTurnRunner.run: the chat host reports that the running queued message waits on an approval or selection card (undefined when none waits); the worker writes it with markWaiting so every window's outbox can show blockedBy"
+    }
+  },
+  "rationale": "Only the chat host sees the cards; the worker is the only queue writer. A callback beside onSpawn, which the runner already receives, carries the card state to the worker without the host holding the store. Additive and optional.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1791981822071-v8q2gp",
+    "storyId": "s2",
+    "stepId": "s5"
+  },
+  "proposedAt": "2026-10-14T12:43:46.493Z",
+  "status": "pending"
+}

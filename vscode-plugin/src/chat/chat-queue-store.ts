@@ -15,6 +15,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { AttachmentRef } from './attachment-store.js';
 import type { ChatPanelLogger } from './chat-panel.js';
+import { isRetryableCause, MAX_INFRA_RETRIES, RETRY_DELAYS_MS } from './chat-failure.js';
 
 /** At most this many rows live in a repository's queue; done rows are deleted at once. */
 export const QUEUE_RECORD_BOUND = 500;
@@ -97,7 +98,10 @@ export interface ChatQueueStore {
   head(): QueuedMessage | undefined;
   /** queued (or retrying and due) -> processing for the head message, taking the free lease, in one transaction. */
   acknowledge(seq: number, claim: LeaseClaim): boolean;
-  /** Records how the message's turn ended and clears the lease when it names this message. */
+  /**
+   * Records how the message's turn ended and clears the lease when it names this message. Story S004: a failed outcome
+   * with a passing infrastructure cause, acted false and retries left makes the row retrying (never failed) instead.
+   */
   finish(seq: number, outcome: TurnOutcome): QueuedMessage | undefined;
   /** A queued or retrying message leaves the queue. */
   cancel(seq: number): boolean;
@@ -115,6 +119,11 @@ export interface ChatQueueStore {
    * head (queued or retrying) inside the transaction; false when another window took, cancelled or finished it first.
    */
   markNotDeliveredIfHead(seq: number): boolean;
+  /**
+   * Epic E20261014613abdb3 Story S004: makes a retrying message due at once (its next attempt time becomes now). Attempts
+   * is not changed: retry-now neither spends nor refunds one. False for any row that is not retrying.
+   */
+  retryNow(seq: number): boolean;
   /** Epic E20261014613abdb3 Story S002: sets or clears the card a processing message waits on; false on any other row. */
   markWaiting(seq: number, on: 'approval' | 'selection' | undefined): boolean;
   /** Every live row, in queue order. */
@@ -450,9 +459,25 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
           case 'stopped':
             db.prepare(`UPDATE messages SET state = 'failed', error = ?, updated_at = ? WHERE seq = ?`).run(outcome.reason ?? 'stopped by the user', at, seq);
             break;
-          case 'failed':
-            db.prepare(`UPDATE messages SET state = 'failed', error = ?, updated_at = ? WHERE seq = ?`).run(outcome.error, at, seq);
+          case 'failed': {
+            // Story S004: a passing infrastructure failure before the turn acted is retried (state retrying, one more
+            // attempt, due after the schedule's wait) in this same transaction that releases the lease; anything else
+            // - the turn acted, a credentials or unknown cause, or the budget spent - ends failed with the error.
+            const row = bySeq(seq);
+            const attempts = row?.attempts ?? 0;
+            if (row !== undefined && row.state === 'processing' && !outcome.acted && isRetryableCause(outcome.cause) && attempts < MAX_INFRA_RETRIES) {
+              db.prepare(`UPDATE messages SET state = 'retrying', attempts = ?, next_attempt_at = ?, error = ?, updated_at = ? WHERE seq = ?`).run(
+                attempts + 1,
+                at + (RETRY_DELAYS_MS[attempts] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1] ?? 0),
+                outcome.error,
+                at,
+                seq,
+              );
+            } else {
+              db.prepare(`UPDATE messages SET state = 'failed', error = ?, updated_at = ? WHERE seq = ?`).run(outcome.error, at, seq);
+            }
             break;
+          }
           case 'not-delivered':
             db.prepare(`UPDATE messages SET state = 'not-delivered', error = ?, updated_at = ? WHERE seq = ?`).run('its window was closed', at, seq);
             break;
@@ -461,6 +486,13 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
         db.prepare(`UPDATE messages SET waiting_on = NULL WHERE seq = ?`).run(seq);
         db.prepare(`DELETE FROM lease WHERE id = 1 AND seq = ?`).run(seq);
         return bySeq(seq);
+      });
+    },
+
+    retryNow(seq) {
+      return write(() => {
+        const at = now();
+        return Number(db.prepare(`UPDATE messages SET next_attempt_at = ?, updated_at = ? WHERE seq = ? AND state = 'retrying'`).run(at, at, seq).changes) === 1;
       });
     },
 

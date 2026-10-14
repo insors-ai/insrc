@@ -511,3 +511,125 @@ test('at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces
     t.done();
   }
 });
+
+// Epic E20261014613abdb3 Story S004 t2 — finish() retries a passing infrastructure failure; retryNow.
+/** A processing message of window w-A with the lease; the store's clock is the given object. */
+function running(t: ReturnType<typeof temp>, clock: { at: number }, other = false) {
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => clock.at, pluginVersion: '0.5.15' });
+  const second = other ? createChatQueueStore({ path: t.path, openDatabase: open, now: () => clock.at, pluginVersion: '0.5.15' }) : undefined;
+  const m = store.enqueue(msg('s1', 't1', 'one', 'w-A'));
+  assert.ok(m.ok);
+  const take = (): void => assert.equal(store.acknowledge(m.message.seq, A), true);
+  take();
+  return { store, second, seq: m.message.seq, take };
+}
+const overloaded = { kind: 'failed' as const, error: 'API Error: 529 overloaded', acted: false, cause: 'overloaded' as const };
+
+test('an infrastructure failure before acting becomes retrying with attempts 1 and nextAttemptAt now plus 10 s, keeps its seq and error, and releases the lease', () => {
+  const t = temp();
+  const clock = { at: 50_000 };
+  const { store, second, seq } = running(t, clock, true);
+  try {
+    const row = store.finish(seq, overloaded);
+    assert.equal(row?.state, 'retrying');
+    assert.equal(row?.attempts, 1);
+    assert.equal(row?.nextAttemptAt, 60_000);
+    assert.equal(row?.error, 'API Error: 529 overloaded');
+    assert.equal(row?.seq, seq, 'the same row, so it keeps its place at the front');
+    assert.equal(store.lease(), undefined, 'the lease is released in the same transaction');
+    assert.equal(second!.head()?.seq, seq, 'another connection sees it as the head');
+    // Not due yet: nothing takes it before nextAttemptAt, and it holds the queue behind it.
+    const behind = store.enqueue(msg('s2', 't1', 'two', 'w-A'));
+    assert.ok(behind.ok);
+    clock.at = 59_999;
+    assert.equal(store.acknowledge(seq, A), false, 'a retrying head not yet due is not taken');
+    assert.equal(store.acknowledge(behind.message.seq, A), false, 'and a later row never jumps it');
+    clock.at = 60_000;
+    assert.equal(store.acknowledge(seq, A), true, 'taken once due');
+  } finally {
+    second?.close();
+    store.close();
+    t.done();
+  }
+});
+
+test('attempts 1 and 2 use 1 min and 5 min, and a failure at attempts 3 becomes failed with the error', () => {
+  const t = temp();
+  const clock = { at: 100_000 };
+  const { store, seq, take } = running(t, clock);
+  try {
+    assert.equal(store.finish(seq, overloaded)?.nextAttemptAt, 110_000);
+    clock.at = 110_000;
+    take();
+    assert.equal(store.finish(seq, { ...overloaded, cause: 'timeout', error: 'timed out' })?.nextAttemptAt, 110_000 + 60_000, 'second retry waits 1 min');
+    assert.equal(store.list()[0]?.attempts, 2);
+    clock.at = 170_000;
+    take();
+    const third = store.finish(seq, { ...overloaded, cause: 'rate-limit', error: 'rate limit' });
+    assert.equal(third?.nextAttemptAt, 170_000 + 300_000, 'third retry waits 5 min');
+    assert.equal(third?.attempts, 3);
+    clock.at = 470_000;
+    take();
+    // The third retry fails: the budget is spent.
+    const last = store.finish(seq, { ...overloaded, cause: 'network', error: 'ECONNRESET' });
+    assert.equal(last?.state, 'failed');
+    assert.equal(last?.error, 'ECONNRESET');
+    assert.equal(last?.attempts, 3, 'attempts never exceeds 3');
+    assert.equal(store.lease(), undefined);
+    assert.equal(store.head(), undefined, 'a failed row is not the head: the next message runs');
+    assert.ok(store.resend(seq, 'r1').ok, 'resendable');
+  } finally {
+    store.close();
+    t.done();
+  }
+});
+
+test('acted true, cause auth, cause other or a missing cause becomes failed with the error and is never retrying', () => {
+  const cases: { name: string; outcome: { kind: 'failed'; error: string; acted: boolean; cause?: 'auth' | 'other' | 'overloaded' } }[] = [
+    { name: 'acted', outcome: { kind: 'failed', error: 'network error after an edit', acted: true, cause: 'overloaded' } },
+    { name: 'auth', outcome: { kind: 'failed', error: 'not authenticated', acted: false, cause: 'auth' } },
+    { name: 'other', outcome: { kind: 'failed', error: 'the model refused', acted: false, cause: 'other' } },
+    { name: 'no cause', outcome: { kind: 'failed', error: 'no cause given', acted: false } },
+  ];
+  for (const c of cases) {
+    const t = temp();
+    const clock = { at: 1_000 };
+    const { store, seq } = running(t, clock);
+    try {
+      const row = store.finish(seq, c.outcome);
+      assert.equal(row?.state, 'failed', c.name);
+      assert.equal(row?.error, c.outcome.error, c.name);
+      assert.equal(row?.attempts, 0, `${c.name}: no attempt is spent`);
+      assert.equal(row?.nextAttemptAt, undefined, c.name);
+      assert.equal(store.lease(), undefined, c.name);
+    } finally {
+      store.close();
+      t.done();
+    }
+  }
+});
+
+test('retryNow makes a retrying row due at once with attempts unchanged and returns false for any other row', () => {
+  const t = temp();
+  const clock = { at: 10_000 };
+  const { store, seq } = running(t, clock);
+  try {
+    assert.equal(store.retryNow(seq), false, 'a processing row');
+    store.finish(seq, overloaded);
+    assert.equal(store.list()[0]?.nextAttemptAt, 20_000);
+    clock.at = 12_000; // 8 s of the 10 s wait left
+    assert.equal(store.retryNow(seq), true);
+    const row = store.list()[0];
+    assert.equal(row?.nextAttemptAt, 12_000, 'due now');
+    assert.equal(row?.attempts, 1, 'attempts unchanged');
+    assert.equal(row?.state, 'retrying');
+    assert.equal(store.acknowledge(seq, A), true, 'taken at once');
+    assert.equal(store.retryNow(seq), false, 'now processing');
+    assert.equal(store.retryNow(9_999), false, 'a missing row');
+    store.finish(seq, { kind: 'failed', error: 'x', acted: true });
+    assert.equal(store.retryNow(seq), false, 'a failed row');
+  } finally {
+    store.close();
+    t.done();
+  }
+});

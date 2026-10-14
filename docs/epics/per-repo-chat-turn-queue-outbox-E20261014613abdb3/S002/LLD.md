@@ -380,6 +380,8 @@ As a1, plus: the messages table gains a nullable waiting_on column (schema versi
   - **resolved**: Accept the HLD boundary as enough — projectOutbox is new by design; s2 creates it in chat-outbox.ts (the sc5 module). _(2026-10-14T12:50:03.494Z)_
 - `q5eea7566` — Four additive changes to s1-owned contracts need approval as HLD amendments: sc4 act(seq, action) and sc1 resendFrom(seq, newTurnId, windowKey) (filed by the first run of this design), and sc1 markWaiting(seq, on) with the waiting_on column and sc4's runner onWaiting argument (filed by this run).
   - **resolved**: Approve all, but plan s1 tasks first — The user approved all four amendments (AMD-3, 4, 7, 8) with the LLD on 2026-10-14; the plan puts the s1-owned additions first. _(2026-10-14T12:50:40.209Z)_
+- `qfad1a51a` — The schema moves to version 2: a window still on the previous plugin refuses the file and runs messages directly until it is reloaded, and a plugin rollback needs the queue file removed.
+  - **resolved**: Accept the v2 break, with a documented runbook — The user approved the LLD with the schema 2 trade-offs presented (old window runs directly until reloaded; rollback removes the queue file). _(2026-10-14T12:51:01.331Z)_
 
 ## Citations
 

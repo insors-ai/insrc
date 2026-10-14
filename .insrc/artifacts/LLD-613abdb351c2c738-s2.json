@@ -237,6 +237,13 @@
         "choice": "Approve all, but plan s1 tasks first",
         "rationale": "The user approved all four amendments (AMD-3, 4, 7, 8) with the LLD on 2026-10-14; the plan puts the s1-owned additions first.",
         "resolvedAt": "2026-10-14T12:50:40.209Z"
+      },
+      "qfad1a51a": {
+        "question": "The schema moves to version 2: a window still on the previous plugin refuses the file and runs messages directly until it is reloaded, and a plugin rollback needs the queue file removed.",
+        "status": "resolved",
+        "choice": "Accept the v2 break, with a documented runbook",
+        "rationale": "The user approved the LLD with the schema 2 trade-offs presented (old window runs directly until reloaded; rollback removes the queue file).",
+        "resolvedAt": "2026-10-14T12:51:01.331Z"
       }
     }
   },

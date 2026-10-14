@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s1",
     "createdAt": "2026-10-14T11:13:11.458Z",
-    "updatedAt": "2026-10-14T11:37:04.816Z",
+    "updatedAt": "2026-10-14T12:04:19.680Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
@@ -30,98 +30,144 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "vscode-plugin/src/chat/chat-panel.ts: ChatPanelHostDeps.queue?: (runner) => ChatQueueWorker builds this window's worker over queueRunner. sendTyped(session, text, files) is the one send path for the webview's submit-turn and the attachment submit (submitTurn): with a worker it enqueues ('typed', attachments as refs; a draft chat is saved first) and does not call supersedeQueuedApprovals, so the running turn and its waiting cards are untouched; a refused enqueue (full/busy/unavailable) posts the queue's note as an informational chat message; without a worker it supersedes the waiting requests and starts the turn directly as before. drainExternal waits while this window's worker runs a queued message. The host's dispose disposes the worker. turn-lifecycle.ts: busy() stays true while a start waits in the chain (tracked by its epoch, so a start dropped by stop/detach/invalidate no longer counts). Tests: the two named tests in chat-queue-routing.test.ts over a real queue file and worker (the first also checks a refused message's note); the host tests that pinned newest-wins at the host (:138, :5018, :5455) are rewritten with their old titles noted; the chat-panel and protocol suites pass 175/175 and the lifecycle suite 32/32; the other listed tests (:1318, :2854, :4745, :5302) run on the no-queue path and pass unchanged. Mutations: dropping the queue routing, the stop flag, 'turn-running', the refusal note, or answering the cards before enqueueing each failed the tests. Plugin typecheck clean. Follow-up after the gate's first refusal: chat-panel.test.ts gains tempQueue() and runs the Stop test (was :2854) with a queue: Stop ends the running message (failed 'stopped by the user', its CLI never started) and later messages all run in order, none replaced; attachHarness takes a queue, and a new test 'host: with the queue, a submit with blank text and an attachment leaves the waiting cards as they are, waits, and runs once they are decided' asserts the cards stay (HLD: :4745 'changes to assert the card stays'); the original :4745 test is kept, marked as the no-queue fallback's rule. The chat-panel, routing and runner suites pass 168/168.",
+    "summary": "New vscode-plugin/src/chat/chat-queue-setup.ts (vscode-free): WINDOW_KEY_STATE / windowKeyOf (window key created once and kept in workspaceState, so a reload keeps it), repoKeyOf (first 16 hex of sha256 of the realpath of the chat folder's git top-level; the folder itself outside git), queuePathOf (<insrc home>/chat-queue/<key>.sqlite), processAliveCheck (pid alive AND, when given, the same start time), createQueueFactory (opens the store and returns the worker factory; on failure logs, shows the notice once — a newer-plugin message for a too-new schema, else QUEUE_UNSUPPORTED_NOTICE — and returns undefined so the chat keeps its direct path). extension.ts builds the factory before createChatPanelHost: repo key via `git -C <cwd> rev-parse --show-toplevel`, node:sqlite loaded lazily through createRequire, the claim from the window key + the extension host's pid and start time (session-lock's defaultProcessStartTime), isAlive from defaultIsAlive + defaultProcessStartTime, notify via showWarningMessage; it passes queue only when the factory exists. package.json engines: vscode ^1.141.0, node >=22.13. Pinned tests updated: extension-chat-wiring's import regex (adds defaultIsAlive, defaultProcessStartTime) and packaging's engines.vscode. The queued attachment test in chat-panel.test.ts now disposes its host, so its worker's poll timers stop and the file exits on its own. Whole plugin suite without force-exit: 1286 tests, 1276 pass, 8 skipped, 2 fail — both the pre-existing manifest-catalog failures (unrelated, failing before this Epic). Plugin typecheck clean. Commit 1cfe1e75.",
     "testRecord": {
       "md": "docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T12:04:19.680Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/__tests__/packaging.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T12:04:19.680Z"
+      },
+      {
+        "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fixtures/queue-ack-child.mts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-setup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-queue-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-queue-worker.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/turn-lifecycle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:37:04.816Z"
+        "timestamp": "2026-10-14T12:04:19.680Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T12:04:19.680Z"
       }
     ],
-    "commit": "6a7a5de3"
+    "commit": "1cfe1e75"
   }
 }

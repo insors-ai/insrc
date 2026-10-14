@@ -329,6 +329,8 @@ Same submitExternal change as a1. Each worker writes ~/.insrc/chat-queue/live-se
   - **resolved**: Moot: the owner's hard-cap ruling removes liveSessionIdsOfAllQueues and the keepSessionIds dependency from the design, so no new names remain to ground. The LLD is amended to drop them. — Follows from the hard-cap decision. _(2026-10-14T18:29:42.904Z)_
 - `qbabde9a5` — ep3 (partial): the invariantsToPreserve cite the HLD assumption ids c3, c11 and c12 as the schema requires; the behaviours are shown by the read:queue-surface and read:current-behaviour bundles, but the ids do not name a bundle directly.
   - **resolved**: Add a bundle crosswalk in the plan: keep the HLD c-ids (c3, c11, c12) in the LLD and map them to the read:queue-surface and read:current-behaviour bundles in the plan's closing task, as ruled for s4. — Same ruling as Story s4 (option A there). _(2026-10-14T18:30:06.224Z)_
+- `q8f16b189` — NOTE (trimmed, disclosed): body.hldContextSlice carries the framework summary, the consumed contracts without their interface sketches, this Story's boundary and the adjacent boundaries' owns and depends, not the full verbatim slice.
+  - **resolved**: B: keep the trimmed slice in the LLD (disclosed) and read the approved HLD directly at plan start for the consumed contracts' interface sketches, citing it where tasks rely on those signatures. — Accuracy first without reopening the LLD; same as the trim accepted for s4. _(2026-10-14T18:30:19.628Z)_
 
 ## Citations
 

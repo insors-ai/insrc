@@ -58,6 +58,13 @@
         "choice": "Add a bundle crosswalk in the plan: keep the HLD c-ids (c3, c11, c12) in the LLD and map them to the read:queue-surface and read:current-behaviour bundles in the plan's closing task, as ruled for s4.",
         "rationale": "Same ruling as Story s4 (option A there).",
         "resolvedAt": "2026-10-14T18:30:06.224Z"
+      },
+      "q8f16b189": {
+        "question": "NOTE (trimmed, disclosed): body.hldContextSlice carries the framework summary, the consumed contracts without their interface sketches, this Story's boundary and the adjacent boundaries' owns and depends, not the full verbatim slice.",
+        "status": "resolved",
+        "choice": "B: keep the trimmed slice in the LLD (disclosed) and read the approved HLD directly at plan start for the consumed contracts' interface sketches, citing it where tasks rely on those signatures.",
+        "rationale": "Accuracy first without reopening the LLD; same as the trim accepted for s4.",
+        "resolvedAt": "2026-10-14T18:30:19.628Z"
       }
     }
   },

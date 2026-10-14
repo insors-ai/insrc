@@ -4,8 +4,9 @@
  * The pieces extension.ts needs, kept vscode-free so they are tested directly: the window key
  * (stable across reloads, kept in the workspace's state), the repository key (the real path of
  * the chat folder's git top-level, so windows on one working tree share a queue), the process
- * check, and the factory that opens the store and builds the window's worker, or says plainly
- * that the queue is not available and leaves the chat on its direct path.
+ * check, and the factory that opens the store and builds the window's worker. Epic
+ * E20261014613abdb3 Story S005: when the queue cannot be opened the chat is disabled in that
+ * window (there is no direct path), and the notice says so and names the cause.
  */
 
 import { createHash } from 'node:crypto';
@@ -17,9 +18,25 @@ import { createChatQueueWorker, type ChatQueueWorker, type QueuedTurnRunner } fr
 /** The workspace-state key of this window's queue key. */
 export const WINDOW_KEY_STATE = 'insrc.chat.windowKey';
 
-/** Said once when the queue cannot be used; the chat then runs messages as before. */
-export const QUEUE_UNSUPPORTED_NOTICE =
-  'This VS Code is not supported by the chat queue: its runtime cannot load node:sqlite. Messages run as before.';
+/** Why the chat queue could not be opened. */
+export type QueueOpenFailure = 'no-sqlite' | 'newer-plugin' | 'other';
+
+/** Said once when the queue cannot be used: the chat is disabled in this window. */
+export const CHAT_DISABLED_NO_SQLITE_NOTICE = 'The chat is disabled in this window: this VS Code cannot load node:sqlite, which the chat queue needs.';
+export const CHAT_DISABLED_NEWER_PLUGIN_NOTICE = 'The chat is disabled in this window: its queue was made by a newer insrc plugin; reload this window.';
+export const chatDisabledOtherNotice = (reason: string): string => `The chat is disabled in this window: its queue could not be opened (${reason}).`;
+
+/** Whether the chat is offered in a window: only when its queue could be created. */
+export const chatIsOffered = (queue: unknown): boolean => queue !== undefined;
+
+/** The cause of a failure to open the queue: a newer plugin's file, a runtime without node:sqlite, or anything else. */
+export function classifyOpenFailure(err: unknown): QueueOpenFailure {
+  const reason = err instanceof Error ? err.message : String(err);
+  if (err instanceof StoreUnavailable && /newer plugin/.test(reason)) return 'newer-plugin';
+  const code = (err as { code?: unknown } | null)?.code;
+  if (code === 'ERR_UNKNOWN_BUILTIN_MODULE' || /node:sqlite/.test(reason)) return 'no-sqlite';
+  return 'other';
+}
 
 export interface KeyValueState {
   get(key: string): string | undefined;
@@ -78,7 +95,7 @@ export interface QueueFactoryDeps {
 
 /**
  * Opens the repository's queue and returns the factory the chat host builds its worker with, or
- * undefined (with the notice shown once) when the queue cannot be used.
+ * undefined (with the notice shown once) when the queue cannot be used: the chat is then disabled.
  */
 export function createQueueFactory(deps: QueueFactoryDeps): ((runner: QueuedTurnRunner) => ChatQueueWorker) | undefined {
   try {
@@ -86,8 +103,9 @@ export function createQueueFactory(deps: QueueFactoryDeps): ((runner: QueuedTurn
     return (runner) => createChatQueueWorker({ store, claim: deps.claim, runner, isAlive: deps.isAlive, now: deps.now, log: deps.log });
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    deps.log.warn(`[chat-queue] not available, messages run directly: ${reason}`);
-    deps.notify(err instanceof StoreUnavailable && /newer plugin/.test(reason) ? `The chat queue was made by a newer insrc plugin; reload this window. Messages run as before.` : QUEUE_UNSUPPORTED_NOTICE);
+    deps.log.warn(`[chat-queue] not available, the chat is disabled in this window: ${reason}`);
+    const cause = classifyOpenFailure(err);
+    deps.notify(cause === 'newer-plugin' ? CHAT_DISABLED_NEWER_PLUGIN_NOTICE : cause === 'no-sqlite' ? CHAT_DISABLED_NO_SQLITE_NOTICE : chatDisabledOtherNotice(reason.replace(/^the chat queue could not be (?:opened|prepared): /, '')));
     return undefined;
   }
 }

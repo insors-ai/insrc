@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import {
-  createQueueFactory, processAliveCheck, queuePathOf, QUEUE_UNSUPPORTED_NOTICE, repoKeyOf, WINDOW_KEY_STATE, windowKeyOf,
+  CHAT_DISABLED_NEWER_PLUGIN_NOTICE, CHAT_DISABLED_NO_SQLITE_NOTICE, chatDisabledOtherNotice, chatIsOffered, classifyOpenFailure, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, WINDOW_KEY_STATE, windowKeyOf,
 } from '../chat-queue-setup.js';
 import type { SqliteDatabase } from '../chat-queue-store.js';
 
@@ -16,7 +16,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 const read = (...p: string[]): string => readFileSync(join(here, ...p), 'utf8');
 const code = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-test('extension wiring: the repo key hashes the real path of the git top-level of the chat folder, the window key is kept in workspaceState, the store opens under ~/.insrc/chat-queue, engines.vscode is ^1.141.0 and engines.node >=22.13, isAlive combines the pid and start-time checks, and when node:sqlite cannot load the chat keeps the direct path and shows the notice once', () => {
+test('extension wiring: the repo key hashes the real path of the git top-level of the chat folder, the window key is kept in workspaceState, the store opens under ~/.insrc/chat-queue, engines.vscode is ^1.141.0 and engines.node >=22.13, isAlive combines the pid and start-time checks, and when node:sqlite cannot load the chat is disabled and the notice is shown once', () => {
   // THE REPO KEY: two folders of one working tree (its root and a subfolder) share it; the real path counts.
   const tops: Record<string, string> = { '/w/repo': '/w/repo\n', '/w/repo/vscode-plugin': '/w/repo\n', '/w/link/sub': '/w/link\n' };
   const real: Record<string, string> = { '/w/repo': '/w/repo', '/w/link': '/w/repo' };
@@ -60,8 +60,8 @@ test('extension wiring: the repo key hashes the real path of the git top-level o
     worker.dispose();
     assert.deepEqual(notices, []);
     const none = createQueueFactory({ ...base, path: queuePathOf(dir, 'k2'), openDatabase: () => { throw new Error("Cannot find module 'node:sqlite'"); } });
-    assert.equal(none, undefined, 'the chat keeps its direct path');
-    assert.deepEqual(notices, [QUEUE_UNSUPPORTED_NOTICE], 'said once, plainly');
+    assert.equal(none, undefined, 'no queue: the chat is disabled');
+    assert.deepEqual(notices, [CHAT_DISABLED_NO_SQLITE_NOTICE], 'said once, plainly');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -79,4 +79,32 @@ test('extension wiring: the repo key hashes the real path of the git top-level o
   assert.match(ext, /\.\.\.\(chatQueue !== undefined \? \{ queue: chatQueue \} : \{\}\),/, 'no queue: the direct path');
   const pkg = JSON.parse(read('..', '..', '..', 'package.json')) as { engines: Record<string, string> };
   assert.deepEqual(pkg.engines, { vscode: '^1.141.0', node: '>=22.13' });
+});
+
+test('when the queue cannot be opened the chat is disabled with a notice chosen by cause (node:sqlite cannot load, newer plugin, any other failure), each saying the chat is disabled, shown once', async () => {
+  const { StoreUnavailable } = await import('../chat-queue-store.js');
+  const dir = mkdtempSync(join(tmpdir(), 'insrc-queue-causes-'));
+  const base = { now: () => Date.now(), pluginVersion: 't', claim: { windowKey: 'w', pid: process.pid }, isAlive: () => false };
+  const cases: Array<[string, () => never, string]> = [
+    ['node:sqlite cannot load (message)', () => { throw new Error("Cannot find module 'node:sqlite'"); }, CHAT_DISABLED_NO_SQLITE_NOTICE],
+    ['node:sqlite cannot load (code)', () => { throw Object.assign(new Error('No such built-in module: node:sqlite'), { code: 'ERR_UNKNOWN_BUILTIN_MODULE' }); }, CHAT_DISABLED_NO_SQLITE_NOTICE],
+    ['newer plugin', () => { throw new StoreUnavailable('the queue was made by a newer plugin (schema 9)'); }, CHAT_DISABLED_NEWER_PLUGIN_NOTICE],
+    ['any other failure', () => { throw new Error('disk image is malformed'); }, chatDisabledOtherNotice('disk image is malformed')],
+  ];
+  for (const [label, open, expected] of cases) {
+    const notices: string[] = [];
+    const factory = createQueueFactory({ ...base, path: join(dir, 'q.sqlite'), openDatabase: open, log: { warn: () => {}, error: () => {} }, notify: (m) => void notices.push(m) });
+    assert.equal(factory, undefined, `${label}: no queue`);
+    assert.equal(chatIsOffered(factory), false, `${label}: the chat is not offered`);
+    assert.deepEqual(notices, [expected], `${label}: one notice, for its cause`);
+    assert.match(notices[0]!, /^The chat is disabled in this window: /, `${label}: it says the chat is disabled`);
+  }
+  assert.deepEqual(
+    [CHAT_DISABLED_NO_SQLITE_NOTICE, CHAT_DISABLED_NEWER_PLUGIN_NOTICE, chatDisabledOtherNotice('x')].map((n) => /Messages run as before/.test(n)),
+    [false, false, false],
+    'no notice still promises a direct path',
+  );
+  rmSync(dir, { recursive: true, force: true });
+  assert.equal(classifyOpenFailure(new Error('weird')), 'other');
+  assert.equal(chatIsOffered(() => undefined), true, 'with a queue factory the chat is offered');
 });

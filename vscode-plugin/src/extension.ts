@@ -51,7 +51,7 @@ import type { ModelListResult, ModelProvider } from './models/model-tier-picker.
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
-import { createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
+import { chatIsOffered, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
 import type { SqliteDatabase } from './chat/chat-queue-store.js';
 import { createRequire } from 'node:module';
 import { execFileSync } from 'node:child_process';
@@ -581,8 +581,9 @@ export function activate(context: vscode.ExtensionContext): void {
       log: panelLog,
     });
     // Epic E20261014613abdb3 Story S001: the repository's chat queue, shared by every window on the
-    // same working tree. node:sqlite is loaded only here and lazily, so a runtime without it keeps
-    // the chat on its direct path (with a notice) instead of failing the extension.
+    // same working tree. node:sqlite is loaded only here and lazily, so a runtime without it disables
+    // the chat in this window (with a notice) instead of failing the extension. Story S005: there is
+    // no direct path; everything below that turns the chat on is gated on the queue existing.
     const chatQueue = createQueueFactory({
       path: queuePathOf(PATHS.insrc, repoKeyOf(chatCwd(), {
         gitTopLevel: (cwd) => execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }),
@@ -684,8 +685,9 @@ export function activate(context: vscode.ExtensionContext): void {
     // activate-time context key set ONLY here, inside the flag gate \u2014 NOT the live
     // config.insrc.chat.enabled. So toggling the setting without a window reload cannot surface a
     // command-less icon; it appears only after a reload re-runs activate with the flag on.
-    void vscode.commands.executeCommand('setContext', 'insrc.chat.ready', true);
-    commands.register({ id: 'insrc.chat.open', title: 'insrc: Open chat' }, async () => {
+    const chatOffered = chatIsOffered(chatQueue);
+    if (chatOffered) void vscode.commands.executeCommand('setContext', 'insrc.chat.ready', true);
+    if (chatOffered) commands.register({ id: 'insrc.chat.open', title: 'insrc: Open chat' }, async () => {
       chatHost.open();
     });
     // S001 (bugfix): restore an insrc chat tab across a window reload / extension update. Without
@@ -693,7 +695,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // (empty history, no wiring). deserializeWebviewPanel wraps the restored panel with the SAME
     // adapter as a fresh open and hands it to chatHost.adopt(), so history + wiring are restored
     // in place. Any failure disposes the panel (never throw into VS Code's restore path).
-    context.subscriptions.push(
+    if (chatOffered) context.subscriptions.push(
       vscode.window.registerWebviewPanelSerializer(CHAT_VIEW_TYPE, {
         deserializeWebviewPanel: (panel) => {
           try {
@@ -742,7 +744,7 @@ export function activate(context: vscode.ExtensionContext): void {
       // one message, which waits its turn there; and an artifact's HTML documents are read
       // from the workspace folder's docs/ directory for the pane's frame. The two hosts
       // meet only here: neither knows of the other.
-      notifyChat: (text) => chatHost.submitExternal(text),
+      ...(chatOffered ? { notifyChat: (text: string) => chatHost.submitExternal(text) } : {}),
       readCompanion: createCompanionReader({ root: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath }),
     });
     commands.register({ id: 'insrc.chat.docsReview', title: 'insrc: Review pending documents' }, async () => {

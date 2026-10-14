@@ -117,6 +117,12 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "insrc.chat.open",
+          "when": "insrc.chat.ready"
+        }
+      ],
       "editor/title": [
         {
           "command": "insrc.chat.open",

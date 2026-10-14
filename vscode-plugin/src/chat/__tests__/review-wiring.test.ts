@@ -20,11 +20,16 @@ const read = (...parts: string[]): string => readFileSync(join(HERE, ...parts), 
 /** Source with its comments removed, so prose about a module is not read as an import of it. */
 const code = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-test("review wiring: the review host is given notifyChat bound to the chat host's submitExternal and a readCompanion, and neither host module imports the other", () => {
+test("review wiring: the review host's notifyChat is bound to the chat host's submitExternal when there is a queue and absent when there is none, it is given a readCompanion, and neither host module imports the other", () => {
   const ext = code(read('..', '..', 'extension.ts'));
   const block = /createDocsReviewHost\(\{([\s\S]*?)\n    \}\);/.exec(ext)?.[1];
   assert.ok(block, 'the review host is built in extension.ts');
-  assert.match(block!, /notifyChat: \(text\) => chatHost\.submitExternal\(text\),/, "notifyChat hands the message to the chat host's submitExternal");
+  assert.match(
+    block!,
+    /\.\.\.\(chatOffered \? \{ notifyChat: \(text: string\) => chatHost\.submitExternal\(text\) \} : \{\}\),/,
+    "with a queue notifyChat hands the message to the chat host's submitExternal; without one there is no binding",
+  );
+  assert.match(ext, /const chatOffered = chatIsOffered\(chatQueue\);/, 'chat availability comes from the queue factory result');
   assert.match(block!, /readCompanion: createCompanionReader\(\{ root: \(\) => vscode\.workspace\.workspaceFolders\?\.\[0\]\?\.uri\.fsPath \}\),/, 'readCompanion reads under the first workspace folder');
   assert.match(ext, /import \{ createCompanionReader \} from '\.\/chat\/companion-reader\.js';/);
   // The pane names the workspace folder to the daemon on every call, so it does not depend on the daemon's default.

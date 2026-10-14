@@ -344,3 +344,24 @@ test('extension wiring: the store is built on ~/.insrc/chat-attachments, the pic
   const storeSrc = read(join(HERE, '..', 'attachment-store.ts'));
   assert.doesNotMatch(storeSrc, /from ['"]vscode['"]/);
 });
+
+test('extension wiring: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host\'s notifyChat are not set up, and with a queue they are', () => {
+  const src = read(EXT).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  assert.match(src, /const chatOffered = chatIsOffered\(chatQueue\);/, 'availability is read from the queue factory result');
+  assert.match(src, /if \(chatOffered\) void vscode\.commands\.executeCommand\('setContext', 'insrc\.chat\.ready', true\);/, 'the ready context (the editor-title icon) is set only with a queue');
+  assert.match(src, /if \(chatOffered\) commands\.register\(\{ id: 'insrc\.chat\.open'/, 'the chat command is registered only with a queue');
+  assert.match(src, /if \(chatOffered\) context\.subscriptions\.push\(\s*vscode\.window\.registerWebviewPanelSerializer\(CHAT_VIEW_TYPE/, 'the chat tab serializer is registered only with a queue');
+  assert.match(src, /\.\.\.\(chatOffered \? \{ notifyChat: \(text: string\) => chatHost\.submitExternal\(text\) \} : \{\}\),/, "the review host's hand-over is bound only with a queue");
+  // Nothing else turns the chat on outside the gate.
+  assert.equal((src.match(/'insrc\.chat\.ready'/g) ?? []).length, 1, 'one place sets the ready context');
+  assert.equal((src.match(/registerWebviewPanelSerializer\(CHAT_VIEW_TYPE/g) ?? []).length, 1, 'one chat serializer');
+  assert.equal((src.match(/id: 'insrc\.chat\.open'/g) ?? []).length, 1, 'one chat command registration');
+});
+
+test('extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready', () => {
+  const pkg = JSON.parse(read(PKG)) as { contributes: { menus: Record<string, Array<{ command: string; when?: string }>> } };
+  const palette = pkg.contributes.menus['commandPalette'] ?? [];
+  assert.deepEqual(palette.filter((m) => m.command === 'insrc.chat.open'), [{ command: 'insrc.chat.open', when: 'insrc.chat.ready' }]);
+  const title = pkg.contributes.menus['editor/title'] ?? [];
+  assert.deepEqual(title.filter((m) => m.command === 'insrc.chat.open').map((m) => m.when), ['insrc.chat.ready'], 'the editor-title icon is gated the same way');
+});

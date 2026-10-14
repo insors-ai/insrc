@@ -1,0 +1,33 @@
+{
+  "id": "AMD-613abdb351c2c738-13",
+  "epicHash": "613abdb351c2c738",
+  "epicSlug": "per-repo-chat-turn-queue-outbox",
+  "hldBaseRunId": "wf-1791967985926-oydluz",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc4",
+    "breaking": false,
+    "field": {
+      "name": "actRetryNow",
+      "type": "act(seq: number, action: 'retry-now') => { readonly ok: true } | { readonly ok: false; readonly note: string }",
+      "optional": false,
+      "purpose": "act also accepts 'retry-now': a retrying message becomes due at once (store.retryNow) and runs at the next tick; any other row is refused with a note"
+    }
+  },
+  "rationale": "S004's outbox needs a retry-now button; the action goes through the worker like cancel, dismiss and resend (AMD-3). Built and approved in S004.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "epic-end-batch",
+    "runId": "manual-2026-10-14T19:08:37.063Z",
+    "storyId": "s4",
+    "stepId": "batch"
+  },
+  "proposedAt": "2026-10-14T19:08:37.063Z",
+  "status": "pending"
+}

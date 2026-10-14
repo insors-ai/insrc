@@ -1,0 +1,31 @@
+{
+  "id": "AMD-613abdb351c2c738-11",
+  "epicHash": "613abdb351c2c738",
+  "epicSlug": "per-repo-chat-turn-queue-outbox",
+  "hldBaseRunId": "wf-1791967985926-oydluz",
+  "amendment": {
+    "type": "sharedContract.methodAdd",
+    "contractId": "sc2",
+    "method": {
+      "name": "presenceOf",
+      "signature": "presenceOf(windowKey: string): WindowPresence | undefined",
+      "purpose": "the window's presence row (its pid and last refresh), or undefined when it has none; used to tell a closed window from a slow or reloading one"
+    }
+  },
+  "rationale": "S003's not-delivered rule needs the presence row itself, not only windowAlive's yes/no. Built and approved in S003.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "epic-end-batch",
+    "runId": "manual-2026-10-14T19:08:37.063Z",
+    "storyId": "s3",
+    "stepId": "batch"
+  },
+  "proposedAt": "2026-10-14T19:08:37.063Z",
+  "status": "pending"
+}

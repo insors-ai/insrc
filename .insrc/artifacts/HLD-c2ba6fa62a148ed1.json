@@ -779,6 +779,26 @@
         },
         "comment": "Stakeholder decision, 2026-10-11: the temporary allowance that lets the MCP server open the live store until Story s11 is kept, and its removal is a required part of Story s11 (a new acceptance criterion ac6, requirement and local constraint on s11 in the definition).",
         "kind": "comment"
+      },
+      {
+        "id": "592cddbb",
+        "author": "subho@insors.io (decision, recorded by the controller)",
+        "timestamp": "2026-10-14T08:19:01.804Z",
+        "target": {
+          "file": "src/indexer/repo-type.ts"
+        },
+        "comment": "For Story s6 (stakeholder decision 2026-10-14: no separate issue, s6 addresses it). Concrete case in this repository: the bare-name ignore list for Node repositories contains 'build' (src/indexer/repo-type.ts:29), and hasIgnoredSegment (src/indexer/index.ts:104) matches it at any depth, so src/workflow/runners/build/ (19 files, all tracked by git; .gitignore has no rule for it, git check-ignore reports none) is never indexed. 19 files in src/ make 38 imports into it, all missing from the graph with the calls through them. s6's design should use this as an acceptance case: after s6, these 19 files are indexed and the 38 imports stored. It also affects Story s1's completeness until s6 lands: imports into that directory resolve to file ids that are never stored, so this repository reads not complete with them counted.",
+        "kind": "comment"
+      },
+      {
+        "id": "74e142f6",
+        "author": "subho@insors.io (decision, recorded by the controller)",
+        "timestamp": "2026-10-14T08:19:18.604Z",
+        "target": {
+          "file": "src/indexer/repo-ignore-config.ts"
+        },
+        "comment": "CORRECTION to entry 592cddbb (2026-10-14): in THIS repository src/workflow/runners/build/ IS indexed. Its .insrc/config.json ignore list no longer contains 'build' (removed 2026-10-10), and resolveRepoIgnore (src/indexer/repo-ignore-config.ts:58-62) uses a repository's own list instead of IGNORE_DIRS, so the 38 imports into it are stored and Story s1's completeness is not affected. The defect stands for any repository on the default list: IGNORE_DIRS for Node contains 'build' (src/indexer/repo-type.ts:29, also 'dist' and 'out'; Python 'build'/'dist'; Java 'target'/'build'/'out') and hasIgnoredSegment (src/indexer/index.ts:104) matches it at any depth, hiding nested source directories that git tracks. s6 addresses it; use a nested tracked 'build' directory in a fixture repository as its acceptance case.",
+        "kind": "comment"
       }
     ]
   },

@@ -182,6 +182,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   let chainEpoch = 0;
   /** Starts begun and not yet over, the one running included. */
   let inFlight = 0;
+  /** The epochs of starts waiting in the chain; one of the current epoch keeps busy() true. */
+  const chainedEpochs: number[] = [];
   /** That turn is no longer in progress; a superseded turn's end leaves its successor in progress. */
   const idle = (gen: number): void => {
     if (busyGen === gen) busyGen = undefined;
@@ -280,7 +282,12 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         } catch (err) {
           log.warn(`[chat] onWaiting failed: ${err instanceof Error ? err.message : String(err)}`);
         }
-        await previous;
+        chainedEpochs.push(epoch);
+        try {
+          await previous;
+        } finally {
+          chainedEpochs.splice(chainedEpochs.indexOf(epoch), 1);
+        }
         if (epoch !== chainEpoch) return;
       }
       const myGen = ++generation;
@@ -598,7 +605,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       busyGen = undefined;
     },
     busy(): boolean {
-      return busyGen !== undefined || (following !== undefined && !following.ctl.signal.aborted);
+      return busyGen !== undefined || chainedEpochs.includes(chainEpoch) || (following !== undefined && !following.ctl.signal.aborted);
     },
     get live() {
       return activeProvider !== undefined && activeTurnId !== undefined ? { provider: activeProvider, turnId: activeTurnId } : undefined;

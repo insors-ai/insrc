@@ -135,7 +135,9 @@ test('submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before d
   assert.equal(runCount, 1, 'StreamAdapter.run called exactly once (passthrough)');
 });
 
-test('single-in-flight: a second submit supersedes the first — no interleave; it waits for the first instead of killing it (H1/M2)', async () => {
+// Epic E20261014613abdb3 Story S001: the newest message no longer wins; the second waits and the
+// first reports to its end. (Was: 'single-in-flight: a second submit supersedes the first'.)
+test('single-in-flight: a second submit waits for the first, which reports to its end — no interleave; the first is not killed (H1/M2)', async () => {
   const fc = fakeChannel();
   // One 'claude' adapter that serves both runs: run #1 (A) streams then keeps running until the
   // test lets it finish; run #2 (B) streams to done. A is never cancelled: B waits for it.
@@ -175,8 +177,9 @@ test('single-in-flight: a second submit supersedes the first — no interleave; 
   assert.equal(cancelled.size, 0, 'A was not killed by the newer message');
   releaseA();
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
-  const idsAfter = turnEvents(fc).slice(postsAtSupersede).map((e) => (e as { turnId: string }).turnId);
-  assert.ok(!idsAfter.includes('A'), 'no A events after B superseded it (no interleave)');
+  const idsAfter = turnEvents(fc).slice(postsAtSupersede).map((e) => (e as { turnId: string }).turnId).filter((id) => id === 'A' || id === 'B');
+  assert.ok(idsAfter.includes('A'), "A's later output is posted: it was not superseded");
+  assert.ok(idsAfter.lastIndexOf('A') < idsAfter.indexOf('B'), 'all of A before any of B (no interleave)');
   assert.ok(turnEvents(fc).some((e) => (e as { turnId: string }).turnId === 'B'), 'B streamed to completion');
   assert.equal(call, 2, 'B started once A had finished');
 });
@@ -5015,7 +5018,9 @@ test('chat host: submitExternal runs the message at once when the webview is rea
   }
 });
 
-test("chat host: a message waiting behind a turn that a typed message supersedes is run when the typed message's turn ends, and a typed message still supersedes a running turn", async () => {
+// Epic E20261014613abdb3 Story S001: a typed message no longer supersedes the running turn. (Was: "...
+// behind a turn that a typed message supersedes ..., and a typed message still supersedes a running turn".)
+test("chat host: a message waiting behind a running turn is run after it, and a typed message sent meanwhile waits for the running turn, whose output is posted to its end", async () => {
   const h = readyHarness();
   h.fc.send(env('submit-turn', { text: 'first' }));
   await waitFor(() => h.runs.length === 1);
@@ -5023,14 +5028,14 @@ test("chat host: a message waiting behind a turn that a typed message supersedes
   await waitFor(() => turnEvents(h.fc).some((e) => e.kind === 'assistant-delta'));
   assert.equal(h.host.submitExternal('from the pane'), 'queued');
 
-  h.fc.send(env('submit-turn', { text: 'second' })); // supersedes the running turn
+  h.fc.send(env('submit-turn', { text: 'second' })); // waits for the running turn
   h.runs[0]!.feed({ kind: 'assistant-delta', turnId: 't1', text: 'late-from-first' });
   h.runs[0]!.feed(doneOf(1));
   await waitFor(() => h.runs.length === 2);
   await runsSettled();
-  assert.deepEqual(prompts(h.runs), ['first', 'second'], 'the superseded turn\'s end does not run the pane message');
+  assert.deepEqual(prompts(h.runs), ['first', 'second'], 'the typed message runs next; the pane message waits behind it');
   const texts = turnEvents(h.fc).filter((e) => e.kind === 'assistant-delta').map((e) => (e as { text: string }).text);
-  assert.deepEqual(texts, ['early'], 'the typed message superseded the running turn: its later output is not posted');
+  assert.deepEqual(texts, ['early', 'late-from-first'], 'the running turn was not superseded: its later output is posted');
 
   h.runs[1]!.feed(doneOf(2));
   await waitFor(() => h.runs.length === 3);
@@ -5452,7 +5457,10 @@ test("chat host: a followed turn begins a presenter turn on its first event, not
   assert.deepEqual(opened, ['BUILD-new'], "the run turn's end still opens the newly pending document");
 });
 
-test("chat host: a superseded turn's later tool results are not passed to the presenter, and a document it writes afterwards is opened at the end of the turn that superseded it", async () => {
+// Epic E20261014613abdb3 Story S001: a second message no longer supersedes the running turn. (Was: "a
+// superseded turn's later tool results are not passed to the presenter, and a document it writes
+// afterwards is opened at the end of the turn that superseded it".)
+test("chat host: a turn followed by a second message still passes its tool results to the presenter, which opens the document it presents, once", async () => {
   const list: Array<{ id: string; mdPath: string }> = [{ id: 'LLD-old', mdPath: '/repo/docs/x/OLD.md' }];
   const opened: string[] = [];
   const real = createReviewPresenter({
@@ -5461,7 +5469,6 @@ test("chat host: a superseded turn's later tool results are not passed to the pr
     log: { warn: () => {}, error: () => {} },
   });
   const spy = presenterSpy();
-  // The spy sees the host's calls; the real presenter decides what is opened.
   const both: ReviewPresenter = {
     begin: () => {
       const a = spy.presenter.begin();
@@ -5473,21 +5480,18 @@ test("chat host: a superseded turn's later tool results are not passed to the pr
   h.fc.send(env('submit-turn', { text: 'A: write the design' }));
   await waitFor(() => h.runs.length === 1);
   await runsSettled();
-  // The user sends another message while A runs.
   h.fc.send(env('submit-turn', { text: 'B: also this' }));
   await waitFor(() => spy.calls.includes('begin#2'));
-  // A, superseded, goes on: it writes a document and its tool result names it.
   list.push({ id: 'LLD-new', mdPath: '/repo/docs/x/NEW.md' });
   h.runs[0]!.feed(resultOf(1, '{"pendingApproval":{"artifactPath":"/repo/docs/x/NEW.md"}}'));
   h.runs[0]!.feed(doneOf(1));
   await waitFor(() => h.runs.length === 2);
   await runsSettled();
-  assert.deepEqual(spy.calls, ['begin#1', 'begin#2', 'end#1'], "the superseded turn's tool result never reached the presenter");
-  assert.ok(!turnEvents(h.fc).some((e) => e.kind === 'tool-result'), 'as it never reached the webview');
-  assert.deepEqual(opened, [], "and the superseded turn's own end opens nothing");
-  // B runs and ends: the document A wrote is opened then.
-  h.runs[1]!.feed(doneOf(2));
+  assert.ok(spy.calls.includes('result#1:{"pendingApproval":{"artifactPath":"/repo/docs/x/NEW.md"}}'), "the first turn's tool result reached the presenter");
+  assert.ok(turnEvents(h.fc).some((e) => e.kind === 'tool-result'), 'and the webview');
   await waitFor(() => opened.length === 1);
   assert.deepEqual(opened, ['LLD-new']);
-  assert.deepEqual(spy.calls.slice(3), ['end#2']);
+  h.runs[1]!.feed(doneOf(2));
+  await runsSettled();
+  assert.deepEqual(opened, ['LLD-new'], 'opened once');
 });

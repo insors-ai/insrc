@@ -32,7 +32,7 @@ import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-s
 import type { TurnEvent } from './stream-events.js';
 import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
-import type { QueuedTurnRunner } from './chat-queue-worker.js';
+import type { ChatQueueWorker, QueuedTurnRunner } from './chat-queue-worker.js';
 import {
   createEditGovernor,
   type EditGovernor,
@@ -120,6 +120,12 @@ export interface ChatPanelHostDeps {
    * approval or selection card before the message ends as stopped. Default CONTINUATION_WAIT_MS.
    */
   readonly continuationWaitMs?: number | undefined;
+  /**
+   * Epic E20261014613abdb3 Story S001: builds this window's worker over the repository's chat queue,
+   * given the host's runner. Present: typed messages go through the queue and run in order. Absent
+   * (node:sqlite unavailable, or tests): messages start their turns directly, as before.
+   */
+  readonly queue?: ((runner: QueuedTurnRunner) => ChatQueueWorker) | undefined;
   /**
    * Story E20261013e62a9269:S001: opens a document a turn presents for approval in the review
    * pane. A turn this host runs begins a presented turn just before it starts and ends it when
@@ -787,6 +793,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (waitingExternal.length === 0) return;
     if (disposed || channel === undefined || !webviewReady || session === undefined) return;
     if (turns.busy() || startingTurns > 0 || approvals.head() !== undefined) return;
+    // Epic E20261014613abdb3 Story S001: not while this window runs a queued message (until Story S005
+    // moves pane messages onto the queue).
+    if (worker?.running() === true || queued !== undefined) return;
     const next = waitingExternal.shift()!;
     supersedeQueuedApprovals(); // none is waiting; like a typed message it resets the grant chain
     void runTurn(next.text);
@@ -1552,15 +1561,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const list = pendingOf(s.id);
       const files = list.filter((p) => p.seq <= upTo).map((p) => p.ref);
       if (typeof text !== 'string' || (text.trim() === '' && files.length === 0)) return;
-      // A typed message, or one that is only attachments, answers the waiting requests with a no.
-      supersedeQueuedApprovals();
       if (files.length > 0) {
         // In place: a change still running holds this same list.
         list.splice(0, list.length, ...list.filter((p) => p.seq > upTo));
         postPending(s.id);
       }
-      // Not awaited: the next submit must not wait for this turn to end (the newest message wins).
-      void runTurn(text, undefined, { attachments: files });
+      sendTyped(s, text, files);
     };
     submitWork = submitWork.then(run).catch((err: unknown) => {
       log.error(`[chat] submit failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -1628,8 +1634,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           submitTurn(msg.text);
           return;
         }
-        if (typeof msg.text === 'string' && msg.text.trim() !== '') supersedeQueuedApprovals();
-        void runTurn(msg.text);
+        if (typeof msg.text !== 'string' || session === undefined) return;
+        sendTyped(session, msg.text, []);
         return;
       case 'cancel-turn':
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
@@ -1975,6 +1981,35 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     },
   };
 
+  // Epic E20261014613abdb3 Story S001: this window's queue worker, when the queue is available.
+  const worker = deps.queue?.(queueRunner);
+
+  /**
+   * Epic E20261014613abdb3 Story S001: a message the user sent goes into the repository's queue; it
+   * never touches the running turn. A refused message (the queue is full or busy) is said in the chat.
+   */
+  const enqueueTyped = (w: ChatQueueWorker, s: ChatSession, text: string, files: readonly AttachmentRef[]): void => {
+    trySave(s); // a draft chat is kept, so its queued message still finds it
+    const res = w.submit({ sessionId: s.id, text, origin: 'typed', attachments: files });
+    if (!res.ok) postInfo(`queue-refused-${Date.now()}`, res.note);
+  };
+
+  /**
+   * A message the user sent. Epic E20261014613abdb3 Story S001: with the queue it goes into the
+   * repository's queue and never touches the running turn or its waiting cards; without it, it
+   * answers the waiting requests with a no and starts its turn (not awaited, so the next submit does
+   * not wait for this turn to end).
+   */
+  const sendTyped = (s: ChatSession, text: string, files: readonly AttachmentRef[]): void => {
+    if (text.trim() === '' && files.length === 0) return;
+    if (worker !== undefined) {
+      enqueueTyped(worker, s, text.trim(), files);
+      return;
+    }
+    supersedeQueuedApprovals();
+    void runTurn(text, undefined, files.length > 0 ? { attachments: files } : undefined);
+  };
+
   const wireChannel = (ch: ChatPanelChannel): void => {
     disposed = false;
     channel = ch;
@@ -2027,6 +2062,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       return waitingExternal.includes(entry) ? 'queued' : 'sent';
     },
     dispose(): void {
+      worker?.dispose();
       endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
       void turns.detach();
       dropQueuedApprovals();

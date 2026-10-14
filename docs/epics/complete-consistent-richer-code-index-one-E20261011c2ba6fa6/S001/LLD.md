@@ -686,6 +686,8 @@ Absent-target rows and their completion as in a1. In resolveCall, when an import
 
 - `qf111c4f4` — sc1 amendment (proposed in s4): sharedContract.fieldAdd reasonCounts { unwritable, awaiting } on IndexState, so completeness can name each cause with its count. Additive; s1 owns sc1. It must be approved with this LLD [c19].
   - **resolved**: Approve fieldAdd with this LLD — Already decided: the stakeholder approved AMD-c2ba6fa62a148ed1-2 (reasonCounts on sc1) together with the LLD on 2026-10-14 (commit 19bbc6d1); duplicates AMD-3..6 rejected. _(2026-10-14T08:42:44.715Z)_
+- `q4a94ad8f` — dm1 (partial): src/db/graph/keys.ts, named as a call site of the EXPORTS edge entry, is not cited by the s1 bundles; it is cited by HLD c2 and holds RELATION_KIND_BYTE (EXPORTS=7). It is a read-only reference: no change is made to it [c2] [c19].
+  - **resolved**: Accept HLD citation as sufficient — Stakeholder decision 2026-10-14: keys.ts is read-only (EXPORTS keeps byte 7), cited by HLD c2; the plan treats it as a reference with no task. _(2026-10-14T08:44:48.779Z)_
 
 ## Citations
 

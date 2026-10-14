@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792005336745-dk9641",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T19:16:10.679Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 33933,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "de069d56d76eaacd",
+    "epicSlug": "keep-chat-s-progress-widget-when",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Keep the chat's progress widget when its panel is rebuilt while a turn is running",
+    "reproduction": "1. In the VS Code plugin, send a chat message that takes a while to answer, so the progress widget (the blinking dots with the elapsed time above the input) is showing. 2. While the turn is still running, open a document in the review pane, in the same editor column as the chat, so the chat's tab is covered, then approve the document and return to the chat tab. Expected: the progress widget is still showing and the Stop button still stops the turn, because the turn is still running. Observed: the progress widget is gone and the chat looks idle, although the turn continues and its output keeps arriving. (The covering of the chat tab by the review pane is my reading of how the pane opens, not yet observed; the build step must confirm that a 'ready' follows, as below.)",
+    "rootCause": "The chat's webview is created without retainContextWhenHidden, so when another tab covers it in the same editor column VS Code discards its page, and builds a new page when the tab is shown again. The new page posts 'ready', and the host answers with postInitialState, which sends the theme, a 'session-restored' message with the transcript, the pending attachments, the waiting approval card, the history list and a follow of any live turn. In the page, 'session-restored' calls setRunning(false) and hideProgress(), and nothing afterwards tells the page that a turn is still running: the only host message that turns the running state and the progress widget on is 'turn-running', which the queued-turn runner posts once, when a message starts. A turn this window is running itself is not followed again (turns.follow returns without following while this host runs the turn), so no later event restores it either, and status events only update the widget while running is true. The review pane is created at ViewColumn.Active or Beside, which is how it comes to cover the chat's tab.",
+    "fixIntent": "After the host answers a webview's 'ready', the rebuilt page must be told that a turn is running whenever this window has a turn in progress for the shown chat, so the progress widget and the Stop button come back; a window with no running turn still shows the idle chat. The correction does not change when a turn starts or ends, and the 'turn-running' behaviour of the queue's runner stays as it is."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts: postInitialState posts session-restored, pending attachments, the approval head, history and followLiveTurn, and nothing about a running turn"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts: the webview script's session-restored handler calls setRunning(false) and hideProgress(); 'turn-running' is the only message that calls setRunning(true) and setProgress"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts: queueRunner.run posts 'turn-running' once, when a queued message starts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts: the chat panel is created with createWebviewPanel at ViewColumn.Beside and no retainContextWhenHidden; the review pane is created at ViewColumn.Active or Beside"
+    }
+  ]
+}

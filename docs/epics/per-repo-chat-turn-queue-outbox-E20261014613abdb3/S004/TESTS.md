@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -118,3 +118,105 @@ Run at 2026-10-14T17:34:40.823Z on commit `c81b9728`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` | 0 | 5 | 0.8 s |  |
+
+## t5
+
+Run at 2026-10-14T17:37:27.326Z on commit `1d8d49ab`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: chat-queue-runner.test.ts: a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` |
+
+**unit: chat-queue-runner.test.ts: a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` |
+
+**unit: chat-queue-runner.test.ts: an auth failure stores and posts a sign-in line in the chat**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an auth failure stores and posts a sign-in line in the chat | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` |
+
+**unit: chat-queue-runner.test.ts: a normal turn still pushes and echoes its user row exactly as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a normal turn still pushes and echoes its user row exactly as before | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` | 0 | 9 | 0.9 s |  |
+
+## t6
+
+Run at 2026-10-14T17:39:15.006Z on commit `390de5ff`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: chat-queue-worker.test.ts: a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend | `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` | 0 | 17 | 1.1 s |  |
+
+## t7
+
+Run at 2026-10-14T17:41:17.100Z on commit `846659f5`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: chat-queue-worker.test.ts: a retrying head is not taken before its due time, holds the queue behind it, and runs when due**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a retrying head is not taken before its due time, holds the queue behind it, and runs when due | `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` |
+
+**unit: chat-queue-worker.test.ts: a message that fails three infrastructure retries ends failed and the next message runs**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a message that fails three infrastructure retries ends failed and the next message runs | `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` |
+
+**unit: chat-queue-worker.test.ts: act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note | `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` |
+
+**unit: chat-outbox.test.ts: a retrying row carries attempt and nextAttemptAt**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a retrying row carries attempt and nextAttemptAt | `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` |
+
+**unit: chat-shell.test.ts: a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` | 0 | 3 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` | 0 | 20 | 1.1 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 10 | 0.5 s |  |
+
+## t8
+
+Run at 2026-10-14T17:45:07.374Z on commit `1bd89556`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+no test files to run; reported as failed by the builder: hand check with a real provider failure: a passing provider error before acting waits, shows its countdown and runs again; retry-now runs it at once; a failure after an edit stays failed
+
+**live: hand check with a real provider failure: a passing provider error before acting waits, shows its countdown and runs again; retry-now runs it at once; a failure after an edit stays failed**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: NOT RUN - no real provider failure could be produced from the build session; unverified, not passed. Labelled fault-injection evidence (a scripted fake claude CLI, not a real provider): vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts, described in the BUILD summary.

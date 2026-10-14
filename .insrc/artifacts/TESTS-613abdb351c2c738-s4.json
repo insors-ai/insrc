@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s4",
     "createdAt": "2026-10-14T17:28:09.450Z",
-    "updatedAt": "2026-10-14T17:34:40.823Z",
+    "updatedAt": "2026-10-14T17:45:07.374Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -694,6 +694,468 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "1d8d49ab",
+        "ranAt": "2026-10-14T17:37:27.326Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-queue-runner.test.ts: a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-runner.test.ts: a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-runner.test.ts: an auth failure stores and posts a sign-in line in the chat",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "an auth failure stores and posts a sign-in line in the chat",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-runner.test.ts: a normal turn still pushes and echoes its user row exactly as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "a normal turn still pushes and echoes its user row exactly as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 851,
+            "titles": [
+              {
+                "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+                "result": "pass"
+              },
+              {
+                "title": "a queued turn that ends with done ok:false resolves failed with the text, not done",
+                "result": "pass"
+              },
+              {
+                "title": "a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause",
+                "result": "pass"
+              },
+              {
+                "title": "a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true",
+                "result": "pass"
+              },
+              {
+                "title": "every failed turn's cause and error text are logged",
+                "result": "pass"
+              },
+              {
+                "title": "a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI",
+                "result": "pass"
+              },
+              {
+                "title": "a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text",
+                "result": "pass"
+              },
+              {
+                "title": "an auth failure stores and posts a sign-in line in the chat",
+                "result": "pass"
+              },
+              {
+                "title": "a normal turn still pushes and echoes its user row exactly as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "390de5ff",
+        "ranAt": "2026-10-14T17:39:15.006Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-queue-worker.test.ts: a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+                "title": "a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1085,
+            "titles": [
+              {
+                "title": "chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit",
+                "result": "pass"
+              },
+              {
+                "title": "worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once",
+                "result": "pass"
+              },
+              {
+                "title": "worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick",
+                "result": "pass"
+              },
+              {
+                "title": "worker recovery: a lease left by a window that reloaded (same window key, old pid and its CLI gone) is freed at once, its message fails for resend, and the queued messages behind it run; another window's dead lease waits LEASE_TAKEOVER_MS",
+                "result": "pass"
+              },
+              {
+                "title": "worker recovery: a reloaded window reclaims a lease whose CLI lives and does not fail the message",
+                "result": "pass"
+              },
+              {
+                "title": "worker recovery: a dead holder and dead CLI of another window is freed only after LEASE_TAKEOVER_MS and the next message runs",
+                "result": "pass"
+              },
+              {
+                "title": "worker recovery: a holder that keeps heartbeating past LEASE_TAKEOVER_MS is never taken over",
+                "result": "pass"
+              },
+              {
+                "title": "a reclaimed lease is heartbeated while the CLI lives, then finished as detached-ended and released when the CLI exits, and the next message runs",
+                "result": "pass"
+              },
+              {
+                "title": "a reclaimed lease lost to another window clears the marker and stops heartbeating",
+                "result": "pass"
+              },
+              {
+                "title": "dispose leaves the presence row in place and windowAlive stays true until PRESENCE_GRACE_MS passes",
+                "result": "pass"
+              },
+              {
+                "title": "a head whose window stopped refreshing presence and whose pid is dead is marked not-delivered after PRESENCE_GRACE_MS and the next message runs",
+                "result": "pass"
+              },
+              {
+                "title": "a head whose window has a fresh presence row or a live pid is never marked; no presence row and a message younger than PRESENCE_GRACE_MS is not marked",
+                "result": "pass"
+              },
+              {
+                "title": "dispose-and-recreate a worker with the same windowKey while a second window ticks, the head is not marked not-delivered",
+                "result": "pass"
+              },
+              {
+                "title": "a reload slower than PRESENCE_GRACE_MS ends as not-delivered with a resend and no row is lost",
+                "result": "pass"
+              },
+              {
+                "title": "a previous-plugin window's dispose deleting its presence row: a head younger than PRESENCE_GRACE_MS is not marked, an older one is marked once",
+                "result": "pass"
+              },
+              {
+                "title": "submit at the bound returns ok:false reason full",
+                "result": "pass"
+              },
+              {
+                "title": "a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "846659f5",
+        "ranAt": "2026-10-14T17:41:17.100Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-queue-worker.test.ts: a retrying head is not taken before its due time, holds the queue behind it, and runs when due",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+                "title": "a retrying head is not taken before its due time, holds the queue behind it, and runs when due",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-worker.test.ts: a message that fails three infrastructure retries ends failed and the next message runs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+                "title": "a message that fails three infrastructure retries ends failed and the next message runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-worker.test.ts: act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+                "title": "act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-outbox.test.ts: a retrying row carries attempt and nextAttemptAt",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+                "title": "a retrying row carries attempt and nextAttemptAt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-shell.test.ts: a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 358,
+            "titles": [
+              {
+                "title": "outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named",
+                "result": "pass"
+              },
+              {
+                "title": "outbox projection: processing rows are dropped, failed and not-delivered rows have no place, blockedBy comes from another chat's processing row, attachments are counted and the note is carried",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row carries attempt and nextAttemptAt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1145,
+            "titles": [
+              {
+                "title": "chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit",
+                "result": "pass"
+              },
+              {
+                "title": "worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once",
+                "result": "pass"
+              },
+              {
+                "title": "worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick",
+                "result": "pass"
+              },
+              {
+                "title": "worker recovery: a lease left by a window that reloaded (same window key, old pid and its CLI gone) is freed at once, its message fails for resend, and the queued messages behind it run; another window's dead lease waits LEASE_TAKEOVER_MS",
+                "result": "pass"
+              },
+              {
+                "title": "worker recovery: a reloaded window reclaims a lease whose CLI lives and does not fail the message",
+                "result": "pass"
+              },
+              {
+                "title": "worker recovery: a dead holder and dead CLI of another window is freed only after LEASE_TAKEOVER_MS and the next message runs",
+                "result": "pass"
+              },
+              {
+                "title": "worker recovery: a holder that keeps heartbeating past LEASE_TAKEOVER_MS is never taken over",
+                "result": "pass"
+              },
+              {
+                "title": "a reclaimed lease is heartbeated while the CLI lives, then finished as detached-ended and released when the CLI exits, and the next message runs",
+                "result": "pass"
+              },
+              {
+                "title": "a reclaimed lease lost to another window clears the marker and stops heartbeating",
+                "result": "pass"
+              },
+              {
+                "title": "dispose leaves the presence row in place and windowAlive stays true until PRESENCE_GRACE_MS passes",
+                "result": "pass"
+              },
+              {
+                "title": "a head whose window stopped refreshing presence and whose pid is dead is marked not-delivered after PRESENCE_GRACE_MS and the next message runs",
+                "result": "pass"
+              },
+              {
+                "title": "a head whose window has a fresh presence row or a live pid is never marked; no presence row and a message younger than PRESENCE_GRACE_MS is not marked",
+                "result": "pass"
+              },
+              {
+                "title": "dispose-and-recreate a worker with the same windowKey while a second window ticks, the head is not marked not-delivered",
+                "result": "pass"
+              },
+              {
+                "title": "a reload slower than PRESENCE_GRACE_MS ends as not-delivered with a resend and no row is lost",
+                "result": "pass"
+              },
+              {
+                "title": "a previous-plugin window's dispose deleting its presence row: a head younger than PRESENCE_GRACE_MS is not marked, an older one is marked once",
+                "result": "pass"
+              },
+              {
+                "title": "submit at the bound returns ok:false reason full",
+                "result": "pass"
+              },
+              {
+                "title": "a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying head is not taken before its due time, holds the queue behind it, and runs when due",
+                "result": "pass"
+              },
+              {
+                "title": "a message that fails three infrastructure retries ends failed and the next message runs",
+                "result": "pass"
+              },
+              {
+                "title": "act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 494,
+            "titles": [
+              {
+                "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
+                "result": "pass"
+              },
+              {
+                "title": "the shell script bounds the view of a long active session: rows past the limit are trimmed at the bottom and come back on request",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: the attach button posts pick-attachments, an image paste posts attach-image with its base64 and is prevented, a text paste is untouched, chips render from attachments-pending with a remove control, and a blank box with chips submits",
+                "result": "pass"
+              },
+              {
+                "title": "shell: the attach button is icon-only with an aria-label, sits first in the status bar, and the content security policy is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "shell script: a chip click on a sent message posts open-attachment, and the error sentence is shown and cleared",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a diff row without replaces appends a widget stamped with its row index; one with replaces redraws the widget of that sid and keeps it open; a withdrawn one hides it; one for an unknown or trimmed sid changes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "transcript-row: a marker row appends the same line a restored marker row draws",
+                "result": "pass"
+              },
+              {
+                "title": "diff widget: a diff row in a session-restored window and in a transcript-page is appended as a widget",
+                "result": "pass"
+              },
+              {
+                "title": "chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running",
+                "result": "pass"
+              },
+              {
+                "title": "a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "1bd89556",
+        "ranAt": "2026-10-14T17:45:07.374Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "hand check with a real provider failure: a passing provider error before acting waits, shows its countdown and runs again; retry-now runs it at once; a failure after an edit stays failed",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "NOT RUN - no real provider failure could be produced from the build session; unverified, not passed. Labelled fault-injection evidence (a scripted fake claude CLI, not a real provider): vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts, described in the BUILD summary."
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: hand check with a real provider failure: a passing provider error before acting waits, shows its countdown and runs again; retry-now runs it at once; a failure after an edit stays failed"
       }
     ]
   }

@@ -1738,6 +1738,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         webviewReady = true;
         for (const w of readyWaiters.splice(0)) w();
         postInitialState();
+        // ISSUE-de069d56d76eaacd: a rebuilt page (VS Code discards a covered tab's page) starts idle after its
+        // session-restored; tell it when a turn is still in progress, so the progress widget and Stop come back.
+        if (session !== undefined && (turns.busy() || startingTurns > 0 || queued?.session.id === session.id)) post({ type: 'turn-running', sessionId: session.id });
         return;
       case 'submit-turn':
         if (att !== undefined) {

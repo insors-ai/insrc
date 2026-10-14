@@ -474,3 +474,32 @@ test('the worker give-up note is shown live and is not stored in the transcript'
   assert.ok(afterTurn > before);
   assert.ok(h.fc.posted.some((p) => p.payload.type === 'turn-event' && JSON.stringify(p.payload).includes('the queue could not record the result')), 'shown live');
 });
+
+// ISSUE-de069d56d76eaacd: a rebuilt page (a second 'ready', as when another tab covered the chat's tab) is told
+// that a turn is running, so the progress widget and Stop come back.
+const runningPosts = (h: ReturnType<typeof harness>): number => h.fc.posted.filter((p) => p.payload.type === 'turn-running').length;
+
+test('a chat page rebuilt while a turn runs is told the turn is running, and one rebuilt when nothing runs is not', async () => {
+  const h = harness();
+  h.host.open();
+  h.fc.send('ready');
+  const s = h.store.create('claude');
+  h.store.save(s);
+  const out = h.host.queueRunner.run(message(s.id, 'a long answer'), () => {});
+  await waitFor(() => h.runs.length === 1);
+  assert.equal(runningPosts(h), 1, 'told once, when the message started');
+
+  // The page is discarded and rebuilt while the turn runs: it posts 'ready' again.
+  h.fc.send('ready');
+  const after = h.fc.posted.slice(h.fc.posted.map((p) => p.payload.type).lastIndexOf('session-restored'));
+  assert.ok(after.some((p) => p.payload.type === 'turn-running' && p.payload['sessionId'] === s.id), 'the rebuilt page is told the turn is running, after its session-restored');
+  assert.equal(runningPosts(h), 2);
+
+  // The turn ends; a page rebuilt now is idle.
+  h.runs[0]!.feed(done('t1'));
+  assert.deepEqual(await out, { kind: 'done' });
+  h.runs[0]!.proc.exitNow();
+  await settle(out, 20);
+  h.fc.send('ready');
+  assert.equal(runningPosts(h), 2, 'nothing is running, so nothing is told');
+});

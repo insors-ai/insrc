@@ -21,7 +21,12 @@
     "epicSlug": "keep-chat-s-progress-widget-when",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-14T19:16:55.124Z",
+    "parentRef": {
+      "slug": "vs-code-editor-dev-chat-ui",
+      "storyId": "s2"
+    }
   },
   "body": {
     "title": "Keep the chat's progress widget when its panel is rebuilt while a turn is running",

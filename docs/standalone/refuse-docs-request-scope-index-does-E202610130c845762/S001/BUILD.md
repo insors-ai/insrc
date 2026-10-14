@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-14T04:32:59.324Z  ·  **Updated:** 2026-10-14T04:37:43.098Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-14T04:32:59.324Z  ·  **Updated:** 2026-10-14T04:46:53.809Z
 
-**Commit:** 2c4f75ca
+**Commit:** 4e4a7378
 
 ## Scope
 
@@ -26,6 +26,12 @@ runShaper's index-state check (checkScopeState, on a cache hit and a miss alike)
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-0c845762241ba26c.json` — **insrc-build** (2026-10-14T04:37:43.098Z)
-- `src/analyze/context/__tests__/run-shaper-wiring.test.ts` — **insrc-build** (2026-10-14T04:37:43.098Z)
-- `src/analyze/context/driver.ts` — **insrc-build** (2026-10-14T04:37:43.098Z)
+- `.insrc/artifacts/CR-0c845762241ba26c-S001.json` — **insrc-build** (2026-10-14T04:46:53.809Z)
+- `.insrc/artifacts/ISSUE-0c845762241ba26c.json` — **insrc-build** (2026-10-14T04:46:53.809Z)
+- `docs/standalone/refuse-docs-request-scope-index-does-E202610130c845762/S001/CR.md` — **insrc-build** (2026-10-14T04:46:53.809Z)
+- `src/analyze/context/__tests__/run-shaper-wiring.test.ts` — **insrc-build** (2026-10-14T04:46:53.809Z)
+- `src/analyze/context/driver.ts` — **insrc-build** (2026-10-14T04:46:53.809Z)
+
+## Feedback
+
+- **subho@insors.io (decision, recorded by the controller)** (2026-10-14T04:46:53.735Z) `comment` — `src/analyze/context/driver.ts`: BUILD approved with the code review's warn verdict (0/1/4), stakeholder decision 2026-10-14. MED (test pass-state unverified by a diff-only review): the gate ran run-shaper-wiring.test.ts, 18/18 pass. LOWs accepted: data/infra behaviour unchanged (ensureScopeQueryable refuses them only under index, as before); the classification/generic guard in checkScopeState is needed to narrow the source type; the context->runtimes import is noted; the test-cleanup LOW is wrong (each test gets a fresh store and registry).

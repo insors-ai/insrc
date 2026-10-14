@@ -1,0 +1,818 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1791967985926-oydluz",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T08:53:08.864Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 2938,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every DEF functional requirement (FR001–FR008 and the S001–S005 story FRs) is designed in some Story boundary or shared contract, including S004:FR003 (Stop leaves a failed message with a resend) and S005:FR004 (attachments of waiting/failed messages are kept).",
+          "evidence": "DEF.md:28-70 lists FR001–FR008 and the story FRs. The HLD maps them as follows. FR001/S001 → sc1/sc4 with head() and acknowledge(). FR002/S002 → sc5 OutboxView, with processing rows dropped per S002:FR002. FR003 → the SQLite rows survive a reload. FR004 → cancel/dismiss/resend. FR005/S003 → takeOver after LEASE_TAKEOVER_MS=600_000 with the process checks. FR006/S004 → retries at 10 s, 1 min and 5 min, at most 3, gated on 'acted'. FR007/S005 → submit with origin 'review-pane'. FR008 → QUEUE_RECORD_BOUND=500 with a 'full' refusal. S004:FR003 → TurnOutcome 'stopped' becomes failed with 'stopped by the user'. S005:FR004 → liveSessionIds() feeds the sweep keep set and the eviction keep predicate. [files: docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No non-goal is built: nothing runs a turn again by itself other than the bounded infra retries before the turn acted, and there is no leader/dispatcher window.",
+          "evidence": "DEF.md:78 names the non-goal 'Running a message unattended or running a turn again by itself, other than the bounded retries...'. In the HLD, a dead window's processing message is marked failed (S003), not re-run. The retry is gated on `acted: false`. a3 (the dispatcher) is rejected for leaning towards the leader-window design. [files: docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "turn-lifecycle.start() supersedes the previous turn (newest wins), and detach() keeps a session-file turn running but stops a pipe turn as stop() does (turn-lifecycle.ts:511-525).",
+          "evidence": "turn-lifecycle.ts:243-248: 'Single-in-flight: the newest message wins. A turn still waiting for the lock is dropped' with `waitCtl?.abort(); const myGen = ++generation;`. At :517-525, `if (detachThis !== undefined && liveProc?.cursor !== undefined) { ... detachThis(); return; } await stopLive();`, so a turn without a cursor (a pipe turn) is stopped. [files: vscode-plugin/src/chat/turn-lifecycle.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The session lock's liveness check prefers the CLI pid over the host pid (session-lock.ts:397), using process.kill(pid, 0) (:294).",
+          "evidence": "session-lock.ts:397: `rec.cliPid !== null ? isAlive(rec.cliPid) && sameProcess(rec) : isAlive(rec.hostPid);` and :294: `process.kill(pid, 0);`. [files: vscode-plugin/src/chat/session-lock.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The chat's working folder is the first workspace folder, falling back to process.cwd(). The review pane hands over via chatHost.submitExternal at extension.ts:712.",
+          "evidence": "extension.ts:481: `const chatCwd = (): string => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();` and extension.ts:712: `notifyChat: (text) => chatHost.submitExternal(text),`. [files: vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "AttachmentRef is reused as is, with the shape { id, name, kind, size, path }.",
+          "evidence": "attachment-store.ts:23-32: `export interface AttachmentRef { readonly id: string; readonly name: string; readonly kind: 'image' | 'file'; readonly size: number; readonly path: string; }`. [files: vscode-plugin/src/chat/attachment-store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No cross-window store and no existing infrastructure-error classification exist in the plugin, so the SQLite queue and the InfraCause classification are genuinely new.",
+          "evidence": "A grep for isTransientCliError in vscode-plugin/src finds nothing, and the plugin has no node:sqlite import (c2). The only cross-window coordination is the per-session lock files in session-lock.ts. [files: vscode-plugin/src/chat/session-lock.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every runTurn caller and supersede site is listed: the grant re-run :578, the selection continuation :1671, the submit sites :1432/:1439 and :1506/:1507, drainExternal :697-703, and submitExternal :1825-1831.",
+          "evidence": "A grep of chat-panel.ts finds runTurn( at 578, 703, 1439, 1507 and 1671. supersedeQueuedApprovals() is called at 702, 1432 and 1506. waitingExternal is at 177 and submitExternal returns 'queued' or 'sent' at 1831. These match the HLD's inventory, including drainExternal's call at :702 going with s5. [files: vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The review-pane result type change sites are complete: ExternalSubmitResult (chat-panel.ts:154), notifyChat (docs-review-panel.ts:45), ChatHandOver (:65), decisionResultLine 'sent' (:2452), and the test default 'sent' (docs-review-decision.test.ts:126).",
+          "evidence": "chat-panel.ts:154: `export type ExternalSubmitResult = 'sent' | 'queued' | 'unavailable';`. docs-review-panel.ts:45: `notifyChat?: ((text: string) => 'sent' | 'queued' | 'unavailable')`. :65: `type ChatHandOver = 'sent' | 'queued' | 'unavailable' | 'failed' | 'none';`. :2452: `case 'sent': parts.push('The chat has been told.')`. docs-review-decision.test.ts:126 returns 'sent'. chat-panel.test.ts:4951 and :4961 assert 'sent'. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Session eviction lives in session-file-store.ts evictBeyondCap (:285-313), where onEvict runs after removal and cannot veto it, so a keep predicate dependency is needed on FileStoreDeps (:98-105).",
+          "evidence": "session-file-store.ts:297-308 removes the head and rows files, then calls `deps.onEvict?.(head.id)` inside a try with the comment 'eviction itself has happened'. The only exclusion today is keepId (:295). FileStoreDeps is at :98 with onEvict at :105. [files: vscode-plugin/src/chat/session-file-store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Older records and mixed versions are handled. The store records its schema version and creating plugin version and migrates a newer schema in one transaction on open. Existing chat sessions and liveTurn cursors are unchanged. engines.vscode is raised from the current ^1.75.0.",
+          "evidence": "package.json:22-23 currently reads `\"engines\": { \"vscode\": \"^1.75.0\" }`, which the HLD's 'minimum VS Code version rises (k5)' addresses. The HLD's §7 Durability states the schema-version migration. The §6.1 mixed-plugin-versions note states that an un-reloaded old window starts turns outside the queue until VS Code's reload prompt is followed. No existing stored shape (session head/rows, liveTurn) is altered. [files: vscode-plugin/package.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Story ownership matches the DEF: S005 owns the attachment keep and eviction (DEF S005:FR004), and the phase order follows the DEF's dependsOn edges (s2, s3 → s1; s4, s5 → s1, s2). No Story redesigns a contract owned by another.",
+          "evidence": "DEF.md:70 assigns 'Images and files attached to any waiting or failed message are kept…' to S005:FR004. DEF.md:123, :138, :154 and :170 give Depends on `s1`, `s1`, `s1, s2` and `s1, s2`. The HLD's sc1-sc4 are owned by s1 and sc5 by s2, and the other Stories only consume them. [files: docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each failure is detectable and its handling is stated. The cases covered are: node:sqlite missing, store busy or full, a dead window, a window whose CLI survived a reload, a pipe turn detached, an unanswered card, a deleted session, and an auth failure.",
+          "evidence": "The HLD gives a handling for each case. A missing node:sqlite reports 'unsupported VS Code' through the injected factory. EnqueueResult carries reason 'full' | 'busy' | 'unavailable' with a note (S004:FR004 and FR008). takeOver requires a stale lease and both pids gone (consistent with session-lock.ts:397), and reclaim() handles a reloaded window. A pipe turn resolves 'stopped' (verified against turn-lifecycle.ts:525). An unanswered card is bounded by CONTINUATION_WAIT_MS. A missing session fails with 'the chat no longer exists'. An auth failure is InfraCause 'auth' and leaves the message failed per S004:FR003. [files: vscode-plugin/src/chat/turn-lifecycle.ts, vscode-plugin/src/chat/session-lock.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The HLD identifies the tests that its behaviour change breaks and the new race test. The existing tests pinning newest-wins exist at the cited sites.",
+          "evidence": "turn-lifecycle.test.ts:205 is `test('a second start drops a turn still waiting for its lease'`. chat-panel.test.ts:138 is 'single-in-flight: a second submit supersedes the first' and :2854 is 'Stop ends the running process at once and cancels a waiting message'. These match the HLD's list. The risk table adds a two-process test asserting a message is acknowledged exactly once. The per-AC test mapping is left to each Story's LLD, as befits an HLD. [files: vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts, vscode-plugin/src/chat/__tests__/chat-panel.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-14T08:53:09.074Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Every VS Code window on a repository shares one small SQLite database that holds the repository's chat messages in the order they were sent, a lease saying which window is running a turn, and a record of which windows are alive. Each window runs a light worker that, when the message at the front belongs to one of its chats, takes the lease, marks the message taken and runs the turn with the chat's existing turn engine. The chat panel's outbox is a live view of the same database, so waiting, retrying and failed messages are always visible and survive reloads.",
+      "audience": "technical"
+    },
+    "frameworkSummary": "A shared per-repository SQLite queue (node:sqlite, WAL, busy timeout) under ~/.insrc, written only in short IMMEDIATE transactions, with three tables: messages in queue order, a single-row repo lease with a heartbeat, and window presence keyed by a window key that survives a reload. A deps-injected queue worker in each window decides from the database alone when to take the lease, acknowledges the head message (queued -> processing) in the same transaction, and hands the turn to the existing turn lifecycle with its newest-wins rule removed; the per-session lease stays underneath as a guard against two CLI processes on one session. Takeover, not-delivered marking, retries and the flush are rules over these tables, and the outbox is a projection of them posted to the chat webview.",
+    "architectureShape": "extension.ts (the only vscode importer) opens the store through an injected factory (node:sqlite) at ~/.insrc/chat-queue/<repo key>.sqlite. The repo key is a hash of the real path of the git top-level of the chat's working folder (the first workspace folder), so two windows on the same working tree share a queue even when one is opened on a subfolder or holds the repo in a second root; outside git it is the folder's real path, and a window with no folder keys by the real path of its process's working directory, and gives the chat host a window key kept in the workspace's storage so it is the same after a reload. chat-queue-store.ts owns the schema and every transaction; chat-queue-worker.ts runs per window: it refreshes its presence row and, while it holds the lease, the lease heartbeat every few seconds, polls PRAGMA data_version (every 500 ms while anything is queued or held, slower when idle) and acts on the head of the queue. The chat host (chat-panel.ts) enqueues instead of starting turns, runs the turns the worker hands it through turn-lifecycle.ts (start no longer supersedes; follow re-attaches a processing turn after a reload) and posts the outbox view to the webview. The review pane's hand-over enqueues through the same call. The attachment store's sweep and session eviction keep the sessions that still have live queue rows.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "ChatQueueStore",
+        "purpose": "The per-repository store and every transaction on it: enqueue with the bound check, the acknowledgement, state changes, cancel and dismiss, resend, the flush, and reading the queue for a view.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c11",
+          "c12"
+        ],
+        "interfaceSketch": "import type { AttachmentRef } from './attachment-store.js';\ntype QueueState = 'queued' | 'processing' | 'retrying' | 'done' | 'failed' | 'not-delivered';\ninterface QueuedMessage {\n  readonly seq: number;            // queue order (row id)\n  readonly key: string;            // `${sessionId}::${turnId}`\n  readonly sessionId: string;\n  readonly turnId: string;\n  readonly windowKey: string;      // the window that sent it; stable across reloads\n  readonly origin: 'typed' | 'review-pane';\n  readonly text: string;\n  readonly attachments: readonly AttachmentRef[];   // the attachment store's own ref, kept as is: { id, name, kind, size, path }\n  readonly state: QueueState;\n  readonly attempts: number;       // infrastructure retries made\n  readonly nextAttemptAt?: number | undefined;\n  readonly error?: string | undefined;\n  readonly createdAt: number;\n  readonly updatedAt: number;\n}\ntype EnqueueResult = { readonly ok: true; readonly message: QueuedMessage } | { readonly ok: false; readonly reason: 'full' | 'busy' | 'unavailable'; readonly note: string };\ninterface ChatQueueStore {\n  enqueue(m: Omit<QueuedMessage, 'seq' | 'state' | 'attempts' | 'createdAt' | 'updatedAt'>): EnqueueResult;\n  head(): QueuedMessage | undefined;                          // the first row in seq order that is queued or retrying (never processing, failed or not-delivered); a retrying head that is not yet due holds the queue: the worker waits for it and never takes a later row\n  acknowledge(seq: number, lease: LeaseClaim): boolean;     // queued|retrying -> processing, with the lease, in one transaction\n  finish(seq: number, outcome: TurnOutcome): QueuedMessage | undefined; // done and detached-ended -> deleted; stopped -> failed ('stopped by the user'); failed -> retrying or failed; not-delivered kept\n  cancel(seq: number): boolean;                             // a queued or retrying message leaves the queue\n  dismiss(seq: number): boolean;                            // a failed or not-delivered message is deleted\n  resend(seq: number, newTurnId: string): EnqueueResult;   // a failed or not-delivered message is queued again at the back\n  list(): readonly QueuedMessage[];                         // every live row, in queue order\n  dataVersion(): number;                                    // changes when another window commits\n  close(): void;\n}\nconst QUEUE_RECORD_BOUND = 500;"
+      },
+      {
+        "id": "sc2",
+        "name": "RepoLease and WindowPresence",
+        "purpose": "Which window runs the repository's turn now, with the CLI process that turn started, and which windows are alive, so a dead window is told from a slow or reloading one and a CLI that outlived its window keeps the repository.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s3"
+        ],
+        "assumptions": [
+          "c3",
+          "c12"
+        ],
+        "interfaceSketch": "interface WindowPresence { readonly windowKey: string; readonly pid: number; readonly pidStartedAt?: number | undefined; readonly heartbeatAt: number }\ninterface RepoLease {\n  readonly windowKey: string; readonly pid: number; readonly pidStartedAt?: number | undefined; // the holder window's extension host\n  readonly seq: number;                                                  // the message being run\n  readonly cliPid?: number | undefined; readonly cliStartedAt?: number | undefined; // the turn's CLI process, set at spawn\n  readonly heartbeatAt: number;\n}\ninterface LeaseClaim { readonly windowKey: string; readonly pid: number; readonly pidStartedAt?: number | undefined }\ninterface ChatQueueLeases {\n  presence(p: LeaseClaim): void;                                  // refresh this window's presence row\n  lease(): RepoLease | undefined;\n  attachCli(claim: LeaseClaim, cli: { readonly pid: number; readonly startedAt?: number | undefined }): boolean; // at spawn\n  heartbeat(claim: LeaseClaim): boolean;                          // false when the lease is no longer this window's\n  release(claim: LeaseClaim): void;\n  takeOver(claim: LeaseClaim, now: number): boolean;              // only when stale AND both the holder window's process and the lease's CLI process are gone\n  reclaim(claim: LeaseClaim): boolean;                            // after a reload: succeeds when lease.windowKey === claim.windowKey and the recorded holder pid is gone; rewrites pid and pidStartedAt, keeps seq and cliPid\n  windowAlive(windowKey: string, now: number): boolean;\n}\nconst LEASE_HEARTBEAT_MS = 5_000;\nconst LEASE_TAKEOVER_MS = 600_000;   // 10 minutes without a heartbeat; the takeover also needs the holder window's process AND the turn's CLI process gone (as session-lock.ts:397 checks cliPid)\nconst PRESENCE_GRACE_MS = 30_000;   // a window absent this long, with its process gone, is closed"
+      },
+      {
+        "id": "sc3",
+        "name": "TurnOutcome",
+        "purpose": "What the turn runner reports to the worker when a queued turn and its continuations end, including a turn whose view was detached, so the worker can finish, fail or retry the message and release the lease only when no CLI of that turn is still running.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s3",
+          "s4"
+        ],
+        "assumptions": [
+          "c13"
+        ],
+        "interfaceSketch": "type TurnOutcome =\n  | { readonly kind: 'done' }\n  | { readonly kind: 'stopped' }                                  // Stop, or a waiting card ended unanswered: the message becomes failed with error 'stopped by the user' (or 'no answer to the approval') and a resend, as DEF S004:FR003 requires\n  | { readonly kind: 'failed'; readonly error: string; readonly acted: boolean; readonly cause?: InfraCause | undefined }\n  | { readonly kind: 'detached-ended' }                            // a session-file turn whose view was detached (chat switch, panel closed, adopt); resolved only when the detached CLI process has exited, the lease being held and heartbeated until then. A pipe turn (no session output: detach() stops it as stop() does) reports 'stopped' instead.\n  | { readonly kind: 'not-delivered'; readonly reason: 'window-closed' };\ntype InfraCause = 'spawn' | 'rate-limit' | 'overloaded' | 'network' | 'timeout' | 'auth' | 'other';\ninterface QueuedTurnRunner {\n  // Supplied by the chat host. Runs the message in this window: opens the chat panel if it is closed and shows the message's chat (with a note naming it) if another is shown.\n  // Resolves only when the turn AND its continuations have ended: an approval grant's re-run and a selection's continuation run under the same lease, off the queue, with their allowedTools and suppressEcho; the message stays processing (heartbeated) while an approval or selection card of its turn is waiting.\n  run(message: QueuedMessage, onSpawn: (cli: { readonly pid: number; readonly startedAt?: number | undefined }) => void): Promise<TurnOutcome>;\n}\n// Turn lifecycle surface added by s1 (turn-lifecycle.ts): the chat host needs the CLI process and its exit, for live and followed turns, also after detach().\ninterface TurnSinkSpawn { onSpawn?(cli: { readonly pid: number; readonly startedAt?: number | undefined; readonly exited: Promise<void> }): void } // added to TurnSink and FollowSink; exited settles when the process exits, whether or not the turn is still read\n// A waiting continuation ends when the user answers it, presses Stop, switches chat, closes the panel, or after CONTINUATION_WAIT_MS without an answer; the message then finishes as 'stopped' (failed, with a resend) and the lease is released.\nconst CONTINUATION_WAIT_MS = 600_000;\n// A head message whose chat session no longer exists finishes as failed with error 'the chat no longer exists'."
+      },
+      {
+        "id": "sc4",
+        "name": "ChatQueueWorker",
+        "purpose": "The per-window loop that watches the store, keeps presence and the lease fresh, decides what runs next and asks the chat host to run it; and the enqueue entry point every sender uses.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5"
+        ],
+        "assumptions": [
+          "c3"
+        ],
+        "interfaceSketch": "interface ChatQueueWorker {\n  submit(m: { readonly sessionId: string; readonly text: string; readonly origin: 'typed' | 'review-pane'; readonly attachments: QueuedMessage['attachments'] }): EnqueueResult;\n  onChange(listener: (rows: readonly QueuedMessage[]) => void): { dispose(): void }; // after any commit, in any window\n  liveSessionIds(): ReadonlySet<string>;            // sessions with a queued, processing, retrying, failed or not-delivered message: kept by the attachment sweep and by onEvict\n  dispose(): void;\n}\n// A message is this window's when message.windowKey === claim.windowKey; nothing else decides ownership.\ninterface ChatQueueWorkerDeps {\n  readonly store: ChatQueueStore & ChatQueueLeases;\n  readonly claim: LeaseClaim;\n  readonly runner: QueuedTurnRunner;\n  readonly isAlive: (pid: number, startedAt?: number) => boolean;\n  readonly now: () => number;\n  readonly timers?: unknown;\n}"
+      },
+      {
+        "id": "sc5",
+        "name": "OutboxView",
+        "purpose": "What the chat webview shows for the shown session: its live messages with positions and states, and the count of other chats' messages ahead; and the actions it can post back.",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s4",
+          "s5"
+        ],
+        "assumptions": [],
+        "interfaceSketch": "interface OutboxRow { readonly seq: number; readonly position?: number | undefined; readonly state: Exclude<QueueState, 'done' | 'processing'>; // a taken message is shown in the transcript, not the outbox (DEF S002:FR002) readonly text: string; readonly attachments: number; readonly origin: 'typed' | 'review-pane'; readonly error?: string | undefined; readonly attempt?: number | undefined; readonly nextAttemptAt?: number | undefined }\ninterface OutboxView { readonly sessionId: string; readonly rows: readonly OutboxRow[]; readonly aheadFromOtherChats: number; readonly blockedBy?: { readonly chatTitle: string; readonly reason: 'approval' | 'selection' } | undefined; readonly note?: string | undefined }\ntype OutboxAction = { readonly type: 'outbox-cancel' | 'outbox-dismiss' | 'outbox-resend' | 'outbox-retry-now'; readonly seq: number };\n// host -> webview: { type: 'outbox', view: OutboxView }"
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "depends": [],
+        "internal": "The SQLite schema, its migrations and pragmas (WAL, busy_timeout), the repo key and the store's file location, the window key kept in workspace storage, the worker's polling cadence and timers, and the chat host's change from starting turns to submitting them. Every caller of runTurn is accounted for: the webview's submit-turn and the attachment submit enqueue a 'typed' message; the approval grant's re-run (chat-panel.ts:578, with allowedTools and suppressEcho) and the selection continuation (:1671, suppressEcho) are continuations of the turn already holding the lease and run under it, off the queue; submitExternal enqueues a 'review-pane' message (s5). The runner opens the panel and shows the message's chat when needed, and reports the lease's CLI process at spawn. turn-lifecycle.ts gains onSpawn with an exit promise that survives detach(), for live and followed turns (the tests that pin newest-wins or the supersede change: turn-lifecycle.test.ts:205 'a second start drops a turn still waiting for its lease', :229, :252, :728, :766, :984; chat-panel.test.ts:138 'single-in-flight: a second submit supersedes the first', :1318 (its 'a newer turn's start' leg: a submit no longer ends the running turn's diff state, since runTurn's start no longer calls endDiffTurn for a queued message), :2854 'Stop ends the running process at once and cancels a waiting message' (now: the waiting message runs after Stop), :4745, :5018, and the presenter tests of a superseded turn at :5302 and :5455 (now: there are no superseded turns); the rest stand). Sending a message never touches the running turn: submit and enqueue no longer call supersedeQueuedApprovals (chat-panel.ts:1432 and :1506, and drainExternal's call at :702 goes with the list in s5), so a typed message waits behind a waiting card, which the user answers; chat-panel.test.ts:4745 changes to assert the card stays. A waiting approval or selection card of the running turn ends at an answer, Stop, a chat switch, the panel closing or CONTINUATION_WAIT_MS; the message then finishes 'stopped', which leaves it failed with a resend, and the lease is released. A head message whose session no longer exists fails with that reason. Mixed plugin versions: a window still running the previous plugin after an update starts turns outside the queue until it is reloaded; VS Code asks for that reload after an extension update, the store records the plugin version that created it, and s1's hand check covers reloading every window. The plugin's test runtime is pinned to a Node with unflagged node:sqlite (engines.node >= 22.13). The newest-wins supersede in turn-lifecycle.ts is removed; a chat switch, the panel closing or adopt() detach the view only, and the runner then resolves 'detached-ended' when the detached CLI exits, the window holding and heartbeating the lease until then; a pipe turn, which detach() stops (turn-lifecycle.ts:517-525), resolves 'stopped' and so stays as a failed message with a resend. Stop ends the running turn and releases the lease. The minimum VS Code version and the plain 'unsupported VS Code' message when node:sqlite cannot load are part of s1."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc4"
+        ],
+        "internal": "The outbox's markup, styles (VS Code theme variables, the chat panel's rounded style) and its live updates in the webview, the projection from queue rows to OutboxView for the shown session (processing rows are dropped: the running message is in the transcript), and the handling of the four outbox actions in the chat host. When the queue is held by a waiting approval or selection card, other chats' outboxes say which chat it is waiting on (blockedBy)."
+      },
+      {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "The takeover rule (lease stale for LEASE_TAKEOVER_MS and both the holder window's process and the lease's CLI process gone), marking a processing message failed when its window died with no CLI left, re-attaching a turn whose CLI survived a reload (the reloaded window, same window key, reclaims the lease with reclaim() and follows the turn through the session's saved cursor), the not-delivered rule for a head message whose window is closed (no live presence past PRESENCE_GRACE_MS and its process gone), and the flush that keeps the stored records within QUEUE_RECORD_BOUND."
+      },
+      {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "The classification of a failed turn's error into an InfraCause, the 'acted' tracking from the turn's tool-call, file-edit and tool-result events, the retry schedule (10 s, 1 min, 5 min; at most 3), the retrying state's row in the outbox with its countdown, retry-now and cancel, and the authentication message."
+      },
+      {
+        "storyId": "s5",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "A pane decision goes to the chat the review pane hands over to today: the chat shown in this window's panel, or, when the panel is closed, the chat the panel opens on (this window's last active chat). It is submitted through ChatQueueWorker.submit with origin 'review-pane', and the panel is opened. submitExternal returns ExternalSubmitResult = 'queued' | { readonly kind: 'unavailable'; readonly note: string } (from EnqueueResult: ok -> 'queued', full / busy / unavailable -> unavailable with the queue's note; 'sent' is no longer returned since every message queues), and the review host's notifyChat type, ChatHandOver and decisionResultLine carry the note so the pane shows why a decision was refused; the change sites are ExternalSubmitResult in chat-panel.ts:148-154, the review host's notifyChat dep type and ChatHandOver in docs-review-panel.ts:45 and :65 with the hand-over sentence at :2452 (the 'sent' branch goes; 'queued' reads 'Sent to the chat; it waits its turn in the outbox.'; 'unavailable' shows the queue's note), the binding in extension.ts:712, and the tests review-wiring.test.ts, docs-review-decision.test.ts (its default notifyChat returning 'sent' at :126 and the result lines at :457-462) and chat-panel.test.ts's submitExternal suite (:4931-5235), which assert 'sent', the wording and the drain order. The waitingExternal list and drainExternal are removed. Attachments: liveSessionIds() across every repository's queue file under ~/.insrc/chat-queue is added to the start-up sweep's keep set (which takes session ids, extension.ts:470, attachment-store.ts:199), and session eviction skips any session with live rows in any queue: createFileChatSessionStore (session-file-store.ts: FileStoreDeps at :98-105, evictBeyondCap at :285-313, built at extension.ts:459) gains a keep predicate dependency: the oldest-first eviction skips kept sessions and evicts other sessions instead to respect the cap, since onEvict runs after the eviction and cannot veto it."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "Enqueue, acknowledge and finish are each one IMMEDIATE transaction of a few rows, under 10 ms on a local disk; a window polls data_version every 500 ms while its repository has live rows or it holds the lease, and every 5 s otherwise; a waiting message starts within about one poll interval of the turn ahead of it ending.",
+      "security": "The store holds message text and attachment paths in the user's home directory with the same permissions as the chat sessions under ~/.insrc; no new network surface; no credentials are stored.",
+      "observability": "Every acknowledgement, takeover, not-delivered marking, retry and refusal is logged through the chat's logger with the message key and window key; the outbox shows each message's state and error to the user.",
+      "durability": "WAL mode with synchronous=NORMAL; a crashed window leaves at most an uncommitted transaction, which SQLite rolls back; done rows are deleted at once and the store never holds more than QUEUE_RECORD_BOUND live rows. The store records the plugin version that created it and its schema version; a newer schema is migrated in one transaction on open."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — the shared queue and in-order turns",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "s1 owns every shared contract the other Stories consume (store, lease and presence, turn outcome, worker); nothing else can land before it. On its own it removes the hidden-turn hang: messages wait and run in order.",
+          "backwardCompat": "Chat sessions, transcripts, the session output files and follow-after-reload keep working unchanged; the per-session lock stays as a guard. A message typed mid-turn now waits instead of superseding, which is the intended change. The minimum VS Code version rises (k5).",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase B — the outbox and a dead window",
+          "includesStories": [
+            "s2",
+            "s3"
+          ],
+          "rationale": "Both depend only on s1 and are independent of each other: s2 makes the queue visible and controllable, s3 keeps it moving when a window dies and keeps it bounded.",
+          "backwardCompat": "",
+          "featureFlag": null
+        },
+        {
+          "name": "Phase C — retries and the review pane",
+          "includesStories": [
+            "s4",
+            "s5"
+          ],
+          "rationale": "Both depend on s1 and s2: s4 shows the retrying state in the outbox, s5 shows the pane's decisions there. They are independent of each other and of s3.",
+          "backwardCompat": "The review pane's decisions keep reaching the chat as one message each; only the waiting list behind them changes.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "Phase order follows the Epic's dependsOn edges (s2, s3 -> s1; s4, s5 -> s1, s2) and contract ownership: s1 owns sc1-sc4, s2 owns sc5, which s4 and s5 consume, so s2 lands before them. s3 needs only s1 and sits beside s2.",
+      "riskyBits": [
+        {
+          "area": "Two windows racing on one SQLite file",
+          "why": "Two extension hosts acknowledging, taking over or flushing at the same moment could double-run a message or lose a row if a transaction is not immediate or a condition is missing.",
+          "mitigation": "Every write is a BEGIN IMMEDIATE transaction with a busy timeout and a conditional UPDATE that checks the expected state; s1's tests run two store connections in two processes against one file and assert a message is acknowledged exactly once."
+        },
+        {
+          "area": "node:sqlite in the live extension host",
+          "why": "It was checked by running VS Code's Electron as Node, not inside a running extension host, and older VS Code versions lack it.",
+          "mitigation": "s1 raises engines.vscode to the version actually tested, opens the store through an injected factory that reports 'unsupported VS Code' plainly when the module cannot load, and its hand check runs the queue in the real extension host."
+        },
+        {
+          "area": "Removing newest-wins from the turn engine",
+          "why": "start() superseding the previous turn is relied on by the chat host's Stop, chat switch and follow paths; removing it could leave a turn reporting into the wrong session view.",
+          "mitigation": "s1 keeps the generation gate for chat switches and Stop, removes only the supersede on a new message (the queue guarantees one turn at a time), and re-runs the existing turn-lifecycle and chat-panel suites unchanged apart from the tests of the removed rule."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared per-repo SQLite queue with a window-scoped worker, a presence table and a separate repo lease",
+        "oneLineSummary": "Every window runs a small queue worker over one SQLite database per repo; the window owning the head message takes a repo lease, acknowledges and runs the turn through the existing turn engine",
+        "approach": "Each repository has one SQLite database under ~/.insrc, opened by every VS Code window on that repository through node:sqlite in WAL mode with a busy timeout. It holds three tables: the messages in queue order (keyed sessionId::turnId, with state, attempts, next attempt time, error, the text and the attachment paths), a single-row lease (holder window, its process, the message being run, the heartbeat time) and a presence table (one row per live window: a window key stable across reloads, its process and a heartbeat). Every change is one short IMMEDIATE transaction; a window notices other windows' commits by polling SQLite's data_version, which is a cheap read.\n\nEach window runs a queue worker. When the head message belongs to one of its chat sessions and the lease is free (or stale: 10 minutes without a heartbeat and the holder's process gone), it takes the lease and moves the message from queued to processing in one transaction (the acknowledgement), then runs the turn through the existing turn engine with the newest-wins rule removed; the per-session lease stays underneath as a guard. When the head message's window is gone (no live presence for its window key past a reload grace) the message is marked not delivered. Turn end writes done (deleted at once), retrying or failed. The chat panel's outbox is a view of the same tables.",
+        "pros": [
+          "Every rule the user fixed maps onto one table and one transaction: order is the row id, acknowledgement is a conditional UPDATE, takeover is a lease row with a heartbeat and a process check",
+          "No inter-window messaging: windows only read and write the database, and a reload loses nothing",
+          "The turn engine, its follow-after-reload and the per-session guard are reused; only who starts a turn and the newest-wins rule change",
+          "Presence keyed by a window key that survives a reload separates 'window reloading' from 'window closed'"
+        ],
+        "cons": [
+          "Three tables and a polling loop per window are new moving parts to test, including two windows racing on one database",
+          "Polling data_version adds a read every few hundred milliseconds per window while a queue is non-empty",
+          "The window key must be stable across reloads, which needs per-workspace storage in the extension"
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c11",
+          "c12",
+          "c3",
+          "c13"
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "Shared per-repo SQLite queue with the lease folded into the processing message row",
+        "oneLineSummary": "The same database, but no separate lease or presence: the processing message row carries its holder and heartbeat, and a message is not delivered when its sender's process is gone",
+        "approach": "The messages table alone carries everything: a processing row holds the window process running it and a heartbeat; at most one processing row may exist per repository (a partial unique index), which is the repo lock. A window takes the head message by updating it to processing only if no other row is processing or that row's heartbeat is 10 minutes old and its process gone.\n\nThe owner of a message is the process that sent it. When the head message's sender process is gone, the message is marked not delivered. Everything else (turn engine reuse, outbox view, flush) is as in a1.",
+        "pros": [
+          "One table instead of three; the lock is a database constraint and cannot drift from the queue",
+          "Fewer writes: the heartbeat goes on the row being run"
+        ],
+        "cons": [
+          "A window reload starts a new extension-host process, so every message the window had queued would be marked not delivered when it reaches the front: queued messages would not survive a reload, which the user required",
+          "Takeover state and message state are mixed in one row, so a failed takeover has to be undone on the message itself"
+        ],
+        "costEstimate": "M",
+        "assumptionsRelied": [
+          "c11",
+          "c12",
+          "c3"
+        ],
+        "reasonRejected": "Simplest, but ties ownership to the extension-host process, so a reload strands every queued message."
+      },
+      {
+        "id": "a3",
+        "name": "Shared per-repo SQLite queue with an elected dispatcher window",
+        "oneLineSummary": "The lease holder is a dispatcher that assigns the head message to its owning window through the database; the owning window runs it",
+        "approach": "One window per repository holds the lease and acts as dispatcher: it watches the queue, decides when the next message may start, marks it assigned to the owning window and handles retries, takeovers and not-delivered marking. The owning window, which only watches for assignments to itself, acknowledges and runs the turn and reports the outcome back through the database.\n\nDispatch logic lives in one place, and the other windows are thin. A dispatcher that dies is replaced by another window through the same lease takeover.",
+        "pros": [
+          "All queue decisions are made by one process, so the rules are easy to reason about",
+          "Owning windows need only an assignment watcher"
+        ],
+        "cons": [
+          "Two roles and a hand-over through the database (assigned, acknowledged, running) add states and a second failure mode: a live owner waiting on a dead dispatcher",
+          "A turn waits for both the dispatcher and the owner to notice, adding up to two polling intervals of latency",
+          "Closer to the leader-window design the user ruled out, with more to build than a1"
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c11",
+          "c12",
+          "c3"
+        ],
+        "reasonRejected": "Workable, but adds a dispatcher role, a hand-over state and extra latency, and leans towards the leader-window design the user ruled out."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "id": "chat-queue",
+      "narrative": "The three tables of a repository's chat queue: messages in send order, the single repo lease naming the window running a turn, and the presence of live windows.",
+      "classes": {
+        "Message": {
+          "description": "A chat message waiting, running or ended without success, in send order.",
+          "attributes": {
+            "seq": {
+              "description": "Queue order; the row id.",
+              "range": "integer",
+              "identifier": true,
+              "required": true
+            },
+            "key": {
+              "description": "sessionId::turnId, unique.",
+              "range": "string",
+              "required": true
+            },
+            "sessionId": {
+              "description": "The chat session it belongs to.",
+              "range": "string",
+              "required": true
+            },
+            "windowKey": {
+              "description": "The window that sent it, stable across reloads.",
+              "range": "Presence",
+              "required": true
+            },
+            "origin": {
+              "description": "typed or review-pane.",
+              "range": "string",
+              "required": true
+            },
+            "state": {
+              "description": "queued, processing, retrying, failed or not-delivered (done rows are deleted).",
+              "range": "string",
+              "required": true
+            },
+            "attempts": {
+              "description": "Infrastructure retries made.",
+              "range": "integer",
+              "required": true
+            },
+            "nextAttemptAt": {
+              "description": "When a retrying message is due.",
+              "range": "integer"
+            },
+            "error": {
+              "description": "The last error, for a failed, retrying or not-delivered message.",
+              "range": "string"
+            },
+            "attachments": {
+              "description": "Paths, names, kinds and sizes of its files in the attachment store.",
+              "range": "string",
+              "multivalued": true
+            }
+          }
+        },
+        "Lease": {
+          "description": "The single row naming the window running the repository's turn.",
+          "attributes": {
+            "windowKey": {
+              "description": "The holder window.",
+              "range": "Presence",
+              "required": true
+            },
+            "pid": {
+              "description": "The holder's extension-host process.",
+              "range": "integer",
+              "required": true
+            },
+            "seq": {
+              "description": "The message being run.",
+              "range": "Message",
+              "required": true
+            },
+            "heartbeatAt": {
+              "description": "Refreshed every 5 s while the turn runs.",
+              "range": "integer",
+              "required": true
+            }
+          }
+        },
+        "Presence": {
+          "description": "One live window on the repository.",
+          "attributes": {
+            "windowKey": {
+              "description": "Stable across reloads; kept in the workspace's storage.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "pid": {
+              "description": "The window's current extension-host process.",
+              "range": "integer",
+              "required": true
+            },
+            "heartbeatAt": {
+              "description": "Refreshed every few seconds while the window is open.",
+              "range": "integer",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "id": "queued-turn",
+      "narrative": "The life of one message from a second window: it waits while another window's turn runs, then its own window takes the lease, acknowledges it and runs it, and the outbox follows every step.",
+      "participants": [
+        {
+          "id": "panelB",
+          "label": "Chat panel (window B)",
+          "description": "The webview where the user typed the message and sees the outbox."
+        },
+        {
+          "id": "workerB",
+          "label": "Queue worker (window B)",
+          "description": "Window B's ChatQueueWorker."
+        },
+        {
+          "id": "store",
+          "label": "Repo queue (SQLite)",
+          "description": "The shared per-repository database under ~/.insrc."
+        },
+        {
+          "id": "workerA",
+          "label": "Queue worker (window A)",
+          "description": "Window A's worker, running the current turn."
+        },
+        {
+          "id": "turns",
+          "label": "Turn lifecycle (window B)",
+          "description": "The existing turn engine, without newest-wins."
+        }
+      ],
+      "messages": [
+        {
+          "from": "panelB",
+          "to": "workerB",
+          "label": "submit(text, attachments)",
+          "kind": "call",
+          "description": "The user sends a message while a turn runs in window A."
+        },
+        {
+          "from": "workerB",
+          "to": "store",
+          "label": "enqueue (bound check)",
+          "kind": "call",
+          "description": "One transaction; refused with a note if the repo is at its bound."
+        },
+        {
+          "from": "workerB",
+          "to": "panelB",
+          "label": "outbox: queued, position 2",
+          "kind": "return",
+          "description": "The outbox shows the message and the message from another chat ahead."
+        },
+        {
+          "from": "workerA",
+          "to": "store",
+          "label": "finish(done) and release the lease",
+          "kind": "call",
+          "description": "Window A's turn ends; its row is deleted."
+        },
+        {
+          "from": "workerB",
+          "to": "store",
+          "label": "data_version changed: head() is mine",
+          "kind": "call",
+          "description": "Window B's poll sees the commit and that the head message is its own."
+        },
+        {
+          "from": "workerB",
+          "to": "store",
+          "label": "acknowledge: take the lease, queued -> processing",
+          "kind": "call",
+          "description": "One IMMEDIATE transaction; fails if another window took it first."
+        },
+        {
+          "from": "workerB",
+          "to": "turns",
+          "label": "run(message)",
+          "kind": "call",
+          "description": "The turn runs in window B's chat; the lease heartbeat is refreshed every 5 s."
+        },
+        {
+          "from": "turns",
+          "to": "workerB",
+          "label": "TurnOutcome",
+          "kind": "return",
+          "description": "done, stopped, failed (acted or not, with its cause) or not-delivered."
+        },
+        {
+          "from": "workerB",
+          "to": "store",
+          "label": "finish(outcome) and release",
+          "kind": "call",
+          "description": "done is deleted; an infrastructure failure before acting becomes retrying; anything else failed."
+        },
+        {
+          "from": "workerB",
+          "to": "panelB",
+          "label": "outbox updated",
+          "kind": "return",
+          "description": "The row leaves the outbox, or shows retrying or failed with resend."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze:structural-map — turn-lifecycle.ts, session-lock.ts, chat-panel.ts, cli-adapter.ts, extension.ts, attachment-store.ts, docs-review-panel.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze:capability-discovery — no node:sqlite or other cross-window store in vscode-plugin/src; per-session lock files in session-lock.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-lock.ts:294",
+      "quotedText": "process.kill(pid, 0);"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 read:turn-flow — submit-turn/runTurn, turns.start supersede, cancel-turn, follow, waitingExternal, the attachment sweep and onEvict"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 probe:runtime — node:sqlite under VS Code 1.141's Electron (Node 24.21) via ELECTRON_RUN_AS_NODE; engines.vscode ^1.75.0"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts:138",
+      "quotedText": "export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/shared/paths.ts:4",
+      "quotedText": "const INSRC_DIR = join(homedir(), '.insrc');"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "DEF-613abdb351c2c738 (approved 2026-10-14 with a recorded review override)"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "s1 analyze:convention.detect — kebab-case files, PascalCase classes, *.test files, deps-injected modules, only extension.ts imports vscode"
+    },
+    {
+      "id": "c11",
+      "kind": "stakeholder",
+      "ref": "Smoke check of 2026-10-14: ELECTRON_RUN_AS_NODE=1 /usr/share/code/code printed 24.21.0 43.7.7 and 'node:sqlite OK'"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/shared/paths.ts:4",
+      "quotedText": "const INSRC_DIR = join(homedir(), '.insrc');"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/stream-events.ts:33,51",
+      "quotedText": "readonly kind: 'tool-call'; ... readonly kind: 'file-edit';"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:578 and :1671",
+      "quotedText": "void runTurn(prompt, approvals.grantChain(), { suppressEcho: true }) ... runTurn(`Selected: ...`, undefined, { suppressEcho: true })"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts:85-88, :338 and :511-524",
+      "quotedText": "A turn that writes to the session file keeps running (with its lease) ... if (detached) break;"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/attachment-store.ts:159 and :199",
+      "quotedText": "return { id, name, kind: 'image', size: input.bytes.length, path }; ... const keep = new Set([...opts.keep].map(sessionFileName));"
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 1 of this HLD, 2026-10-14: block, 3 high (takeover ignoring a CLI that outlives its window; grant re-runs and selection continuations not covered; a detached turn's outcome unstated) and 3 medium (a message whose chat is not shown; attachment keep set takes session ids; AttachmentRef shape)"
+    },
+    {
+      "id": "c18",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 2 of this HLD, 2026-10-14: block, 6 medium (repo key by first folder; lifecycle surface for spawn and exit; the pane decision's target chat and result type; eviction across repositories; mixed plugin versions; an unanswered card holding the lease), 1 not verified (the test runtime's Node)"
+    },
+    {
+      "id": "c19",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 3 of this HLD, 2026-10-14: block, 3 medium (Stop must leave a failed message with a resend per DEF S004:FR003; the review host's hand-over sites; the chat-panel tests that pin newest-wins and the drain)"
+    },
+    {
+      "id": "c20",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 4 of this HLD, 2026-10-14: block, 5 medium (a pipe turn stopped by detach; turn-lifecycle and chat-panel tests that pin the supersede and the cancelled waiting message; docs-review-decision tests; the hand-over result cannot carry a note) and 1 not verified (the session store's eviction needs a keep predicate)"
+    },
+    {
+      "id": "c21",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 5 of this HLD, 2026-10-14: block, 4 medium (head() must hold a retrying head; the session eviction lives in session-file-store.ts; chat-panel.test.ts:1318's supersede leg; a reclaim operation for a reloaded window)"
+    },
+    {
+      "id": "c22",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 6 of this HLD, 2026-10-14: block, 1 medium (a typed message no longer denies the running turn's waiting cards)"
+    },
+    {
+      "id": "c23",
+      "kind": "prior-artifact",
+      "ref": "The daemon review of revision 7 of this HLD, 2026-10-14: block, 1 medium (the outbox must drop a taken, processing message)"
+    }
+  ]
+}

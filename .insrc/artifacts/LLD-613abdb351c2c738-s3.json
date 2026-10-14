@@ -263,6 +263,13 @@
         "choice": "File a fieldAdd HLD amendment",
         "rationale": "Both additions are additive; amendment keeps sc1 and sc2 accurate for sibling Stories.",
         "resolvedAt": "2026-10-14T15:03:44.495Z"
+      },
+      "q4fa42c10": {
+        "question": "sc2 additions: presenceOf(windowKey) is a new read on sc2 and takeOver skips the staleness wait for the claim's own windowKey; both are additive to the HLD sketch, and sc2 is owned by S001.",
+        "status": "resolved",
+        "choice": "File an sc2 HLD amendment",
+        "rationale": "presenceOf and the own-windowKey takeOver skip are additions to a contract S001 owns.",
+        "resolvedAt": "2026-10-14T15:04:06.402Z"
       }
     }
   },

@@ -339,6 +339,8 @@ takeOver and reclaim are implemented in the store with the liveness decision pas
   - **resolved**: Keep HLD c-ids + crosswalk note — Consistent with the decision for Story s1. _(2026-10-14T15:03:04.902Z)_
 - `qd776acfb` — markNotDeliveredIfHead is a new store method not in the HLD sc1 sketch, and the optional holderGone argument deviates from the sc2 sketch signatures; both are additive.
   - **resolved**: File a fieldAdd HLD amendment — Both additions are additive; amendment keeps sc1 and sc2 accurate for sibling Stories. _(2026-10-14T15:03:44.495Z)_
+- `q4fa42c10` — sc2 additions: presenceOf(windowKey) is a new read on sc2 and takeOver skips the staleness wait for the claim's own windowKey; both are additive to the HLD sketch, and sc2 is owned by S001.
+  - **resolved**: File an sc2 HLD amendment — presenceOf and the own-windowKey takeOver skip are additions to a contract S001 owns. _(2026-10-14T15:04:06.402Z)_
 
 ## Citations
 

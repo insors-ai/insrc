@@ -4,7 +4,7 @@
     "epicHash": "fb584b4856ebeea9",
     "storyId": "S001",
     "createdAt": "2026-10-14T05:16:50.783Z",
-    "updatedAt": "2026-10-14T05:16:50.783Z",
+    "updatedAt": "2026-10-14T05:34:22.640Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-14T04:21:03.437Z",
     "epicSlug": "label-failed-last-index-rejected-ollama"
@@ -13,8 +13,8 @@
     "tasks": [
       {
         "taskId": "S001",
-        "commit": "77e91e87",
-        "ranAt": "2026-10-14T05:16:50.783Z",
+        "commit": "c9bc3b37",
+        "ranAt": "2026-10-14T05:34:22.640Z",
         "testsPassed": true,
         "tests": [
           {
@@ -24,14 +24,6 @@
             "files": [
               "src/agent/providers/__tests__/ollama-model-call-failure.test.ts"
             ]
-          },
-          {
-            "name": "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts",
-            "source": "touched",
-            "cases": [],
-            "files": [
-              "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts"
-            ]
           }
         ],
         "files": [
@@ -39,7 +31,7 @@
             "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5743,
+            "durationMs": 5545,
             "titles": [
               {
                 "title": "OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause",
@@ -70,36 +62,7 @@
                 "result": "pass"
               },
               {
-                "title": "OllamaProvider (ISSUE-fb584b48): a request the server rejected for its content (ResponseError 4xx) reaches the caller as it was raised, with its status, not as a failed model call; a 404 (model not found) and a 5xx stay failed model calls",
-                "result": "pass"
-              }
-            ],
-            "otherFailures": []
-          },
-          {
-            "file": "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts",
-            "exitCode": 0,
-            "timedOut": false,
-            "durationMs": 1843,
-            "titles": [
-              {
-                "title": "insrc_analyze_step start on a scope the index does not hold (in no registered repository, or in one with no stored entities), for code and docs, is refused with code 'scope-not-indexed' and the run's message, with no size announced and no state minted",
-                "result": "pass"
-              },
-              {
-                "title": "insrc_analyze_step start on an indexed repository is answered; data, infra and generic requests on an unregistered directory are not refused for it",
-                "result": "pass"
-              },
-              {
-                "title": "insrc_analyze_step plan on a run whose repository is no longer held by the index is refused with code 'scope-not-indexed' before its lookups run",
-                "result": "pass"
-              },
-              {
-                "title": "insrc_analyze_step replies to every scope error with the code and message of the one mapping (scopeErrorMapping); only a repository under index is retryable; any other error is not a scope error",
-                "result": "pass"
-              },
-              {
-                "title": "insrc_analyze_step (ISSUE-fb584b48): a 'repo-indexing' refusal is retryable only while the repository is being indexed; one for a repository whose last index failed is not",
+                "title": "OllamaProvider (ISSUE-fb584b48): a request the server rejected for its content (ResponseError 4xx) reaches the caller as it was raised, with its status, not as a failed model call; a 404 (model not found), a 408 or 429 (not reached in time) and a 5xx stay failed model calls",
                 "result": "pass"
               }
             ],

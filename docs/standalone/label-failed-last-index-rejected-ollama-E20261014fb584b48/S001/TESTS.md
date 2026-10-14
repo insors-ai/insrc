@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## S001
 
-Run at 2026-10-14T05:16:50.783Z on commit `77e91e87`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-14T05:34:22.640Z on commit `c9bc3b37`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **src/agent/providers/__tests__/ollama-model-call-failure.test.ts**
 
@@ -18,17 +18,8 @@ Run by file: the build commit touched this test file.
 | :--- | :--- | :--- |
 | pass | `src/agent/providers/__tests__/ollama-model-call-failure.test.ts` | 8 |
 
-**src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts**
-
-Run by file: the build commit touched this test file.
-
-| Result | File | Titles |
-| :--- | :--- | :--- |
-| pass | `src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts` | 5 |
-
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/agent/providers/__tests__/ollama-model-call-failure.test.ts` | 0 | 8 | 5.7 s |  |
-| `src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts` | 0 | 5 | 1.8 s |  |
+| `src/agent/providers/__tests__/ollama-model-call-failure.test.ts` | 0 | 8 | 5.5 s |  |

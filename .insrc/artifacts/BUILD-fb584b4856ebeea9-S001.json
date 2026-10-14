@@ -10,64 +10,91 @@
     "triageRationale": "bugfix/small: scopeErrorResult sets retryable from the code alone; wrapOllamaError wraps every non-abort error, including request rejections. Two files plus tests.",
     "epicCreatedAt": "2026-10-14T04:21:03.437Z",
     "epicSlug": "label-failed-last-index-rejected-ollama",
-    "updatedAt": "2026-10-14T05:16:50.783Z"
+    "updatedAt": "2026-10-14T05:35:08.018Z",
+    "approvedAt": "2026-10-14T05:35:08.114Z"
   },
   "body": {
     "focus": "ISSUE-fb584b4856ebeea9. (1) The analyze step tool marks a 'repo-indexing' refusal retryable only while the repository is being indexed (RepoIndexingError data.status 'indexing'); a refusal for a failed last index (status 'error') is not retryable; code and message unchanged (src/daemon/steps/analyze-step/handler.ts scopeErrorResult). (2) The local Ollama provider keeps reporting a failure to reach or keep the model (connection refused, socket hang up, fetch failed, a stream that ends early) as ModelCallFailedError, but a request the Ollama server rejected for its content (the client's ResponseError with an HTTP status, e.g. 400) is raised as that rejection with the server's status and message, not as a failed model call; 'Ollama not running' and 'model not found' keep their actionable wording and stay failed model calls; a cancellation stays a cancellation (src/agent/providers/ollama.ts wrapOllamaError).",
     "producesLld": false,
-    "commit": "77e91e87",
+    "commit": "c9bc3b37",
     "tasks": [
       {
         "id": "S001",
         "passed": true
       }
     ],
-    "summary": "The step tool marks a 'repo-indexing' refusal retryable only while the repository is being indexed; a failed last index is not retryable. The Ollama provider passes through a request the server rejected for its content (ResponseError 4xx other than 404) with its status, keeping 404 (model not found), 5xx and transport failures as failed model calls; the structured retry helper keeps the last thrown error as its final error's cause. Four falsifying mutations each fail the new tests.",
+    "summary": "The step tool marks a 'repo-indexing' refusal retryable only while the repository is being indexed. The Ollama provider passes through a request the server rejected for its content (ResponseError 4xx other than 404, 408 and 429) with its status; 404 (model not found), 408/429 (not reached in time), 5xx and transport failures stay failed model calls; the structured retry helper keeps the last thrown error as its final error's cause. Code-review LOW (408/429) fixed in 5 falsifying mutations' worth of tests.",
     "testRecord": {
       "md": "docs/standalone/label-failed-last-index-rejected-ollama-E20261014fb584b48/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-fb584b4856ebeea9-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T05:35:08.018Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/ISSUE-fb584b4856ebeea9.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T05:16:50.783Z"
+        "timestamp": "2026-10-14T05:35:08.018Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/label-failed-last-index-rejected-ollama-E20261014fb584b48/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T05:35:08.018Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/ollama-model-call-failure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T05:16:50.783Z"
+        "timestamp": "2026-10-14T05:35:08.018Z"
       },
       {
         "target": {
           "file": "src/agent/providers/ollama.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T05:16:50.783Z"
+        "timestamp": "2026-10-14T05:35:08.018Z"
       },
       {
         "target": {
           "file": "src/agent/providers/structured-output.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T05:16:50.783Z"
+        "timestamp": "2026-10-14T05:35:08.018Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/scope-not-indexed-steps.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T05:16:50.783Z"
+        "timestamp": "2026-10-14T05:35:08.018Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T05:16:50.783Z"
+        "timestamp": "2026-10-14T05:35:08.018Z"
+      }
+    ],
+    "feedback": [
+      {
+        "id": "bb49b19e",
+        "author": "subho@insors.io (decision, recorded by the controller)",
+        "timestamp": "2026-10-14T05:35:07.921Z",
+        "target": {
+          "file": "src/agent/providers/ollama.ts"
+        },
+        "comment": "Code review (warn 0/0/6), stakeholder decision 2026-10-14 (option A): the LOW at ollama.ts:774 (408 and 429 treated as request rejections) fixed in c9bc3b37 and re-gated; both stay failed model calls. Accepted with a note: the three 'present but unverified' coverage LOWs (the gate ran the tests, all pass); the structured retry helper retrying a content rejection up to its attempt limit (unchanged behaviour, not a regression); the type cast in scopeErrorResult (style).",
+        "kind": "comment"
       }
     ]
   }

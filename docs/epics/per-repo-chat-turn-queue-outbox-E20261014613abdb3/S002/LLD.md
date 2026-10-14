@@ -382,6 +382,8 @@ As a1, plus: the messages table gains a nullable waiting_on column (schema versi
   - **resolved**: Approve all, but plan s1 tasks first — The user approved all four amendments (AMD-3, 4, 7, 8) with the LLD on 2026-10-14; the plan puts the s1-owned additions first. _(2026-10-14T12:50:40.209Z)_
 - `qfad1a51a` — The schema moves to version 2: a window still on the previous plugin refuses the file and runs messages directly until it is reloaded, and a plugin rollback needs the queue file removed.
   - **resolved**: Accept the v2 break, with a documented runbook — The user approved the LLD with the schema 2 trade-offs presented (old window runs directly until reloaded; rollback removes the queue file). _(2026-10-14T12:51:01.331Z)_
+- `qd70938cc` — While a turn runs, the send control is Stop, so a message can be queued mid-turn only with Cmd/Ctrl+Enter; whether to offer a separate send while running is left to a later change.
+  - **resolved**: Defer, but add a hint for the shortcut — User chose (2026-10-14): keep Cmd/Ctrl+Enter, and while a turn runs show the hint "⌘/Ctrl+Enter to queue" next to the message box. _(2026-10-14T12:53:04.442Z)_
 
 ## Citations
 

@@ -244,6 +244,13 @@
         "choice": "Accept the v2 break, with a documented runbook",
         "rationale": "The user approved the LLD with the schema 2 trade-offs presented (old window runs directly until reloaded; rollback removes the queue file).",
         "resolvedAt": "2026-10-14T12:51:01.331Z"
+      },
+      "qd70938cc": {
+        "question": "While a turn runs, the send control is Stop, so a message can be queued mid-turn only with Cmd/Ctrl+Enter; whether to offer a separate send while running is left to a later change.",
+        "status": "resolved",
+        "choice": "Defer, but add a hint for the shortcut",
+        "rationale": "User chose (2026-10-14): keep Cmd/Ctrl+Enter, and while a turn runs show the hint \"⌘/Ctrl+Enter to queue\" next to the message box.",
+        "resolvedAt": "2026-10-14T12:53:04.442Z"
       }
     }
   },

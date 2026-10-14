@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s2",
     "createdAt": "2026-10-14T12:57:26.478Z",
-    "updatedAt": "2026-10-14T12:57:26.478Z",
+    "updatedAt": "2026-10-14T12:59:57.549Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -98,6 +98,63 @@
               },
               {
                 "title": "resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "4a614086",
+        "ranAt": "2026-10-14T12:59:57.549Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+                "title": "worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+                "title": "worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 348,
+            "titles": [
+              {
+                "title": "chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit",
+                "result": "pass"
+              },
+              {
+                "title": "worker act: cancel removes a waiting message and is refused once the message has started; dismiss and resend refuse rows in the wrong state; resend takes this window's key; a successful act is seen by onChange at once",
+                "result": "pass"
+              },
+              {
+                "title": "worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick",
                 "result": "pass"
               }
             ],

@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s1",
+    "createdAt": "2026-10-14T11:13:11.458Z",
+    "updatedAt": "2026-10-14T11:13:11.458Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicSlug": "per-repo-chat-turn-queue-outbox"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f6de7994",
+        "ranAt": "2026-10-14T11:13:11.458Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 916,
+            "titles": [
+              {
+                "title": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows",
+                "result": "pass"
+              },
+              {
+                "title": "chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -410,6 +410,8 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
   - **resolved**: Conservative seeded patterns + log + live check (owner's resolution) — Owner decision. _(2026-10-14T17:19:48.958Z)_
 - `q66692ae9` — RESOLVED by the owner: a claude or codex turn that ends with an is_error result is recorded as failed with a resend (the text carried on done ok:false), not as done as S001 recorded it.
   - **resolved**: Failed + resend, with S001 back-fix task — Owner decision: an is_error result is failed with a resend; the text travels on done ok:false. A regression test keeps it from being recorded as done again. _(2026-10-14T17:20:23.964Z)_
+- `q844bb1ed` — RESOLVED by the owner: the additive additions (retryNow on sc1, the retry-now action on sc4, completing outbox-retry-now on sc5, and S003's) stay recorded in the LLDs; HLD amendments are filed in one batch at the end of the Epic.
+  - **resolved**: Keep in LLDs; batch HLD amendments at Epic end — Owner decision (option A). _(2026-10-14T17:20:52.301Z)_
 
 ## Citations
 

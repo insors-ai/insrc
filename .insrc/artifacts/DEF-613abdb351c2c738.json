@@ -326,6 +326,11 @@
       "reviewedAt": "2026-10-14T08:14:32.334Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-14T08:30:55.475Z",
+    "reviewOverride": {
+      "reason": "Approved by the user (Subho Ghosh) on 2026-10-14 over a block of 7 medium findings, 0 high, all checked against the code and the document: two are wrong (the dependency and retry/storage-number premises were judged on other Epics' documents after truncated searches; this DEF lists S2,S3 -> S1 and S4,S5 -> S1,S2, and FR006, FR008 and S004:FR001 restate k2's values); one is confirmed (the chat plugin has no failure classification, only classifyPermissionDenial); four are wording or citation fixes carried into the HLD: cite src/shared/paths.ts:4 only for ~/.insrc and drop the INSRC_DAEMON_ROOT condition; cite createTurnLifecycle(deps) at turn-lifecycle.ts:138 for k4; state that the node:sqlite check ran under ELECTRON_RUN_AS_NODE, with an extension-host check and a pinned engines.vscode floor left to the design; the isTransientCliError anchor (fixed to :554 by the review).",
+      "at": "2026-10-14T08:30:55.474Z"
     }
   },
   "body": {

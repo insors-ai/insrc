@@ -249,3 +249,49 @@ test('chat host outbox: after the host is rebuilt over the same queue file and i
     r.done();
   }
 });
+
+// Epic E20261014613abdb3 Story S002 t5 — the running queued message reports its cards.
+test("chat host outbox: while another window's running message waits on an approval, this window's outbox says which chat it waits on, and the line clears once the card is answered", async () => {
+  const r = repo();
+  try {
+    const a = r.host('w-1');
+    const b = r.host('w-2');
+    a.fc.send('submit-turn', { text: 'needs a yes' });
+    await waitFor(() => a.runs.length === 1, 3000);
+    const aChat = a.shown();
+    r.sessions.get(aChat)!.title = 'fix the board';
+    const marked = (): string | undefined => r.qstore.list().find((m) => m.text === 'needs a yes')?.waitingOn;
+
+    // An approval card: recorded on the running message, shown in the other window.
+    a.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'p1', title: 'Permission: Bash', detail: 'Bash needs your permission', toolName: 'Bash', command: 'ls', resolution: 'in-turn' } as TurnEvent);
+    await waitFor(() => marked() === 'approval', 3000);
+    await waitFor(() => b.outbox()?.blockedBy !== undefined, 3000);
+    assert.deepEqual(b.outbox()?.blockedBy, { chatTitle: 'fix the board', reason: 'approval' });
+    assert.deepEqual(b.outbox()?.runningChat, { title: 'fix the board', here: false });
+
+    // Answered: the line clears in the other window.
+    a.fc.send('permission-decision', { requestId: 'p1', decision: 'approve' });
+    await waitFor(() => marked() === undefined, 3000);
+    await waitFor(() => b.outbox()?.blockedBy === undefined, 3000);
+
+    // A selection card reports 'selection'.
+    a.runs[0]!.feed({ kind: 'selection-request', turnId: 't1', requestId: 's1', prompt: 'Pick one', options: [{ id: 'x', label: 'X' }] } as TurnEvent);
+    await waitFor(() => marked() === 'selection', 3000);
+    await waitFor(() => b.outbox()?.blockedBy?.reason === 'selection', 3000);
+
+    // The run ends: nothing is left marked, and nothing is reported after it.
+    a.fc.send('selection-decision', { requestId: 's1', selected: ['x'] });
+    a.runs[0]!.feed(doneEv('t1'));
+    a.runs[0]!.proc.exitNow();
+    // The choice is carried on by a continuation of the same message; it ends too.
+    await waitFor(() => a.runs.length === 2, 3000);
+    assert.equal(marked(), undefined, 'the answered card is no longer reported');
+    a.runs[1]!.feed(doneEv('t2'));
+    a.runs[1]!.proc.exitNow();
+    await waitFor(() => !r.qstore.list().some((m) => m.text === 'needs a yes' && m.state === 'processing'), 5000);
+    await waitFor(() => b.outbox()?.blockedBy === undefined && b.outbox()?.runningChat === undefined, 3000);
+    assert.ok(!r.qstore.list().some((m) => m.waitingOn !== undefined));
+  } finally {
+    r.done();
+  }
+});

@@ -32,7 +32,7 @@ import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-s
 import type { TurnEvent } from './stream-events.js';
 import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
-import type { ChatQueueWorker, QueueAction, QueuedTurnRunner } from './chat-queue-worker.js';
+import type { ChatQueueWorker, QueueAction, QueuedTurnRunner, WaitingOn } from './chat-queue-worker.js';
 import { projectOutbox } from './chat-outbox.js';
 import {
   createEditGovernor,
@@ -246,6 +246,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     readonly message: QueuedMessage;
     readonly session: ChatSession;
     readonly onSpawn: (cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }) => void;
+    /** Story S002: tells the worker the card this message waits on, so every window's outbox can say so. */
+    readonly onWaiting: ((on: WaitingOn) => void) | undefined;
+    /** The card last reported. */
+    waiting: WaitingOn;
     /** Turns of this message begun and not yet over. */
     turns: number;
     spawned: boolean;
@@ -557,6 +561,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   };
 
   // ISSUE-6a811b8a: queue a raised approval-request (instead of posting it) and show the head.
+  /**
+   * Epic E20261014613abdb3 Story S002: reports to the worker whether the running queued message waits
+   * on an approval or a selection card, when that changes. While a queued message runs, the cards
+   * in this window are its own.
+   */
+  const reportCards = (): void => {
+    const q = queued;
+    if (q === undefined) return;
+    const now: WaitingOn = approvals.head() !== undefined ? 'approval' : pendingSelections.size > 0 ? 'selection' : undefined;
+    if (now === q.waiting) return;
+    q.waiting = now;
+    try {
+      q.onWaiting?.(now);
+    } catch (err) {
+      log.warn(`[chat] the queue could not be told about a waiting card: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const enqueueApproval = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): void => {
     approvals.enqueue({
       requestId: ev.requestId,
@@ -568,6 +590,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       blockKind: classifyPermissionDenial(ev.detail),
       resolution: resolutionOf(ev),
     });
+    reportCards(); // Story S002
     showApprovalHead();
   };
 
@@ -575,6 +598,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const rejectQueuedApprovals = (): void => {
     shownApproval = undefined;
     for (const r of approvals.clear()) recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
+    reportCards(); // Story S002
   };
 
   // ISSUE-6a811b8a: the user typed a message instead of answering. A request the running turn is
@@ -587,6 +611,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       if (r.resolution === 'in-turn') relayDecision(r.requestId, 'deny');
       recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
     }
+    reportCards(); // Story S002
   };
 
   // ISSUE-6a811b8a: a chat switch or the panel closing. The waiting cards were live-only, so the
@@ -594,6 +619,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const dropQueuedApprovals = (): void => {
     shownApproval = undefined;
     approvals.clear();
+    reportCards(); // Story S002
   };
 
   /** Epic E20261014613abdb3 Story S001: ends the queued run with an outcome, once. */
@@ -1474,6 +1500,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // requestId) so a later selection-decision can map the chosen ids back to labels.
         if (ev.kind === 'selection-request') {
           pendingSelections.set(ev.requestId, { options: ev.options });
+          reportCards(); // Story S002
         }
         // S006: an observed file-edit -> the governor computes + renders its own diff
         // (auto: visualize-only; review: track for accept/reject). Fire-and-forget so
@@ -1767,6 +1794,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (!res.ok) return;
           // Epic E20261014613abdb3 Story S001: a decision that starts no continuation may end the queued message.
           queueMicrotask(settleQueued);
+          queueMicrotask(reportCards); // Story S002
           shownApproval = undefined;
           const decided = res.decided;
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
@@ -1828,6 +1856,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (pending === undefined) return; // unknown / stale / already answered -> no-op
         pendingSelections.delete(msg.requestId);
         queueMicrotask(settleQueued); // Epic E20261014613abdb3 Story S001
+        queueMicrotask(reportCards); // Story S002
         const ids = msg.selected.filter((x): x is string => typeof x === 'string');
         if (ids.length === 0) return; // nothing actually chosen -> no run, no outcome
         // Map ids -> labels (ids should be unique; a duplicate maps to its first option, and an
@@ -1981,7 +2010,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * continuations have ended.
    */
   const queueRunner: QueuedTurnRunner = {
-    run(message, onSpawn) {
+    run(message, onSpawn, onWaiting) {
       return new Promise<TurnOutcome>((resolve) => {
         void (async (): Promise<void> => {
           try {
@@ -1995,7 +2024,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               s = found;
               postInfo(`queue-note-${message.turnId}`, `Running your queued message in "${found.title ?? 'this chat'}".`);
             }
-            queued = { message, session: s, onSpawn, turns: 0, spawned: false, lastCli: undefined, terminal: undefined, error: undefined, stopped: false, viewLost: false, waitTimer: undefined, resolve };
+            queued = { message, session: s, onSpawn, onWaiting, waiting: undefined, turns: 0, spawned: false, lastCli: undefined, terminal: undefined, error: undefined, stopped: false, viewLost: false, waitTimer: undefined, resolve };
             post({ type: 'turn-running', sessionId: s.id });
             await runTurn(message.text, undefined, message.attachments.length > 0 ? { attachments: message.attachments } : undefined);
             // runTurn returned without starting a turn (a blank message): nothing ran.

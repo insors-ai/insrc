@@ -208,6 +208,9 @@ export type HostToWebview =
   // stable transcript-index key, so the live echo and its replay reconcile to ONE row (lc1).
   // Story E20261012ddc4ede1:S001 (additive): `rowIndex` is the row's absolute transcript index.
   // Story E2026101259da3204:S001 (additive): `attachments` is the files the message carries.
+  // Epic E20261014613abdb3 Story S001: a queued message's turn began for this session, so the webview
+  // shows the turn as running (and offers Stop) though no submit was clicked for it.
+  | { readonly type: 'turn-running'; readonly sessionId: string }
   | {
       readonly type: 'user-row';
       readonly text: string;
@@ -316,6 +319,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'attachments-pending',
   'docs-decision-result',
   'docs-companion',
+  'turn-running',
 ] as const;
 
 export const WEBVIEW_TO_HOST_TYPES = [

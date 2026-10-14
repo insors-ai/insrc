@@ -27,10 +27,12 @@ import { createApprovalQueue, type ApprovalResolution } from './approval-queue.j
 import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
-import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type TurnSink } from './turn-lifecycle.js';
+import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-store.js';
 import type { TurnEvent } from './stream-events.js';
 import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
+import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
+import type { QueuedTurnRunner } from './chat-queue-worker.js';
 import {
   createEditGovernor,
   type EditGovernor,
@@ -114,6 +116,11 @@ export interface ChatPanelHostDeps {
    */
   readonly attachments?: ChatAttachmentDeps | undefined;
   /**
+   * Epic E20261014613abdb3 Story S001: how long a queued message's turn may wait on an unanswered
+   * approval or selection card before the message ends as stopped. Default CONTINUATION_WAIT_MS.
+   */
+  readonly continuationWaitMs?: number | undefined;
+  /**
    * Story E20261013e62a9269:S001: opens a document a turn presents for approval in the review
    * pane. A turn this host runs begins a presented turn just before it starts and ends it when
    * its run is over; a followed turn begins one on its first event. Absent -> nothing is presented.
@@ -148,8 +155,16 @@ export interface ChatPanelHost {
    * turn end. 'sent' when this message was run at once, 'queued' when it is still waiting.
    */
   submitExternal(text: string): ExternalSubmitResult;
+  /**
+   * Epic E20261014613abdb3 Story S001: runs a message the repository's queue hands this window
+   * (HLD sc3). Resolves when the message's turn and its continuations have ended.
+   */
+  readonly queueRunner: QueuedTurnRunner;
   dispose(): void;
 }
+
+/** How long a queued turn may wait on an unanswered approval or selection card (10 minutes). */
+export const CONTINUATION_WAIT_MS = 600_000;
 
 export type ExternalSubmitResult = 'sent' | 'queued' | 'unavailable';
 
@@ -218,6 +233,25 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // Populated when a turn surfaces a selection-request (parsed from an `insrc:select` marker),
   // consumed by a selection-decision to map the chosen ids back to labels. Cleared on decision.
   const pendingSelections = new Map<string, { options: ReadonlyArray<{ id: string; label: string }> }>();
+  // Epic E20261014613abdb3 Story S001: the queued message this window is running, and what its
+  // turns (the message's own and its continuations) have reported so far.
+  interface QueuedRun {
+    readonly message: QueuedMessage;
+    readonly session: ChatSession;
+    readonly onSpawn: (cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }) => void;
+    /** Turns of this message begun and not yet over. */
+    turns: number;
+    spawned: boolean;
+    lastCli: SpawnedCli | undefined;
+    terminal: 'done' | 'error' | undefined;
+    error: string | undefined;
+    stopped: boolean;
+    viewLost: boolean;
+    waitTimer: ReturnType<typeof setTimeout> | undefined;
+    readonly resolve: (o: TurnOutcome) => void;
+  }
+  let queued: QueuedRun | undefined;
+  const readyWaiters: Array<() => void> = [];
 
   const post = (msg: HostToWebview): void => {
     if (disposed || channel === undefined) return;
@@ -535,6 +569,61 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const dropQueuedApprovals = (): void => {
     shownApproval = undefined;
     approvals.clear();
+  };
+
+  /** Epic E20261014613abdb3 Story S001: ends the queued run with an outcome, once. */
+  const endQueued = (outcome: TurnOutcome): void => {
+    const q = queued;
+    if (q === undefined) return;
+    queued = undefined;
+    if (q.waitTimer !== undefined) clearTimeout(q.waitTimer);
+    q.resolve(outcome);
+  };
+  /**
+   * Epic E20261014613abdb3 Story S001: decides whether the queued message is over, once none of its
+   * turns is in progress. A Stop wins over the stopped CLI's own error; a view detached from a
+   * session-file turn waits for that CLI to exit; a waiting approval or selection card holds the
+   * message (and the repository's lease) until it is answered, or for continuationWaitMs.
+   */
+  const settleQueued = (): void => {
+    const q = queued;
+    if (q === undefined || q.turns > 0) return;
+    if (q.stopped) return endQueued({ kind: 'stopped' });
+    if (q.viewLost && q.terminal === undefined && q.error === undefined) {
+      if (!q.spawned) return endQueued({ kind: 'stopped', reason: 'the turn was dropped before it started' });
+      const cli = q.lastCli;
+      // A session-file turn keeps running after its view was detached (its cursor is saved): the
+      // message ends when that CLI exits. A pipe turn was stopped by the detach.
+      if (q.session.liveTurn !== undefined && cli !== undefined) {
+        void cli.exited.then(() => {
+          if (queued === q) endQueued({ kind: 'detached-ended' });
+        });
+        return;
+      }
+      return endQueued({ kind: 'stopped', reason: 'the turn ended when the chat was switched or closed' });
+    }
+    if (!q.spawned && q.terminal === undefined && q.error === undefined) {
+      return endQueued({ kind: 'stopped', reason: 'the turn was dropped before it started' });
+    }
+    const cardsWaiting = approvals.head() !== undefined || pendingSelections.size > 0;
+    if (cardsWaiting && !q.viewLost) {
+      if (q.waitTimer === undefined) {
+        q.waitTimer = setTimeout(() => {
+          if (queued !== q) return;
+          rejectQueuedApprovals();
+          pendingSelections.clear();
+          endQueued({ kind: 'stopped', reason: 'no answer to the approval' });
+        }, deps.continuationWaitMs ?? CONTINUATION_WAIT_MS);
+      }
+      return;
+    }
+    if (q.viewLost && cardsWaiting) return endQueued({ kind: 'stopped', reason: 'no answer to the approval' });
+    if (q.error !== undefined || q.terminal === 'error') return endQueued({ kind: 'failed', error: q.error ?? 'the turn ended with an error', acted: true });
+    endQueued({ kind: 'done' });
+  };
+  /** A chat switch, the panel closing or adopt() while a queued message runs. */
+  const queuedViewLost = (): void => {
+    if (queued !== undefined) queued.viewLost = true;
   };
 
   // A self-contained informational assistant message (its own turn id, so it closes itself).
@@ -1106,6 +1195,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the held rows and keeps the reader's place (a page it did not ask for is discarded).
       `else if(m.type==='transcript-page'){pager.prepend(m);}` +
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
+      `else if(m.type==='turn-running'){if(m.sessionId===cur){setRunning(true);setProgress('working\\u2026');setProvLock(true);}}` +
       `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text,attachments:m.attachments}),m.key);});}` +
       (attachOn ? `else if(m.type==='attachments-pending'){renderPending(m);}` : '') +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
@@ -1287,6 +1377,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // Story E20261013e62a9269:S001: this turn as the review presenter sees it, begun once the
     // message is accepted and before the turn starts.
     const shown = beginPresented();
+    // Epic E20261014613abdb3 Story S001: a turn of the queued message being run (its own, or a
+    // continuation started from it) is counted, so the message ends only after the last one.
+    const q = queued !== undefined && queued.session === s ? queued : undefined;
+    if (q !== undefined) {
+      q.turns += 1;
+      q.terminal = undefined;
+      q.error = undefined;
+      if (q.waitTimer !== undefined) {
+        clearTimeout(q.waitTimer);
+        q.waitTimer = undefined;
+      }
+    }
     const req = s.nativeSessionId !== undefined
       ? { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable, resume: { provider: s.provider, nativeSessionId: s.nativeSessionId } }
       : { provider: s.provider, prompt, cwd: deps.cwd(), permissionMode, ...grant, ...readable };
@@ -1365,7 +1467,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             .catch((err: unknown) => warnGovernor('settle', err));
         }
       },
-      onTerminal: () => {
+      ...(q !== undefined
+        ? {
+            onSpawn: (cli: SpawnedCli): void => {
+              q.spawned = true;
+              q.lastCli = cli;
+              try {
+                q.onSpawn({ ...(cli.pid !== undefined ? { pid: cli.pid } : {}), ...(cli.startedAt !== undefined ? { startedAt: cli.startedAt } : {}) });
+              } catch (err) {
+                log.warn(`[chat] the queue could not record the turn's CLI: ${err instanceof Error ? err.message : String(err)}`);
+              }
+            },
+          }
+        : {}),
+      onTerminal: (ev) => {
+        if (q !== undefined) {
+          q.terminal = ev.kind;
+          if (ev.kind === 'error') q.error = ev.message;
+        }
         runCompletedBatch(); // ISSUE-6a811b8a: requests decided before the turn ended are now complete
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
         // Story E20261013b2e8109f:S001: the last check runs here; its rows are saved as they arrive,
@@ -1388,6 +1507,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         drainExternal();
       },
       onError: (message, turnId) => {
+        if (q !== undefined) q.error = message;
         endDiffTurn();
         post({ type: 'turn-event', event: { kind: 'error', turnId, message } });
         drainExternal();
@@ -1407,6 +1527,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       await run;
     } finally {
       endPresented(shown);
+      if (q !== undefined) {
+        q.turns -= 1;
+        settleQueued();
+      }
     }
   }
 
@@ -1493,6 +1617,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // has no retainContextWhenHidden), so a restored/re-shown chat is always repopulated
         // instead of showing an empty dropdown + transcript.
         webviewReady = true;
+        for (const w of readyWaiters.splice(0)) w();
         postInitialState();
         // A message handed to a panel that was closed is run now that its webview listens (behind
         // a followed turn, if postInitialState began one).
@@ -1509,7 +1634,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       case 'cancel-turn':
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
         // Idempotent when no turn is active (stop() no-ops).
+        if (queued !== undefined) queued.stopped = true; // Epic E20261014613abdb3 Story S001: wins over the CLI's error
         rejectQueuedApprovals(); // ISSUE-6a811b8a: Stop rejects the requests still waiting
+        settleQueued(); // a queued message waiting only on a card ends now
         endDiffTurn();
         void turns.stop().then(drainExternal, drainExternal);
         return;
@@ -1524,9 +1651,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // Switching the active session stops following any in-flight turn first, or its deltas
         // would paint into the newly-restored session's view (a session-file turn keeps running).
         endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
+        queuedViewLost(); // Epic E20261014613abdb3 Story S001
         void turns.detach();
         turns.invalidate();
         dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
+        settleQueued();
         // A DRAFT (unsaved): the new chat is not written to history until its first turn, so
         // repeatedly starting/abandoning new chats never leaves empty sessions behind.
         session = deps.store.draft(msg.provider);
@@ -1548,9 +1677,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           return;
         }
         endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
+        queuedViewLost(); // Epic E20261014613abdb3 Story S001
         void turns.detach();
         turns.invalidate();
         dropQueuedApprovals(); // ISSUE-6a811b8a: a chat switch drops the waiting requests
+        settleQueued();
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
         postRestored(s);
@@ -1600,6 +1731,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (approvals.has(msg.requestId)) {
           const res = approvals.decide(msg.requestId, msg.decision);
           if (!res.ok) return;
+          // Epic E20261014613abdb3 Story S001: a decision that starts no continuation may end the queued message.
+          queueMicrotask(settleQueued);
           shownApproval = undefined;
           const decided = res.decided;
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
@@ -1660,6 +1793,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const pending = pendingSelections.get(msg.requestId);
         if (pending === undefined) return; // unknown / stale / already answered -> no-op
         pendingSelections.delete(msg.requestId);
+        queueMicrotask(settleQueued); // Epic E20261014613abdb3 Story S001
         const ids = msg.selected.filter((x): x is string => typeof x === 'string');
         if (ids.length === 0) return; // nothing actually chosen -> no run, no outcome
         // Map ids -> labels (ids should be unique; a duplicate maps to its first option, and an
@@ -1778,14 +1912,79 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // on the initial load AND on every webview reload (show-after-hide / restore, since the panel
   // has no retainContextWhenHidden). Calling it here too keeps the session drafted synchronously
   // (the open()-yields-a-turnable-session invariant) and single-sources the post sequence.
+  /** Opens the panel, or reveals it when it is open (the host's open()). */
+  const hostOpen = (): void => {
+    disposed = false;
+    if (channel !== undefined) {
+      channel.reveal();
+      return;
+    }
+    wireChannel(deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc chat' }));
+  };
+
+  /** Shows a stored chat in the panel, as opening it from the history does. */
+  const showSession = (s: ChatSession): void => {
+    endDiffTurn();
+    void turns.detach();
+    turns.invalidate();
+    dropQueuedApprovals();
+    session = s;
+    permissionMode = modeOf(s);
+    postRestored(s);
+    postPending(s.id);
+    postHistory();
+    followLiveTurn(s);
+  };
+
+  /** Resolves once the panel's webview has posted 'ready'. */
+  const whenReady = (): Promise<void> => (webviewReady ? Promise.resolve() : new Promise<void>((r) => void readyWaiters.push(r)));
+
+  /**
+   * Epic E20261014613abdb3 Story S001: runs a message the repository's queue handed this window. It
+   * opens the panel if it is closed and shows the message's chat (with a note) if another is shown,
+   * tells the webview a turn is running (so Stop is offered for a turn that started without a
+   * click), and starts the turn as a typed message would; it resolves once that turn and its
+   * continuations have ended.
+   */
+  const queueRunner: QueuedTurnRunner = {
+    run(message, onSpawn) {
+      return new Promise<TurnOutcome>((resolve) => {
+        void (async (): Promise<void> => {
+          try {
+            if (channel === undefined) hostOpen();
+            await whenReady();
+            let s = session;
+            if (s === undefined || s.id !== message.sessionId) {
+              const found = deps.store.get(message.sessionId);
+              if (found === undefined) return resolve({ kind: 'failed', error: 'the chat no longer exists', acted: false });
+              showSession(found);
+              s = found;
+              postInfo(`queue-note-${message.turnId}`, `Running your queued message in "${found.title ?? 'this chat'}".`);
+            }
+            queued = { message, session: s, onSpawn, turns: 0, spawned: false, lastCli: undefined, terminal: undefined, error: undefined, stopped: false, viewLost: false, waitTimer: undefined, resolve };
+            post({ type: 'turn-running', sessionId: s.id });
+            await runTurn(message.text, undefined, message.attachments.length > 0 ? { attachments: message.attachments } : undefined);
+            // runTurn returned without starting a turn (a blank message): nothing ran.
+            if (queued?.message === message && queued.turns === 0 && !queued.spawned && queued.terminal === undefined) settleQueued();
+          } catch (err) {
+            if (queued?.message === message) queued = undefined;
+            resolve({ kind: 'failed', error: err instanceof Error ? err.message : String(err), acted: true });
+          }
+        })();
+      });
+    },
+  };
+
   const wireChannel = (ch: ChatPanelChannel): void => {
     disposed = false;
     channel = ch;
     webviewReady = false; // until this channel's webview posts 'ready'
     channel.onDidDispose(() => {
+      queuedViewLost(); // Epic E20261014613abdb3 Story S001
       endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
       void turns.detach();
       dropQueuedApprovals();
+      settleQueued();
       dropExternal();
       disposed = true;
       channel = undefined;
@@ -1797,17 +1996,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   return {
     open(): void {
-      disposed = false;
-      if (channel !== undefined) {
-        channel.reveal();
-        return;
-      }
-      wireChannel(deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc chat' }));
+      hostOpen();
     },
     adopt(ch: ChatPanelChannel): void {
       // A restored panel arrived. Supersede any live channel (kill its in-flight turn + dispose
       // it) so exactly one channel remains, then wire the restored one in place.
       if (channel !== undefined) {
+        queuedViewLost(); // Epic E20261014613abdb3 Story S001
         endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
         void turns.detach();
         superseding = true;
@@ -1822,6 +2017,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       wireChannel(ch);
     },
+    queueRunner,
     submitExternal(text: string): ExternalSubmitResult {
       if (typeof text !== 'string' || text.trim() === '' || deps.providers.available.length === 0) return 'unavailable';
       if (channel === undefined) this.open();

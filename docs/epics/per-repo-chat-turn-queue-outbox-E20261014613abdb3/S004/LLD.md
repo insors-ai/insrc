@@ -408,6 +408,8 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
   - **resolved**: Bounded 60 s retry, then a reload note (owner's decision) — Owner decision: retries cannot be indefinite. _(2026-10-14T17:19:05.046Z)_
 - `q823f47b9` — RESOLVED by the owner: the classifier ships with conservative patterns written from the adapter's messages and the daemon's isTransientCliError; an unmatched text is never retried, every failed turn's cause and text are logged, and the live hand check confirms the patterns against real failures.
   - **resolved**: Conservative seeded patterns + log + live check (owner's resolution) — Owner decision. _(2026-10-14T17:19:48.958Z)_
+- `q66692ae9` — RESOLVED by the owner: a claude or codex turn that ends with an is_error result is recorded as failed with a resend (the text carried on done ok:false), not as done as S001 recorded it.
+  - **resolved**: Failed + resend, with S001 back-fix task — Owner decision: an is_error result is failed with a resend; the text travels on done ok:false. A regression test keeps it from being recorded as done again. _(2026-10-14T17:20:23.964Z)_
 
 ## Citations
 

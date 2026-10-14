@@ -239,6 +239,13 @@
         "choice": "Accept HLD citation as sufficient",
         "rationale": "Stakeholder decision 2026-10-14: keys.ts is read-only (EXPORTS keeps byte 7), cited by HLD c2; the plan treats it as a reference with no task.",
         "resolvedAt": "2026-10-14T08:44:48.779Z"
+      },
+      "q25ae42a3": {
+        "question": "ep3 (partial): invariantsToPreserve cite HLD reference ids because the schema allows only c-ids; the s1 bundles that show each: c1, c5 -> bundle 3 (migration chain, SCHEMA_VERSION 4); c7 -> bundle 4 (RepoStatus); c6 -> bundle 2 (the cross-file passes); c4 -> bundle 1 (the six loss points); the graphCompleteness invariant -> bundle 6 [c17] [c20].",
+        "status": "resolved",
+        "choice": "Keep c-id citations + bundle crosswalk note",
+        "rationale": "Stakeholder decision 2026-10-14: keep the HLD c-ids; the plan carries the crosswalk c4->bundle 1, c6->2, c1/c5->3, c7->4, graphCompleteness->6.",
+        "resolvedAt": "2026-10-14T08:46:10.872Z"
       }
     }
   },

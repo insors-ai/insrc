@@ -242,6 +242,13 @@
         "choice": "Confirm, and amend the HLD wording",
         "rationale": "No deleting flush; HLD wording becomes bounded by delete-on-finish plus refuse-when-full.",
         "resolvedAt": "2026-10-14T15:01:26.398Z"
+      },
+      "qb1c54e0f": {
+        "question": "Epic constraints k1-k5 were not scored individually against the alternatives; none is contradicted.",
+        "status": "resolved",
+        "choice": "Score k1-k5 in the plan",
+        "rationale": "A short constraint matrix in the plan; the approved LLD stays untouched.",
+        "resolvedAt": "2026-10-14T15:02:20.295Z"
       }
     }
   },

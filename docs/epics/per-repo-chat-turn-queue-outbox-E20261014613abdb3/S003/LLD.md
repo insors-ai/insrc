@@ -333,6 +333,8 @@ takeOver and reclaim are implemented in the store with the liveness decision pas
   - **resolved**: Point ac3 at existing S001 tests — Name real runnable S001 cases for the display half; if none exist, record the hand check as a reported live test. _(2026-10-14T15:00:11.883Z)_
 - `q1614c270` — HLD wording vs this LLD: the HLD boundary lists a flush that keeps stored records within QUEUE_RECORD_BOUND. This LLD builds no deleting flush: done rows are already deleted at finish, failed and not-delivered rows are only removed by the user, and a full queue refuses a new message with a note. Confirm no age-based purge of failed rows is wanted.
   - **resolved**: Confirm, and amend the HLD wording — No deleting flush; HLD wording becomes bounded by delete-on-finish plus refuse-when-full. _(2026-10-14T15:01:26.398Z)_
+- `qb1c54e0f` — Epic constraints k1-k5 were not scored individually against the alternatives; none is contradicted.
+  - **resolved**: Score k1-k5 in the plan — A short constraint matrix in the plan; the approved LLD stays untouched. _(2026-10-14T15:02:20.295Z)_
 
 ## Citations
 

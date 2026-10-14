@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-14T18:51:21.474Z  ·  **Updated:** 2026-10-14T18:56:34.438Z
+**Standalone:** no  ·  **Created:** 2026-10-14T18:51:21.474Z  ·  **Updated:** 2026-10-14T19:07:10.268Z
 
-**Commit:** b265f65e
+**Commit:** 405099fc
 
 ## Summary
 
@@ -21,15 +21,17 @@ S005 closing (t4). LIVE HAND CHECK: NOT RUN - it needs the installed plugin driv
 
 ## Changes
 
-- `vscode-plugin/package.json` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/__tests__/attachment-store.test.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/chat-queue-setup.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/chat/docs-review-panel.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
-- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-14T18:56:34.438Z)
+- `.insrc/artifacts/CR-613abdb351c2c738-s5.json` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S005/CR.md` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/package.json` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/__tests__/attachment-store.test.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/chat-queue-setup.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/chat/docs-review-panel.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)
+- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-14T19:07:10.268Z)

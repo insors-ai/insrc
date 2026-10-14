@@ -402,6 +402,8 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
 
 - `q80e30701` — RESOLVED by the owner: a turn that streamed text but made no tool call, command or edit before an infrastructure failure is retried; anything the agent did with a tool call, command or edit is never retried. The partial text stays in the transcript with a stored 'retrying' line before the retried output.
   - **resolved**: Retry text-only turns, keep partial text plus a stored 'retrying' line (owner's resolution) — Owner decision: a text-only turn is retried; a tool call, command or edit is never retried. _(2026-10-14T17:15:50.853Z)_
+- `qf72d3469` — RESOLVED by the owner: a CLI that is not installed (ENOENT, 'CLI not found') is classified 'other' and fails at once with the install hint and a resend, not retried.
+  - **resolved**: Classify 'other', fail fast with install hint + resend (owner's resolution) — Owner decision: a missing CLI cannot be fixed by waiting. _(2026-10-14T17:17:06.008Z)_
 
 ## Citations
 

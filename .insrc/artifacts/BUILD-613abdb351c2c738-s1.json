@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s1",
     "createdAt": "2026-10-14T11:13:11.458Z",
-    "updatedAt": "2026-10-14T11:13:11.458Z",
+    "updatedAt": "2026-10-14T11:15:59.550Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "New vscode-plugin/src/chat/chat-queue-store.ts implementing HLD sc1/sc2 as the s1 LLD specifies: node:sqlite through an injected openDatabase (a SqliteDatabase subset), the directory created, PRAGMA busy_timeout 5000, journal_mode WAL, synchronous NORMAL; schema v1 (meta with schema_version and created_by, messages, lease single-row, presence) created in one transaction, and a newer schema rejected as StoreUnavailable. Every write is BEGIN IMMEDIATE ... COMMIT with rollback; a busy wait past the timeout surfaces as StoreBusy and enqueue/resend return { ok:false, reason:'busy', note }. enqueue refuses at QUEUE_RECORD_BOUND (500) with FULL_NOTE; head() is the first queued or retrying row (a retrying head not yet due still holds the queue); acknowledge takes the free lease and marks the head processing in one transaction; finish maps done/detached-ended to delete, stopped to failed 'stopped by the user', failed to failed with its error, not-delivered to not-delivered, and clears the lease naming that message; cancel, dismiss, resend (to the back under a new turn id), attachCli, heartbeat, release, presence, leave, windowAlive; takeOver and reclaim return false until S003; dataVersion plus an own-write counter. Tests: the two named tests in chat-queue-store.test.ts, the second forking two child processes (fixtures/queue-ack-child.mts) that acknowledge the same head at once, five rounds, exactly one succeeding each time. Eight mutations of the store each failed the tests. Plugin typecheck clean.",
+    "summary": "New vscode-plugin/src/chat/chat-queue-worker.ts implementing HLD sc4 as the s1 LLD specifies: QueuedTurnRunner, ChatQueueWorker (submit, onChange, liveSessionIds, running, dispose) and createChatQueueWorker(deps: store, claim, runner, isAlive, now, timers, log, newTurnId). It refreshes presence every LEASE_HEARTBEAT_MS, polls every 500 ms while the queue has rows or a message runs and every 5 s otherwise, emits onChange when data_version or the store's own-write counter changes (so its own writes count too), acknowledges the head only when it is this window's and due, runs it with onSpawn calling attachCli, heartbeats the lease every 5 s while it runs, treats a rejecting runner as failed with acted=true, and finishes and releases; a failed finish is kept pending and retried on each poll before any new message is taken. dispose stops the timers, leaves presence, and finishes and releases a held lease whose CLI is gone (isAlive), leaving one whose CLI still runs. Test: the named test over a real queue file with two windows' stores and fake timers. Mutations: 7 of 8 failed the test; the eighth (dropping the pending-finish guard before acknowledging) is equivalent, because the pending finish leaves the lease held and acknowledge refuses. Plugin typecheck clean.",
     "testRecord": {
       "md": "docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S001/TESTS.md"
     },
@@ -26,23 +30,37 @@
           "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:13:11.458Z"
+        "timestamp": "2026-10-14T11:15:59.550Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T11:15:59.550Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fixtures/queue-ack-child.mts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:13:11.458Z"
+        "timestamp": "2026-10-14T11:15:59.550Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-queue-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T11:13:11.458Z"
+        "timestamp": "2026-10-14T11:15:59.550Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T11:15:59.550Z"
       }
     ],
-    "commit": "f6de7994"
+    "commit": "b2e1abe7"
   }
 }

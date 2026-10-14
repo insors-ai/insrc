@@ -66,11 +66,209 @@
         "rationale": "Accuracy first without reopening the LLD; same as the trim accepted for s4.",
         "resolvedAt": "2026-10-14T18:30:19.628Z"
       }
-    }
+    },
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1–ac3 and FR001–FR003 of S005 (DEF §6.5) are each designed: the decision joins the repository queue as a 'review-pane' row in the target chat's outbox, survives the panel or window closing, the waiting list is removed, and the start-up sweep keeps a waiting message's attachments.",
+          "evidence": "DEF.md:67-69, 174-176 list FR001–FR003 and ac1–ac3. LLD §2.1, §3.2, §5 and §7 design each one: submitExternal goes through ChatQueueWorker.submit with origin 'review-pane', and waitingExternal, drainExternal and dropExternal are removed. The sweep keep set is chatKeep, built from chatStore.list() at extension.ts:476-482. No non-goal is built: there is no daemon queue, no reordering, and nothing is stored in the queue beyond AttachmentRefs. [files: docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/DEF.md, vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "FR004 (attachments of a waiting or failed message are kept until it is finished, cancelled or dismissed) is met, except where the owner's hard 200-session cap rules otherwise.",
+          "evidence": "The owner's ruling in commit 895eda8c accepts that a session is evicted at the cap even with live rows. Eviction runs onEvict, which calls chatAttachments.removeSession(id) at extension.ts:469-472, so the attachments of a waiting message in an evicted session are deleted at that moment, not only at the next sweep. The LLD's edge table says the text is kept for a resend, but it does not say the attachments are gone. [files: vscode-plugin/src/extension.ts, vscode-plugin/src/chat/session-file-store.ts]",
+          "action": "State in §5's eviction edge case that onEvict deletes the session's attachments, so a resend after eviction carries none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today submitExternal pushes the message onto an in-memory waitingExternal list. drainExternal runs it directly through runTurn, skipping the queue, and is called at about ten sites. dropExternal discards the list when the panel or host closes.",
+          "evidence": "chat-panel.ts:204 `const waitingExternal`. Lines 869-879: drainExternal runs `void runTurn(next.text)` and returns early when `worker?.running() === true || queued !== undefined`. Lines 882-889: dropExternal logs 'dropped: the chat panel was closed'. drainExternal is called at 857, 1660, 1666, 1774, 1803, 1828, 1853, 1907, 1928 and 2248. Lines 2243-2250: submitExternal returns 'unavailable', 'queued' or 'sent'. [files: vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Failing to save the draft is not detected at submit (trySaveSession only logs). The queue runner reads the store only when the shown session is a different chat, and returns failed 'the chat no longer exists' when the session is missing.",
+          "evidence": "turn-lifecycle.ts:122-128: trySaveSession catches the error and calls log.warn. chat-panel.ts:2124-2127: `if (s === undefined || s.id !== message.sessionId) { const found = deps.store.get(...); if (found === undefined) return resolve({ kind: 'failed', error: 'the chat no longer exists' ...`. [files: vscode-plugin/src/chat/turn-lifecycle.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "createQueueFactory catches every error from opening the store (a failed mkdir, a node:sqlite load failure, a newer schema, a corrupt file) and returns undefined. Today the chat then stays on a direct path.",
+          "evidence": "chat-queue-setup.ts:83-92: a try/catch around createChatQueueStore returns undefined and shows a notice. chat-queue-store.ts:299-304: mkdirSync and openDatabase failures are wrapped as StoreUnavailable('the chat queue could not be opened: …'). Lines 349-356 wrap prepare failures. extension.ts:678 passes the queue only when it is defined. Lines 687-706 and 745 register the command, the context key, the serializer and notifyChat with no condition. [files: vscode-plugin/src/chat/chat-queue-setup.ts, vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused ChatQueueWorker.submit has the stated shape: { sessionId, text, origin: 'typed' | 'review-pane', attachments } → EnqueueResult, where EnqueueResult is ok with the message, or ok:false with reason 'full' | 'busy' | 'unavailable' and a note. It never throws for queue refusals.",
+          "evidence": "chat-queue-worker.ts:65-73 declares ChatQueueSubmission and submit(m): EnqueueResult. chat-queue-store.ts:59-61 declares the EnqueueResult union. Lines 408-419: enqueue catches StoreBusy as 'busy' and any other error as a refused result. chat-panel.ts:2178-2181: enqueueTyped already calls trySave and then w.submit with origin 'typed', which is the path the LLD mirrors. [files: vscode-plugin/src/chat/chat-queue-worker.ts, vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'review-pane' origin already exists end to end (store column, row mapping, outbox projection), so the outbox (sc5) needs no change.",
+          "evidence": "chat-queue-store.ts:44 has `origin: 'typed' | 'review-pane'` and line 266 maps the row's origin. chat-outbox.ts:22 has `readonly origin: 'typed' | 'review-pane'`. No caller passes 'review-pane' today; chat-panel.ts:2180 is the only submit. [files: vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/chat/chat-outbox.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The call sites of ExternalSubmitResult, ChatHandOver and notifyChat are chat-panel.ts, docs-review-panel.ts and extension.ts, plus the tests listed in §6. decisionResultLine holds the 'sent', 'queued' and 'unavailable' wording to be changed.",
+          "evidence": "Grep finds the following. chat-panel.ts:165 and :181 hold the type. docs-review-panel.ts:45 has `notifyChat?: ((text) => 'sent' | 'queued' | 'unavailable')`, :65 has ChatHandOver, :1603-1611 has handOver (catch → 'failed'), and :2451-2456 has the wording. extension.ts:745 has the only binding. The tests are review-wiring.test.ts:27 (binding regex) and chat-panel.test.ts:4999-5305 (submitExternal suite). One small gap: the `superseding` flag (chat-panel.ts:211, 884, 2230-2236) exists only to keep the waiting list across adopt(), and it becomes dead once dropExternal goes. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/extension.ts]",
+          "action": "Remove `superseding` along with dropExternal in step 2.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Everything in extension.ts that turns the chat on is in the gating inventory: the insrc.chat.open registration, setContext insrc.chat.ready, the WebviewPanelSerializer and the notifyChat binding. package.json has no commandPalette entry yet.",
+          "evidence": "extension.ts:687 calls setContext('insrc.chat.ready', true). Line 688 registers insrc.chat.open, line 697 calls registerWebviewPanelSerializer(CHAT_VIEW_TYPE…), and line 745 binds notifyChat. Grep finds no other use of chatHost. package.json:119-126 has only menus['editor/title'] with when insrc.chat.ready. There is no commandPalette entry. [files: vscode-plugin/src/extension.ts, vscode-plugin/package.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing stored changes. The queue schema, the session files and the attachment directories are untouched, and review-pane rows use the existing origin column.",
+          "evidence": "chat-queue-store.ts:373-376: the INSERT already writes the origin column, and :266 reads it back with 'typed' as the fallback. The change only adds new callers of submit and changes internal TypeScript types (ExternalSubmitResult, ChatHandOver). The mixed-version note is accurate: an older plugin's drainExternal (chat-panel.ts:869-879) runs pane messages outside the queue. [files: vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S005 consumes sc1, sc4 and sc5 without redesigning them. It adds no queue reader or writer and leaves the signatures of ChatQueueWorker, the store and the outbox as they are. The changes in chat-queue-setup.ts are limited to the notice text and comments, following the owner's 'chat disabled without sqlite' ruling.",
+          "evidence": "The LLD calls only worker.submit (chat-queue-worker.ts:366-379) and drops liveSessionIds consumption. createQueueFactory's signature (chat-queue-setup.ts:83) is unchanged. HLD.md:269 assigns s1 to report 'unsupported VS Code' plainly, and the reworded notices still do that. The disable-the-chat behaviour is the owner ruling recorded in commit 34cb02d0. [files: vscode-plugin/src/chat/chat-queue-setup.ts, docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three notices can be told apart from what createQueueFactory catches: a StoreUnavailable matching /newer plugin/, a node:sqlite load failure (ERR_UNKNOWN_BUILTIN_MODULE or a message naming node:sqlite), and any other failure.",
+          "evidence": "chat-queue-store.ts:342 throws StoreUnavailable('…made by a newer plugin…'), which matches /newer plugin/ as chat-queue-setup.ts:90 already tests. Lines 299-304 wrap an openDatabase failure as StoreUnavailable('the chat queue could not be opened: <original message>') without chaining the cause. The original error's `code` is therefore lost and the ERR_UNKNOWN_BUILTIN_MODULE check can never fire. The 'message naming node:sqlite' fallback still works, because Node's message ('No such built-in module: node:sqlite') is copied into the wrapped message. [files: vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/chat/chat-queue-setup.ts]",
+          "action": "In the build, classify by the wrapped message (or chain `cause` in createChatQueueStore), and pin the test on a StoreUnavailable that wraps the sqlite error, not on a raw error.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every refusal from submitExternal is detectable and reported to the pane with its own note. A throw from outside the queue (opening the panel) is caught by handOver and becomes 'failed', and the recorded decision is kept.",
+          "evidence": "The worker returns refusals as { ok:false, reason, note } (chat-queue-store.ts:380, 411, 415-419), so the note can be carried into { kind:'unavailable', note }. The blank-text and no-CLI checks already run before the panel opens (chat-panel.ts:2244). docs-review-panel.ts:1603-1611: handOver catches any throw from notifyChat, logs it and returns 'failed'. The decision is recorded by the daemon before handOver is called (:1667). [files: vscode-plugin/src/chat/chat-queue-store.ts, vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1, ac2 and ac3 each map to named tests in files and harnesses that exist: chat-queue-outbox-host.test.ts, docs-review-decision.test.ts and attachment-store.test.ts, plus the extension-chat-wiring harness for the disabled-chat wiring.",
+          "evidence": "Glob confirms that vscode-plugin/src/chat/__tests__/ contains chat-queue-outbox-host.test.ts, docs-review-decision.test.ts, attachment-store.test.ts, extension-chat-wiring.test.ts, chat-queue-setup.test.ts and review-wiring.test.ts. §6's acceptance table maps ac1 to two tests, ac2 to two and ac3 to two. [files: vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts, vscode-plugin/src/chat/__tests__/attachment-store.test.ts, vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing tests that pin the old behaviour are named for rewriting, so the build will not leave stale assertions behind.",
+          "evidence": "chat-panel.test.ts:4999-5305 asserts 'sent' and 'queued' from the waiting list and a drop with a warning on dispose. review-wiring.test.ts:27 asserts the unconditional binding `notifyChat: (text) => chatHost.submitExternal(text),`. chat-queue-setup.ts:20-22 has the 'Messages run as before' notice that chat-queue-setup.test.ts pins. §6 and migration step 4 list all of them. [files: vscode-plugin/src/chat/__tests__/chat-panel.test.ts, vscode-plugin/src/chat/__tests__/review-wiring.test.ts, vscode-plugin/src/chat/chat-queue-setup.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 15,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-14T18:37:11.922Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-14T18:40:28.266Z"
   },
   "body": {
     "summary": {
-      "prose": "A decision sent from the document review pane now joins the repository's chat queue like a typed message: it waits in the chat's outbox behind any running turn, survives the panel or window closing, and runs in order. The review pane's own in-memory waiting list is removed. A new read-only look at every repository's queue file keeps the chats (and attachments) of waiting or failed messages from being swept or evicted.",
+      "prose": "A decision sent from the document review pane now joins the repository's chat queue like a typed message: it waits in the chat's outbox behind any running turn, survives the panel or window closing, and runs in order. The review pane's own in-memory waiting list is removed. Where the chat queue cannot be opened (node:sqlite cannot load, or a newer-schema queue file) the chat is disabled, with no fallback path. The 200-session history cap stays a hard cap.",
       "audience": "product"
     },
     "hldContextSlice": {
@@ -187,7 +385,7 @@
           ],
           "returns": {
             "type": "ExternalSubmitResult",
-            "meaning": "'queued' when the message joined the repository's queue; otherwise { kind: 'unavailable', note } with a sentence saying why (blank text, no agentic CLI installed, no queue in this window, or the queue's own refusal: full or busy)."
+            "meaning": "'queued' when the message joined the repository's queue; otherwise { kind: 'unavailable', note } with a sentence saying why (blank text, no agentic CLI installed, or the queue's own refusal: full or busy). A window without a queue has no chat and no notifyChat binding, so submitExternal is not reached there."
           },
           "errors": [
             {
@@ -198,7 +396,7 @@
           "preconditions": [
             "text is a non-empty string after trimming",
             "an agentic CLI is installed",
-            "this window has a queue worker"
+            "this window has a queue worker (without one the chat is not offered and the review pane is given no hand-over)"
           ],
           "postconditions": [
             "on 'queued' the panel is open, the target chat is saved, and one row with origin 'review-pane' exists in the queue for that chat",
@@ -280,47 +478,10 @@
           "postconditions": [
             "a refused decision names why it was refused"
           ]
-        },
-        {
-          "name": "createFileChatSessionStore",
-          "signature": "createFileChatSessionStore(deps: FileStoreDeps & { keepSessionIds?: () => ReadonlySet<string> | undefined }): ChatSessionStore",
-          "parameters": [
-            {
-              "name": "deps.keepSessionIds",
-              "type": "() => ReadonlySet<string> | undefined",
-              "purpose": "Sessions that must not be evicted: those with a live row in any repository's queue.",
-              "optional": true
-            }
-          ],
-          "returns": {
-            "type": "ChatSessionStore",
-            "meaning": "The same store; evictBeyondCap calls keepSessionIds once per eviction pass, only when the history is over the cap, and removes the oldest sessions not in that set."
-          },
-          "errors": [
-            {
-              "type": "swallowed",
-              "condition": "keepSessionIds throws: logged, and eviction proceeds as before so history is still capped"
-            }
-          ],
-          "preconditions": [],
-          "postconditions": [
-            "a kept session is never evicted",
-            "the history may stay above maxSessions while kept sessions fill it"
-          ]
         }
       ]
     },
     "dataModelChanges": [
-      {
-        "entity": "liveSessionIdsOfAllQueues (new function, chat-queue-setup.ts)",
-        "change": "new",
-        "details": "Lists ~/.insrc/chat-queue/*.sqlite and, for each, opens it read-only and runs SELECT DISTINCT session_id FROM messages; returns the union as a ReadonlySet<string>. A file that cannot be opened or read is skipped and logged. It never migrates, stamps or writes, so a file of a newer schema is read the same way.",
-        "schemaDiff": "none: reads the existing messages.session_id column",
-        "callSites": [
-          "vscode-plugin/src/extension.ts (chatKeep for both sweeps; keepSessionIds for the store)",
-          "vscode-plugin/src/chat/chat-queue-setup.ts"
-        ]
-      },
       {
         "entity": "ExternalSubmitResult / ChatHandOver",
         "change": "field-modify",
@@ -340,13 +501,14 @@
         ]
       },
       {
-        "entity": "FileStoreDeps",
-        "change": "field-add",
-        "details": "keepSessionIds?: () => ReadonlySet<string> | undefined.",
-        "schemaDiff": "FileStoreDeps gains one optional dependency",
+        "entity": "chat availability (extension.ts)",
+        "change": "invariant-change",
+        "details": "When createQueueFactory returns undefined (node:sqlite cannot load, or a newer-schema queue file) the chat is not offered in that window, with no direct-run path. In extension.ts, everything that turns the chat on is gated on the queue existing: (1) the insrc.chat.open command is not registered, and package.json gains a menus.commandPalette entry for it with when: insrc.chat.ready, so the Command Palette does not list a command that is not there; (2) setContext('insrc.chat.ready', true), which shows the editor-title chat icon, is not called; (3) the WebviewPanelSerializer for the chat view type is not registered, so a chat tab restored after a reload is not wired to the host (the restored tab is left empty and closes); (4) the review host is given no notifyChat binding, so the review pane still works for its own decisions and shows 'No chat message was sent.'. ANY failure to open the queue disables the chat, since createQueueFactory catches every error from opening the store (a failed mkdir, a permission error, a corrupt or locked file, as well as the two named causes). Three notices, chosen by cause: a StoreUnavailable matching /newer plugin/ -> 'The chat is disabled in this window: its queue was made by a newer insrc plugin; reload this window.'; an error that is the failure to load node:sqlite (ERR_UNKNOWN_BUILTIN_MODULE, or a message naming node:sqlite) -> 'The chat is disabled in this window: this VS Code cannot load node:sqlite, which the chat queue needs.'; any other failure -> 'The chat is disabled in this window: its queue could not be opened (<the error's message>).'. The module doc comments that say the chat 'stays on its direct path' (chat-queue-setup.ts header, extension.ts near the queue factory) are updated. The host's internal no-queue branches stay and are not reachable from the extension; removing them is a separate cleanup.",
         "callSites": [
-          "vscode-plugin/src/chat/session-file-store.ts",
-          "vscode-plugin/src/extension.ts"
+          "vscode-plugin/src/extension.ts (insrc.chat.open registration, setContext insrc.chat.ready, registerWebviewPanelSerializer, the review host's notifyChat binding)",
+          "vscode-plugin/src/chat/chat-queue-setup.ts (the two notices and the header comment)",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/package.json (menus.commandPalette entry for insrc.chat.open)"
         ]
       }
     ],
@@ -354,12 +516,12 @@
       {
         "contractId": "sc1",
         "role": "consumes",
-        "howDetails": "Reads the queue file's messages table read-only for session ids; writes only through the worker's submit. The store contract is unchanged."
+        "howDetails": "Unchanged. This Story reads and writes the queue only through the worker's submit; it adds no reader of the queue files."
       },
       {
         "contractId": "sc4",
         "role": "consumes",
-        "howDetails": "submitExternal calls ChatQueueWorker.submit with origin 'review-pane'. worker.liveSessionIds() still reports this repository's rows; the cross-repository set is a separate read-only reader."
+        "howDetails": "submitExternal calls ChatQueueWorker.submit with origin 'review-pane'. worker.liveSessionIds() is not consumed: the sweep and eviction rules are unchanged."
       },
       {
         "contractId": "sc5",
@@ -370,10 +532,10 @@
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "A decision is sent in a window with no queue (node:sqlite could not load, or a newer-schema queue file)",
-          "detection": "submitExternal finds no queue worker for this window (worker is undefined, as createQueueFactory returned undefined)",
-          "response": "Return { kind: 'unavailable', note } saying the chat queue is not available in this window; do not start a turn and keep no list",
-          "userImpact": "The decision is already recorded by the review host; the pane's line says the chat could not be told and why, and the user can paste it",
+          "scenario": "The chat queue cannot be created in this window (node:sqlite cannot load, a newer-schema queue file, or any other failure to open the store)",
+          "detection": "createQueueFactory returns undefined at start-up: it catches every error from opening the store",
+          "response": "The chat is disabled in this window: the chat command, the chat icon's ready context and the chat tab serializer are not registered, and the review host gets no notifyChat binding; the notice says the chat is disabled and names the cause (sqlite cannot load, newer plugin, or the open error's message)",
+          "userImpact": "No chat in that window. A review-pane decision is still recorded and the pane says 'No chat message was sent.'",
           "recoverable": true
         },
         {
@@ -391,31 +553,17 @@
           "recoverable": true
         },
         {
-          "scenario": "The target chat session is gone when the message reaches the front (evicted or removed)",
+          "scenario": "The target chat session is gone when the message reaches the front (evicted at the hard 200-session cap, or removed)",
           "detection": "queueRunner.run finds deps.store.get(sessionId) undefined and resolves failed 'the chat no longer exists' (S001)",
-          "response": "Unchanged: the row ends failed with a resend; the eviction keep predicate makes this unlikely for a session with live rows",
-          "userImpact": "The outbox shows the failed decision with resend and dismiss",
-          "recoverable": true
-        },
-        {
-          "scenario": "A queue file under ~/.insrc/chat-queue cannot be opened or read while listing live sessions (locked, corrupt, a stray file)",
-          "detection": "the read-only open or the SELECT throws for that file",
-          "response": "Skip the file, log a warning with its name, and continue with the other files; the set is partial",
-          "userImpact": "Sessions with live rows in that one file are not protected on this pass; their messages may later fail with the chat gone",
-          "recoverable": true
-        },
-        {
-          "scenario": "The keep predicate throws during eviction",
-          "detection": "evictBeyondCap catches the exception from keepSessionIds()",
-          "response": "Log it and evict as if no session were kept, so the history is still capped",
-          "userImpact": "None visible; protection is lost for that one pass",
+          "response": "Unchanged: the row ends failed with a resend. Eviction does not protect sessions with live rows (the cap is hard)",
+          "userImpact": "The outbox shows the failed decision with resend and dismiss; the message text is kept so it can be resent into another chat",
           "recoverable": true
         },
         {
           "scenario": "Saving the draft chat fails before the message is queued",
-          "detection": "trySave returns false or throws (the existing guard in enqueueTyped)",
-          "response": "Proceed as typed messages do: the save failure is logged and the submit still happens; if the chat is then missing the runner fails the message with a resend",
-          "userImpact": "Rare; the decision shows as failed with a resend",
+          "detection": "Not detected at submit: trySave (via trySaveSession) only logs a failed save and returns nothing; the failure is seen later when the runner finds no session and resolves failed 'the chat no longer exists'",
+          "response": "Proceed as typed messages do: the submit still happens. If the unsaved draft is still the shown chat in the window that runs the message, it runs against the in-memory draft and succeeds. The runner fails the message with 'the chat no longer exists' only when the message is run by another window, or after the chat was switched or the window reloaded (it reads the store only when the shown session is a different chat)",
+          "userImpact": "Rare; the decision may show as failed with a resend",
           "recoverable": true
         }
       ],
@@ -445,16 +593,12 @@
           "expected": "The row is in the file, so it survives; the reloaded window's worker runs it when it reaches the front, opening the panel"
         },
         {
-          "input": "A session has live rows in the queue of a repository other than the open one",
-          "expected": "It is in the cross-repository keep set, so neither the sweep nor eviction removes it or its attachments"
+          "input": "A session with a waiting message and attachments is in the store at start-up",
+          "expected": "The sweep's keep set already holds every stored session, so its attachments are kept and go with the message when it runs"
         },
         {
-          "input": "Every one of the 200 sessions is kept",
-          "expected": "No eviction happens and the history stays above the cap until rows finish"
-        },
-        {
-          "input": "The chat-queue directory does not exist or holds no queue files",
-          "expected": "The keep set is empty and nothing changes"
+          "input": "More than 200 sessions exist and the oldest has a waiting message",
+          "expected": "It is evicted by the hard cap; its message fails with 'the chat no longer exists' and can be resent"
         }
       ],
       "invariantsToPreserve": [
@@ -463,16 +607,16 @@
           "source": "c3"
         },
         {
-          "text": "Only the worker writes the queue, in short IMMEDIATE transactions; the new keep reader opens other repositories' files read-only and never migrates, stamps or writes them.",
-          "source": "c11"
-        },
-        {
           "text": "A decision is recorded by the review host before the chat is told, and a failed hand-over never undoes it.",
           "source": "c12"
         },
         {
           "text": "Queue order is strict per repository: a review-pane message is an ordinary row and runs at its place in seq order.",
           "source": "c3"
+        },
+        {
+          "text": "Only the worker writes the queue, in short IMMEDIATE transactions; this Story adds no other reader or writer of the queue files.",
+          "source": "c11"
         }
       ]
     },
@@ -480,16 +624,15 @@
       "testLevels": [
         {
           "level": "unit",
-          "purpose": "The review host's wording and hand-over, the session store's keep predicate, and the cross-repository reader, each in isolation.",
+          "purpose": "The review host's wording and hand-over, and the start-up attachment sweep over a stored session with a waiting message.",
           "subjects": [
             "decisionResultLine: 'queued' reads 'Sent to the chat; it waits its turn in the outbox.', unavailable carries the note, failed and none unchanged, no 'sent'",
             "docs-review-decision: notifyChat's queued and unavailable results reach the pane's result line",
-            "createFileChatSessionStore: with keepSessionIds, evictBeyondCap skips kept sessions and evicts others; a throwing predicate is logged and eviction still caps; the predicate is not called under the cap",
-            "liveSessionIdsOfAllQueues: the union over several queue files; an unreadable file is skipped with a warning; a missing directory gives an empty set; a file of a newer schema is read without being modified"
+            "attachment sweep: with the start-up keep set made from the store's sessions, a session that holds a waiting queued message keeps its attachments directory",
+            "existing tests rewritten with the change: chat-queue-setup.test.ts (its 'chat keeps the direct path' title and the notice text), review-wiring.test.ts (the unconditional notifyChat binding regex, plus a case where the binding is absent when there is no queue), docs-review-decision.test.ts (its 'sent' default notifyChat and the old 'no chat is available' and 'will be told when it is free' wording), chat-panel.test.ts (the submitExternal suite)"
           ],
           "fixturesNeeded": [
-            "temporary directory with real SQLite queue files made by createChatQueueStore",
-            "fake session files filesystem (fake-session-fs)"
+            "fake attachment filesystem (fake-attachment-fs)"
           ]
         },
         {
@@ -498,13 +641,14 @@
           "subjects": [
             "submitExternal with a running turn: returns 'queued', the row is in the outbox with origin 'review-pane', the running turn and its waiting card are untouched, and the decision runs when the turn ends",
             "submitExternal with the panel closed: opens the panel on its session, saves a draft chat, queues, and the message runs once the webview is ready",
-            "submitExternal with no worker, no CLI, blank text, a full queue and a busy queue: each returns unavailable with its own note and queues nothing",
+            "submitExternal with no CLI, blank text, a full queue and a busy queue: each returns unavailable with its own note and queues nothing",
             "no waitingExternal list: a message submitted before the panel closes is still in the queue file afterwards (the old test asserted it was dropped)",
-            "start-up wiring in extension.ts: chatKeep and the store's keepSessionIds include sessions with live rows in another repository's queue file"
+            "extension wiring: when the queue cannot be created the chat command is not registered, setContext insrc.chat.ready is not set, the chat tab serializer is not registered, the review host has no notifyChat, and each of the three notices (sqlite cannot load, newer plugin, any other open failure) says the chat is disabled (text pinned)",
+            "extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready"
           ],
           "fixturesNeeded": [
             "chat-queue-outbox-host harness (real store, createChatQueueWorker, fake adapter)",
-            "two queue files in one temp chat-queue directory"
+            "extension-chat-wiring harness"
           ]
         }
       ],
@@ -526,71 +670,57 @@
         {
           "criterionId": "ac3",
           "provingTests": [
-            "session-file-store.test.ts: eviction skips sessions in keepSessionIds and evicts others to respect the cap",
-            "chat-queue-setup.test.ts: liveSessionIdsOfAllQueues returns the sessions of every queue file, skips an unreadable file and reads a newer-schema file without changing it",
-            "extension-chat-wiring.test.ts: the start-up sweep's keep set contains a session with a live row in another repository's queue"
+            "attachment-store.test.ts: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session",
+            "chat-queue-outbox-host.test.ts: a queued message with an attachment keeps it and sends it when the message runs"
           ]
         }
       ],
       "testFramework": "node:test (node:assert/strict) run through tsx: npx tsx --test; co-located *.test.ts under src/chat/__tests__ with the existing fake-dom, fake-session-fs and chat-queue-outbox-host harnesses"
     },
     "migration": {
-      "stateBefore": "A pane decision goes through submitExternal into the chat host's in-memory waitingExternal list and is run by drainExternal directly through runTurn when this window is idle (bundle read:current-behaviour). It bypasses the repository queue, so another window's running message does not hold it, and it is dropped when the panel or the window closes. Attachments of waiting messages are protected only by the session being in this window's store at start-up; eviction at the 200-session cap can remove a session with live queue rows (bundle read:attachment-keep).",
-      "stateAfter": "A pane decision is submitted through the repository's queue worker with origin 'review-pane' and is an ordinary row: it waits in the chat's outbox, survives the panel or window closing, and runs in order. The waiting list and its drain are gone. The start-up sweep and session eviction both consult a read-only list of the sessions that have live rows in any repository's queue file.",
+      "stateBefore": "A pane decision goes through submitExternal into the chat host's in-memory waitingExternal list and is run by drainExternal directly through runTurn when this window is idle (bundle read:current-behaviour). It bypasses the repository queue, so another window's running message does not hold it, and it is dropped when the panel or the window closes. A window without a queue runs the chat on a direct path.",
+      "stateAfter": "A pane decision is submitted through the repository's queue worker with origin 'review-pane' and is an ordinary row: it waits in the chat's outbox, survives the panel or window closing, and runs in order. The waiting list and its drain are gone. A window that cannot open the queue has the chat disabled.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add the read-only reader of every queue file's session ids and its tests; nothing calls it yet",
-          "rollbackable": true
-        },
-        {
-          "order": 2,
-          "action": "Add the optional keepSessionIds dependency to the session file store, used only when over the cap, with its tests; nothing passes it yet",
-          "rollbackable": true
-        },
-        {
-          "order": 3,
-          "action": "Wire the reader into the start-up: add its set to the keep set of both sweeps and pass it to the store as keepSessionIds",
-          "rollbackable": true
-        },
-        {
-          "order": 4,
           "action": "Change submitExternal to submit through the worker and return the new result; change the review host's notifyChat type, ChatHandOver and decisionResultLine to carry the note; update the binding",
           "rollbackable": true
         },
         {
-          "order": 5,
+          "order": 2,
           "action": "Remove waitingExternal, drainExternal and its call sites; keep the webviewReady reset that dropExternal performs",
           "rollbackable": true
         },
         {
-          "order": 6,
-          "action": "Rewrite or remove the tests that pinned 'sent', the wording and the drain order; add the queue-path tests",
+          "order": 3,
+          "action": "In extension.ts, when the queue cannot be created: do not register insrc.chat.open, do not set insrc.chat.ready, do not register the chat tab serializer and do not pass notifyChat to the review host; reword the notices in chat-queue-setup.ts to say the chat is disabled and add a third for any other open failure, and update the comments that say it stays on a direct path; add the menus.commandPalette entry for insrc.chat.open in package.json",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Rewrite or remove the tests that pinned 'sent', the old wording, the drain order, the direct path and the old notices (chat-panel.test.ts submitExternal suite, docs-review-decision.test.ts, review-wiring.test.ts, chat-queue-setup.test.ts); add the queue-path tests, the extension wiring tests and the sweep test",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No stored data changes: the queue file's schema, the session files and the attachment directories are untouched, and the keep reader only reads. The IPC and the review pane's webview messages are unchanged. The review host's notifyChat dependency changes its return type, which is internal to the plugin and changes in one commit with its only binding. Mixed plugin versions: a window still running the previous plugin starts a pane decision directly outside the queue until it is reloaded, as typed messages already do (S001); and a previous-plugin window never reads the keep set, so it may still evict a session another window's queue holds, until it is reloaded.",
+      "backwardCompat": "No stored data changes: the queue file's schema, the session files and the attachment directories are untouched. The review host's notifyChat dependency changes its return type, internal to the plugin and changed in one commit with its only binding. Behaviour change: a VS Code that cannot load node:sqlite no longer runs the chat on a direct path; the chat is not offered there (owner decision). Mixed plugin versions: a window still running the previous plugin starts a pane decision directly outside the queue until it is reloaded, as typed messages already do (S001).",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Submit through the worker; a read-only reader of every queue file",
-        "oneLineSummary": "submitExternal submits through ChatQueueWorker; a small read-only reader lists the session ids of every repository's queue file for the sweep and for eviction.",
-        "approach": "submitExternal drops the waiting list: it resolves the target chat (the shown session, or after opening the panel the session it opens on), saves a draft so the chat exists, submits with origin 'review-pane' and returns 'queued' or { kind: 'unavailable', note }. With no worker it returns unavailable with a note. A new pure function liveSessionIdsOfAllQueues(root, openDatabase, log) lists ~/.insrc/chat-queue/*.sqlite and runs one SELECT DISTINCT session_id FROM messages over each, opened read-only, skipping (and logging) a file it cannot open. Its result joins chatKeep for both sweeps, and createFileChatSessionStore gains keepSessionIds?: () => ReadonlySet<string> that evictBeyondCap calls once, only when over the cap, and skips those sessions when choosing whom to evict.",
+        "name": "Submit through the worker; hard 200-session cap, sweep unchanged",
+        "oneLineSummary": "submitExternal submits through ChatQueueWorker; the sweep's existing keep set already holds every stored session; no new reader and no keep predicate.",
+        "approach": "submitExternal drops the waiting list: it resolves the target chat (the shown session, or after opening the panel the session it opens on), saves a draft so the chat exists, submits with origin 'review-pane' and returns 'queued' or { kind: 'unavailable', note }. A window without a queue does not offer the chat. The start-up sweep's keep set (chatKeep, every session in the store) already protects a waiting message's attachments; the 200-session cap stays hard, so an evicted session's message fails with the chat gone and a resend.",
         "pros": [
-          "Reads the truth: the queue files themselves, so another window's or repository's rows are seen without any new write or coordination",
-          "Read-only access cannot migrate, stamp or refuse a newer-schema file, so mixed plugin versions are harmless",
-          "The predicate is called only over the cap, so a normal save pays nothing",
-          "No change to the queue store, the worker contract or the schema"
+          "No new reader of queue files and no change to the session store",
+          "No change to the queue store, the worker contract or the schema",
+          "Smallest change that removes the waiting list"
         ],
         "cons": [
-          "A second, small reader of the queue's table layout (it must stay in step with the column name session_id)",
-          "Eviction is skipped for kept sessions, so history can exceed the cap while many sessions hold live rows",
-          "A file that is locked or unreadable is skipped, so its sessions are not protected on that pass"
+          "A session evicted at the hard cap loses its waiting message (it fails with the chat gone and can be resent)"
         ],
-        "costEstimate": "S"
+        "costEstimate": "XS"
       },
       {
         "id": "a2",
@@ -628,10 +758,6 @@
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "OWNER DECISION: with no queue in this window (node:sqlite cannot load, or a newer-schema file), should a review-pane decision be refused with a note (this LLD's choice: the decision stays recorded and the pane says the chat could not be told), or keep a direct-run fallback for that case? The HLD removes the waiting list entirely, so a fallback would keep part of what S005 removes. Recommendation: refuse with a note.",
-      "OWNER DECISION: eviction skips every session with live queue rows in any repository, so the 200-session history can grow above its cap while many sessions hold waiting or failed messages. Accept that, or evict a kept session anyway once the history passes a hard ceiling (and fail its message with the chat gone)? Recommendation: accept; rows are bounded at 500 per repository, so the overshoot is bounded too.",
-      "cd1 (partial): liveSessionIdsOfAllQueues and the keepSessionIds dependency are new names this Story introduces; they are labelled new in dataModel and are not existing symbols.",
-      "ep3 (partial): the invariantsToPreserve cite the HLD assumption ids c3, c11 and c12 as the schema requires; the behaviours are shown by the read:queue-surface and read:current-behaviour bundles, but the ids do not name a bundle directly.",
       "NOTE (trimmed, disclosed): body.hldContextSlice carries the framework summary, the consumed contracts without their interface sketches, this Story's boundary and the adjacent boundaries' owns and depends, not the full verbatim slice."
     ]
   },

@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Timers } from '../async-util.js';
-import { createChatQueueStore, LEASE_HEARTBEAT_MS, LEASE_TAKEOVER_MS, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
+import { createChatQueueStore, LEASE_HEARTBEAT_MS, PRESENCE_GRACE_MS, LEASE_TAKEOVER_MS, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
 import { ACTION_NOTES, ACTIVE_POLL_MS, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 
 /** Fake timers over a fake clock: advance() runs what is due, in order. */
@@ -148,7 +148,7 @@ test("chat queue worker: the window whose message is at the front takes the leas
     alive.add(901);
     wA.dispose();
     assert.equal(storeB.lease()?.windowKey, 'w-A', 'left to its heartbeat timeout');
-    assert.equal(storeB.windowAlive('w-A', t.now()), false, 'presence removed');
+    assert.equal(storeB.windowAlive('w-A', t.now()), true, 'presence kept');
     // A new worker for a window whose CLI has exited: dispose finishes and releases.
     const storeC = r.open(t.now);
     const C = gatedRunner();
@@ -317,6 +317,39 @@ test("worker recovery: a lease left by a window that reloaded (same window key, 
     w.dispose();
     store.close();
     old.close();
+    r.done();
+  }
+});
+
+// Epic E20261014613abdb3 Story S003 t3.
+test('dispose leaves the presence row in place and windowAlive stays true until PRESENCE_GRACE_MS passes', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const store = r.open(t.now);
+  const watcher = r.open(t.now);
+  const R = gatedRunner();
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    await t.advance(0);
+    assert.equal(watcher.windowAlive('w-A', t.now()), true, 'present while the worker runs');
+    w.dispose();
+    assert.equal(watcher.presenceOf('w-A')?.pid, 101, 'the row is still there after dispose');
+    assert.equal(watcher.windowAlive('w-A', t.now()), true);
+    await t.advance(PRESENCE_GRACE_MS - 1_000);
+    assert.equal(watcher.windowAlive('w-A', t.now()), true, 'still within the grace');
+    await t.advance(2_000);
+    assert.equal(watcher.windowAlive('w-A', t.now()), false, 'aged out once PRESENCE_GRACE_MS has passed');
+    // A reload: a new worker for the same window key refreshes the row on its first tick.
+    const againStore = r.open(t.now);
+    const again = createChatQueueWorker({ store: againStore, claim: { windowKey: 'w-A', pid: 202 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => 'n2' });
+    await t.advance(0);
+    assert.equal(watcher.presenceOf('w-A')?.pid, 202);
+    again.dispose();
+    againStore.close();
+  } finally {
+    w.dispose();
+    store.close();
+    watcher.close();
     r.done();
   }
 });

@@ -322,7 +322,9 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
       if (pollHandle !== undefined) timers.clearTimeout(pollHandle);
       timers.clearTimeout(beatHandle);
       try {
-        store.leave(claim);
+        // Story S003: the presence row is left in place. A reload disposes and recreates the worker with the same window key
+        // within seconds; deleting the row would make the window look closed to another window's tick in that gap. The row
+        // ages out over PRESENCE_GRACE_MS when the window really is gone.
         const lease = store.lease();
         if (lease !== undefined && lease.windowKey === claim.windowKey && lease.pid === claim.pid) {
           // A turn whose CLI has already exited is finished now; one still running keeps the lease

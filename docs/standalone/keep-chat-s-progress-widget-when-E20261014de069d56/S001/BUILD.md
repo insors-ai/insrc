@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-14T19:17:05.767Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-14T19:17:05.767Z  ·  **Updated:** 2026-10-14T19:18:11.574Z
 
-**Commit:** 56e97c39
+**Commit:** dfba2056
 
 ## Scope
 
@@ -20,4 +20,20 @@ Files: vscode-plugin/src/chat/chat-panel.ts (postInitialState, the 'ready' case)
 
 ## Triage rationale
 
-Small bugfix, one module (ISSUE-de069d56d76eaacd, docs/standalone/keep-chat-s-progress-widget-when-E20261014de069d56/ISSUE.md); approved issue is the ledger entry.
+Small bugfix; ISSUE-de069d56d76eaacd.
+
+## Summary
+
+Fix for ISSUE-de069d56d76eaacd. In chat-panel.ts, the 'ready' case now posts 'turn-running' for the shown chat, after postInitialState, when this window has a turn in progress for it (turns.busy(), a turn being started, or a queued message of that chat running), so a page rebuilt after another tab covered it gets its progress widget and Stop back. Nothing about when a turn starts or ends changed, and the queue runner's own 'turn-running' post is unchanged. Test: chat-queue-runner.test.ts 'a chat page rebuilt while a turn runs is told the turn is running, and one rebuilt when nothing runs is not' fails without the fix (checked by disabling it) and passes with it; a page rebuilt when idle is told nothing. NOT CONFIRMED IN A REAL VS CODE: that the review pane actually covers the chat's tab and that a 'ready' follows an approval is still a reading of the code; the test rebuilds the page by sending 'ready' directly. If the widget still disappears after this, the cause is something else and the live check will show it. Full suite: 1333 pass, 2 fail (the two manifest-catalog tests that were failing before).
+
+## Tasks validated
+
+- ✓ `S001`
+
+**Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
+
+## Changes
+
+- `.insrc/artifacts/ISSUE-de069d56d76eaacd.json` — **insrc-build** (2026-10-14T19:18:11.574Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` — **insrc-build** (2026-10-14T19:18:11.574Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T19:18:11.574Z)

@@ -160,3 +160,20 @@ test("insrc_analyze_step replies to every scope error with the code and message 
 	assert.deepEqual(codes, ['scope-not-indexed', 'repo-indexing', 'scope-ref-unresolved', 'scope-ref-kind-target-mismatch']);
 	assert.equal(scopeErrorResult(new Error('MDB_BAD_TXN')), undefined);
 });
+
+test("insrc_analyze_step (ISSUE-fb584b48): a 'repo-indexing' refusal is retryable only while the repository is being indexed; one for a repository whose last index failed is not", async () => {
+	const indexing = scopeErrorResult(new RepoIndexingError({ repoPath: '/x', status: 'indexing', run: null }));
+	assert.equal(indexing?.error.code, 'repo-indexing');
+	assert.equal(indexing?.error.retryable, true, 'being indexed: its index ends on its own');
+	const failed = new RepoIndexingError({ repoPath: '/x', status: 'error', run: null });
+	const reply = scopeErrorResult(failed);
+	assert.deepEqual(reply, { next: 'error', error: { code: 'repo-indexing', message: failed.message, retryable: false } });
+
+	// Through the daemon's step.call handler: a registered repository whose last index failed.
+	const at = '2026-10-13T00:00:00.000Z';
+	await addRepo(null, { path: unregistered, name: 'failed', addedAt: at, status: 'error', errorMsg: 'boom' } as never);
+	const { reply: stepReply } = await step({ phase: 'start', focus: 'how is it laid out', repo: unregistered, target: 'code' });
+	assert.equal(stepReply.error?.code, 'repo-indexing', JSON.stringify(stepReply));
+	assert.equal(stepReply.error?.retryable, false);
+	assert.match(stepReply.error?.message ?? '', /Re-index the repository\.$/);
+});

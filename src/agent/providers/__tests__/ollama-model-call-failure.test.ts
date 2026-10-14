@@ -174,3 +174,50 @@ test('retry helper: a cancelled attempt (AbortError) ends the helper at once and
 	assert.equal(caught, abort);
 	assert.equal(calls, 1, 'not retried');
 });
+
+/** The Ollama client's ResponseError, as the client raises it: name, message and the server's HTTP status. */
+function responseError(status: number, message: string): Error {
+	return Object.assign(new Error(message), { name: 'ResponseError', error: message, status_code: status });
+}
+
+test('OllamaProvider (ISSUE-fb584b48): a request the server rejected for its content (ResponseError 4xx) reaches the caller as it was raised, with its status, not as a failed model call; a 404 (model not found) and a 5xx stay failed model calls', async () => {
+	const { isModelCallFailure } = await import('../../../analyze/context/model-failure.js');
+	for (const where of ['call', 'iteration'] as const) {
+		const runs: Array<[string, (p: OllamaProvider) => Promise<unknown>]> = [
+			['stream', async p => { for await (const _ of p.stream([{ role: 'user', content: 'hi' }])) { /* drain */ } }],
+			['complete', p => p.complete([{ role: 'user', content: 'hi' }])],
+		];
+		for (const [name, run] of runs) {
+			const rejected = failingClient(() => responseError(400, 'invalid format: schema is not valid JSON'), where);
+			let caught: unknown;
+			try { await run(providerWith(rejected)); } catch (err) { caught = err; }
+			const label = `${name} ${where} 400`;
+			assert.equal(caught, rejected.thrown[0], `${label}: the rejection itself (got ${String(caught)})`);
+			assert.equal((caught as { status_code?: number }).status_code, 400, label);
+			assert.equal(isModelCallFailure(caught), false, `${label}: not reported as an outage`);
+			assert.equal(rejected.thrown.length, 1, `${label}: not retried`);
+
+			const missing = failingClient(() => responseError(404, "model 'qwen-x' not found"), where);
+			caught = undefined;
+			try { await run(providerWith(missing)); } catch (err) { caught = err; }
+			assertTyped(caught, missing.thrown[0], `${name} ${where} 404`);
+			assert.match((caught as ModelCallFailedError).detail, /^Model not found in Ollama/);
+
+			const failing = failingClient(() => responseError(500, 'llama runner process has terminated'), where);
+			caught = undefined;
+			try { await run(providerWith(failing)); } catch (err) { caught = err; }
+			assert.ok(caught instanceof ModelCallFailedError, `${name} ${where} 500: got ${String(caught)}`);
+			assert.equal(isModelCallFailure(caught), true, `${name} ${where} 500: a failed model call`);
+		}
+	}
+
+	// Behind the structured retry helper the rejection is kept as the final error's cause.
+	const rejected = failingClient(() => responseError(400, 'invalid format: schema is not valid JSON'), 'call');
+	let caught: unknown;
+	try {
+		await providerWith(rejected).completeStructured([{ role: 'user', content: 'hi' }], SCHEMA, { maxAttempts: 1 });
+	} catch (err) { caught = err; }
+	assert.ok(caught instanceof Error && !(caught instanceof ModelCallFailedError), String(caught));
+	assert.equal(isModelCallFailure(caught), false, 'completeStructured: not reported as an outage');
+	assert.equal((caught as Error).cause, rejected.thrown[0], 'the rejection, with its status, is the cause');
+});

@@ -21,7 +21,11 @@
     "epicSlug": "label-failed-last-index-rejected-ollama",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-14T05:11:46.224Z",
+    "parentRef": {
+      "slug": "label-failed-last-index-rejected-ollama"
+    }
   },
   "body": {
     "title": "Label a failed last index and a rejected Ollama request truthfully",

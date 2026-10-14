@@ -763,6 +763,18 @@ function isAbortError(err: unknown): boolean {
 }
 
 /**
+ * A request the Ollama server answered and rejected for its content: the
+ * client's ResponseError with a 4xx status (a bad format schema, a prompt over
+ * the context length). A 404 is not one: it is the model not being found, a
+ * configuration failure. A 5xx is the server failing, not the request.
+ */
+function isRequestRejection(err: unknown): boolean {
+  if (!(err instanceof Error) || err.name !== 'ResponseError') return false;
+  const status = (err as { status_code?: unknown }).status_code;
+  return typeof status === 'number' && status >= 400 && status < 500 && status !== 404;
+}
+
+/**
  * Every failure the Ollama client raises -- from the call itself or from
  * inside a stream's iteration -- is a failed model call, whatever its text
  * (ECONNREFUSED, socket hang up, fetch failed, terminated, a stream that
@@ -776,6 +788,10 @@ function wrapOllamaError(err: unknown): unknown {
   // A cancelled call is not a failed one: the abort reaches the caller as it
   // was raised, so a cancellation is never reported as the model being unavailable.
   if (isAbortError(err)) return err;
+  // Neither is a request the server rejected for its content: it reaches the
+  // caller as the client raised it, with the server's status and message, so
+  // it is not reported as an outage (ISSUE-fb584b48).
+  if (isRequestRejection(err)) return err;
   const message = err instanceof Error ? err.message : String(err);
   let detail = message;
   if (message.includes('ECONNREFUSED')) {

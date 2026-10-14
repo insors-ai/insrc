@@ -193,6 +193,10 @@ export async function withStructuredRetry<T>(
 	// final error keeps that type, so a real outage is not reported as a
 	// failure of shape.
 	let lastCallFailure: ModelCallFailedError | undefined;
+	// The error the last attempt threw, when it threw one: kept as the cause of
+	// the helper's final error, so a caller can still read what it was (a
+	// request the server rejected keeps its status).
+	let lastThrown: unknown;
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 		const note = attempt === 1
 			? undefined
@@ -212,6 +216,7 @@ export async function withStructuredRetry<T>(
 			const msg = (err as Error).message ?? String(err);
 			lastErrors = [msg];
 			lastCallFailure = err instanceof ModelCallFailedError ? err : undefined;
+			lastThrown = err;
 			log.warn({ attempt, maxAttempts, error: msg }, 'structured-output: call threw; treating as validation failure for retry');
 			continue;
 		}
@@ -225,13 +230,14 @@ export async function withStructuredRetry<T>(
 		}
 		lastErrors = result.errors;
 		lastCallFailure = undefined;
+		lastThrown = undefined;
 		log.warn({ attempt, maxAttempts, errors: lastErrors }, 'structured-output: validation failed; will retry');
 	}
 	const prefix = `structured-output: validation failed after ${maxAttempts} attempts: `;
 	if (lastCallFailure !== undefined) {
 		throw new ModelCallFailedError(`${prefix}${lastCallFailure.detail}`, { cause: lastCallFailure });
 	}
-	throw new Error(`${prefix}${lastErrors.join('; ')}`);
+	throw new Error(`${prefix}${lastErrors.join('; ')}`, lastThrown !== undefined ? { cause: lastThrown } : undefined);
 }
 
 

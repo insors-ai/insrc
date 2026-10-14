@@ -117,13 +117,16 @@ async function dispatch(input: unknown): Promise<StepOutput> {
 /**
  * A scope error thrown by a phase, as the reply the tool gives: the code and
  * message of the one mapping from scope errors to codes (scopeErrorMapping).
- * Only a repository under index is retryable: its index ends. Any other error
- * is not a scope error (undefined).
+ * Only a repository being indexed is retryable: its index ends on its own. A
+ * repository whose last index failed is refused with the same code but is not
+ * retryable: nothing changes until it is re-indexed (ISSUE-fb584b48). Any other
+ * error is not a scope error (undefined).
  */
 export function scopeErrorResult(err: unknown): StepOutputError | undefined {
 	const scoped = scopeErrorMapping(err);
 	if (scoped === undefined) return undefined;
-	return errorResult(scoped.code, scoped.message, scoped.code === 'repo-indexing');
+	const beingIndexed = scoped.code === 'repo-indexing' && (scoped.data as { status?: unknown } | undefined)?.status === 'indexing';
+	return errorResult(scoped.code, scoped.message, beingIndexed);
 }
 
 function errorResult(code: string, message: string, retryable: boolean): StepOutputError {

@@ -1,0 +1,510 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792005723169-abi49h",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T19:23:57.366Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 114194,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d27fe8996fc3a2db",
+    "epicSlug": "open-review-pane-existing-editor-group",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1792005723169-abi49h",
+    "hldEffectiveHash": "d27fe8996fc3a2db992e5f9d39ce8bf83253687dce3d35f861d2b6d9af8423d3",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One module (the review host's createPanel in extension.ts) and one obvious approach; vscode.window.tabGroups is already used. One small design choice for the LLD: which group when several qualify, and whether the pane takes focus when the chat opens it.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers the request (reuse an existing non-chat group; otherwise today's placement; quiet opens keep focus in the chat) and builds no non-goal (other panels such as the delivery board stay at ViewColumn.Active).",
+          "evidence": "Sections 2.1/3.2/6 state all three behaviours; extension.ts:762 (delivery board, ViewColumn.Active) and the status panel are explicitly left unchanged ('Only the review pane is changed'). ac1-ac3 are derived from the request (open question ts1 says so) and each maps to a stated behaviour. [files: vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the review host's createPanel opens at ViewColumn.Beside with preserveFocus when quiet, else ViewColumn.Active.",
+          "evidence": "extension.ts:719-721: `const panel = quiet === true ? vscode.window.createWebviewPanel(viewType, title, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }, ...) : vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, ...)`. [files: vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An already open pane is only revealed; createPanel is called only when the host has no live pane.",
+          "evidence": "docs-review-panel.ts:2351-2360 show(quiet): reveals the existing channel (with preserveFocus when quiet) and only otherwise calls deps.createPanel({ viewType, title, ...(quiet ? { quiet: true } : {}) }). [files: vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The vscode.d.ts shim today declares only TabGroup.activeTab and TabGroups.activeTabGroup/onDidChangeTabs/onDidChangeTabGroups.",
+          "evidence": "vscode.d.ts:95-108: Tab { input }, TabGroup { activeTab }, TabGroups { activeTabGroup; onDidChangeTabs; onDidChangeTabGroups } - no `all`, `viewColumn`, `isActive` or `tabs`. [files: vscode-plugin/src/vscode.d.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "isChatTabInput(input: unknown, viewType: string): boolean exists in group-lock.ts with the stated shape and rejects non-object or viewType-less inputs.",
+          "evidence": "group-lock.ts:49-54: returns false when `typeof input !== 'object' || input === null` or viewType is not a string; else `actual === viewType || actual.endsWith(`-${viewType}`)`. [files: vscode-plugin/src/chat/group-lock.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "chooseReviewColumn / review-column.ts do not already exist.",
+          "evidence": "No review-column.ts under vscode-plugin/src/chat; extension.ts reads tabGroups only for activeTabGroup.activeTab and the change events (extension.ts:552-555). [files: vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Two source scans in review-wiring.test.ts pin the current createPanel calls and must be rewritten, and their extractor regex expects the `createPanel: ({ viewType, title, quiet }) => {` block shape.",
+          "evidence": "review-wiring.test.ts:125 and :173 extract with /createPanel: \\(\\{ viewType, title, quiet \\}\\) => \\{([\\s\\S]*?)\\n      \\},/; :128 asserts the ViewColumn.Active call; :175 asserts the quiet Beside/preserveFocus ternary; :144 title states the old placement. [files: vscode-plugin/src/chat/__tests__/review-wiring.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "CHAT_VIEW_TYPE is available in extension.ts for the createPanel callback to pass to chooseReviewColumn.",
+          "evidence": "extension.ts:52 imports CHAT_VIEW_TYPE from './chat/chat-panel.js' and :551 already uses it for the group lock. [files: vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No stored data or message shape changes; only where a new review pane opens.",
+          "evidence": "The createPanel dep signature (docs-review-panel.ts:36) is unchanged; the change is inside the extension.ts callback and a new pure function; nothing is persisted. [files: vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A failed read of tabGroups is caught and falls back to today's placement; non-object tab inputs do not mark a group as the chat's.",
+          "evidence": "Section 4 states a try around the tabGroups.all read with logging and the Beside/Active fallback; isChatTabInput (group-lock.ts:50-52) already returns false for non-object or missing-viewType inputs, so the second case needs no new code. extension.ts has panelLog for the log. [files: vscode-plugin/src/chat/group-lock.ts, vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each derived criterion ac1-ac3 maps to a test: pure-function unit tests over fake groups (as group-lock.test.ts does) plus rewritten source scans for the wiring and focus.",
+          "evidence": "Section 5 acceptance mapping covers ac1 (review-column.test.ts active-first), ac2 (undefined + source-scan fallback), ac3 (source-scan preserveFocus). group-lock.test.ts exists as the fake-based precedent; review-wiring.test.ts already uses source scans of the same createPanel block. [files: vscode-plugin/src/chat/__tests__/group-lock.test.ts, vscode-plugin/src/chat/__tests__/review-wiring.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-14T19:30:06.468Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "When the review pane opens, it now goes into an editor group you already have open, as long as that group is not the one holding the chat, instead of opening beside or over the chat. If there is no other group open, it opens exactly where it does today: a new group beside the chat when the chat opened it for a document it presents, and the active group when you opened it yourself from the command or the delivery board. A pane the chat opens on a presented document still does not take your cursor.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Open the review pane in an existing editor group, not beside the chat"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "createPanel",
+          "signature": "createPanel(opts: { viewType: string; title: string; quiet?: boolean | undefined }): ChatPanelChannel   // the review host's dependency, bound in extension.ts",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "{ viewType; title; quiet? }",
+              "purpose": "What to create; quiet means without taking keyboard focus (a document the chat presents).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChatPanelChannel",
+            "meaning": "The new review pane's channel; unchanged."
+          },
+          "errors": [
+            {
+              "type": "never thrown by the choice",
+              "condition": "if reading the tab groups throws, the pane opens where it does today (beside the chat when quiet, the active group otherwise)"
+            }
+          ],
+          "preconditions": [
+            "the review host has no live pane (it only calls createPanel then)"
+          ],
+          "postconditions": [
+            "the pane is a tab in an open editor group that holds no chat tab, when there is one; otherwise exactly where it opens today: beside the chat when quiet, the active group when not",
+            "a quiet open keeps preserveFocus",
+            "the tab icon and channel wrapping are unchanged"
+          ]
+        },
+        {
+          "name": "isChatTabInput",
+          "signature": "isChatTabInput(input: unknown, viewType: string): boolean",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "A tab's raw input.",
+              "optional": false
+            },
+            {
+              "name": "viewType",
+              "type": "string",
+              "purpose": "The chat panel's view type (CHAT_VIEW_TYPE).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "Whether the tab is the chat webview."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "unchanged: consumed as the one rule for 'this is the chat tab'"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "chooseReviewColumn (new vscode-free function in vscode-plugin/src/chat/review-column.ts, beside group-lock.ts)",
+        "change": "new",
+        "details": "chooseReviewColumn(groups: readonly { readonly viewColumn: number; readonly isActive: boolean; readonly tabs: readonly { readonly input: unknown }[] }[], chatViewType: string): number | undefined. It leaves out every group with a tab satisfying isChatTabInput(input, chatViewType). Among the rest it returns the active group's viewColumn when the active group is one of them, otherwise the lowest viewColumn; it returns undefined when no group is left. It reads nothing from vscode and never throws.",
+        "schemaDiff": "none",
+        "callSites": [
+          "vscode-plugin/src/extension.ts (the review host's createPanel callback reads vscode.window.tabGroups.all into the plain list and uses the result)",
+          "vscode-plugin/src/chat/review-column.ts (the new file)"
+        ]
+      },
+      {
+        "entity": "createPanel (review host, extension.ts)",
+        "change": "invariant-change",
+        "details": "Today the pane is created at ViewColumn.Beside with preserveFocus (quiet, a document the chat presents) or ViewColumn.Active (the command and the board), which puts it beside the chat's group or in the active group, which may be the chat's. After the change both paths first use the column chooseReviewColumn returns (a group holding no chat tab); when it returns undefined or reading the groups fails, each path keeps today's placement: ViewColumn.Beside with preserveFocus when quiet, ViewColumn.Active otherwise. Two source-scan tests in review-wiring.test.ts that pin the current calls are rewritten with it.",
+        "callSites": [
+          "vscode-plugin/src/extension.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts",
+          "vscode-plugin/src/vscode.d.ts (the compile-only shim)",
+          "vscode-plugin/src/chat/__tests__/review-wiring.test.ts"
+        ]
+      },
+      {
+        "entity": "vscode.d.ts shim: TabGroups and TabGroup",
+        "change": "field-add",
+        "details": "The plugin builds against a local compile-only shim of the vscode module, which today declares only TabGroup.activeTab and TabGroups.activeTabGroup, onDidChangeTabs and onDidChangeTabGroups. The change needs TabGroups to gain `readonly all: readonly TabGroup[]` and TabGroup to gain `readonly viewColumn: ViewColumn`, `readonly isActive: boolean` and `readonly tabs: readonly Tab[]`, matching the real vscode API, so extension.ts typechecks.",
+        "schemaDiff": "TabGroups.all; TabGroup.viewColumn, TabGroup.isActive, TabGroup.tabs",
+        "callSites": [
+          "vscode-plugin/src/vscode.d.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Reading the tab groups fails (an editor without the tab model, or a call that throws)",
+          "detection": "the createPanel callback wraps the read of vscode.window.tabGroups.all in a try and catches an exception",
+          "response": "Log it and open the pane where it opens today: beside the chat (ViewColumn.Beside, preserveFocus) when quiet, the active group (ViewColumn.Active) otherwise",
+          "userImpact": "The pane opens in a new group instead of an existing one; nothing is lost",
+          "recoverable": true
+        },
+        {
+          "scenario": "A tab's input is not an object, or has no viewType (a text editor tab, a diff, a terminal)",
+          "detection": "isChatTabInput returns false for it, so the tab does not mark its group as the chat's",
+          "response": "The group is treated as a normal group and can be chosen",
+          "userImpact": "None",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Only the chat's group is open",
+          "expected": "chooseReviewColumn returns undefined and the pane opens where it does today: beside the chat when quiet, the active group otherwise"
+        },
+        {
+          "input": "Two groups other than the chat's are open and the active group is one of them",
+          "expected": "The pane goes into the active group"
+        },
+        {
+          "input": "Two groups other than the chat's are open and the chat's group is the active one",
+          "expected": "The pane goes into the one with the lowest view column"
+        },
+        {
+          "input": "A group holds the chat tab and other tabs",
+          "expected": "It is left out as a whole: a group with any chat tab is the chat's group"
+        },
+        {
+          "input": "The pane is already open",
+          "expected": "Nothing changes: the host reveals it and does not call createPanel"
+        },
+        {
+          "input": "A quiet open (the chat presents a document) into an existing group",
+          "expected": "The pane opens with preserveFocus, so the cursor stays in the chat"
+        },
+        {
+          "input": "An open that is not quiet (the command, the delivery board)",
+          "expected": "The pane opens in the chosen group and takes focus, as it did"
+        },
+        {
+          "input": "A group holds only an empty editor or only other webviews",
+          "expected": "It is a qualifying group and is reused: the pane becomes one more tab there"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "An open review pane is revealed, never created a second time: createPanel is called only when the host has no live pane.",
+          "source": "c1"
+        },
+        {
+          "text": "A pane the chat opens on a presented document opens without taking keyboard focus (preserveFocus), and the command and the board take focus.",
+          "source": "c1"
+        },
+        {
+          "text": "The chat panel's own group, its lock and its tab are not touched: isChatTabInput stays the one rule for what is the chat's tab.",
+          "source": "c2"
+        },
+        {
+          "text": "The pane's tab icon and its channel wrapping are unchanged by where it opens.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The placement rule with fake tab groups, and the wiring of createPanel by source scan.",
+          "subjects": [
+            "chooseReviewColumn: groups other than the chat's are chosen (the active one first, else the lowest view column), a group with any chat tab is left out whole, and undefined is returned when only the chat's group is open or there are no groups",
+            "chooseReviewColumn: a tab whose input is not an object or has no viewType does not mark its group as the chat's",
+            "extension.ts's review host createPanel reads vscode.window.tabGroups.all through a try, passes the chosen column (or, when there is none or reading fails, today's placement: ViewColumn.Beside with preserveFocus when quiet, ViewColumn.Active otherwise), and keeps preserveFocus for a quiet open (source scan)",
+            "review-wiring.test.ts: TWO existing source scans pin the current createPanel calls and are rewritten: 'review wiring: extension.ts sets the review panel's iconPath...' (about :128, asserts the ViewColumn.Active call) and 'extension wiring: the chat host's presenter opens a document...' (about :175, asserts the quiet Beside/preserveFocus ternary, and its title states the old placement). The new createPanel body keeps the `createPanel: ({ viewType, title, quiet }) => {` block shape their extractor regex expects; the createPanel wiring scan lives in review-wiring.test.ts"
+          ],
+          "fixturesNeeded": [
+            "plain fake tab-group lists (as group-lock.test.ts builds them)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "review-column.test.ts: chooseReviewColumn picks a group without the chat tab, the active one first"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "review-column.test.ts: chooseReviewColumn returns undefined when only the chat's group is open, and review-wiring.test.ts: extension.ts falls back to today's placement (Beside when quiet, Active otherwise) (source scan)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "review-wiring.test.ts: the review host's createPanel keeps preserveFocus for a quiet open and takes focus otherwise (source scan)"
+          ]
+        }
+      ],
+      "testFramework": "node:test (node:assert/strict) run through tsx: npx tsx --test; co-located *.test.ts under src/chat/__tests__, with plain fakes as in group-lock.test.ts"
+    },
+    "migration": {
+      "stateBefore": "A new review pane is created by the review host's createPanel in extension.ts at ViewColumn.Beside (quiet, the chat presenting a document) or ViewColumn.Active (the command and the delivery board's open), so it lands in or beside the chat's group wherever other groups are already open (bundle read:current-behaviour). An already open pane is only revealed.",
+      "stateAfter": "A new review pane is created in an open editor group that holds no chat tab (the active one when it qualifies, else the lowest column); when there is none it opens as it does today (beside the chat when quiet, the active group otherwise). A quiet open keeps preserveFocus. An already open pane is revealed as before.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the vscode-free placement function in a new file, vscode-plugin/src/chat/review-column.ts, beside group-lock.ts and reusing its isChatTabInput, with its tests in __tests__/review-column.test.ts over fake tab groups",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Extend the compile-only vscode.d.ts shim with the tab-group fields the placement needs (TabGroups.all; TabGroup.viewColumn, isActive, tabs); change the review host's createPanel in extension.ts to read the tab groups into the plain list (in a try), call the function, and use the column, or today's placement when there is none or reading fails (ViewColumn.Beside with preserveFocus when quiet, ViewColumn.Active otherwise)",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Rewrite the two source scans in review-wiring.test.ts that pin the current createPanel calls (the iconPath test and the presenter-wiring test, including its title), so they pin the new wiring",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored data and no message changes: only where a new review pane opens. A user who has no other editor group open sees exactly today's placement on both paths. The other panels (the delivery board, the status panel) keep ViewColumn.Active.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "A vscode-free placement function over the tab groups",
+        "oneLineSummary": "A small pure function takes the open tab groups and the chat's view type and returns the column to use, or none; extension.ts passes the result to createWebviewPanel.",
+        "approach": "A new vscode-free function in the plugin (next to group-lock.ts, reusing its isChatTabInput rule) takes a plain list of groups { viewColumn, isActive, tabs[].input } and the chat view type. It leaves out every group that holds a tab satisfying isChatTabInput. Among the rest it picks the active group when it is one of them, otherwise the first by column; with no such group it returns undefined. The review host's createPanel in extension.ts reads vscode.window.tabGroups.all into that plain list, and uses the returned column, or, when the function returns undefined, today's placement (ViewColumn.Beside when quiet, ViewColumn.Active otherwise). A quiet open (the chat's presenter) keeps preserveFocus. Only the review pane is changed.",
+        "pros": [
+          "The rule is testable with fake groups, like group-lock.ts, instead of a source scan",
+          "Reuses the one definition of 'this tab is the chat'",
+          "Falls back to today's behaviour on both paths when no other group is open",
+          "A few lines in extension.ts: reading the groups and passing the column"
+        ],
+        "cons": [
+          "A group that holds only other webviews or an unrelated editor is also reused, so the pane becomes one more tab there",
+          "Which group to choose when several qualify (active, else first) is a convention, not something the user states"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "The same rule written inline in extension.ts",
+        "oneLineSummary": "extension.ts scans tabGroups and picks a column in the createPanel callback, with no separate module.",
+        "approach": "The createPanel callback reads vscode.window.tabGroups.all, finds the groups without a chat tab (using isChatTabInput), picks the active one or the first, and passes its viewColumn to createWebviewPanel, falling back to today's placement (Beside when quiet, Active otherwise).",
+        "pros": [
+          "No new module or file",
+          "One place to read"
+        ],
+        "cons": [
+          "extension.ts imports vscode and cannot run in tests, so the rule can only be pinned by a source scan, which proves nothing about which group is chosen",
+          "Grows an already large activate function"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Same behaviour at lower cost, but the rule that is the whole change cannot be tested: only a source scan could pin it."
+      },
+      {
+        "id": "a3",
+        "name": "A fixed column or a remembered column",
+        "oneLineSummary": "Open the pane in a fixed column (for example Two) or in the column the previous review pane used.",
+        "approach": "Use ViewColumn.Two always, or remember the column of the last review pane and reuse it when its group still exists and is not the chat's.",
+        "pros": [
+          "Very little code for the fixed column",
+          "A remembered column keeps the pane where the user last put it"
+        ],
+        "cons": [
+          "A fixed column ignores the user's layout and can be the chat's own group, which is the thing to avoid",
+          "A remembered column adds state that must be kept in step with groups that are closed or reordered",
+          "Neither reuses a group the user already has open"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Does not meet the request: it ignores the user's layout."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "cd1 (partial): chooseReviewColumn is a new function this Story introduces; it is labelled new in dataModel and is not an existing symbol.",
+      "ts1 (partial): the Story carries no acceptance criteria; ac1-ac3 in the test mapping are derived from the request, not stated by the owner.",
+      "alt2 (partial): the alternatives are scored against the request and testability only; the Story has no formal constraints, HLD contracts or Epic constraints.",
+      "OWNER DECISION: when several groups other than the chat's are open, which one should the pane use? This LLD's choice: the active group if it is not the chat's, otherwise the one with the lowest column. Alternative: always the group that held the most recently active non-chat editor. Recommendation: keep the choice as written.",
+      "DECIDED IN THE LLD (change to confirm): when no other group is open, the non-quiet path (the command and the delivery board) keeps ViewColumn.Active, as today; only a quiet open falls back to Beside, as today. No fallback changes."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "read:current-behaviour: the review host's createPanel in extension.ts and show(quiet) in docs-review-panel.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "read:chat-group: group-lock.ts isChatTabInput, the chat group lock and extension.ts's use of tabGroups"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "read:other-panels: the delivery board and status panel are created at ViewColumn.Active and are out of scope"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "read:tests: extension.ts is tested by source scan; group-lock.ts by fakes"
+    }
+  ]
+}

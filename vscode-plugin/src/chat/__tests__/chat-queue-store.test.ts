@@ -2,13 +2,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fork } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import {
-  createChatQueueStore, FULL_NOTE, QUEUE_RECORD_BOUND, StoreUnavailable,
+  createChatQueueStore, FULL_NOTE, QUEUE_RECORD_BOUND, SCHEMA_VERSION, StoreUnavailable,
   type NewMessage, type SqliteDatabase,
 } from '../chat-queue-store.js';
 
@@ -158,5 +158,137 @@ test('chat queue store: two processes on one database file acknowledging the sam
       store.close();
       t.done();
     }
+  }
+});
+
+// Epic E20261014613abdb3 Story S002 t1 — schema 2, markWaiting and resendFrom.
+const columnsOf = (path: string): string[] => {
+  const db = new DatabaseSync(path);
+  try {
+    return (db.prepare(`PRAGMA table_info(messages)`).all() as Array<{ name: string }>).map((c) => c.name);
+  } finally {
+    db.close();
+  }
+};
+const versionOf = (path: string): string | undefined => {
+  const db = new DatabaseSync(path);
+  try {
+    return (db.prepare(`SELECT value FROM meta WHERE key = 'schema_version'`).get() as { value?: string } | undefined)?.value;
+  } finally {
+    db.close();
+  }
+};
+
+test('schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting', () => {
+  const t = temp();
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => 1_000, pluginVersion: '0.5.14' });
+  try {
+    assert.equal(SCHEMA_VERSION, 2);
+    assert.equal(versionOf(t.path), '2');
+    assert.ok(columnsOf(t.path).includes('waiting_on'));
+    const m = store.enqueue(msg('s1', 't1'));
+    assert.ok(m.ok);
+    assert.equal(store.acknowledge(m.message.seq, A), true);
+    assert.equal(store.markWaiting(m.message.seq, 'approval'), true);
+    assert.equal(store.list()[0]?.waitingOn, 'approval');
+  } finally {
+    store.close();
+    t.done();
+  }
+});
+
+test('schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty, and a newer file is still refused', () => {
+  const t = temp();
+  try {
+    // A file as S001 (schema 1) wrote it: no waiting_on column.
+    mkdirSync(dirname(t.path), { recursive: true });
+    const v1 = new DatabaseSync(t.path);
+    v1.exec(`CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)`);
+    v1.exec(`CREATE TABLE messages (seq INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL UNIQUE, session_id TEXT NOT NULL, turn_id TEXT NOT NULL, window_key TEXT NOT NULL, origin TEXT NOT NULL, text TEXT NOT NULL, attachments_json TEXT NOT NULL, state TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at INTEGER, error TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)`);
+    v1.exec(`INSERT INTO meta (key, value) VALUES ('schema_version', '1'), ('created_by', '0.5.13')`);
+    v1.exec(`INSERT INTO messages (key, session_id, turn_id, window_key, origin, text, attachments_json, state, created_at, updated_at) VALUES ('s1::t1', 's1', 't1', 'w-A', 'typed', 'kept', '[]', 'failed', 5, 5)`);
+    v1.close();
+    assert.equal(columnsOf(t.path).includes('waiting_on'), false);
+
+    const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => 1_000, pluginVersion: '0.5.15' });
+    try {
+      assert.equal(versionOf(t.path), '2');
+      assert.ok(columnsOf(t.path).includes('waiting_on'));
+      const rows = store.list();
+      assert.equal(rows.length, 1);
+      assert.equal(rows[0]?.text, 'kept');
+      assert.equal(rows[0]?.state, 'failed');
+      assert.equal(rows[0]?.waitingOn, undefined);
+    } finally {
+      store.close();
+    }
+
+    // A file from a newer plugin is refused as before.
+    const db = new DatabaseSync(t.path);
+    db.exec(`UPDATE meta SET value = '3' WHERE key = 'schema_version'`);
+    db.close();
+    assert.throws(
+      () => createChatQueueStore({ path: t.path, openDatabase: open, now: () => 1_000, pluginVersion: '0.5.15' }),
+      (err: unknown) => err instanceof StoreUnavailable && /newer plugin/.test(err.message),
+    );
+  } finally {
+    t.done();
+  }
+});
+
+test('markWaiting sets and clears waitingOn on a processing row only', () => {
+  const t = temp();
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => 1_000, pluginVersion: '0.5.15' });
+  try {
+    const m1 = store.enqueue(msg('s1', 't1'));
+    const m2 = store.enqueue(msg('s2', 't1'));
+    assert.ok(m1.ok && m2.ok);
+    assert.equal(store.markWaiting(m1.message.seq, 'approval'), false, 'a queued row is not marked');
+    assert.equal(store.acknowledge(m1.message.seq, A), true);
+    assert.equal(store.markWaiting(m1.message.seq, 'selection'), true);
+    assert.equal(store.list()[0]?.waitingOn, 'selection');
+    assert.equal(store.list()[1]?.waitingOn, undefined, 'only the processing row');
+    assert.equal(store.markWaiting(m1.message.seq, undefined), true);
+    assert.equal(store.list()[0]?.waitingOn, undefined, 'cleared');
+    assert.equal(store.markWaiting(m1.message.seq, 'approval'), true);
+    store.finish(m1.message.seq, { kind: 'stopped' });
+    assert.equal(store.markWaiting(m1.message.seq, 'approval'), false, 'a failed row is not marked');
+    assert.equal(store.markWaiting(9_999, 'approval'), false, 'a missing row');
+  } finally {
+    store.close();
+    t.done();
+  }
+});
+
+test('resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused', () => {
+  const t = temp();
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => 1_000, pluginVersion: '0.5.15' });
+  try {
+    const ref = { id: 'a1', name: 'shot.png', kind: 'image' as const, size: 10, path: '/att/s1/a1.png' };
+    const m1 = store.enqueue({ ...msg('s1', 't1', 'from A', 'w-A'), attachments: [ref] });
+    const m2 = store.enqueue(msg('s2', 't1', 'waits', 'w-A'));
+    assert.ok(m1.ok && m2.ok);
+    assert.equal(store.resendFrom(m2.message.seq, 't8', 'w-B').ok, false, 'a queued message is not resent');
+    assert.equal(store.acknowledge(m1.message.seq, A), true);
+    store.finish(m1.message.seq, { kind: 'not-delivered', reason: 'window-closed' });
+    const again = store.resendFrom(m1.message.seq, 't9', 'w-B');
+    assert.ok(again.ok);
+    assert.equal(again.message.key, 's1::t9');
+    assert.equal(again.message.windowKey, 'w-B', "the resending window's key");
+    assert.equal(again.message.text, 'from A');
+    assert.deepEqual(again.message.attachments, [ref]);
+    assert.equal(again.message.state, 'queued');
+    assert.ok(again.message.seq > m2.message.seq, 'at the back');
+    assert.deepEqual(store.list().map((m) => m.key), ['s2::t1', 's1::t9'], 'the old row is gone');
+    assert.equal(store.resendFrom(m1.message.seq, 't10', 'w-B').ok, false, 'the old row cannot be resent twice');
+    // A failed message too; resend keeps its own window.
+    assert.equal(store.acknowledge(m2.message.seq, A), true);
+    store.finish(m2.message.seq, { kind: 'stopped' });
+    const own = store.resend(m2.message.seq, 't11');
+    assert.ok(own.ok);
+    assert.equal(own.message.windowKey, 'w-A');
+  } finally {
+    store.close();
+    t.done();
   }
 });

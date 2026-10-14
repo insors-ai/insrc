@@ -27,7 +27,7 @@ export const PRESENCE_GRACE_MS = 30_000;
 /** How long the store waits for another window's write before a write fails as busy. */
 export const BUSY_TIMEOUT_MS = 5_000;
 /** The schema this module reads and writes. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export type QueueState = 'queued' | 'processing' | 'retrying' | 'done' | 'failed' | 'not-delivered';
 
@@ -49,6 +49,8 @@ export interface QueuedMessage {
   readonly attempts: number;
   readonly nextAttemptAt?: number | undefined;
   readonly error?: string | undefined;
+  /** Epic E20261014613abdb3 Story S002: a processing message waiting on an approval or selection card (schema 2). */
+  readonly waitingOn?: 'approval' | 'selection' | undefined;
   readonly createdAt: number;
   readonly updatedAt: number;
 }
@@ -87,7 +89,7 @@ export type TurnOutcome =
   | { readonly kind: 'not-delivered'; readonly reason: 'window-closed' };
 
 /** What a sender gives; the store adds the order, state and times. */
-export type NewMessage = Omit<QueuedMessage, 'seq' | 'state' | 'attempts' | 'createdAt' | 'updatedAt' | 'nextAttemptAt' | 'error'>;
+export type NewMessage = Omit<QueuedMessage, 'seq' | 'state' | 'attempts' | 'createdAt' | 'updatedAt' | 'nextAttemptAt' | 'error' | 'waitingOn'>;
 
 export interface ChatQueueStore {
   enqueue(m: NewMessage): EnqueueResult;
@@ -103,6 +105,13 @@ export interface ChatQueueStore {
   dismiss(seq: number): boolean;
   /** A failed or not-delivered message is queued again at the back under a new turn id. */
   resend(seq: number, newTurnId: string): EnqueueResult;
+  /**
+   * Epic E20261014613abdb3 Story S002: resend, with the message handed to the window that resends it (a
+   * not-delivered message's own window is closed, so under its old key no window would take it).
+   */
+  resendFrom(seq: number, newTurnId: string, windowKey: string): EnqueueResult;
+  /** Epic E20261014613abdb3 Story S002: sets or clears the card a processing message waits on; false on any other row. */
+  markWaiting(seq: number, on: 'approval' | 'selection' | undefined): boolean;
   /** Every live row, in queue order. */
   list(): readonly QueuedMessage[];
   /** Changes when another connection commits (SQLite's data_version). */
@@ -188,6 +197,7 @@ const SCHEMA = [
      attempts INTEGER NOT NULL DEFAULT 0,
      next_attempt_at INTEGER,
      error TEXT,
+     waiting_on TEXT,
      created_at INTEGER NOT NULL,
      updated_at INTEGER NOT NULL)`,
   `CREATE INDEX IF NOT EXISTS messages_state_seq ON messages (state, seq)`,
@@ -220,6 +230,8 @@ function rowToMessage(r: Record<string, unknown>): QueuedMessage {
   }
   const nextAttemptAt = num(r['next_attempt_at']);
   const error = str(r['error']);
+  const waiting = r['waiting_on'];
+  const waitingOn = waiting === 'approval' || waiting === 'selection' ? waiting : undefined;
   return {
     seq: num(r['seq']) ?? 0,
     key: String(r['key']),
@@ -233,6 +245,7 @@ function rowToMessage(r: Record<string, unknown>): QueuedMessage {
     attempts: num(r['attempts']) ?? 0,
     ...(nextAttemptAt !== undefined ? { nextAttemptAt } : {}),
     ...(error !== undefined ? { error } : {}),
+    ...(waitingOn !== undefined ? { waitingOn } : {}),
     createdAt: num(r['created_at']) ?? 0,
     updatedAt: num(r['updated_at']) ?? 0,
   };
@@ -302,6 +315,10 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
         db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('created_by', ?)`).run(deps.pluginVersion);
       } else if (version > SCHEMA_VERSION) {
         throw new StoreUnavailable(`the chat queue was made by a newer plugin (schema ${version}); reload or update this window`);
+      } else if (version < SCHEMA_VERSION) {
+        // Epic E20261014613abdb3 Story S002: version 1 -> 2 adds waiting_on; its rows are kept.
+        if (version < 2) db.exec(`ALTER TABLE messages ADD COLUMN waiting_on TEXT`);
+        db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`).run(String(SCHEMA_VERSION));
       }
     });
   } catch (err) {
@@ -336,6 +353,31 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
   }
 
   const refused = (reason: 'full' | 'busy' | 'unavailable', note: string): EnqueueResult => ({ ok: false, reason, note });
+
+  /** A failed or not-delivered message queued again at the back under a new turn id, by its own window or the given one. */
+  function resendTo(seq: number, newTurnId: string, windowKey: string | undefined): EnqueueResult {
+    try {
+      return write((): EnqueueResult => {
+        const old = bySeq(seq);
+        if (old === undefined || (old.state !== 'failed' && old.state !== 'not-delivered')) {
+          return refused('unavailable', 'That message can no longer be sent again.');
+        }
+        db.prepare(`DELETE FROM messages WHERE seq = ?`).run(seq);
+        // The old row's place is freed first, so a resend never needs more room than it had.
+        if (liveCount() >= QUEUE_RECORD_BOUND) return refused('full', FULL_NOTE);
+        return {
+          ok: true,
+          message: insert(
+            { key: `${old.sessionId}::${newTurnId}`, sessionId: old.sessionId, turnId: newTurnId, windowKey: windowKey ?? old.windowKey, origin: old.origin, text: old.text, attachments: old.attachments },
+            now(),
+          ),
+        };
+      });
+    } catch (err) {
+      if (err instanceof StoreBusy) return refused('busy', BUSY_NOTE);
+      return refused('unavailable', `The chat queue could not take the message: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
 
   return {
     enqueue(m) {
@@ -413,27 +455,17 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
     },
 
     resend(seq, newTurnId) {
-      try {
-        return write((): EnqueueResult => {
-          const old = bySeq(seq);
-          if (old === undefined || (old.state !== 'failed' && old.state !== 'not-delivered')) {
-            return refused('unavailable', 'That message can no longer be sent again.');
-          }
-          db.prepare(`DELETE FROM messages WHERE seq = ?`).run(seq);
-          // The old row's place is freed first, so a resend never needs more room than it had.
-          if (liveCount() >= QUEUE_RECORD_BOUND) return refused('full', FULL_NOTE);
-          return {
-            ok: true,
-            message: insert(
-              { key: `${old.sessionId}::${newTurnId}`, sessionId: old.sessionId, turnId: newTurnId, windowKey: old.windowKey, origin: old.origin, text: old.text, attachments: old.attachments },
-              now(),
-            ),
-          };
-        });
-      } catch (err) {
-        if (err instanceof StoreBusy) return refused('busy', BUSY_NOTE);
-        return refused('unavailable', `The chat queue could not take the message: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      return resendTo(seq, newTurnId, undefined);
+    },
+
+    resendFrom(seq, newTurnId, windowKey) {
+      return resendTo(seq, newTurnId, windowKey);
+    },
+
+    markWaiting(seq, on) {
+      return write(
+        () => Number(db.prepare(`UPDATE messages SET waiting_on = ? WHERE seq = ? AND state = 'processing'`).run(on ?? null, seq).changes) === 1,
+      );
     },
 
     list() {

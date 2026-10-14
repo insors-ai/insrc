@@ -29,6 +29,7 @@ import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-store.js';
+import { classifyFailure } from './chat-failure.js';
 import type { TurnEvent } from './stream-events.js';
 import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
@@ -260,6 +261,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     lastCli: SpawnedCli | undefined;
     terminal: 'done' | 'error' | undefined;
     error: string | undefined;
+    /**
+     * Story S004: true once any turn of this message emitted a tool-call, file-edit or tool-result event. Never cleared (a
+     * continuation or an approval re-run of the same message keeps it): a message whose agent acted is never retried.
+     */
+    acted: boolean;
     stopped: boolean;
     viewLost: boolean;
     waitTimer: ReturnType<typeof setTimeout> | undefined;
@@ -673,7 +679,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       return;
     }
     if (q.viewLost && cardsWaiting) return endQueued({ kind: 'stopped', reason: 'no answer to the approval' });
-    if (q.error !== undefined || q.terminal === 'error') return endQueued({ kind: 'failed', error: q.error ?? 'the turn ended with an error', acted: true });
+    if (q.error !== undefined || q.terminal === 'error') {
+      // Story S004: the cause is read from the error text and reported with whether the agent acted; every failed turn is
+      // logged with both, so a pattern the classifier missed is visible. The queue decides whether to retry.
+      const error = q.error ?? 'the turn ended with an error';
+      const cause = classifyFailure(error);
+      log.warn(`[chat-queue] message ${q.message.key} failed: cause ${cause}, acted ${q.acted}, attempt ${q.message.attempts}: ${error}`);
+      return endQueued({ kind: 'failed', error, acted: q.acted, cause });
+    }
     endQueued({ kind: 'done' });
   };
   /** A chat switch, the panel closing or adopt() while a queued message runs. */
@@ -1528,6 +1541,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       onEvent: (ev) => {
         // Story E20261013e62a9269:S001: before anything else, and whatever is done with the event below.
         presentResult(shown, ev);
+        // Story S004: the agent acted (a tool call, an edit or a tool result): this message is never retried.
+        if (q !== undefined && (ev.kind === 'tool-call' || ev.kind === 'file-edit' || ev.kind === 'tool-result')) q.acted = true;
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with its index.
         // Story E20261013b2e8109f:S001: while this turn's diff state is open an edit's path line and
@@ -2081,7 +2096,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               s = found;
               postInfo(`queue-note-${message.turnId}`, `Running your queued message in "${found.title ?? 'this chat'}".`);
             }
-            queued = { message, session: s, onSpawn, onWaiting, waiting: undefined, turns: 0, spawned: false, lastCli: undefined, terminal: undefined, error: undefined, stopped: false, viewLost: false, waitTimer: undefined, resolve };
+            queued = { message, session: s, onSpawn, onWaiting, waiting: undefined, turns: 0, spawned: false, lastCli: undefined, terminal: undefined, error: undefined, acted: false, stopped: false, viewLost: false, waitTimer: undefined, resolve };
             post({ type: 'turn-running', sessionId: s.id });
             await runTurn(message.text, undefined, message.attachments.length > 0 ? { attachments: message.attachments } : undefined);
             // runTurn returned without starting a turn (a blank message): nothing ran.

@@ -55,7 +55,7 @@ function spawningAdapter(opts: { pipe?: boolean } = {}): { adapter: StreamAdapte
 function registry(adapter: StreamAdapter): ProviderRegistry {
   return { available: ['claude' as ProviderId], get: () => adapter };
 }
-function harness(opts: { pipe?: boolean } = {}) {
+function harness(opts: { pipe?: boolean; logs?: string[] } = {}) {
   const fc = fakeChannel();
   const { adapter, runs } = spawningAdapter(opts);
   const store = createInMemoryChatSessionStore();
@@ -63,6 +63,7 @@ function harness(opts: { pipe?: boolean } = {}) {
   const host = createChatPanelHost({
     createPanel: () => { panels += 1; return fc.channel; },
     providers: registry(adapter), store, cwd: () => '/repo', continuationWaitMs: 60,
+    ...(opts.logs !== undefined ? { logger: { warn: (m: string) => void opts.logs!.push(`warn: ${m}`), error: (m: string) => void opts.logs!.push(`error: ${m}`) } } : {}),
   });
   return { fc, runs, store, host, panels: () => panels };
 }
@@ -259,4 +260,112 @@ test('a queued turn that ends with done ok:false resolves failed with the text, 
     assert.deepEqual(await out, { kind: 'done' });
     h.runs[0]!.proc.exitNow();
   }
+});
+
+// Epic E20261014613abdb3 Story S004 t4 — whether the agent acted, why the turn failed, and the log line.
+const toolCall = (turnId: string): TurnEvent => ({ kind: 'tool-call', turnId, tool: 'Bash', command: 'npm test' });
+const fileEdit = (turnId: string): TurnEvent => ({ kind: 'file-edit', turnId, path: '/repo/a.ts', diff: { path: '/repo/a.ts', hunks: [] } });
+const toolResult = (turnId: string): TurnEvent => ({ kind: 'tool-result', turnId, output: 'ok' });
+const errorEv = (turnId: string, message: string): TurnEvent => ({ kind: 'error', turnId, message });
+/** Runs one queued message through a fresh host and returns its outcome after the given events were fed. */
+async function runWith(events: TurnEvent[], logs?: string[]): Promise<TurnOutcome> {
+  const h = harness(logs !== undefined ? { logs } : {});
+  h.host.open();
+  h.fc.send('ready');
+  const s = h.store.create('claude');
+  h.store.save(s);
+  const out = h.host.queueRunner.run(message(s.id, 'do the thing'), () => {});
+  await waitFor(() => h.runs.length === 1);
+  for (const ev of events) h.runs[0]!.feed(ev);
+  const outcome = await out;
+  h.runs[0]!.proc.exitNow();
+  return outcome;
+}
+const asFailed = (o: TurnOutcome): { error: string; acted: boolean; cause?: string } => {
+  assert.equal(o.kind, 'failed');
+  return o as never;
+};
+
+test('a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause', async () => {
+  const overload = 'API Error: 529 overloaded';
+  for (const [name, first] of [['tool-call', toolCall('t1')], ['file-edit', fileEdit('t1')], ['tool-result', toolResult('t1')]] as const) {
+    const f = asFailed(await runWith([first, errorEv('t1', overload)]));
+    assert.equal(f.acted, true, `${name} before the error`);
+    assert.equal(f.cause, 'overloaded', name);
+    assert.equal(f.error, overload);
+  }
+  // Streamed text only: not acting.
+  const text = asFailed(await runWith([{ kind: 'assistant-delta', turnId: 't1', text: 'partial answer' }, errorEv('t1', overload)]));
+  assert.equal(text.acted, false);
+  assert.equal(text.cause, 'overloaded');
+  // Nothing before the error, other causes.
+  assert.deepEqual(
+    (({ acted, cause }) => ({ acted, cause }))(asFailed(await runWith([errorEv('t1', 'claude is not authenticated — run its login command, then retry')]))),
+    { acted: false, cause: 'auth' },
+  );
+  assert.deepEqual(
+    (({ acted, cause }) => ({ acted, cause }))(asFailed(await runWith([errorEv('t1', 'I cannot do that')]))),
+    { acted: false, cause: 'other' },
+  );
+  assert.deepEqual(
+    (({ acted, cause }) => ({ acted, cause }))(asFailed(await runWith([errorEv('t1', 'claude CLI not found — install it or check your PATH')]))),
+    { acted: false, cause: 'other' },
+  );
+  // acted stays true across an approval re-run of the same queued message.
+  {
+    const h = harness();
+    h.host.open();
+    h.fc.send('ready');
+    const s = h.store.create('claude');
+    h.store.save(s);
+    const out = h.host.queueRunner.run(message(s.id, 'run the tests'), () => {});
+    await waitFor(() => h.runs.length === 1);
+    h.runs[0]!.feed(toolCall('t1'));
+    h.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'perm-9', title: 'Permission: Bash', detail: 'Bash needs your permission', toolName: 'Bash', command: 'npm test', resolution: 'turn-ended' } as TurnEvent);
+    h.runs[0]!.feed(done('t1'));
+    h.runs[0]!.proc.exitNow();
+    assert.equal(await settle(out, 40), 'pending', 'held while the card waits');
+    h.fc.send('permission-decision', { requestId: 'perm-9', decision: 'approve' });
+    await waitFor(() => h.runs.length === 2);
+    h.runs[1]!.feed(errorEv('t2', overload)); // the re-run itself acts on nothing before it fails
+    const f = asFailed(await out);
+    assert.equal(f.acted, true, 'the first turn acted, so the message is never retried');
+    assert.equal(f.cause, 'overloaded');
+    h.runs[1]!.proc.exitNow();
+  }
+  // The chat no longer exists: acted false, no cause.
+  {
+    const h = harness();
+    h.host.open();
+    h.fc.send('ready');
+    const f = asFailed(await h.host.queueRunner.run(message('gone-session', 'hello'), () => {}));
+    assert.equal(f.acted, false);
+    assert.equal(f.cause, undefined);
+    assert.equal(f.error, 'the chat no longer exists');
+  }
+});
+
+test('a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true', async () => {
+  const text = 'API Error: 529 {"type":"overloaded_error","message":"Overloaded"}';
+  const before = asFailed(await runWith([{ kind: 'done', turnId: 't1', ok: false, message: text }]));
+  assert.equal(before.cause, 'overloaded');
+  assert.equal(before.acted, false);
+  assert.equal(before.error, text);
+  const after = asFailed(await runWith([fileEdit('t1'), { kind: 'done', turnId: 't1', ok: false, message: text }]));
+  assert.equal(after.cause, 'overloaded');
+  assert.equal(after.acted, true, 'a failure after an edit is never retried');
+});
+
+test("every failed turn's cause and error text are logged", async () => {
+  const logs: string[] = [];
+  await runWith([toolCall('t1'), errorEv('t1', 'API Error: 503 Service Unavailable')], logs);
+  await runWith([errorEv('t1', 'something nobody planned for')], logs);
+  const lines = logs.filter((l) => l.includes('[chat-queue]') && l.includes('failed'));
+  assert.equal(lines.length, 2, 'one line per failed turn');
+  assert.match(lines[0]!, /cause overloaded, acted true.*API Error: 503 Service Unavailable/);
+  assert.match(lines[1]!, /cause other, acted false.*something nobody planned for/);
+  // A successful turn logs no failure line.
+  const quiet: string[] = [];
+  await runWith([done('t1')], quiet);
+  assert.equal(quiet.filter((l) => l.includes('failed')).length, 0);
 });

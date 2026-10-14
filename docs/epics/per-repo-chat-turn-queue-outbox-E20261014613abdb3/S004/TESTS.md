@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -67,3 +67,26 @@ Run at 2026-10-14T17:29:43.129Z on commit `90130862`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` | 0 | 18 | 1 s |  |
+
+## t3
+
+Run at 2026-10-14T17:32:14.193Z on commit `ee431e5b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: cli-adapter.test.ts: a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` |
+
+**unit: chat-queue-runner.test.ts: a queued turn that ends with done ok:false resolves failed with the text, not done**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a queued turn that ends with done ok:false resolves failed with the text, not done | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` | 0 | 2 | 0.7 s |  |
+| `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 83 | 1.3 s |  |

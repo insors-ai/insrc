@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s4",
     "createdAt": "2026-10-14T17:28:09.450Z",
-    "updatedAt": "2026-10-14T17:29:43.129Z",
+    "updatedAt": "2026-10-14T17:32:14.193Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -216,6 +216,400 @@
               },
               {
                 "title": "retryNow makes a retrying row due at once with attempts unchanged and returns false for any other row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ee431e5b",
+        "ranAt": "2026-10-14T17:32:14.193Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cli-adapter.test.ts: a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-runner.test.ts: a queued turn that ends with done ok:false resolves failed with the text, not done",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "a queued turn that ends with done ok:false resolves failed with the text, not done",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+                "result": "pass"
+              },
+              {
+                "title": "a queued turn that ends with done ok:false resolves failed with the text, not done",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1342,
+            "titles": [
+              {
+                "title": "claude: text turn maps to status + assistant-delta(s) + done(ok)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff",
+                "result": "pass"
+              },
+              {
+                "title": "claude: is_error result maps to done(ok:false)",
+                "result": "pass"
+              },
+              {
+                "title": "nothing is yielded after the terminal event, even if the stream continues",
+                "result": "pass"
+              },
+              {
+                "title": "codex: item.completed + turn.completed maps to assistant-delta + done(ok)",
+                "result": "pass"
+              },
+              {
+                "title": "an in-stream error is terminal: nothing (incl. a second done) is yielded after it",
+                "result": "pass"
+              },
+              {
+                "title": "a stdout stream error surfaces as a terminal error event (never throws/rejects)",
+                "result": "pass"
+              },
+              {
+                "title": "abandoning the stream early kills the subprocess (no orphan)",
+                "result": "pass"
+              },
+              {
+                "title": "the terminal done carries the captured native session id (resume handle for S005)",
+                "result": "pass"
+              },
+              {
+                "title": "error path 1: spawn throws synchronously -> terminal error event (never rejects)",
+                "result": "pass"
+              },
+              {
+                "title": "error path 2: ENOENT spawn error -> terminal error naming the missing CLI",
+                "result": "pass"
+              },
+              {
+                "title": "error path 3: non-zero exit with no terminal event -> error carrying the stderr tail",
+                "result": "pass"
+              },
+              {
+                "title": "error path 4: an auth-failure stderr -> a re-login error message",
+                "result": "pass"
+              },
+              {
+                "title": "error path 5: an unparseable stream line is skipped+warned, not fatal",
+                "result": "pass"
+              },
+              {
+                "title": "cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)",
+                "result": "pass"
+              },
+              {
+                "title": "run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop",
+                "result": "pass"
+              },
+              {
+                "title": "cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group",
+                "result": "pass"
+              },
+              {
+                "title": "after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles",
+                "result": "pass"
+              },
+              {
+                "title": "cancel(): unknown/finished turnId is a no-op (idempotent, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "capabilities.resume is true for both providers; a resume request passes the native flag",
+                "result": "pass"
+              },
+              {
+                "title": "ProviderRegistry.available lists only installed agentic CLIs (never Ollama)",
+                "result": "pass"
+              },
+              {
+                "title": "ProviderRegistry.get() on an absent provider throws unknown-provider",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a Bash tool_use sets ToolCallEvent.command from input.command",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a command-less tool_use omits command (renders as the tool name, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a command_execution item sets command from item.command",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a tool_call item without a command omits command (k2)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result with empty content still emits a tool-result (empty output)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a completed command_execution with output emits both a tool-call and a tool-result",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: an error event -> undefined; an unknown provider -> undefined",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied with a nested input.command sets event.command",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a top-level command takes precedence over input.command",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir, on a grant with no readDirs (no sandbox widening on a click)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: an unparseable line is skipped+logged, never thrown (as today)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: decide() on an unknown turn is a safe no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a marker-only text block emits the selection-request with NO empty assistant-delta",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a malformed marker -> NO event, the raw text stays a delta, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a no-marker delta behaves exactly as today",
+                "result": "pass"
+              },
+              {
+                "title": "claude: tool-call and its tool-result carry the tool_use id as callId",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a command item with an id carries it as callId on both events; an id-less item omits it",
+                "result": "pass"
+              },
+              {
+                "title": "the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line",
+                "result": "pass"
+              },
+              {
+                "title": "marker lines reaching a mapper produce no events",
+                "result": "pass"
+              },
+              {
+                "title": "run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits",
+                "result": "pass"
+              },
+              {
+                "title": "a beginTurn failure falls back to the pipe with one logged error",
+                "result": "pass"
+              },
+              {
+                "title": "resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one",
+                "result": "pass"
+              },
+              {
+                "title": "resume()'s handed-over process stops the recorded pid's group only while its start time matches",
+                "result": "pass"
+              },
+              {
+                "title": "65cb63f7: a prompt starting with \"-\" or \"--\" reaches claude and codex verbatim, after the end-of-options marker",
+                "result": "pass"
+              },
+              {
+                "title": "claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'",
+                "result": "pass"
+              },
+              {
+                "title": "claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today",
+                "result": "pass"
+              },
+              {
+                "title": "codex argv is unchanged by readDirs",
+                "result": "pass"
+              },
+              {
+                "title": "codex is started with no input stream and claude keeps its input open; a decision for codex is reported as undeliverable and written nowhere",
+                "result": "pass"
+              },
+              {
+                "title": "the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits",
+                "result": "pass"
+              },
+              {
+                "title": "claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither",
+                "result": "pass"
+              },
+              {
+                "title": "codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied",
+                "result": "pass"
+              },
+              {
+                "title": "a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message",
                 "result": "pass"
               }
             ],

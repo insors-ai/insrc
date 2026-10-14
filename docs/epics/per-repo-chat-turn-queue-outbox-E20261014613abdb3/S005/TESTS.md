@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -105,3 +105,13 @@ Run at 2026-10-14T18:55:05.660Z on commit `7bf3bf1f`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/attachment-store.test.ts` | 0 | 6 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` | 0 | 11 | 3.8 s |  |
+
+## t4
+
+Run at 2026-10-14T18:56:34.438Z on commit `b265f65e`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+no test files to run; reported as failed by the builder: hand check: a review-pane decision sent while a turn runs waits in the outbox and runs after it; with the chat panel closed it opens the chat and runs; with the queue unavailable the chat is not offered
+
+**live: hand check: a review-pane decision sent while a turn runs waits in the outbox and runs after it; with the chat panel closed it opens the chat and runs; with the queue unavailable the chat is not offered**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: NOT RUN - needs a person driving the installed plugin; recorded as unverified, not passed. Labelled automated evidence (scripted fake adapter, real store and worker; source-scan for the extension gating): chat-queue-outbox-host.test.ts and extension-chat-wiring.test.ts, described in the BUILD summary.

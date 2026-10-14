@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s5",
     "createdAt": "2026-10-14T18:51:21.474Z",
-    "updatedAt": "2026-10-14T18:55:05.660Z",
+    "updatedAt": "2026-10-14T18:56:34.438Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -533,6 +533,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b265f65e",
+        "ranAt": "2026-10-14T18:56:34.438Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "hand check: a review-pane decision sent while a turn runs waits in the outbox and runs after it; with the chat panel closed it opens the chat and runs; with the queue unavailable the chat is not offered",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "NOT RUN - needs a person driving the installed plugin; recorded as unverified, not passed. Labelled automated evidence (scripted fake adapter, real store and worker; source-scan for the extension gating): chat-queue-outbox-host.test.ts and extension-chat-wiring.test.ts, described in the BUILD summary."
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: hand check: a review-pane decision sent while a turn runs waits in the outbox and runs after it; with the chat panel closed it opens the chat and runs; with the queue unavailable the chat is not offered"
       }
     ]
   }

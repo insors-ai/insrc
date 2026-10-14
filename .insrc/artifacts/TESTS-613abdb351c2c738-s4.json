@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s4",
     "createdAt": "2026-10-14T17:28:09.450Z",
-    "updatedAt": "2026-10-14T17:32:14.193Z",
+    "updatedAt": "2026-10-14T17:34:40.823Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -610,6 +610,84 @@
               },
               {
                 "title": "a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c81b9728",
+        "ranAt": "2026-10-14T17:34:40.823Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-queue-runner.test.ts: a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-runner.test.ts: a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-runner.test.ts: every failed turn's cause and error text are logged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+                "title": "every failed turn's cause and error text are logged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 827,
+            "titles": [
+              {
+                "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+                "result": "pass"
+              },
+              {
+                "title": "a queued turn that ends with done ok:false resolves failed with the text, not done",
+                "result": "pass"
+              },
+              {
+                "title": "a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause",
+                "result": "pass"
+              },
+              {
+                "title": "a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true",
+                "result": "pass"
+              },
+              {
+                "title": "every failed turn's cause and error text are logged",
                 "result": "pass"
               }
             ],

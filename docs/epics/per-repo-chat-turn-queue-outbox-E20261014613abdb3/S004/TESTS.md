@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -90,3 +90,31 @@ Run at 2026-10-14T17:32:14.193Z on commit `ee431e5b`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` | 0 | 2 | 0.7 s |  |
 | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 83 | 1.3 s |  |
+
+## t4
+
+Run at 2026-10-14T17:34:40.823Z on commit `c81b9728`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: chat-queue-runner.test.ts: a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` |
+
+**unit: chat-queue-runner.test.ts: a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` |
+
+**unit: chat-queue-runner.test.ts: every failed turn's cause and error text are logged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | every failed turn's cause and error text are logged | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` | 0 | 5 | 0.8 s |  |

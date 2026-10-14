@@ -29,7 +29,7 @@ import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
 import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-store.js';
-import { classifyFailure } from './chat-failure.js';
+import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
 import type { TurnEvent } from './stream-events.js';
 import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
@@ -685,6 +685,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const error = q.error ?? 'the turn ended with an error';
       const cause = classifyFailure(error);
       log.warn(`[chat-queue] message ${q.message.key} failed: cause ${cause}, acted ${q.acted}, attempt ${q.message.attempts}: ${error}`);
+      if (cause === 'auth' && !disposed) {
+        const cli = /\b(claude|codex)\b/i.exec(error)?.[1]?.toLowerCase();
+        persistInfo(q.session, `queue-signin-${q.message.turnId}`, `${cli ?? 'The CLI'} is not signed in — run \`${cli ?? 'the CLI'}\` in a terminal to sign in, then resend this message.`);
+      }
       return endQueued({ kind: 'failed', error, acted: q.acted, cause });
     }
     endQueued({ kind: 'done' });
@@ -698,6 +702,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const postInfo = (turnId: string, text: string): void => {
     post({ type: 'turn-event', event: { kind: 'assistant-delta', turnId, text } });
     post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true } });
+  };
+
+  // Story S004: an informational line that is also stored (postInfo is live-only), so a reload still
+  // shows it. Written like followLiveTurn writes a row: append, then post with the row's index.
+  const persistInfo = (s: ChatSession, turnId: string, text: string): void => {
+    const ev: TurnEvent = { kind: 'assistant-delta', turnId, text };
+    const rowIndex = appendEvent(s, ev);
+    postLive(ev, rowIndex);
+    post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true } });
+    trySave(s);
   };
 
   // ISSUE-6a811b8a: when a turn-ended batch is complete (its turn ended and every request it raised
@@ -1426,7 +1440,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   async function runTurn(
     text: unknown,
     allowedTools?: readonly string[],
-    opts?: { readonly suppressEcho?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined },
+    opts?: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined },
   ): Promise<void> {
     // Story E202610138d4b90c9:S001: counted as starting until turns.start has been called (from
     // then on the lifecycle says a turn is in progress), so no waiting pane message is run between.
@@ -1447,7 +1461,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   async function startTurn(
     text: unknown,
     allowedTools: readonly string[] | undefined,
-    opts: { readonly suppressEcho?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined } | undefined,
+    opts: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined } | undefined,
     started: () => void,
   ): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
@@ -1459,34 +1473,38 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // The stored row keeps the user's own words; the paths are named only in what the CLI is sent.
     const prompt = files.length === 0 ? typed : [...(typed === '' ? [] : [typed, '']), ATTACHED_HEADING, ...files.map((f) => f.path)].join('\n');
 
-    s.transcript.push(files.length === 0 ? { role: 'user', text: typed, at: now() } : { role: 'user', text: typed, at: now(), attachments: [...files] });
-    // S001 ac1/lc1: echo the user's prompt LIVE so it appears during the turn (not only on a
-    // later session-restored replay). ONE append is both the durable row and the live echo —
-    // its key is the row's transcript index, so the live row and its replay reconcile to a
-    // single rendered row webview-side (the stored transcript shape is unchanged, k4).
-    // S003 (dev-chat ux polish) ac2: a SYNTHESIZED grant re-run (from an Approve) passes
-    // suppressEcho so the internal "Approved — run exactly this now: …" prompt is NOT echoed as a
-    // user bubble (only the resolved permission-outcome chip is shown). A normal submit still echoes.
-    if (opts?.suppressEcho !== true) {
-      post({
-        type: 'user-row',
-        text: typed,
-        key: `r${s.transcript.length - 1}`,
-        rowIndex: s.transcript.length - 1,
-        ...(files.length > 0 ? { attachments: [...files] } : {}),
-      });
+    // Story S004: a retried message already has its user row from the first attempt, so the retry
+    // sends the prompt to the CLI but writes no second row, echo, title or save here.
+    if (opts?.skipUserRow !== true) {
+      s.transcript.push(files.length === 0 ? { role: 'user', text: typed, at: now() } : { role: 'user', text: typed, at: now(), attachments: [...files] });
+      // S001 ac1/lc1: echo the user's prompt LIVE so it appears during the turn (not only on a
+      // later session-restored replay). ONE append is both the durable row and the live echo —
+      // its key is the row's transcript index, so the live row and its replay reconcile to a
+      // single rendered row webview-side (the stored transcript shape is unchanged, k4).
+      // S003 (dev-chat ux polish) ac2: a SYNTHESIZED grant re-run (from an Approve) passes
+      // suppressEcho so the internal "Approved — run exactly this now: …" prompt is NOT echoed as a
+      // user bubble (only the resolved permission-outcome chip is shown). A normal submit still echoes.
+      if (opts?.suppressEcho !== true) {
+        post({
+          type: 'user-row',
+          text: typed,
+          key: `r${s.transcript.length - 1}`,
+          rowIndex: s.transcript.length - 1,
+          ...(files.length > 0 ? { attachments: [...files] } : {}),
+        });
+      }
+      // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown
+      // rows are distinguishable; a whitespace-only prompt is already rejected above, so
+      // the clip is non-empty. Later turns keep the established title.
+      if (s.transcript.filter((r) => r.role === 'user').length === 1) {
+        // A first message with no text is named from its first attachment.
+        const derived = (typed !== '' ? typed : (files[0]?.name ?? '')).replace(/\s+/g, ' ').trim().slice(0, 60);
+        if (derived !== '') s.title = derived;
+        // Then ask the LLM for a better title in the background (keeps `derived` on failure).
+        if (typed !== '') void applyTitle(s, typed);
+      }
+      trySave(s); // runTurn is fired and forgotten: a failing save must not become an unhandled rejection
     }
-    // S005: name the chat from its FIRST user prompt (clipped) so the history dropdown
-    // rows are distinguishable; a whitespace-only prompt is already rejected above, so
-    // the clip is non-empty. Later turns keep the established title.
-    if (s.transcript.filter((r) => r.role === 'user').length === 1) {
-      // A first message with no text is named from its first attachment.
-      const derived = (typed !== '' ? typed : (files[0]?.name ?? '')).replace(/\s+/g, ' ').trim().slice(0, 60);
-      if (derived !== '') s.title = derived;
-      // Then ask the LLM for a better title in the background (keeps `derived` on failure).
-      if (typed !== '') void applyTitle(s, typed);
-    }
-    trySave(s); // runTurn is fired and forgotten: a failing save must not become an unhandled rejection
 
     const grant = allowedTools && allowedTools.length > 0 ? { allowedTools } : {};
     // The session's attachments directory is readable on this turn and on every later one (a grant
@@ -2098,7 +2116,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             }
             queued = { message, session: s, onSpawn, onWaiting, waiting: undefined, turns: 0, spawned: false, lastCli: undefined, terminal: undefined, error: undefined, acted: false, stopped: false, viewLost: false, waitTimer: undefined, resolve };
             post({ type: 'turn-running', sessionId: s.id });
-            await runTurn(message.text, undefined, message.attachments.length > 0 ? { attachments: message.attachments } : undefined);
+            const retried = message.attempts > 0;
+            if (retried) {
+              const cause = classifyFailure(message.error ?? '');
+              persistInfo(s, `queue-retry-${message.turnId}-${message.attempts}`, `the turn failed with ${cause}; retrying (attempt ${message.attempts} of ${MAX_INFRA_RETRIES})`);
+            }
+            await runTurn(message.text, undefined, {
+              ...(message.attachments.length > 0 ? { attachments: message.attachments } : {}),
+              ...(retried ? { skipUserRow: true } : {}),
+            });
             // runTurn returned without starting a turn (a blank message): nothing ran.
             if (queued?.message === message && queued.turns === 0 && !queued.spawned && queued.terminal === undefined) settleQueued();
           } catch (err) {

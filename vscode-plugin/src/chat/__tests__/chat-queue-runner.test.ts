@@ -369,3 +369,89 @@ test("every failed turn's cause and error text are logged", async () => {
   await runWith([done('t1')], quiet);
   assert.equal(quiet.filter((l) => l.includes('failed')).length, 0);
 });
+
+// ---- Story S004 t5: a retried message --------------------------------------------------------
+const overloadText = 'API Error: 529 overloaded_error';
+/** A chat that already holds the first attempt of a message: its user row and the text it streamed. */
+function retriedHarness() {
+  const h = harness();
+  h.host.open();
+  h.fc.send('ready');
+  const s = h.store.create('claude');
+  s.transcript.push({ role: 'user', text: 'do the thing', at: 1 }, { role: 'assistant', text: 'partial answer', at: 2 });
+  h.store.save(s);
+  const retried: QueuedMessage = { ...message(s.id, 'do the thing'), attempts: 1, error: overloadText };
+  return { h, s, retried };
+}
+const userRows = (h: ReturnType<typeof harness>, id: string): number => h.store.get(id)!.transcript.filter((r) => r.role === 'user').length;
+
+test('a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI', async () => {
+  const { h, s, retried } = retriedHarness();
+  const out = h.host.queueRunner.run(retried, () => {});
+  await waitFor(() => h.runs.length === 1);
+  assert.equal(h.runs[0]!.req.prompt, 'do the thing', 'the prompt is still sent to the CLI');
+  h.runs[0]!.feed(done('t1'));
+  assert.deepEqual(await out, { kind: 'done' });
+  h.runs[0]!.proc.exitNow();
+  assert.equal(userRows(h, s.id), 1, 'one user row in the stored transcript');
+  assert.equal(h.fc.posted.filter((p) => p.payload.type === 'user-row').length, 0, 'no echo of a second user row');
+});
+
+test('a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text', async () => {
+  const { h, s, retried } = retriedHarness();
+  const out = h.host.queueRunner.run(retried, () => {});
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed(done('t1'));
+  await out;
+  h.runs[0]!.proc.exitNow();
+  const line = 'the turn failed with overloaded; retrying (attempt 1 of 3)';
+  const rows = h.store.get(s.id)!.transcript;
+  assert.equal(rows.filter((r) => r.role === 'assistant' && r.text === line).length, 1, 'one stored retrying line');
+  assert.ok(rows.some((r) => r.role === 'assistant' && r.text === 'partial answer'), 'the partial text is kept');
+  assert.equal(h.fc.posted.filter((p) => p.payload.type === 'turn-event' && JSON.stringify(p.payload).includes(line)).length, 1, 'posted once');
+  h.fc.send('ready'); // a reload
+  const restored = h.fc.posted.filter((p) => p.payload.type === 'session-restored').at(-1)!;
+  assert.ok(JSON.stringify(restored.payload['transcript']).includes(line), 'present after a reload');
+  // A text-only failed first attempt is retried by the queue's rule.
+  const failed = asFailed(await runWith([{ kind: 'assistant-delta', turnId: 't1', text: 'partial' }, errorEv('t1', overloadText)]));
+  assert.deepEqual({ acted: failed.acted, cause: failed.cause }, { acted: false, cause: 'overloaded' });
+});
+
+test('an auth failure stores and posts a sign-in line in the chat', async () => {
+  const h = harness();
+  h.host.open();
+  h.fc.send('ready');
+  const s = h.store.create('claude');
+  h.store.save(s);
+  const out = h.host.queueRunner.run(message(s.id, 'hello'), () => {});
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed(errorEv('t1', 'claude is not authenticated — run its login command, then retry'));
+  assert.equal(asFailed(await out).cause, 'auth');
+  h.runs[0]!.proc.exitNow();
+  const sign = h.store.get(s.id)!.transcript.filter((r) => r.role === 'assistant' && /not signed in/.test(r.text));
+  assert.equal(sign.length, 1, 'one stored sign-in line');
+  assert.match(sign[0]!.text, /`claude`/);
+  assert.ok(h.fc.posted.some((p) => p.payload.type === 'turn-event' && JSON.stringify(p.payload).includes('not signed in')), 'posted');
+  h.fc.send('ready');
+  const restored = h.fc.posted.filter((p) => p.payload.type === 'session-restored').at(-1)!;
+  assert.ok(JSON.stringify(restored.payload['transcript']).includes('not signed in'), 'present after a reload');
+});
+
+test('a normal turn still pushes and echoes its user row exactly as before', async () => {
+  const h = harness();
+  h.host.open();
+  h.fc.send('ready');
+  const s = h.store.create('claude');
+  h.store.save(s);
+  const out = h.host.queueRunner.run(message(s.id, 'first words'), () => {});
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed(done('t1'));
+  await out;
+  h.runs[0]!.proc.exitNow();
+  assert.equal(userRows(h, s.id), 1);
+  const echoes = h.fc.posted.filter((p) => p.payload.type === 'user-row');
+  assert.equal(echoes.length, 1, 'echoed once');
+  assert.equal(echoes[0]!.payload['text'], 'first words');
+  assert.equal(h.store.get(s.id)!.title, 'first words', 'the title is still derived');
+  assert.equal(h.fc.posted.some((p) => JSON.stringify(p.payload).includes('retrying')), false, 'no retrying line on a first attempt');
+});

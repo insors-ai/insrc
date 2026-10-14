@@ -331,6 +331,8 @@ takeOver and reclaim are implemented in the store with the liveness decision pas
 
 - `q58c348fe` — ac3, display half is carried by existing S001 code (followLiveTurn and turns.follow); it is not tested again here. The hand check in migration step 3 is the check that a reload with a live CLI shows the turn continuing; if that fails, it is an S001 defect to fix there, not a gap in this design.
   - **resolved**: Point ac3 at existing S001 tests — Name real runnable S001 cases for the display half; if none exist, record the hand check as a reported live test. _(2026-10-14T15:00:11.883Z)_
+- `q1614c270` — HLD wording vs this LLD: the HLD boundary lists a flush that keeps stored records within QUEUE_RECORD_BOUND. This LLD builds no deleting flush: done rows are already deleted at finish, failed and not-delivered rows are only removed by the user, and a full queue refuses a new message with a note. Confirm no age-based purge of failed rows is wanted.
+  - **resolved**: Confirm, and amend the HLD wording — No deleting flush; HLD wording becomes bounded by delete-on-finish plus refuse-when-full. _(2026-10-14T15:01:26.398Z)_
 
 ## Citations
 

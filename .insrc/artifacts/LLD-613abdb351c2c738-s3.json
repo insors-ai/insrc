@@ -235,6 +235,13 @@
         "choice": "Point ac3 at existing S001 tests",
         "rationale": "Name real runnable S001 cases for the display half; if none exist, record the hand check as a reported live test.",
         "resolvedAt": "2026-10-14T15:00:11.883Z"
+      },
+      "q1614c270": {
+        "question": "HLD wording vs this LLD: the HLD boundary lists a flush that keeps stored records within QUEUE_RECORD_BOUND. This LLD builds no deleting flush: done rows are already deleted at finish, failed and not-delivered rows are only removed by the user, and a full queue refuses a new message with a note. Confirm no age-based purge of failed rows is wanted.",
+        "status": "resolved",
+        "choice": "Confirm, and amend the HLD wording",
+        "rationale": "No deleting flush; HLD wording becomes bounded by delete-on-finish plus refuse-when-full.",
+        "resolvedAt": "2026-10-14T15:01:26.398Z"
       }
     }
   },

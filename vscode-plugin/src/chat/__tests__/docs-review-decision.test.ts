@@ -123,7 +123,7 @@ function harness(o: {
   };
   const notifyChat: DocsReviewHostDeps['notifyChat'] = o.notifyChat === 'absent'
     ? undefined
-    : (o.notifyChat ?? ((text: string) => { chat.push(text); return 'sent'; }));
+    : (o.notifyChat ?? ((text: string) => { chat.push(text); return 'queued' as const; }));
   const readCompanion: DocsReviewHostDeps['readCompanion'] = o.readCompanion === 'absent'
     ? undefined
     : (o.readCompanion ?? (async (relPath: string) => { companionReads.push(relPath); return `<html><script>draw('${relPath}')</script></html>`; }));
@@ -175,7 +175,7 @@ test("docs review host: a docs-decision calls decide once with the open document
   assert.deepEqual(h.decide, [{ path: LLD_PATH, decision: 'reject', comments }], 'one call: the path, the decision and every comment');
   assert.deepEqual(h.results(), [{
     type: 'docs-decision-result', artifactId: LLD.id, ok: true, outcome: 'rejected', recorded: 3,
-    message: 'Rejected. 3 comments saved. The chat has been told.',
+    message: 'Rejected. 3 comments saved. Sent to the chat; it waits its turn in the outbox.',
   }]);
   assert.ok(h.pendingReads() > pendingBefore, 'the pending list is re-read');
   assert.deepEqual(h.content, [LLD.id, LLD_PATH], 'the document is re-read by its path, not by its id');
@@ -200,14 +200,14 @@ test('docs review host: a decision with no comments sends the chat the decision 
   await settle();
   assert.deepEqual(h.decide, [{ path: LLD_PATH, decision: 'approve', comments: [] }]);
   assert.deepEqual(h.chat, [`Review decision: approved ${WHAT}, by Rev Iewer.`]);
-  assert.equal(h.results()[0]!['message'], 'Approved. The chat has been told.');
+  assert.equal(h.results()[0]!['message'], 'Approved. Sent to the chat; it waits its turn in the outbox.');
   assert.equal(h.results()[0]!['recorded'], 0);
 
   const r = await openOnLld();
   r.fc.send('docs-decision', { artifactId: LLD.id, decision: 'reject', comments: [] });
   await settle();
   assert.deepEqual(r.chat, [`Review decision: rejected ${WHAT}, by Rev Iewer.`]);
-  assert.equal(r.results()[0]!['message'], 'Rejected. The chat has been told.');
+  assert.equal(r.results()[0]!['message'], 'Rejected. Sent to the chat; it waits its turn in the outbox.');
 });
 
 test('docs review host: send feedback works on a read-only open and on a document just approved, while approve and reject are refused for a document that is not pending or not the open one', async () => {
@@ -221,7 +221,7 @@ test('docs review host: send feedback works on a read-only open and on a documen
     await settle();
     assert.deepEqual(h.decide, [{ path: BUILD_PATH, decision: 'feedback', comments: [WHOLE] }], 'feedback is sent by the path it was read by');
     assert.equal(h.results().at(-1)!['ok'], true);
-    assert.equal(h.results().at(-1)!['message'], 'Feedback sent. 1 comment saved. The chat has been told.');
+    assert.equal(h.results().at(-1)!['message'], 'Feedback sent. 1 comment saved. Sent to the chat; it waits its turn in the outbox.');
     assert.match(h.chat[0]!, /^Review feedback on BUILD-abc-s7 \(docs\/e\/S007\/BUILD\.md\), by Rev Iewer\.\nComments:\n1\. The second phase needs an owner\.$/);
 
     for (const decision of ['approve', 'reject'] as const) {
@@ -318,7 +318,7 @@ test('docs review host: a withheld approval and a commentsError are each reporte
   await settle();
   assert.deepEqual(withheld.results(), [{
     type: 'docs-decision-result', artifactId: LLD.id, ok: true, outcome: 'withheld', recorded: 2,
-    message: 'Not approved: Review blocks approval: 1 HIGH, 0 MED. 2 comments saved as feedback. The chat has been told.',
+    message: 'Not approved: Review blocks approval: 1 HIGH, 0 MED. 2 comments saved as feedback. Sent to the chat; it waits its turn in the outbox.',
   }]);
   assert.deepEqual(withheld.chat, [[
     `Review decision: the approval of ${WHAT} by Rev Iewer was withheld: Review blocks approval: 1 HIGH, 0 MED.`,
@@ -333,14 +333,14 @@ test('docs review host: a withheld approval and a commentsError are each reporte
   bare.fc.send('docs-decision', { artifactId: LLD.id, decision: 'approve', comments: [] });
   await settle();
   assert.deepEqual(bare.chat, [`Review decision: the approval of ${WHAT} by Rev Iewer was withheld: no review has run.`]);
-  assert.equal(bare.results()[0]!['message'], 'Not approved: no review has run. The chat has been told.');
+  assert.equal(bare.results()[0]!['message'], 'Not approved: no review has run. Sent to the chat; it waits its turn in the outbox.');
 
   const unsaved = await openOnLld({ decide: () => ({ recorded: 0, entryIds: [], commentsError: 'cannot write the artifact' }) });
   unsaved.fc.send('docs-decision', { artifactId: LLD.id, decision: 'approve', comments: [WHOLE] });
   await settle();
   assert.deepEqual(unsaved.results(), [{
     type: 'docs-decision-result', artifactId: LLD.id, ok: true, outcome: 'approved', recorded: 0,
-    message: 'Approved. The comment was not saved: cannot write the artifact. The chat has been told.',
+    message: 'Approved. The comment was not saved: cannot write the artifact. Sent to the chat; it waits its turn in the outbox.',
   }], 'the decision stands; recorded 0 tells the pane to keep the drafts');
   assert.deepEqual(unsaved.chat, [[
     `Review decision: approved ${WHAT}, by Rev Iewer.`,
@@ -454,12 +454,12 @@ test("docs review host: open-companion for one of the document's companions post
   }
 });
 
-test('docs review host: an absent, throwing or unavailable notifyChat leaves the decision recorded and says so in the result', async () => {
+test("docs review host: a queued hand-over shows 'Sent to the chat; it waits its turn in the outbox.', unavailable carries the note, failed and none are unchanged, and no 'sent' wording remains", async () => {
   const cases: Array<[Parameters<typeof harness>[0], string]> = [
     [{ notifyChat: 'absent' }, 'Rejected. 1 comment saved. No chat message was sent.'],
     [{ notifyChat: () => { throw new Error('chat host disposed'); } }, 'Rejected. 1 comment saved. The chat could not be told.'],
-    [{ notifyChat: () => 'unavailable' }, 'Rejected. 1 comment saved. The chat could not be told: no chat is available.'],
-    [{ notifyChat: () => 'queued' }, 'Rejected. 1 comment saved. The chat will be told when it is free.'],
+    [{ notifyChat: () => ({ kind: 'unavailable' as const, note: 'the chat queue is full' }) }, 'Rejected. 1 comment saved. The chat could not be told: the chat queue is full.'],
+    [{ notifyChat: () => 'queued' }, 'Rejected. 1 comment saved. Sent to the chat; it waits its turn in the outbox.'],
   ];
   for (const [o, message] of cases) {
     const h = await openOnLld(o);
@@ -468,6 +468,7 @@ test('docs review host: an absent, throwing or unavailable notifyChat leaves the
     await settle();
     assert.deepEqual(h.decide, [{ path: LLD_PATH, decision: 'reject', comments: [WHOLE] }], 'the decision is recorded, once');
     assert.deepEqual(h.results(), [{ type: 'docs-decision-result', artifactId: LLD.id, ok: true, outcome: 'rejected', recorded: 1, message }]);
+    assert.doesNotMatch(message, /The chat has been told|will be told when it is free|no chat is available/, "no 'sent' wording remains");
     assert.equal(h.content.at(-1), LLD_PATH, 'and the pane goes on to re-read the document');
     assert.equal(h.contents().at(-1)!['readOnly'], true);
   }

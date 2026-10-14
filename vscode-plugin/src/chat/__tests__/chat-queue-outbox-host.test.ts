@@ -9,7 +9,7 @@ import { createChatPanelHost, type ChatPanelChannel } from '../chat-panel.js';
 import { createInMemoryChatSessionStore, type ChatSessionStore } from '../session-store.js';
 import type { ProviderId, ProviderRegistry, RunOptions, StreamAdapter, TurnRequest } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
-import { createChatQueueStore, type ChatQueueLeases, type ChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
+import { BUSY_NOTE, FULL_NOTE, QUEUE_RECORD_BOUND, createChatQueueStore, type ChatQueueLeases, type ChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { ACTION_NOTES, createChatQueueWorker } from '../chat-queue-worker.js';
 import type { OutboxView } from '../chat-outbox.js';
 import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
@@ -66,19 +66,22 @@ function repo() {
   const qstore = open();
   const sessions = createInMemoryChatSessionStore();
   const hosts: Array<{ dispose(): void }> = [];
-  function host(windowKey: string, store: ChatSessionStore = sessions) {
+  function host(windowKey: string, store: ChatSessionStore = sessions, opts: { closed?: boolean; noCli?: boolean; busy?: boolean } = {}) {
     const fc = fakeChannel();
     const decisions: string[] = [];
     const { adapter, runs } = spawningAdapter(decisions);
-    const registry: ProviderRegistry = { available: ['claude' as ProviderId], get: () => adapter };
-    const own = open();
+    const registry: ProviderRegistry = { available: opts.noCli === true ? [] : ['claude' as ProviderId], get: () => adapter };
+    const real = open();
+    const own: QStore = opts.busy === true ? Object.assign(Object.create(real) as QStore, { enqueue: () => ({ ok: false as const, reason: 'busy' as const, note: BUSY_NOTE }) }) : real;
     const h = createChatPanelHost({
       createPanel: () => fc.channel, providers: registry, store, cwd: () => '/repo',
       queue: (runner) => createChatQueueWorker({ store: own, claim: { windowKey, pid: process.pid }, runner, isAlive: () => false, now: () => Date.now() }),
     });
     hosts.push(h);
-    h.open();
-    fc.send('ready');
+    if (opts.closed !== true) {
+      h.open();
+      fc.send('ready');
+    }
     const shown = (): string => {
       const r = [...fc.posted].reverse().find((p) => p.payload.type === 'session-restored');
       return String(r?.payload['sessionId']);
@@ -291,6 +294,121 @@ test("chat host outbox: while another window's running message waits on an appro
     await waitFor(() => !r.qstore.list().some((m) => m.text === 'needs a yes' && m.state === 'processing'), 5000);
     await waitFor(() => b.outbox()?.blockedBy === undefined && b.outbox()?.runningChat === undefined, 3000);
     assert.ok(!r.qstore.list().some((m) => m.waitingOn !== undefined));
+  } finally {
+    r.done();
+  }
+});
+
+// Epic E20261014613abdb3 Story S005 t1 — a review-pane decision is an ordinary queue message.
+test('chat host outbox: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends', async () => {
+  const r = repo();
+  try {
+    const a = r.host('w-1');
+    a.fc.send('submit-turn', { text: 'first' });
+    await waitFor(() => a.runs.length === 1, 3000);
+    a.runs[0]!.feed({ kind: 'assistant-delta', turnId: 't1', text: 'working' });
+    a.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'perm-1', title: 'Permission: Bash', detail: 'Bash needs your permission', toolName: 'Bash', command: 'npm test', resolution: 'turn-ended' } as TurnEvent);
+    await waitFor(() => a.fc.posted.some((p) => p.payload.type === 'turn-event' && JSON.stringify(p.payload).includes('perm-1')), 3000);
+
+    assert.equal(a.host.submitExternal('Review decision: approved LLD-1'), 'queued');
+    await waitFor(() => rowsOf(a.outbox()).length === 1, 3000);
+    assert.deepEqual(rowsOf(a.outbox()), [['Review decision: approved LLD-1', 1, 'queued']]);
+    assert.equal(a.outbox()?.rows[0]?.origin, 'review-pane');
+    assert.equal(r.qstore.list().find((m) => m.text.startsWith('Review decision'))?.origin, 'review-pane');
+    assert.deepEqual(a.decisions, [], 'the waiting card was not answered or rejected');
+    assert.equal(a.runs.length, 1, 'the running turn is untouched and nothing else started');
+
+    a.runs[0]!.feed(doneEv('t1'));
+    a.runs[0]!.proc.exitNow();
+    a.fc.send('permission-decision', { requestId: 'perm-1', decision: 'deny' });
+    await waitFor(() => a.runs.some((x) => x.req.prompt === 'Review decision: approved LLD-1'), 5000);
+    assert.equal(a.runs.at(-1)!.req.prompt, 'Review decision: approved LLD-1');
+    a.runs.at(-1)!.feed(doneEv('t2'));
+  } finally {
+    r.done();
+  }
+});
+
+test('chat host outbox: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready', async () => {
+  const r = repo();
+  try {
+    const a = r.host('w-1', undefined, { closed: true });
+    assert.equal(a.host.submitExternal('Review decision: approved LLD-1'), 'queued');
+    assert.equal(a.fc.posted.some((p) => p.payload.type === 'session-restored'), true, 'the panel opened on its session');
+    const row = r.qstore.list().find((m) => m.text.startsWith('Review decision'));
+    assert.equal(row?.origin, 'review-pane');
+    assert.ok(r.sessions.get(row!.sessionId) !== undefined, 'the chat is saved so the message finds it');
+    assert.equal(a.runs.length, 0, 'not run before the webview listens');
+    assert.equal(a.host.submitExternal('second decision'), 'queued');
+    a.fc.send('ready');
+    await waitFor(() => a.runs.length === 1, 5000);
+    assert.equal(a.runs[0]!.req.prompt, 'Review decision: approved LLD-1', 'in order: the first one runs first');
+    a.runs[0]!.feed(doneEv('t1'));
+    a.runs[0]!.proc.exitNow();
+    await waitFor(() => a.runs.length === 2, 5000);
+    assert.equal(a.runs[1]!.req.prompt, 'second decision');
+    a.runs[1]!.feed(doneEv('t2'));
+  } finally {
+    r.done();
+  }
+});
+
+test('chat host outbox: a decision queued before the panel or window closes is still in the queue file afterwards', async () => {
+  const r = repo();
+  try {
+    const a = r.host('w-1');
+    a.fc.send('submit-turn', { text: 'first' });
+    await waitFor(() => a.runs.length === 1, 3000);
+    assert.equal(a.host.submitExternal('Review decision: approved LLD-1'), 'queued');
+    a.host.dispose(); // the panel and the window go away
+    const left = r.qstore.list().filter((m) => m.text.startsWith('Review decision'));
+    assert.equal(left.length, 1, 'the decision is still in the queue file');
+    assert.equal(left[0]!.state, 'queued');
+    assert.equal(left[0]!.origin, 'review-pane');
+  } finally {
+    r.done();
+  }
+});
+
+test('chat host outbox: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing', async () => {
+  const r = repo();
+  try {
+    const noCli = r.host('w-1', undefined, { noCli: true });
+    assert.deepEqual(noCli.host.submitExternal('x'), { kind: 'unavailable', note: 'no agentic CLI (claude or codex) is installed' });
+    const blank = r.host('w-2');
+    assert.deepEqual(blank.host.submitExternal('   '), { kind: 'unavailable', note: 'the decision message was empty' });
+    assert.deepEqual(blank.host.submitExternal(7 as unknown as string), { kind: 'unavailable', note: 'the decision message was empty' });
+    const busy = r.host('w-3', undefined, { busy: true });
+    assert.deepEqual(busy.host.submitExternal('x'), { kind: 'unavailable', note: BUSY_NOTE });
+    assert.equal(r.qstore.list().length, 0, 'nothing was queued');
+
+    for (let i = 0; i < QUEUE_RECORD_BOUND; i += 1) assert.ok(elsewhere(r.qstore, `filler ${i}`, `chat-${i}`).ok);
+    const full = r.host('w-4');
+    assert.deepEqual(full.host.submitExternal('one too many'), { kind: 'unavailable', note: FULL_NOTE });
+    assert.equal(r.qstore.list().length, QUEUE_RECORD_BOUND, 'the full queue took nothing more');
+  } finally {
+    r.done();
+  }
+});
+
+test('chat host outbox: a queued message with an attachment keeps it and sends it when the message runs', async () => {
+  const r = repo();
+  try {
+    const a = r.host('w-1');
+    const sid = a.shown();
+    a.fc.send('submit-turn', { text: 'first' });
+    await waitFor(() => a.runs.length === 1, 3000);
+    const att = { id: 'a1', name: 'shot.png', kind: 'image' as const, size: 3, path: '/att/s/shot.png' };
+    const res = r.qstore.enqueue({ key: `${sid}::att`, sessionId: sid, turnId: 'att', windowKey: 'w-1', origin: 'typed', text: 'look at this', attachments: [att] });
+    assert.ok(res.ok);
+    assert.deepEqual(r.qstore.list().find((m) => m.text === 'look at this')?.attachments, [att], 'the row keeps its attachment while it waits');
+    a.runs[0]!.feed(doneEv('t1'));
+    a.runs[0]!.proc.exitNow();
+    await waitFor(() => a.runs.length === 2, 5000);
+    assert.match(a.runs[1]!.req.prompt, /look at this/);
+    assert.match(a.runs[1]!.req.prompt, /Attached files/);
+    assert.match(a.runs[1]!.req.prompt, /\/att\/s\/shot\.png/, 'the attachment goes with the message when it runs');
+    a.runs[1]!.feed(doneEv('t2'));
   } finally {
     r.done();
   }

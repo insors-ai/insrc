@@ -155,12 +155,12 @@ export interface ChatPanelHost {
    */
   adopt(channel: ChatPanelChannel): void;
   /**
-   * Story E202610138d4b90c9:S001: another pane hands the chat a message to send as the user's, in
-   * the session then active. 'unavailable' when no agentic CLI is installed or the text is blank:
-   * nothing is kept. Otherwise the panel is opened if it is closed and the message joins a
-   * first-in first-out waiting list. A waiting message is run, like a typed one, once the webview
-   * has posted 'ready', no turn is in progress and no permission request is unanswered; one per
-   * turn end. 'sent' when this message was run at once, 'queued' when it is still waiting.
+   * Story E202610138d4b90c9:S001, Epic E20261014613abdb3 Story S005: another pane hands the chat a
+   * message to send as the user's. It goes through the repository's queue like a typed message
+   * (origin 'review-pane'), to the chat shown in this panel, or the one the panel opens on when it
+   * is closed, and waits its turn in that chat's outbox; nothing is held in memory here. 'queued'
+   * when it joined the queue; { kind: 'unavailable', note } when the text is blank, no agentic CLI
+   * is installed, the queue refused it (full or busy) or this window has no queue.
    */
   submitExternal(text: string): ExternalSubmitResult;
   /**
@@ -178,7 +178,7 @@ const QUEUE_PLACEHOLDER = 'message claude… (⌘/Ctrl+Enter to queue · ^C inte
 
 export const CONTINUATION_WAIT_MS = 600_000;
 
-export type ExternalSubmitResult = 'sent' | 'queued' | 'unavailable';
+export type ExternalSubmitResult = 'queued' | { readonly kind: 'unavailable'; readonly note: string };
 
 /** The chat panel's webview view type (also the WebviewPanelSerializer key). */
 export const CHAT_VIEW_TYPE = 'insrc.chatPanel';
@@ -201,7 +201,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let disposed = false;
   let session: ChatSession | undefined;
   // Story E202610138d4b90c9:S001: messages another pane handed over, waiting their turn (see drain).
-  const waitingExternal: { readonly text: string }[] = [];
   // Whether the webview has posted 'ready' since the channel was wired. The session is not the
   // test: opening the panel drafts it at once, before the webview listens.
   let webviewReady = false;
@@ -852,40 +851,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           runCompletedBatch();
           postHistory();
         }
-        // On either path the follow is over: a message that waited behind it can run. After
-        // runCompletedBatch, so an approval follow-up it started stays ahead.
-        drainExternal();
       },
     });
   };
 
-  /**
-   * Story E202610138d4b90c9:S001: run the first waiting pane message through runTurn, the path a
-   * typed message takes, when the webview is ready, no turn is in progress, no runTurn is starting
-   * and no permission request is unanswered (so it rejects none). One message per call. Called
-   * wherever the chat becomes free: a turn's end or error, a follow's end on either path, the last
-   * permission request decided, Stop, a chat switch and the webview's 'ready'.
-   */
-  const drainExternal = (): void => {
-    if (waitingExternal.length === 0) return;
-    if (disposed || channel === undefined || !webviewReady || session === undefined) return;
-    if (turns.busy() || startingTurns > 0 || approvals.head() !== undefined) return;
-    // Epic E20261014613abdb3 Story S001: not while this window runs a queued message (until Story S005
-    // moves pane messages onto the queue).
-    if (worker?.running() === true || queued !== undefined) return;
-    const next = waitingExternal.shift()!;
-    supersedeQueuedApprovals(); // none is waiting; like a typed message it resets the grant chain
-    void runTurn(next.text);
-  };
-
-  /** The panel is gone: the messages still waiting are dropped, and the log says how many. */
-  const dropExternal = (): void => {
+  /** The panel is gone: its webview no longer listens, so nothing waits for 'ready' until a new one posts it. */
+  const markViewGone = (): void => {
     webviewReady = false;
-    if (superseding) return;
-    const n = waitingExternal.length;
-    if (n === 0) return;
-    waitingExternal.length = 0;
-    log.warn(`[chat] ${n} message${n === 1 ? '' : 's'} from the review pane ${n === 1 ? 'was' : 'were'} dropped: the chat panel was closed`);
   };
 
   const postInitialState = (): void => {
@@ -1656,14 +1628,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             .catch((err: unknown) => warnGovernor('settle', err));
         }
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
-        // After runCompletedBatch above: an approval follow-up it started stays ahead of a pane message.
-        drainExternal();
       },
       onError: (message, turnId) => {
         if (q !== undefined) q.error = message;
         endDiffTurn();
         post({ type: 'turn-event', event: { kind: 'error', turnId, message } });
-        drainExternal();
       },
     };
     // Single-in-flight per panel: the newest message wins. start drops a turn still waiting for
@@ -1769,9 +1738,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         webviewReady = true;
         for (const w of readyWaiters.splice(0)) w();
         postInitialState();
-        // A message handed to a panel that was closed is run now that its webview listens (behind
-        // a followed turn, if postInitialState began one).
-        drainExternal();
         return;
       case 'submit-turn':
         if (att !== undefined) {
@@ -1800,7 +1766,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         rejectQueuedApprovals(); // ISSUE-6a811b8a: Stop rejects the requests still waiting
         settleQueued(); // a queued message waiting only on a card ends now
         endDiffTurn();
-        void turns.stop().then(drainExternal, drainExternal);
+        void turns.stop();
         return;
       case 'new-chat': {
         if (typeof msg.provider !== 'string') return;
@@ -1825,7 +1791,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postRestored(session);
         postPending(session.id);
         postHistory(); // refresh the dropdown (the draft is not yet listed until it has a message)
-        drainExternal(); // a waiting pane message is run in the chat that is now active
         return;
       }
       case 'open-chat': {
@@ -1850,7 +1815,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postPending(s.id); // each chat shows its own pending attachments
         postHistory(); // S005: keep the dropdown selection/order in sync
         followLiveTurn(s);
-        drainExternal(); // a waiting pane message is run in the chat that is now active
         return;
       }
       case 'load-older': {
@@ -1904,7 +1868,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (decided.resolution === 'in-turn') {
             relayDecision(msg.requestId, msg.decision);
             showApprovalHead();
-            drainExternal(); // normally its turn is still running, and the drain is at that turn's end
             return;
           }
           if (msg.decision === 'approve' && decided.blockKind === 'dir-block') {
@@ -1923,9 +1886,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // follow-up runs once, when the whole batch is decided and its turn has ended.
           showApprovalHead();
           runCompletedBatch();
-          // The last waiting request decided: a pane message runs now, or behind the follow-up
-          // runCompletedBatch has just started.
-          drainExternal();
           return;
         }
         // Otherwise an id the host does not hold: relay to the LIVE turn's captured adapter, as
@@ -2207,7 +2167,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       void turns.detach();
       dropQueuedApprovals();
       settleQueued();
-      dropExternal();
+      markViewGone();
       disposed = true;
       channel = undefined;
     });
@@ -2241,19 +2201,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     },
     queueRunner,
     submitExternal(text: string): ExternalSubmitResult {
-      if (typeof text !== 'string' || text.trim() === '' || deps.providers.available.length === 0) return 'unavailable';
+      if (typeof text !== 'string' || text.trim() === '') return { kind: 'unavailable', note: 'the decision message was empty' };
+      if (deps.providers.available.length === 0) return { kind: 'unavailable', note: 'no agentic CLI (claude or codex) is installed' };
+      if (worker === undefined) return { kind: 'unavailable', note: 'the chat queue is not available in this window' };
       if (channel === undefined) this.open();
-      const entry = { text: text.trim() };
-      waitingExternal.push(entry);
-      drainExternal();
-      return waitingExternal.includes(entry) ? 'queued' : 'sent';
+      const target = session;
+      if (target === undefined) return { kind: 'unavailable', note: 'there is no chat to send it to' };
+      trySave(target); // a draft chat is kept, so the queued message still finds it
+      const res = worker.submit({ sessionId: target.id, text: text.trim(), origin: 'review-pane', attachments: [] });
+      return res.ok ? 'queued' : { kind: 'unavailable', note: res.note };
     },
     dispose(): void {
       worker?.dispose();
       endDiffTurn(); // Story E20261013b2e8109f:S001: settle held paths before the sink goes quiet
       void turns.detach();
       dropQueuedApprovals();
-      dropExternal();
+      markViewGone();
       disposed = true;
       channel?.dispose();
       channel = undefined;

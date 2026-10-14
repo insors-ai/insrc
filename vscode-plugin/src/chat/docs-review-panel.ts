@@ -42,7 +42,7 @@ export interface DocsReviewHostDeps {
    * chat message is sent. It never undoes a decision: a throw or 'unavailable' is only
    * reported in the pane.
    */
-  readonly notifyChat?: ((text: string) => 'sent' | 'queued' | 'unavailable') | undefined;
+  readonly notifyChat?: ((text: string) => 'queued' | { readonly kind: 'unavailable'; readonly note: string }) | undefined;
   /**
    * Story E202610138d4b90c9:S001: the text of an HTML companion, by its repo-relative
    * path; undefined when it may not or cannot be read. Absent means no companion is shown.
@@ -62,7 +62,7 @@ export interface DocsReviewHostDeps {
 export const RELOAD_QUIET_MS = 300;
 
 /** What the chat hand-over of a decision came to. */
-type ChatHandOver = 'sent' | 'queued' | 'unavailable' | 'failed' | 'none';
+type ChatHandOver = 'queued' | { readonly kind: 'unavailable'; readonly note: string } | 'failed' | 'none';
 
 /** The document the pane shows, as the host last read it. */
 interface OpenDocument {
@@ -2448,12 +2448,14 @@ function decisionResultLine(res: ReviewDecisionResult, sent: number, chat: ChatH
   } else if (sent > 0) {
     parts.push(`${plural(res.recorded, 'comment')} saved${asFeedback}.`);
   }
-  switch (chat) {
-    case 'sent': parts.push('The chat has been told.'); break;
-    case 'queued': parts.push('The chat will be told when it is free.'); break;
-    case 'unavailable': parts.push('The chat could not be told: no chat is available.'); break;
-    case 'failed': parts.push('The chat could not be told.'); break;
-    case 'none': parts.push('No chat message was sent.'); break;
+  if (typeof chat === 'object') {
+    parts.push(`The chat could not be told: ${noFullStop(chat.note)}.`);
+  } else {
+    switch (chat) {
+      case 'queued': parts.push('Sent to the chat; it waits its turn in the outbox.'); break;
+      case 'failed': parts.push('The chat could not be told.'); break;
+      case 'none': parts.push('No chat message was sent.'); break;
+    }
   }
   return parts.join(' ');
 }

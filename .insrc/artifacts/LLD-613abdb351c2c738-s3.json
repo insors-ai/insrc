@@ -256,6 +256,13 @@
         "choice": "Keep HLD c-ids + crosswalk note",
         "rationale": "Consistent with the decision for Story s1.",
         "resolvedAt": "2026-10-14T15:03:04.902Z"
+      },
+      "qd776acfb": {
+        "question": "markNotDeliveredIfHead is a new store method not in the HLD sc1 sketch, and the optional holderGone argument deviates from the sc2 sketch signatures; both are additive.",
+        "status": "resolved",
+        "choice": "File a fieldAdd HLD amendment",
+        "rationale": "Both additions are additive; amendment keeps sc1 and sc2 accurate for sibling Stories.",
+        "resolvedAt": "2026-10-14T15:03:44.495Z"
       }
     }
   },

@@ -337,6 +337,8 @@ takeOver and reclaim are implemented in the store with the liveness decision pas
   - **resolved**: Score k1-k5 in the plan — A short constraint matrix in the plan; the approved LLD stays untouched. _(2026-10-14T15:02:20.295Z)_
 - `qf24e0656` — The invariantsToPreserve cite HLD assumption ids (c11, c12, c13, c3) rather than analyze-bundle ids.
   - **resolved**: Keep HLD c-ids + crosswalk note — Consistent with the decision for Story s1. _(2026-10-14T15:03:04.902Z)_
+- `qd776acfb` — markNotDeliveredIfHead is a new store method not in the HLD sc1 sketch, and the optional holderGone argument deviates from the sc2 sketch signatures; both are additive.
+  - **resolved**: File a fieldAdd HLD amendment — Both additions are additive; amendment keeps sc1 and sc2 accurate for sibling Stories. _(2026-10-14T15:03:44.495Z)_
 
 ## Citations
 

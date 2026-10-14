@@ -27,5 +27,7 @@
     "stepId": "s5"
   },
   "proposedAt": "2026-10-14T12:34:59.243Z",
-  "status": "pending"
+  "status": "approved",
+  "approvedAt": "2026-10-14T12:49:01.729Z",
+  "approvedBy": "Subho Ghosh"
 }

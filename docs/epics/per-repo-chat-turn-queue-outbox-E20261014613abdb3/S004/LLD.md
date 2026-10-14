@@ -414,6 +414,8 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
   - **resolved**: Keep in LLDs; batch HLD amendments at Epic end — Owner decision (option A). _(2026-10-14T17:20:52.301Z)_
 - `qc5c07fb1` — RESOLVED by the owner: Epic constraints k1-k5 are scored in the plan's closing task, not in the LLD.
   - **resolved**: Apply owner ruling: score k1-k5 in the plan's closing task — Owner decision (option A). _(2026-10-14T17:21:13.684Z)_
+- `qb1d8d443` — RESOLVED by the owner: the invariantsToPreserve keep the HLD assumption ids (c11, c12, c13, c3); the plan carries a crosswalk to the analyze bundles.
+  - **resolved**: Keep HLD c-ids + plan crosswalk (owner's decision) — Owner decision (option A). _(2026-10-14T17:21:25.852Z)_
 
 ## Citations
 

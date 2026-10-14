@@ -289,6 +289,13 @@
         "choice": "Apply owner ruling: score k1-k5 in the plan's closing task",
         "rationale": "Owner decision (option A).",
         "resolvedAt": "2026-10-14T17:21:13.684Z"
+      },
+      "qb1d8d443": {
+        "question": "RESOLVED by the owner: the invariantsToPreserve keep the HLD assumption ids (c11, c12, c13, c3); the plan carries a crosswalk to the analyze bundles.",
+        "status": "resolved",
+        "choice": "Keep HLD c-ids + plan crosswalk (owner's decision)",
+        "rationale": "Owner decision (option A).",
+        "resolvedAt": "2026-10-14T17:21:25.852Z"
       }
     }
   },

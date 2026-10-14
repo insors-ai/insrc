@@ -1,0 +1,330 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1791975056566-pze8n5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T10:52:24.420Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 87850,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "storyId": "s1",
+    "lldRunId": "wf-1791969455067-dfc1hm",
+    "lldEffectiveHash": "e1a7250f3a6ddaa96975cbfbe8ef9268fa78412430804b83447e10d03a26a6e9",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story adds two new modules (the repository's queue store and each window's queue worker), changes the turn engine so starts run one after another and report their CLI process, gives the chat host a runner for queued messages and routes the chat's messages through the queue, and wires it all in the extension with a safe fallback. It ends with the suite and a hand check with two windows.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the repository queue store",
+        "summary": "New chat-queue-store.ts over node:sqlite (injected openDatabase): schema v1 (messages, lease, presence, meta), WAL, synchronous NORMAL, busy_timeout 5000, every write BEGIN IMMEDIATE; enqueue with the 500-row bound, head (queued or retrying, never skipping a retrying head), acknowledge with the lease in one transaction, finish's outcome mapping, cancel, dismiss, resend, attachCli, heartbeat, release, presence, windowAlive, takeOver and reclaim stubs returning false, dataVersion plus an own-write counter, and the schema-version guard.",
+        "size": "L",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A message is acknowledged at most once, only with the lease free, and only when it is the head",
+          "Rows run in seq order and a retrying head is never skipped",
+          "done and detached-ended rows are deleted; stopped becomes failed 'stopped by the user'; live rows never exceed 500 and the 501st enqueue is refused with a note",
+          "Two processes on one file acknowledging one head: exactly one succeeds",
+          "A newer schema version, or a database that cannot be opened, is reported as unavailable"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows"
+          },
+          {
+            "level": "integration",
+            "name": "chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the per-window queue worker",
+        "summary": "New chat-queue-worker.ts: presence and lease heartbeats every 5 s, polling data_version and the store's own-write counter (500 ms active, 5 s idle), onChange, acknowledging this window's head, calling the runner with onSpawn recording the CLI, finish and release with a pending retry on failure, submit, liveSessionIds, and dispose releasing a lease whose CLI has exited.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The window whose message is at the front takes the lease, runs it, heartbeats while it runs, finishes and releases",
+          "Another window's message at the front is left alone",
+          "onChange fires after this window's own writes and after another window's commit",
+          "A finish that fails is retried before any new message is taken",
+          "dispose releases a lease whose CLI exited and leaves one whose CLI still runs"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Chain starts in the turn lifecycle and report the CLI process",
+        "summary": "turn-lifecycle.ts: remove the newest-wins supersede (a start made while a turn is in progress waits for it, then takes its generation), drop a chained start on stop/detach/invalidate through a chain epoch, and add onSpawn (pid optional, start time, exited promise surviving detach) to TurnSink and FollowSink for live and followed turns; update the lifecycle tests the HLD lists.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A second start runs after the first instead of superseding it",
+          "A chained start is dropped by Stop and by detach and never spawns",
+          "onSpawn reports every spawned process, with or without a pid, and its exit also after detach, for live and followed turns",
+          "The listed lifecycle tests are updated and the rest pass unchanged"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Give the chat host the queued turn runner",
+        "summary": "chat-panel.ts: runQueued as the QueuedTurnRunner: show the message's chat (opening the panel when closed) with a note, post 'turn-running' (protocol.ts gains it; the webview enters its running state), push the user row and echo at run time, start the turn, and resolve the outcome: done, failed with the error, stopped by the stop flag set on cancel-turn, detached-ended after a detached CLI exits, stopped for a pipe turn or a turn dropped before it started, failed for a missing chat; continuations (the grant re-run, the selection continuation) run under the lease and the message resolves after the last one, a waiting card ending at an answer, Stop, a chat switch, the panel closing or CONTINUATION_WAIT_MS.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A queued turn that starts on its own puts the webview in its running state so Stop is offered",
+          "Stop leaves the message failed 'stopped by the user' even though the stopped CLI reports a terminal error",
+          "The runner resolves for every way a turn ends, including detached, pipe, dropped before start and a missing chat, and only after continuations end"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Route the chat's messages through the queue",
+        "summary": "chat-panel.ts: typed and attachment submits call worker.submit and no longer call supersedeQueuedApprovals; a refused submit shows the queue's note; drainExternal is held back while the worker runs a message; the chat-panel tests the HLD and LLD list are updated (:138, :1318, :2854, :4745, :5018, :5302, :5455).",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A message sent mid-turn waits, the running turn keeps reporting, and the message runs when the turn ends",
+          "A typed message no longer denies the running turn's waiting approval",
+          "After Stop the next waiting message runs",
+          "The listed chat-panel tests are updated and the rest pass unchanged"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat host: a message sent while a turn runs waits in the queue, the running turn keeps reporting, and the message runs when the turn ends; a typed message no longer denies the running turn's waiting approval"
+          },
+          {
+            "level": "integration",
+            "name": "chat host: a queued message that starts after the previous turn ended tells the webview it is running, so Stop is offered; Stop ends the running turn, its message becomes failed with 'stopped by the user' and a resend even though the stopped CLI reports a terminal error, and the next waiting message runs"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wire the queue in the extension and raise the floor",
+        "summary": "extension.ts: the window key in workspaceState, the repo key from the git top-level's real path (fallbacks), the store under ~/.insrc/chat-queue opened with node:sqlite, isAlive from session-lock's defaultIsAlive and defaultProcessStartTime, the worker given to the chat host, the one-time notice and direct path when the store cannot open; package.json engines.vscode ^1.141.0 and engines.node >=22.13.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Two folders in one git working tree get the same repo key; no folder keys by the process's working directory",
+          "The window key survives a reload",
+          "When node:sqlite cannot load the chat keeps the direct path and shows the notice once",
+          "engines.vscode is ^1.141.0 and engines.node >=22.13"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "extension wiring: the repo key hashes the real path of the git top-level of the chat folder, the window key is kept in workspaceState, the store opens under ~/.insrc/chat-queue, engines.vscode is ^1.141.0 and engines.node >=22.13, isAlive combines the pid and start-time checks, and when node:sqlite cannot load the chat keeps the direct path and shows the notice once"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Run the suites and check by hand with two windows",
+        "summary": "Run the plugin's suite and typecheck, build, package and install the plugin, and have the user check in VS Code 1.141 with two windows on one repository.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "The plugin's suite and typecheck pass apart from failures that exist before this Story",
+          "By hand: a message typed mid-turn waits and runs after the turn; a message from the second window runs after the first window's turn; Stop marks the message failed and the next runs; a reload while a message waits keeps it; the store opens in the real extension host with no 'unsupported' notice"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "The plugin's whole test suite and typecheck pass apart from failures that exist before this Story, with the tests the HLD lists as changing updated"
+          },
+          {
+            "level": "smoke",
+            "name": "By hand in VS Code (1.141) with two windows on one repository: a message typed mid-turn waits and runs after the turn, the running turn keeps showing; a message sent in the second window runs after the first window's turn; Stop marks the message failed and the next runs; a window reload while a message waits keeps it and it runs"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat host: a message sent while a turn runs waits in the queue, the running turn keeps reporting, and the message runs when the turn ends; a typed message no longer denies the running turn's waiting approval",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat host: a queued message that starts after the previous turn ended tells the webview it is running, so Stop is offered; Stop ends the running turn, its message becomes failed with 'stopped by the user' and a resend even though the stopped CLI reports a terminal error, and the next waiting message runs",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension wiring: the repo key hashes the real path of the git top-level of the chat folder, the window key is kept in workspaceState, the store opens under ~/.insrc/chat-queue, engines.vscode is ^1.141.0 and engines.node >=22.13, isAlive combines the pid and start-time checks, and when node:sqlite cannot load the chat keeps the direct path and shows the notice once",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "The plugin's whole test suite and typecheck pass apart from failures that exist before this Story, with the tests the HLD lists as changing updated",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "By hand in VS Code (1.141) with two windows on one repository: a message typed mid-turn waits and runs after the turn, the running turn keeps showing; a message sent in the second window runs after the first window's turn; Stop marks the message failed and the next runs; a window reload while a message waits keeps it and it runs",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 ChatQueueStore (chat-queue-store.ts, schema v1)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 ChatQueueWorker (chat-queue-worker.ts)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 createTurnLifecycle changes (chained starts, chain epoch, onSpawn)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 QueuedTurnRunner and createChatPanelHost changes"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 activate (extension.ts) wiring and the engines change"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: the 'turn-running' webview message in protocol.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 test strategy (smoke checks)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 error paths and edge cases"
+    }
+  ]
+}

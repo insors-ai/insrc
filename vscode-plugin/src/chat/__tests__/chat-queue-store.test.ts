@@ -480,3 +480,34 @@ test('reclaim rewrites pid and keeps seq and cliPid for the same windowKey, and 
     t.done();
   }
 });
+
+// Epic E20261014613abdb3 Story S003 t7 — the unchanged bound (ac5).
+test('enqueue and resendFrom at QUEUE_RECORD_BOUND are refused with FULL_NOTE and leave every row', () => {
+  const t = temp();
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => 1_000, pluginVersion: '0.5.15' });
+  try {
+    const first = store.enqueue(msg('s0', 't0', 'first', 'w-A'));
+    assert.ok(first.ok);
+    assert.equal(store.acknowledge(first.message.seq, A), true);
+    store.finish(first.message.seq, { kind: 'stopped' }); // a failed row the user could resend
+    for (let i = 1; i < QUEUE_RECORD_BOUND; i++) assert.ok(store.enqueue(msg(`s${i}`, 't0')).ok, `row ${i}`);
+    assert.equal(store.list().length, QUEUE_RECORD_BOUND);
+    const before = store.list().map((m) => m.seq);
+    const refused = store.enqueue(msg('sx', 'tx', 'one too many'));
+    assert.deepEqual(refused.ok ? undefined : { reason: refused.reason, note: refused.note }, { reason: 'full', note: FULL_NOTE });
+    // A resend frees its own old row first, so at the bound it replaces that row instead of needing more room: no row is lost
+    // and the count stays at the bound (S001's rule, pinned here).
+    const resend = store.resendFrom(first.message.seq, 'r1', 'w-A');
+    assert.ok(resend.ok);
+    assert.equal(store.list().length, QUEUE_RECORD_BOUND, 'the resend took its own old place');
+    assert.deepEqual(store.list().slice(0, QUEUE_RECORD_BOUND - 1).map((m) => m.seq), before.slice(1), 'the other rows are untouched');
+    const again = store.enqueue(msg('sy', 'ty', 'still full'));
+    assert.deepEqual(again.ok ? undefined : { reason: again.reason, note: again.note }, { reason: 'full', note: FULL_NOTE });
+    // The user cancelling one queued message makes room again.
+    assert.equal(store.cancel(store.list()[0]!.seq), true);
+    assert.ok(store.enqueue(msg('sx', 'tx', 'fits now')).ok);
+  } finally {
+    store.close();
+    t.done();
+  }
+});

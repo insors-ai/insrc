@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Timers } from '../async-util.js';
-import { createChatQueueStore, LEASE_HEARTBEAT_MS, PRESENCE_GRACE_MS, LEASE_TAKEOVER_MS, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
+import { createChatQueueStore, FULL_NOTE, LEASE_HEARTBEAT_MS, PRESENCE_GRACE_MS, LEASE_TAKEOVER_MS, QUEUE_RECORD_BOUND, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
 import { ACTION_NOTES, ACTIVE_POLL_MS, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 
 /** Fake timers over a fake clock: advance() runs what is due, in order. */
@@ -711,6 +711,28 @@ test("a previous-plugin window's dispose deleting its presence row: a head young
     w.dispose();
     store.close();
     prev.close();
+    r.done();
+  }
+});
+
+// Epic E20261014613abdb3 Story S003 t7 — the unchanged bound (ac5), through the worker.
+test('submit at the bound returns ok:false reason full', () => {
+  const r = repo();
+  const t = fakeTime();
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  let n = 0;
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: () => true, now: t.now, timers: t.timers, newTurnId: () => `t${++n}` });
+  try {
+    for (let i = 0; i < QUEUE_RECORD_BOUND; i++) assert.ok(w.submit(sub(`s${i}`, `m${i}`)).ok, `row ${i}`);
+    const refused = w.submit(sub('sx', 'one too many'));
+    assert.equal(refused.ok, false);
+    assert.equal(refused.ok ? undefined : refused.reason, 'full');
+    assert.equal(refused.ok ? undefined : refused.note, FULL_NOTE);
+    assert.equal(store.list().length, QUEUE_RECORD_BOUND, 'nothing already queued is lost');
+  } finally {
+    w.dispose();
+    store.close();
     r.done();
   }
 });

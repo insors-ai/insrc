@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -61,3 +61,32 @@ Run at 2026-10-14T12:59:57.549Z on commit `4a614086`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` | 0 | 3 | 0.3 s |  |
+
+## t3
+
+Run at 2026-10-14T13:02:08.162Z on commit `29e9f12f`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named | `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` |
+
+**unit: outbox projection: processing rows are dropped, failed and not-delivered rows have no place, blockedBy comes from another chat's processing row, attachments are counted and the note is carried**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | outbox projection: processing rows are dropped, failed and not-delivered rows have no place, blockedBy comes from another chat's processing row, attachments are counted and the note is carried | `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` |
+
+**unit: protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions | `vscode-plugin/src/chat/__tests__/protocol.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` | 0 | 2 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 12 | 0.3 s |  |

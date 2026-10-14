@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s2",
     "createdAt": "2026-10-14T12:57:26.478Z",
-    "updatedAt": "2026-10-14T12:59:57.549Z",
+    "updatedAt": "2026-10-14T13:02:08.162Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -155,6 +155,129 @@
               },
               {
                 "title": "worker onWaiting: the runner's card report sets and clears waitingOn on the running message, and a busy write is retried on the next tick",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "29e9f12f",
+        "ranAt": "2026-10-14T13:02:08.162Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+                "title": "outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "outbox projection: processing rows are dropped, failed and not-delivered rows have no place, blockedBy comes from another chat's processing row, attachments are counted and the note is carried",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+                "title": "outbox projection: processing rows are dropped, failed and not-delivered rows have no place, blockedBy comes from another chat's processing row, attachments are counted and the note is carried",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+                "title": "protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 319,
+            "titles": [
+              {
+                "title": "outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named",
+                "result": "pass"
+              },
+              {
+                "title": "outbox projection: processing rows are dropped, failed and not-delivered rows have no place, blockedBy comes from another chat's processing row, attachments are counted and the note is carried",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 329,
+            "titles": [
+              {
+                "title": "WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "a { type: 'cancel-turn' } WebviewToHost message typechecks and carries no other field",
+                "result": "pass"
+              },
+              {
+                "title": "every existing WebviewToHost message still constructs with its original shape (no drift, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permission-mode' (additive, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (additive, exhaustiveness passes, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision message typechecks with requestId + selected ids",
+                "result": "pass"
+              },
+              {
+                "title": "S004: permission-decision typechecks with optional accepted-but-inert scope; set-permission-mode carries a PermissionMode",
+                "result": "pass"
+              },
+              {
+                "title": "WEBVIEW_TO_HOST_TYPES includes 'load-older' and HOST_TO_WEBVIEW_TYPES includes 'transcript-page', alongside every prior kind",
+                "result": "pass"
+              },
+              {
+                "title": "protocol: the four new webview messages and attachments-pending are in the type lists, and user-row carries attachments",
+                "result": "pass"
+              },
+              {
+                "title": "protocol: transcript-row is a host message and edit-prompt is not",
+                "result": "pass"
+              },
+              {
+                "title": "plugin protocol: 'docs-decision-result' and 'docs-companion' are host messages, 'open-companion' is a webview message, and 'docs-decision' carries a decision and a comments list",
+                "result": "pass"
+              },
+              {
+                "title": "protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions",
                 "result": "pass"
               }
             ],

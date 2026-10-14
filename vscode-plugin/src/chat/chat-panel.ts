@@ -32,7 +32,8 @@ import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-s
 import type { TurnEvent } from './stream-events.js';
 import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
-import type { ChatQueueWorker, QueuedTurnRunner } from './chat-queue-worker.js';
+import type { ChatQueueWorker, QueueAction, QueuedTurnRunner } from './chat-queue-worker.js';
+import { projectOutbox } from './chat-outbox.js';
 import {
   createEditGovernor,
   type EditGovernor,
@@ -479,6 +480,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const postRestored = (s: ChatSession): void => {
     const window = latestWindow(s.transcript);
     post({ type: 'session-restored', sessionId: s.id, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
+    postOutbox(); // Epic E20261014613abdb3 Story S002: each chat shows its own outbox
+  };
+
+  /**
+   * Epic E20261014613abdb3 Story S002: the queue's rows as the worker last delivered them (undefined
+   * while the queue is off or has not been read yet), projected to the shown chat's outbox and posted
+   * after every change, whenever a chat is shown (which covers the webview's 'ready') and after an
+   * action. A note is shown once, with the post it came with.
+   */
+  let outboxRows: readonly QueuedMessage[] | undefined;
+  const postOutbox = (note?: string): void => {
+    if (outboxRows === undefined || session === undefined) return;
+    const view = projectOutbox(outboxRows, session.id, {
+      titleOf: (id) => deps.store.get(id)?.title,
+      here: (m) => queued?.message.seq === m.seq,
+      ...(note !== undefined ? { note } : {}),
+    });
+    post({ type: 'outbox', view });
   };
 
   // S003 (dev-chat ux polish): record a resolved permission decision. Mirrors the tool-result
@@ -1637,6 +1656,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (typeof msg.text !== 'string' || session === undefined) return;
         sendTyped(session, msg.text, []);
         return;
+      case 'outbox-cancel':
+        outboxAction(msg.seq, 'cancel');
+        return;
+      case 'outbox-dismiss':
+        outboxAction(msg.seq, 'dismiss');
+        return;
+      case 'outbox-resend':
+        outboxAction(msg.seq, 'resend');
+        return;
       case 'cancel-turn':
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
         // Idempotent when no turn is active (stop() no-ops).
@@ -1983,6 +2011,23 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   // Epic E20261014613abdb3 Story S001: this window's queue worker, when the queue is available.
   const worker = deps.queue?.(queueRunner);
+  // Story S002: the outbox follows every change to the queue, in this window or another.
+  worker?.onChange((rows) => {
+    outboxRows = rows;
+    postOutbox();
+  });
+
+  /** Story S002: an outbox action on one of the shown chat's rows; a refusal is said in the outbox. */
+  const outboxAction = (seq: unknown, action: QueueAction): void => {
+    if (worker === undefined || session === undefined || typeof seq !== 'number') return;
+    const row = outboxRows?.find((m) => m.seq === seq);
+    if (row === undefined || row.sessionId !== session.id) {
+      log.warn(`[chat] outbox ${action} of message ${String(seq)} ignored: it is not a message of the shown chat`);
+      return;
+    }
+    const res = worker.act(seq, action);
+    if (!res.ok) postOutbox(res.note);
+  };
 
   /**
    * Epic E20261014613abdb3 Story S001: a message the user sent goes into the repository's queue; it

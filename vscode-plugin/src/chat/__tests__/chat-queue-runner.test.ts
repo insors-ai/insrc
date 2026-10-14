@@ -213,3 +213,50 @@ test("chat host: the queued turn runner shows the message's chat (opening the pa
     assert.equal(h.runs.length, 0);
   }
 });
+
+// Epic E20261014613abdb3 Story S004 t3 — a done with ok:false is a failed turn, not a finished one.
+test('a queued turn that ends with done ok:false resolves failed with the text, not done', async () => {
+  // The provider's text rides on the done event (claude and codex report an overload as an is_error result).
+  {
+    const h = harness();
+    h.host.open();
+    h.fc.send('ready');
+    const s = h.store.create('claude');
+    h.store.save(s);
+    const out = h.host.queueRunner.run(message(s.id, 'do the thing'), () => {});
+    await waitFor(() => h.runs.length === 1);
+    h.runs[0]!.feed({ kind: 'done', turnId: 't1', ok: false, message: 'API Error: 529 overloaded' });
+    const outcome = await out;
+    assert.equal(outcome.kind, 'failed', 'recorded as failed, not done: this is the regression the change fixes');
+    assert.equal((outcome as { error: string }).error, 'API Error: 529 overloaded');
+    h.runs[0]!.proc.exitNow();
+  }
+  // A done ok:false with no text still fails, with the generic text.
+  {
+    const h = harness();
+    h.host.open();
+    h.fc.send('ready');
+    const s = h.store.create('claude');
+    h.store.save(s);
+    const out = h.host.queueRunner.run(message(s.id, 'do the thing'), () => {});
+    await waitFor(() => h.runs.length === 1);
+    h.runs[0]!.feed({ kind: 'done', turnId: 't1', ok: false });
+    const outcome = await out;
+    assert.equal(outcome.kind, 'failed');
+    assert.equal((outcome as { error: string }).error, 'the turn ended with an error');
+    h.runs[0]!.proc.exitNow();
+  }
+  // A successful done is still done.
+  {
+    const h = harness();
+    h.host.open();
+    h.fc.send('ready');
+    const s = h.store.create('claude');
+    h.store.save(s);
+    const out = h.host.queueRunner.run(message(s.id, 'finish fine'), () => {});
+    await waitFor(() => h.runs.length === 1);
+    h.runs[0]!.feed(done('t1'));
+    assert.deepEqual(await out, { kind: 'done' });
+    h.runs[0]!.proc.exitNow();
+  }
+});

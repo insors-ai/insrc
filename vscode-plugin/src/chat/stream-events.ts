@@ -67,6 +67,11 @@ export type TurnEvent =
       readonly ok: boolean;
       /** The provider's native session id for this turn, when captured — the resume handle S005 persists. */
       readonly sessionId?: string;
+      /**
+       * Story S004 (additive): the provider's own error text when `ok` is false, so a failure that arrives as an
+       * is_error result (how claude and codex report an overload) is not an anonymous done. Absent otherwise.
+       */
+      readonly message?: string;
     }
   | { readonly kind: 'error'; readonly turnId: string; readonly message: string }
   | {

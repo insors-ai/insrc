@@ -1593,6 +1593,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (q !== undefined) {
           q.terminal = ev.kind;
           if (ev.kind === 'error') q.error = ev.message;
+          // Story S004: a done with ok:false is a failed turn, not a finished one. claude and codex report an overload or
+          // a rate limit as an is_error result, which the adapter maps to done(ok:false) with the provider's text.
+          else if (ev.kind === 'done' && !ev.ok) q.error = ev.message ?? 'the turn ended with an error';
         }
         runCompletedBatch(); // ISSUE-6a811b8a: requests decided before the turn ended are now complete
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn

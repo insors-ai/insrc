@@ -1528,3 +1528,56 @@ test("codex adapter: a file_change item emits one applied file-edit event per ch
   ];
   assert.deepEqual(await edits('claude', claude), [['/repo/a.ts', undefined]]);
 });
+
+// Epic E20261014613abdb3 Story S004 t3 — the provider's error text rides on done(ok:false).
+test('a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message', async () => {
+  // claude, live: the result text of an is_error result.
+  const claudeFail = [
+    JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-f' }),
+    JSON.stringify({ type: 'result', subtype: 'success', is_error: true, result: 'API Error: 529 {"type":"overloaded_error"}', session_id: 'sess-f' }),
+  ];
+  const c = await collect(createProviderRegistry(depsFor({ lines: claudeFail }).deps).get('claude').run(REQ({ provider: 'claude' })));
+  const cd = c.at(-1) as { kind: string; ok: boolean; message?: string; sessionId?: string };
+  assert.equal(cd.kind, 'done');
+  assert.equal(cd.ok, false);
+  assert.equal(cd.message, 'API Error: 529 {"type":"overloaded_error"}');
+  assert.equal(cd.sessionId, 'sess-f', 'the native session id is still carried');
+
+  // claude with no text (error_max_turns): ok:false and no message.
+  const bare = await collect(createProviderRegistry(depsFor({ lines: CLAUDE_ERROR_TURN }).deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.equal((bare.at(-1) as { ok: boolean }).ok, false);
+  assert.equal('message' in (bare.at(-1) as object), false, 'no invented text');
+
+  // codex: an error object, an error string and a result text each give the message.
+  for (const [lineObj, want] of [
+    [{ type: 'turn.completed', error: { message: 'rate limit exceeded' } }, 'rate limit exceeded'],
+    [{ type: 'turn.completed', error: 'upstream overloaded' }, 'upstream overloaded'],
+    [{ type: 'result', is_error: true, result: 'connection closed mid-response' }, 'connection closed mid-response'],
+  ] as const) {
+    const ev = await collect(createProviderRegistry(depsFor({ lines: [JSON.stringify(lineObj)] }).deps).get('codex').run(REQ({ provider: 'codex' })));
+    const d = ev.at(-1) as { kind: string; ok: boolean; message?: string };
+    assert.equal(d.kind, 'done');
+    assert.equal(d.ok, false);
+    assert.equal(d.message, want);
+  }
+
+  // A successful result of either provider has no message.
+  const okClaude = await collect(createProviderRegistry(depsFor({ lines: CLAUDE_TEXT_TURN }).deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.equal((okClaude.at(-1) as { ok: boolean }).ok, true);
+  assert.equal('message' in (okClaude.at(-1) as object), false);
+  const okCodex = await collect(createProviderRegistry(depsFor({ lines: CODEX_TEXT_TURN }).deps).get('codex').run(REQ({ provider: 'codex' })));
+  assert.equal('message' in (okCodex.at(-1) as object), false);
+
+  // The resumed path (a window that reloaded) carries it too.
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const sessionOutput = createSessionOutput({ root, pollMs: 5 });
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput, livenessPollMs: 5 }).get('claude');
+  const seg = await sessionOutput.beginTurn('s9', 'turn-9');
+  appendFileSync(seg.outPath, `${claudeFail[0]}\n${claudeFail[1]}\n`);
+  const resumed: TurnEvent[] = [];
+  for await (const ev of adapter.resume({ cursor: seg.cursor, pid: process.pid, startedAt: defaultProcessStartTime(process.pid) ?? null })) resumed.push(ev);
+  const rd = resumed.at(-1) as { kind: string; ok: boolean; message?: string };
+  assert.equal(rd.kind, 'done');
+  assert.equal(rd.ok, false);
+  assert.equal(rd.message, 'API Error: 529 {"type":"overloaded_error"}');
+});

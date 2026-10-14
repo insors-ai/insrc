@@ -1,0 +1,228 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "createdAt": "2026-10-14T17:28:09.450Z",
+    "updatedAt": "2026-10-14T17:29:43.129Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicSlug": "per-repo-chat-turn-queue-outbox"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d4e8739f",
+        "ranAt": "2026-10-14T17:28:09.450Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-failure.test.ts: overloaded, rate limit, 429 and 5xx texts, timeouts and connection failures map to their causes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-failure.test.ts",
+                "title": "overloaded, rate limit, 429 and 5xx texts, timeouts and connection failures map to their causes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-failure.test.ts: the adapter's not-authenticated text and the CLIs' unauthorised and invalid key texts map to auth",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-failure.test.ts",
+                "title": "the adapter's not-authenticated text and the CLIs' unauthorised and invalid key texts map to auth",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-failure.test.ts: CLI not found and any unmatched text, including a model refusal, map to other",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-failure.test.ts",
+                "title": "CLI not found and any unmatched text, including a model refusal, map to other",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 337,
+            "titles": [
+              {
+                "title": "overloaded, rate limit, 429 and 5xx texts, timeouts and connection failures map to their causes",
+                "result": "pass"
+              },
+              {
+                "title": "the adapter's not-authenticated text and the CLIs' unauthorised and invalid key texts map to auth",
+                "result": "pass"
+              },
+              {
+                "title": "CLI not found and any unmatched text, including a model refusal, map to other",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "90130862",
+        "ranAt": "2026-10-14T17:29:43.129Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-queue-store.test.ts: an infrastructure failure before acting becomes retrying with attempts 1 and nextAttemptAt now plus 10 s, keeps its seq and error, and releases the lease",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "an infrastructure failure before acting becomes retrying with attempts 1 and nextAttemptAt now plus 10 s, keeps its seq and error, and releases the lease",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-store.test.ts: attempts 1 and 2 use 1 min and 5 min, and a failure at attempts 3 becomes failed with the error",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "attempts 1 and 2 use 1 min and 5 min, and a failure at attempts 3 becomes failed with the error",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-store.test.ts: acted true, cause auth, cause other or a missing cause becomes failed with the error and is never retrying",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "acted true, cause auth, cause other or a missing cause becomes failed with the error and is never retrying",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-store.test.ts: retryNow makes a retrying row due at once with attempts unchanged and returns false for any other row",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+                "title": "retryNow makes a retrying row due at once with attempts unchanged and returns false for any other row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1011,
+            "titles": [
+              {
+                "title": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows",
+                "result": "pass"
+              },
+              {
+                "title": "chat queue store: two processes on one database file acknowledging the same head at the same moment: exactly one succeeds and the message is processing once",
+                "result": "pass"
+              },
+              {
+                "title": "schema 2: a fresh queue file is created with the waiting_on column at version 2, and a processing row can be marked waiting",
+                "result": "pass"
+              },
+              {
+                "title": "schema upgrade: a version-1 queue file opens as version 2 with its rows kept and waitingOn empty, and a newer file is still refused",
+                "result": "pass"
+              },
+              {
+                "title": "markWaiting sets and clears waitingOn on a processing row only",
+                "result": "pass"
+              },
+              {
+                "title": "resendFrom: a failed or not-delivered message joins the back with its text and attachments under the given window key; any other state is refused",
+                "result": "pass"
+              },
+              {
+                "title": "presenceOf returns the row, and undefined when there is none",
+                "result": "pass"
+              },
+              {
+                "title": "markNotDeliveredIfHead marks the head, the next row becomes the head, and a row acknowledged first by another connection is not marked",
+                "result": "pass"
+              },
+              {
+                "title": "markNotDeliveredIfHead marks a retrying head whose window closed and the next row becomes the head",
+                "result": "pass"
+              },
+              {
+                "title": "takeOver takes a stale lease of another windowKey only after LEASE_TAKEOVER_MS and fails its message, and refuses when holderGone is false, absent or the heartbeat is fresh",
+                "result": "pass"
+              },
+              {
+                "title": "takeOver takes a lease of the claim's own windowKey at once when holderGone is true",
+                "result": "pass"
+              },
+              {
+                "title": "two connections racing takeOver on one stale lease, exactly one returns true",
+                "result": "pass"
+              },
+              {
+                "title": "reclaim rewrites pid and keeps seq and cliPid for the same windowKey, and refuses another windowKey",
+                "result": "pass"
+              },
+              {
+                "title": "at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces its own old row, and no row is lost",
+                "result": "pass"
+              },
+              {
+                "title": "an infrastructure failure before acting becomes retrying with attempts 1 and nextAttemptAt now plus 10 s, keeps its seq and error, and releases the lease",
+                "result": "pass"
+              },
+              {
+                "title": "attempts 1 and 2 use 1 min and 5 min, and a failure at attempts 3 becomes failed with the error",
+                "result": "pass"
+              },
+              {
+                "title": "acted true, cause auth, cause other or a missing cause becomes failed with the error and is never retrying",
+                "result": "pass"
+              },
+              {
+                "title": "retryNow makes a retrying row due at once with attempts unchanged and returns false for any other row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

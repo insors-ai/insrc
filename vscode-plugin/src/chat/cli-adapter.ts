@@ -653,7 +653,10 @@ const claudeMapper: ProviderMapper = {
       return out;
     }
     if (type === 'result') {
-      return [{ kind: 'done', turnId, ok: obj['is_error'] !== true }];
+      // Story S004: an is_error result carries the provider's text; keep it on the done event.
+      const failed = obj['is_error'] === true;
+      const text = failed && typeof obj['result'] === 'string' && (obj['result'] as string).trim() !== '' ? (obj['result'] as string).trim() : undefined;
+      return [{ kind: 'done', turnId, ok: !failed, ...(text !== undefined ? { message: text } : {}) }];
     }
     // S004: a host-answered permission prompt (--permission-prompts host). claude raises
     // it as a control_request / permission_request envelope (or a nested can_use_tool
@@ -778,7 +781,19 @@ const codexMapper: ProviderMapper = {
       return emitAssistantText(turnId, text, state);
     }
     if (type === 'turn.completed' || type === 'thread.completed' || type === 'result') {
-      return [{ kind: 'done', turnId, ok: obj['is_error'] !== true && obj['error'] === undefined }];
+      // Story S004: a failed codex result carries its error text (a string, or an object with a message, or the result text).
+      const failed = obj['is_error'] === true || obj['error'] !== undefined;
+      const err = obj['error'];
+      const text = !failed
+        ? undefined
+        : typeof err === 'string'
+          ? err
+          : typeof err === 'object' && err !== null && typeof (err as { message?: unknown }).message === 'string'
+            ? (err as { message: string }).message
+            : typeof obj['result'] === 'string'
+              ? (obj['result'] as string)
+              : undefined;
+      return [{ kind: 'done', turnId, ok: !failed, ...(text !== undefined && text.trim() !== '' ? { message: text.trim() } : {}) }];
     }
     if (type === 'error' || type === 'turn.failed') {
       const message = typeof obj['message'] === 'string' ? (obj['message'] as string) : 'codex turn failed';
@@ -897,8 +912,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     let terminal = false;
     // Stamp the captured native session id onto a terminal `done` so the caller
     // (S005) can persist the resume handle; a dead capture would strand resume.
-    const doneEvent = (ok: boolean): TurnEvent =>
-      state.sessionId !== undefined ? { kind: 'done', turnId, ok, sessionId: state.sessionId } : { kind: 'done', turnId, ok };
+    const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
+      kind: 'done',
+      turnId,
+      ok,
+      ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
+      ...(!ok && message !== undefined ? { message } : {}),
+    });
     const stdout = proc.lines()[Symbol.asyncIterator]();
     try {
       const spawnErr = await proc.spawnError;
@@ -945,7 +965,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             void drain(stdout);
           }
           // Enrich a mapper-produced done with the session id captured so far.
-          yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
+          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
           if (sawDone || sawError) return;
         }
         // Every event of this line has been handed over: report the position after it.
@@ -1056,8 +1076,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     opts?.onAttach?.(handle);
 
     const state: TurnState = {};
-    const doneEvent = (ok: boolean): TurnEvent =>
-      state.sessionId !== undefined ? { kind: 'done', turnId, ok, sessionId: state.sessionId } : { kind: 'done', turnId, ok };
+    const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
+      kind: 'done',
+      turnId,
+      ok,
+      ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
+      ...(!ok && message !== undefined ? { message } : {}),
+    });
     try {
       for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: () => !isTheProcess(), signal: opts?.signal })) {
         let events: TurnEvent[];
@@ -1068,7 +1093,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           continue;
         }
         for (const ev of events) {
-          yield ev.kind === 'done' ? doneEvent(ev.ok) : ev;
+          yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
           if (ev.kind === 'done' || ev.kind === 'error') return;
         }
         opts?.onProgress?.(cursor);

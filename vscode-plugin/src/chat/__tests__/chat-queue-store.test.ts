@@ -292,3 +292,81 @@ test('resendFrom: a failed or not-delivered message joins the back with its text
     t.done();
   }
 });
+
+// Epic E20261014613abdb3 Story S003 t1.
+test('presenceOf returns the row, and undefined when there is none', () => {
+  const t = temp();
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => 5_000, pluginVersion: '0.5.15' });
+  try {
+    assert.equal(store.presenceOf('w-A'), undefined, 'no row yet');
+    store.presence({ windowKey: 'w-A', pid: 101, pidStartedAt: 77 });
+    store.presence({ windowKey: 'w-B', pid: 202 });
+    assert.deepEqual(store.presenceOf('w-A'), { windowKey: 'w-A', pid: 101, pidStartedAt: 77, heartbeatAt: 5_000 });
+    assert.deepEqual(store.presenceOf('w-B'), { windowKey: 'w-B', pid: 202, heartbeatAt: 5_000 }, 'no start time recorded');
+    assert.equal(store.presenceOf('w-C'), undefined, 'another window');
+    store.leave({ windowKey: 'w-A', pid: 101 });
+    assert.equal(store.presenceOf('w-A'), undefined, 'removed');
+  } finally {
+    store.close();
+    t.done();
+  }
+});
+
+test('markNotDeliveredIfHead marks the head, the next row becomes the head, and a row acknowledged first by another connection is not marked', () => {
+  const t = temp();
+  let clock = 1_000;
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => clock, pluginVersion: '0.5.15' });
+  const other = createChatQueueStore({ path: t.path, openDatabase: open, now: () => clock, pluginVersion: '0.5.15' });
+  try {
+    const m1 = store.enqueue(msg('s1', 't1', 'one', 'w-B'));
+    const m2 = store.enqueue(msg('s2', 't1', 'two', 'w-B'));
+    const m3 = store.enqueue(msg('s3', 't1', 'three', 'w-C'));
+    assert.ok(m1.ok && m2.ok && m3.ok);
+    // Not the head: refused, nothing changes.
+    assert.equal(store.markNotDeliveredIfHead(m2.message.seq), false);
+    assert.equal(store.list().every((m) => m.state === 'queued'), true);
+    // The head: marked with the error, and the next row becomes the head.
+    clock = 2_000;
+    assert.equal(store.markNotDeliveredIfHead(m1.message.seq), true);
+    const marked = store.list().find((m) => m.seq === m1.message.seq);
+    assert.equal(marked?.state, 'not-delivered');
+    assert.equal(marked?.error, 'its window was closed');
+    assert.equal(marked?.updatedAt, 2_000);
+    assert.equal(store.head()?.seq, m2.message.seq);
+    assert.equal(store.markNotDeliveredIfHead(m1.message.seq), false, 'already marked');
+    // Another connection acknowledged the head first: this connection does not mark it.
+    assert.equal(other.acknowledge(m2.message.seq, { windowKey: 'w-B', pid: 303 }), true);
+    assert.equal(store.markNotDeliveredIfHead(m2.message.seq), false);
+    assert.equal(store.list().find((m) => m.seq === m2.message.seq)?.state, 'processing');
+    // Resendable: a not-delivered message is handed to the window that resends it.
+    assert.ok(store.resendFrom(m1.message.seq, 't9', 'w-A').ok);
+  } finally {
+    other.close();
+    store.close();
+    t.done();
+  }
+});
+
+test('markNotDeliveredIfHead marks a retrying head whose window closed and the next row becomes the head', () => {
+  const t = temp();
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => 1_000, pluginVersion: '0.5.15' });
+  try {
+    const m1 = store.enqueue(msg('s1', 't1', 'one', 'w-B'));
+    const m2 = store.enqueue(msg('s2', 't1', 'two', 'w-B'));
+    assert.ok(m1.ok && m2.ok);
+    // Story S004 writes the retrying state; here it is put on the row directly.
+    const raw = new DatabaseSync(t.path);
+    try {
+      raw.prepare(`UPDATE messages SET state = 'retrying', attempts = 1, next_attempt_at = 99999 WHERE seq = ?`).run(m1.message.seq);
+    } finally {
+      raw.close();
+    }
+    assert.equal(store.head()?.seq, m1.message.seq, 'a retrying head is still the head');
+    assert.equal(store.markNotDeliveredIfHead(m1.message.seq), true);
+    assert.equal(store.list().find((m) => m.seq === m1.message.seq)?.state, 'not-delivered');
+    assert.equal(store.head()?.seq, m2.message.seq, 'the queue moves on');
+  } finally {
+    store.close();
+    t.done();
+  }
+});

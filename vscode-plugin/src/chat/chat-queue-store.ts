@@ -110,6 +110,11 @@ export interface ChatQueueStore {
    * not-delivered message's own window is closed, so under its old key no window would take it).
    */
   resendFrom(seq: number, newTurnId: string, windowKey: string): EnqueueResult;
+  /**
+   * Epic E20261014613abdb3 Story S003: marks the head not-delivered ('its window was closed') when `seq` is still the
+   * head (queued or retrying) inside the transaction; false when another window took, cancelled or finished it first.
+   */
+  markNotDeliveredIfHead(seq: number): boolean;
   /** Epic E20261014613abdb3 Story S002: sets or clears the card a processing message waits on; false on any other row. */
   markWaiting(seq: number, on: 'approval' | 'selection' | undefined): boolean;
   /** Every live row, in queue order. */
@@ -138,6 +143,8 @@ export interface ChatQueueLeases {
   reclaim(claim: LeaseClaim): boolean;
   /** Whether a live presence row for the window was refreshed within PRESENCE_GRACE_MS. */
   windowAlive(windowKey: string, now: number): boolean;
+  /** Epic E20261014613abdb3 Story S003: the window's presence row (pid and last refresh), or undefined when it has none. */
+  presenceOf(windowKey: string): WindowPresence | undefined;
 }
 
 /** The subset of node:sqlite's DatabaseSync the store uses. */
@@ -448,6 +455,17 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
       });
     },
 
+    markNotDeliveredIfHead(seq) {
+      return write(() => {
+        const r = db.prepare(LIVE_HEAD).get();
+        if (r === undefined || rowToMessage(r).seq !== seq) return false;
+        const changed = db
+          .prepare(`UPDATE messages SET state = 'not-delivered', error = ?, waiting_on = NULL, updated_at = ? WHERE seq = ? AND state IN ('queued', 'retrying')`)
+          .run('its window was closed', now(), seq);
+        return Number(changed.changes) === 1;
+      });
+    },
+
     cancel(seq) {
       return write(() => Number(db.prepare(`DELETE FROM messages WHERE seq = ? AND state IN ('queued', 'retrying')`).run(seq).changes) === 1);
     },
@@ -533,6 +551,18 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
       const r = db.prepare(`SELECT heartbeat_at FROM presence WHERE window_key = ?`).get(windowKey);
       const beat = r === undefined ? undefined : num(r['heartbeat_at']);
       return beat !== undefined && at - beat <= PRESENCE_GRACE_MS;
+    },
+
+    presenceOf(windowKey) {
+      const r = db.prepare(`SELECT window_key, pid, pid_started_at, heartbeat_at FROM presence WHERE window_key = ?`).get(windowKey);
+      if (r === undefined) return undefined;
+      const pidStartedAt = num(r['pid_started_at']);
+      return {
+        windowKey: String(r['window_key']),
+        pid: num(r['pid']) ?? 0,
+        ...(pidStartedAt !== undefined ? { pidStartedAt } : {}),
+        heartbeatAt: num(r['heartbeat_at']) ?? 0,
+      };
     },
 
     close() {

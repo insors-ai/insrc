@@ -775,13 +775,15 @@ function isRequestRejection(err: unknown): boolean {
 }
 
 /**
- * Every failure the Ollama client raises -- from the call itself or from
- * inside a stream's iteration -- is a failed model call, whatever its text
- * (ECONNREFUSED, socket hang up, fetch failed, terminated, a stream that
- * ends early, a rejected request). It is raised as ModelCallFailedError so
- * a caller recognises it by type, not by matching words; the client's own
- * error is kept as the cause. The two configuration failures keep their
- * actionable wording as the detail.
+ * A failure to reach or keep the model -- from the call itself or from inside
+ * a stream's iteration -- is a failed model call, whatever its text
+ * (ECONNREFUSED, socket hang up, fetch failed, terminated, a stream that ends
+ * early, a server error). It is raised as ModelCallFailedError so a caller
+ * recognises it by type, not by matching words; the client's own error is
+ * kept as the cause. The two configuration failures (Ollama not running, the
+ * model not found) keep their actionable wording as the detail. Two errors
+ * are not failed model calls and pass through as raised: a cancellation, and
+ * a request the server rejected for its content (isRequestRejection).
  */
 function wrapOllamaError(err: unknown): unknown {
   if (err instanceof ModelCallFailedError) return err;

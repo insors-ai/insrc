@@ -766,12 +766,16 @@ function isAbortError(err: unknown): boolean {
  * A request the Ollama server answered and rejected for its content: the
  * client's ResponseError with a 4xx status (a bad format schema, a prompt over
  * the context length). A 404 is not one: it is the model not being found, a
- * configuration failure. A 5xx is the server failing, not the request.
+ * configuration failure. Nor are 408 (request timeout) and 429 (too many
+ * requests), which a proxy in front of Ollama can return: the request was not
+ * refused for its content, the model could not be reached in time. A 5xx is
+ * the server failing, not the request.
  */
+const NOT_A_REQUEST_REJECTION: ReadonlySet<number> = new Set([404, 408, 429]);
 function isRequestRejection(err: unknown): boolean {
   if (!(err instanceof Error) || err.name !== 'ResponseError') return false;
   const status = (err as { status_code?: unknown }).status_code;
-  return typeof status === 'number' && status >= 400 && status < 500 && status !== 404;
+  return typeof status === 'number' && status >= 400 && status < 500 && !NOT_A_REQUEST_REJECTION.has(status);
 }
 
 /**

@@ -180,7 +180,7 @@ function responseError(status: number, message: string): Error {
 	return Object.assign(new Error(message), { name: 'ResponseError', error: message, status_code: status });
 }
 
-test('OllamaProvider (ISSUE-fb584b48): a request the server rejected for its content (ResponseError 4xx) reaches the caller as it was raised, with its status, not as a failed model call; a 404 (model not found) and a 5xx stay failed model calls', async () => {
+test('OllamaProvider (ISSUE-fb584b48): a request the server rejected for its content (ResponseError 4xx) reaches the caller as it was raised, with its status, not as a failed model call; a 404 (model not found), a 408 or 429 (not reached in time) and a 5xx stay failed model calls', async () => {
 	const { isModelCallFailure } = await import('../../../analyze/context/model-failure.js');
 	for (const where of ['call', 'iteration'] as const) {
 		const runs: Array<[string, (p: OllamaProvider) => Promise<unknown>]> = [
@@ -202,6 +202,15 @@ test('OllamaProvider (ISSUE-fb584b48): a request the server rejected for its con
 			try { await run(providerWith(missing)); } catch (err) { caught = err; }
 			assertTyped(caught, missing.thrown[0], `${name} ${where} 404`);
 			assert.match((caught as ModelCallFailedError).detail, /^Model not found in Ollama/);
+
+			// A request timeout or a rate limit (a proxy in front of Ollama) is a failure to reach the model, not a rejection.
+			for (const [status, text] of [[408, 'request timeout'], [429, 'too many requests']] as const) {
+				const transient = failingClient(() => responseError(status, text), where);
+				caught = undefined;
+				try { await run(providerWith(transient)); } catch (err) { caught = err; }
+				assert.ok(caught instanceof ModelCallFailedError, `${name} ${where} ${status}: got ${String(caught)}`);
+				assert.equal(isModelCallFailure(caught), true, `${name} ${where} ${status}: a failed model call`);
+			}
 
 			const failing = failingClient(() => responseError(500, 'llama runner process has terminated'), where);
 			caught = undefined;

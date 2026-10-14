@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s1",
     "createdAt": "2026-10-14T11:13:11.458Z",
-    "updatedAt": "2026-10-14T11:30:19.422Z",
+    "updatedAt": "2026-10-14T11:37:04.816Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -288,6 +288,59 @@
             "titles": [
               {
                 "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "6a7a5de3",
+        "ranAt": "2026-10-14T11:37:04.816Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat host: a message sent while a turn runs waits in the queue, the running turn keeps reporting, and the message runs when the turn ends; a typed message no longer denies the running turn's waiting approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+                "title": "chat host: a message sent while a turn runs waits in the queue, the running turn keeps reporting, and the message runs when the turn ends; a typed message no longer denies the running turn's waiting approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat host: a queued message that starts after the previous turn ended tells the webview it is running, so Stop is offered; Stop ends the running turn, its message becomes failed with 'stopped by the user' and a resend even though the stopped CLI reports a terminal error, and the next waiting message runs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+                "title": "chat host: a queued message that starts after the previous turn ended tells the webview it is running, so Stop is offered; Stop ends the running turn, its message becomes failed with 'stopped by the user' and a resend even though the stopped CLI reports a terminal error, and the next waiting message runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1024,
+            "titles": [
+              {
+                "title": "chat host: a message sent while a turn runs waits in the queue, the running turn keeps reporting, and the message runs when the turn ends; a typed message no longer denies the running turn's waiting approval",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a queued message that starts after the previous turn ended tells the webview it is running, so Stop is offered; Stop ends the running turn, its message becomes failed with 'stopped by the user' and a resend even though the stopped CLI reports a terminal error, and the next waiting message runs",
                 "result": "pass"
               }
             ],

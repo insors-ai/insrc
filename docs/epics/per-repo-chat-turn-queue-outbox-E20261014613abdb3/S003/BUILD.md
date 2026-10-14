@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s3
 
-**Standalone:** no  ·  **Created:** 2026-10-14T15:08:25.833Z  ·  **Updated:** 2026-10-14T16:16:20.391Z
+**Standalone:** no  ·  **Created:** 2026-10-14T15:08:25.833Z  ·  **Updated:** 2026-10-14T16:21:55.626Z
 
-**Commit:** fca9d67c
+**Commit:** 12a45bec
 
 ## Summary
 
@@ -24,4 +24,9 @@ S003 gives the chat queue three protections. A dead window's lease is freed: a r
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-613abdb351c2c738-s3.json` — **insrc-build** (2026-10-14T16:16:20.391Z)
+- `.insrc/artifacts/PLAN-613abdb351c2c738-s3.json` — **insrc-build** (2026-10-14T16:21:55.626Z)
+- `docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S003/PLAN.md` — **insrc-build** (2026-10-14T16:21:55.626Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` — **insrc-build** (2026-10-14T16:21:55.626Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` — **insrc-build** (2026-10-14T16:21:55.626Z)
+- `vscode-plugin/src/chat/chat-queue-store.ts` — **insrc-build** (2026-10-14T16:21:55.626Z)
+- `vscode-plugin/src/chat/chat-queue-worker.ts` — **insrc-build** (2026-10-14T16:21:55.626Z)

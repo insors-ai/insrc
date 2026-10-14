@@ -4,10 +4,11 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s3",
     "createdAt": "2026-10-14T15:08:25.833Z",
-    "updatedAt": "2026-10-14T16:16:20.391Z",
+    "updatedAt": "2026-10-14T16:21:55.626Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
-    "epicSlug": "per-repo-chat-turn-queue-outbox"
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "approvedAt": "2026-10-14T16:21:56.599Z"
   },
   "body": {
     "tasks": [
@@ -49,10 +50,45 @@
           "file": ".insrc/artifacts/PLAN-613abdb351c2c738-s3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T16:16:20.391Z"
+        "timestamp": "2026-10-14T16:21:55.626Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S003/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T16:21:55.626Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T16:21:55.626Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T16:21:55.626Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T16:21:55.626Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T16:21:55.626Z"
       }
     ],
-    "commit": "fca9d67c",
+    "commit": "12a45bec",
     "summary": "S003 gives the chat queue three protections. A dead window's lease is freed: a reloaded window re-homes the lease when its CLI survived and follows it until the CLI exits; the same window's lease is freed at once when the CLI is gone; another window's only after LEASE_TAKEOVER_MS, and never while it heartbeats. A message whose window is closed is marked not delivered after PRESENCE_GRACE_MS so the queue moves on, and dispose keeps the presence row so a reload never looks like a closed window. The bound is unchanged (ac5): enqueue is refused with FULL_NOTE at QUEUE_RECORD_BOUND; a resend replaces its own old row so it is never refused and loses nothing. Tasks t1-t6 passed the gate (t4 and t5 share one commit). HAND CHECK NOT RUN: only a single-window reload with a message queued behind a running turn was observed (new host pid held the lease, no failed or not-delivered row from the reload). The multi-window checks (reload mid-turn with the CLI alive; reload with a message waiting while a second window ticks; close a window with queued messages) are deferred by the owner until a repo path bug that blocks multi-window use is fixed, so no result is reported for them. Display half of ac3 is carried by S001 tests run by the gate: turn-lifecycle.test.ts follow tests and chat-panel.test.ts reload-follow tests. Constraints: k1 holds (only the plugin's own SQLite queue is touched, no daemon store); k2 holds (10 min takeover needs the holder process gone and applies only to another window's lease; the 500 bound refuses with a note and drops nothing; no retry code); k3 n/a (no UI change); k4 holds (store and worker stay free of the vscode module, injected deps); k5 holds (node:sqlite requirement unchanged). The three HLD amendments (sc1 markNotDeliveredIfHead; sc2 presenceOf plus takeOver holderGone and own-windowKey rule; HLD flush wording) were NOT filed: choosing 'file an amendment' at plan time only recorded the decision. They remain to be filed for the owner's approval."
   }
 }

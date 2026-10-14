@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1791994609969-gh69ji",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T16:16:49.970Z",
+    "model": "claude:opus",
+    "elapsedMs": 54850,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s3",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicSlug": "per-repo-chat-turn-queue-outbox"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s3",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+        "vscode-plugin/src/chat/chat-queue-store.ts",
+        "vscode-plugin/src/chat/chat-queue-worker.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts:51",
+            "message": "The promised live hand check has no automated test, which is expected for a live test, and it has no recorded result. The recent build commits (12a45bec, 32d8d81e) say the multi-window hand check is still deferred. It is present but unverified. It is not missing: it needs a reported result and evidence before the Story is completed.",
+            "expectationRef": "hand check in two windows: reload mid-turn with the CLI alive, reload with queued messages while a second window ticks, and close a window with queued messages",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts:297",
+            "message": "All 21 promised automated tests are present with matching titles. The 9 store tests are at chat-queue-store.test.ts:297, 315, 350, 386, 414, 445, 463 and 485. The 12 worker tests are at chat-queue-worker.test.ts:51 (the existing S001 worker test), 318, 350, 378, 408, 441, 478, 513, 543, 609, 655, 690 and 719. No build record was supplied, so whether they pass is unverified. They are present but unverified, not passing.",
+            "expectationRef": "all promised chat-queue-store.test.ts / chat-queue-worker.test.ts tests",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-queue-worker.ts:1",
+            "message": "These symbols have empty testsReaching, but they are closures nested inside createChatQueueStore and createChatQueueWorker. Both factories are reached by the test helpers repo, leased and mk. The graph does not link test cases to closures, so the empty edges reflect hollow grounding, not a confirmed gap. The promised tests cover this behaviour by name: the resend/bound test, the window-closed head tests, takeOver/reclaim and the reclaimed-lease heartbeat. This is not reported as a HIGH gap.",
+            "expectationRef": "resendTo, windowClosed, applyLeaseRules, followReclaimed, tick, insert, liveCount (and other factory closures)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 2
+    }
+  }
+}

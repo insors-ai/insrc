@@ -68,3 +68,13 @@ test('outbox projection: processing rows are dropped, failed and not-delivered r
   assert.equal(none.aheadFromOtherChats, 2);
   assert.deepEqual(none.blockedBy, { chatTitle: 'another chat', reason: 'approval' });
 });
+
+test('a retrying row carries attempt and nextAttemptAt', () => {
+  const view = projectOutbox([row('mine', 'retrying', 'retry me', { attempts: 2, nextAttemptAt: 99 }), row('mine', 'queued', 'plain')], 'mine', { titleOf });
+  const retrying = view.rows.find((r) => r.text === 'retry me');
+  assert.equal(retrying?.attempt, 2);
+  assert.equal(retrying?.nextAttemptAt, 99);
+  const plain = view.rows.find((r) => r.text === 'plain');
+  assert.equal(plain?.attempt, undefined, 'a message never retried carries neither');
+  assert.equal(plain?.nextAttemptAt, undefined);
+});

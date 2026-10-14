@@ -35,9 +35,11 @@ interface Shell {
   html: string;
   /** The fake element the script got for an id. */
   el: (id: string) => BodyStub;
+  /** Runs every interval the script set (its countdown tick). */
+  tickIntervals: () => void;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined } = {}): Shell {
+function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined } = {}): Shell {
   let html = '';
   const channel: ChatPanelChannel = { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   const adapter: StreamAdapter = { async *run(): AsyncIterable<TurnEvent> {}, cancel: () => {}, decide: () => {}, capabilities: { resume: true } };
@@ -88,6 +90,7 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
 
   const sent: Array<Record<string, unknown>> = [];
   const listeners: Array<(e: unknown) => void> = [];
+  const intervals: Array<() => void> = [];
   const context: Record<string, unknown> = {
     window: { addEventListener: (type: string, l: (e: unknown) => void) => { if (type === 'message') listeners.push(l); } },
     document: { getElementById, createElement: (tag: string) => dress(bodyStub(tag)), addEventListener: () => {} },
@@ -95,8 +98,8 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
     acquireVsCodeApi: () => ({ postMessage: (m: { payload: unknown }) => { sent.push(JSON.parse(JSON.stringify(m.payload)) as Record<string, unknown>); } }),
     marked,
     setTimeout, clearTimeout,
-    setInterval: () => 0, clearInterval: () => {},
-    Date,
+    setInterval: (fn: () => void) => { intervals.push(fn); return intervals.length; }, clearInterval: () => {},
+    Date: opts.clock !== undefined ? { now: () => opts.clock!.t } : Date,
     // Reads a pasted file at once: the test's file carries the data: URL it would produce.
     FileReader: class {
       result = '';
@@ -106,7 +109,7 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
   };
   runInNewContext(script, context);
   const msg = (payload: Record<string, unknown>): void => { for (const l of listeners) l({ data: { v: 1, payload } }); };
-  return { term, bar: getElementById('insrc-older'), sent, msg, maxTop, html, el: getElementById };
+  return { term, bar: getElementById('insrc-older'), sent, msg, maxTop, html, el: getElementById, tickIntervals: () => { for (const f of intervals) f(); } };
 }
 
 /** Stored rows [from, to): a user row at every multiple of 20, assistant rows between. */
@@ -564,4 +567,35 @@ test('chat shell: the outbox band is present only with the queue, and the queue 
   assert.equal(v.el('insrc-obnote').textContent, 'That message has already started; it is in the chat now.');
   v.msg({ type: 'outbox', view: { sessionId: 's1', rows: [], aheadFromOtherChats: 0 } });
   assert.equal(band.hidden, true);
+});
+
+test("a retrying row shows 'attempt n of 3', a countdown, a retry-now button and a cancel button, and retry-now posts outbox-retry-now with its seq", () => {
+  const clock = { t: 1_000_000 };
+  const v = runShell({ queue: true, clock });
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [], mode: 'manual' });
+  v.msg({
+    type: 'outbox',
+    view: {
+      sessionId: 's1',
+      rows: [{ seq: 7, position: 1, state: 'retrying', text: 'go', attachments: 0, origin: 'typed', error: 'API Error: 529 overloaded_error', attempt: 2, nextAttemptAt: clock.t + 65_000 }],
+      aheadFromOtherChats: 0,
+    },
+  });
+  const rowEl = v.el('insrc-oblist').children[0]!;
+  const texts = rowEl.children.map((c) => c.textContent);
+  assert.deepEqual(texts, ['#1', 'go', 'API Error: 529 overloaded_error', 'attempt 2 of 3', 'retrying in 1m 5s', '\u25b6', '\u2715']);
+  // The countdown ticks.
+  clock.t += 30_000;
+  v.tickIntervals();
+  assert.equal(rowEl.children[4]!.textContent, 'retrying in 35s');
+  clock.t += 40_000;
+  v.tickIntervals();
+  assert.equal(rowEl.children[4]!.textContent, 'retrying now');
+  // The buttons are named and post their seq; cancel is still there.
+  const [retryNow, cancel] = byClass(rowEl, 'outbox__btn');
+  assert.equal(retryNow!.attrs['aria-label'], 'retry this message now');
+  assert.equal(cancel!.attrs['aria-label'], 'cancel this message');
+  fire(retryNow!, 'click');
+  fire(cancel!, 'click');
+  assert.deepEqual(v.sent.filter((m) => String(m['type']).startsWith('outbox-')), [{ type: 'outbox-retry-now', seq: 7 }, { type: 'outbox-cancel', seq: 7 }]);
 });

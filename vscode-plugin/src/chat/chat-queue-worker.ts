@@ -52,13 +52,14 @@ export const GIVE_UP_NOTE =
   "The chat queue could not record this message's result. Reload the window to recover it: the queue then fails the message so you can resend it, and moves on.";
 
 /** An outbox action on one message (Story S002, AMD-3). */
-export type QueueAction = 'cancel' | 'dismiss' | 'resend';
+export type QueueAction = 'cancel' | 'dismiss' | 'resend' | 'retry-now';
 export type QueueActionResult = { readonly ok: true } | { readonly ok: false; readonly note: string };
 
 /** The sentence a refused action shows in the outbox. */
 export const ACTION_NOTES = {
   started: 'That message has already started; it is in the chat now.',
   gone: 'That message is no longer in the outbox.',
+  notRetrying: 'That message is not waiting to be retried.',
 } as const;
 
 export interface ChatQueueSubmission {
@@ -397,6 +398,8 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
         if (action === 'resend') {
           const sent = store.resendFrom(seq, newTurnId(), claim.windowKey);
           res = sent.ok ? { ok: true } : { ok: false, note: sent.note };
+        } else if (action === 'retry-now') {
+          res = store.retryNow(seq) ? { ok: true } : { ok: false, note: ACTION_NOTES.notRetrying };
         } else if (action === 'cancel') {
           res = store.cancel(seq) ? { ok: true } : { ok: false, note: store.list().some((r) => r.seq === seq && r.state === 'processing') ? ACTION_NOTES.started : ACTION_NOTES.gone };
         } else {

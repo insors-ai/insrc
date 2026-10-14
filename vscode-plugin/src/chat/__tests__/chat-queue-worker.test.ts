@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Timers } from '../async-util.js';
 import { createChatQueueStore, FULL_NOTE, LEASE_HEARTBEAT_MS, PRESENCE_GRACE_MS, LEASE_TAKEOVER_MS, QUEUE_RECORD_BOUND, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
+import { RETRY_DELAYS_MS, MAX_INFRA_RETRIES } from '../chat-failure.js';
 import { ACTION_NOTES, ACTIVE_POLL_MS, BUSY_GIVE_UP_MS, GIVE_UP_NOTE, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 
 /** Fake timers over a fake clock: advance() runs what is due, in order. */
@@ -809,5 +810,88 @@ test('a finish that stays busy is retried each tick for 60 s, then retrying stop
     w.dispose();
     real.close();
     r.done();
+  }
+});
+
+const overloaded: TurnOutcome = { kind: 'failed', error: 'API Error: 529 overloaded_error', acted: false, cause: 'overloaded' };
+function retryWorker(t: ReturnType<typeof fakeTime>) {
+  const r = repo();
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers });
+  return { r, store, R, w, close: () => { w.dispose(); store.close(); r.done(); } };
+}
+
+test('a retrying head is not taken before its due time, holds the queue behind it, and runs when due', async () => {
+  const t = fakeTime();
+  const h = retryWorker(t);
+  try {
+    assert.ok(h.w.submit(sub('s1', 'first')).ok);
+    assert.ok(h.w.submit(sub('s1', 'second')).ok);
+    await t.advance(0);
+    h.R.runs[0]!.end(overloaded);
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(h.store.list().find((m) => m.text === 'first')?.state, 'retrying');
+    await t.advance(RETRY_DELAYS_MS[0]! - ACTIVE_POLL_MS * 4);
+    assert.equal(h.R.runs.length, 1, 'not taken before it is due, and the message behind it waits');
+    await t.advance(ACTIVE_POLL_MS * 6);
+    assert.equal(h.R.runs.length, 2);
+    assert.equal(h.R.runs[1]!.message.text, 'first', 'the retried message runs first, once due');
+    assert.equal(h.R.runs[1]!.message.attempts, 1);
+    h.R.runs[1]!.end({ kind: 'done' });
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(h.R.runs[2]?.message.text, 'second', 'then the queue moves on');
+  } finally {
+    h.close();
+  }
+});
+
+test('a message that fails three infrastructure retries ends failed and the next message runs', async () => {
+  const t = fakeTime();
+  const h = retryWorker(t);
+  try {
+    assert.ok(h.w.submit(sub('s1', 'flaky')).ok);
+    assert.ok(h.w.submit(sub('s1', 'next')).ok);
+    await t.advance(0);
+    for (let i = 0; i < MAX_INFRA_RETRIES; i += 1) {
+      h.R.runs[i]!.end(overloaded);
+      await t.advance(ACTIVE_POLL_MS * 2);
+      assert.equal(h.store.list().find((m) => m.text === 'flaky')?.state, 'retrying', `retry ${i + 1} is scheduled`);
+      await t.advance(RETRY_DELAYS_MS[i]! + ACTIVE_POLL_MS * 2);
+      assert.equal(h.R.runs.length, i + 2, `attempt ${i + 2} ran`);
+    }
+    h.R.runs[MAX_INFRA_RETRIES]!.end(overloaded); // the fourth failure
+    await t.advance(ACTIVE_POLL_MS * 3);
+    const flaky = h.store.list().find((m) => m.text === 'flaky');
+    assert.equal(flaky?.state, 'failed');
+    assert.equal(flaky?.attempts, MAX_INFRA_RETRIES);
+    assert.equal(h.R.runs[MAX_INFRA_RETRIES + 1]?.message.text, 'next', 'the next message runs');
+  } finally {
+    h.close();
+  }
+});
+
+test('act retry-now on a retrying row runs it at the next tick; on any other row it is refused with a note', async () => {
+  const t = fakeTime();
+  const h = retryWorker(t);
+  try {
+    assert.ok(h.w.submit(sub('s1', 'later')).ok);
+    await t.advance(0);
+    const seq = h.R.runs[0]!.message.seq;
+    assert.deepEqual(h.w.act(seq, 'retry-now'), { ok: false, note: ACTION_NOTES.notRetrying }, 'a processing row is refused');
+    h.R.runs[0]!.end(overloaded);
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(h.R.runs.length, 1, 'waiting for its delay');
+    assert.deepEqual(h.w.act(seq, 'retry-now'), { ok: true });
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(h.R.runs.length, 2, 'ran at the next tick, long before its delay');
+    assert.equal(h.R.runs[1]!.message.attempts, 1, 'retry-now does not change the attempt count');
+    assert.deepEqual(h.w.act(999, 'retry-now'), { ok: false, note: ACTION_NOTES.notRetrying }, 'an unknown row is refused');
+    h.R.runs[1]!.end({ kind: 'failed', error: 'something odd', acted: false, cause: 'other' });
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(h.w.act(seq, 'retry-now').ok, false, 'a failed row is refused');
+    assert.equal(h.w.act(seq, 'retry-now').ok === false && (h.w.act(seq, 'retry-now') as { note: string }).note, ACTION_NOTES.notRetrying);
+  } finally {
+    h.close();
   }
 });

@@ -1170,7 +1170,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         `function go(){vs.postMessage({v:1,payload:{type:type,seq:seq}});}` +
         `b.addEventListener('click',go);b.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});return b;}` +
         `function obSpan(cls,text){var x=document.createElement('span');x.className=cls;x.textContent=text;return x;}` +
-        `function renderOutbox(v){if(!v||v.sessionId!==cur)return;` +
+        `var obCounts=[],obTimer=0;` +
+        `function obTick(){var n=Date.now();obCounts.forEach(function(c){var s=Math.max(0,Math.ceil((c.at-n)/1000));c.el.textContent=s>0?'retrying in '+(s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'):'retrying now';});` +
+        `if(obCounts.length===0&&obTimer){clearInterval(obTimer);obTimer=0;}}` +
+        `function renderOutbox(v){if(!v||v.sessionId!==cur)return;obCounts=[];` +
         `var parts=[];var n=v.aheadFromOtherChats||0;if(n>0)parts.push(n+(n===1?' message':' messages')+' from other chats ahead');` +
         `if(v.runningChat)parts.push('running: \u201c'+String(v.runningChat.title)+'\u201d'+(v.runningChat.here?' (this window)':''));` +
         `if(v.blockedBy)parts.push('waiting for '+(v.blockedBy.reason==='selection'?'a choice':'an approval')+' in \u201c'+String(v.blockedBy.chatTitle)+'\u201d');` +
@@ -1182,9 +1185,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         `var t=obSpan('outbox__text',first||(r.attachments>0?'':'(empty)'));t.setAttribute('title',text);row.appendChild(t);` +
         `if(r.attachments>0)row.appendChild(obSpan('outbox__files','\ud83d\udcce'+r.attachments));` +
         `if(r.error){var er=obSpan('outbox__err',String(r.error));er.setAttribute('title',String(r.error));row.appendChild(er);}` +
+        `if(r.state==='retrying'){row.appendChild(obSpan('outbox__attempt','attempt '+String(r.attempt||1)+' of 3'));` +
+        `var cd=obSpan('outbox__countdown','');row.appendChild(cd);if(typeof r.nextAttemptAt==='number')obCounts.push({el:cd,at:r.nextAttemptAt});` +
+        `row.appendChild(obBtn('\u25b6','retry this message now','outbox-retry-now',r.seq));}` +
         `if(r.state==='queued'||r.state==='retrying'){row.appendChild(obBtn('\u2715','cancel this message','outbox-cancel',r.seq));}` +
         `else{row.appendChild(obBtn('\u21bb','send this message again','outbox-resend',r.seq));row.appendChild(obBtn('\u2715','dismiss this message','outbox-dismiss',r.seq));}` +
         `obList.appendChild(row);});` +
+        `obTick();if(obCounts.length>0&&!obTimer)obTimer=setInterval(obTick,1000);` +
         `if(v.note){obNote.textContent=String(v.note);obNote.hidden=false;}else{obNote.textContent='';obNote.hidden=true;}` +
         `obBox.hidden=rows.length===0&&parts.length===0&&!v.note;}`;
     const attachScript = !attachOn
@@ -1781,6 +1788,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         return;
       case 'outbox-resend':
         outboxAction(msg.seq, 'resend');
+        return;
+      case 'outbox-retry-now':
+        outboxAction(msg.seq, 'retry-now');
         return;
       case 'cancel-turn':
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.

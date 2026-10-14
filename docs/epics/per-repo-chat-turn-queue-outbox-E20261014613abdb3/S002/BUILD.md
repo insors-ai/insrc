@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-10-14T12:57:26.478Z  ·  **Updated:** 2026-10-14T13:11:49.428Z
+**Standalone:** no  ·  **Created:** 2026-10-14T12:57:26.478Z  ·  **Updated:** 2026-10-14T14:24:29.782Z
 
-**Commit:** 8425ca74
+**Commit:** d12f8de2
 
 ## Summary
 
@@ -23,15 +23,5 @@ vscode-plugin/src/chat/chat-panel.ts renderShell, only when deps.queue is set (q
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-613abdb351c2c738-s2.json` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/chat-outbox.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/chat-queue-store.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/chat-queue-worker.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
-- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-14T14:24:29.782Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T14:24:29.782Z)

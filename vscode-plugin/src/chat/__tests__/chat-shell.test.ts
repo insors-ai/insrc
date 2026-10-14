@@ -493,23 +493,23 @@ test('diff widget: a diff row in a session-restored window and in a transcript-p
 });
 
 // Epic E20261014613abdb3 Story S002 t6.
-test('chat shell: the outbox band and the queue shortcut hint are present only with the queue; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running', () => {
+test('chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running', () => {
   const off = runShell();
-  for (const absent of ['insrc-outbox', 'insrc-qhint', 'renderOutbox']) assert.ok(!off.html.includes(absent), `no ${absent} without the queue`);
+  for (const absent of ['insrc-outbox', 'renderOutbox']) assert.ok(!off.html.includes(absent), `no ${absent} without the queue`);
+  assert.ok(!off.html.includes('Ctrl+Enter to queue'), 'no queue hint without the queue');
   assert.ok(off.html.includes("setRunning(true);setProgress('working\\u2026');setProvLock(true);}"), 'without the queue a submit still marks the turn running');
 
   const v = runShell({ queue: true });
-  assert.ok(v.html.includes('id="insrc-outbox"') && v.html.includes('id="insrc-qhint"'));
-  assert.ok(v.html.includes('\u2318/Ctrl+Enter to queue'));
+  assert.ok(v.html.includes('id="insrc-outbox"'));
   assert.ok(v.html.indexOf('id="insrc-outbox"') < v.html.indexOf('class="inputbar"'), 'the band sits above the input bar');
   v.msg({ type: 'session-restored', sessionId: 's1', transcript: [], firstIndex: 0, total: 0 });
 
-  // The hint shows while a turn runs and hides after.
-  const hint = v.el('insrc-qhint') as BodyStub & { hidden?: boolean };
+  // The queue hint replaces the input's placeholder while a turn runs and is restored after.
+  const ph = v.el('insrc-input') as BodyStub & { placeholder?: string };
   v.msg({ type: 'turn-running', sessionId: 's1' });
-  assert.equal(hint.hidden, false);
+  assert.ok(ph.placeholder?.includes('\u2318/Ctrl+Enter to queue'));
   v.msg({ type: 'turn-event', event: { kind: 'done', turnId: 't', ok: true } });
-  assert.equal(hint.hidden, true);
+  assert.ok(ph.placeholder?.includes('\u2318\u21b5 send'));
 
   // A submit posts the message and does not mark the turn running: it waits in the outbox.
   const box = v.el('insrc-input') as BodyStub & { value: string };
@@ -518,7 +518,7 @@ test('chat shell: the outbox band and the queue shortcut hint are present only w
   fire(send, 'click');
   assert.deepEqual(ofType(v, 'submit-turn').map((m) => m['text']), ['later']);
   assert.equal(send.textContent, '\u276f', 'still the send control');
-  assert.equal(hint.hidden, true);
+  assert.ok(ph.placeholder?.includes('\u2318\u21b5 send'));
 
   // An outbox for another chat is not drawn; this chat's is.
   const band = v.el('insrc-outbox') as BodyStub & { hidden?: boolean };

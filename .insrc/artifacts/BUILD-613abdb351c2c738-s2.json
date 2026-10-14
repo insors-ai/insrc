@@ -4,10 +4,11 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s2",
     "createdAt": "2026-10-14T12:57:26.478Z",
-    "updatedAt": "2026-10-14T13:11:49.428Z",
+    "updatedAt": "2026-10-14T14:24:29.782Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
-    "epicSlug": "per-repo-chat-turn-queue-outbox"
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "approvedAt": "2026-10-14T14:24:30.111Z"
   },
   "body": {
     "tasks": [
@@ -43,89 +44,19 @@
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-613abdb351c2c738-s2.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/chat-outbox.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
+        "timestamp": "2026-10-14T14:24:29.782Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/chat-queue-store.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/chat-queue-worker.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/protocol.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-14T13:11:49.428Z"
+        "timestamp": "2026-10-14T14:24:29.782Z"
       }
     ],
-    "commit": "8425ca74"
+    "commit": "d12f8de2"
   }
 }

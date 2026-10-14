@@ -171,6 +171,10 @@ export interface ChatPanelHost {
 }
 
 /** How long a queued turn may wait on an unanswered approval or selection card (10 minutes). */
+/** The input's placeholder when idle, and while a turn runs with the queue on (the hint to queue replaces it). */
+const IDLE_PLACEHOLDER = 'message claude… (⌘↵ send · ^C interrupt)';
+const QUEUE_PLACEHOLDER = 'message claude… (⌘/Ctrl+Enter to queue · ^C interrupt)';
+
 export const CONTINUATION_WAIT_MS = 600_000;
 
 export type ExternalSubmitResult = 'sent' | 'queued' | 'unavailable';
@@ -1040,7 +1044,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       (deps.queue === undefined
         ? ''
         : `.outbox{padding:6px 12px;background:var(--bg-inset);border-top:1px solid var(--border-lit);flex:0 0 auto;max-height:30vh;overflow-y:auto;font-size:12px;}` +
-          `.outbox[hidden],.outbox__note[hidden],.outbox__sum[hidden],.qhint[hidden]{display:none;}` +
+          `.outbox[hidden],.outbox__note[hidden],.outbox__sum[hidden]{display:none;}` +
           `.outbox__sum{color:var(--muted);font-size:11.5px;padding-bottom:4px;}` +
           `.outbox__row{display:flex;align-items:center;gap:8px;padding:3px 4px 3px 8px;margin-top:4px;border:1px solid var(--border-lit);border-radius:8px;color:var(--fg);}` +
           `.outbox__place{color:var(--accent);font-weight:600;flex:0 0 auto;min-width:2.2em;}` +
@@ -1050,8 +1054,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           `.outbox__files{color:var(--muted);flex:0 0 auto;}` +
           `.outbox__btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:0 0 auto;border-radius:50%;border:1px solid var(--border-lit);color:var(--muted);cursor:pointer;}` +
           `.outbox__btn:hover,.outbox__btn:focus-visible{color:var(--accent);border-color:var(--accent);outline:none;}` +
-          `.outbox__note{color:var(--warn);font-size:11.5px;padding-top:4px;}` +
-          `.qhint{color:var(--muted);font-size:11px;align-self:center;flex:0 0 auto;padding-right:8px;}`) +
+          `.outbox__note{color:var(--warn);font-size:11.5px;padding-top:4px;}`) +
       `.statusbar .perm-auto{color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:2px 9px;}` +
       // The provider/session/edits selects, styled as the bold segment value (transparent, borderless).
       `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
@@ -1243,7 +1246,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var provLocked=true;var provGate=!!(ps&&ps.disabled);` +
       `function setProvLock(l){provLocked=l;if(ps)ps.disabled=provGate||provLocked;}` +
       `const sendBtn=document.getElementById('insrc-prompt');` +
-      `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}${queueOn ? `var qh=document.getElementById('insrc-qhint');if(qh)qh.hidden=!r;` : ''}}` +
+      `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}${queueOn ? `var ib=document.getElementById('insrc-input');if(ib)ib.placeholder=r?${JSON.stringify(QUEUE_PLACEHOLDER)}:${JSON.stringify(IDLE_PLACEHOLDER)};` : ''}}` +
       // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
       // #insrc-progress label (gated on running by the caller); hideProgress hides it. It is never
       // written to the transcript (the host status-skip stays as-is, k4).
@@ -1377,8 +1380,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // setRunning: ❯ green Send / ■ red Stop). role=button + tabindex make the span a keyboard-
       // reachable control; the separate trailing send button is retired (one send affordance).
       `<span id="insrc-prompt" role="button" tabindex="0" aria-label="send">❯</span>` +
-      `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude… (⌘↵ send · ^C interrupt)"></textarea>` +
-      (deps.queue === undefined ? '' : `<span id="insrc-qhint" class="qhint" hidden>⌘/Ctrl+Enter to queue</span>`) +
+      `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="${IDLE_PLACEHOLDER}"></textarea>` +
       `</div>` +
       (attachOn
         ? `<div id="insrc-attachments" class="attachbar" hidden><div id="insrc-attlist" class="attlist"></div><div id="insrc-atterr" class="atterr" role="status" hidden></div></div>`

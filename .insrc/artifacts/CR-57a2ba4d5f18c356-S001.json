@@ -1,0 +1,106 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792007202828-tzzerb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T19:46:42.828Z",
+    "model": "claude:opus",
+    "elapsedMs": 85290,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "57a2ba4d5f18c356",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-14T19:38:17.866Z",
+    "epicSlug": "always-show-chat-s-progress-widget",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "57a2ba4d5f18c356",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-theme-before.json",
+        "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1013",
+            "message": "The idle style only changes the dots' animation (insrc-breathe, opacity .20 to .65). It does not give the idle dots the muted colour: they keep `background:var(--progress)` from the base `#insrc-progress .spin i` rule, so the idle dots are the same colour as the working ones, only dimmer. The label already inherits `color:var(--muted)` from the widget in both states, so idle has no distinct muted colour of its own. Fix: add `background:var(--muted)` to the `#insrc-progress.idle .spin i` rule. Alternatively, if 'muted' meant only the dimmer opacity, record that reading in the LLD.",
+            "expectationRef": "dataModelChanges[0].details / alternative a1 approach: \"An .idle variant draws the same three dots with a slow, gentle breathing animation ... in the muted colour\""
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:4975",
+            "message": "The `presenterSpy` options object declares `throwOn?:` without an explicit `| undefined`. The documented rule requires optional properties to be written `| undefined` under exactOptionalPropertyTypes. This test helper may be older than this Story.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:5005",
+            "message": "The `presentedHarness` options object declares `store?:` and `hostPid?: number` without an explicit `| undefined`. Other helpers in the same file follow the rule, for example `attachHarness` (`adapter?: StreamAdapter | undefined`) and chat-shell's `runShell`. This test helper may be older than this Story.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1381",
+            "message": "The Story's changed behaviour is all in the webview shell that renderShell emits: the progress widget is no longer hidden and starts with class 'progress idle' and the label 'idle'; the idle 'breathe' CSS and its reduced-motion override are new; and setIdle() replaces hideProgress() on done/error, session-restored and user cancel. In the provided grounding renderShell (and its enclosing createChatPanelHost) has an EMPTY testsReaching, so no test is shown reaching it. The test-side harnesses that build this HTML (chat-shell.test.ts runShell, chat-theme.test.ts shellHtml) carry no edge to renderShell or createChatPanelHost, so the graph cannot confirm that any test exercises the always-visible/idle widget. This may be a missing graph edge rather than a real gap, but on the evidence provided it counts as not exercised. No build record is available, so no test's pass state can be confirmed.",
+            "expectationRef": "renderShell",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1273",
+            "message": "The idle state is written in two places: the initial markup at line 1385 (class=\"progress idle\", label 'idle') and setIdle() at line 1273. If one changes and the other doesn't, the first paint and later idle states will differ. Calling setIdle() once at script start (beside setRunning(false)) would leave only one definition. This is a drift risk, not a current defect.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1262",
+            "message": "The edited comment now reads '...setIdle puts it in its idle state (it is never hidden). It is never written to the transcript', so 'It is never' appears twice in a row and is easy to misread. Wording only.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 1,
+      "med": 0,
+      "low": 5
+    }
+  }
+}

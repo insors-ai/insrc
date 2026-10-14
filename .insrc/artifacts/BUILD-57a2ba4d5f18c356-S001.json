@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "57a2ba4d5f18c356",
+    "storyId": "S001",
+    "createdAt": "2026-10-14T19:45:09.978Z",
+    "updatedAt": "2026-10-14T19:46:10.493Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Small: one module plus three test files.",
+    "epicCreatedAt": "2026-10-14T19:38:17.866Z",
+    "epicSlug": "always-show-chat-s-progress-widget"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "The chat's progress widget (#insrc-progress) is never hidden. It is rendered without the hidden attribute in an idle state (class 'progress idle', label 'idle'); the [hidden] CSS rule is removed; an .idle variant breathes the same three dots slowly (3.6 s, no vertical movement) and reduced motion stops it. In the webview script hideProgress is replaced by setIdle (className 'progress idle', label 'idle', timer stopped, elapsed text empty) at the same call sites (done or error, session-restored, Stop), and setProgress sets className 'progress'. Tests: chat-shell.test.ts drives the page through its states (the harness gained a stable .plabel stub for the widget) and checks it is never hidden; chat-theme.test.ts checks colours, the idle animation and reduced motion and the selector baseline (chat-theme-before.json and the added-selector list updated); chat-panel.test.ts checks one widget, not hidden, starting idle, and setIdle on done, error and Stop. A mutation check (removing setIdle from the done handler) makes the shell test fail. Full suite: 1343 pass, 2 fail (the two manifest-catalog tests that were already failing). KNOWN LIMIT, not fixed here: the page treats any done event as the end of the running turn, so an informational line's done (a retry or sign-in note) shows the idle look while a turn runs. NOT SEEN IN A REAL WEBVIEW: the idle animation's look has only been checked as CSS text and by the page-state test.",
+    "testRecord": {
+      "md": "docs/standalone/always-show-chat-s-progress-widget-E2026101457a2ba4d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-57a2ba4d5f18c356-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T19:46:10.493Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T19:46:10.493Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T19:46:10.493Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T19:46:10.493Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T19:46:10.493Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T19:46:10.493Z"
+      }
+    ],
+    "commit": "0ad6fec4"
+  }
+}

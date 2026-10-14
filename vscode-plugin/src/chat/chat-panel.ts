@@ -1259,7 +1259,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const sendBtn=document.getElementById('insrc-prompt');` +
       `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}${queueOn ? `var ib=document.getElementById('insrc-input');if(ib)ib.placeholder=r?${JSON.stringify(QUEUE_PLACEHOLDER)}:${JSON.stringify(IDLE_PLACEHOLDER)};` : ''}}` +
       // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
-      // #insrc-progress label (gated on running by the caller); setIdle puts it in its idle state (it is never hidden). It is
+      // #insrc-progress label (gated on running by the caller); setIdle puts it in its idle state (it is never hidden). It is never
       // written to the transcript (the host status-skip stays as-is, k4).
       `const prog=document.getElementById('insrc-progress');` +
       `const progLabel=prog?prog.querySelector('.plabel'):null;` +

@@ -76,7 +76,7 @@ test('extension wiring: the repo key hashes the real path of the git top-level o
   assert.match(ext, /windowKey: windowKeyOf\(\s*\{ get: \(k\) => context\.workspaceState\.get<string>\(k\), update: \(k, v\) => context\.workspaceState\.update\(k, v\) \}/);
   assert.match(ext, /isAlive: processAliveCheck\(defaultIsAlive, defaultProcessStartTime\),/);
   assert.match(ext, /notify: \(message\) => void vscode\.window\.showWarningMessage\(message\),/);
-  assert.match(ext, /\.\.\.\(chatQueue !== undefined \? \{ queue: chatQueue \} : \{\}\),/, 'no queue: the direct path');
+  assert.match(ext, /\.\.\.\(chatQueue !== undefined \? \{ queue: chatQueue \} : \{\}\),/, 'the host is built with the queue when there is one');
   const pkg = JSON.parse(read('..', '..', '..', 'package.json')) as { engines: Record<string, string> };
   assert.deepEqual(pkg.engines, { vscode: '^1.141.0', node: '>=22.13' });
 });

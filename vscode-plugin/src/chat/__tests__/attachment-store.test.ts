@@ -10,6 +10,9 @@ import {
   PASTE_IMAGE_MIMES,
   createAttachmentStore,
 } from '../attachment-store.js';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { createInMemoryChatSessionStore } from '../session-store.js';
 import { fakeAttachmentFs } from './fake-attachment-fs.js';
 
 const ROOT = '/root/chat-attachments';
@@ -176,4 +179,39 @@ test('attachment store: a failed write leaves no partial file', async () => {
   fake.failOn = undefined;
   const ok = await store.addFile('s', '/src/doc.txt');
   assert.deepEqual(fake.files.get(ok.path), bytes(8));
+});
+
+test('attachment store: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session', async () => {
+  // The keep set is built as extension.ts builds it: the ids of the sessions in the chat store.
+  const keepOf = (sessionIds: string[]): ReadonlySet<string> => new Set(sessionIds);
+  const run = async (keepFor: (stored: string[]) => ReadonlySet<string>) => {
+    const sessions = createInMemoryChatSessionStore();
+    const waiting = sessions.create('claude'); // its chat holds a message waiting in the queue, with an image
+    sessions.save(waiting);
+    const clock = { t: 0 };
+    const { fake, store } = setup(() => clock.t);
+    const add = async (session: string, name: string): Promise<void> => {
+      fake.clock = 1000;
+      await store.addBytes(session, { name, mime: 'image/png', bytes: bytes(1) });
+    };
+    await add(waiting.id, 'waiting.png');
+    await add('evicted-chat', 'old.png'); // a chat that is no longer in the store
+    clock.t = 10_000_000; // long after: both are older than the sweep's age
+    await store.sweep({ olderThanMs: 5000, keep: keepFor(sessions.list().map((c) => c.id)) });
+    return { fake, waitingId: waiting.id };
+  };
+
+  const kept = await run(keepOf);
+  const dir = (id: string): string => `${ROOT}/${id.replace(/[^A-Za-z0-9._-]/g, '_')}`;
+  assert.ok(kept.fake.files.has(`${dir(kept.waitingId)}/1-waiting.png`), 'the waiting message\'s image is kept');
+  assert.equal(kept.fake.dirs.has(`${ROOT}/evicted-chat`), false, 'an unreferenced old session is cleared');
+
+  // The test can fail: with the stored session left out of the keep set the same sweep removes the image.
+  const missed = await run(() => new Set<string>());
+  assert.equal(missed.fake.files.has(`${dir(missed.waitingId)}/1-waiting.png`), false, 'left out of the keep set, the image would go');
+
+  // And extension.ts builds the keep set from the store's sessions for the attachments sweep.
+  const ext = readFileSync(fileURLToPath(new URL('../../extension.ts', import.meta.url)), 'utf8');
+  assert.match(ext, /const chatKeep = new Set\(\[\.\.\.chatStore\.list\(\)\.map\(\(c\) => c\.id\), \.\.\.migratedChats\.kept\]\);/);
+  assert.match(ext, /chatAttachments\s*\n?\s*\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: chatKeep \}\)/);
 });

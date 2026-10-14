@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792004233250-hhu3nv",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T18:57:13.250Z",
+    "model": "claude:opus",
+    "elapsedMs": 119421,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s5",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicSlug": "per-repo-chat-turn-queue-outbox"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s5",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts",
+        "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+        "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+        "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/chat-queue-setup.ts",
+        "vscode-plugin/src/chat/docs-review-panel.ts",
+        "vscode-plugin/src/extension.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts:69",
+            "message": "The test helper `host(...)` declares its options as `{ closed?: boolean; noCli?: boolean; busy?: boolean }` with no explicit `| undefined`. The rule says optional properties are written as `?: T | undefined` (the plugin's tsconfig has exactOptionalPropertyTypes on), and the code this story changed in the same module follows it: `attachHarness` opts and `startTurn`/`runTurn` opts in chat-panel.ts. This line was added by this story (5bffd27f). It is a test-only helper, so the risk is small.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts:303",
+            "message": "The live hand check was not run, so it is present but unverified. The build commit 675c4596 says 'live hand check not run', and no reported result or evidence is recorded for it. This check is the only one that covers, against the real VS Code host: a review-pane decision waiting in the outbox behind a running turn, the chat opening when its panel is closed, and the chat not being offered when the queue is unavailable.",
+            "expectationRef": "hand check: a review-pane decision sent while a turn runs waits in the outbox and runs after it; with the chat panel closed it opens the chat and runs; with the queue unavailable the chat is not offered",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts:303",
+            "message": "All 11 automated promised tests are present, each with a matching title: chat-queue-outbox-host.test.ts:303/332/356/373/394, docs-review-decision.test.ts:457, chat-queue-setup.test.ts:84, extension-chat-wiring.test.ts:348/361, review-wiring.test.ts:23 and attachment-store.test.ts:184. No build record was supplied, so none of them is confirmed as passing. Their pass state is unverified, not failing.",
+            "expectationRef": "all automated promised tests (pass-state)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1",
+            "message": "The graph grounding for coverage looks hollow. It records testsReaching edges only between helpers inside test files. Every production symbol has an empty testsReaching list, including createChatPanelHost, createQueueFactory, classifyOpenFailure, chatIsOffered, createDocsReviewHost's decideNow/decisionResultLine and activate. Yet the promised tests that exercise these paths exist and are named for them (for example chat-queue-setup.test.ts:84 and chat-queue-outbox-host.test.ts:303-394). These are therefore not reported as HIGH not-exercised breaches. To confirm coverage, run the vscode-plugin suite rather than rely on the empty edges.",
+            "expectationRef": "createChatPanelHost / createQueueFactory / activate (empty testsReaching)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:2150",
+            "message": "sendTyped still has the old direct path. When `worker` is undefined, it denies the waiting approvals (supersedeQueuedApprovals) and starts runTurn straight away, skipping the queue. Story S005 says there is no direct path when the queue cannot be opened (chat-queue-setup.ts header; extension.ts comment near line 584). In production the chat is gated off by chatIsOffered, so this branch only runs for a host built without `deps.queue`, mainly test harnesses. Two problems follow. The production send path and the path most tests use are different. And if the host is ever built without a queue, it silently goes back to the removed path instead of refusing. The `worker === undefined` cases at lines 2124 and 2206 refuse with 'unavailable'; this branch should do the same, or the dependency should be required.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-queue-setup.ts:108",
+            "message": "The notice is chosen with a nested ternary inside the notify call, which also strips a hard-coded store message prefix with a regex. If the store's wording changes, the prefix silently stays in the notice. A small map from QueueOpenFailure to notice would be easier to read, and classifyOpenFailure could return the cleaned reason. This is readability only.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-queue-setup.ts:34",
+            "message": "`err instanceof Error ? err.message : String(err)` is written out twice in this file (lines 34 and 105). The same logic already exists as a helper in another changed file.",
+            "counterpartRef": "errText",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 5
+    }
+  }
+}

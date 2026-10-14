@@ -205,7 +205,8 @@
       "reviewedAt": "2026-10-14T08:53:09.074Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
-    }
+    },
+    "approvedAt": "2026-10-14T08:59:00.342Z"
   },
   "body": {
     "summary": {

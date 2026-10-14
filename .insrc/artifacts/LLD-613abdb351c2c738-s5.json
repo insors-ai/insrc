@@ -44,6 +44,13 @@
         "choice": "The 200-session history cap is a hard cap and eviction is unchanged: the oldest session is evicted even if it still has queue rows, and such a message then fails with 'the chat no longer exists' (S001's existing path) and offers a resend. No keep predicate on the session store and no cross-repository reader of other queue files are added; protecting sessions beyond the cap is over-engineering. The start-up attachment sweep already keeps every session still in the store (chatKeep), so a waiting message's attachments survive it; Story S005 only pins that with a test.",
         "rationale": "Owner decision: hard cap of 200; anything more is unrealistic and over-engineering.",
         "resolvedAt": "2026-10-14T18:29:07.479Z"
+      },
+      "q719063a7": {
+        "question": "cd1 (partial): liveSessionIdsOfAllQueues and the keepSessionIds dependency are new names this Story introduces; they are labelled new in dataModel and are not existing symbols.",
+        "status": "resolved",
+        "choice": "Moot: the owner's hard-cap ruling removes liveSessionIdsOfAllQueues and the keepSessionIds dependency from the design, so no new names remain to ground. The LLD is amended to drop them.",
+        "rationale": "Follows from the hard-cap decision.",
+        "resolvedAt": "2026-10-14T18:29:42.904Z"
       }
     }
   },

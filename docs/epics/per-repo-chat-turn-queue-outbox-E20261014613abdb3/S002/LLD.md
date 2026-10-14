@@ -374,20 +374,15 @@ As a1, plus: the messages table gains a nullable waiting_on column (schema versi
 - The schema moves to version 2: a window still on the previous plugin refuses the file and runs messages directly until it is reloaded, and a plugin rollback needs the queue file removed.
 - While a turn runs, the send control is Stop, so a message can be queued mid-turn only with Cmd/Ctrl+Enter; whether to offer a separate send while running is left to a later change.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q4ab57645` — cd1 (partial): projectOutbox is a new function of the sc5 module, not an existing symbol; it is the projection the HLD boundary for s2 names.
+  - **resolved**: Accept the HLD boundary as enough — projectOutbox is new by design; s2 creates it in chat-outbox.ts (the sc5 module). _(2026-10-14T12:50:03.494Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-14T12:43:54.657Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `code` `vscode-plugin/src/chat/chat-queue-worker.ts`
+- **[[c2]]** `code` `vscode-plugin/src/chat/chat-panel.ts`
+- **[[c3]]** `code` `vscode-plugin/src/chat/protocol.ts`
+- **[[c4]]** `code` `vscode-plugin/src/chat/chat-queue-store.ts`
+- **[[c5]]** `prior-artifact` `HLD-613abdb351c2c738`

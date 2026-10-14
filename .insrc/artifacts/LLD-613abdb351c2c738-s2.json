@@ -222,7 +222,16 @@
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-14T12:48:45.774Z"
+    "approvedAt": "2026-10-14T12:48:45.774Z",
+    "questionResolutions": {
+      "q4ab57645": {
+        "question": "cd1 (partial): projectOutbox is a new function of the sc5 module, not an existing symbol; it is the projection the HLD boundary for s2 names.",
+        "status": "resolved",
+        "choice": "Accept the HLD boundary as enough",
+        "rationale": "projectOutbox is new by design; s2 creates it in chat-outbox.ts (the sc5 module).",
+        "resolvedAt": "2026-10-14T12:50:03.494Z"
+      }
+    }
   },
   "body": {
     "summary": {

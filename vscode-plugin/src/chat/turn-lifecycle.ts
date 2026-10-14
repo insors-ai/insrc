@@ -81,8 +81,9 @@ export type FollowOutcome = 'ended' | 'failed';
 
 export interface TurnLifecycle {
   /**
-   * Runs a turn for the session: drops a turn still waiting for the lease and supersedes the
-   * current one (synchronously), then waits for the lease and reads the turn. Never rejects.
+   * Runs a turn for the session: when another start is in progress it waits for it (reporting
+   * onWaiting) and is dropped if stop(), detach() or invalidate() comes first; then it waits for
+   * the session lease and reads the turn. Never rejects.
    */
   start(session: ChatSession, req: TurnRequest, sink: TurnSink): Promise<void>;
   /**
@@ -110,7 +111,7 @@ export interface TurnLifecycle {
    * up or being read, or a turn begun by follow() that is being read. False once the turn's
    * terminal event has been handed to the sink (before onTerminal), before a turn's error is
    * reported (onError), once a follow is over (before onEnd), after stop(), detach() or invalidate(), and when follow() returned without following.
-   * A superseded turn does not make it false: the turn that superseded it keeps it true.
+   * A start chained behind another keeps it true until it ends.
    */
   busy(): boolean;
   /** The turn being read live, once its first event arrived. */

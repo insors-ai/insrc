@@ -4,7 +4,7 @@
     "epicHash": "613abdb351c2c738",
     "storyId": "s1",
     "createdAt": "2026-10-14T11:13:11.458Z",
-    "updatedAt": "2026-10-14T11:15:59.550Z",
+    "updatedAt": "2026-10-14T11:25:37.825Z",
     "epicCreatedAt": "2026-10-14T08:04:11.007Z",
     "epicSlug": "per-repo-chat-turn-queue-outbox"
   },
@@ -92,6 +92,166 @@
             "titles": [
               {
                 "title": "chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5028ef1e",
+        "ranAt": "2026-10-14T11:25:37.825Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
+                "title": "turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1767,
+            "titles": [
+              {
+                "title": "start waits for the session lease, reports waiting, runs, and releases the lease when the process exits",
+                "result": "pass"
+              },
+              {
+                "title": "a start made while another waits for its lease runs after it instead of dropping it",
+                "result": "pass"
+              },
+              {
+                "title": "a turn being read when another start is made keeps reporting to its end and clears its cursor",
+                "result": "pass"
+              },
+              {
+                "title": "a lease granted after the turn stopped being current is released",
+                "result": "pass"
+              },
+              {
+                "title": "a lock failure and a missing adapter are reported through onError",
+                "result": "pass"
+              },
+              {
+                "title": "a beforeRun failure is reported, the session saved and the lease released",
+                "result": "pass"
+              },
+              {
+                "title": "the cursor is saved on spawn, throttled on progress and cleared before onTerminal",
+                "result": "pass"
+              },
+              {
+                "title": "invalidate and a closed panel suppress all sink calls; live names the turn being read",
+                "result": "pass"
+              },
+              {
+                "title": "a panel closed while a turn is read is told nothing more",
+                "result": "pass"
+              },
+              {
+                "title": "stop cancels the provider turn and stops the live process; idempotent with nothing running",
+                "result": "pass"
+              },
+              {
+                "title": "stop and detach drop a turn waiting for its lease",
+                "result": "pass"
+              },
+              {
+                "title": "detach leaves a session-file turn running with its cursor saved and stops a pipe turn",
+                "result": "pass"
+              },
+              {
+                "title": "stop continues past a failing cancel or process stop",
+                "result": "pass"
+              },
+              {
+                "title": "follow skips a running turn, a turn already followed and a turn owned by a live host",
+                "result": "pass"
+              },
+              {
+                "title": "follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd",
+                "result": "pass"
+              },
+              {
+                "title": "a failing resume keeps the cursor saved",
+                "result": "pass"
+              },
+              {
+                "title": "stop ends a followed turn's process; detach leaves it running",
+                "result": "pass"
+              },
+              {
+                "title": "a detached session-file turn is resumed by follow",
+                "result": "pass"
+              },
+              {
+                "title": "trySaveSession logs a failing save and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "a generator whose cleanup throws when the turn finishes it is not an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "a start made while beforeRun runs waits for that turn; a turn stopped while beforeRun runs starts no CLI",
+                "result": "pass"
+              },
+              {
+                "title": "a turn's end with another start waiting saves its cleared cursor and keeps its native session; Stop drops the waiting start",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing onTerminal is logged, still finishes the generator and is not a turn error",
+                "result": "pass"
+              },
+              {
+                "title": "an aborted follow unwinding late does not drop the next follow's process, so Stop still ends it",
+                "result": "pass"
+              },
+              {
+                "title": "a throwing onEvent is reported and the turn's generator is finished",
+                "result": "pass"
+              },
+              {
+                "title": "a failing onError report is logged and start never rejects",
+                "result": "pass"
+              },
+              {
+                "title": "a failing follow onEvent is logged and the follow still ends the turn",
+                "result": "pass"
+              },
+              {
+                "title": "a turn whose output ends without a done or error event ends as an error",
+                "result": "pass"
+              },
+              {
+                "title": "turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a chained turn keeps it true",
+                "result": "pass"
+              },
+              {
+                "title": "turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called",
+                "result": "pass"
+              },
+              {
+                "title": "turn lifecycle: busy is false when a turn's error is reported",
+                "result": "pass"
+              },
+              {
+                "title": "turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach",
                 "result": "pass"
               }
             ],

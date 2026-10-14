@@ -244,7 +244,7 @@ test('the extension passes a file-backed lock registry and the turnLockTimeoutMs
     'a file-backed registry on ~/.insrc/chat-locks, owned by this extension host',
   );
   assert.match(host![1]!, /turnLockTimeoutMs: \(\) =>[\s\S]*?get<number>\('insrc\.chat\.turnLockTimeoutMs'\)/, 'a live read of the setting');
-  assert.match(src, /import \{ createFileSessionLocks \} from '\.\/chat\/session-lock\.js';/);
+  assert.match(src, /import \{ createFileSessionLocks, defaultIsAlive, defaultProcessStartTime \} from '\.\/chat\/session-lock\.js';/);
 });
 
 test('package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)', () => {

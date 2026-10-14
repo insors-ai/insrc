@@ -4305,6 +4305,7 @@ const PNG5 = Buffer.from([1, 2, 3, 4, 5]).toString('base64');
 
 interface AttachHarness {
   fc: FakeChannel;
+  host: ReturnType<typeof createChatPanelHost>;
   fake: FakeAttachmentFs;
   store: AttachmentStore;
   sessions: ReturnType<typeof createInMemoryChatSessionStore>;
@@ -4353,7 +4354,7 @@ function attachHarness(opts: { adapter?: StreamAdapter | undefined; wrapStore?: 
   host.open();
   const pendings: AttachHarness['pendings'] = () => posted(fc, 'attachments-pending') as unknown as ReturnType<AttachHarness['pendings']>;
   return {
-    fc, fake, store, sessions, runs, opened, errors, pick, pendings,
+    fc, host, fake, store, sessions, runs, opened, errors, pick, pendings,
     async sendAndWait(type, extra = {}) {
       const before = pendings().length;
       fc.send(env(type, extra));
@@ -4836,6 +4837,7 @@ test('host: with the queue, a submit with blank text and an attachment leaves th
     assert.ok(runs[1]!.prompt.startsWith(ATTACHED));
     assert.equal(runs[1]!.allowedTools, undefined, 'with no grant');
   } finally {
+    h.host.dispose();
     q.done();
   }
 });

@@ -50,7 +50,13 @@ import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
 import { createChatPanelHost, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
-import { createFileSessionLocks } from './chat/session-lock.js';
+import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
+import { createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
+import type { SqliteDatabase } from './chat/chat-queue-store.js';
+import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
+import { realpathSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { createChatGroupLock } from './chat/group-lock.js';
 import { createFileChatSessionStore, migrateChatSessionsFromMemento } from './chat/session-file-store.js';
 import { createSessionOutput } from './chat/session-output.js';
@@ -574,6 +580,32 @@ export function activate(context: vscode.ExtensionContext): void {
       open: (target) => docsReviewHost?.openArtifact({ ...target, quiet: true }),
       log: panelLog,
     });
+    // Epic E20261014613abdb3 Story S001: the repository's chat queue, shared by every window on the
+    // same working tree. node:sqlite is loaded only here and lazily, so a runtime without it keeps
+    // the chat on its direct path (with a notice) instead of failing the extension.
+    const chatQueue = createQueueFactory({
+      path: queuePathOf(PATHS.insrc, repoKeyOf(chatCwd(), {
+        gitTopLevel: (cwd) => execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }),
+        realpath: (p) => realpathSync(p),
+      })),
+      openDatabase: (p) => {
+        const { DatabaseSync } = createRequire(import.meta.url)('node:sqlite') as { DatabaseSync: new (path: string) => SqliteDatabase };
+        return new DatabaseSync(p);
+      },
+      now: () => Date.now(),
+      pluginVersion: String(context.extension.packageJSON.version ?? ''),
+      claim: {
+        windowKey: windowKeyOf(
+          { get: (k) => context.workspaceState.get<string>(k), update: (k, v) => context.workspaceState.update(k, v) },
+          () => randomUUID(),
+        ),
+        pid: process.pid,
+        ...(defaultProcessStartTime(process.pid) !== undefined ? { pidStartedAt: defaultProcessStartTime(process.pid)! } : {}),
+      },
+      isAlive: processAliveCheck(defaultIsAlive, defaultProcessStartTime),
+      log: panelLog,
+      notify: (message) => void vscode.window.showWarningMessage(message),
+    });
     const chatHost = createChatPanelHost({
       attachments: {
         store: chatAttachments,
@@ -643,6 +675,7 @@ export function activate(context: vscode.ExtensionContext): void {
       // lock file under ~/.insrc/chat-locks naming the CLI's pid. A new turn waits for it and
       // stops it only after insrc.chat.turnLockTimeoutMs.
       presenter: reviewPresenter,
+      ...(chatQueue !== undefined ? { queue: chatQueue } : {}),
       sessionLocks: createFileSessionLocks({ fs: nodeFsp, lockDir: join(PATHS.insrc, 'chat-locks'), hostPid: process.pid, logger: panelLog }),
       turnLockTimeoutMs: () =>
         Math.max(1000, vscode.workspace.getConfiguration().get<number>('insrc.chat.turnLockTimeoutMs') ?? DEFAULT_TURN_LOCK_TIMEOUT_MS),

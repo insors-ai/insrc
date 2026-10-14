@@ -35,7 +35,8 @@ test('package.json carries every Marketplace-required field for a single install
   for (const field of ['publisher', 'repository', 'license', 'icon', 'keywords', 'categories', 'engines', 'main', 'activationEvents']) {
     assert.ok(pkg[field] !== undefined, `manifest must carry ${field}`);
   }
-  assert.equal(pkg.engines.vscode, '^1.75.0', 'engines.vscode preserved from S001');
+  // Epic E20261014613abdb3 Story S001 raised the floor to the VS Code whose runtime has node:sqlite (DEF k5).
+  assert.equal(pkg.engines.vscode, '^1.141.0', 'engines.vscode: the chat queue needs node:sqlite');
   assert.equal(pkg.main, './out/extension.js', 'main preserved from S001');
   assert.equal(pkg.icon, 'icon.png', 'icon points at the shipped listing icon');
   assert.ok(Array.isArray(pkg.keywords) && pkg.keywords.length > 0, 'keywords is a non-empty list');

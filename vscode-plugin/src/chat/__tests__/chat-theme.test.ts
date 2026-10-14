@@ -237,8 +237,7 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   has('#insrc-progress', 'background:var(--bg-inset)', 'border-top:1px solid var(--border-lit)');
   has('.statusbar', 'background:var(--bg-inset)', 'border-top:1px solid var(--border-lit)');
   has('.attachbar', 'background:var(--bg-inset)');
-  has('.chrome .dot', 'background:var(--accent)');
-  assert.ok(!rule(style, '.chrome .dot').includes('box-shadow'), 'the header dot has no glow');
+  assert.ok(!style.includes('.chrome .dot') && !style.includes('.chrome .title'), 'the header carries only the session switcher: the tab already names insrc');
   // messages
   has('.insrc-bubble--user', 'background:var(--user-bg)', 'border:1px solid var(--msg-border)');
   has('.insrc-bubble--assistant', 'background:var(--assistant-bg)', 'border:1px solid var(--msg-border)');

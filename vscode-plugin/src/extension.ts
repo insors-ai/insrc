@@ -623,7 +623,7 @@ export function activate(context: vscode.ExtensionContext): void {
         diffView: () =>
           (vscode.workspace.getConfiguration().get<DiffView>('insrc.chat.diffView') === 'editor' ? 'editor' : 'chat'),
         notify: (m) => {
-          void vscode.window.showWarningMessage(`insrc chat: ${m}`);
+          void vscode.window.showWarningMessage(`insrc ctrl: ${m}`);
         },
         baseline: workspaceBaseline,
         fs: {
@@ -690,7 +690,7 @@ export function activate(context: vscode.ExtensionContext): void {
     if (chatOffered) commands.register({ id: 'insrc.chat.open', title: 'insrc: Open chat' }, async () => {
       chatHost.open();
     });
-    // S001 (bugfix): restore an insrc chat tab across a window reload / extension update. Without
+    // S001 (bugfix): restore an insrc ctrl tab across a window reload / extension update. Without
     // this, VS Code re-opens the serialized tab but never hands it back, leaving a dead shell
     // (empty history, no wiring). deserializeWebviewPanel wraps the restored panel with the SAME
     // adapter as a fresh open and hands it to chatHost.adopt(), so history + wiring are restored

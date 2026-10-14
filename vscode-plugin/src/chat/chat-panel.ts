@@ -973,8 +973,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // card border/radius/shadow (that framing was the mock's page card; in-panel it fills).
       `.box{flex:1 1 auto;width:100%;min-width:0;display:flex;flex-direction:column;min-height:0;background:var(--panel);overflow:hidden;}` +
       `.chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-inset);border-bottom:1px solid var(--border-lit);color:var(--muted);font-size:12px;flex:0 0 auto;flex-wrap:wrap;}` +
-      `.chrome .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);flex:0 0 auto;}` +
-      `.chrome .title{color:var(--fg-strong);font-weight:600;letter-spacing:.02em;}` +
       `.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;}` +
       // The scrolling transcript band (mock .term): the only overflow region, its own padding +
       // subtle top gradient. Replaces the former inset .pad wrapper so progress/input are full bars.
@@ -1367,13 +1365,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // classes belong on the inner surface divs, never the root body.
       `<body class="insrc-term">` +
       `<div class="box">` +
-      // Fixed header (mock .chrome): dot + insrc + ONLY the session dropdown, right-aligned. The
+      // Fixed header (mock .chrome): ONLY the session dropdown, right-aligned (the tab already carries the insrc name and mark). The
       // ISSUE-6ae99f6e fix keeps the header to a single control: the #insrc-history session switcher
       // (its selected option already shows the session — the old 'session' label + active-name text were
       // duplication). The provider + mode selects live in the footer status bar now.
       `<div class="chrome">` +
-      `<span class="dot"></span><span class="title">insrc</span>` +
-      `<span class="right"><span class="histchip"><select id="insrc-history" class="segsel ${histCls}" aria-label="session"><option value="">new…</option></select></span></span>` +
+            `<span class="right"><span class="histchip"><select id="insrc-history" class="segsel ${histCls}" aria-label="session"><option value="">new…</option></select></span></span>` +
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
       // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.
@@ -2050,7 +2047,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       channel.reveal();
       return;
     }
-    wireChannel(deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc chat' }));
+    wireChannel(deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc ctrl' }));
   };
 
   /** Shows a stored chat in the panel, as opening it from the history does. */

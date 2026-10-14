@@ -138,7 +138,7 @@
           "insrc.chat.enabled": {
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Enable the in-editor insrc chat (sidebar Activity Bar view) over your own claude/codex CLI. On by default.",
+            "markdownDescription": "Enable the in-editor insrc ctrl (sidebar Activity Bar view) over your own claude/codex CLI. On by default.",
             "scope": "machine"
           },
           "insrc.chat.diffView": {
@@ -152,13 +152,13 @@
               "Show edit diffs in a native VS Code editor diff"
             ],
             "default": "chat",
-            "markdownDescription": "Where insrc chat renders assistant code-edit diffs: inside the terminal chat panel, or in a native VS Code editor diff.",
+            "markdownDescription": "Where insrc ctrl renders assistant code-edit diffs: inside the terminal chat panel, or in a native VS Code editor diff.",
             "scope": "machine"
           },
           "insrc.chat.lockGroup": {
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Lock the insrc chat's editor group so files opened from the Explorer open in another group instead of as tabs over the chat. The group is locked the first time the chat is focused, and again after each window reload. Turn off to let tabs stack on the chat.",
+            "markdownDescription": "Lock the insrc ctrl's editor group so files opened from the Explorer open in another group instead of as tabs over the chat. The group is locked the first time the chat is focused, and again after each window reload. Turn off to let tabs stack on the chat.",
             "scope": "machine"
           },
           "insrc.chat.turnLockTimeoutMs": {

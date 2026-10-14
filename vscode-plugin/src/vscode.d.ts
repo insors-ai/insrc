@@ -83,7 +83,7 @@ declare module 'vscode' {
     readonly webview: Webview;
     readonly active: boolean;
     readonly visible: boolean;
-    /** The tab icon (themed light/dark) — the insrc chat sets this to the insrc mark. */
+    /** The tab icon (themed light/dark) — the insrc ctrl sets this to the insrc mark. */
     iconPath?: Uri | { readonly light: Uri; readonly dark: Uri } | undefined;
     reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
     onDidDispose(listener: () => unknown): Disposable;

@@ -276,27 +276,21 @@ test("worker onWaiting: the runner's card report sets and clears waitingOn on th
   }
 });
 
-test("worker recovery: a lease left by a window that reloaded (same window key, old pid and its CLI gone) is freed at once, its message fails for resend, and the queued messages behind it run; a live CLI keeps the lease; another window's dead lease waits LEASE_TAKEOVER_MS", async () => {
+test("worker recovery: a lease left by a window that reloaded (same window key, old pid and its CLI gone) is freed at once, its message fails for resend, and the queued messages behind it run; another window's dead lease waits LEASE_TAKEOVER_MS", async () => {
   const r = repo();
   const t = fakeTime();
   const old = r.open(t.now);
   const store = r.open(t.now);
   const R = gatedRunner();
-  const alive = new Set<number>([900]);
+  const alive = new Set<number>();
   const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 202 }, runner: R.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'n1' });
   try {
-    // The pre-reload window (pid 101) is running message one, its CLI (pid 900) still alive; two is queued behind it.
+    // The pre-reload window (pid 101) was running message one, its CLI (pid 900) is gone; two is queued behind it.
     const one = old.enqueue({ key: 's1::a', sessionId: 's1', turnId: 'a', windowKey: 'w-A', origin: 'typed', text: 'one', attachments: [] });
     assert.ok(one.ok);
     assert.equal(old.acknowledge(one.message.seq, { windowKey: 'w-A', pid: 101 }), true);
     old.attachCli({ windowKey: 'w-A', pid: 101 }, { pid: 900 });
     assert.ok(w.submit(sub('s1', 'two')).ok);
-    await t.advance(ACTIVE_POLL_MS * 3);
-    assert.equal(R.runs.length, 0, 'a live CLI keeps the lease');
-    assert.equal(store.lease()?.seq, one.message.seq);
-
-    // The CLI exits: the lease is freed, one fails (resendable) and two runs.
-    alive.delete(900);
     await t.advance(ACTIVE_POLL_MS * 2);
     assert.equal(store.list().find((m) => m.text === 'one')?.state, 'failed');
     assert.equal(R.runs.length, 1);
@@ -313,6 +307,165 @@ test("worker recovery: a lease left by a window that reloaded (same window key, 
     await t.advance(ACTIVE_POLL_MS * 8);
     assert.equal(store.lease(), undefined, 'taken over');
     assert.equal(store.list().find((m) => m.text === 'three')?.state, 'failed');
+  } finally {
+    w.dispose();
+    store.close();
+    old.close();
+    r.done();
+  }
+});
+
+test('worker recovery: a reloaded window reclaims a lease whose CLI lives and does not fail the message', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const old = r.open(t.now);
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  const alive = new Set<number>([900]);
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 202 }, runner: R.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    const one = old.enqueue({ key: 's1::a', sessionId: 's1', turnId: 'a', windowKey: 'w-A', origin: 'typed', text: 'one', attachments: [] });
+    assert.ok(one.ok);
+    assert.equal(old.acknowledge(one.message.seq, { windowKey: 'w-A', pid: 101 }), true);
+    old.attachCli({ windowKey: 'w-A', pid: 101 }, { pid: 900, startedAt: 4 });
+    assert.ok(w.submit(sub('s1', 'two')).ok);
+    await t.advance(ACTIVE_POLL_MS * 3);
+    assert.equal(R.runs.length, 0, 'a live CLI keeps the lease: nothing else runs');
+    assert.equal(store.list().find((m) => m.text === 'one')?.state, 'processing', 'the message is not failed');
+    const lease = store.lease();
+    assert.equal(lease?.seq, one.message.seq);
+    assert.equal(lease?.pid, 202, 'the lease is re-homed to the reloaded window');
+    assert.equal(lease?.cliPid, 900);
+    assert.equal(lease?.cliStartedAt, 4);
+    // The old window's pid 101 is gone, and the holder's own pid is never touched by the rules.
+    assert.equal(store.list().find((m) => m.text === 'two')?.state, 'queued');
+  } finally {
+    w.dispose();
+    store.close();
+    old.close();
+    r.done();
+  }
+});
+
+test('worker recovery: a dead holder and dead CLI of another window is freed only after LEASE_TAKEOVER_MS and the next message runs', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const old = r.open(t.now);
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 202 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    const first = old.enqueue({ key: 's1::a', sessionId: 's1', turnId: 'a', windowKey: 'w-B', origin: 'typed', text: 'from the dead window', attachments: [] });
+    assert.ok(first.ok);
+    assert.equal(old.acknowledge(first.message.seq, { windowKey: 'w-B', pid: 303 }), true);
+    assert.ok(w.submit(sub('s2', 'next')).ok);
+    await t.advance(LEASE_TAKEOVER_MS - ACTIVE_POLL_MS * 4);
+    assert.equal(store.lease()?.seq, first.message.seq, 'not stale yet');
+    assert.equal(R.runs.length, 0);
+    await t.advance(ACTIVE_POLL_MS * 8);
+    assert.equal(store.list().find((m) => m.text === 'from the dead window')?.state, 'failed');
+    assert.equal(store.list().find((m) => m.text === 'from the dead window')?.error, 'the window closed during the turn');
+    assert.equal(R.runs.length, 1, 'the next message runs');
+    assert.equal(R.runs[0]!.message.text, 'next');
+  } finally {
+    w.dispose();
+    store.close();
+    old.close();
+    r.done();
+  }
+});
+
+test('worker recovery: a holder that keeps heartbeating past LEASE_TAKEOVER_MS is never taken over', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const holder = r.open(t.now);
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  // The holder's process looks gone to this window (another host), but it heartbeats: it must never be taken over.
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 202 }, runner: R.runner, isAlive: () => false, now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    const first = holder.enqueue({ key: 's1::a', sessionId: 's1', turnId: 'a', windowKey: 'w-B', origin: 'typed', text: 'long task', attachments: [] });
+    assert.ok(first.ok);
+    const B = { windowKey: 'w-B', pid: 303 };
+    assert.equal(holder.acknowledge(first.message.seq, B), true);
+    assert.ok(w.submit(sub('s2', 'waits')).ok);
+    for (let i = 0; i < (LEASE_TAKEOVER_MS * 1.2) / LEASE_HEARTBEAT_MS; i++) {
+      assert.equal(holder.heartbeat(B), true);
+      await t.advance(LEASE_HEARTBEAT_MS);
+    }
+    assert.equal(store.lease()?.seq, first.message.seq, 'still held after more than LEASE_TAKEOVER_MS');
+    assert.equal(store.list().find((m) => m.text === 'long task')?.state, 'processing');
+    assert.equal(R.runs.length, 0);
+  } finally {
+    w.dispose();
+    store.close();
+    holder.close();
+    r.done();
+  }
+});
+
+// Epic E20261014613abdb3 Story S003 t5.
+test('a reclaimed lease is heartbeated while the CLI lives, then finished as detached-ended and released when the CLI exits, and the next message runs', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const old = r.open(t.now);
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  const alive = new Set<number>([900]);
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 202 }, runner: R.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    const one = old.enqueue({ key: 's1::a', sessionId: 's1', turnId: 'a', windowKey: 'w-A', origin: 'typed', text: 'one', attachments: [] });
+    assert.ok(one.ok);
+    assert.equal(old.acknowledge(one.message.seq, { windowKey: 'w-A', pid: 101 }), true);
+    old.attachCli({ windowKey: 'w-A', pid: 101 }, { pid: 900 });
+    assert.ok(w.submit(sub('s1', 'two')).ok);
+    await t.advance(ACTIVE_POLL_MS * 3);
+    const reclaimedAt = store.lease()!.heartbeatAt;
+    await t.advance(LEASE_HEARTBEAT_MS * 3);
+    assert.ok(store.lease()!.heartbeatAt > reclaimedAt, 'heartbeated while the CLI lives');
+    assert.equal(R.runs.length, 0);
+    alive.delete(900);
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(store.list().some((m) => m.text === 'one'), false, 'finished as detached-ended: its row is gone');
+    assert.equal(R.runs.length, 1, 'the next message runs');
+    assert.equal(R.runs[0]!.message.text, 'two');
+    assert.equal(store.lease()?.seq !== one.message.seq, true, 'the reclaimed lease is released');
+  } finally {
+    w.dispose();
+    store.close();
+    old.close();
+    r.done();
+  }
+});
+
+test('a reclaimed lease lost to another window clears the marker and stops heartbeating', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const old = r.open(t.now);
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  const alive = new Set<number>([900]);
+  const realHeartbeat = store.heartbeat.bind(store);
+  let beats = 0;
+  store.heartbeat = (c) => { beats += 1; return realHeartbeat(c); };
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 202 }, runner: R.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    const one = old.enqueue({ key: 's1::a', sessionId: 's1', turnId: 'a', windowKey: 'w-A', origin: 'typed', text: 'one', attachments: [] });
+    assert.ok(one.ok);
+    assert.equal(old.acknowledge(one.message.seq, { windowKey: 'w-A', pid: 101 }), true);
+    old.attachCli({ windowKey: 'w-A', pid: 101 }, { pid: 900 });
+    await t.advance(ACTIVE_POLL_MS * 3);
+    await t.advance(LEASE_HEARTBEAT_MS * 2);
+    assert.ok(beats > 0, 'heartbeating the reclaimed lease');
+    // The lease is lost: finished elsewhere and taken by another window for another message.
+    old.finish(one.message.seq, { kind: 'detached-ended' });
+    const two = old.enqueue({ key: 's2::b', sessionId: 's2', turnId: 'b', windowKey: 'w-B', origin: 'typed', text: 'two', attachments: [] });
+    assert.ok(two.ok);
+    assert.equal(old.acknowledge(two.message.seq, { windowKey: 'w-B', pid: 303 }), true);
+    const before = beats;
+    await t.advance(LEASE_HEARTBEAT_MS * 4);
+    assert.equal(beats, before, 'no heartbeat for a lease that is no longer this window\'s');
+    assert.equal(store.lease()?.windowKey, 'w-B');
   } finally {
     w.dispose();
     store.close();

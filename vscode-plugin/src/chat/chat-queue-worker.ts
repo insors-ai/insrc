@@ -19,7 +19,7 @@ import type { AttachmentRef } from './attachment-store.js';
 import type { ChatPanelLogger } from './chat-panel.js';
 import {
   BUSY_NOTE, LEASE_HEARTBEAT_MS, LEASE_TAKEOVER_MS, StoreBusy,
-  type ChatQueueLeases, type ChatQueueStore, type EnqueueResult, type LeaseClaim, type QueuedMessage, type TurnOutcome,
+  type ChatQueueLeases, type ChatQueueStore, type EnqueueResult, type LeaseClaim, type QueuedMessage, type RepoLease, type TurnOutcome,
 } from './chat-queue-store.js';
 
 /** How often the queue is checked while it has rows or this window holds the lease. */
@@ -110,6 +110,9 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
   let beatHandle: unknown;
   /** Story S002: a card state of the running message that could not be written yet; written on the next tick. */
   let pendingWaiting: { readonly seq: number; readonly on: WaitingOn } | undefined;
+  /** Story S003: the message of a lease this window reclaimed after a reload, and when it last refreshed that lease. */
+  let reclaimedSeq: number | undefined;
+  let lastReclaimBeat = Number.NEGATIVE_INFINITY;
 
   function emit(): void {
     let rows: readonly QueuedMessage[];
@@ -203,21 +206,64 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
     schedule(0);
   }
 
+  /** The holder window's process and the lease's CLI are both gone. */
+  const holderGone = (l: RepoLease): boolean => !deps.isAlive(l.pid, l.pidStartedAt) && !cliAlive(l);
+  const cliAlive = (l: RepoLease): boolean => l.cliPid !== undefined && deps.isAlive(l.cliPid, l.cliStartedAt);
+  const holderPidGone = (l: RepoLease): boolean => !deps.isAlive(l.pid, l.pidStartedAt);
+
   /**
-   * A lease whose holder window's process and turn CLI are both gone can never be released by its
-   * holder (a reload or a crash): without this it blocks the repository's queue for good. The
-   * message it ran is marked failed (the outbox offers resend) and the lease is freed. The same
-   * window key after a reload is recovered at once; another window's lease only once it has gone
-   * LEASE_TAKEOVER_MS without a heartbeat. A turn whose CLI still lives is left until it exits.
+   * Epic E20261014613abdb3 Story S003 (replaces the ad-hoc recoverDeadLease): the lease rules, each a single store
+   * transaction. A lease this window holds because it reclaimed it after a reload is followed until its CLI exits. For
+   * another lease whose holder process is gone: the same window key (a reload) is reclaimed when the turn's CLI still
+   * lives (the message is not failed) and taken over at once when it does not (the message fails, the outbox offers
+   * resend); another window's lease is taken over only after LEASE_TAKEOVER_MS without a heartbeat.
    */
-  function recoverDeadLease(at: number): void {
+  function applyLeaseRules(at: number): void {
     const lease = store.lease();
-    if (lease === undefined || (lease.windowKey === claim.windowKey && lease.pid === claim.pid)) return;
-    if (deps.isAlive(lease.pid, lease.pidStartedAt)) return;
-    if (lease.cliPid !== undefined && deps.isAlive(lease.cliPid, lease.cliStartedAt)) return;
-    if (lease.windowKey !== claim.windowKey && at - lease.heartbeatAt < LEASE_TAKEOVER_MS) return;
-    log?.warn(`[chat-queue] recovering the lease of message ${lease.seq}: window ${lease.windowKey} (pid ${lease.pid}) is gone`);
-    store.finish(lease.seq, { kind: 'failed', error: 'the window closed during the turn', acted: true });
+    if (lease === undefined) {
+      reclaimedSeq = undefined;
+      return;
+    }
+    if (lease.windowKey === claim.windowKey && lease.pid === claim.pid) {
+      if (reclaimedSeq === lease.seq) followReclaimed(lease, at);
+      return;
+    }
+    reclaimedSeq = undefined; // the lease is not this window's (any more)
+    if (lease.windowKey === claim.windowKey) {
+      if (!holderPidGone(lease)) return;
+      if (cliAlive(lease)) {
+        if (store.reclaim(claim, holderPidGone)) {
+          reclaimedSeq = lease.seq;
+          lastReclaimBeat = at;
+          log?.warn(`[chat-queue] reclaimed the lease of message ${lease.seq} after a reload: its CLI (pid ${lease.cliPid}) is still running`);
+        }
+      } else if (store.takeOver(claim, at, holderGone)) {
+        log?.warn(`[chat-queue] freed the lease of message ${lease.seq}: this window's earlier process (pid ${lease.pid}) and its CLI are gone`);
+      }
+      return;
+    }
+    if (at - lease.heartbeatAt < LEASE_TAKEOVER_MS || !holderGone(lease)) return;
+    if (store.takeOver(claim, at, holderGone)) {
+      log?.warn(`[chat-queue] took over the lease of message ${lease.seq}: window ${lease.windowKey} (pid ${lease.pid}) is gone`);
+    }
+  }
+
+  /**
+   * A reclaimed lease runs a turn this window did not start. Keep it fresh while the CLI lives; when the CLI has exited the
+   * turn is over (its output is in the chat's transcript): the message is finished as detached-ended and the lease released.
+   */
+  function followReclaimed(lease: RepoLease, at: number): void {
+    if (cliAlive(lease)) {
+      if (at - lastReclaimBeat >= LEASE_HEARTBEAT_MS) {
+        lastReclaimBeat = at;
+        if (!store.heartbeat(claim)) reclaimedSeq = undefined;
+      }
+      return;
+    }
+    store.finish(lease.seq, { kind: 'detached-ended' });
+    store.release(claim);
+    reclaimedSeq = undefined;
+    log?.warn(`[chat-queue] the reclaimed turn of message ${lease.seq} has ended`);
   }
 
   function tick(): void {
@@ -232,7 +278,7 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
       if (pendingFinish !== undefined) {
         if (finishNow(pendingFinish.seq, pendingFinish.outcome)) pendingFinish = undefined;
       }
-      if (current === undefined && pendingFinish === undefined) recoverDeadLease(at);
+      if (current === undefined && pendingFinish === undefined) applyLeaseRules(at);
       if (pendingWaiting !== undefined && current?.seq === pendingWaiting.seq) writeWaiting(pendingWaiting.seq, pendingWaiting.on);
       noticeChanges();
       if (current === undefined && pendingFinish === undefined) {

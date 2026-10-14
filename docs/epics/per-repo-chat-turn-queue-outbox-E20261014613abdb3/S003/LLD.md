@@ -22,6 +22,7 @@ S003 makes a dead or closed window unable to block the repository's chat queue. 
 8. [Alternatives considered](#8-alternatives-considered)
 9. [References](#9-references)
 10. [Open questions](#10-open-questions)
+11. [Feedback](#11-feedback)
 
 ## 1. HLD context
 
@@ -322,20 +323,23 @@ takeOver and reclaim are implemented in the store with the liveness decision pas
 - sc2 additions: presenceOf(windowKey) is a new read on sc2 and takeOver skips the staleness wait for the claim's own windowKey; both are additive to the HLD sketch, and sc2 is owned by S001.
 - Decision for the owner: the line between a slow reload and a closed window is PRESENCE_GRACE_MS (30 s, the HLD's value). A reload slower than that marks the window's head message not delivered, with a resend, never lost. Using a longer grace for the head rule (for example LEASE_TAKEOVER_MS, 10 minutes) would avoid that but would hold the queue behind a genuinely closed window for up to that long. This LLD keeps the HLD's 30 s.
 
-<!-- insrc:review -->
+## 11. Feedback
 
-## Review
+- **Subho Ghosh** (2026-10-14T14:55:23.823Z) `comment` `approve` — `docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S003/LLD.md`: on "Using a longer grace for the head rule (for example LEASE_TAKEOVER_MS, 10 minutes) would avoid that but would hold the q…": Locking the queue for 10mins is not an option
 
-### ✅ Review `PASS` — design.story (design.story)
+## Resolved questions
 
-**0 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-14T14:51:25.438Z
+- `q58c348fe` — ac3, display half is carried by existing S001 code (followLiveTurn and turns.follow); it is not tested again here. The hand check in migration step 3 is the check that a reload with a live CLI shows the turn continuing; if that fails, it is an S001 defect to fix there, not a gap in this design.
+  - **resolved**: Point ac3 at existing S001 tests — Name real runnable S001 cases for the display half; if none exist, record the hand check as a reported live test. _(2026-10-14T15:00:11.883Z)_
 
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+## Citations
 
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c3]]** `prior-artifact` `HLD-613abdb351c2c738 assumption c3 (the worker decides from the database alone)`
+- **[[c11]]** `prior-artifact` `HLD-613abdb351c2c738 assumption c11 (acknowledge takes the lease in one transaction)`
+- **[[c12]]** `prior-artifact` `HLD-613abdb351c2c738 assumption c12 (writes are short IMMEDIATE transactions)`
+- **[[c13]]** `prior-artifact` `HLD-613abdb351c2c738 assumption c13 (the lease is released only when no CLI of the turn runs)`
+- **[[c14]]** `code` `vscode-plugin/src/chat/chat-queue-store.ts (takeOver and reclaim stubs, windowAlive, finish, enqueue, resendFrom, bound constants)`
+- **[[c15]]** `code` `vscode-plugin/src/chat/chat-queue-worker.ts (recoverDeadLease from commit 97df9bf7, tick, dispose)`
+- **[[c16]]** `code` `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts (the worker recovery test)`
+- **[[c17]]** `code` `vscode-plugin/src/chat/chat-panel.ts (followLiveTurn: re-attaches a saved live turn on webview ready) and vscode-plugin/src/chat/turn-lifecycle.ts (follow(): owner takeover when the old host pid is gone)`
+- **[[c18]]** `code` `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts:151 (S001 dispose test asserting presence removed; inverted by this Story)`

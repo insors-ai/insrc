@@ -227,7 +227,16 @@
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-14T14:55:23.822Z"
+    "approvedAt": "2026-10-14T14:55:23.822Z",
+    "questionResolutions": {
+      "q58c348fe": {
+        "question": "ac3, display half is carried by existing S001 code (followLiveTurn and turns.follow); it is not tested again here. The hand check in migration step 3 is the check that a reload with a live CLI shows the turn continuing; if that fails, it is an S001 defect to fix there, not a gap in this design.",
+        "status": "resolved",
+        "choice": "Point ac3 at existing S001 tests",
+        "rationale": "Name real runnable S001 cases for the display half; if none exist, record the hand check as a reported live test.",
+        "resolvedAt": "2026-10-14T15:00:11.883Z"
+      }
+    }
   },
   "body": {
     "summary": {

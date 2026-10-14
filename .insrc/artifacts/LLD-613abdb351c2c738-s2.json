@@ -230,6 +230,13 @@
         "choice": "Accept the HLD boundary as enough",
         "rationale": "projectOutbox is new by design; s2 creates it in chat-outbox.ts (the sc5 module).",
         "resolvedAt": "2026-10-14T12:50:03.494Z"
+      },
+      "q5eea7566": {
+        "question": "Four additive changes to s1-owned contracts need approval as HLD amendments: sc4 act(seq, action) and sc1 resendFrom(seq, newTurnId, windowKey) (filed by the first run of this design), and sc1 markWaiting(seq, on) with the waiting_on column and sc4's runner onWaiting argument (filed by this run).",
+        "status": "resolved",
+        "choice": "Approve all, but plan s1 tasks first",
+        "rationale": "The user approved all four amendments (AMD-3, 4, 7, 8) with the LLD on 2026-10-14; the plan puts the s1-owned additions first.",
+        "resolvedAt": "2026-10-14T12:50:40.209Z"
       }
     }
   },

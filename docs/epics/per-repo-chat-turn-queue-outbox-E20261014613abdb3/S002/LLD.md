@@ -378,6 +378,8 @@ As a1, plus: the messages table gains a nullable waiting_on column (schema versi
 
 - `q4ab57645` — cd1 (partial): projectOutbox is a new function of the sc5 module, not an existing symbol; it is the projection the HLD boundary for s2 names.
   - **resolved**: Accept the HLD boundary as enough — projectOutbox is new by design; s2 creates it in chat-outbox.ts (the sc5 module). _(2026-10-14T12:50:03.494Z)_
+- `q5eea7566` — Four additive changes to s1-owned contracts need approval as HLD amendments: sc4 act(seq, action) and sc1 resendFrom(seq, newTurnId, windowKey) (filed by the first run of this design), and sc1 markWaiting(seq, on) with the waiting_on column and sc4's runner onWaiting argument (filed by this run).
+  - **resolved**: Approve all, but plan s1 tasks first — The user approved all four amendments (AMD-3, 4, 7, 8) with the LLD on 2026-10-14; the plan puts the s1-owned additions first. _(2026-10-14T12:50:40.209Z)_
 
 ## Citations
 

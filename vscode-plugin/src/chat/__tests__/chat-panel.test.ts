@@ -23,6 +23,23 @@ import { fakeLiveProc, patchOf, waitFor, type FakeLiveProc } from './fixtures.js
 import type { DiffView } from '../edit-governor.js';
 import type { TranscriptEntry } from '../session-store.js';
 import { createReviewPresenter, type ReviewPresenter } from '../review-presenter.js';
+import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
+import { createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
+import { DatabaseSync } from 'node:sqlite';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join as pathJoin } from 'node:path';
+
+/** Epic E20261014613abdb3 Story S001: a repository queue on a temp file, as deps.queue builds it. */
+function tempQueue(): { queue: (runner: QueuedTurnRunner) => ReturnType<typeof createChatQueueWorker>; store: ReturnType<typeof createChatQueueStore>; done(): void } {
+  const dir = mkdtempSync(pathJoin(tmpdir(), 'insrc-chat-q-'));
+  const store = createChatQueueStore({ path: pathJoin(dir, 'repo.sqlite'), openDatabase: (p) => new DatabaseSync(p) as unknown as SqliteDatabase, now: () => Date.now(), pluginVersion: 't' });
+  return {
+    store,
+    queue: (runner) => createChatQueueWorker({ store, claim: { windowKey: 'w-test', pid: process.pid }, runner, isAlive: () => false, now: () => Date.now() }),
+    done: () => { store.close(); rmSync(dir, { recursive: true, force: true }); },
+  };
+}
 
 interface FakeChannel {
   channel: ChatPanelChannel;
@@ -2854,39 +2871,51 @@ test('with a short timeout, the still-running holder is stopped and the new turn
   procs[1]!.exitNow();
 });
 
-test('Stop ends the running process at once and cancels a waiting message; the generation guard still keeps superseded events out of the transcript', async () => {
+// Epic E20261014613abdb3 Story S001: with the queue, Stop ends the running turn and the next waiting
+// message runs; a newer message never replaces a waiting one. (Was: 'Stop ends the running process
+// at once and cancels a waiting message; the generation guard still keeps superseded events out of
+// the transcript'.)
+test('Stop ends the running process at once and the waiting message then runs; with the queue every message runs, in order, one answer each', async () => {
   const fc = fakeChannel();
   const { adapter, procs, runs } = procAdapter();
   const store = createInMemoryChatSessionStore();
-  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo' });
-  host.open();
-  fc.send(env('submit-turn', { text: 'first' }));
-  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
-  fc.send(env('submit-turn', { text: 'second' }));
-  await waitFor(() => waitingPosted(fc));
+  const q = tempQueue();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', queue: q.queue });
+  try {
+    host.open();
+    fc.send(env('ready'));
+    fc.send(env('submit-turn', { text: 'first' }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'), 3000);
+    fc.send(env('submit-turn', { text: 'second' }));
+    await waitFor(() => waitingPosted(fc), 3000); // its turn waits for the first CLI to exit
 
-  fc.send(env('cancel-turn'));
-  await waitFor(() => procs[0]!.exited(), 200);
-  assert.deepEqual(procs[0]!.signals, ['SIGTERM'], 'Stop ended the running process at once (no timeout wait)');
-  await new Promise((r) => setTimeout(r, 30));
-  assert.equal(runs(), 1, 'the waiting message was cancelled, not started');
+    fc.send(env('cancel-turn'));
+    await waitFor(() => procs[0]!.exited(), 500);
+    assert.deepEqual(procs[0]!.signals, ['SIGTERM'], 'Stop ended the running process at once (no timeout wait)');
 
-  // A newer message replaces a waiting one: only the latest runs, and nothing from the dropped
-  // one reaches the transcript.
-  fc.send(env('submit-turn', { text: 'third' }));
-  await waitFor(() => runs() === 2);
-  fc.send(env('submit-turn', { text: 'fourth' }));
-  fc.send(env('submit-turn', { text: 'fifth' }));
-  await waitFor(() => waitingPosted(fc));
-  procs[1]!.exitNow();
-  await waitFor(() => runs() === 3);
-  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'done').length === 3);
-  await new Promise((r) => setTimeout(r, 30));
-  assert.equal(runs(), 3, "'fourth' was replaced by 'fifth' and never ran");
-  const saved = store.list()[0]!;
-  const answers = store.get(saved.id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
-  assert.deepEqual(answers, ['answer-1', 'answer-2', 'answer-3'], 'one answer per started turn, none from a dropped one');
-  procs[2]!.exitNow();
+    // 'second' was the message being run (waiting for the session's CLI): Stop ends it, kept with a resend.
+    await waitFor(() => q.store.list().find((m) => m.text === 'second')?.state === 'failed', 3000);
+    assert.equal(q.store.list().find((m) => m.text === 'second')?.error, 'stopped by the user');
+    assert.equal(runs(), 1, 'its turn never started a CLI');
+
+    // Messages sent next all run, in order: a newer one never replaces a waiting one.
+    fc.send(env('submit-turn', { text: 'third' }));
+    fc.send(env('submit-turn', { text: 'fourth' }));
+    await waitFor(() => runs() === 2, 3000);
+    procs[1]!.exitNow(); // 'third' answered; its CLI exits, so 'fourth' gets the session
+    await waitFor(() => runs() === 3, 3000);
+    procs[2]!.exitNow();
+    await waitFor(() => q.store.list().filter((m) => m.state !== 'failed').length === 0, 3000);
+    const saved = store.list()[0]!;
+    const users = store.get(saved.id)!.transcript.filter((r) => r.role === 'user').map((r) => (r as { text: string }).text);
+    assert.deepEqual(users, ['first', 'second', 'third', 'fourth'], 'in order (a message enters the transcript when it is taken, so the stopped one is there too)');
+    const answers = store.get(saved.id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
+    assert.deepEqual(answers, ['answer-1', 'answer-2', 'answer-3'], 'one answer per started turn');
+    procs.forEach((p) => p.exitNow());
+  } finally {
+    host.dispose();
+    q.done();
+  }
 });
 
 test('a lock failure other than a dropped wait is logged and shown, never a silent no-op', async () => {
@@ -4290,7 +4319,7 @@ interface AttachHarness {
   sendAndWait(type: string, extra?: Record<string, unknown>): Promise<{ sessionId: string; items: Array<Record<string, unknown>>; error?: string }>;
 }
 /** A chat host with the attachment seams: the real store over an in-memory file seam, a scripted dialog and a recording opener. */
-function attachHarness(opts: { adapter?: StreamAdapter | undefined; wrapStore?: ((store: AttachmentStore) => AttachmentStore) | undefined } = {}): AttachHarness {
+function attachHarness(opts: { adapter?: StreamAdapter | undefined; wrapStore?: ((store: AttachmentStore) => AttachmentStore) | undefined; queue?: ((runner: QueuedTurnRunner) => ReturnType<typeof createChatQueueWorker>) | undefined } = {}): AttachHarness {
   const fc = fakeChannel();
   const fake = fakeAttachmentFs();
   const real = createAttachmentStore({ root: ATT_ROOT, fs: fake.fs });
@@ -4310,6 +4339,7 @@ function attachHarness(opts: { adapter?: StreamAdapter | undefined; wrapStore?: 
     store: sessions,
     cwd: () => '/repo',
     logger: { warn: () => {}, error: (m) => errors.push(m) },
+    ...(opts.queue !== undefined ? { queue: opts.queue } : {}),
     attachments: {
       store,
       pickFiles: async () => {
@@ -4745,6 +4775,7 @@ test('host: a grant re-run and a selection continuation leave the pending list u
   assert.deepEqual(runs[3]!.readDirs, [dir]);
 });
 
+// Epic E20261014613abdb3 Story S001: this is the rule without the queue (the fallback path).
 test('host: a submit with blank text and an attachment supersedes queued approvals', async () => {
   const { adapter, runs } = sequenceAdapter([
     [refused('u1', 'Edit'), refused('u2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
@@ -4775,6 +4806,38 @@ test('host: a submit with blank text and an attachment supersedes queued approva
   await runsSettled();
   assert.equal(outcomes(h.fc).length, 2);
   assert.equal(runs.length, 2);
+});
+
+// Epic E20261014613abdb3 Story S001: with the queue, a message never answers the waiting cards; it
+// waits, and runs once they are decided. (The test above keeps the no-queue path's rule.)
+test('host: with the queue, a submit with blank text and an attachment leaves the waiting cards as they are, waits, and runs once they are decided', async () => {
+  const { adapter, runs } = sequenceAdapter([
+    [refused('u1', 'Edit'), refused('u2', 'Write'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' }],
+    [{ kind: 'assistant-delta', turnId: 't2', text: 'ok' }, { kind: 'done', turnId: 't2', ok: true, sessionId: 'sess-1' }],
+  ]);
+  const q = tempQueue();
+  const h = attachHarness({ adapter, queue: q.queue });
+  try {
+    h.fc.send(env('ready'));
+    h.fc.send(env('submit-turn', { text: 'two edits' }));
+    await waitFor(() => approvalCards(h.fc).length === 1 && turnEvents(h.fc).some((e) => e.kind === 'done'), 3000);
+
+    await h.sendAndWait('attach-image', { mime: 'image/png', dataBase64: PNG5, name: 'instead.png' });
+    h.fc.send(env('submit-turn', { text: '' }));
+    await waitFor(() => q.store.list().some((m) => m.state === 'queued' && m.attachments.length === 1), 3000);
+    await runsSettled();
+    assert.deepEqual(outcomes(h.fc), [], 'the waiting cards are not answered with a no');
+    assert.equal(runs.length, 1, 'the message waits while the cards wait');
+    // The cards are decided; the waiting message then runs, as a normal turn.
+    h.fc.send(env('permission-decision', { requestId: 'u1', decision: 'deny' }));
+    h.fc.send(env('permission-decision', { requestId: 'u2', decision: 'deny' }));
+    await waitFor(() => runs.length === 2, 3000);
+    assert.deepEqual(outcomes(h.fc).map((o) => [o.toolName, o.decision]), [['Edit', 'rejected'], ['Write', 'rejected']]);
+    assert.ok(runs[1]!.prompt.startsWith(ATTACHED));
+    assert.equal(runs[1]!.allowedTools, undefined, 'with no grant');
+  } finally {
+    q.done();
+  }
 });
 
 test('host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first', async () => {

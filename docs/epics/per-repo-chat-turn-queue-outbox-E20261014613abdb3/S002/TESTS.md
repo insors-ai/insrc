@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -146,3 +146,19 @@ Run at 2026-10-14T13:08:37.126Z on commit `fe1d2a5a`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` | 0 | 6 | 3.8 s |  |
+
+## t6
+
+Run at 2026-10-14T13:11:49.428Z on commit `8425ca74`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: chat shell: the outbox band and the queue shortcut hint are present only with the queue; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | chat shell: the outbox band and the queue shortcut hint are present only with the queue; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 9 | 0.5 s |  |

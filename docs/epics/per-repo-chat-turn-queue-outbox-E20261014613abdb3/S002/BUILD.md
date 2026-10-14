@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-10-14T12:57:26.478Z  ·  **Updated:** 2026-10-14T13:08:37.126Z
+**Standalone:** no  ·  **Created:** 2026-10-14T12:57:26.478Z  ·  **Updated:** 2026-10-14T13:11:49.428Z
 
-**Commit:** fe1d2a5a
+**Commit:** 8425ca74
 
 ## Summary
 
-vscode-plugin/src/chat/chat-panel.ts: the queue runner's run(message, onSpawn, onWaiting) keeps onWaiting on the QueuedRun with the last reported card. reportCards() computes the card the running queued message waits on (an approval when the approval queue has a head, else a selection when one is pending, else none) and calls onWaiting only when it changes; it does nothing when no queued message runs (so a turn not run from the queue reports nothing). It is called when an approval is enqueued, when a selection request arrives, after a permission or selection decision (in a microtask, after the state changes), and when the waiting approvals are rejected, superseded or dropped. The worker writes each report with markWaiting (t2), and every window's projection shows blockedBy (t3/t4). Test: the named test runs two hosts (w-1, w-2) on one queue file: an approval card in w-1's running message marks it 'approval' and w-2's outbox shows blockedBy { 'fix the board', 'approval' } with runningChat; answering clears it; a selection card reports 'selection'; once the message and its selection continuation end, nothing stays marked and w-2 shows no blockedBy or runningChat. Mutations: reporting approvals only, and dropping the report after a decision, each fail the test. Plugin suite: 1301 tests, 1291 pass, 8 skipped, 2 fail (pre-existing manifest-catalog). Typecheck clean.
+vscode-plugin/src/chat/chat-panel.ts renderShell, only when deps.queue is set (queueOn): #insrc-outbox (summary #insrc-obsum, rows #insrc-oblist, note #insrc-obnote) sits above the .inputbar; #insrc-qhint '⌘/Ctrl+Enter to queue' sits beside #insrc-input. Styles use the chat's theme variables only (no literals): rounded rows, round icon-only buttons (.outbox__btn, border-radius 50%) per the plugin UI convention. The script's renderOutbox(view) ignores another chat's view, builds the summary ('N messages from other chats ahead · running: “title” (this window) · waiting for an approval/a choice in “title”'), and draws each row with textContent: place '#n' or the state ('failed' / 'not sent'), the first line (full text in the title tooltip), the attachment count, the error, then ✕ cancel for queued/retrying or ↻ resend + ✕ dismiss for failed/not-delivered; each button has role=button, tabindex 0, aria-label and title, and posts its outbox-* type with the seq on click or Enter/Space. The band hides when there is nothing to show. setRunning toggles the hint; with the queue, doSubmit no longer calls setRunning(true)/setProgress (the host's 'turn-running' does); without the queue doSubmit is byte-identical, so the pinned tests (chat-panel.test.ts:1622, :1683, chat-shell.test.ts:334) stand. Test: the named test in chat-shell.test.ts runs the real script on the fake DOM (runShell gains a queue option with an inert worker). Mutations (marking running on submit with the queue, a hint that never hides, drawing another chat's outbox, a band that never hides) each fail it. Plugin suite: 1302 tests, 1292 pass, 8 skipped, 2 fail (pre-existing manifest-catalog). Typecheck clean.
 
 ## Tasks validated
 
@@ -17,19 +17,21 @@ vscode-plugin/src/chat/chat-panel.ts: the queue runner's run(message, onSpawn, o
 - ✓ `t3`
 - ✓ `t4`
 - ✓ `t5`
+- ✓ `t6`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-613abdb351c2c738-s2.json` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/chat-outbox.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/chat-queue-store.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/chat-queue-worker.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
-- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-14T13:08:37.126Z)
+- `.insrc/artifacts/PLAN-613abdb351c2c738-s2.json` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/chat-outbox.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/chat-queue-store.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/chat-queue-worker.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)
+- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-14T13:11:49.428Z)

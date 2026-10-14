@@ -254,6 +254,13 @@
         "choice": "Classify 'other', fail fast with install hint + resend (owner's resolution)",
         "rationale": "Owner decision: a missing CLI cannot be fixed by waiting.",
         "resolvedAt": "2026-10-14T17:17:06.008Z"
+      },
+      "q2ee914d5": {
+        "question": "RESOLVED by the owner: the retry of a busy outcome write is bounded at 60 s, then a chat note asks for a reload, and the reload frees the lease through S003's rule (FR004; enqueue was already bounded by the busy timeout and refused with a note).",
+        "status": "resolved",
+        "choice": "Bounded 60 s retry, then a reload note (owner's decision)",
+        "rationale": "Owner decision: retries cannot be indefinite.",
+        "resolvedAt": "2026-10-14T17:19:05.046Z"
       }
     }
   },

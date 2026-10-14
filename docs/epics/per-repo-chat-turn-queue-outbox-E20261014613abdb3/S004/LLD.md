@@ -404,6 +404,8 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
   - **resolved**: Retry text-only turns, keep partial text plus a stored 'retrying' line (owner's resolution) — Owner decision: a text-only turn is retried; a tool call, command or edit is never retried. _(2026-10-14T17:15:50.853Z)_
 - `qf72d3469` — RESOLVED by the owner: a CLI that is not installed (ENOENT, 'CLI not found') is classified 'other' and fails at once with the install hint and a resend, not retried.
   - **resolved**: Classify 'other', fail fast with install hint + resend (owner's resolution) — Owner decision: a missing CLI cannot be fixed by waiting. _(2026-10-14T17:17:06.008Z)_
+- `q2ee914d5` — RESOLVED by the owner: the retry of a busy outcome write is bounded at 60 s, then a chat note asks for a reload, and the reload frees the lease through S003's rule (FR004; enqueue was already bounded by the busy timeout and refused with a note).
+  - **resolved**: Bounded 60 s retry, then a reload note (owner's decision) — Owner decision: retries cannot be indefinite. _(2026-10-14T17:19:05.046Z)_
 
 ## Citations
 

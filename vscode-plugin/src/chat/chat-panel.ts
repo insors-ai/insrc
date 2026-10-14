@@ -1036,6 +1036,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           `.attchip__x{cursor:pointer;color:var(--muted);padding:0 4px;flex:0 0 auto;}` +
           `.attchip__x:hover,.attchip__x:focus-visible{color:var(--red);outline:none;}` +
           `.atterr{color:var(--red);font-size:11.5px;padding-top:4px;}`) +
+      // Epic E20261014613abdb3 Story S002: the outbox band above the input bar, and the queue hint.
+      (deps.queue === undefined
+        ? ''
+        : `.outbox{padding:6px 12px;background:var(--bg-inset);border-top:1px solid var(--border-lit);flex:0 0 auto;max-height:30vh;overflow-y:auto;font-size:12px;}` +
+          `.outbox[hidden],.outbox__note[hidden],.outbox__sum[hidden],.qhint[hidden]{display:none;}` +
+          `.outbox__sum{color:var(--muted);font-size:11.5px;padding-bottom:4px;}` +
+          `.outbox__row{display:flex;align-items:center;gap:8px;padding:3px 4px 3px 8px;margin-top:4px;border:1px solid var(--border-lit);border-radius:8px;color:var(--fg);}` +
+          `.outbox__place{color:var(--accent);font-weight:600;flex:0 0 auto;min-width:2.2em;}` +
+          `.outbox__row--failed .outbox__place,.outbox__row--not-delivered .outbox__place{color:var(--red);}` +
+          `.outbox__text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}` +
+          `.outbox__err{color:var(--red);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40%;}` +
+          `.outbox__files{color:var(--muted);flex:0 0 auto;}` +
+          `.outbox__btn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:0 0 auto;border-radius:50%;border:1px solid var(--border-lit);color:var(--muted);cursor:pointer;}` +
+          `.outbox__btn:hover,.outbox__btn:focus-visible{color:var(--accent);border-color:var(--accent);outline:none;}` +
+          `.outbox__note{color:var(--warn);font-size:11.5px;padding-top:4px;}` +
+          `.qhint{color:var(--muted);font-size:11px;align-self:center;flex:0 0 auto;padding-right:8px;}`) +
       `.statusbar .perm-auto{color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:2px 9px;}` +
       // The provider/session/edits selects, styled as the bold segment value (transparent, borderless).
       `.segsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;color:var(--fg);font-family:var(--font);font-size:12px;font-weight:500;line-height:1.2;padding:0 14px 0 2px;margin:0;cursor:pointer;outline:none;` +
@@ -1113,6 +1129,34 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // the chip's thumbnail (matched by clientId; the policy's `img-src data:` allows it). Chips are
     // built with textContent, and a file is only ever named by the id the host issued.
     const attachOn = att !== undefined;
+    // Epic E20261014613abdb3 Story S002: the outbox, drawn only from what the host posts ('outbox'),
+    // with textContent. Waiting rows show their place and a cancel button; failed and undelivered
+    // rows show the reason with resend and dismiss. Buttons are round, icon-only, keyboard-reachable.
+    const queueOn = deps.queue !== undefined;
+    const outboxScript = !queueOn
+      ? ''
+      : `var obBox=document.getElementById('insrc-outbox'),obSum=document.getElementById('insrc-obsum'),obList=document.getElementById('insrc-oblist'),obNote=document.getElementById('insrc-obnote');` +
+        `function obBtn(glyph,label,type,seq){var b=document.createElement('span');b.className='outbox__btn';b.setAttribute('role','button');b.setAttribute('tabindex','0');b.setAttribute('aria-label',label);b.setAttribute('title',label);b.textContent=glyph;` +
+        `function go(){vs.postMessage({v:1,payload:{type:type,seq:seq}});}` +
+        `b.addEventListener('click',go);b.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});return b;}` +
+        `function obSpan(cls,text){var x=document.createElement('span');x.className=cls;x.textContent=text;return x;}` +
+        `function renderOutbox(v){if(!v||v.sessionId!==cur)return;` +
+        `var parts=[];var n=v.aheadFromOtherChats||0;if(n>0)parts.push(n+(n===1?' message':' messages')+' from other chats ahead');` +
+        `if(v.runningChat)parts.push('running: \u201c'+String(v.runningChat.title)+'\u201d'+(v.runningChat.here?' (this window)':''));` +
+        `if(v.blockedBy)parts.push('waiting for '+(v.blockedBy.reason==='selection'?'a choice':'an approval')+' in \u201c'+String(v.blockedBy.chatTitle)+'\u201d');` +
+        `obSum.textContent=parts.join(' \u00b7 ');obSum.hidden=parts.length===0;` +
+        `obList.textContent='';var rows=v.rows||[];` +
+        `rows.forEach(function(r){var row=document.createElement('div');row.className='outbox__row outbox__row--'+String(r.state);` +
+        `var text=String(r.text||'');var first=text.split('\\n')[0];` +
+        `row.appendChild(obSpan('outbox__place',typeof r.position==='number'?'#'+r.position:(r.state==='not-delivered'?'not sent':String(r.state))));` +
+        `var t=obSpan('outbox__text',first||(r.attachments>0?'':'(empty)'));t.setAttribute('title',text);row.appendChild(t);` +
+        `if(r.attachments>0)row.appendChild(obSpan('outbox__files','\ud83d\udcce'+r.attachments));` +
+        `if(r.error){var er=obSpan('outbox__err',String(r.error));er.setAttribute('title',String(r.error));row.appendChild(er);}` +
+        `if(r.state==='queued'||r.state==='retrying'){row.appendChild(obBtn('\u2715','cancel this message','outbox-cancel',r.seq));}` +
+        `else{row.appendChild(obBtn('\u21bb','send this message again','outbox-resend',r.seq));row.appendChild(obBtn('\u2715','dismiss this message','outbox-dismiss',r.seq));}` +
+        `obList.appendChild(row);});` +
+        `if(v.note){obNote.textContent=String(v.note);obNote.hidden=false;}else{obNote.textContent='';obNote.hidden=true;}` +
+        `obBox.hidden=rows.length===0&&parts.length===0&&!v.note;}`;
     const attachScript = !attachOn
       ? ''
       : `var attBar=document.getElementById('insrc-attachments'),attList=document.getElementById('insrc-attlist'),attErr=document.getElementById('insrc-atterr'),attBtn=document.getElementById('insrc-attach');` +
@@ -1180,6 +1224,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // maps back to labels + continues the run. Wired once via the sc1 selection decision sink.
       `reg.onSelectionDecision(function(requestId,selected){vs.postMessage({v:1,payload:{type:'selection-decision',requestId:requestId,selected:selected}});});` +
       attachScript +
+      outboxScript +
       // S005: provider-selector + history-dropdown wiring (same one nonce'd script).
       `var cur='';` +
       `const ps=document.getElementById('insrc-provider');` +
@@ -1198,7 +1243,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var provLocked=true;var provGate=!!(ps&&ps.disabled);` +
       `function setProvLock(l){provLocked=l;if(ps)ps.disabled=provGate||provLocked;}` +
       `const sendBtn=document.getElementById('insrc-prompt');` +
-      `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}}` +
+      `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}${queueOn ? `var qh=document.getElementById('insrc-qhint');if(qh)qh.hidden=!r;` : ''}}` +
       // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
       // #insrc-progress label (gated on running by the caller); hideProgress hides it. It is never
       // written to the transcript (the host status-skip stays as-is, k4).
@@ -1252,6 +1297,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `else if(m.type==='turn-running'){if(m.sessionId===cur){setRunning(true);setProgress('working\\u2026');setProvLock(true);}}` +
       `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text,attachments:m.attachments}),m.key);});}` +
       (attachOn ? `else if(m.type==='attachments-pending'){renderPending(m);}` : '') +
+      (queueOn ? `else if(m.type==='outbox'){renderOutbox(m.view);}` : '') +
       // S005: session-restored CLEARS the terminal before replaying (so switching chats
       // does not append onto the prior chat's view) + tracks the active id for the dropdown.
       // S001 t5: the replay routes through the sc1 registry (reg.appendKeyed(reg.toViewModel(x)))
@@ -1278,7 +1324,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Guard on non-empty (matches the host runTurn no-op) so an empty submit never marks running
       // or shows a stuck spinner. On submit, show the progress widget; status events refine its label.
       // With attachments on, a blank box still submits when chips are shown.
-      `function doSubmit(){if(!box.value.trim()${attachOn ? '&&attCount===0' : ''})return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';setRunning(true);setProgress('working\\u2026');setProvLock(true);}` +
+      // Epic E20261014613abdb3 Story S002: with the queue, a sent message waits in the outbox until it
+      // starts, so the turn is marked running only when the host says so ('turn-running').
+      `function doSubmit(){if(!box.value.trim()${attachOn ? '&&attCount===0' : ''})return;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';${queueOn ? '' : `setRunning(true);setProgress('working\\u2026');`}setProvLock(true);}` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
       pasteScript +
       // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
@@ -1321,12 +1369,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S002 ac3: the single animated progress widget above the input (live-only). Mock: 3 blinking
       // dots + a label + a right-aligned elapsed timer; hidden until a turn runs.
       `<div id="insrc-progress" class="progress" hidden><span class="spin"><i></i><i></i><i></i></span><span class="plabel"></span><span class="elapsed" id="insrc-elapsed"></span></div>` +
+      (deps.queue === undefined
+        ? ''
+        : `<div id="insrc-outbox" class="outbox" hidden><div id="insrc-obsum" class="outbox__sum" hidden></div><div id="insrc-oblist" class="outbox__list"></div><div id="insrc-obnote" class="outbox__note" role="status" hidden></div></div>`) +
       `<div class="inputbar">` +
       // S002 (ux-polish): the leading '>' prompt IS the send/stop control (glyph + class set by
       // setRunning: ❯ green Send / ■ red Stop). role=button + tabindex make the span a keyboard-
       // reachable control; the separate trailing send button is retired (one send affordance).
       `<span id="insrc-prompt" role="button" tabindex="0" aria-label="send">❯</span>` +
       `<textarea id="insrc-input" rows="2" aria-label="message" placeholder="message claude… (⌘↵ send · ^C interrupt)"></textarea>` +
+      (deps.queue === undefined ? '' : `<span id="insrc-qhint" class="qhint" hidden>⌘/Ctrl+Enter to queue</span>`) +
       `</div>` +
       (attachOn
         ? `<div id="insrc-attachments" class="attachbar" hidden><div id="insrc-attlist" class="attlist"></div><div id="insrc-atterr" class="atterr" role="status" hidden></div></div>`

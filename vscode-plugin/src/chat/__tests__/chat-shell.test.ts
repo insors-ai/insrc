@@ -37,7 +37,7 @@ interface Shell {
   el: (id: string) => BodyStub;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean | undefined } = {}): Shell {
+function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined } = {}): Shell {
   let html = '';
   const channel: ChatPanelChannel = { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   const adapter: StreamAdapter = { async *run(): AsyncIterable<TurnEvent> {}, cancel: () => {}, decide: () => {}, capabilities: { resume: true } };
@@ -48,6 +48,10 @@ function runShell(opts: { attach?: boolean | undefined } = {}): Shell {
     store: createInMemoryChatSessionStore(),
     cwd: () => '/repo',
     genNonce: () => 'N',
+    // Epic E20261014613abdb3 Story S002: a queue, so the shell has the outbox (the worker is inert here).
+    ...(opts.queue === true
+      ? { queue: () => ({ submit: () => ({ ok: false as const, reason: 'unavailable' as const, note: '' }), onChange: () => ({ dispose: () => {} }), liveSessionIds: () => new Set<string>(), running: () => false, act: () => ({ ok: true as const }), dispose: () => {} }) }
+      : {}),
     ...(opts.attach === true
       ? { attachments: { store: createAttachmentStore({ root: '/att', fs: fakeAttachmentFs().fs }), pickFiles: async () => [], open: () => {} } }
       : {}),
@@ -486,4 +490,78 @@ test('diff widget: a diff row in a session-restored window and in a transcript-p
   assert.equal(rowOf(older), 99);
   assert.equal(byClass(older, 'insrc-diffw__path')[0]!.attrs['title'], 'src/older.ts');
   assert.equal(v.term.children.indexOf(older), 1, 'above the rows held before');
+});
+
+// Epic E20261014613abdb3 Story S002 t6.
+test('chat shell: the outbox band and the queue shortcut hint are present only with the queue; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running', () => {
+  const off = runShell();
+  for (const absent of ['insrc-outbox', 'insrc-qhint', 'renderOutbox']) assert.ok(!off.html.includes(absent), `no ${absent} without the queue`);
+  assert.ok(off.html.includes("setRunning(true);setProgress('working\\u2026');setProvLock(true);}"), 'without the queue a submit still marks the turn running');
+
+  const v = runShell({ queue: true });
+  assert.ok(v.html.includes('id="insrc-outbox"') && v.html.includes('id="insrc-qhint"'));
+  assert.ok(v.html.includes('\u2318/Ctrl+Enter to queue'));
+  assert.ok(v.html.indexOf('id="insrc-outbox"') < v.html.indexOf('class="inputbar"'), 'the band sits above the input bar');
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [], firstIndex: 0, total: 0 });
+
+  // The hint shows while a turn runs and hides after.
+  const hint = v.el('insrc-qhint') as BodyStub & { hidden?: boolean };
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  assert.equal(hint.hidden, false);
+  v.msg({ type: 'turn-event', event: { kind: 'done', turnId: 't', ok: true } });
+  assert.equal(hint.hidden, true);
+
+  // A submit posts the message and does not mark the turn running: it waits in the outbox.
+  const box = v.el('insrc-input') as BodyStub & { value: string };
+  const send = v.el('insrc-prompt');
+  box.value = 'later';
+  fire(send, 'click');
+  assert.deepEqual(ofType(v, 'submit-turn').map((m) => m['text']), ['later']);
+  assert.equal(send.textContent, '\u276f', 'still the send control');
+  assert.equal(hint.hidden, true);
+
+  // An outbox for another chat is not drawn; this chat's is.
+  const band = v.el('insrc-outbox') as BodyStub & { hidden?: boolean };
+  v.msg({ type: 'outbox', view: { sessionId: 'other', rows: [{ seq: 9, position: 1, state: 'queued', text: 'x', attachments: 0, origin: 'typed' }], aheadFromOtherChats: 0 } });
+  assert.equal(v.el('insrc-oblist').children.length, 0);
+  v.msg({
+    type: 'outbox',
+    view: {
+      sessionId: 's1',
+      rows: [
+        { seq: 4, position: 2, state: 'queued', text: 'add a test\nwith detail', attachments: 2, origin: 'typed' },
+        { seq: 2, state: 'failed', text: 'refactor', attachments: 0, origin: 'typed', error: 'stopped by the user' },
+      ],
+      aheadFromOtherChats: 1,
+      runningChat: { title: 'board search', here: false },
+      blockedBy: { chatTitle: 'board search', reason: 'approval' },
+    },
+  });
+  assert.equal(band.hidden, false);
+  assert.equal(v.el('insrc-obsum').textContent, '1 message from other chats ahead \u00b7 running: \u201cboard search\u201d \u00b7 waiting for an approval in \u201cboard search\u201d');
+  const rowsEl = v.el('insrc-oblist').children;
+  assert.equal(rowsEl.length, 2);
+  const texts = (n: BodyStub): string[] => n.children.map((c) => c.textContent);
+  assert.deepEqual(texts(rowsEl[0]!), ['#2', 'add a test', '\ud83d\udcce2', '\u2715']);
+  assert.deepEqual(texts(rowsEl[1]!), ['failed', 'refactor', 'stopped by the user', '\u21bb', '\u2715']);
+  assert.equal(rowsEl[0]!.children[1]!.attrs['title'], 'add a test\nwith detail', 'the full text in the tooltip');
+
+  // Each action posts its type with the row's seq; buttons are named and reachable by keyboard.
+  const cancel = byClass(rowsEl[0]!, 'outbox__btn')[0]!;
+  assert.equal(cancel.attrs['aria-label'], 'cancel this message');
+  assert.equal(cancel.attrs['tabindex'], '0');
+  fire(cancel, 'click');
+  const [resend, dismiss] = byClass(rowsEl[1]!, 'outbox__btn');
+  fire(resend!, 'click');
+  fire(dismiss!, 'keydown', { key: 'Enter', preventDefault: () => {} });
+  assert.deepEqual(v.sent.filter((m) => String(m['type']).startsWith('outbox-')), [
+    { type: 'outbox-cancel', seq: 4 }, { type: 'outbox-resend', seq: 2 }, { type: 'outbox-dismiss', seq: 2 },
+  ]);
+
+  // A note is shown; an empty outbox hides the band.
+  v.msg({ type: 'outbox', view: { sessionId: 's1', rows: [], aheadFromOtherChats: 0, note: 'That message has already started; it is in the chat now.' } });
+  assert.equal(band.hidden, false);
+  assert.equal(v.el('insrc-obnote').textContent, 'That message has already started; it is in the chat now.');
+  v.msg({ type: 'outbox', view: { sessionId: 's1', rows: [], aheadFromOtherChats: 0 } });
+  assert.equal(band.hidden, true);
 });

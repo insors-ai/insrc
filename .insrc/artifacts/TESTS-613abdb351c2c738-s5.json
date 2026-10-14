@@ -1,0 +1,539 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s5",
+    "createdAt": "2026-10-14T18:51:21.474Z",
+    "updatedAt": "2026-10-14T18:55:05.660Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicSlug": "per-repo-chat-turn-queue-outbox"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "5bffd27f",
+        "ranAt": "2026-10-14T18:51:21.474Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-queue-outbox-host.test.ts: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+                "title": "chat host outbox: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-outbox-host.test.ts: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+                "title": "chat host outbox: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-outbox-host.test.ts: a decision queued before the panel or window closes is still in the queue file afterwards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+                "title": "chat host outbox: a decision queued before the panel or window closes is still in the queue file afterwards",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-outbox-host.test.ts: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+                "title": "chat host outbox: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs-review-decision.test.ts: a queued hand-over shows 'Sent to the chat; it waits its turn in the outbox.', unavailable carries the note, failed and none are unchanged, and no 'sent' wording remains",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+                "title": "docs review host: a queued hand-over shows 'Sent to the chat; it waits its turn in the outbox.', unavailable carries the note, failed and none are unchanged, and no 'sent' wording remains",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3850,
+            "titles": [
+              {
+                "title": "chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: cancelling a waiting message removes it from the queue and the outbox, and it never runs",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: resending a failed message queues the same text and attachments at the back under this window's key, and it runs",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: a refused action is re-posted with its note, a seq of another chat is ignored, and a taken message leaves the outbox",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: after the host is rebuilt over the same queue file and its webview is ready, the outbox shows the same messages in the same places",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: while another window's running message waits on an approval, this window's outbox says which chat it waits on, and the line clears once the card is answered",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: a decision queued before the panel or window closes is still in the queue file afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: a queued message with an attachment keeps it and sends it when the message runs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 936,
+            "titles": [
+              {
+                "title": "docs review host: a docs-decision calls decide once with the open document's docPath and every comment, posts docs-decision-result, re-reads the list and the document by docPath, and hands the chat one message with the decision and the numbered comments",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a decision with no comments sends the chat the decision line alone",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: send feedback works on a read-only open and on a document just approved, while approve and reject are refused for a document that is not pending or not the open one",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a failing decide posts a failed result, sends no chat message and keeps the open document",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a withheld approval and a commentsError are each reported in the result and in the chat message",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: docs-content carries the feedback list, the reviewer, the state and one document entry per HTML companion",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: open-companion for one of the document's companions posts docs-companion with the file's text and the shell's nonce on every script tag that had none; for any other path, or when the read fails, it posts docs-companion with no html",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a queued hand-over shows 'Sent to the chat; it waits its turn in the outbox.', unavailable carries the note, failed and none are unchanged, and no 'sent' wording remains",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a boot ping while a document is open re-posts that document by its path, for a pending document and for one that is no longer pending",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: docs-list carries openQuestions and workItemId",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: opening a document watches its markdown file and its artifact JSON, and the watch is disposed wherever the open document's record is replaced or cleared: another document, a failed open of another, the panel closing and dispose",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a burst of changes causes one re-read of the list and of the open document by its path after the quiet period, marked changed; a change during a decision is acted on when the decision settles, whether it was recorded, refused or failed",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: a watcher or disposer that throws is logged and the document is still shown; with no watcher dep nothing is watched",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: docs-content carries reveal for a list-row open and for openArtifact, on the content and on the unavailable content of a failed read alike, and not for a re-read after a decision, on the boot ping or from the watch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "c8291085",
+        "ranAt": "2026-10-14T18:54:00.674Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "chat-queue-setup.test.ts: when the queue cannot be opened the chat is disabled with a notice chosen by cause (node:sqlite cannot load, newer plugin, any other failure), each saying the chat is disabled, shown once",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts",
+                "title": "when the queue cannot be opened the chat is disabled with a notice chosen by cause (node:sqlite cannot load, newer plugin, any other failure), each saying the chat is disabled, shown once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "extension-chat-wiring.test.ts: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension wiring: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "review-wiring.test.ts: the review host's notifyChat is bound to the chat host's submitExternal when there is a queue and absent when there is none",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+                "title": "review wiring: the review host's notifyChat is bound to the chat host's submitExternal when there is a queue and absent when there is none, it is given a readCompanion, and neither host module imports the other",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "extension-chat-wiring.test.ts: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+                "title": "extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 355,
+            "titles": [
+              {
+                "title": "extension wiring: the repo key hashes the real path of the git top-level of the chat folder, the window key is kept in workspaceState, the store opens under ~/.insrc/chat-queue, engines.vscode is ^1.141.0 and engines.node >=22.13, isAlive combines the pid and start-time checks, and when node:sqlite cannot load the chat is disabled and the notice is shown once",
+                "result": "pass"
+              },
+              {
+                "title": "when the queue cannot be opened the chat is disabled with a notice chosen by cause (node:sqlite cannot load, newer plugin, any other failure), each saying the chat is disabled, shown once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 345,
+            "titles": [
+              {
+                "title": "extension.ts gates the chat command on insrc.chat.enabled (config read)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host + protocol + store modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes the chat command + the insrc.chat.enabled config (default on)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams",
+                "result": "pass"
+              },
+              {
+                "title": "chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the edit-governor module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: the module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "S007: package.json contributes the insrc.chat.docsReview command",
+                "result": "pass"
+              },
+              {
+                "title": "S007: extension.ts wires the docs-review host inside the chat gate over the shared client",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the docs-review host + client modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact",
+                "result": "pass"
+              },
+              {
+                "title": "the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+                "result": "pass"
+              },
+              {
+                "title": "the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 357,
+            "titles": [
+              {
+                "title": "review wiring: the review host's notifyChat is bound to the chat host's submitExternal when there is a queue and absent when there is none, it is given a readCompanion, and neither host module imports the other",
+                "result": "pass"
+              },
+              {
+                "title": "review wiring: readCompanion answers the text of an .html file under the workspace's docs/ folder and undefined for another extension, a path that leaves docs/, a missing file and a file over 8 MB",
+                "result": "pass"
+              },
+              {
+                "title": "review wiring: extension.ts sets the review panel's iconPath to the pair and gives the review host a watchDocument bound to file watchers under the workspace folder",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in the active column without quiet and beside without focus with it; there is no presenter when the review pane is not created",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "7bf3bf1f",
+        "ranAt": "2026-10-14T18:55:05.660Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "attachment-store.test.ts: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+                "title": "attachment store: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "chat-queue-outbox-host.test.ts: a queued message with an attachment keeps it and sends it when the message runs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+                "title": "chat host outbox: a queued message with an attachment keeps it and sends it when the message runs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 371,
+            "titles": [
+              {
+                "title": "attachment store: addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: an oversize paste or file, a mime outside the image list and a source that is not a regular file are refused with AttachmentRefused and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: remove ignores an id that is not a plain file name in the session's directory, and remove and removeSession succeed when the target is gone",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: sweep removes only directories of sessions not kept whose files are all older than the age",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: a failed write leaves no partial file",
+                "result": "pass"
+              },
+              {
+                "title": "attachment store: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3836,
+            "titles": [
+              {
+                "title": "chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: cancelling a waiting message removes it from the queue and the outbox, and it never runs",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: resending a failed message queues the same text and attachments at the back under this window's key, and it runs",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: a refused action is re-posted with its note, a seq of another chat is ignored, and a taken message leaves the outbox",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: after the host is rebuilt over the same queue file and its webview is ready, the outbox shows the same messages in the same places",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: while another window's running message waits on an approval, this window's outbox says which chat it waits on, and the line clears once the card is answered",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: a decision queued before the panel or window closes is still in the queue file afterwards",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing",
+                "result": "pass"
+              },
+              {
+                "title": "chat host outbox: a queued message with an attachment keeps it and sends it when the message runs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

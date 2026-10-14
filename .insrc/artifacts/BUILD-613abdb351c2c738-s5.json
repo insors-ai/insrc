@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s5",
+    "createdAt": "2026-10-14T18:51:21.474Z",
+    "updatedAt": "2026-10-14T18:55:05.660Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicSlug": "per-repo-chat-turn-queue-outbox"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S005/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/review-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-setup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-14T18:55:05.660Z"
+      }
+    ],
+    "commit": "7bf3bf1f"
+  }
+}

@@ -216,3 +216,15 @@ test("plugin protocol: 'docs-decision-result' and 'docs-companion' are host mess
   ];
   assert.deepEqual(results.map((r) => r.type), ['docs-decision-result', 'docs-decision-result', 'docs-companion', 'docs-companion']);
 });
+
+// Epic E20261014613abdb3 Story S002 t3.
+test('protocol: the host-to-webview and webview-to-host type lists include the outbox message and its four actions', () => {
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('outbox'));
+  for (const k of ['outbox-cancel', 'outbox-dismiss', 'outbox-resend', 'outbox-retry-now'] as const) assert.ok(WEBVIEW_TO_HOST_TYPES.includes(k), k);
+  const post: HostToWebview = { type: 'outbox', view: { sessionId: 's', rows: [], aheadFromOtherChats: 0 } };
+  const act: WebviewToHost = { type: 'outbox-resend', seq: 3 };
+  assert.deepEqual([post.type, act.type], ['outbox', 'outbox-resend']);
+  for (const k of ['turn-running', 'attachments-pending', 'docs-companion']) assert.ok(HOST_TO_WEBVIEW_TYPES.includes(k as HostToWebviewType), `existing kind ${k} still present`);
+  assert.equal(new Set(WEBVIEW_TO_HOST_TYPES).size, WEBVIEW_TO_HOST_TYPES.length);
+  assert.equal(new Set(HOST_TO_WEBVIEW_TYPES).size, HOST_TO_WEBVIEW_TYPES.length);
+});

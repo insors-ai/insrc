@@ -10,6 +10,7 @@
  *
  * Type-only; vscode-free.
  */
+import type { OutboxAction, OutboxView } from './chat-outbox.js';
 import type { TurnEvent } from './stream-events.js';
 import type { TerminalTheme } from './design-tokens.js';
 import type { ProviderId } from './cli-adapter.js';
@@ -211,6 +212,8 @@ export type HostToWebview =
   // Epic E20261014613abdb3 Story S001: a queued message's turn began for this session, so the webview
   // shows the turn as running (and offers Stop) though no submit was clicked for it.
   | { readonly type: 'turn-running'; readonly sessionId: string }
+  // Epic E20261014613abdb3 Story S002: the shown chat's outbox, posted after every queue change.
+  | { readonly type: 'outbox'; readonly view: OutboxView }
   | {
       readonly type: 'user-row';
       readonly text: string;
@@ -294,7 +297,9 @@ export type WebviewToHost =
   | { readonly type: 'attach-image'; readonly mime: string; readonly dataBase64: string; readonly name?: string | undefined; readonly clientId?: string | undefined }
   | { readonly type: 'pick-attachments' }
   | { readonly type: 'remove-attachment'; readonly attachmentId: string }
-  | { readonly type: 'open-attachment'; readonly attachmentId: string };
+  | { readonly type: 'open-attachment'; readonly attachmentId: string }
+  // Epic E20261014613abdb3 Story S002: an outbox action on one row ('outbox-retry-now' is Story S004's).
+  | OutboxAction;
 
 /** A pending attachment as the webview shows it: no path. */
 export interface PendingAttachmentView {
@@ -320,6 +325,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'docs-decision-result',
   'docs-companion',
   'turn-running',
+  'outbox',
 ] as const;
 
 export const WEBVIEW_TO_HOST_TYPES = [
@@ -341,6 +347,10 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'remove-attachment',
   'open-attachment',
   'open-companion',
+  'outbox-cancel',
+  'outbox-dismiss',
+  'outbox-resend',
+  'outbox-retry-now',
 ] as const;
 
 export type HostToWebviewType = (typeof HOST_TO_WEBVIEW_TYPES)[number];

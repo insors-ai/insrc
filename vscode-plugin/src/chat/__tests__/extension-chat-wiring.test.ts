@@ -365,3 +365,10 @@ test('extension wiring: package.json lists insrc.chat.open in menus.commandPalet
   const title = pkg.contributes.menus['editor/title'] ?? [];
   assert.deepEqual(title.filter((m) => m.command === 'insrc.chat.open').map((m) => m.when), ['insrc.chat.ready'], 'the editor-title icon is gated the same way');
 });
+
+test("extension wiring: a restored chat tab gets the chat's current title, since VS Code keeps the title a tab was saved with", () => {
+  const src = read(EXT).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  assert.match(src, /deserializeWebviewPanel: \(panel\) => \{\s*try \{\s*panel\.title = CHAT_PANEL_TITLE;[^\n]*\n\s*chatHost\.adopt\(/, 'the title is set before the panel is adopted');
+  assert.match(read(CHAT_PANEL), /export const CHAT_PANEL_TITLE = 'insrc ctrl';/);
+  assert.match(read(CHAT_PANEL), /title: CHAT_PANEL_TITLE \}/, 'a fresh panel uses the same title');
+});

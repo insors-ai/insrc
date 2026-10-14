@@ -83,6 +83,8 @@ declare module 'vscode' {
     readonly webview: Webview;
     readonly active: boolean;
     readonly visible: boolean;
+    /** The tab's title; assignable (a restored tab keeps the title it was saved with). */
+    title: string;
     /** The tab icon (themed light/dark) — the insrc ctrl sets this to the insrc mark. */
     iconPath?: Uri | { readonly light: Uri; readonly dark: Uri } | undefined;
     reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;

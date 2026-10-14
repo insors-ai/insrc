@@ -182,6 +182,8 @@ export type ExternalSubmitResult = 'queued' | { readonly kind: 'unavailable'; re
 
 /** The chat panel's webview view type (also the WebviewPanelSerializer key). */
 export const CHAT_VIEW_TYPE = 'insrc.chatPanel';
+/** The chat tab's title; also set on a tab VS Code restores, which keeps the title it was saved with. */
+export const CHAT_PANEL_TITLE = 'insrc ctrl';
 const VIEW_TYPE = CHAT_VIEW_TYPE;
 const NOOP_LOGGER: ChatPanelLogger = { warn: () => {}, error: () => {} };
 
@@ -2047,7 +2049,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       channel.reveal();
       return;
     }
-    wireChannel(deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc ctrl' }));
+    wireChannel(deps.createPanel({ viewType: VIEW_TYPE, title: CHAT_PANEL_TITLE }));
   };
 
   /** Shows a stored chat in the panel, as opening it from the history does. */

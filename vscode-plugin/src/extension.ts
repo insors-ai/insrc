@@ -49,7 +49,7 @@ import type { PanelHandle } from './panels/types.js';
 import { runSetModelTier } from './models/model-tier-picker.js';
 import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
-import { createChatPanelHost, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
+import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
 import { chatIsOffered, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
 import type { SqliteDatabase } from './chat/chat-queue-store.js';
@@ -699,6 +699,7 @@ export function activate(context: vscode.ExtensionContext): void {
       vscode.window.registerWebviewPanelSerializer(CHAT_VIEW_TYPE, {
         deserializeWebviewPanel: (panel) => {
           try {
+            panel.title = CHAT_PANEL_TITLE; // a restored tab keeps the title it was saved with
             chatHost.adopt(webviewPanelChannel(panel));
           } catch {
             panel.dispose();

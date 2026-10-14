@@ -1618,7 +1618,7 @@ test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the
   assert.match(html, /function setRunning\(r\)\{running=r;/, 'setRunning toggles the prompt glyph/class');
   assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u276f'/, 'Stop=■ (u25a0) while running, Send=❯ (u276f) at rest');
   // t2: click reuses the EXISTING doSubmit / cancel-turn body verbatim (byte-identical send intent).
-  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);setRunning\(false\);hideProgress\(\);\}else\{doSubmit\(\);\}/, 'the "> " prompt posts cancel-turn while running AND resets the UI locally, else submits');
+  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);setRunning\(false\);setIdle\(\);\}else\{doSubmit\(\);\}/, 'the "> " prompt posts cancel-turn while running AND resets the UI locally, else submits');
   assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty then posts submit-turn + marks running (unchanged)');
   // t2: role=button span is keyboard-activatable (Enter/Space -> click).
   assert.match(html, /sendBtn\.addEventListener\('keydown',function\(e\)\{if\(e\.key==='Enter'\|\|e\.key===' '\)\{e\.preventDefault\(\);sendBtn\.click\(\);\}\}\);/, 'Enter/Space activate the ">" prompt control');
@@ -1804,7 +1804,7 @@ test('S002: an empty submit is a host no-op (no turn starts)', async () => {
 
 // ---- S002 t4: single animated progress widget + status reroute ----
 
-test('S002 ac3: renderShell embeds a single #insrc-progress widget above the input, hidden at rest', () => {
+test('S002 ac3: renderShell embeds a single #insrc-progress widget above the input, not hidden and starting idle', () => {
   const fc = fakeChannel();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
@@ -1816,13 +1816,16 @@ test('S002 ac3: renderShell embeds a single #insrc-progress widget above the inp
   host.open();
   const html = fc.html();
   assert.equal((html.match(/id="insrc-progress"/g) ?? []).length, 1, 'exactly one progress widget');
-  assert.match(html, /<div id="insrc-progress" class="progress" hidden>/, 'hidden at rest');
+  assert.match(html, /<div id="insrc-progress" class="progress idle">/, 'not hidden: it starts idle');
+  assert.match(html, /<span class="plabel">idle<\/span>/, 'with the idle label');
+  assert.doesNotMatch(html, /#insrc-progress\[hidden\]/, 'the [hidden] rule is gone');
+  assert.doesNotMatch(html, /prog\.hidden/, 'no script path sets the widget hidden');
   // It sits above the input bar.
   assert.ok(html.indexOf('id="insrc-progress"') < html.indexOf('class="inputbar"'), 'progress is above the input');
   // It is animated (a keyframed spinner) and status routes to it, not a transcript row.
   assert.match(html, /@keyframes insrc-blink/, 'the widget is animated');
   assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label\);\}/, 'status drives the progress widget (gated on running), not a row');
-  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|ev\.kind==='error'\)\)\{setRunning\(false\);hideProgress\(\);\}/, 'done/error hides the widget + restores Send');
+  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|ev\.kind==='error'\)\)\{setRunning\(false\);setIdle\(\);\}/, 'done/error puts the widget idle (never hides it) + restores Send');
 });
 
 test('S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)', async () => {

@@ -1005,13 +1005,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S002 ac3: the SINGLE animated progress bar above the input (mock .progress; live-only, never
       // persisted): 3 blinking dots + a label + a right-aligned tabular elapsed timer.
       `#insrc-progress{display:flex;align-items:center;gap:10px;padding:7px 14px;border-top:1px solid var(--border-lit);background:var(--bg-inset);color:var(--muted);font-size:12px;flex:0 0 auto;}` +
-      `#insrc-progress[hidden]{display:none;}` +
       `#insrc-progress .spin{display:inline-flex;gap:4px;flex:0 0 auto;}` +
       `#insrc-progress .spin i{width:6px;height:6px;border-radius:50%;background:var(--progress);opacity:.35;animation:insrc-blink 1.1s infinite;}` +
       `#insrc-progress .spin i:nth-child(2){animation-delay:.18s;}#insrc-progress .spin i:nth-child(3){animation-delay:.36s;}` +
       `#insrc-progress .elapsed{margin-left:auto;color:var(--dim);font-variant-numeric:tabular-nums;}` +
       `@keyframes insrc-blink{0%,100%{opacity:.30;transform:translateY(0);}40%{opacity:1;transform:translateY(-2px);}}` +
-      `@media (prefers-reduced-motion:reduce){#insrc-progress .spin i{animation:none;opacity:.7;}}` +
+      // ISSUE (always visible): the idle state when no turn runs: the same three dots, breathing slowly (a longer,
+      // gentler cycle than the working blink, no vertical movement).
+      `#insrc-progress.idle .spin i{animation:insrc-breathe 3.6s ease-in-out infinite;}` +
+      `#insrc-progress.idle .spin i:nth-child(2){animation-delay:.3s;}#insrc-progress.idle .spin i:nth-child(3){animation-delay:.6s;}` +
+      `@keyframes insrc-breathe{0%,100%{opacity:.20;}50%{opacity:.65;}}` +
+      `@media (prefers-reduced-motion:reduce){#insrc-progress .spin i,#insrc-progress.idle .spin i{animation:none;opacity:.7;}}` +
       // S001 (ISSUE-c96399d1) delta 1: the input reads as a FLUSH 2-line terminal prompt — no bordered
       // box (no border/border-radius/background). rows=2 (no auto-grow) pins the visible height at 2 lines
       // and a longer message scrolls natively inside it (a textarea scrolls its own content by default —
@@ -1255,7 +1259,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `const sendBtn=document.getElementById('insrc-prompt');` +
       `function setRunning(r){running=r;if(sendBtn){sendBtn.textContent=r?'\\u25a0':'\\u276f';sendBtn.className=r?'stop':'';sendBtn.setAttribute('aria-label',r?'stop':'send');}${queueOn ? `var ib=document.getElementById('insrc-input');if(ib)ib.placeholder=r?${JSON.stringify(QUEUE_PLACEHOLDER)}:${JSON.stringify(IDLE_PLACEHOLDER)};` : ''}}` +
       // S002 ac3/lc1: the single live-only progress widget. setProgress shows + updates the ONE
-      // #insrc-progress label (gated on running by the caller); hideProgress hides it. It is never
+      // #insrc-progress label (gated on running by the caller); setIdle puts it in its idle state (it is never hidden). It is never
       // written to the transcript (the host status-skip stays as-is, k4).
       `const prog=document.getElementById('insrc-progress');` +
       `const progLabel=prog?prog.querySelector('.plabel'):null;` +
@@ -1265,8 +1269,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var progT0=0,progTimer=null;` +
       `function fmtElapsed(ms){var s=Math.floor(ms/1000);var m=Math.floor(s/60);var ss=s%60;return m+':'+(ss<10?'0':'')+ss;}` +
       `function tickElapsed(){if(progElapsed)progElapsed.textContent=fmtElapsed(Date.now()-progT0);}` +
-      `function setProgress(text){if(prog){prog.hidden=false;if(progLabel)progLabel.textContent=text;if(!progTimer){progT0=Date.now();tickElapsed();progTimer=setInterval(tickElapsed,1000);}}}` +
-      `function hideProgress(){if(prog)prog.hidden=true;if(progTimer){clearInterval(progTimer);progTimer=null;}if(progElapsed)progElapsed.textContent='';}` +
+      `function setProgress(text){if(prog){prog.className='progress';if(progLabel)progLabel.textContent=text;if(!progTimer){progT0=Date.now();tickElapsed();progTimer=setInterval(tickElapsed,1000);}}}` +
+      `function setIdle(){if(prog){prog.className='progress idle';if(progLabel)progLabel.textContent='idle';}if(progTimer){clearInterval(progTimer);progTimer=null;}if(progElapsed)progElapsed.textContent='';}` +
       `ps.addEventListener('change',function(){if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       `hs.addEventListener('change',function(){if(hs.value){vs.postMessage({v:1,payload:{type:'open-chat',chatId:hs.value}});}else if(ps.value){vs.postMessage({v:1,payload:{type:'new-chat',provider:ps.value}});}});` +
       // S001 (bugfix): the SINGLE chat-mode control (Manual / Edit Automatically / Auto). Posts
@@ -1293,7 +1297,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // builds a detached node, so the handler appends it) — never a silent block.
       `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){pager.append(_c);}}` +
       `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}});` +
-      `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);hideProgress();}}` +
+      `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);setIdle();}}` +
       // ISSUE-6a811b8a: more requests queued behind the shown card — update its '1 of N' in place.
       `else if(m.type==='approval-position'){reg.approvalPosition(m.requestId,m.position,m.total);}` +
       // Story E20261013b2e8109f:S001: a row the host pushed outside the event path. A later version
@@ -1319,7 +1323,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();` +
       `var _rows=m.transcript||[],_first=typeof m.firstIndex==='number'?m.firstIndex:0,_total=typeof m.total==='number'?m.total:_first+_rows.length;` +
       `pager.reset(cur,_first,_total);` +
-      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;setRunning(false);hideProgress();` +
+      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;setRunning(false);setIdle();` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
       `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
       `setProvLock(_total>0);}` +
@@ -1341,7 +1345,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       pasteScript +
       // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
       // event, so the webview must clear running + hide the progress widget itself (no stuck spinner).
-      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});setRunning(false);hideProgress();}else{doSubmit();}});` +
+      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});setRunning(false);setIdle();}else{doSubmit();}});` +
       // S002 (ux-polish): the '>' prompt is a role=button span — Enter/Space activate it like a click.
       `if(sendBtn)sendBtn.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();sendBtn.click();}});` +
       `setRunning(false);` +
@@ -1377,8 +1381,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<div id="insrc-older" role="button" tabindex="0" aria-label="load earlier messages"></div>` +
       `<div id="insrc-term" class="term"></div>` +
       // S002 ac3: the single animated progress widget above the input (live-only). Mock: 3 blinking
-      // dots + a label + a right-aligned elapsed timer; hidden until a turn runs.
-      `<div id="insrc-progress" class="progress" hidden><span class="spin"><i></i><i></i><i></i></span><span class="plabel"></span><span class="elapsed" id="insrc-elapsed"></span></div>` +
+      // dots + a label + a right-aligned elapsed timer; idle (never hidden) until a turn runs.
+      `<div id="insrc-progress" class="progress idle"><span class="spin"><i></i><i></i><i></i></span><span class="plabel">idle</span><span class="elapsed" id="insrc-elapsed"></span></div>` +
       (deps.queue === undefined
         ? ''
         : `<div id="insrc-outbox" class="outbox" hidden><div id="insrc-obsum" class="outbox__sum" hidden></div><div id="insrc-oblist" class="outbox__list"></div><div id="insrc-obnote" class="outbox__note" role="status" hidden></div></div>`) +

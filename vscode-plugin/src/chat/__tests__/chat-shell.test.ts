@@ -75,7 +75,9 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
     let e = byId.get(id);
     if (e === undefined) {
       e = dress(bodyStub(id === 'insrc-input' ? 'textarea' : 'div', id));
-      e['querySelector'] = () => dress(bodyStub('span'));
+      // The progress widget's label is one stable element, so the test can read what the page set on it.
+      const label = id === 'insrc-progress' ? dress(bodyStub('span')) : undefined;
+      e['querySelector'] = (sel: string) => (label !== undefined && sel === '.plabel' ? label : dress(bodyStub('span')));
       byId.set(id, e);
     }
     return e;
@@ -598,4 +600,40 @@ test("a retrying row shows 'attempt n of 3', a countdown, a retry-now button and
   fire(retryNow!, 'click');
   fire(cancel!, 'click');
   assert.deepEqual(v.sent.filter((m) => String(m['type']).startsWith('outbox-')), [{ type: 'outbox-retry-now', seq: 7 }, { type: 'outbox-cancel', seq: 7 }]);
+});
+
+test('chat shell: the progress widget is never hidden: idle at the start, working after turn-running, idle after done, error, Stop and session-restored', () => {
+  const v = runShell();
+  const prog = v.el('insrc-progress') as BodyStub & { hidden?: boolean; className?: string; querySelector(s: string): BodyStub };
+  const label = prog.querySelector('.plabel');
+  const elapsed = v.el('insrc-elapsed');
+  const state = (): string => `${prog.className ?? ''}|${label.textContent}|hidden=${String(prog.hidden === true)}`;
+
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [], mode: 'manual' });
+  assert.equal(state(), 'progress idle|idle|hidden=false', 'idle after the chat is shown');
+
+  // A turn starts: working, with its label and no idle class.
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  assert.equal(state(), 'progress|working\u2026|hidden=false');
+
+  // done ends it: idle, the elapsed text empty.
+  v.msg({ type: 'turn-event', event: { kind: 'done', turnId: 't1', ok: true } });
+  assert.equal(state(), 'progress idle|idle|hidden=false');
+  assert.equal(elapsed.textContent, '');
+
+  // error ends it the same way.
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  v.msg({ type: 'turn-event', event: { kind: 'error', turnId: 't1', message: 'boom' } });
+  assert.equal(state(), 'progress idle|idle|hidden=false');
+
+  // Stop: the prompt posts cancel-turn and the widget goes idle.
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  fire(v.el('insrc-prompt'), 'click');
+  assert.ok(v.sent.some((m) => m['type'] === 'cancel-turn'));
+  assert.equal(state(), 'progress idle|idle|hidden=false');
+
+  // A chat switch while running: idle with the restored view.
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  v.msg({ type: 'session-restored', sessionId: 's2', transcript: [], mode: 'manual' });
+  assert.equal(state(), 'progress idle|idle|hidden=false');
 });

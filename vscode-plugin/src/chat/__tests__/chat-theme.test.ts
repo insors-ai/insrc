@@ -343,6 +343,11 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.insrc-permoutcome__badge.insrc-approval__btn--approve',
     '.insrc-permoutcome__badge.insrc-approval__btn--deny',
     '.insrc-select__confirm--disabled:hover',
+    // The progress widget's idle state (always visible; its [hidden] rule left the fixture).
+    '#insrc-progress.idle .spin i',
+    '#insrc-progress.idle .spin i:nth-child(2)',
+    '#insrc-progress.idle .spin i:nth-child(3)',
+    '@keyframes insrc-breathe',
     // Story E20261013b2e8109f:S001: the no-shrink rule and the diff widget (the seven .insrc-diff-* rules of the old box left the fixture).
     '#insrc-term>*',
     '.insrc-diffw',
@@ -439,4 +444,15 @@ test("chat theme: the transcript's children do not shrink, the diff widget's rul
   const sheet = styleBlocks(html)[0]!;
   assert.ok(sheet.includes('.insrc-term-diff'), 'the shared sheet has a rule for the same class');
   assert.ok(html.indexOf(sheet) < html.indexOf(style), "the chat's style comes after the shared sheet");
+});
+
+test('chat theme: the progress widget keeps its colours, and its idle variant has its own slower animation that reduced motion stops', () => {
+  const css = ownStyle(shellHtml());
+  assert.ok(css.includes('#insrc-progress{') && css.includes('background:var(--bg-inset)') && css.includes('border-top:1px solid var(--border-lit)'), 'the widget keeps its inset background and lit border');
+  assert.ok(css.includes('#insrc-progress .spin i{width:6px;height:6px;border-radius:50%;background:var(--progress)'), 'the dots keep the progress colour');
+  assert.ok(css.includes('#insrc-progress.idle .spin i{animation:insrc-breathe 3.6s'), 'the idle variant has its own animation');
+  assert.ok(css.includes('@keyframes insrc-breathe{0%,100%{opacity:.20;}50%{opacity:.65;}}'), 'a gentle breathing, with no vertical movement');
+  assert.ok(!/insrc-breathe\{[^}]*translate/.test(css), 'no vertical movement while idle');
+  assert.ok(/prefers-reduced-motion:reduce\)\{[^}]*#insrc-progress\.idle \.spin i\{animation:none/.test(css), 'reduced motion stops the idle animation');
+  assert.ok(!css.includes('#insrc-progress[hidden]'), 'the [hidden] rule is gone');
 });

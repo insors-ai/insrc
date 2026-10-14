@@ -2100,6 +2100,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * continuations have ended.
    */
   const queueRunner: QueuedTurnRunner = {
+    note(message, text) {
+      if (disposed || session === undefined || session.id !== message.sessionId) return log.warn(`[chat-queue] note for ${message.key} not shown (its chat is not open): ${text}`);
+      persistInfo(session, `queue-note-${message.turnId}-${Date.now()}`, text);
+    },
     run(message, onSpawn, onWaiting) {
       return new Promise<TurnOutcome>((resolve) => {
         void (async (): Promise<void> => {

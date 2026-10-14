@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Timers } from '../async-util.js';
 import { createChatQueueStore, FULL_NOTE, LEASE_HEARTBEAT_MS, PRESENCE_GRACE_MS, LEASE_TAKEOVER_MS, QUEUE_RECORD_BOUND, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
-import { ACTION_NOTES, ACTIVE_POLL_MS, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
+import { ACTION_NOTES, ACTIVE_POLL_MS, BUSY_GIVE_UP_MS, GIVE_UP_NOTE, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 
 /** Fake timers over a fake clock: advance() runs what is due, in order. */
 function fakeTime() {
@@ -733,6 +733,81 @@ test('submit at the bound returns ok:false reason full', () => {
   } finally {
     w.dispose();
     store.close();
+    r.done();
+  }
+});
+
+test('a finish that stays busy is retried each tick for 60 s, then retrying stops and one chat note is shown; a new worker for the same window frees the lease and fails the message with a resend', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const real = r.open(t.now);
+  let busy = true;
+  let attempts = 0;
+  const store: Store = Object.assign(Object.create(real) as Store, {
+    finish: (seq: number, outcome: TurnOutcome) => {
+      attempts += 1;
+      if (busy) throw new StoreBusy('database is locked');
+      return real.finish(seq, outcome);
+    },
+  });
+  const notes: string[] = [];
+  const errors: string[] = [];
+  const runs: { message: QueuedMessage; end: (o: TurnOutcome) => void }[] = [];
+  const runner: QueuedTurnRunner = {
+    run: (message) => new Promise<TurnOutcome>((end) => { runs.push({ message, end }); }),
+    note: (_m, text) => void notes.push(text),
+  };
+  const log = { warn: () => {}, error: (m: string) => void errors.push(m) };
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 101 }, runner, isAlive: () => false, now: t.now, timers: t.timers, log });
+  try {
+    // INSIDE THE BOUND: the write lands as soon as the store frees up.
+    assert.ok(w.submit(sub('s1', 'inside')).ok);
+    await t.advance(0);
+    runs[0]!.end({ kind: 'done' });
+    await t.advance(ACTIVE_POLL_MS * 3);
+    assert.ok(attempts >= 3, `retried on each tick (${attempts})`);
+    busy = false;
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(real.list().some((m) => m.text === 'inside'), false, 'written once the store freed up (a done message leaves the list)');
+    assert.equal(real.lease(), undefined, 'and the lease is released');
+    assert.deepEqual(notes, [], 'no note inside the bound');
+
+    // PAST THE BOUND: retrying stops and one note is shown.
+    busy = true;
+    attempts = 0;
+    assert.ok(w.submit(sub('s1', 'stuck')).ok);
+    await t.advance(0);
+    runs[1]!.end({ kind: 'done' });
+    await t.advance(BUSY_GIVE_UP_MS - ACTIVE_POLL_MS * 2);
+    assert.deepEqual(notes, [], 'not yet');
+    const before = attempts;
+    assert.ok(before >= BUSY_GIVE_UP_MS / ACTIVE_POLL_MS - 4, `retried each tick (${before})`);
+    await t.advance(ACTIVE_POLL_MS * 6);
+    assert.deepEqual(notes, [GIVE_UP_NOTE], 'one note');
+    assert.equal(errors.length, 1, 'one error logged');
+    const stopped = attempts;
+    await t.advance(ACTIVE_POLL_MS * 20);
+    assert.equal(attempts, stopped, 'no more write attempts');
+    assert.deepEqual(notes, [GIVE_UP_NOTE], 'still one note');
+    assert.equal(real.list().find((m) => m.text === 'stuck')?.state, 'processing', 'the message is left as it was');
+
+    // THE RELOAD: a new worker for the same window frees the lease, fails the message with a resend, and the next message runs.
+    const fresh = r.open(t.now);
+    const R2 = gatedRunner();
+    const w2 = createChatQueueWorker({ store: fresh, claim: { windowKey: 'w-A', pid: 202 }, runner: R2.runner, isAlive: () => false, now: t.now, timers: t.timers });
+    try {
+      assert.ok(w2.submit(sub('s1', 'after')).ok);
+      await t.advance(ACTIVE_POLL_MS * 3);
+      assert.equal(fresh.list().find((m) => m.text === 'stuck')?.state, 'failed', 'failed for a resend');
+      assert.equal(R2.runs.length, 1);
+      assert.equal(R2.runs[0]!.message.text, 'after', 'the queue moved on');
+    } finally {
+      w2.dispose();
+      fresh.close();
+    }
+  } finally {
+    w.dispose();
+    real.close();
     r.done();
   }
 });

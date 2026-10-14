@@ -41,7 +41,15 @@ export interface QueuedTurnRunner {
     onSpawn: (cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }) => void,
     onWaiting?: (on: WaitingOn) => void,
   ): Promise<TurnOutcome>;
+  /** Story S004: says a line in the message's chat (the worker's give-up note for a busy outcome write). */
+  note?(message: QueuedMessage, text: string): void;
 }
+
+/** Story S004: how long a busy outcome write is retried before the worker stops and asks for a reload. */
+export const BUSY_GIVE_UP_MS = 60_000;
+/** The chat note said when the outcome write is given up. */
+export const GIVE_UP_NOTE =
+  "The chat queue could not record this message's result. Reload the window to recover it: the queue then fails the message so you can resend it, and moves on.";
 
 /** An outbox action on one message (Story S002, AMD-3). */
 export type QueueAction = 'cancel' | 'dismiss' | 'resend';
@@ -103,7 +111,7 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
   let disposed = false;
   let current: QueuedMessage | undefined;
   /** A finish (and release) that could not be written; retried before any new message is taken. */
-  let pendingFinish: { readonly seq: number; readonly outcome: TurnOutcome } | undefined;
+  let pendingFinish: { readonly seq: number; readonly outcome: TurnOutcome; readonly message: QueuedMessage; readonly since: number; gaveUp: boolean } | undefined;
   let stamp = '';
   let lastPresence = Number.NEGATIVE_INFINITY;
   let pollHandle: unknown;
@@ -147,6 +155,26 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
     } catch (err) {
       log?.warn(`[chat-queue] the outcome of message ${seq} could not be written yet: ${errText(err)}`);
       return false;
+    }
+  }
+
+  /**
+   * Story S004 (FR004): a busy outcome write is retried each tick for BUSY_GIVE_UP_MS; then one chat note
+   * asks for a reload and the retries stop. The reload frees the lease through S003's same-window rule.
+   */
+  function retryFinish(p: NonNullable<typeof pendingFinish>, at: number): void {
+    if (p.gaveUp) return;
+    if (finishNow(p.seq, p.outcome)) {
+      pendingFinish = undefined;
+      return;
+    }
+    if (at - p.since < BUSY_GIVE_UP_MS) return;
+    p.gaveUp = true;
+    log?.error(`[chat-queue] giving up writing the outcome of message ${p.seq} after ${BUSY_GIVE_UP_MS} ms; a window reload recovers it`);
+    try {
+      deps.runner.note?.(p.message, GIVE_UP_NOTE);
+    } catch (err) {
+      log?.warn(`[chat-queue] the give-up note for message ${p.seq} could not be shown: ${errText(err)}`);
     }
   }
 
@@ -202,7 +230,7 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
     current = undefined;
     if (pendingWaiting?.seq === m.seq) pendingWaiting = undefined; // the flag ends with the message
     if (disposed) return;
-    if (!finishNow(m.seq, outcome)) pendingFinish = { seq: m.seq, outcome };
+    if (!finishNow(m.seq, outcome)) pendingFinish = { seq: m.seq, outcome, message: m, since: now(), gaveUp: false };
     schedule(0);
   }
 
@@ -288,7 +316,7 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
         lastPresence = at;
       }
       if (pendingFinish !== undefined) {
-        if (finishNow(pendingFinish.seq, pendingFinish.outcome)) pendingFinish = undefined;
+        retryFinish(pendingFinish, at);
       }
       if (current === undefined && pendingFinish === undefined) applyLeaseRules(at);
       if (pendingWaiting !== undefined && current?.seq === pendingWaiting.seq) writeWaiting(pendingWaiting.seq, pendingWaiting.on);

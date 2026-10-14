@@ -398,20 +398,17 @@ Add a 'retry' kind to TurnOutcome (sc3), with the runner owning attempts and the
 - RESOLVED by the owner: Epic constraints k1-k5 are scored in the plan's closing task, not in the LLD.
 - RESOLVED by the owner: the invariantsToPreserve keep the HLD assumption ids (c11, c12, c13, c3); the plan carries a crosswalk to the analyze bundles.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q80e30701` — RESOLVED by the owner: a turn that streamed text but made no tool call, command or edit before an infrastructure failure is retried; anything the agent did with a tool call, command or edit is never retried. The partial text stays in the transcript with a stored 'retrying' line before the retried output.
+  - **resolved**: Retry text-only turns, keep partial text plus a stored 'retrying' line (owner's resolution) — Owner decision: a text-only turn is retried; a tool call, command or edit is never retried. _(2026-10-14T17:15:50.853Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-14T17:02:45.193Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c3]]** `prior-artifact` `HLD-613abdb351c2c738 assumption c3 (the worker decides from the database alone)`
+- **[[c11]]** `prior-artifact` `HLD-613abdb351c2c738 assumption c11 (acknowledge takes the lease in one transaction)`
+- **[[c12]]** `prior-artifact` `HLD-613abdb351c2c738 assumption c12 (writes are short IMMEDIATE transactions)`
+- **[[c13]]** `prior-artifact` `HLD-613abdb351c2c738 assumption c13 (the lease is released only when no CLI of the turn runs)`
+- **[[c14]]** `code` `vscode-plugin/src/chat/chat-panel.ts (settleQueued, the queued-turn runner) and vscode-plugin/src/chat/cli-adapter.ts (acting events and error messages)`
+- **[[c15]]** `code` `vscode-plugin/src/chat/chat-queue-store.ts (finish, LIVE_HEAD, acknowledge, cancel) and chat-queue-worker.ts (due logic, finishNow, act)`
+- **[[c16]]** `code` `vscode-plugin/src/chat/chat-outbox.ts and the webview script in chat-panel.ts (retrying row, cancel button)`

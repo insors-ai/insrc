@@ -238,6 +238,16 @@
       "reviewedAt": "2026-10-14T17:02:45.193Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-14T17:14:24.313Z",
+    "questionResolutions": {
+      "q80e30701": {
+        "question": "RESOLVED by the owner: a turn that streamed text but made no tool call, command or edit before an infrastructure failure is retried; anything the agent did with a tool call, command or edit is never retried. The partial text stays in the transcript with a stored 'retrying' line before the retried output.",
+        "status": "resolved",
+        "choice": "Retry text-only turns, keep partial text plus a stored 'retrying' line (owner's resolution)",
+        "rationale": "Owner decision: a text-only turn is retried; a tool call, command or edit is never retried.",
+        "resolvedAt": "2026-10-14T17:15:50.853Z"
+      }
     }
   },
   "body": {

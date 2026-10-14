@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792001610055-ie285z",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T18:13:30.056Z",
+    "model": "claude:opus",
+    "elapsedMs": 90087,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "epicSlug": "per-repo-chat-turn-queue-outbox"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "613abdb351c2c738",
+    "storyId": "s4",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/chat-failure.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/chat-failure.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/chat-queue-store.ts",
+        "vscode-plugin/src/chat/chat-queue-worker.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/stream-events.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:2115",
+            "message": "The queue runner's note() hook, which the worker uses for the BUSY_GIVE_UP_MS give-up note, writes through persistInfo. That gives persistInfo a third stored line, the queue-could-not-record note, on top of the retry line and the sign-in line. The LLD restricts persistInfo to exactly those two lines and keeps queue notes live-only via postInfo.",
+            "expectationRef": "LLD persistInfo postconditions: 'used for exactly two lines: the retry line when a retried message starts and the sign-in line on an auth failure'; 'postInfo is unchanged and still used for the live-only queue note'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:690",
+            "message": "The stored sign-in line tells the user to run the bare binary (\"run `claude`\" / \"run `codex`\") instead of naming the CLI's login command (for example `codex login`). If the CLI can't be found in the error text, the line reads \"run `the CLI` in a terminal\", which names no command.",
+            "expectationRef": "LLD errorPaths 'The provider rejects the credentials': 'the runner stores one line in the chat (persistInfo) naming the CLI's login command so the user can sign in again'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts:284",
+            "message": "The test helper asFailed declares its return type as `{ error: string; acted: boolean; cause?: string }`. The optional `cause` is missing `| undefined`. Elsewhere in the same suite, optional fields spell it out, e.g. runShell's opts and pasteEvent's `file?: … | undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts:389",
+            "message": "The toolCall test helper casts to `{ tool: string; command?: string; mcp?: unknown }`. The optional `command` is missing `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts:450",
+            "message": "The toolResult test helper casts to `{ output: string; command?: string; exitCode?: number }`. The optional `command` and `exitCode` are missing `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/chat-queue-worker.ts:1",
+            "message": "The promised live hand check (a real provider failure waits, shows its countdown and runs again; retry-now runs it at once; a failure after an edit stays failed) has no recorded result. The latest commit (af771a88) says 'live hand check not run'. It is not an automated test, so it is reported as not run rather than as a missing test file.",
+            "expectationRef": "hand check with a real provider failure: a passing provider error before acting waits, shows its countdown and runs again; retry-now runs it at once; a failure after an edit stays failed",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/chat-failure.ts:1",
+            "message": "All 22 promised automated tests exist with their exact titles: chat-failure.test.ts:6/29/42, chat-queue-store.test.ts:528/556/587/612, cli-adapter.test.ts:1533, chat-queue-runner.test.ts:219/289/348/359/388/400/420/440, chat-queue-worker.test.ts:741/825/849/874, chat-outbox.test.ts:72 and chat-shell.test.ts:572. Whether they pass is unknown because no build record was supplied. The graph also shows no test reaching classifyFailure, isRetryableCause, createChatQueueStore, the worker or the panel, but tests that call them by name exist. These empty edges look like gaps in the call graph, not untested code, so no HIGH findings were raised for them. Run the vscode-plugin chat test suite to confirm the tests pass.",
+            "expectationRef": "present but unverified: all promised unit/integration tests; empty testsReaching on chat-failure.ts / chat-queue-store.ts / chat-queue-worker.ts / chat-panel.ts / cli-adapter.ts symbols",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:193",
+            "message": "createChatPanelHost is a ~2000-line closure that reaches about 70 nested helpers. They share mutable state: the diff turn, the approval queue, queued runs, pending attachments and external drains. This story adds more retry and outbox paths to it (outboxAction, postOutbox, settleQueued with classifyFailure, persistInfo). Each new path widens the interleavings that are hard to reason about or test in isolation. Consider pulling the queued-run, outbox and approval-queue state out into their own small modules with explicit interfaces.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1755",
+            "message": "handleMessage dispatches to about 30 helpers. It drives queue settlement (settleQueued, queuedViewLost, runCompletedBatch, drainExternal) and approval-queue teardown (rejectQueuedApprovals, dropQueuedApprovals) from one tangled routine. The order of these calls decides correctness, for example when an approval queue is rejected or dropped relative to settling a queued outcome. That ordering is not enforced anywhere it can be checked separately.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/chat-panel.ts:1468",
+            "message": "startTurn coordinates 23 callees in one async routine: diff-turn open, settle and end, approval enqueue, settleQueued, applyTitle, drainExternal and runCompletedBatch. With the new skipUserRow retry path running through it, a failure part-way through could leave the diff turn or the queued run unsettled. This depends on how errors are caught inside a single large function.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
+            "message": "The test fixture message(sessionId, text) builds a QueuedMessage that overlaps with row(sessionId, state, text, extra) in chat-outbox.test.ts. A shared fixture would keep the two in step when QueuedMessage changes.",
+            "counterpartRef": "row (vscode-plugin/src/chat/__tests__/chat-outbox.test.ts)",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 4,
+      "low": 7
+    }
+  }
+}

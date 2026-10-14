@@ -682,20 +682,34 @@ Absent-target rows and their completion as in a1. In resolveCall, when an import
 - ep3 (partial): invariantsToPreserve cite HLD reference ids because the schema allows only c-ids; the s1 bundles that show each: c1, c5 -> bundle 3 (migration chain, SCHEMA_VERSION 4); c7 -> bundle 4 (RepoStatus); c6 -> bundle 2 (the cross-file passes); c4 -> bundle 1 (the six loss points); the graphCompleteness invariant -> bundle 6 [c17] [c20].
 - sc1 amendment (proposed in s4): sharedContract.fieldAdd reasonCounts { unwritable, awaiting } on IndexState, so completeness can name each cause with its count. Additive; s1 owns sc1. It must be approved with this LLD [c19].
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qf111c4f4` — sc1 amendment (proposed in s4): sharedContract.fieldAdd reasonCounts { unwritable, awaiting } on IndexState, so completeness can name each cause with its count. Additive; s1 owns sc1. It must be approved with this LLD [c19].
+  - **resolved**: Approve fieldAdd with this LLD — Already decided: the stakeholder approved AMD-c2ba6fa62a148ed1-2 (reasonCounts on sc1) together with the LLD on 2026-10-14 (commit 19bbc6d1); duplicates AMD-3..6 rejected. _(2026-10-14T08:42:44.715Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-14T08:37:49.207Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `s1 bundle (how-does-it-work): indexFile, reindexFile, upsertEntities, findEntitiesByFile, listEntitiesForRepo, upsertRelations, upsertResolvedRelations; 0 callers of reindexFile; no community detection; empty edge values`
+- **[[c2]]** `analyze-bundle` `s1 bundle (structural-map): src/db, src/db/graph (store.ts, migrations.ts, keys.ts, codec.ts, edges.ts, traversal.ts), src/indexer and src/indexer/parser; import in-degree 159 for src/db`
+- **[[c3]]** `code` `src/db/entities.ts` — "export async function reindexFile("
+- **[[c4]]** `prior-artifact` `docs/standalone/bug-code-graph-missing-most-cross-E2026100712f70133/ISSUE.md` — "A resolved edge is silently dropped when its target is not stored yet."
+- **[[c5]]** `code` `src/db/graph/store.ts` — "export const SCHEMA_VERSION = 4;"
+- **[[c6]]** `code` `src/indexer/cross-file-resolver.ts` — "export async function runCrossFileResolver("
+- **[[c7]]** `code` `src/shared/types.ts` — "export type RepoStatus = 'pending' | 'indexing' | 'ready' | 'error';"
+- **[[c8]]** `code` `src/db/relations.ts` — "export async function deleteRelationsForFile(_db: DbClient, _filePath: string): Promise<void> {"
+- **[[c9]]** `code` `src/indexer/index.ts` — "return relative(repoPath, file).split(sep).some(seg => ignoreSet.has(seg));"
+- **[[c10]]** `prior-artifact` `docs/standalone/defect-installed-daemon-runs-out-lmdb-E202610100d577569/ISSUE.md`
+- **[[c11]]** `prior-artifact` `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md`
+- **[[c12]]** `step-output` `HLD s1 backFlowNotes: direct reads of the store, migration, relations, entities and indexer files`
+- **[[c13]]** `code` `src/indexer/external-endpoints.ts`
+- **[[c14]]** `code` `src/indexer/messaging-endpoints.ts`
+- **[[c15]]** `stakeholder` `Stakeholder decisions of 2026-10-11 on the HLD: completeness as a separate field with the four status values kept; reindex is the one command and indexes every file from scratch, deleting the repository's rows in the graph store and the vector store; the pickScope measure replaced by a function named in Story s1's design.`
+- **[[c16]]** `code` `src/indexer/embedder.ts` — "entity.embeddingModel = EMBEDDING_MODEL;"
+- **[[c17]]** `step-output` `s1 context.assemble (five analyze bundles, 2026-10-14, plus one direct-read bundle of the facts the first review rested on)`
+- **[[c18]]** `step-output` `s2 alternatives and s3 judge`
+- **[[c19]]** `step-output` `s4 contract.detail`
+- **[[c20]]** `step-output` `s5 error.paths`
+- **[[c21]]** `step-output` `s6 test.strategy`
+- **[[c22]]** `step-output` `s7 migration.write`
+- **[[c23]]** `step-output` `s8 checklist.verify`
+- **[[c24]]** `prior-artifact` `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md (earlier versions; daemon reviews 2026-10-14: block 2H/5M; 0H/5M; 0H/3M; 0H/3M; 0H/1M; 0H/2M; 0H/2M; 0H/1M; 0H/1M)`

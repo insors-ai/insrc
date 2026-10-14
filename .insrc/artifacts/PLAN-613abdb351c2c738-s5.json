@@ -1,0 +1,271 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792003231583-8zyfe7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-14T18:42:29.195Z",
+    "epicCreatedAt": "2026-10-14T08:04:11.007Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 117607,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "613abdb351c2c738",
+    "epicSlug": "per-repo-chat-turn-queue-outbox",
+    "storyId": "s5",
+    "lldRunId": "wf-1792001876848-kfdwrw",
+    "lldEffectiveHash": "02f5e748bf5bfeef65825e1be46b05b0d483c33faf2d33230accf132424831fa",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-14T18:43:46.998Z",
+    "rangeBase": "8369279123efb958d319901811f239045658b04c"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story sends the review pane's decisions through the same per-repository queue as typed messages and removes the pane's own waiting list, then makes the chat unavailable (with a clear notice) in a window whose queue cannot be opened. A short test-only task pins that waiting messages keep their attachments, and a closing task scores the Epic's constraints and records the live hand check.",
+      "audience": "product"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Pane decisions through the queue; the waiting list removed",
+        "summary": "Change submitExternal in chat-panel.ts to resolve the target chat (the shown session, or the one the panel opens on), save it, and submit through ChatQueueWorker.submit with origin 'review-pane', returning 'queued' or { kind: 'unavailable', note } (note for blank text, no CLI, a full or busy queue, and defensively no worker). Change ExternalSubmitResult, the review host's notifyChat dependency type, ChatHandOver and decisionResultLine together so the pane says 'Sent to the chat; it waits its turn in the outbox.' or 'The chat could not be told: <note>'. Remove waitingExternal, drainExternal and every call to it; keep the webviewReady reset that dropExternal performs under a clearer name. Rewrite the chat-panel.test.ts submitExternal suite and the docs-review-decision tests that pinned 'sent', the old wording and the drain order, and add the queue-path tests on the real-store host harness. This stays one L task because the result type is shared by the chat host and the review host through extension.ts's binding, and the old suite runs on hosts without a queue, so a split would leave the typecheck or the suite red between tasks.",
+        "size": "L",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a pane decision sent while a turn runs is a review-pane row in the chat's outbox, the running turn and its waiting card are untouched, and it runs when the turn ends",
+          "with the panel closed, submitExternal opens it on its session, saves the chat and queues one row that runs in order once the webview is ready",
+          "blank text, no CLI, a full queue and a busy queue each return unavailable with their own note and queue nothing",
+          "the review pane's result line reads 'Sent to the chat; it waits its turn in the outbox.' for queued and 'The chat could not be told: <note>' for unavailable; 'sent' no longer exists",
+          "waitingExternal and drainExternal are gone and a decision queued before the panel or window closes is still in the queue file afterwards"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "chat-queue-outbox-host.test.ts: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends"
+          },
+          {
+            "level": "integration",
+            "name": "chat-queue-outbox-host.test.ts: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready"
+          },
+          {
+            "level": "integration",
+            "name": "chat-queue-outbox-host.test.ts: a decision queued before the panel or window closes is still in the queue file afterwards"
+          },
+          {
+            "level": "integration",
+            "name": "chat-queue-outbox-host.test.ts: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing"
+          },
+          {
+            "level": "unit",
+            "name": "docs-review-decision.test.ts: a queued hand-over shows 'Sent to the chat; it waits its turn in the outbox.', unavailable carries the note, failed and none are unchanged, and no 'sent' wording remains"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Chat disabled when the queue cannot be opened",
+        "summary": "Put the gating in a small vscode-free function in chat-queue-setup.ts that says, from the queue factory's result, whether the chat is offered and which notice (if any) to show; extension.ts calls it and, when the chat is not offered, does not register insrc.chat.open, does not set insrc.chat.ready, does not register the chat tab serializer and does not give the review host a notifyChat binding. Add the menus.commandPalette entry for insrc.chat.open (when insrc.chat.ready) in package.json. In chat-queue-setup.ts reword the notices so each says the chat is disabled and add a third for any other open failure, chosen by cause (newer plugin, node:sqlite cannot load, anything else), and update the comments that say the chat stays on a direct path. The vscode-free function and the notice text are tested directly (chat-queue-setup.test.ts); the registration of the four pieces is carried by the extension wiring harness (extension-chat-wiring.test.ts) and review-wiring.test.ts (which gains a case where the binding is absent).",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "when the queue cannot be created none of the chat command, the chat-ready context, the chat tab serializer or the review host's notifyChat is set up (wiring harness), and package.json hides the command from the Command Palette without insrc.chat.ready",
+          "the three notices (node:sqlite cannot load, newer plugin, any other open failure) each say the chat is disabled and name the cause, are chosen by cause and are shown once (chat-queue-setup tests)",
+          "with a queue, the chat command, ready context, serializer and notifyChat binding are set up exactly as before"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "chat-queue-setup.test.ts: when the queue cannot be opened the chat is disabled with a notice chosen by cause (node:sqlite cannot load, newer plugin, any other failure), each saying the chat is disabled, shown once"
+          },
+          {
+            "level": "integration",
+            "name": "extension-chat-wiring.test.ts: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are"
+          },
+          {
+            "level": "unit",
+            "name": "review-wiring.test.ts: the review host's notifyChat is bound to the chat host's submitExternal when there is a queue and absent when there is none"
+          },
+          {
+            "level": "unit",
+            "name": "extension-chat-wiring.test.ts: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "A waiting message's attachments survive the start-up sweep",
+        "summary": "Add tests only: the start-up sweep over a keep set made from the store's sessions keeps the attachments directory of a session that holds a waiting queued message and clears an unreferenced old session; and a queued message with an attachment keeps it and sends it when the message runs. Show the sweep test can fail: temporarily build the keep set without the stored session and see the directory removed, then restore it. No production change is planned; if the tests show the keep set does not protect the session, that is reported, not worked around.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "the sweep keeps the attachments of a stored session with a waiting message and removes an unreferenced old one, and the same test fails when the stored session is left out of the keep set",
+          "a queued message with an attachment still has it and sends it when it runs"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "attachment-store.test.ts: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session"
+          },
+          {
+            "level": "integration",
+            "name": "chat-queue-outbox-host.test.ts: a queued message with an attachment keeps it and sends it when the message runs"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Closing: constraints scored, crosswalk, deferred amendments and the live hand check",
+        "summary": "Score the Epic constraints k1-k5 against the finished change in the BUILD summary; carry the c-id crosswalk (c3 and c12 to read:current-behaviour, c11 to read:queue-surface); list the deferred HLD additions for the Epic-end batch, including that S005 dropped the HLD's cross-repository keep set and session-store keep predicate by owner decision; run the live hand check (send a decision from the review pane while a turn runs and with the chat panel closed; disable the queue and confirm the chat is not offered), or record it as not run with the reason and the labelled fault-injection evidence.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "the BUILD summary scores k1-k5, lists the deferred HLD additions and carries the crosswalk",
+          "the hand check is recorded as a reported live test with its evidence, or as not run with the reason and labelled evidence"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "hand check: a review-pane decision sent while a turn runs waits in the outbox and runs after it; with the chat panel closed it opens the chat and runs; with the queue unavailable the chat is not offered"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "decisionResultLine: 'queued' reads 'Sent to the chat; it waits its turn in the outbox.', unavailable carries the note, failed and none unchanged, no 'sent'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs-review-decision: notifyChat's queued and unavailable results reach the pane's result line",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "attachment sweep: with the start-up keep set made from the store's sessions, a session that holds a waiting queued message keeps its attachments directory",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "existing tests rewritten with the change: chat-queue-setup.test.ts (its 'chat keeps the direct path' title and the notice text), review-wiring.test.ts (the unconditional notifyChat binding regex, plus a case where the binding is absent when there is no queue), docs-review-decision.test.ts (its 'sent' default notifyChat and the old 'no chat is available' and 'will be told when it is free' wording), chat-panel.test.ts (the submitExternal suite)",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "submitExternal with a running turn: returns 'queued', the row is in the outbox with origin 'review-pane', the running turn and its waiting card are untouched, and the decision runs when the turn ends",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "submitExternal with the panel closed: opens the panel on its session, saves a draft chat, queues, and the message runs once the webview is ready",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "submitExternal with no CLI, blank text, a full queue and a busy queue: each returns unavailable with its own note and queues nothing",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "no waitingExternal list: a message submitted before the panel closes is still in the queue file afterwards (the old test asserted it was dropped)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension wiring: when the queue cannot be created the chat command is not registered, setContext insrc.chat.ready is not set, the chat tab serializer is not registered, the review host has no notifyChat, and each of the three notices (sqlite cannot load, newer plugin, any other open failure) says the chat is disabled (text pinned)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 contractDetails: submitExternal, ChatQueueWorker.submit, notifyChat, decisionResultLine"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges: ExternalSubmitResult / ChatHandOver and waitingExternal / drainExternal / dropExternal"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 errorPaths and invariantsToPreserve (c3, c12, c11): a decision waits its turn, is recorded before the chat is told, and queue order is strict"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 dataModelChanges: chat availability (extension.ts) - the chat is disabled when the queue cannot be opened"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 migration steps 3 and 4: the gating, the notices and the tests to rewrite"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 edgeCases and acceptanceMapping ac3: a waiting message's attachments survive the start-up sweep"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 openQuestions resolutions and the Epic-end HLD amendment batch"
+    }
+  ]
+}

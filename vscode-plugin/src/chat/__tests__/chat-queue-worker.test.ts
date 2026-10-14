@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { Timers } from '../async-util.js';
-import { createChatQueueStore, LEASE_HEARTBEAT_MS, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
+import { createChatQueueStore, LEASE_HEARTBEAT_MS, LEASE_TAKEOVER_MS, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
 import { ACTION_NOTES, ACTIVE_POLL_MS, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 
 /** Fake timers over a fake clock: advance() runs what is due, in order. */
@@ -272,6 +272,51 @@ test("worker onWaiting: the runner's card report sets and clears waitingOn on th
   } finally {
     w.dispose();
     real.close();
+    r.done();
+  }
+});
+
+test("worker recovery: a lease left by a window that reloaded (same window key, old pid and its CLI gone) is freed at once, its message fails for resend, and the queued messages behind it run; a live CLI keeps the lease; another window's dead lease waits LEASE_TAKEOVER_MS", async () => {
+  const r = repo();
+  const t = fakeTime();
+  const old = r.open(t.now);
+  const store = r.open(t.now);
+  const R = gatedRunner();
+  const alive = new Set<number>([900]);
+  const w = createChatQueueWorker({ store, claim: { windowKey: 'w-A', pid: 202 }, runner: R.runner, isAlive: (p) => alive.has(p), now: t.now, timers: t.timers, newTurnId: () => 'n1' });
+  try {
+    // The pre-reload window (pid 101) is running message one, its CLI (pid 900) still alive; two is queued behind it.
+    const one = old.enqueue({ key: 's1::a', sessionId: 's1', turnId: 'a', windowKey: 'w-A', origin: 'typed', text: 'one', attachments: [] });
+    assert.ok(one.ok);
+    assert.equal(old.acknowledge(one.message.seq, { windowKey: 'w-A', pid: 101 }), true);
+    old.attachCli({ windowKey: 'w-A', pid: 101 }, { pid: 900 });
+    assert.ok(w.submit(sub('s1', 'two')).ok);
+    await t.advance(ACTIVE_POLL_MS * 3);
+    assert.equal(R.runs.length, 0, 'a live CLI keeps the lease');
+    assert.equal(store.lease()?.seq, one.message.seq);
+
+    // The CLI exits: the lease is freed, one fails (resendable) and two runs.
+    alive.delete(900);
+    await t.advance(ACTIVE_POLL_MS * 2);
+    assert.equal(store.list().find((m) => m.text === 'one')?.state, 'failed');
+    assert.equal(R.runs.length, 1);
+    assert.equal(R.runs[0]!.message.text, 'two');
+    R.runs[0]!.end({ kind: 'done' });
+    await t.advance(0);
+
+    // Another window's dead lease is taken over only after LEASE_TAKEOVER_MS without a heartbeat.
+    const three = old.enqueue({ key: 's2::b', sessionId: 's2', turnId: 'b', windowKey: 'w-B', origin: 'typed', text: 'three', attachments: [] });
+    assert.ok(three.ok);
+    assert.equal(old.acknowledge(three.message.seq, { windowKey: 'w-B', pid: 303 }), true);
+    await t.advance(LEASE_TAKEOVER_MS - ACTIVE_POLL_MS * 4);
+    assert.equal(store.lease()?.seq, three.message.seq, 'not yet');
+    await t.advance(ACTIVE_POLL_MS * 8);
+    assert.equal(store.lease(), undefined, 'taken over');
+    assert.equal(store.list().find((m) => m.text === 'three')?.state, 'failed');
+  } finally {
+    w.dispose();
+    store.close();
+    old.close();
     r.done();
   }
 });

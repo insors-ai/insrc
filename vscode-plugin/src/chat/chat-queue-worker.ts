@@ -18,7 +18,7 @@ import { REAL_TIMERS, type Timers } from './async-util.js';
 import type { AttachmentRef } from './attachment-store.js';
 import type { ChatPanelLogger } from './chat-panel.js';
 import {
-  BUSY_NOTE, LEASE_HEARTBEAT_MS, StoreBusy,
+  BUSY_NOTE, LEASE_HEARTBEAT_MS, LEASE_TAKEOVER_MS, StoreBusy,
   type ChatQueueLeases, type ChatQueueStore, type EnqueueResult, type LeaseClaim, type QueuedMessage, type TurnOutcome,
 } from './chat-queue-store.js';
 
@@ -203,6 +203,23 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
     schedule(0);
   }
 
+  /**
+   * A lease whose holder window's process and turn CLI are both gone can never be released by its
+   * holder (a reload or a crash): without this it blocks the repository's queue for good. The
+   * message it ran is marked failed (the outbox offers resend) and the lease is freed. The same
+   * window key after a reload is recovered at once; another window's lease only once it has gone
+   * LEASE_TAKEOVER_MS without a heartbeat. A turn whose CLI still lives is left until it exits.
+   */
+  function recoverDeadLease(at: number): void {
+    const lease = store.lease();
+    if (lease === undefined || (lease.windowKey === claim.windowKey && lease.pid === claim.pid)) return;
+    if (deps.isAlive(lease.pid, lease.pidStartedAt)) return;
+    if (lease.cliPid !== undefined && deps.isAlive(lease.cliPid, lease.cliStartedAt)) return;
+    if (lease.windowKey !== claim.windowKey && at - lease.heartbeatAt < LEASE_TAKEOVER_MS) return;
+    log?.warn(`[chat-queue] recovering the lease of message ${lease.seq}: window ${lease.windowKey} (pid ${lease.pid}) is gone`);
+    store.finish(lease.seq, { kind: 'failed', error: 'the window closed during the turn', acted: true });
+  }
+
   function tick(): void {
     pollHandle = undefined;
     if (disposed) return;
@@ -215,6 +232,7 @@ export function createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorke
       if (pendingFinish !== undefined) {
         if (finishNow(pendingFinish.seq, pendingFinish.outcome)) pendingFinish = undefined;
       }
+      if (current === undefined && pendingFinish === undefined) recoverDeadLease(at);
       if (pendingWaiting !== undefined && current?.seq === pendingWaiting.seq) writeWaiting(pendingWaiting.seq, pendingWaiting.on);
       noticeChanges();
       if (current === undefined && pendingFinish === undefined) {

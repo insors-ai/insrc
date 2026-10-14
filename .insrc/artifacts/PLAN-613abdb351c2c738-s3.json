@@ -24,7 +24,6 @@
     "lldRunId": "wf-1791988197055-kf5a2u",
     "lldEffectiveHash": "02f5e748bf5bfeef65825e1be46b05b0d483c33faf2d33230accf132424831fa",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-14T15:07:19.776Z",
     "rangeBase": "b00ef85c81e92918c3c7416c67b219e45e131350"
   },
   "body": {
@@ -253,7 +252,7 @@
       {
         "id": "t7",
         "title": "Bound, display half of ac3, amendments and hand check",
-        "summary": "Pin ac5 with tests over the existing bound (enqueue and resendFrom refuse at QUEUE_RECORD_BOUND with FULL_NOTE and leave every row; submit at the bound returns ok:false reason full) without new production code. List the existing S001 tests that carry ac3's display half in the TESTS record (turn-lifecycle.test.ts follow tests and chat-panel.test.ts reload-follow tests). Score k1-k5 against the finished change in the BUILD summary. List the three HLD amendments the question resolutions chose (sc1 methodAdd markNotDeliveredIfHead; sc2 methodAdd presenceOf plus the takeOver holderGone and own-key rule; the HLD 'flush' wording) as to be filed for the owner's approval, and say in the BUILD summary whether they were filed; they are not code and do not block the code tasks. Run the hand check in two windows: reload mid-turn with the CLI alive, reload with queued messages while a second window ticks, and close a window with queued messages.",
+        "summary": "Pin ac5 with tests over the existing bound (enqueue refuses at QUEUE_RECORD_BOUND with FULL_NOTE and leaves every row; a resend frees its own old row first, so at the bound it replaces that row and is never refused, as S001 built it; submit at the bound returns ok:false reason full) without new production code. List the existing S001 tests that carry ac3's display half in the TESTS record (turn-lifecycle.test.ts follow tests and chat-panel.test.ts reload-follow tests). Score k1-k5 against the finished change in the BUILD summary. List the three HLD amendments the question resolutions chose (sc1 methodAdd markNotDeliveredIfHead; sc2 methodAdd presenceOf plus the takeOver holderGone and own-key rule; the HLD 'flush' wording) as to be filed for the owner's approval, and say in the BUILD summary whether they were filed; they are not code and do not block the code tasks. Run the hand check in two windows: reload mid-turn with the CLI alive, reload with queued messages while a second window ticks, and close a window with queued messages.",
         "size": "S",
         "order": 7,
         "dependsOn": [
@@ -261,7 +260,7 @@
           "t6"
         ],
         "acceptanceChecks": [
-          "enqueue and resendFrom at the bound are refused with FULL_NOTE and no row is lost",
+          "enqueue at the bound is refused with FULL_NOTE, a resend at the bound replaces its own old row and is not refused, and no row is lost",
           "submit at the bound returns ok:false reason full",
           "the TESTS record names the S001 follow tests for ac3's display half",
           "the BUILD summary scores k1-k5 and states whether the three HLD amendments were filed",
@@ -274,7 +273,7 @@
         "tests": [
           {
             "level": "integration",
-            "name": "chat-queue-store.test.ts: enqueue and resendFrom at QUEUE_RECORD_BOUND are refused with FULL_NOTE and leave every row"
+            "name": "chat-queue-store.test.ts: at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces its own old row, and no row is lost"
           },
           {
             "level": "unit",

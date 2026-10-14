@@ -482,7 +482,7 @@ test('reclaim rewrites pid and keeps seq and cliPid for the same windowKey, and 
 });
 
 // Epic E20261014613abdb3 Story S003 t7 — the unchanged bound (ac5).
-test('enqueue and resendFrom at QUEUE_RECORD_BOUND are refused with FULL_NOTE and leave every row', () => {
+test('at QUEUE_RECORD_BOUND enqueue is refused with FULL_NOTE, a resend replaces its own old row, and no row is lost', () => {
   const t = temp();
   const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => 1_000, pluginVersion: '0.5.15' });
   try {

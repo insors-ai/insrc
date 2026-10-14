@@ -233,7 +233,8 @@
       "reviewedAt": "2026-10-14T09:17:38.911Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
-    }
+    },
+    "approvedAt": "2026-10-14T10:50:39.672Z"
   },
   "body": {
     "summary": {

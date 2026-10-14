@@ -137,10 +137,19 @@ export interface ChatQueueLeases {
   /** False when the lease is no longer this window's. */
   heartbeat(claim: LeaseClaim): boolean;
   release(claim: LeaseClaim): void;
-  /** Story S003 gives the rule; until then a held lease is never taken over. */
-  takeOver(claim: LeaseClaim, now: number): boolean;
-  /** Story S003 gives the rule; until then a reloaded window does not reclaim. */
-  reclaim(claim: LeaseClaim): boolean;
+  /**
+   * Epic E20261014613abdb3 Story S003: takes a dead holder's lease in one transaction and fails its message
+   * ('the window closed during the turn'). Refused unless `holderGone` says the holder window's process and the
+   * lease's CLI are both gone. A lease of the claim's own windowKey (a reloaded window) is taken at once; another
+   * window's only after LEASE_TAKEOVER_MS without a heartbeat.
+   */
+  takeOver(claim: LeaseClaim, now: number, holderGone?: ((lease: RepoLease) => boolean) | undefined): boolean;
+  /**
+   * Epic E20261014613abdb3 Story S003: a reloaded window (same windowKey, new pid) re-homes the lease of a turn whose CLI
+   * survived: pid and pidStartedAt are rewritten and the heartbeat refreshed; seq and cliPid are kept and the message is
+   * not failed. Refused unless `holderGone` says the recorded holder is gone.
+   */
+  reclaim(claim: LeaseClaim, holderGone?: ((lease: RepoLease) => boolean) | undefined): boolean;
   /** Whether a live presence row for the window was refreshed within PRESENCE_GRACE_MS. */
   windowAlive(windowKey: string, now: number): boolean;
   /** Epic E20261014613abdb3 Story S003: the window's presence row (pid and last refresh), or undefined when it has none. */
@@ -539,12 +548,35 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
       });
     },
 
-    takeOver() {
-      return false;
+    takeOver(claim, at, holderGone) {
+      return write(() => {
+        const lease = leaseRow();
+        if (lease === undefined || (lease.windowKey === claim.windowKey && lease.pid === claim.pid)) return false;
+        if (holderGone === undefined || !holderGone(lease)) return false;
+        if (lease.windowKey !== claim.windowKey && at - lease.heartbeatAt < LEASE_TAKEOVER_MS) return false;
+        db.prepare(`UPDATE messages SET state = 'failed', error = ?, waiting_on = NULL, updated_at = ? WHERE seq = ? AND state = 'processing'`).run(
+          'the window closed during the turn',
+          now(),
+          lease.seq,
+        );
+        db.prepare(`DELETE FROM lease WHERE id = 1 AND seq = ?`).run(lease.seq);
+        return true;
+      });
     },
 
-    reclaim() {
-      return false;
+    reclaim(claim, holderGone) {
+      return write(() => {
+        const lease = leaseRow();
+        if (lease === undefined || lease.windowKey !== claim.windowKey || lease.pid === claim.pid) return false;
+        if (holderGone === undefined || !holderGone(lease)) return false;
+        db.prepare(`UPDATE lease SET pid = ?, pid_started_at = ?, heartbeat_at = ? WHERE id = 1 AND seq = ?`).run(
+          claim.pid,
+          claim.pidStartedAt ?? null,
+          now(),
+          lease.seq,
+        );
+        return true;
+      });
     },
 
     windowAlive(windowKey, at) {

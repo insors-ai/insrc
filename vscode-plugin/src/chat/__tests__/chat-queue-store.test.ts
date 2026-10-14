@@ -8,7 +8,7 @@ import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'node:url';
 import {
-  createChatQueueStore, FULL_NOTE, QUEUE_RECORD_BOUND, SCHEMA_VERSION, StoreUnavailable,
+  createChatQueueStore, FULL_NOTE, LEASE_TAKEOVER_MS, QUEUE_RECORD_BOUND, SCHEMA_VERSION, StoreUnavailable,
   type NewMessage, type SqliteDatabase,
 } from '../chat-queue-store.js';
 
@@ -365,6 +365,116 @@ test('markNotDeliveredIfHead marks a retrying head whose window closed and the n
     assert.equal(store.markNotDeliveredIfHead(m1.message.seq), true);
     assert.equal(store.list().find((m) => m.seq === m1.message.seq)?.state, 'not-delivered');
     assert.equal(store.head()?.seq, m2.message.seq, 'the queue moves on');
+  } finally {
+    store.close();
+    t.done();
+  }
+});
+
+// Epic E20261014613abdb3 Story S003 t2.
+/** A lease held by window w-A (pid 101) on its first message; returns the stores. */
+function leased(t: ReturnType<typeof temp>, clock: { at: number }, extra = false) {
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => clock.at, pluginVersion: '0.5.15' });
+  const other = extra ? createChatQueueStore({ path: t.path, openDatabase: open, now: () => clock.at, pluginVersion: '0.5.15' }) : undefined;
+  const m1 = store.enqueue(msg('s1', 't1', 'one', 'w-A'));
+  assert.ok(m1.ok);
+  assert.equal(store.acknowledge(m1.message.seq, { windowKey: 'w-A', pid: 101, pidStartedAt: 11 }), true);
+  assert.equal(store.attachCli({ windowKey: 'w-A', pid: 101 }, { pid: 900, startedAt: 5 }), true);
+  return { store, other, seq: m1.message.seq };
+}
+
+test('takeOver takes a stale lease of another windowKey only after LEASE_TAKEOVER_MS and fails its message, and refuses when holderGone is false, absent or the heartbeat is fresh', () => {
+  const t = temp();
+  const clock = { at: 1_000 };
+  const { store, seq } = leased(t, clock);
+  try {
+    const W = { windowKey: 'w-B', pid: 202 };
+    const gone = (): boolean => true;
+    clock.at = 1_000 + LEASE_TAKEOVER_MS - 1;
+    assert.equal(store.takeOver(W, clock.at, gone), false, 'not stale yet');
+    assert.equal(store.lease()?.seq, seq);
+    clock.at = 1_000 + LEASE_TAKEOVER_MS;
+    assert.equal(store.takeOver(W, clock.at), false, 'holderGone absent: never');
+    assert.equal(store.takeOver(W, clock.at, () => false), false, 'holder or CLI alive: never');
+    assert.equal(store.lease()?.seq, seq);
+    assert.equal(store.list()[0]?.state, 'processing');
+    assert.equal(store.takeOver(W, clock.at, (l) => l.cliPid === 900 && l.windowKey === 'w-A'), true, 'the predicate sees the lease row');
+    assert.equal(store.lease(), undefined);
+    const failed = store.list()[0];
+    assert.equal(failed?.state, 'failed');
+    assert.equal(failed?.error, 'the window closed during the turn');
+    assert.equal(store.takeOver(W, clock.at, gone), false, 'no lease now');
+    assert.ok(store.resend(seq, 't9').ok, 'resendable');
+  } finally {
+    store.close();
+    t.done();
+  }
+});
+
+test("takeOver takes a lease of the claim's own windowKey at once when holderGone is true", () => {
+  const t = temp();
+  const clock = { at: 1_000 };
+  const { store, seq } = leased(t, clock);
+  try {
+    const reloaded = { windowKey: 'w-A', pid: 777 };
+    assert.equal(store.takeOver({ windowKey: 'w-A', pid: 101 }, 1_001, () => true), false, "the holder's own claim");
+    assert.equal(store.takeOver(reloaded, 1_001, () => false), false, 'holder alive');
+    assert.equal(store.lease()?.seq, seq);
+    assert.equal(store.takeOver(reloaded, 1_001, () => true), true, 'a second after the heartbeat, no wait');
+    assert.equal(store.lease(), undefined);
+    assert.equal(store.list()[0]?.state, 'failed');
+    // A lease whose message row is gone is deleted and nothing else changes.
+    const m2 = store.enqueue(msg('s2', 't1', 'two', 'w-A'));
+    assert.ok(m2.ok);
+    assert.equal(store.acknowledge(m2.message.seq, { windowKey: 'w-A', pid: 101 }), true);
+    const raw = new DatabaseSync(t.path);
+    try {
+      raw.prepare(`DELETE FROM messages WHERE seq = ?`).run(m2.message.seq);
+    } finally {
+      raw.close();
+    }
+    assert.equal(store.takeOver(reloaded, 1_002, () => true), true);
+    assert.equal(store.lease(), undefined);
+    assert.deepEqual(store.list().map((m) => m.seq), [seq], 'the other row is untouched');
+  } finally {
+    store.close();
+    t.done();
+  }
+});
+
+test('two connections racing takeOver on one stale lease, exactly one returns true', () => {
+  const t = temp();
+  const clock = { at: 1_000 };
+  const { store, other, seq } = leased(t, clock, true);
+  try {
+    clock.at = 1_000 + LEASE_TAKEOVER_MS + 5;
+    const a = store.takeOver({ windowKey: 'w-B', pid: 202 }, clock.at, () => true);
+    const b = other!.takeOver({ windowKey: 'w-C', pid: 303 }, clock.at, () => true);
+    assert.deepEqual([a, b].sort(), [false, true]);
+    assert.equal(store.lease(), undefined);
+    assert.equal(store.list().find((m) => m.seq === seq)?.state, 'failed');
+  } finally {
+    other?.close();
+    store.close();
+    t.done();
+  }
+});
+
+test('reclaim rewrites pid and keeps seq and cliPid for the same windowKey, and refuses another windowKey', () => {
+  const t = temp();
+  const clock = { at: 1_000 };
+  const { store, seq } = leased(t, clock);
+  try {
+    clock.at = 4_000;
+    assert.equal(store.reclaim({ windowKey: 'w-B', pid: 202 }, () => true), false, 'another windowKey');
+    assert.equal(store.reclaim({ windowKey: 'w-A', pid: 101 }, () => true), false, "the holder's own claim");
+    assert.equal(store.reclaim({ windowKey: 'w-A', pid: 777, pidStartedAt: 33 }), false, 'holderGone absent');
+    assert.equal(store.reclaim({ windowKey: 'w-A', pid: 777, pidStartedAt: 33 }, () => false), false, 'holder alive');
+    assert.equal(store.lease()?.pid, 101);
+    assert.equal(store.reclaim({ windowKey: 'w-A', pid: 777, pidStartedAt: 33 }, () => true), true);
+    assert.deepEqual(store.lease(), { windowKey: 'w-A', pid: 777, pidStartedAt: 33, seq, cliPid: 900, cliStartedAt: 5, heartbeatAt: 4_000 });
+    assert.equal(store.list()[0]?.state, 'processing', 'the message is not failed');
+    assert.equal(store.heartbeat({ windowKey: 'w-A', pid: 777 }), true, 'the new pid heartbeats it');
   } finally {
     store.close();
     t.done();

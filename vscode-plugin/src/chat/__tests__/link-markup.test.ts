@@ -197,18 +197,17 @@ test('the review pane renderer source, run against a stub DOM, links a code refe
   const out = renderMarkdownBody(body, 'ignored');
   assert.equal(out.degradation.degraded, false);
 
-  const [code, http, plain] = anchors(body);
+  const [code, http, relativeLink] = anchors(body);
   assert.deepEqual([code!.attrs['data-path'], code!.attrs['data-line'], code!.getAttribute('href')], ['src/foo.ts', '42', null], 'the code reference is a link');
   assert.deepEqual([http!.getAttribute('href'), http!.getAttribute('data-url')], [null, 'https://example.com/docs'], 'an http link has no href and keeps its target');
-  assert.deepEqual([plain!.getAttribute('href'), plain!.getAttribute('data-url'), plain!.getAttribute('data-path')], [null, null, null], 'a relative link is dropped as before');
+  assert.deepEqual([relativeLink!.getAttribute('href'), relativeLink!.getAttribute('data-url'), relativeLink!.getAttribute('data-path')], [null, null, null], 'a relative link is dropped as before');
 
   const posted: Array<Record<string, unknown>> = [];
   let prevented = 0;
-  for (const target of [code!, http!]) onLinkClick({ target, preventDefault: () => { prevented++; } }, (m) => posted.push(plain_(m)));
+  for (const target of [code!, http!]) onLinkClick({ target, preventDefault: () => { prevented++; } }, (m) => posted.push(plain(m)));
   assert.deepEqual(posted, [{ type: 'open-code-ref', path: 'src/foo.ts', line: 42 }, { type: 'open-link', url: 'https://example.com/docs' }]);
   assert.equal(prevented, 2);
 });
-const plain_ = <T>(m: T): T => JSON.parse(JSON.stringify(m)) as T;
 
 test('the chat page and the review pane both include the linkify and click wiring', async () => {
   const { createChatPanelHost } = await import('../chat-panel.js');

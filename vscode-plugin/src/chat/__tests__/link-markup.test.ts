@@ -175,3 +175,71 @@ test('the chat registry hands a clicked link to the open-link sink', () => {
   assert.deepEqual(got, [{ type: 'open-code-ref', path: 'src/foo.ts', line: 3 }]);
   assert.ok(prevented);
 });
+
+// ---- t5: the review pane --------------------------------------------------------------------
+
+test('the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click', async () => {
+  const { DOCS_BODY_RENDERER_SOURCE } = await import('../docs-review-panel.js');
+  const context: Record<string, unknown> = {
+    document: { createElement: (tag: string) => bodyStub(tag), createTextNode: (t: string) => textNode(t) },
+    marked: { parse: (s: string) => s },
+  };
+  runInNewContext(DOCS_BODY_RENDERER_SOURCE, context);
+  const renderMarkdownBody = context['renderMarkdownBody'] as (el: BodyStub, src: string) => { degradation: { degraded: boolean } };
+  const onLinkClick = context['onLinkClick'] as Page['onLinkClick'];
+
+  // The rendered body: what marked would have produced, in place (the stub's innerHTML does not parse markup).
+  const body = bodyStub('div');
+  Object.defineProperty(body, 'innerHTML', { get: () => '', set: () => {} });
+  const docs = link('https://example.com/docs', 'the docs');
+  const relative = link('./local.md', 'local');
+  body.appendChild(el('p', 'see src/foo.ts:42, ', docs, ' and ', relative));
+  const out = renderMarkdownBody(body, 'ignored');
+  assert.equal(out.degradation.degraded, false);
+
+  const [code, http, plain] = anchors(body);
+  assert.deepEqual([code!.attrs['data-path'], code!.attrs['data-line'], code!.getAttribute('href')], ['src/foo.ts', '42', null], 'the code reference is a link');
+  assert.deepEqual([http!.getAttribute('href'), http!.getAttribute('data-url')], [null, 'https://example.com/docs'], 'an http link has no href and keeps its target');
+  assert.deepEqual([plain!.getAttribute('href'), plain!.getAttribute('data-url'), plain!.getAttribute('data-path')], [null, null, null], 'a relative link is dropped as before');
+
+  const posted: Array<Record<string, unknown>> = [];
+  let prevented = 0;
+  for (const target of [code!, http!]) onLinkClick({ target, preventDefault: () => { prevented++; } }, (m) => posted.push(plain_(m)));
+  assert.deepEqual(posted, [{ type: 'open-code-ref', path: 'src/foo.ts', line: 42 }, { type: 'open-link', url: 'https://example.com/docs' }]);
+  assert.equal(prevented, 2);
+});
+const plain_ = <T>(m: T): T => JSON.parse(JSON.stringify(m)) as T;
+
+test('the chat page and the review pane both include the linkify and click wiring', async () => {
+  const { createChatPanelHost } = await import('../chat-panel.js');
+  const { createDocsReviewHost } = await import('../docs-review-panel.js');
+  const { createInMemoryChatSessionStore } = await import('../session-store.js');
+  const channelFor = (set: (h: string) => void) => ({ setHtml: set, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} });
+
+  let chatHtml = '';
+  createChatPanelHost({
+    createPanel: () => channelFor((h) => { chatHtml = h; }),
+    providers: { available: [], get() { throw new Error('unused'); } },
+    store: createInMemoryChatSessionStore(),
+    cwd: () => '/repo',
+  }).open();
+  let reviewHtml = '';
+  createDocsReviewHost({
+    createPanel: () => channelFor((h) => { reviewHtml = h; }),
+    client: { async pending() { return []; }, async content() { throw new Error('unused'); }, async decide() { throw new Error('unused'); } },
+  }).open();
+
+  const count = (haystack: string, needle: string): number => haystack.split(needle).length - 1;
+  for (const [name, html] of [['chat', chatHtml], ['review', reviewHtml]] as const) {
+    assert.equal(count(html, LINK_MARKUP_SOURCE), 1, `${name}: the shared link source is inlined exactly once`);
+    for (const fn of ['function guardMd(', 'function linkifyMd(', 'function onLinkClick(']) {
+      assert.equal(count(html, fn), 1, `${name}: ${fn} is defined once`);
+    }
+    assert.match(html, /\.insrc-md a\[data-url\]/, `${name}: handled links have a pointer`);
+  }
+  // Each page hands the click to the host over its own channel.
+  assert.match(chatHtml, /document\.addEventListener\('click',function\(e\)\{onLinkClick\(e,function\(p\)\{if\(LDEC\)LDEC\(p\);\}\);\}\);/);
+  assert.match(chatHtml, /reg\.onLinkOpen\(function\(p\)\{vs\.postMessage\(\{v:1,payload:p\}\);\}\);/);
+  assert.match(reviewHtml, /document\.addEventListener\('click',function\(e\)\{onLinkClick\(e,function\(p\)\{vs\.postMessage\(\{v:1,payload:p\}\);\}\);\}\);/);
+  assert.equal(count(reviewHtml, "document.addEventListener('click'"), 1, 'review: one delegated click handler');
+});

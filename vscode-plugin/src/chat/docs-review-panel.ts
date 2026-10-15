@@ -22,6 +22,7 @@ import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-sty
 import { DOCS_COMMENTS_SOURCE } from './docs-review-comments.js';
 import { DOCS_LIST_SOURCE } from './docs-review-list.js';
 import type { LinkOpener } from './link-opener.js';
+import { LINK_MARKUP_SOURCE } from './link-markup.js';
 import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './docs-sections.js';
 
 /**
@@ -111,8 +112,9 @@ export const SECTION_INDEX_NOTICE =
  * contract that string assertions pronounced green while the behaviour was
  * wrong, so the fallback path is proved by RUNNING it, not by grepping for it.
  *
- * `guardMd` is the sanctioned scrub, carried verbatim from render-registry.ts:321
- * (drop non-http(s) hrefs, open the rest safely, strip image sources). The parse
+ * `guardMd` is the sanctioned scrub, single-sourced with the chat page in link-markup.ts (no
+ * link keeps an href, an http(s) address moves to data-url, image sources are stripped, and code
+ * references are linked; a click posts open-link or open-code-ref). The parse
  * call mirrors render-registry.ts:332 including `headerIds:false` — heading
  * identity comes from sc3's deriveSectionIndex, never from the renderer.
  *
@@ -125,10 +127,7 @@ export const SECTION_INDEX_NOTICE =
  */
 export const DOCS_BODY_RENDERER_SOURCE =
   `var DEGRADE_NOTICE=${JSON.stringify(DEGRADE_NOTICE)};` +
-  `function guardMd(el){try{` +
-  `var as=el.querySelectorAll('a');for(var i=0;i<as.length;i++){var hr=as[i].getAttribute('href')||'';if(/^https?:/i.test(hr)){as[i].setAttribute('rel','noopener noreferrer');as[i].setAttribute('target','_blank');}else{as[i].removeAttribute('href');}}` +
-  `var ig=el.querySelectorAll('img');for(var j=0;j<ig.length;j++){ig[j].removeAttribute('src');ig[j].removeAttribute('srcset');}` +
-  `}catch(e){}}` +
+  LINK_MARKUP_SOURCE +
   `function renderMarkdownBody(el,src){var s=src||'';` +
   `try{` +
   `if(typeof marked==='undefined'||!marked||!marked.parse)throw new Error('vendored markdown renderer unavailable');` +
@@ -1842,6 +1841,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     const mdStyle = `<style>${renderMarkdownStyle(DOCS_REVIEW_MARKDOWN_TOKENS)}` +
       // The plain-text fallback container: preserve the document's own newlines
       // (it is markdown source at that point) without the <pre> geometry.
+      `.insrc-md a[data-url],.insrc-md a[data-path]{cursor:pointer;}` +
       `.insrc-docs-plain{white-space:pre-wrap;word-break:break-word;font-family:var(--it-font);color:var(--it-fg);}` +
       `.insrc-docs-notice{color:var(--it-warn);border:1px solid var(--it-border);padding:4px 8px;margin:4px 0;font-size:12px;}` +
       `#insrc-docs-sections select{background:var(--it-bg);color:var(--it-fg);border:1px solid var(--it-border);font-family:var(--it-font);font-size:12px;padding:2px 4px;margin:4px 0;max-width:100%;}` +
@@ -2086,6 +2086,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // docs-content: render the verbatim body + open questions, then the header and
       // the comment panel for this document.
       DOCS_BODY_RENDERER_SOURCE +
+      // Epic babd84c6e2fb480a Story S001: one delegated click handler (defined by the renderer source above) posts a clicked
+      // link or code reference to the host, which checks the target and opens it.
+      `document.addEventListener('click',function(e){onLinkClick(e,function(p){vs.postMessage({v:1,payload:p});});});` +
       DOCS_SECTIONS_SOURCE +
       // S002/t2 — inlined after its two siblings, since its placement step (t5)
       // runs after both. INERT at t2: defined, nothing calls it yet.

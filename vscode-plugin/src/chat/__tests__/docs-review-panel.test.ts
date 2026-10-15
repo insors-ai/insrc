@@ -612,7 +612,7 @@ test('t4: a MISSING vendored global takes the SAME fallback path as a parse thro
   assert.equal(el['textContent'], body, 'the full body still shows with no renderer at all');
 });
 
-test('t4: guardMd strips a non-http href and an image src from the rendered body', () => {
+test('t4: guardMd strips a non-http href and an image src from the rendered body, and moves an http(s) address to data-url', () => {
   // Exercise the scrub itself, so "guardMd is present" is backed by it working.
   const anchor = {
     _attrs: { href: 'javascript:alert(1)' } as Record<string, string>,
@@ -640,9 +640,11 @@ test('t4: guardMd strips a non-http href and an image src from the rendered body
   loadRenderer({ parse: (s: string) => s })(el, 'body');
 
   assert.equal(anchor._attrs['href'], undefined, 'a javascript: href is dropped');
-  assert.equal(safe._attrs['href'], 'https://example.com', 'an https href survives');
-  assert.equal(safe._attrs['rel'], 'noopener noreferrer', 'and is opened safely');
-  assert.equal(safe._attrs['target'], '_blank');
+  assert.equal(anchor._attrs['data-url'], undefined, 'and leaves no target behind');
+  // Epic babd84c6e2fb480a Story S001: no link keeps an href, so only the pane's own click handler can open one.
+  assert.equal(safe._attrs['href'], undefined, 'an https href is removed');
+  assert.equal(safe._attrs['data-url'], 'https://example.com', 'and its address is kept for the click handler');
+  assert.equal(safe._attrs['target'], undefined, 'nothing asks the webview to open a window');
   assert.equal(img._attrs['src'], undefined, 'image sources are stripped');
   assert.equal(img._attrs['srcset'], undefined);
 });
@@ -1244,9 +1246,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  131921,
-  bytes:  131985,
-  sha256: '832b34e59721345683d125a52b1acffc48ed700311096e057577d7592a1ce25e',
+  chars:  134207,
+  bytes:  134271,
+  sha256: 'afe18712682504dea70e0e0030b1cfbeb96ce69db1baa36c59b9cca22977e81f',
 } as const;
 
 function renderShellFor(nonce: string): string {

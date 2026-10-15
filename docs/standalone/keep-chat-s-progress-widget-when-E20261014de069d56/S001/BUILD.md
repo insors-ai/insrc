@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-14T19:17:05.767Z  ·  **Updated:** 2026-10-14T19:18:11.574Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-14T19:17:05.767Z  ·  **Updated:** 2026-10-15T08:21:40.423Z
 
-**Commit:** dfba2056
+**Commit:** 4ba749de
 
 ## Scope
 
@@ -34,6 +34,5 @@ Fix for ISSUE-de069d56d76eaacd. In chat-panel.ts, the 'ready' case now posts 'tu
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-de069d56d76eaacd.json` — **insrc-build** (2026-10-14T19:18:11.574Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` — **insrc-build** (2026-10-14T19:18:11.574Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T19:18:11.574Z)
+- `.insrc/artifacts/BUILD-babd84c6e2fb480a-S001.json` — **insrc-build** (2026-10-15T08:21:40.423Z)
+- `docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/BUILD.md` — **insrc-build** (2026-10-15T08:21:40.423Z)

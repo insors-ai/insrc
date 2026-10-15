@@ -2,9 +2,9 @@
 
 # Build (standalone small) — Story S001
 
-**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-15T04:54:23.764Z  ·  **Updated:** 2026-10-15T04:54:23.764Z
+**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-15T04:54:23.764Z  ·  **Updated:** 2026-10-15T08:21:41.032Z
 
-**Commit:** 999d729a
+**Commit:** 4ba749de
 
 ## Triage rationale
 
@@ -22,12 +22,7 @@ A new review pane opens in an editor group that is already open and holds no cha
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:54:23.764Z)
-- `.insrc/artifacts/BUILD-57a2ba4d5f18c356-S001.json` — **insrc-build** (2026-10-15T04:54:23.764Z)
-- `docs/standalone/always-show-chat-s-progress-widget-E2026101457a2ba4d/S001/BUILD.md` — **insrc-build** (2026-10-15T04:54:23.764Z)
-- `docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/S001/BUILD.md` — **insrc-build** (2026-10-15T04:54:23.764Z)
-- `vscode-plugin/src/chat/__tests__/review-column.test.ts` — **insrc-build** (2026-10-15T04:54:23.764Z)
-- `vscode-plugin/src/chat/__tests__/review-wiring.test.ts` — **insrc-build** (2026-10-15T04:54:23.764Z)
-- `vscode-plugin/src/chat/review-column.ts` — **insrc-build** (2026-10-15T04:54:23.764Z)
-- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-15T04:54:23.764Z)
-- `vscode-plugin/src/vscode.d.ts` — **insrc-build** (2026-10-15T04:54:23.764Z)
+- `.insrc/artifacts/BUILD-babd84c6e2fb480a-S001.json` — **insrc-build** (2026-10-15T08:21:41.032Z)
+- `.insrc/artifacts/BUILD-de069d56d76eaacd-S001.json` — **insrc-build** (2026-10-15T08:21:41.032Z)
+- `docs/standalone/keep-chat-s-progress-widget-when-E20261014de069d56/S001/BUILD.md` — **insrc-build** (2026-10-15T08:21:41.032Z)
+- `docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/BUILD.md` — **insrc-build** (2026-10-15T08:21:41.032Z)

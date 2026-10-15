@@ -4,11 +4,12 @@
     "epicHash": "babd84c6e2fb480a",
     "storyId": "S001",
     "createdAt": "2026-10-15T05:44:51.534Z",
-    "updatedAt": "2026-10-15T08:17:53.430Z",
+    "updatedAt": "2026-10-15T08:21:38.056Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-15T05:12:06.864Z",
-    "epicSlug": "make-links-code-references-clickable-chat"
+    "epicSlug": "make-links-code-references-clickable-chat",
+    "approvedAt": "2026-10-15T08:21:38.360Z"
   },
   "body": {
     "tasks": [
@@ -43,125 +44,153 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-babd84c6e2fb480a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T08:21:38.056Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-babd84c6e2fb480a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T08:21:38.056Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T08:21:38.056Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T08:21:38.056Z"
+      },
+      {
+        "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/fake-dom.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/link-markup.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/link-opener.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/resolve-within.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/companion-reader.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/docs-review-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/link-markup.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/link-opener.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/protocol.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/render-registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/extension.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/vscode.d.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T08:17:53.430Z"
+        "timestamp": "2026-10-15T08:21:38.056Z"
       }
     ],
-    "commit": "32d6f3b9",
+    "commit": "4ba749de",
     "summary": "Links and code references are clickable in the chat and the review pane. A shared link step (vscode-plugin/src/chat/link-markup.ts) wraps code references and moves http(s) addresses to data-url with no href; one delegated click posts open-link or open-code-ref; and a host opener (vscode-plugin/src/chat/link-opener.ts) validates the target and opens it, in the review pane's editor group, else Beside. The path check is shared with the companion reader through resolveWithin (vscode-plugin/src/chat/companion-reader.ts). The browser open is vscode.env.openExternal, documented at https://code.visualstudio.com/api/references/vscode-api#env (click this link in the review pane to check it opens once)."
   }
 }

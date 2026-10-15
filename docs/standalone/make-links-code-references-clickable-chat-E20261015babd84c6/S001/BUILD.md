@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-15T05:44:51.534Z  ·  **Updated:** 2026-10-15T08:17:53.430Z
+**Standalone:** yes  ·  **Created:** 2026-10-15T05:44:51.534Z  ·  **Updated:** 2026-10-15T08:21:38.056Z
 
-**Commit:** 32d6f3b9
+**Commit:** 4ba749de
 
 ## Summary
 
@@ -23,20 +23,24 @@ Links and code references are clickable in the chat and the review pane. A share
 
 ## Changes
 
-- `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/__tests__/fake-dom.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/__tests__/link-markup.test.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/__tests__/link-opener.test.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/__tests__/resolve-within.test.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/companion-reader.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/docs-review-panel.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/link-markup.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/link-opener.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
-- `vscode-plugin/src/vscode.d.ts` — **insrc-build** (2026-10-15T08:17:53.430Z)
+- `.insrc/artifacts/CR-babd84c6e2fb480a-S001.json` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `.insrc/artifacts/PLAN-babd84c6e2fb480a-S001.json` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/CR.md` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `docs/standalone/make-links-code-references-clickable-chat-E20261015babd84c6/S001/PLAN.md` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/__tests__/fake-dom.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/__tests__/link-markup.test.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/__tests__/link-opener.test.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/__tests__/protocol.test.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/__tests__/resolve-within.test.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/companion-reader.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/docs-review-panel.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/link-markup.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/link-opener.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)
+- `vscode-plugin/src/vscode.d.ts` — **insrc-build** (2026-10-15T08:21:38.056Z)

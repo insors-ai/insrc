@@ -58,6 +58,7 @@ import { execFileSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { createChatGroupLock } from './chat/group-lock.js';
+import { chooseReviewColumn } from './chat/review-column.js';
 import { createFileChatSessionStore, migrateChatSessionsFromMemento } from './chat/session-file-store.js';
 import { createSessionOutput } from './chat/session-output.js';
 import { createAttachmentStore } from './chat/attachment-store.js';
@@ -712,14 +713,27 @@ export function activate(context: vscode.ExtensionContext): void {
     // review IPCs (workflow.pending/artifactContent/reviewDecision). It only reads + acts on
     // daemon-tracked pending artifacts (k5), reuses the same webview channel seam, and
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
+    // The column a new review pane opens in: an open editor group without the chat tab (chat/review-column.ts).
+    const reviewColumn = (): vscode.ViewColumn | undefined => {
+      try {
+        const groups = vscode.window.tabGroups.all.map((g) => ({ viewColumn: g.viewColumn as number, isActive: g.isActive, tabs: g.tabs.map((t) => ({ input: t.input })) }));
+        return chooseReviewColumn(groups, CHAT_VIEW_TYPE) as vscode.ViewColumn | undefined;
+      } catch (err) {
+        panelLog.warn(`the editor groups could not be read for the review pane: ${String(err)}`);
+        return undefined;
+      }
+    };
     const reviewHost = createDocsReviewHost({
       client: reviewClient,
       createPanel: ({ viewType, title, quiet }) => {
-        // Story E20261013e62a9269:S001: a pane the chat opens on a presented document goes beside
-        // the chat and leaves the cursor there; the command and the board open it as before.
+        // Story E20261013e62a9269:S001: a pane the chat opens on a presented document leaves the cursor where it is; the
+        // command and the board open it as before. Standalone d27fe899: a new pane goes into an editor group that is already
+        // open and holds no chat tab; with none (or if the groups cannot be read) it opens where it did: beside the chat when
+        // quiet, in the active group otherwise.
+        const column = reviewColumn();
         const panel = quiet === true
-          ? vscode.window.createWebviewPanel(viewType, title, { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true }, { enableScripts: true })
-          : vscode.window.createWebviewPanel(viewType, title, vscode.ViewColumn.Active, { enableScripts: true });
+          ? vscode.window.createWebviewPanel(viewType, title, { viewColumn: column ?? vscode.ViewColumn.Beside, preserveFocus: true }, { enableScripts: true })
+          : vscode.window.createWebviewPanel(viewType, title, column ?? vscode.ViewColumn.Active, { enableScripts: true });
         // Story E202610131f74c81f:S001: the pane's own tab icon, as the delivery board has its own.
         panel.iconPath = {
           light: vscode.Uri.file(join(context.extensionPath, 'media', 'insrc-review-icon.svg')),

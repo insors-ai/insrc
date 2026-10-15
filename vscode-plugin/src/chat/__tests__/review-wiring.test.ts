@@ -124,8 +124,8 @@ test("review wiring: extension.ts sets the review panel's iconPath to the pair a
   // The icon is set on the vscode panel before it is wrapped as a channel.
   const create = /createPanel: \(\{ viewType, title, quiet \}\) => \{([\s\S]*?)\n      \},/.exec(block!)?.[1];
   assert.ok(create, 'createPanel builds the panel itself');
-  // Story E20261013e62a9269:S001: without quiet the pane is created as before, in the active column.
-  assert.match(create!, /: vscode\.window\.createWebviewPanel\(viewType, title, vscode\.ViewColumn\.Active, \{ enableScripts: true \}\);/);
+  // Without quiet the pane is created in an open group without the chat tab, else as before in the active column (standalone d27fe899).
+  assert.match(create!, /: vscode\.window\.createWebviewPanel\(viewType, title, column \?\? vscode\.ViewColumn\.Active, \{ enableScripts: true \}\);/);
   assert.match(create!, /panel\.iconPath = \{\s*light: vscode\.Uri\.file\(join\(context\.extensionPath, 'media', 'insrc-review-icon\.svg'\)\),\s*dark: vscode\.Uri\.file\(join\(context\.extensionPath, 'media', 'insrc-review-icon-dark\.svg'\)\),\s*\};/);
   assert.ok(create!.indexOf('panel.iconPath') < create!.indexOf('return webviewChannel(panel);'), 'before it is wrapped');
   // The watcher: one VS Code file watcher per path, under the first workspace folder, all three events, disposed together.
@@ -141,7 +141,7 @@ test("review wiring: extension.ts sets the review panel's iconPath to the pair a
 });
 
 // Story E20261013e62a9269:S001: a document the chat presents is opened in the review pane.
-test("extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in the active column without quiet and beside without focus with it; there is no presenter when the review pane is not created", () => {
+test("extension wiring: the chat host's presenter opens a document through the review host's openArtifact with the pending list's id and path and quiet set; createPanel creates the pane in an open editor group that holds no chat tab and otherwise in the active column without quiet, or beside the chat without focus with it; there is no presenter when the review pane is not created", () => {
   const ext = code(read('..', '..', 'extension.ts'));
   assert.match(ext, /import \{ createReviewPresenter \} from '\.\/chat\/review-presenter\.js';/);
   // The presenter: the pending list from the review client, the open through the review host, quietly.
@@ -168,11 +168,17 @@ test("extension wiring: the chat host's presenter opens a document through the r
   assert.ok(gate > 0 && ext.slice(gate, iPresenter).split('\n  }\n').length === 1, 'still inside the block that the chat flag opens');
   assert.ok(ext.indexOf('const reviewHost = createDocsReviewHost({') < ext.indexOf('docsReviewHost = reviewHost;'));
 
-  // The pane's creation: quiet goes beside the chat without focus; otherwise the active column, as before.
+  // The pane's creation: a group without the chat tab when there is one (read through a try, by the placement function);
+  // otherwise today's placement: quiet goes beside the chat without focus, not quiet into the active column.
   const block = /createDocsReviewHost\(\{([\s\S]*?)\n    \}\);/.exec(ext)?.[1];
   const create = /createPanel: \(\{ viewType, title, quiet \}\) => \{([\s\S]*?)\n      \},/.exec(block!)?.[1];
   assert.ok(create);
-  assert.match(create!, /const panel = quiet === true\s*\? vscode\.window\.createWebviewPanel\(viewType, title, \{ viewColumn: vscode\.ViewColumn\.Beside, preserveFocus: true \}, \{ enableScripts: true \}\)\s*: vscode\.window\.createWebviewPanel\(viewType, title, vscode\.ViewColumn\.Active, \{ enableScripts: true \}\);/);
+  assert.match(create!, /const column = reviewColumn\(\);/);
+  assert.match(create!, /const panel = quiet === true\s*\? vscode\.window\.createWebviewPanel\(viewType, title, \{ viewColumn: column \?\? vscode\.ViewColumn\.Beside, preserveFocus: true \}, \{ enableScripts: true \}\)\s*: vscode\.window\.createWebviewPanel\(viewType, title, column \?\? vscode\.ViewColumn\.Active, \{ enableScripts: true \}\);/);
+  // The column comes from the tab groups, read in a try, through the placement function; a read that throws gives today's placement.
+  assert.match(ext, /const reviewColumn = \(\): vscode\.ViewColumn \| undefined => \{\s*try \{\s*const groups = vscode\.window\.tabGroups\.all\.map\(/);
+  assert.match(ext, /return chooseReviewColumn\(groups, CHAT_VIEW_TYPE\) as vscode\.ViewColumn \| undefined;\s*\} catch \(err\) \{\s*panelLog\.warn\([^\n]*\);\s*return undefined;/);
+  assert.match(ext, /import \{ chooseReviewColumn \} from '\.\/chat\/review-column\.js';/);
   // The channel's reveal passes preserveFocus on to the panel, and reveals as before without it.
   const channel = code(read('..', 'webview-channel.ts'));
   assert.match(channel, /reveal: \(opts\) => \(opts\?\.preserveFocus === true \? panel\.reveal\(undefined, true\) : panel\.reveal\(\)\),/);

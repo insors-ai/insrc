@@ -100,11 +100,17 @@ declare module 'vscode' {
 
   export interface TabGroup {
     readonly activeTab: Tab | undefined;
+    /** The group's column, whether it is the active group, and its tabs (the review pane's placement). */
+    readonly viewColumn: ViewColumn;
+    readonly isActive: boolean;
+    readonly tabs: readonly Tab[];
   }
 
   /** The window's editor tab model (chat group lock: is the chat the active tab?). */
   export interface TabGroups {
     readonly activeTabGroup: TabGroup;
+    /** Every editor group of the window. */
+    readonly all: readonly TabGroup[];
     onDidChangeTabs(listener: (e: unknown) => unknown): Disposable;
     onDidChangeTabGroups(listener: (e: unknown) => unknown): Disposable;
   }

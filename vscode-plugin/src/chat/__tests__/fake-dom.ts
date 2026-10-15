@@ -20,6 +20,7 @@
  *   node is a child, and removeChild that the child is present; removal and
  *   replacing content clear the parent), querySelector('#id') — which throws a SyntaxError
  *   on a digit-leading id, as the real DOM does — and querySelectorAll by tag;
+ * - get/removeAttribute and childNodes (the same list as children, text nodes included);
  * - listeners as arrays per type, and scrollIntoView.
  *
  * The one known divergence from the real DOM: className is NOT reflected into
@@ -66,6 +67,10 @@ export interface BodyStub {
   insertBefore(c: BodyStub, ref: BodyStub | null): BodyStub;
   removeChild(c: BodyStub): BodyStub;
   setAttribute(k: string, v: unknown): void;
+  getAttribute(k: string): string | null;
+  removeAttribute(k: string): void;
+  /** The same list as `children`, which here holds text nodes too (as the real childNodes does). */
+  readonly childNodes: BodyStub[];
   addEventListener(type: string, l: (e?: unknown) => void): void;
   scrollIntoView(): void;
   querySelector(sel: string): BodyStub | null;
@@ -157,6 +162,9 @@ function makeNode(nodeType: 1 | 3, tagName: string, id: string, text: string, ns
       return c;
     },
     setAttribute(k, v) { n.attrs[k] = String(v); writes.push({ prop: `attr:${k}`, value: v }); },
+    getAttribute(k) { return Object.prototype.hasOwnProperty.call(n.attrs, k) ? (n.attrs[k] as string) : null; },
+    removeAttribute(k) { delete n.attrs[k]; },
+    get childNodes() { return children; },
     addEventListener(type, l) { (n.listeners[type] ??= []).push(l); },
     scrollIntoView() { n.scrolled = true; },
     querySelectorAll(sel) {

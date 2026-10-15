@@ -26,6 +26,7 @@ import type { TranscriptEntry } from './session-store.js';
 import type { TurnEvent } from './stream-events.js';
 import { MARKER_CLASS } from './markers.js';
 import { COLLAPSED_LINES } from './diff-sections.js';
+import { LINK_MARKUP_SOURCE } from './link-markup.js';
 
 /** The two conversational roles a message row can carry. */
 export type ChatRole = 'user' | 'assistant';
@@ -357,6 +358,10 @@ export function renderRegistryWebviewSource(): string {
     // onAttachmentOpen(cb); a click on a message's attachment chip calls it with the attachment's
     // id. The chip names the file by id only and loads nothing: glyph, name and size as text (k1).
     `var ADEC=null;function onAttachmentOpen(cb){ADEC=cb;}` +
+    // Epic babd84c6e2fb480a Story S001: the link-open sink. chat-panel registers a callback via onLinkOpen(cb); one
+    // delegated click handler on the document hands it the message for a clicked link or code reference.
+    `var LDEC=null;function onLinkOpen(cb){LDEC=cb;}` +
+    `if(document.addEventListener)document.addEventListener('click',function(e){onLinkClick(e,function(p){if(LDEC)LDEC(p);});});` +
     `function attSize(n){n=typeof n==='number'&&n>=0?n:0;` +
     `if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(1)+' MB';}` +
     `function attChip(a){` +
@@ -417,11 +422,9 @@ export function renderRegistryWebviewSource(): string {
     `var BT=String.fromCharCode(96);` +
     // guardMd: marked escapes text, and the strict CSP (default-src 'none'; scripts nonce-only)
     // neutralizes injected scripts/handlers/resource loads — but belt-and-suspenders, scrub every
-    // rendered node: drop non-http(s) link hrefs, open the rest safely, and strip image sources.
-    `function guardMd(el){try{` +
-    `var as=el.querySelectorAll('a');for(var i=0;i<as.length;i++){var hr=as[i].getAttribute('href')||'';if(/^https?:/i.test(hr)){as[i].setAttribute('rel','noopener noreferrer');as[i].setAttribute('target','_blank');}else{as[i].removeAttribute('href');}}` +
-    `var ig=el.querySelectorAll('img');for(var j=0;j<ig.length;j++){ig[j].removeAttribute('src');ig[j].removeAttribute('srcset');}` +
-    `}catch(e){}}` +
+    // rendered node: no link keeps an href (an http(s) address moves to data-url), image sources are
+    // stripped, and code references are linked. Single-sourced with the review pane (link-markup.ts).
+    LINK_MARKUP_SOURCE +
     // renderAssistantMd: marked.parse(raw) -> HTML assigned via innerHTML (k1 relaxed to a library
     // render, kept safe by marked's escaping + the CSP + guardMd). A top-level JSON value is
     // pretty-printed into a ```json code block so it renders as highlighted-ish code, not flat text.
@@ -690,6 +693,6 @@ export function renderRegistryWebviewSource(): string {
     `function forgetKeysBefore(idx){for(var k in KEYS){if(/^r\\d+$/.test(k)&&Number(k.slice(1))<idx)delete KEYS[k];}}` +
     `function withIsolatedPending(fn){var live=PEND;PEND=[];try{return fn();}finally{PEND=live;}}` +
     `function forgetPendingIn(nodes){PEND=PEND.filter(function(p){return nodes.indexOf(p.wrap)<0;});for(var k in DIFFS){if(nodes.indexOf(DIFFS[k])>=0)delete DIFFS[k];}}` +
-    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,redrawDiff:redrawDiff,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen,attachmentSize:attSize};}`
+    `return {register:register,renderRow:renderRow,collapsible:collapsible,toViewModel:toViewModel,appendKeyed:appendKeyed,resetKeys:resetKeys,onApprovalDecision:onApprovalDecision,approvalPosition:approvalPosition,forgetKeysBefore:forgetKeysBefore,withIsolatedPending:withIsolatedPending,forgetPendingIn:forgetPendingIn,redrawDiff:redrawDiff,onSelectionDecision:onSelectionDecision,onAttachmentOpen:onAttachmentOpen,onLinkOpen:onLinkOpen,attachmentSize:attSize};}`
   );
 }

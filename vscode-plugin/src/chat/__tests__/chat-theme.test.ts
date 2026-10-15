@@ -335,6 +335,8 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.histchip',
     '.histchip::before',
     '.insrc-approval__btn--approve:hover',
+    // Epic babd84c6e2fb480a Story S001: a link or code reference the page made clickable has no href, so it needs its own link look.
+    '.insrc-md a[data-url],.insrc-md a[data-path]',
     '.insrc-md blockquote',
     '.insrc-md code',
     '.insrc-md hr',

@@ -36,6 +36,7 @@ import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
 import type { ChatQueueWorker, QueueAction, QueuedTurnRunner, WaitingOn } from './chat-queue-worker.js';
 import { projectOutbox } from './chat-outbox.js';
 import type { LinkOpener } from './link-opener.js';
+import { LINK_MARKUP_STYLE } from './link-markup.js';
 import {
   createEditGovernor,
   type EditGovernor,
@@ -1116,7 +1117,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // block keeps the code-block ground), block quotes, rules and links.
       `.insrc-md code{background:var(--pre-bg);}.insrc-md pre code{background:none;}` +
       `.insrc-md blockquote{background:var(--quote-bg);border-left-color:var(--quote-border);}` +
-      `.insrc-md hr{border-top-color:var(--sep);}.insrc-md a{color:var(--link);}` +
+      `.insrc-md hr{border-top-color:var(--sep);}.insrc-md a{color:var(--link);}${LINK_MARKUP_STYLE}` +
       // JSON widget: a bordered code surface with key/value/punct tones (mock .jsonw).
       `.insrc-json{font-family:var(--font);border:1px solid var(--border-lit);border-radius:8px;background:var(--code-bg);padding:8px 11px;font-size:12.5px;line-height:1.55;}` +
       `.insrc-json .insrc-json-key{color:var(--accent2);}.insrc-json .insrc-json-val{color:var(--accent);}.insrc-json .insrc-json-punct{color:var(--dim);}` +
@@ -1240,6 +1241,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `reg.onApprovalDecision(function(requestId,decision){vs.postMessage({v:1,payload:{type:'permission-decision',requestId:requestId,decision:decision}});});` +
       // S004 (dev-chat ux polish): the selection widget's confirm posts a selection-decision the host
       // maps back to labels + continues the run. Wired once via the sc1 selection decision sink.
+      `reg.onLinkOpen(function(p){vs.postMessage({v:1,payload:p});});` +
       `reg.onSelectionDecision(function(requestId,selected){vs.postMessage({v:1,payload:{type:'selection-decision',requestId:requestId,selected:selected}});});` +
       attachScript +
       outboxScript +

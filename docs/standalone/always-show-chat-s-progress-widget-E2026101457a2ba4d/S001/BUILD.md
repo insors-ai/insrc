@@ -2,9 +2,9 @@
 
 # Build (standalone small) — Story S001
 
-**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-14T19:45:09.978Z  ·  **Updated:** 2026-10-14T19:46:10.493Z
+**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-10-14T19:45:09.978Z  ·  **Updated:** 2026-10-15T04:52:05.060Z
 
-**Commit:** 0ad6fec4
+**Commit:** cdbf3c37
 
 ## Triage rationale
 
@@ -22,9 +22,27 @@ The chat's progress widget (#insrc-progress) is never hidden. It is rendered wit
 
 ## Changes
 
-- `.insrc/artifacts/LLD-57a2ba4d5f18c356-S001.json` — **insrc-build** (2026-10-14T19:46:10.493Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-14T19:46:10.493Z)
-- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-14T19:46:10.493Z)
-- `vscode-plugin/src/chat/__tests__/chat-theme-before.json` — **insrc-build** (2026-10-14T19:46:10.493Z)
-- `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` — **insrc-build** (2026-10-14T19:46:10.493Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-14T19:46:10.493Z)
+- `.insrc/artifacts/BUILD-160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/CR-160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/CR-57a2ba4d5f18c356-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/ISSUE-160fa1bb7a8604ad.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/LLD-57a2ba4d5f18c356-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/LLD-d27fe8996fc3a2db-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/artifacts/TESTS-160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `.insrc/build-start/160fa1bb7a8604ad-S001.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `docs/standalone/always-show-chat-s-progress-widget-E2026101457a2ba4d/S001/CR.md` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/ISSUE.md` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/S001/BUILD.md` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/S001/CR.md` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/S001/TESTS.md` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/package.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/chat/__tests__/chat-theme-before.json` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/extension.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)
+- `vscode-plugin/src/vscode.d.ts` — **insrc-build** (2026-10-15T04:52:05.060Z)

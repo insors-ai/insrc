@@ -10,12 +10,13 @@
     "triageRationale": "Small bugfix, one handler in chat-panel.ts.",
     "epicCreatedAt": "2026-10-14T20:02:51.690Z",
     "epicSlug": "end-running-state-only-running-turn",
-    "updatedAt": "2026-10-15T04:48:09.043Z"
+    "updatedAt": "2026-10-15T04:52:06.368Z",
+    "approvedAt": "2026-10-15T04:52:06.844Z"
   },
   "body": {
     "focus": "Fix ISSUE-160fa1bb7a8604ad: the chat page ends the running state (idle widget, Send button) only on the done or error of the turn it considers running, not on the done that closes an informational line posted by the host (postInfo, persistInfo). Mark the informational done so the page ignores it for the running state; the line still renders; a real turn's done/error and Stop still end it. Files: vscode-plugin/src/chat/chat-panel.ts and protocol.ts. Add a shell test (turn-running, then an informational done keeps it working, then a real done makes it idle) and a host test that the informational done is marked.",
     "producesLld": false,
-    "commit": "9344d0c8",
+    "commit": "cdbf3c37",
     "tasks": [
       {
         "id": "S001",
@@ -29,45 +30,17 @@
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/ISSUE-160fa1bb7a8604ad.json"
+          "file": ".insrc/artifacts/BUILD-57a2ba4d5f18c356-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T04:48:09.043Z"
+        "timestamp": "2026-10-15T04:52:06.368Z"
       },
       {
         "target": {
-          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+          "file": "docs/standalone/always-show-chat-s-progress-widget-E2026101457a2ba4d/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-15T04:48:09.043Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-15T04:48:09.043Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-15T04:48:09.043Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/chat-panel.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-15T04:48:09.043Z"
-      },
-      {
-        "target": {
-          "file": "vscode-plugin/src/chat/protocol.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-15T04:48:09.043Z"
+        "timestamp": "2026-10-15T04:52:06.368Z"
       }
     ]
   }

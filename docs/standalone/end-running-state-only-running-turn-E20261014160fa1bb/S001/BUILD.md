@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-15T04:44:56.186Z  ·  **Updated:** 2026-10-15T04:48:09.043Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-15T04:44:56.186Z  ·  **Updated:** 2026-10-15T04:52:06.368Z
 
-**Commit:** 9344d0c8
+**Commit:** cdbf3c37
 
 ## Scope
 
@@ -26,9 +26,5 @@ Fix for ISSUE-160fa1bb7a8604ad. The host marks the done that closes an informati
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-160fa1bb7a8604ad.json` — **insrc-build** (2026-10-15T04:48:09.043Z)
-- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
-- `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
-- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
-- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
-- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
+- `.insrc/artifacts/BUILD-57a2ba4d5f18c356-S001.json` — **insrc-build** (2026-10-15T04:52:06.368Z)
+- `docs/standalone/always-show-chat-s-progress-widget-E2026101457a2ba4d/S001/BUILD.md` — **insrc-build** (2026-10-15T04:52:06.368Z)

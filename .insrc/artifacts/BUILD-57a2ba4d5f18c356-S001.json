@@ -4,13 +4,14 @@
     "epicHash": "57a2ba4d5f18c356",
     "storyId": "S001",
     "createdAt": "2026-10-14T19:45:09.978Z",
-    "updatedAt": "2026-10-14T19:46:10.493Z",
+    "updatedAt": "2026-10-15T04:52:05.060Z",
     "authoredBy": "controller",
     "standalone": true,
     "sizeClass": "small",
     "triageRationale": "Small: one module plus three test files.",
     "epicCreatedAt": "2026-10-14T19:38:17.866Z",
-    "epicSlug": "always-show-chat-s-progress-widget"
+    "epicSlug": "always-show-chat-s-progress-widget",
+    "approvedAt": "2026-10-15T04:52:06.358Z"
   },
   "body": {
     "tasks": [
@@ -26,47 +27,173 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/BUILD-160fa1bb7a8604ad-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-160fa1bb7a8604ad-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-57a2ba4d5f18c356-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-160fa1bb7a8604ad.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/LLD-57a2ba4d5f18c356-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T19:46:10.493Z"
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-d27fe8996fc3a2db-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-160fa1bb7a8604ad-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/160fa1bb7a8604ad-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/always-show-chat-s-progress-widget-E2026101457a2ba4d/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/end-running-state-only-running-turn-E20261014160fa1bb/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T19:46:10.493Z"
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T19:46:10.493Z"
+        "timestamp": "2026-10-15T04:52:05.060Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T19:46:10.493Z"
+        "timestamp": "2026-10-15T04:52:05.060Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T19:46:10.493Z"
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
       },
       {
         "target": {
           "file": "vscode-plugin/src/chat/chat-panel.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-14T19:46:10.493Z"
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/vscode.d.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-15T04:52:05.060Z"
       }
     ],
-    "commit": "0ad6fec4"
+    "commit": "cdbf3c37"
   }
 }

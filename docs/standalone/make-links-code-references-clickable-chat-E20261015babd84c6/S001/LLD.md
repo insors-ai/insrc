@@ -226,6 +226,8 @@ The host preprocesses assistant markdown, replacing code references with markdow
 
 - `q6aed0048` — The Story has no acceptance criteria; ac1-ac3 were derived from its three user-value points.
   - **resolved**: Accept derived ac1-ac3 as-is — User approved the LLD with the derivation disclosed; PLAN notes they were derived. _(2026-10-15T05:32:51.759Z)_
+- `qdf0d2c9a` — The contract entry for the two new messages is named open-attachment (an existing message) as a schema workaround; they are the new open-link and open-code-ref messages.
+  - **resolved**: Keep the workaround, document the alias — User chose no schema work for a naming quirk; plan and tests use open-link and open-code-ref. _(2026-10-15T05:33:23.411Z)_
 
 ## Citations
 

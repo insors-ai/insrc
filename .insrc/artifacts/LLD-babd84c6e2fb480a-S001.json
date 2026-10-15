@@ -185,6 +185,13 @@
         "choice": "Accept derived ac1-ac3 as-is",
         "rationale": "User approved the LLD with the derivation disclosed; PLAN notes they were derived.",
         "resolvedAt": "2026-10-15T05:32:51.759Z"
+      },
+      "qdf0d2c9a": {
+        "question": "The contract entry for the two new messages is named open-attachment (an existing message) as a schema workaround; they are the new open-link and open-code-ref messages.",
+        "status": "resolved",
+        "choice": "Keep the workaround, document the alias",
+        "rationale": "User chose no schema work for a naming quirk; plan and tests use open-link and open-code-ref.",
+        "resolvedAt": "2026-10-15T05:33:23.411Z"
       }
     }
   },

@@ -28,8 +28,24 @@ export interface ReviewPresenterDeps {
   readonly log: ChatPanelLogger;
 }
 
+/**
+ * What a declaration came to (Story E20261015067b05b6:S001): the declared names that are open in
+ * the review pane for this turn, the ones that are not pending, and whether the pending list could
+ * not be read (then nothing is opened and no name is classified).
+ */
+export interface DeclaredOutcome {
+  readonly opened: readonly string[];
+  readonly notPending: readonly string[];
+  readonly unreadable: boolean;
+}
+
 /** One chat turn, as the presenter sees it. */
 export interface PresentedTurn {
+  /**
+   * The documents the turn declared by calling `insrc_present`, as artifact ids or document paths.
+   * Opens the pending document each name resolves to, once per turn and in order. Never rejects.
+   */
+  declared(documents: readonly string[]): Promise<DeclaredOutcome>;
   /** A tool result's whole text. */
   toolResult(output: string): void;
   /** The turn is over. A second call does nothing. */
@@ -45,6 +61,8 @@ interface TurnState {
   /** The ids pending when the turn began; undefined while unread or when the read failed. */
   before: ReadonlySet<string> | undefined;
   readonly opened: Set<string>;
+  /** The ids whose open call threw (they are in `opened` too, so they are not tried again). */
+  readonly failed: Set<string>;
   /** The turn's calls, one behind another. */
   queue: Promise<void>;
 }
@@ -71,6 +89,10 @@ export function presentedPathOf(output: string): string | undefined {
 const samePath = (listed: string, presented: string): boolean =>
   listed === presented || (listed !== '' && presented.endsWith(`/${listed}`));
 
+/** A declared name names a pending document by its artifact id (compared without regard to case: the daemon lists `-s5` for some records and `-S001` for others) or by its path, absolute or repo-relative. */
+const namesDocument = (name: string, doc: PendingDocument): boolean =>
+  doc.id.toLowerCase() === name.toLowerCase() || doc.mdPath === name || doc.mdPath.endsWith(`/${name}`);
+
 const errorText = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
 export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresenter {
@@ -94,6 +116,7 @@ export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresente
     try {
       deps.open({ artifactId: doc.id, mdPath: doc.mdPath });
     } catch (err) {
+      state.failed.add(doc.id);
       log.error(`review presenter: ${doc.id} could not be opened: ${errorText(err)}`);
     }
   }
@@ -112,7 +135,7 @@ export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresente
         // one too, so its start list and what it opened are carried on.
         state = newest.state;
       } else {
-        const fresh: TurnState = { before: undefined, opened: new Set(), queue: Promise.resolve() };
+        const fresh: TurnState = { before: undefined, opened: new Set(), failed: new Set(), queue: Promise.resolve() };
         // Asked for now, not when the queue comes round to it: the list is the one of this moment.
         const atStart = read('at the start of the turn');
         enqueue(fresh, async () => {
@@ -125,6 +148,35 @@ export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresente
         state,
         ended: false,
         handle: {
+          declared(documents: readonly string[]): Promise<DeclaredOutcome> {
+            return new Promise<DeclaredOutcome>((resolve) => {
+              enqueue(state, async () => {
+                const outcome: { opened: string[]; notPending: string[]; unreadable: boolean } = { opened: [], notPending: [], unreadable: false };
+                try {
+                  const docs = await read('for a declared document');
+                  if (docs === undefined) {
+                    outcome.unreadable = true;
+                  } else {
+                    for (const name of documents) {
+                      const doc = docs.find((d) => namesDocument(name, d));
+                      if (doc === undefined) {
+                        outcome.notPending.push(name);
+                        continue;
+                      }
+                      open(state, doc);
+                      // Shown in this turn, now or by an earlier declaration; an open that failed is left out.
+                      if (!state.failed.has(doc.id)) outcome.opened.push(name);
+                    }
+                  }
+                } catch (err) {
+                  log.error(`review presenter: a declaration failed: ${errorText(err)}`);
+                  outcome.unreadable = true;
+                } finally {
+                  resolve(outcome);
+                }
+              });
+            });
+          },
           toolResult(output: string): void {
             const path = presentedPathOf(output);
             if (path === undefined) return;

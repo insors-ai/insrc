@@ -377,3 +377,94 @@ test('docs review host: openArtifact with quiet creates the pane with quiet when
   await settle();
   assert.deepEqual(q.created.at(-1), { viewType: 'insrc.docsReviewPanel', title: 'insrc docs review', quiet: true });
 });
+
+// ---- Story E20261015067b05b6:S001: the turn declares the documents it presents ----
+
+test('a declared artifact id and a declared path each open the matching pending document once, in order', async () => {
+  const A = doc('LLD-aaa-S001');
+  const B = doc('PLAN-bbb-S001', 'docs/standalone/x/S001/PLAN.md');
+  const C = doc('BUILD-ccc-S001');
+  const k = kit([A, B, C]);
+  const turn = k.presenter.begin();
+  const outcome = await turn.declared(['PLAN-bbb-S001', 'docs/standalone/x/S001/PLAN.md', 'LLD-aaa-S001', B.mdPath]);
+  // The id and the repo-relative path both name B, which opens once; then A; the absolute path is B again.
+  assert.deepEqual(ids(k), ['PLAN-bbb-S001', 'LLD-aaa-S001']);
+  assert.deepEqual(k.opened[0], `PLAN-bbb-S001@${B.mdPath}`, 'opened with the path the list gives');
+  assert.deepEqual(outcome.opened, ['PLAN-bbb-S001', 'docs/standalone/x/S001/PLAN.md', 'LLD-aaa-S001', B.mdPath]);
+  assert.deepEqual(outcome.notPending, []);
+  // C is pending but was never declared: it is not opened.
+  assert.ok(!ids(k).includes('BUILD-ccc-S001'));
+});
+
+test('a declared name that is not pending opens nothing and is reported by name', async () => {
+  const A = doc('LLD-aaa-S001');
+  const k = kit([A]);
+  const turn = k.presenter.begin();
+  const outcome = await turn.declared(['LLD-zzz-S001', 'docs/nowhere/LLD.md', 'LLD-aaa-S001']);
+  assert.deepEqual(outcome, { opened: ['LLD-aaa-S001'], notPending: ['LLD-zzz-S001', 'docs/nowhere/LLD.md'], unreadable: false });
+  assert.deepEqual(ids(k), ['LLD-aaa-S001']);
+  // A path that is only a tail of a file name does not match (a name must be a whole path segment run).
+  const partial = await k.presenter.begin().declared(['LLD.md']);
+  assert.deepEqual(partial.notPending, ['LLD.md']);
+});
+
+test('the same document declared twice in a turn opens once', async () => {
+  const A = doc('LLD-aaa-S001');
+  const k = kit([A]);
+  const turn = k.presenter.begin();
+  const first = await turn.declared(['LLD-aaa-S001']);
+  const second = await turn.declared(['lld-aaa-s001', 'LLD-aaa-S001']);
+  assert.equal(k.opened.length, 1, 'opened once for the turn');
+  assert.deepEqual(first.opened, ['LLD-aaa-S001']);
+  assert.deepEqual(second.opened, ['lld-aaa-s001', 'LLD-aaa-S001'], 'still shown, so not reported as missing');
+  assert.deepEqual(second.notPending, []);
+});
+
+test('an unreadable pending list and a failing open are logged and never thrown', async () => {
+  const A = doc('LLD-aaa-S001');
+  const B = doc('PLAN-bbb-S001');
+  const k = kit([A, B], { open: (id) => { if (id === 'LLD-aaa-S001') throw new Error('pane gone'); } });
+  const turn = k.presenter.begin();
+  await settle();
+  // A failing open: logged, the other document still opens, and the failed one is left out of the outcome.
+  const outcome = await turn.declared(['LLD-aaa-S001', 'PLAN-bbb-S001']);
+  assert.deepEqual(outcome, { opened: ['PLAN-bbb-S001'], notPending: [], unreadable: false });
+  assert.ok(k.logged.some((m) => m.includes('LLD-aaa-S001 could not be opened') && m.includes('pane gone')), k.logged.join('\n'));
+  // The failed one is not tried again in the turn.
+  await turn.declared(['LLD-aaa-S001']);
+  assert.equal(ids(k).filter((i) => i === 'LLD-aaa-S001').length, 1);
+
+  // An unreadable list: nothing opens, no name is classified, it is logged, nothing is thrown.
+  const k2 = kit([A]);
+  const turn2 = k2.presenter.begin();
+  await settle();
+  k2.failReads = true;
+  const down = await turn2.declared(['LLD-aaa-S001']);
+  assert.deepEqual(down, { opened: [], notPending: [], unreadable: true });
+  assert.deepEqual(k2.opened, []);
+  assert.ok(k2.logged.some((m) => m.includes('pending list could not be read') && m.includes('daemon down')), k2.logged.join('\n'));
+  // The turn goes on: a later declaration, once the list reads again, opens.
+  k2.failReads = false;
+  assert.deepEqual((await turn2.declared(['LLD-aaa-S001'])).opened, ['LLD-aaa-S001']);
+});
+
+test('declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable', async () => {
+  const k = kit([doc('LLD-aaa-S001')]);
+  const turn = k.presenter.begin();
+  const outcome = await turn.declared(['LLD-aaa-S001', 'nope']);
+  assert.deepEqual(Object.keys(outcome).sort(), ['notPending', 'opened', 'unreadable']);
+  assert.deepEqual(outcome, { opened: ['LLD-aaa-S001'], notPending: ['nope'], unreadable: false });
+  // An empty declaration opens nothing and says so.
+  assert.deepEqual(await turn.declared([]), { opened: [], notPending: [], unreadable: false });
+});
+
+test("a declared artifact id matches the pending list's id without regard to the case of its story part", async () => {
+  // The daemon lists LLD-<hash>-s5 for some records and LLD-<hash>-S001 for others.
+  const lower = doc('LLD-abc123-s5');
+  const upper = doc('LLD-def456-S001');
+  const k = kit([lower, upper]);
+  const turn = k.presenter.begin();
+  const outcome = await turn.declared(['LLD-abc123-S5', 'LLD-def456-s001']);
+  assert.deepEqual(ids(k), ['LLD-abc123-s5', 'LLD-def456-S001'], 'opened by the id the list holds');
+  assert.deepEqual(outcome, { opened: ['LLD-abc123-S5', 'LLD-def456-s001'], notPending: [], unreadable: false });
+});

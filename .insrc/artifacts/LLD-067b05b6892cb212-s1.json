@@ -752,6 +752,21 @@
       "The Story has no acceptance criteria; ac1-ac4 were derived from its stated needs.",
       "The controller must call insrc_present for anything to open; the steering text is the only enforcement, and a missing call is visible as nothing opening.",
       "The Codex shape is verified against codex-cli 0.162.1 only; a newer Codex that changes the item type, the tool naming or the arguments shape would open nothing until the mapper and the pinned fixture are updated."
+    ],
+    "feedback": [
+      {
+        "id": "fd46e1ea",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-15T10:36:55.030Z",
+        "target": {
+          "file": "docs/standalone/declare-documents-turn-presents-instead-parsing-E20261015067b05b6/S001/LLD.md",
+          "version": "1e29e2c4c3fcb69c"
+        },
+        "comment": "approved",
+        "kind": "comment",
+        "decision": "feedback",
+        "batchId": "acf58f88"
+      }
     ]
   },
   "citations": [

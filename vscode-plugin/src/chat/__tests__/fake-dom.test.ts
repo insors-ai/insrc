@@ -121,7 +121,7 @@ test('fake-dom nodes carry scrollTop, scrollHeight and clientHeight', () => {
 });
 
 // Epic 00d80121c593053c Story S001 t2: textOf reads descendants' text as the real textContent does.
-test("the shared fake DOM's textContent joins its children and still clears them when set", () => {
+test("the shared fake DOM's textOf joins descendants' text while textContent stays its own text and still clears children when set", () => {
   const el = bodyStub('div');
   el.appendChild(textNode('a '));
   const inner = bodyStub('span');

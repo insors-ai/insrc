@@ -17,6 +17,7 @@ import { renderRegistryWebviewSource, RENDER_REGISTRY_STYLE } from './render-reg
 // S001 (bugfix): the bundled `marked` UMD (committed generated string) — evaluated first in the
 // one nonce'd webview script so `marked.parse` is available to the render registry (no CDN; CSP-safe).
 import { MARKED_SRC } from './webview-marked.js';
+import { HLJS_SRC } from './webview-hljs.js';
 import { renderMarkdownStyle, CHAT_MARKDOWN_TOKENS } from './markdown-style.js';
 import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode } from './protocol.js';
 import { AttachmentRefused, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE, type AttachmentRef, type AttachmentStore } from './attachment-store.js';
@@ -1416,7 +1417,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `<span class="seg" id="insrc-modeseg">edits <select id="insrc-mode" class="segsel ${provCls}" aria-label="mode"><option value="manual">Manual</option><option value="edit-auto">Edit Automatically</option><option value="auto">Auto</option></select></span>` +
       `</div>` +
       `</div>` +
-      `<script nonce="${nonce}">${MARKED_SRC}\n;${bootstrap}</script></body></html>`
+      `<script nonce="${nonce}">${MARKED_SRC}\n;${HLJS_SRC}\n;${bootstrap}</script></body></html>`
     );
   };
 

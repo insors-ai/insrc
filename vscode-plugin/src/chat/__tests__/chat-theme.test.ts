@@ -336,6 +336,13 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.histchip::before',
     '.insrc-approval__btn--approve:hover',
     // Epic babd84c6e2fb480a Story S001: a link or code reference the page made clickable has no href, so it needs its own link look.
+    '.insrc-diffw__text .hljs-comment,.insrc-diffw__text .hljs-quote,.insrc-diffw__text .hljs-doctag',
+    '.insrc-diffw__text .hljs-keyword,.insrc-diffw__text .hljs-selector-tag',
+    '.insrc-diffw__text .hljs-meta,.insrc-diffw__text .hljs-attribute,.insrc-diffw__text .hljs-attr,.insrc-diffw__text .hljs-tag,.insrc-diffw__text .hljs-name,.insrc-diffw__text .hljs-selector-class,.insrc-diffw__text .hljs-selector-id',
+    '.insrc-diffw__text .hljs-number,.insrc-diffw__text .hljs-literal,.insrc-diffw__text .hljs-symbol,.insrc-diffw__text .hljs-bullet',
+    '.insrc-diffw__text .hljs-string,.insrc-diffw__text .hljs-regexp',
+    '.insrc-diffw__text .hljs-title,.insrc-diffw__text .hljs-section,.insrc-diffw__text .hljs-function',
+    '.insrc-diffw__text .hljs-type,.insrc-diffw__text .hljs-built_in,.insrc-diffw__text .hljs-class',
     '.insrc-md a[data-url],.insrc-md a[data-path]',
     '.insrc-md blockquote',
     '.insrc-md code',
@@ -456,4 +463,48 @@ test('chat theme: the progress widget keeps its colours, and its idle variant ha
   assert.ok(!/insrc-breathe\{[^}]*translate/.test(css), 'no vertical movement while idle');
   assert.ok(/prefers-reduced-motion:reduce\)\{[^}]*#insrc-progress\.idle \.spin i\{animation:none/.test(css), 'reduced motion stops the idle animation');
   assert.ok(!css.includes('#insrc-progress[hidden]'), 'the [hidden] rule is gone');
+});
+
+// Epic 00d80121c593053c Story S001 t5: the syntax token colours and the highlighter in the shell.
+test('the shell inlines the highlighter source once, holds no script tag in it, and the CSP is unchanged', async () => {
+  const { HLJS_SRC } = await import('../webview-hljs.js');
+  const html = shellHtml();
+  assert.equal(html.split(HLJS_SRC).length - 1, 1, 'the highlighter source is inlined exactly once');
+  assert.equal((html.match(/<script\b/g) ?? []).length, 1, 'the shell still has one script tag');
+  assert.equal((html.match(/<\/script>/g) ?? []).length, 1);
+  assert.match(html, /<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'nonce-[^']+';">/, 'the policy is the one it was');
+  // The highlighter is evaluated before the page's own code, which looks for the global.
+  assert.ok(html.indexOf(HLJS_SRC) < html.indexOf('const vs=acquireVsCodeApi()'), 'the highlighter is defined before the bootstrap runs');
+  // Neither the marked module nor the review pane takes it.
+  const { createDocsReviewHost } = await import('../docs-review-panel.js');
+  let review = '';
+  createDocsReviewHost({
+    createPanel: () => ({ setHtml: (h) => { review = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} }),
+    client: { async pending() { return []; }, async content() { throw new Error('unused'); }, async decide() { throw new Error('unused'); } },
+  }).open();
+  assert.ok(!review.includes(HLJS_SRC), 'the review pane does not carry the highlighter');
+  const marked = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'webview-marked.ts'), 'utf8');
+  assert.ok(!marked.includes('hljs'), 'webview-marked.ts is untouched by the highlighter');
+});
+
+test('the token classes take their colours from existing :root names with no new --vscode- name in the widget rules, and the added selectors are listed exactly', () => {
+  const html = shellHtml();
+  const rules = [...RENDER_REGISTRY_STYLE.matchAll(/([^{}]*\.hljs-[^{}]*)\{([^}]*)\}/g)].map((m) => ({ sel: m[1]!.trim(), body: m[2]! }));
+  assert.equal(rules.length, 7, 'seven colour groups');
+  // Each class group takes exactly one of the chat's own colours, and the widget rules name no theme variable.
+  const used = new Set<string>();
+  for (const r of rules) {
+    assert.doesNotMatch(r.body, /--vscode-/, `${r.sel} names no theme variable`);
+    const names = [...r.body.matchAll(/var\((--[a-z0-9-]+)\)/g)].map((m) => m[1]!);
+    assert.equal(names.length, 1, `${r.sel} uses one colour`);
+    used.add(names[0]!);
+  }
+  assert.deepEqual([...used].sort(), ['--accent', '--accent2', '--amber', '--link', '--magenta', '--muted', '--user'], 'the mapping: keyword magenta, string accent, number amber, function and title user, type and built-in accent2, comment muted, meta/attribute/tag link');
+  // Every one of them is a name the :root layer already defines.
+  const root = /:root\{([^}]*)\}/.exec(html)?.[1] ?? '';
+  for (const n of used) assert.match(root, new RegExp(`${n}:`), `${n} is defined in :root`);
+  assert.doesNotMatch(RENDER_REGISTRY_STYLE, /--vscode-/, 'the widget rules still name no theme variable');
+  // The added selectors are the ones listed in the added-selector test above, exactly (that test fails on any other).
+  const have = selectors(RENDER_REGISTRY_STYLE);
+  for (const r of rules) assert.ok(have.has(r.sel), `${r.sel} is a rule of the widget style`);
 });

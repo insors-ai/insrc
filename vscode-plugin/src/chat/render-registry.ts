@@ -233,6 +233,16 @@ export const RENDER_REGISTRY_STYLE =
   `.insrc-diffw__line--del{background:var(--del-bg);outline:1px solid var(--del-border);outline-offset:-1px;}` +
   `.insrc-diffw__line--del .insrc-diffw__sign{color:var(--red);}` +
   `.insrc-diffw__line--ctx{color:var(--muted);}` +
+  // Epic 00d80121c593053c Story S001: syntax token colours. highlight.js has no token variables in a webview, so each class
+  // takes one of the chat's existing :root colours (themselves VS Code theme variables); they approximate the editor's
+  // token colours and do not reproduce them. A diff line keeps its add/del ground; only the text takes a colour.
+  `.insrc-diffw__text .hljs-keyword,.insrc-diffw__text .hljs-selector-tag{color:var(--magenta);}` +
+  `.insrc-diffw__text .hljs-string,.insrc-diffw__text .hljs-regexp{color:var(--accent);}` +
+  `.insrc-diffw__text .hljs-number,.insrc-diffw__text .hljs-literal,.insrc-diffw__text .hljs-symbol,.insrc-diffw__text .hljs-bullet{color:var(--amber);}` +
+  `.insrc-diffw__text .hljs-title,.insrc-diffw__text .hljs-section,.insrc-diffw__text .hljs-function{color:var(--user);}` +
+  `.insrc-diffw__text .hljs-type,.insrc-diffw__text .hljs-built_in,.insrc-diffw__text .hljs-class{color:var(--accent2);}` +
+  `.insrc-diffw__text .hljs-comment,.insrc-diffw__text .hljs-quote,.insrc-diffw__text .hljs-doctag{color:var(--muted);}` +
+  `.insrc-diffw__text .hljs-meta,.insrc-diffw__text .hljs-attribute,.insrc-diffw__text .hljs-attr,.insrc-diffw__text .hljs-tag,.insrc-diffw__text .hljs-name,.insrc-diffw__text .hljs-selector-class,.insrc-diffw__text .hljs-selector-id{color:var(--link);}` +
   `.insrc-diffw__line--note{color:var(--muted);}` +
   `.insrc-diffw__omitted{display:none;color:var(--muted);padding:2px 10px;font-size:11.5px;}` +
   // Folded: the lines after the first 8 and the note of lines not saved are hidden until opened.

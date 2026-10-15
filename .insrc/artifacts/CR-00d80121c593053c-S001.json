@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792056760866-wij7kz",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-15T09:32:41.289Z",
+    "model": "claude:opus",
+    "elapsedMs": 111027,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "00d80121c593053c",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-15T08:24:57.082Z",
+    "epicSlug": "add-syntax-highlighting-chat-diff-widget",
+    "standalone": true,
+    "approvedAt": "2026-10-15T09:35:42.528Z"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "00d80121c593053c",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/gen-webview-libs.mjs",
+        "vscode-plugin/package-lock.json",
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
+        "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
+        "vscode-plugin/src/chat/__tests__/diff-click.test.ts",
+        "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
+        "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
+        "vscode-plugin/src/chat/__tests__/fake-dom.test.ts",
+        "vscode-plugin/src/chat/__tests__/fake-dom.ts",
+        "vscode-plugin/src/chat/__tests__/link-markup.test.ts",
+        "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/diff-highlight.ts",
+        "vscode-plugin/src/chat/render-registry.ts",
+        "vscode-plugin/src/chat/webview-hljs.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/diff-highlight.ts:44",
+            "message": "When a span has no hljs- class, such as a sub-language wrapper like `language-xml`, hljsRuns gives it the class of the span around it (`stack.push(cls!==undefined?cls:cur())`). The approved postcondition says such a span is read as classless text. The test in diff-highlight.test.ts pins the inheriting behaviour: 'inside a classed span it takes that span's class'. So text inside a wrapper nested in a string or comment is coloured with the outer class instead of being left classless. The doc comment in diff-highlight.ts also describes the inheriting behaviour, not the approved one.",
+            "expectationRef": "LLD contractDetails.api[renderRegistryWebviewSource].postconditions: 'a span whose class has no hljs- prefix (a sub-language wrapper) is read as classless text, not as a reason to reject'; PLAN t3 summary: 'a class with no hljs- prefix is classless'"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "vscode-plugin/package.json:4",
+            "message": "The only package.json change the plan calls for is adding highlight.js as a dev dependency. The diff also rewrites many unrelated strings, turning —, ⇒ and → escapes into literal characters in description, title and markdownDescription fields. The lockfile root also changes its engines (node >=22.13, vscode ^1.75.0 → ^1.141.0). These edits are outside the Story's scope and should be reverted or committed separately.",
+            "expectationRef": "PLAN t1 summary: 'Add highlight.js as a dev dependency…'; LLD dataModelChanges callSites list package.json only for the highlighter dependency"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts:12",
+            "message": "`type Run = { text: string; cls?: string }` declares an optional property without an explicit `| undefined`. The rule requires `cls?: string | undefined`, and the sibling chat-shell.test.ts follows it (`attach?: boolean | undefined`).",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts:17",
+            "message": "The `registry(opts: { withHljs?: boolean; hljs?: unknown })` parameter type declares `withHljs?` without `| undefined`. It should be `withHljs?: boolean | undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts:27",
+            "message": "`interface Row { ...; added?: number; removed?: number }` declares optional properties without `| undefined`. They should be `added?: number | undefined; removed?: number | undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/gen-webview-libs.mjs:71",
+            "message": "The generator script reports with `console.log` rather than a logger. This is a standalone build script outside the daemon's `shared/logger.js` tree, and it matches the existing `console.log` for the marked output in the same file, so this is idiom continuity rather than a clear breach.",
+            "expectationRef": "logger-not-console",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/render-registry.ts:571",
+            "message": "Live test not run, result unknown. The plan promises a live test that a diff in the chat is coloured by syntax, readable in a light and a dark theme, and stays plain for an unknown file type. There is no automated test for it and no build record, so there is no evidence it was carried out. The automated parts are covered and pass (diff-tokens.test.ts: 6/6; chat-theme.test.ts token-colour test). Whether the colours are readable in light and dark themes can only be checked by hand. Record a reported result with evidence at validate.",
+            "expectationRef": "a diff in the chat is coloured by syntax, readable in a light and a dark theme, and a file of an unknown type stays plain",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/render-registry.ts:376",
+            "message": "Live test not run, result unknown. The plan promises a live test that clicking a diff line opens the file at that line, beside the chat or in the editor group the review pane uses. There is no build record for it. The webview-to-host path is covered by diff-click.test.ts (4/4 pass), but real VS Code editor-group placement is only pinned indirectly through link-opener.test.ts. Record a reported result with evidence at validate.",
+            "expectationRef": "clicking a diff line opens the file at that line beside or in the editor group the review pane uses",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/gen-webview-libs.mjs:39",
+            "message": "Graph grounding caveat. Every changed file came back with empty testsReaching. These are diff-level file entities with no symbol or test edges, not real coverage gaps. I ran the Story's 8 test files directly (`npx tsx --test --test-reporter=tap` on webview-hljs, diff-highlight, diff-tokens, diff-click, fake-dom, chat-theme, chat-shell and link-markup): 55/55 pass. That run includes all 20 automatable promised tests. The generator script itself has no test that runs it. Only its committed output (webview-hljs.ts) is checked: no script-tag text, under the 250 KB budget, and the language subset is registered. Its escaping and budget-throw branches are never exercised directly. Acceptable for a build-time generator.",
+            "expectationRef": "gen-webview-libs.mjs (hljs bundling branch)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/render-registry.ts:582",
+            "message": "diffTokens rebuilds the diff-line classification that fillDiff also does: a leading '\\\\' marks a note, '-' a removed line, '+' an added line, anything else context. fillDiff applies the same rules in its own loop a few lines below. If one copy changes and the other doesn't, the token runs will land on the wrong rows. A side-mismatch is caught by the line-count check and falls back to plain text, but a class mismatch would not be caught. A small shared lineKind(c) helper used by both would remove the second copy.",
+            "counterpartRef": "fillDiff",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/render-registry.ts:383",
+            "message": "onDiffClick wraps its whole body in try{...}catch(x){} with an empty catch. Any failure while resolving the clicked line's path or line, or inside the LDEC sink, is dropped without a trace, so a broken click-to-open fails silently in the webview. diffTokens' catch is a deliberate fall-back to plain text. This one is not, so it should at least log, or narrow the try to the getSelection call.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/render-registry.ts:602",
+            "message": "diffTokens runs every time fillDiff runs: on first render, on each in-place redraw for a `replaces` row, and for every restored or paged-in diff row. Each run synchronously highlights the whole section twice, once for the old side and once for the new, even though only the first DIFF_LIMIT lines are shown until the widget opens. With many diff rows, such as a restored session or older pages, this all happens on the webview's main thread. The cost is bounded by the section size the host stores, so this is a performance note, not a correctness defect.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 10
+    }
+  }
+}

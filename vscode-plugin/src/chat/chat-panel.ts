@@ -35,6 +35,7 @@ import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
 import type { ChatQueueWorker, QueueAction, QueuedTurnRunner, WaitingOn } from './chat-queue-worker.js';
 import { projectOutbox } from './chat-outbox.js';
+import type { LinkOpener } from './link-opener.js';
 import {
   createEditGovernor,
   type EditGovernor,
@@ -117,6 +118,8 @@ export interface ChatPanelHostDeps {
    * vscode module. Absent -> no attach button, no chip row, and the attachment messages are ignored.
    */
   readonly attachments?: ChatAttachmentDeps | undefined;
+  /** Epic babd84c6e2fb480a Story S001: opens a clicked link or code reference. Absent -> the clicks are ignored. */
+  readonly links?: LinkOpener | undefined;
   /**
    * Epic E20261014613abdb3 Story S001: how long a queued message's turn may wait on an unanswered
    * approval or selection card before the message ends as stopped. Default CONTINUATION_WAIT_MS.
@@ -285,6 +288,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // chat switch lose nothing (a window reload does). `clientId` is the webview's own name for a
   // pasted image, echoed back so it can show the thumbnail it holds.
   const att = deps.attachments;
+  const links = deps.links;
   interface PendingAttachment {
     readonly ref: AttachmentRef;
     readonly clientId?: string | undefined;
@@ -2027,6 +2031,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         return;
       }
+      case 'open-link':
+        if (links !== undefined) void links.openLink(msg.url);
+        return;
+      case 'open-code-ref':
+        if (links !== undefined) void links.openCodeRef(msg.path, msg.line);
+        return;
       default:
         // docs-decision (S007) or any unknown/forward variant: accepted-but-ignored
         // seam — never an error.

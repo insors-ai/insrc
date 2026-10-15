@@ -315,7 +315,7 @@ test('extension wiring: the store is built on ~/.insrc/chat-attachments, the pic
   assert.match(b, /const chatAttachments = createAttachmentStore\(\{ root: join\(PATHS\.insrc, 'chat-attachments'\), logger: panelLog \}\);/);
 
   // The chat host gets the store and the two VS Code calls.
-  const seams = /createChatPanelHost\(\{\s*attachments: \{([\s\S]*?)\n      \},/.exec(b);
+  const seams = /createChatPanelHost\(\{\s*(?:links: linkOpener,\s*)?attachments: \{([\s\S]*?)\n      \},/.exec(b);
   assert.ok(seams, 'the attachments seams are passed to the chat host');
   assert.match(seams![1]!, /store: chatAttachments,/);
   assert.match(

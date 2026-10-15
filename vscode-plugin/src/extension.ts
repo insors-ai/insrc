@@ -64,6 +64,7 @@ import { createSessionOutput } from './chat/session-output.js';
 import { createAttachmentStore } from './chat/attachment-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
 import type { DiffView } from './chat/edit-governor.js';
+import { createLinkOpener } from './chat/link-opener.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
 import { createReviewPresenter } from './chat/review-presenter.js';
@@ -608,7 +609,30 @@ export function activate(context: vscode.ExtensionContext): void {
       log: panelLog,
       notify: (message) => void vscode.window.showWarningMessage(message),
     });
+    // The column a new review pane opens in: an open editor group without the chat tab (chat/review-column.ts).
+    const reviewColumn = (): vscode.ViewColumn | undefined => {
+      try {
+        const groups = vscode.window.tabGroups.all.map((g) => ({ viewColumn: g.viewColumn as number, isActive: g.isActive, tabs: g.tabs.map((t) => ({ input: t.input })) }));
+        return chooseReviewColumn(groups, CHAT_VIEW_TYPE) as vscode.ViewColumn | undefined;
+      } catch (err) {
+        panelLog.warn(`the editor groups could not be read for the review pane: ${String(err)}`);
+        return undefined;
+      }
+    };
+    // Epic babd84c6e2fb480a Story S001: a clicked link or code reference. An http(s) address opens in the browser; a file
+    // inside the workspace opens at its line in the group the review pane would use, else beside the chat.
+    const linkOpener = createLinkOpener({
+      root: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+      openExternal: (url) => vscode.env.openExternal(vscode.Uri.parse(url)),
+      openFile: (path, line) =>
+        vscode.commands.executeCommand('vscode.open', vscode.Uri.file(path), {
+          viewColumn: reviewColumn() ?? vscode.ViewColumn.Beside,
+          ...(line !== undefined ? { selection: new vscode.Range(new vscode.Position(line - 1, 0), new vscode.Position(line - 1, 0)) } : {}),
+        }),
+      log: panelLog,
+    });
     const chatHost = createChatPanelHost({
+      links: linkOpener,
       attachments: {
         store: chatAttachments,
         // The file dialog is VS Code's own; a dismissed dialog attaches nothing.
@@ -713,18 +737,9 @@ export function activate(context: vscode.ExtensionContext): void {
     // review IPCs (workflow.pending/artifactContent/reviewDecision). It only reads + acts on
     // daemon-tracked pending artifacts (k5), reuses the same webview channel seam, and
     // persists nothing extension-side (k3). Gated behind the same insrc.chat.enabled flag.
-    // The column a new review pane opens in: an open editor group without the chat tab (chat/review-column.ts).
-    const reviewColumn = (): vscode.ViewColumn | undefined => {
-      try {
-        const groups = vscode.window.tabGroups.all.map((g) => ({ viewColumn: g.viewColumn as number, isActive: g.isActive, tabs: g.tabs.map((t) => ({ input: t.input })) }));
-        return chooseReviewColumn(groups, CHAT_VIEW_TYPE) as vscode.ViewColumn | undefined;
-      } catch (err) {
-        panelLog.warn(`the editor groups could not be read for the review pane: ${String(err)}`);
-        return undefined;
-      }
-    };
     const reviewHost = createDocsReviewHost({
       client: reviewClient,
+      links: linkOpener,
       createPanel: ({ viewType, title, quiet }) => {
         // Story E20261013e62a9269:S001: a pane the chat opens on a presented document leaves the cursor where it is; the
         // command and the board open it as before. Standalone d27fe899: a new pane goes into an editor group that is already

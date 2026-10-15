@@ -21,6 +21,7 @@ import { MARKED_SRC } from './webview-marked.js';
 import { renderMarkdownStyle, DOCS_REVIEW_MARKDOWN_TOKENS } from './markdown-style.js';
 import { DOCS_COMMENTS_SOURCE } from './docs-review-comments.js';
 import { DOCS_LIST_SOURCE } from './docs-review-list.js';
+import type { LinkOpener } from './link-opener.js';
 import { deriveSectionIndex, createSectionResolver, type SectionIndex } from './docs-sections.js';
 
 /**
@@ -48,6 +49,8 @@ export interface DocsReviewHostDeps {
    * path; undefined when it may not or cannot be read. Absent means no companion is shown.
    */
   readonly readCompanion?: ((relPath: string) => Promise<string | undefined>) | undefined;
+  /** Epic babd84c6e2fb480a Story S001: opens a clicked link or code reference. Absent -> the clicks are ignored. */
+  readonly links?: LinkOpener | undefined;
   /**
    * Story E202610131f74c81f:S001: watches repo-relative files and calls onChange when any of
    * them is created, changed or deleted. Absent means the pane does not follow changes made
@@ -2341,6 +2344,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       case 'open-companion':
         if (typeof msg.artifactId !== 'string' || typeof msg.relPath !== 'string') return;
         void openCompanion(msg.artifactId, msg.relPath);
+        return;
+      case 'open-link':
+        if (deps.links !== undefined) void deps.links.openLink(msg.url);
+        return;
+      case 'open-code-ref':
+        if (deps.links !== undefined) void deps.links.openCodeRef(msg.path, msg.line);
         return;
       default:
         // any chat-slice / forward variant: accepted-but-ignored seam — never an error.

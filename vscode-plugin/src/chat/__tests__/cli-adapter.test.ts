@@ -12,7 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
 import { tick, waitFor } from './fixtures.js';
 import { defaultProcessStartTime } from '../session-lock.js';
@@ -463,6 +463,67 @@ test('an input that is not a list of at most twenty non-empty strings leaves pre
   const { deps } = depsFor({ lines: claudeToolUse('mcp__insrc__insrc_present', { documents: [] }) });
   const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
   assert.ok(events.some((e) => e.kind === 'tool-call' && e.mcp?.name === 'insrc_present'));
+});
+
+const codexItems = (...items: unknown[]): string[] => [
+  JSON.stringify({ type: 'thread.started', thread_id: 't' }),
+  ...items.map((item) => JSON.stringify({ type: 'item.completed', item })),
+  JSON.stringify({ type: 'turn.completed' }),
+];
+const codexEvents = async (lines: string[]): Promise<TurnEvent[]> => {
+  const { deps } = depsFor({ lines });
+  return collect(createProviderRegistry(deps).get('codex').run(REQ({ provider: 'codex' })));
+};
+const codexMcp = (over: Record<string, unknown>) => ({
+  id: 'item_1', type: 'mcp_tool_call', server: 'stub', tool: 'insrc_present', arguments: { documents: ['LLD-abc-S001', 'docs/x.md'] },
+  result: null, error: null, status: 'completed', ...over,
+});
+
+test('the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one', async () => {
+  // A real `codex exec --json` run (codex-cli 0.162.1) that called an MCP tool named insrc_present.
+  const lines = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'codex-mcp-tool-call.jsonl'), 'utf8')
+    .split('\n')
+    .filter((l) => l.trim() !== '');
+  const started = lines.filter((l) => (JSON.parse(l) as { type: string }).type === 'item.started');
+  assert.equal(started.length, 1, 'the capture holds the started item too');
+  assert.equal(((JSON.parse(started[0]!) as { item: { arguments: unknown } }).item.arguments as { documents: string[] }).documents.length, 2, 'and it carries the arguments');
+  const calls = (await codexEvents(lines)).filter((e) => e.kind === 'tool-call');
+  assert.equal(calls.length, 1, 'one call, though the CLI reported it twice');
+  const call = calls[0] as { tool: string; present?: readonly string[]; mcp?: { server: string; name: string }; callId?: string };
+  assert.deepEqual(call.present, ['LLD-abc-S001', 'docs/x.md']);
+  assert.deepEqual(call.mcp, { server: 'stub', name: 'insrc_present' });
+  assert.equal(call.tool, 'insrc_present');
+  assert.equal(call.callId, 'item_1');
+});
+
+test('a Codex mcp_tool_call insrc_present item with status failed still sets present', async () => {
+  const failed = codexMcp({ status: 'failed', error: { message: 'MCP tool call requires approval, but approval policy is never' } });
+  const calls = (await codexEvents(codexItems(failed))).filter((e) => e.kind === 'tool-call') as { present?: readonly string[] }[];
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0]!.present, ['LLD-abc-S001', 'docs/x.md']);
+});
+
+test('a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before', async () => {
+  const none = async (item: unknown): Promise<TurnEvent> => {
+    const calls = (await codexEvents(codexItems(item))).filter((e) => e.kind === 'tool-call');
+    assert.equal(calls.length, 1, JSON.stringify(item));
+    return calls[0]!;
+  };
+  for (const item of [
+    codexMcp({ tool: 'insrc_workflow_approve' }),
+    codexMcp({ tool: 'mcp__stub__insrc_present' }),
+    codexMcp({ arguments: JSON.stringify({ documents: ['LLD-abc-S001'] }) }),
+    codexMcp({ arguments: { documents: [] } }),
+    codexMcp({ arguments: ['LLD-abc-S001'] }),
+    codexMcp({ arguments: null }),
+  ]) {
+    assert.equal((await none(item) as { present?: unknown }).present, undefined, JSON.stringify(item));
+  }
+  // The unchanged item types still map exactly as before: no present, no mcp.
+  const cmd = await none({ id: 'c1', type: 'command_execution', command: 'ls -la', documents: ['LLD-abc-S001'] }) as { tool: string; command?: string; present?: unknown; mcp?: unknown; callId?: string };
+  assert.deepEqual({ tool: cmd.tool, command: cmd.command, present: cmd.present, mcp: cmd.mcp, callId: cmd.callId }, { tool: 'ls -la', command: 'ls -la', present: undefined, mcp: undefined, callId: 'c1' });
+  const plain = await none({ type: 'tool_call', tool: 'insrc_present', arguments: { documents: ['LLD-abc-S001'] } }) as { tool: string; present?: unknown; mcp?: unknown };
+  assert.deepEqual({ tool: plain.tool, present: plain.present, mcp: plain.mcp }, { tool: 'insrc_present', present: undefined, mcp: undefined });
 });
 
 test('codex: a command_execution item sets command from item.command', async () => {

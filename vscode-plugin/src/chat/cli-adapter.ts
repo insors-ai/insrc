@@ -769,6 +769,30 @@ const codexMapper: ProviderMapper = {
         const applied = item['status'] !== 'failed';
         return paths.map((path): TurnEvent => ({ kind: 'file-edit', turnId, path, diff: { path, hunks: [] }, ...(applied ? { applied: true as const } : {}) }));
       }
+      if (itemType === 'mcp_tool_call' && typeof item['tool'] === 'string' && item['tool'] !== '') {
+        // Story E20261015067b05b6:S001: a codex MCP call (codex-cli 0.162.1: server, a bare tool name
+        // and an `arguments` object, reported on item.started AND item.completed, even when the call
+        // failed). Only the completed item is read here, so a call declares once. The declaration is
+        // the call's own arguments, never its result.
+        const name = item['tool'] as string;
+        const server = typeof item['server'] === 'string' && item['server'] !== '' ? (item['server'] as string) : undefined;
+        const args = item['arguments'];
+        const present =
+          name === PRESENT_TOOL && typeof args === 'object' && args !== null && !Array.isArray(args)
+            ? declaredDocuments((args as Record<string, unknown>)['documents'])
+            : undefined;
+        const callId = typeof item['id'] === 'string' && item['id'] !== '' ? (item['id'] as string) : undefined;
+        return [
+          {
+            kind: 'tool-call',
+            turnId,
+            tool: name,
+            ...(server !== undefined ? { mcp: { server, name } } : {}),
+            ...(present !== undefined ? { present } : {}),
+            ...(callId !== undefined ? { callId } : {}),
+          },
+        ];
+      }
       if (itemType === 'command_execution' || itemType === 'tool_call') {
         // S001 sc2: carry the actual command (codex `item.command`) as the additive command
         // field, while `tool` keeps its existing label fallback. Command-less items omit it (k2).

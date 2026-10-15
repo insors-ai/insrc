@@ -94,10 +94,22 @@ scope, `path?`), `component-dependency` (module dependency topology, `path?`),
 ### Approval discipline (applies to every workflow artifact)
 
 Never auto-approve and never send the user to the TUI. When a `done` response
-carries a `pendingApproval` block, PRESENT a concise summary and ASK the user;
-only on their explicit in-chat yes call
-`insrc_workflow_approve({ artifactPath })` (or `{ epicHash }` to batch). Review
-before you approve — see `insrc_guide({ workflow: 'review' })`.
+carries a `pendingApproval` block (or a build or review step leaves a record to
+approve), first DECLARE what you are about to show: call
+`insrc_present({ documents: [...] })` with each document's artifact id (for
+example `LLD-<hash>-S001`) or repo-relative path. Then PRESENT a concise summary
+(give the document's path in your message too) and ASK the user; only on their
+explicit in-chat yes call `insrc_workflow_approve({ artifactPath })` (or
+`{ epicHash }` to batch). Review before you approve — see
+`insrc_guide({ workflow: 'review' })`.
+
+The chat opens exactly the documents you declare with `insrc_present`; it does
+not work out what to open from tool output, so a document you do not declare is
+not opened for the user. The answer lists each name as `presented` or
+`notPending` (misspelt, already approved, or with no document file yet): correct
+a `notPending` name and call again. Declaring is steering-only for now, and a
+missed call shows up as nothing opening; if that proves unreliable, revisit it
+(a reminder from the daemon in tool responses, or detection of a missing call).
 
 <!-- insrc:guide:triage:start -->
 ## triage — size a feature request and route it (`insrc_triage`)
@@ -235,7 +247,8 @@ with `invalid-test-mapping` and nothing is run. The test record is a record:
 it is never approved.
 
 After the build has produced its changes, run `code-review` over the changed
-code, PRESENT the verdict, then COMPLETE the Story by approving its **BUILD**
+code, DECLARE the BUILD record and the code review with `insrc_present`, PRESENT
+the verdict, then COMPLETE the Story by approving its **BUILD**
 artifact with `insrc_workflow_approve` on the BUILD md/path. BUILD approval is
 the code-review-gated completion act. A Story with NO code review, or one
 reviewed by the party that wrote the code, is always withheld into `skipped[]`.
@@ -285,8 +298,8 @@ Either way the review stamps `meta.review`, and **approval requires it**: a
 DEF, HLD or LLD with no review, or with a review done by the party that
 authored it, is withheld, and so is one whose verdict is `block` (unresolved
 HIGH/MED findings). Resolve the blocking findings (apply / accept-with-note /
-override), THEN present-ask-approve with
-`insrc_workflow_approve({ artifactPath })`. A withheld artifact comes back from
+override), THEN declare the document with `insrc_present`, present-ask-approve
+with `insrc_workflow_approve({ artifactPath })`. A withheld artifact comes back from
 approve in `skipped[]` with a reason (relay it); pass `overrideReview` only with
 the user's explicit override reason. An ISSUE, SPEC or PLAN needs no review,
 only the user's approval.

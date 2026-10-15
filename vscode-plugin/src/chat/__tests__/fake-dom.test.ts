@@ -8,7 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { allOf, bodyStub, fire, textNode } from './fake-dom.js';
+import { allOf, bodyStub, fire, textNode, textOf } from './fake-dom.js';
 
 test('the shared fake DOM records writes, parses and traps innerHTML, clears children on textContent, and models namespaces, text nodes, parent and sibling links, moves, querying and listeners', () => {
   // Write recording, in order, for every assignment the suites assert on.
@@ -118,4 +118,26 @@ test('fake-dom nodes carry scrollTop, scrollHeight and clientHeight', () => {
   el.scrollTop = el.scrollHeight - el.clientHeight;
   assert.deepEqual([el.scrollTop, el.scrollHeight, el.clientHeight], [600, 900, 300], 'plain numbers a test sets and code reads back');
   assert.deepEqual([bodyStub('p').scrollTop, textNode('t').scrollHeight], [0, 0], 'each node has its own');
+});
+
+// Epic 00d80121c593053c Story S001 t2: textOf reads descendants' text as the real textContent does.
+test("the shared fake DOM's textContent joins its children and still clears them when set", () => {
+  const el = bodyStub('div');
+  el.appendChild(textNode('a '));
+  const inner = bodyStub('span');
+  inner.appendChild(textNode('b'));
+  el.appendChild(inner);
+  el.appendChild(textNode(' c'));
+  assert.equal(textOf(el), 'a b c', 'the text of the children, nested elements included');
+  assert.equal(textOf(bodyStub('p', '', 'own')), 'own', 'an element with no children reads its own text');
+  assert.equal(textOf(textNode('t')), 't');
+  // The node's own textContent is still its own text, which is what the suites that collect it over every element read.
+  assert.equal(el.textContent, '');
+  assert.equal(bodyStub('p', '', 'own').textContent, 'own');
+  // Setting it still replaces the children.
+  el.textContent = 'plain';
+  assert.equal(el.children.length, 0);
+  assert.equal(textOf(el), 'plain');
+  el.appendChild(textNode('x'));
+  assert.equal(textOf(el), 'x', 'children added afterwards are what it then reads');
 });

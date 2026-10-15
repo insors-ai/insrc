@@ -20,6 +20,8 @@
  *   node is a child, and removeChild that the child is present; removal and
  *   replacing content clear the parent), querySelector('#id') — which throws a SyntaxError
  *   on a digit-leading id, as the real DOM does — and querySelectorAll by tag;
+ * - textOf(node), which reads the text of a node's descendants as the real textContent does (the node's own
+ *   textContent stays its own text: suites collect it over every element and rely on that);
  * - get/removeAttribute and childNodes (the same list as children, text nodes included);
  * - listeners as arrays per type, and scrollIntoView.
  *
@@ -87,6 +89,12 @@ export function textNode(data: string): BodyStub {
   const n = makeNode(3, '#text', '', data, null);
   n.data = data;
   return n;
+}
+
+/** The text of a node and its descendants, as the real DOM's textContent reads it. */
+export function textOf(n: BodyStub): string {
+  if (n.nodeType === 3) return n.data;
+  return n.children.length > 0 ? n.children.map(textOf).join('') : n.textContent;
 }
 
 /** Every element in the tree in pre-order, root first, skipping text nodes. */

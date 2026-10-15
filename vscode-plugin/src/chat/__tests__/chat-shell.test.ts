@@ -16,7 +16,7 @@ import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderRegistry, StreamAdapter } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { createAttachmentStore } from '../attachment-store.js';
-import { allOf, bodyStub, fire, type BodyStub } from './fake-dom.js';
+import { allOf, bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
 import { fakeAttachmentFs } from './fake-attachment-fs.js';
 
 const ROW_PX = 10;
@@ -95,7 +95,7 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
   const intervals: Array<() => void> = [];
   const context: Record<string, unknown> = {
     window: { addEventListener: (type: string, l: (e: unknown) => void) => { if (type === 'message') listeners.push(l); } },
-    document: { getElementById, createElement: (tag: string) => dress(bodyStub(tag)), addEventListener: () => {} },
+    document: { getElementById, createElement: (tag: string) => dress(bodyStub(tag)), createTextNode: (t: string) => textNode(t), addEventListener: () => {} },
     // Messages cross from the script's context; copy them into this one so they compare by value.
     acquireVsCodeApi: () => ({ postMessage: (m: { payload: unknown }) => { sent.push(JSON.parse(JSON.stringify(m.payload)) as Record<string, unknown>); } }),
     marked,

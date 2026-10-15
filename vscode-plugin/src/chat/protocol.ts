@@ -300,6 +300,10 @@ export type WebviewToHost =
   | { readonly type: 'pick-attachments' }
   | { readonly type: 'remove-attachment'; readonly attachmentId: string }
   | { readonly type: 'open-attachment'; readonly attachmentId: string }
+  // Epic babd84c6e2fb480a Story S001: a clicked link or code reference. The page only reports what
+  // was clicked; the host validates it (http/https only; a path inside the workspace) and opens it.
+  | { readonly type: 'open-link'; readonly url: string }
+  | { readonly type: 'open-code-ref'; readonly path: string; readonly line?: number | undefined }
   // Epic E20261014613abdb3 Story S002: an outbox action on one row ('outbox-retry-now' is Story S004's).
   | OutboxAction;
 
@@ -348,6 +352,8 @@ export const WEBVIEW_TO_HOST_TYPES = [
   'pick-attachments',
   'remove-attachment',
   'open-attachment',
+  'open-link',
+  'open-code-ref',
   'open-companion',
   'outbox-cancel',
   'outbox-dismiss',

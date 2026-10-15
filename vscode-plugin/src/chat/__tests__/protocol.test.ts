@@ -228,3 +228,16 @@ test('protocol: the host-to-webview and webview-to-host type lists include the o
   assert.equal(new Set(WEBVIEW_TO_HOST_TYPES).size, WEBVIEW_TO_HOST_TYPES.length);
   assert.equal(new Set(HOST_TO_WEBVIEW_TYPES).size, HOST_TO_WEBVIEW_TYPES.length);
 });
+
+// Epic babd84c6e2fb480a Story S001 t1: the two link messages.
+test('protocol allowlist includes open-link and open-code-ref', () => {
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-link'), "'open-link' is listed");
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-code-ref'), "'open-code-ref' is listed");
+  assert.equal(new Set(WEBVIEW_TO_HOST_TYPES).size, WEBVIEW_TO_HOST_TYPES.length);
+  // The shapes, as the compiler accepts them: a url, and a path with or without a line.
+  const link: WebviewToHost = { type: 'open-link', url: 'https://example.com' };
+  const ref: WebviewToHost = { type: 'open-code-ref', path: 'src/foo.ts', line: 42 };
+  const bare: WebviewToHost = { type: 'open-code-ref', path: 'src/foo.ts' };
+  assert.deepEqual([link.type, ref.type, bare.type], ['open-link', 'open-code-ref', 'open-code-ref']);
+  assert.deepEqual(Object.keys(bare), ['type', 'path']);
+});

@@ -32,6 +32,20 @@ declare module 'vscode' {
     export function parse(value: string): Uri;
   }
 
+  /** A zero-based line and character in a document. */
+  export class Position {
+    constructor(line: number, character: number);
+    readonly line: number;
+    readonly character: number;
+  }
+
+  /** A span of a document, used to select a line when a file is opened. */
+  export class Range {
+    constructor(start: Position, end: Position);
+    readonly start: Position;
+    readonly end: Position;
+  }
+
   /** Supplies read-only content for a custom-scheme document (S006 baseline diff side). */
   export interface TextDocumentContentProvider {
     readonly onDidChange?: Event<Uri>;
@@ -167,6 +181,8 @@ declare module 'vscode' {
     export const appName: string;
     /** The running editor's uri scheme (e.g. 'vscode', 'cursor'). */
     export const uriScheme: string;
+    /** Open a uri in the user's default application (an http(s) link opens in the browser). */
+    export function openExternal(target: Uri): Thenable<boolean>;
   }
 
   export interface WorkspaceFolder {

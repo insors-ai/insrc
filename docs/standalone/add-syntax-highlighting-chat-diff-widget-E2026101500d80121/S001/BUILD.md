@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-15T09:07:53.194Z  ·  **Updated:** 2026-10-15T09:31:33.572Z
+**Standalone:** yes  ·  **Created:** 2026-10-15T09:07:53.194Z  ·  **Updated:** 2026-10-15T09:37:05.780Z
 
-**Commit:** 2c3b52fa
+**Commit:** 9e31763f
 
 ## Summary
 
@@ -24,4 +24,23 @@ Diffs in the chat's diff widget are coloured by syntax and open the file at the 
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-00d80121c593053c-S001.json` — **insrc-build** (2026-10-15T09:31:33.572Z)
+- `.insrc/artifacts/CR-00d80121c593053c-S001.json` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `.insrc/artifacts/PLAN-00d80121c593053c-S001.json` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `docs/standalone/add-syntax-highlighting-chat-diff-widget-E2026101500d80121/S001/CR.md` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `docs/standalone/add-syntax-highlighting-chat-diff-widget-E2026101500d80121/S001/PLAN.md` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/gen-webview-libs.mjs` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/package.json` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/diff-click.test.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/diff-highlight.test.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/diff-tokens.test.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/fake-dom.test.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/fake-dom.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/link-markup.test.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/__tests__/webview-hljs.test.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/diff-highlight.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/render-registry.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)
+- `vscode-plugin/src/chat/webview-hljs.ts` — **insrc-build** (2026-10-15T09:37:05.780Z)

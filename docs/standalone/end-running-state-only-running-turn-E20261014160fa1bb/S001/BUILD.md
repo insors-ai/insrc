@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-15T04:44:56.186Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-15T04:44:56.186Z  ·  **Updated:** 2026-10-15T04:48:09.043Z
 
-**Commit:** 0aa8d514
+**Commit:** 9344d0c8
 
 ## Scope
 
@@ -12,4 +12,23 @@ Fix ISSUE-160fa1bb7a8604ad: the chat page ends the running state (idle widget, S
 
 ## Triage rationale
 
-Small bugfix, one handler in chat-panel.ts (ISSUE-160fa1bb7a8604ad).
+Small bugfix, one handler in chat-panel.ts.
+
+## Summary
+
+Fix for ISSUE-160fa1bb7a8604ad. The host marks the done that closes an informational line (postInfo and persistInfo in chat-panel.ts) with info: true on the turn-event message (an additive optional field in protocol.ts). The page's turn-event handler now runs setRunning(false) and setIdle() for a done or error only when the message is not marked, so a retry note, sign-in note, queue note or approval note leaves a running turn running; a turn's own done or error and Stop still end it, and the informational lines still render. Tests: chat-shell.test.ts drives turn-running, then a marked informational done (still working, Stop), then the turn's done and error (idle, Send); chat-queue-runner.test.ts checks the retry line closes with a marked done; chat-panel.test.ts's pinned handler regex is updated. Mutation checks: removing the page's !m.info condition fails the shell test; marking the persistInfo done false fails the runner test. The reproduction was first seen with a temporary probe (a turn-running, then a done under another turn id, turned the widget idle and the button to Send), now a permanent test. Tests run file by file: 1355 tests in 92 files, 2 failures (the manifest-catalog tests that were already failing). NOTE: running the whole glob in one go sometimes drops a test file silently (counts varied between 1313 and 1348 on identical runs), so the full-suite number from a single glob run is not reliable. NOT SEEN IN A REAL VS CODE.
+
+## Tasks validated
+
+- ✓ `S001`
+
+**Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
+
+## Changes
+
+- `.insrc/artifacts/ISSUE-160fa1bb7a8604ad.json` — **insrc-build** (2026-10-15T04:48:09.043Z)
+- `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
+- `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
+- `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
+- `vscode-plugin/src/chat/chat-panel.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)
+- `vscode-plugin/src/chat/protocol.ts` — **insrc-build** (2026-10-15T04:48:09.043Z)

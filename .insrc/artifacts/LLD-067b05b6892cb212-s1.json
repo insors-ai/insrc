@@ -253,6 +253,13 @@
         "choice": "Accept steering-only enforcement",
         "rationale": "User: steering only is fine for now; the PLAN must carry a note that this may need to be revisited (e.g. a daemon-side reminder or missing-call detection) if steering-only proves unreliable.",
         "resolvedAt": "2026-10-15T10:33:02.190Z"
+      },
+      "q8bf7921c": {
+        "question": "The Codex shape is verified against codex-cli 0.162.1 only; a newer Codex that changes the item type, the tool naming or the arguments shape would open nothing until the mapper and the pinned fixture are updated.",
+        "status": "resolved",
+        "choice": "Accept the pin, document the limit",
+        "rationale": "User chose option 1.",
+        "resolvedAt": "2026-10-15T10:33:49.957Z"
       }
     }
   },

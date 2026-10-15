@@ -288,6 +288,8 @@ When a workflow, build or review tool writes a document for approval, the daemon
   - **resolved**: Accept derived ac1-ac4 as-is — User chose option 1. _(2026-10-15T10:31:35.250Z)_
 - `q89143172` — The controller must call insrc_present for anything to open; the steering text is the only enforcement, and a missing call is visible as nothing opening.
   - **resolved**: Accept steering-only enforcement — User: steering only is fine for now; the PLAN must carry a note that this may need to be revisited (e.g. a daemon-side reminder or missing-call detection) if steering-only proves unreliable. _(2026-10-15T10:33:02.190Z)_
+- `q8bf7921c` — The Codex shape is verified against codex-cli 0.162.1 only; a newer Codex that changes the item type, the tool naming or the arguments shape would open nothing until the mapper and the pinned fixture are updated.
+  - **resolved**: Accept the pin, document the limit — User chose option 1. _(2026-10-15T10:33:49.957Z)_
 
 ## Citations
 

@@ -27,6 +27,7 @@ import type { TurnEvent } from './stream-events.js';
 import { MARKER_CLASS } from './markers.js';
 import { COLLAPSED_LINES } from './diff-sections.js';
 import { LINK_MARKUP_SOURCE } from './link-markup.js';
+import { DIFF_HIGHLIGHT_SOURCE } from './diff-highlight.js';
 
 /** The two conversational roles a message row can carry. */
 export type ChatRole = 'user' | 'assistant';
@@ -550,6 +551,29 @@ export function renderRegistryWebviewSource(): string {
     // is remembered under its row's sid so a later version of the section (a row with `replaces`)
     // rebuilds it in place. className/textContent only (k1, CSP-safe); open/closed and hidden are
     // classes, never inline styles.
+    // Epic 00d80121c593053c Story S001: the language map and the highlighter-markup scanner (diff-highlight.ts), then
+    // diffTokens, which colours a section: the old side (context and removed lines) and the new side (context and
+    // added lines) are tokenised as two texts, so a comment or string that spans lines stays right and a removed
+    // line is never read as part of the added text. Context lines take the new side's runs. It answers undefined
+    // (the widget then writes plain text, as before) for an unknown language, a missing highlighter, a throw, a
+    // scanner refusal or a line count that does not match.
+    DIFF_HIGHLIGHT_SOURCE +
+    `function diffTokens(path,lines){try{` +
+    `if(typeof hljs==='undefined'||!hljs||typeof hljs.highlight!=='function')return undefined;` +
+    `var lang=diffLang(path);if(lang===undefined)return undefined;` +
+    `var oT=[],oI=[],nT=[],nI=[];` +
+    `for(var i=0;i<lines.length;i++){var l=String(lines[i]);var c=l.charAt(0);if(c==='\\\\')continue;var t=l.slice(1);` +
+    `if(c==='-'){oT.push(t);oI.push(i);}else if(c==='+'){nT.push(t);nI.push(i);}else{oT.push(t);oI.push(i);nT.push(t);nI.push(i);}}` +
+    `var out=new Array(lines.length);` +
+    `function side(texts,idx,keep){if(!texts.length)return true;` +
+    `var runs=hljsRuns(hljs.highlight(texts.join('\\n'),{language:lang,ignoreIllegals:true}).value);` +
+    `if(runs===undefined||runs.length!==texts.length)return false;` +
+    `for(var j=0;j<idx.length;j++){if(keep(String(lines[idx[j]]).charAt(0)))out[idx[j]]=runs[j];}return true;}` +
+    `if(!side(oT,oI,function(c){return c==='-';}))return undefined;` +
+    `if(!side(nT,nI,function(c){return c!=='-';}))return undefined;` +
+    `return out;}catch(e){return undefined;}}` +
+    `function fillText(span,runs){for(var k=0;k<runs.length;k++){var u=runs[k];` +
+    `span.appendChild(u.cls?dEl('span',u.cls,u.text):document.createTextNode(u.text));}}` +
     `var DIFFS={};var DIFF_LIMIT=${COLLAPSED_LINES};var DIFF_CLS='insrc-term-diff insrc-diffw';` +
     `function dEl(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}` +
     `function fillDiff(box,row,open){` +
@@ -563,12 +587,14 @@ export function renderRegistryWebviewSource(): string {
     `box.appendChild(head);var body=dEl('div','insrc-diffw__body');box.appendChild(body);` +
     `var lines=row.lines||[];` +
     `if(row.binary||lines.length===0){box.className=DIFF_CLS+' insrc-diffw--empty';body.textContent=row.binary?'binary file changed':'no lines';return box;}` +
+    `var toks=diffTokens(p,lines);` +
     `var oldNo=row.oldStart||0,newNo=row.newStart||0;` +
     `for(var i=0;i<lines.length;i++){var l=String(lines[i]);var c=l.charAt(0);var note=c==='\\\\';` +
     `var r=dEl('div','insrc-diffw__line insrc-diffw__line--'+(c==='+'?'add':c==='-'?'del':note?'note':'ctx')+(i>=DIFF_LIMIT?' insrc-diffw__line--more':''));` +
     `r.appendChild(dEl('span','insrc-diffw__num',note?'':String(c==='-'?oldNo:newNo)));` +
     `r.appendChild(dEl('span','insrc-diffw__sign',c==='+'?'+':c==='-'?'\\u2212':''));` +
-    `r.appendChild(dEl('span','insrc-diffw__text',note?l:l.slice(1)));` +
+    `var tx=dEl('span','insrc-diffw__text');var runs=toks&&toks[i];` +
+    `if(runs)fillText(tx,runs);else tx.textContent=note?l:l.slice(1);r.appendChild(tx);` +
     `if(c==='-')oldNo++;else if(c==='+')newNo++;else if(!note){oldNo++;newNo++;}` +
     `body.appendChild(r);}` +
     `var omitted=row.omitted>0?row.omitted:0;` +

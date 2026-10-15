@@ -4968,11 +4968,11 @@ const prompts = (runs: readonly GatedRun[]): string[] => runs.map((r) => r.req.p
 // ---------------------------------------------------------------------------
 
 interface PresenterSpy {
-  /** begin#n, result#n:<output>, end#n, in the order the host made the calls. */
+  /** begin#n, declared#n:<documents>, end#n, in the order the host made the calls. */
   readonly calls: string[];
   readonly presenter: ReviewPresenter;
 }
-function presenterSpy(o: { throwOn?: 'begin' | 'result' | 'end' | 'declared'; outcome?: DeclaredOutcome } = {}): PresenterSpy {
+function presenterSpy(o: { throwOn?: 'begin' | 'end' | 'declared'; outcome?: DeclaredOutcome } = {}): PresenterSpy {
   const calls: string[] = [];
   let n = 0;
   return {
@@ -4987,10 +4987,6 @@ function presenterSpy(o: { throwOn?: 'begin' | 'result' | 'end' | 'declared'; ou
             calls.push(`declared#${id}:${documents.join(',')}`);
             if (o.throwOn === 'declared') throw new Error('presenter down');
             return o.outcome ?? { opened: [...documents], notPending: [], unreadable: false };
-          },
-          toolResult: (output) => {
-            calls.push(`result#${id}:${output}`);
-            if (o.throwOn === 'result') throw new Error('presenter down');
           },
           end: () => {
             calls.push(`end#${id}`);
@@ -5028,7 +5024,7 @@ const resultOf = (n: number, output: string, isError = false): TurnEvent =>
   ({ kind: 'tool-result', turnId: `t${n}`, command: 'run', output, ...(isError ? { isError: true } : {}) }) as TurnEvent;
 const dones = (fc: FakeChannel): number => turnEvents(fc).filter((e) => e.kind === 'done' || e.kind === 'error').length;
 
-test('chat host: a run turn begins a presenter turn just before it starts, passes each tool result that is not an error, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn', async () => {
+test('chat host: a run turn begins a presenter turn just before it starts, passes the documents a tool call declares and no tool result, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn', async () => {
   // A TURN THAT COMPLETES.
   const spy = presenterSpy();
   const h = presentedHarness(spy.presenter);
@@ -5044,23 +5040,24 @@ test('chat host: a run turn begins a presenter turn just before it starts, passe
   await waitFor(() => h.runs.length === 1);
   assert.deepEqual(spy.calls, ['begin#1'], 'begun once the message is accepted, before any event');
   h.runs[0]!.feed({ kind: 'assistant-delta', turnId: 't1', text: 'working' });
+  h.runs[0]!.feed(presentCall(1, ['LLD-x-S001']));
   h.runs[0]!.feed(resultOf(1, '{"pendingApproval":{"artifactPath":"/repo/docs/x/LLD.md"}}'));
   h.runs[0]!.feed(resultOf(1, 'Error: tool failed', true));
   h.runs[0]!.feed(resultOf(1, 'ok'));
   await waitFor(() => turnEvents(h.fc).filter((e) => e.kind === 'tool-result').length === 3);
-  assert.deepEqual(spy.calls, ['begin#1', 'result#1:{"pendingApproval":{"artifactPath":"/repo/docs/x/LLD.md"}}', 'result#1:ok'], "each tool result's whole text, not the failed one, nothing else");
+  assert.deepEqual(spy.calls, ['begin#1', 'declared#1:LLD-x-S001'], 'the declared documents only: no tool result, whatever it holds');
   h.runs[0]!.feed(doneOf(1));
   await waitFor(() => spy.calls.includes('end#1'));
   assert.equal(spy.calls.filter((c) => c === 'end#1').length, 1);
   // The chat itself is as before: every event posted.
-  assert.deepEqual(turnEvents(h.fc).map((e) => e.kind).filter((k) => k !== 'status'), ['assistant-delta', 'tool-result', 'tool-result', 'tool-result', 'done']);
+  assert.deepEqual(turnEvents(h.fc).map((e) => e.kind).filter((k) => k !== 'status'), ['assistant-delta', 'tool-call', 'tool-result', 'tool-result', 'tool-result', 'done']);
 
   // A TURN THAT FAILS.
   h.fc.send(env('submit-turn', { text: 'again' }));
   await waitFor(() => h.runs.length === 2);
   h.runs[1]!.feed({ kind: 'error', turnId: 't2', message: 'boom' } as TurnEvent);
   await waitFor(() => spy.calls.includes('end#2'));
-  assert.deepEqual(spy.calls.slice(3), ['end#1', 'begin#2', 'end#2']);
+  assert.deepEqual(spy.calls.slice(2), ['end#1', 'begin#2', 'end#2']);
 
   // A TURN THAT IS STOPPED: it is ended when its run is over.
   h.fc.send(env('submit-turn', { text: 'long one' }));
@@ -5070,7 +5067,7 @@ test('chat host: a run turn begins a presenter turn just before it starts, passe
   // Its process ends a moment later.
   h.runs[2]!.feed(doneOf(3));
   await waitFor(() => spy.calls.includes('end#3'));
-  assert.deepEqual(spy.calls.slice(6), ['begin#3', 'end#3'], 'ended once its run is over');
+  assert.deepEqual(spy.calls.slice(5), ['begin#3', 'end#3'], 'ended once its run is over');
 
   // A TURN THAT IS SUPERSEDED: the next begins while it runs; it is ended when its process ends.
   const sup = presenterSpy();
@@ -5096,16 +5093,17 @@ test('chat host: a run turn begins a presenter turn just before it starts, passe
   await waitFor(() => dones(none.fc) === 1);
 
   // A PRESENTER THAT THROWS, at each of its three calls: logged, and the turn goes on to its end.
-  for (const throwOn of ['begin', 'result', 'end'] as const) {
+  for (const throwOn of ['begin', 'declared', 'end'] as const) {
     const bad = presenterSpy({ throwOn });
     const b = presentedHarness(bad.presenter);
     b.fc.send(env('submit-turn', { text: 'go' }));
     await waitFor(() => b.runs.length === 1);
+    b.runs[0]!.feed(presentCall(1, ['LLD-x-S001']));
     b.runs[0]!.feed(resultOf(1, 'ok'));
     b.runs[0]!.feed(doneOf(1));
     await waitFor(() => dones(b.fc) === 1);
     await runsSettled();
-    assert.deepEqual(turnEvents(b.fc).map((e) => e.kind).filter((k) => k !== 'status'), ['tool-result', 'done'], `${throwOn}: the turn's events are posted as usual`);
+    assert.deepEqual(turnEvents(b.fc).map((e) => e.kind).filter((k) => k !== 'status'), ['tool-call', 'tool-result', 'done'], `${throwOn}: the turn's events are posted as usual`);
     assert.equal(b.errors.filter((e) => /review presenter failed/.test(e)).length, 1, `${throwOn}: logged`);
     // The chat takes the next message.
     b.fc.send(env('submit-turn', { text: 'next' }));
@@ -5115,7 +5113,7 @@ test('chat host: a run turn begins a presenter turn just before it starts, passe
   }
 });
 
-test("chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its tool results and ends it when the follow ended; a ready message during a run turn begins nothing, and the run turn's end still opens a newly pending document", async () => {
+test("chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its declared documents and ends it when the follow ended; a ready message during a run turn begins nothing and reads nothing, and the run turn opens only a document it declares", async () => {
   // A FOLLOWED TURN: this window's own saved turn, picked up after a reload.
   const spy = presenterSpy();
   const { store, id } = storeWithLiveTurn(1);
@@ -5127,11 +5125,11 @@ test("chat host: a followed turn begins a presenter turn on its first event, not
   f.resumes[0]!.feed({ kind: 'assistant-delta', turnId: 't1', text: 'still going' });
   await waitFor(() => spy.calls.length === 1);
   assert.deepEqual(spy.calls, ['begin#1'], 'begun on the first event');
+  f.resumes[0]!.feed(presentCall(1, ['PLAN-bbb-S001']));
   f.resumes[0]!.feed(resultOf(1, '{"pendingApproval":{"artifactPath":"/repo/docs/x/PLAN.md"}}'));
-  f.resumes[0]!.feed(resultOf(1, 'failed', true));
   f.resumes[0]!.feed(doneOf(1));
   await waitFor(() => spy.calls.includes('end#1'));
-  assert.deepEqual(spy.calls, ['begin#1', 'result#1:{"pendingApproval":{"artifactPath":"/repo/docs/x/PLAN.md"}}', 'end#1']);
+  assert.deepEqual(spy.calls, ['begin#1', 'declared#1:PLAN-bbb-S001', 'end#1'], 'a result naming a document passes nothing');
 
   // A FOLLOW WHOSE RESUME FAILS before any event: nothing is begun, nothing ended.
   const spy2 = presenterSpy();
@@ -5148,15 +5146,15 @@ test("chat host: a followed turn begins a presenter turn on its first event, not
   const k = presentedHarness(spy3.presenter, { store: live3.store, hostPid: 2 });
   k.fc.send(env('open-chat', { chatId: live3.id }));
   await waitFor(() => k.resumes.length === 1);
-  k.resumes[0]!.feed(resultOf(1, 'ok'));
+  k.resumes[0]!.feed(presentCall(1, ['LLD-y-S001']));
   await waitFor(() => spy3.calls.length === 2);
   k.resumes[0]!.fail('read error');
   await runsSettled();
-  assert.deepEqual(spy3.calls, ['begin#1', 'result#1:ok'], 'not ended: nothing has ended');
+  assert.deepEqual(spy3.calls, ['begin#1', 'declared#1:LLD-y-S001'], 'not ended: nothing has ended');
 
   // A READY MESSAGE DURING A RUN TURN (the chat tab hidden and shown): it asks for a follow that
-  // does not start. With the real presenter: no read is made for it, and the run turn stays the
-  // newest, so its end opens what became pending.
+  // does not start. With the real presenter: no read is made for it, and the run turn opens only
+  // what it declares.
   const list: Array<{ id: string; mdPath: string }> = [{ id: 'LLD-old', mdPath: '/repo/docs/x/OLD.md' }];
   const opened: string[] = [];
   let reads = 0;
@@ -5169,22 +5167,25 @@ test("chat host: a followed turn begins a presenter turn on its first event, not
   r.fc.send(env('submit-turn', { text: 'build it' }));
   await waitFor(() => r.runs.length === 1);
   await runsSettled();
-  assert.equal(reads, 1, 'the start list was read');
+  assert.equal(reads, 0, 'no start list is read: nothing is worked out from what is pending');
   r.fc.send(env('ready'));
   r.fc.send(env('ready'));
   await runsSettled();
-  assert.equal(reads, 1, 'a ready message reads nothing');
+  assert.equal(reads, 0, 'a ready message reads nothing');
   assert.equal(r.resumes.length, 0, 'and follows nothing: this host is running the turn');
-  list.push({ id: 'BUILD-new', mdPath: '/repo/docs/x/BUILD.md' });
-  r.runs[0]!.feed(doneOf(1));
+  list.push({ id: 'BUILD-new', mdPath: '/repo/docs/x/BUILD.md' }, { id: 'CR-new', mdPath: '/repo/docs/x/CR.md' });
+  r.runs[0]!.feed(presentCall(1, ['BUILD-new']));
   await waitFor(() => opened.length === 1);
-  assert.deepEqual(opened, ['BUILD-new'], "the run turn's end still opens the newly pending document");
+  r.runs[0]!.feed(doneOf(1));
+  await waitFor(() => dones(r.fc) === 1);
+  await runsSettled();
+  assert.deepEqual(opened, ['BUILD-new'], 'the declared document opens; the other pending one, and the end of the turn, open nothing');
 });
 
 // Epic E20261014613abdb3 Story S001: a second message no longer supersedes the running turn. (Was: "a
 // superseded turn's later tool results are not passed to the presenter, and a document it writes
 // afterwards is opened at the end of the turn that superseded it".)
-test("chat host: a turn followed by a second message still passes its tool results to the presenter, which opens the document it presents, once", async () => {
+test("chat host: a turn followed by a second message still passes its declared documents to the presenter, which opens the document it presents, once", async () => {
   const list: Array<{ id: string; mdPath: string }> = [{ id: 'LLD-old', mdPath: '/repo/docs/x/OLD.md' }];
   const opened: string[] = [];
   const real = createReviewPresenter({
@@ -5197,7 +5198,7 @@ test("chat host: a turn followed by a second message still passes its tool resul
     begin: () => {
       const a = spy.presenter.begin();
       const b = real.begin();
-      return { declared: async (d) => { await a.declared(d); return b.declared(d); }, toolResult: (o) => { a.toolResult(o); b.toolResult(o); }, end: () => { a.end(); b.end(); } };
+      return { declared: async (d) => { await a.declared(d); return b.declared(d); }, end: () => { a.end(); b.end(); } };
     },
   };
   const h = presentedHarness(both);
@@ -5207,12 +5208,12 @@ test("chat host: a turn followed by a second message still passes its tool resul
   h.fc.send(env('submit-turn', { text: 'B: also this' }));
   await waitFor(() => spy.calls.includes('begin#2'));
   list.push({ id: 'LLD-new', mdPath: '/repo/docs/x/NEW.md' });
-  h.runs[0]!.feed(resultOf(1, '{"pendingApproval":{"artifactPath":"/repo/docs/x/NEW.md"}}'));
+  h.runs[0]!.feed(presentCall(1, ['LLD-new']));
   h.runs[0]!.feed(doneOf(1));
   await waitFor(() => h.runs.length === 2);
   await runsSettled();
-  assert.ok(spy.calls.includes('result#1:{"pendingApproval":{"artifactPath":"/repo/docs/x/NEW.md"}}'), "the first turn's tool result reached the presenter");
-  assert.ok(turnEvents(h.fc).some((e) => e.kind === 'tool-result'), 'and the webview');
+  assert.ok(spy.calls.includes('declared#1:LLD-new'), "the first turn's declaration reached the presenter");
+  assert.ok(turnEvents(h.fc).some((e) => e.kind === 'tool-call'), 'and the webview');
   await waitFor(() => opened.length === 1);
   assert.deepEqual(opened, ['LLD-new']);
   h.runs[1]!.feed(doneOf(2));

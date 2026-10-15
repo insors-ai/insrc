@@ -2,7 +2,10 @@
 // the review pane: the presenter's rule, and the review host's quiet open.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createReviewPresenter, presentedPathOf, type PendingDocument } from '../review-presenter.js';
+import { createReviewPresenter, type PendingDocument } from '../review-presenter.js';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createDocsReviewHost } from '../docs-review-panel.js';
 import type { DocsReviewClient } from '../docs-review-client.js';
 import type { ChatPanelChannel } from '../chat-panel.js';
@@ -47,262 +50,50 @@ function kit(initial: PendingDocument[] = [], o: { open?: (id: string) => void; 
 }
 const ids = (k: Kit): string[] => k.opened.map((x) => x.slice(0, x.indexOf('@')));
 
-test('review presenter: a tool result that carries a pendingApproval path opens the pending document with that absolute path once; the same path again in the turn does not; a path that is not pending, a result with no such block and one that is not JSON open nothing', async () => {
+test('a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing', async () => {
   const A = doc('LLD-aaa-S001');
   const B = doc('PLAN-bbb-S001');
-  const k = kit([A, B]);
+  const k = kit([A]);
   const turn = k.presenter.begin();
   await settle();
-  assert.equal(k.reads, 1, 'the list is read once when the turn begins');
-
-  // The block's path is the list's path: both absolute, equal.
-  turn.toolResult(presenting(A.mdPath));
-  await settle();
-  assert.deepEqual(k.opened, [`LLD-aaa-S001@${A.mdPath}`], 'opened by its id and the path the list gives');
-  assert.equal(k.reads, 2, 'the list is read again for a presenting result');
-  // The same document again in the turn (a re-run of the step, a second mention).
-  turn.toolResult(presenting(A.mdPath));
-  await settle();
-  assert.equal(k.opened.length, 1, 'opened once in a turn');
-
-  // Nothing is opened, and the list is not even read, for a result that presents nothing.
-  const before = k.reads;
-  for (const output of [
-    'ok\n42 passing',
-    '',
-    'see pendingApproval in the docs',                                   // names the word, is not JSON
-    '{"pendingApproval": {"artifactPath": ',                             // cut-off JSON
-    JSON.stringify({ next: 'emit_step', prompt: 'do it' }),              // JSON without the block
-    JSON.stringify({ pendingApproval: null }),
-    JSON.stringify({ pendingApproval: 'yes' }),
-    JSON.stringify({ pendingApproval: { artifactPath: '' } }),
-    JSON.stringify({ pendingApproval: { artifactPath: 7 } }),
-    JSON.stringify({ pendingApproval: { epicHash: 'abc' } }),
-    JSON.stringify([{ pendingApproval: { artifactPath: B.mdPath } }]),   // not the response's own block
-    JSON.stringify({ result: { pendingApproval: { artifactPath: B.mdPath } } }),
-    JSON.stringify('pendingApproval'),
-    'null',
-  ]) {
-    assert.equal(presentedPathOf(output), undefined, output.slice(0, 40));
-    turn.toolResult(output);
-  }
-  await settle();
-  assert.equal(k.opened.length, 1);
-  assert.equal(k.reads, before, 'no read for a result that presents nothing');
-
-  // A path that is not pending: approved meanwhile, or another repository's.
-  turn.toolResult(presenting(`${ROOT}/docs/standalone/x/GONE.md`));
-  turn.toolResult(presenting('/elsewhere/docs/standalone/x/PLAN-bbb-S001.md'));
-  await settle();
-  assert.equal(k.opened.length, 1, 'a path no pending document has opens nothing');
-
-  // Tolerance only: a list that gives a repo-relative path still matches the block's absolute one.
-  const rel = kit([{ id: 'DEF-ccc', mdPath: 'docs/epics/y/DEF.md' }, { id: 'HLD-ccc', mdPath: 'docs/epics/y/HLD.md' }]);
-  const t2 = rel.presenter.begin();
-  t2.toolResult(presenting(`${ROOT}/docs/epics/yy/HLD.md`));
-  t2.toolResult(presenting(`${ROOT}/xdocs/epics/y/HLD.md`));
-  await settle();
-  assert.deepEqual(ids(rel), [], 'the tail must begin at a path separator');
-  t2.toolResult(presenting(`${ROOT}/docs/epics/y/HLD.md`));
-  await settle();
-  assert.deepEqual(ids(rel), ['HLD-ccc']);
-
-  // A revision of a document that was already pending before the turn is opened when it is named.
-  const rev = kit([A]);
-  const t3 = rev.presenter.begin();
-  t3.toolResult(presenting(A.mdPath));
-  t3.end();
-  await settle();
-  assert.deepEqual(ids(rev), ['LLD-aaa-S001']);
-});
-
-test('review presenter: at the end of a turn each document that became pending during the turn and was not opened yet is opened; a document pending before the turn is not; a failed pending read opens nothing and is logged', async () => {
-  const OLD = doc('LLD-old-S001');
-  const k = kit([OLD]);
-  const turn = k.presenter.begin();
-  await settle();
-  // During the turn: a build record and a code review record appear (no tool result names them),
-  // and a design the tool result does name.
-  const BUILD = doc('BUILD-new-S001');
-  const CR = doc('CR-new-S001');
-  const LLD = doc('LLD-new-S001');
-  k.list.push(BUILD, LLD, CR);
-  turn.toolResult(presenting(LLD.mdPath));
-  await settle();
-  assert.deepEqual(ids(k), ['LLD-new-S001']);
-  turn.end();
-  await settle();
-  assert.deepEqual(ids(k), ['LLD-new-S001', 'BUILD-new-S001', 'CR-new-S001'], 'the rest that became pending, in the list\'s order; not the one already opened, not the one pending before');
-  k.list.push(doc('PLAN-late-S001'));
-  turn.end();
-  await settle();
-  assert.equal(k.opened.length, 3, 'a second end does nothing, whatever became pending since');
-
-  // A turn that makes nothing pending opens nothing.
-  const quiet = kit([OLD]);
-  const q = quiet.presenter.begin();
-  q.toolResult('ok');
-  q.end();
-  await settle();
-  assert.deepEqual(quiet.opened, []);
-
-  // The read at the turn's END fails: nothing is opened, it is logged, the caller sees no throw.
-  const endFails = kit([OLD]);
-  const e = endFails.presenter.begin();
-  await settle();
-  endFails.list.push(BUILD);
-  endFails.failReads = true;
-  assert.doesNotThrow(() => e.end());
-  await settle();
-  assert.deepEqual(endFails.opened, []);
-  assert.equal(endFails.logged.length, 1);
-  assert.match(endFails.logged[0]!, /pending list could not be read at the end of the turn: daemon down/);
-
-  // The read at the turn's START fails: what was pending before is unknown, so the end opens
-  // nothing (it cannot tell what is new), while a tool result still opens what it names.
-  const startFails = kit([OLD]);
-  startFails.failReads = true;
-  const s = startFails.presenter.begin();
-  await settle();
-  startFails.failReads = false;
-  startFails.list.push(BUILD, LLD);
-  s.toolResult(presenting(LLD.mdPath));
-  s.end();
-  await settle();
-  assert.deepEqual(ids(startFails), ['LLD-new-S001'], 'named by the result: opened; only new by the list: not, since the start list is unknown');
-  assert.match(startFails.logged[0]!, /at the start of the turn/);
-
-  // The read for a tool result fails: nothing opened for that call; the end still works.
-  const midFails = kit([OLD]);
-  const m = midFails.presenter.begin();
-  await settle();
-  midFails.list.push(LLD);
-  midFails.failReads = true;
-  m.toolResult(presenting(LLD.mdPath));
-  await settle();
-  assert.deepEqual(midFails.opened, []);
-  midFails.failReads = false;
-  m.end();
-  await settle();
-  assert.deepEqual(ids(midFails), ['LLD-new-S001'], 'picked up at the end');
-
-  // An open that throws is logged, is not tried again in the turn, and does not stop the others.
-  const throws = kit([OLD], { open: (id) => { if (id === 'BUILD-new-S001') throw new Error('no window'); } });
-  const t = throws.presenter.begin();
-  await settle();
-  throws.list.push(BUILD, CR);
-  t.toolResult(presenting(BUILD.mdPath));
-  await settle();
-  t.end();
-  await settle();
-  assert.deepEqual(ids(throws), ['BUILD-new-S001', 'CR-new-S001'], 'the failed one once, then the other');
-  assert.ok(throws.logged.some((l) => /BUILD-new-S001 could not be opened: no window/.test(l)));
-
-  // The turn's calls keep their order however slow the reads are: a result fed before the
-  // start read has answered is still judged after it.
-  let release!: () => void;
-  const held = new Promise<void>((r) => (release = r));
-  let first = true;
-  const slow = kit([OLD], { gate: async () => { if (first) { first = false; await held; } } });
-  const sl = slow.presenter.begin();
-  slow.list.push(LLD, BUILD);
-  sl.toolResult(presenting(LLD.mdPath));
-  sl.end();
-  await settle();
-  assert.deepEqual(slow.opened, [], 'nothing until the start read answers');
-  release();
-  await settle();
-  assert.deepEqual(ids(slow), ['LLD-new-S001', 'BUILD-new-S001']);
-});
-
-test('review presenter: a later turn opens a document again when it is presented again; several documents in one turn are opened in order, so the last presented is the one on show', async () => {
-  const k = kit([]);
-  const A = doc('DEF-a');
-  const B = doc('HLD-a');
-  const C = doc('LLD-a-s1');
-  // One turn presents three documents, one after another.
-  const t1 = k.presenter.begin();
-  await settle();
-  k.list.push(A);
-  t1.toolResult(presenting(A.mdPath));
+  // The turn's work makes a document pending and a result names it, as a workflow's done response does.
   k.list.push(B);
-  t1.toolResult(presenting(B.mdPath));
-  k.list.push(C);
-  t1.toolResult(presenting(C.mdPath));
-  t1.end();
+  const handle = turn as unknown as Record<string, unknown>;
+  assert.equal(handle['toolResult'], undefined, 'the handle takes no tool result');
+  assert.equal(typeof handle['declared'], 'function');
+  assert.equal(typeof handle['end'], 'function');
+  // Even a result that is handed over by a caller still on the old contract is not read.
+  (handle['toolResult'] as ((o: string) => void) | undefined)?.(presenting(B.mdPath));
+  turn.end();
+  turn.end(); // a second call does nothing
   await settle();
-  assert.deepEqual(ids(k), ['DEF-a', 'HLD-a', 'LLD-a-s1'], 'in the order presented: the last is the one the pane shows');
+  assert.deepEqual(k.opened, [], 'nothing opens: not for the result, not for what became pending, not at the end');
+  assert.equal(k.reads, 0, 'the pending list is not even read without a declaration');
 
-  // The next turn: the three are pending before it, so its end opens none of them,
-  const t2 = k.presenter.begin();
-  t2.end();
+  // A later turn is as fresh: a document pending before it began is opened only when declared.
+  const next = k.presenter.begin();
+  next.end();
   await settle();
-  assert.equal(k.opened.length, 3);
-  // but a revision presented in a later turn is opened again, once.
-  const t3 = k.presenter.begin();
-  t3.toolResult(presenting(B.mdPath));
-  t3.toolResult(presenting(B.mdPath));
-  t3.end();
-  await settle();
-  assert.deepEqual(ids(k), ['DEF-a', 'HLD-a', 'LLD-a-s1', 'HLD-a']);
+  assert.deepEqual(k.opened, []);
+  assert.deepEqual(ids(k), []);
+  const out = await k.presenter.begin().declared([B.id]);
+  assert.deepEqual(out.opened, [B.id]);
+  assert.deepEqual(ids(k), [B.id]);
 });
 
-test("review presenter: a turn begun while the one before it has not ended takes over that turn's start list and what it opened; the earlier turn's end then opens nothing and the later turn's end opens what became pending since the earlier one began", async () => {
-  const OLD = doc('LLD-old-S001');
-  const k = kit([OLD]);
-  const A = k.presenter.begin();
-  await settle();
-  // Turn A makes two documents pending and a tool result names the first.
-  const D1 = doc('LLD-one-S001');
-  const D2 = doc('BUILD-one-S001');
-  k.list.push(D1, D2);
-  A.toolResult(presenting(D1.mdPath));
-  await settle();
-  assert.deepEqual(ids(k), ['LLD-one-S001']);
-
-  // The user sends another message: turn B begins while A is still running.
-  const readsBefore = k.reads;
-  const B = k.presenter.begin();
-  await settle();
-  assert.equal(k.reads, readsBefore, "B reads no start list of its own: it carries A's on");
-  // A, superseded, writes one more document and its process ends.
-  const D3 = doc('CR-one-S001');
-  k.list.push(D3);
-  A.end();
-  await settle();
-  assert.deepEqual(ids(k), ['LLD-one-S001'], "the earlier turn's end opens nothing");
-  // B's end: everything that became pending since A began and was not opened yet.
-  B.end();
-  await settle();
-  assert.deepEqual(ids(k), ['LLD-one-S001', 'BUILD-one-S001', 'CR-one-S001'], 'D1 was opened by A and is not opened again; D2 and D3 are');
-
-  // Both over: the next turn starts afresh, reading its own start list.
-  const C = k.presenter.begin();
-  await settle();
-  assert.equal(k.reads > readsBefore + 1, true);
-  C.toolResult(presenting(D1.mdPath));
-  C.end();
-  await settle();
-  assert.deepEqual(ids(k).slice(3), ['LLD-one-S001'], 'a fresh turn may open again what an earlier one opened');
-
-  // Ends in the other order (B over before A): B, the newest, opens; A's later end opens nothing more.
-  const k2 = kit([]);
-  const A2 = k2.presenter.begin();
-  await settle();
-  const B2 = k2.presenter.begin();
-  k2.list.push(D1);
-  B2.end();
-  await settle();
-  assert.deepEqual(ids(k2), ['LLD-one-S001']);
-  k2.list.push(D2);
-  A2.end();
-  await settle();
-  assert.deepEqual(ids(k2), ['LLD-one-S001'], 'not the newest: nothing');
+test('the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist', async () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const mod = (await import('../review-presenter.js')) as Record<string, unknown>;
+  assert.deepEqual(Object.keys(mod).sort(), ['createReviewPresenter'], 'the module exports only the presenter factory (and types)');
+  for (const file of ['review-presenter.ts', 'chat-panel.ts']) {
+    const text = readFileSync(join(here, '..', file), 'utf8');
+    assert.ok(!text.includes('presentedPathOf'), `${file} no longer names presentedPathOf`);
+    assert.ok(!text.includes('pendingApproval'), `${file} no longer looks for a pendingApproval block`);
+    assert.ok(!/\.toolResult\(/.test(text), `${file} no longer passes a tool result to the presenter`);
+  }
+  const presenter = readFileSync(join(here, '..', 'review-presenter.ts'), 'utf8');
+  assert.ok(!/state\.before|before:\s|became pending/.test(presenter.replace(/\/\*[\s\S]*?\*\//g, '')), 'no start list, so no end-of-turn guess');
 });
-
-// ---------------------------------------------------------------------------
-// The review host's quiet open.
-// ---------------------------------------------------------------------------
 
 interface PaneKit {
   host: ReturnType<typeof createDocsReviewHost>;
@@ -337,6 +128,7 @@ function pane(): PaneKit {
 }
 const TARGET = { artifactId: 'LLD-abc-s7', mdPath: '/home/dev/repo/docs/epics/x/S007/LLD.md' };
 const contents = (p: PaneKit): Array<Record<string, unknown>> => p.posted.filter((m) => m['type'] === 'docs-content');
+
 
 test('docs review host: openArtifact with quiet creates the pane with quiet when there is none and reveals an existing one without taking focus; without quiet both are as before', async () => {
   // QUIET, no pane yet: created with quiet, not revealed; the document is opened with reveal.

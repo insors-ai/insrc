@@ -1,16 +1,14 @@
 /**
- * Story E20261013e62a9269:S001 — a document a chat turn presents for approval is opened in
- * the review pane without the user doing anything.
+ * Story E20261013e62a9269:S001, then Story E20261015067b05b6:S001 — a document a chat turn
+ * presents for review is opened in the review pane without the user doing anything.
  *
- * The chat host begins a presented turn for each turn, passes it the turn's tool results
- * and ends it. Two things open a document:
- *   - a tool result that carries a workflow's `pendingApproval.artifactPath` opens the
- *     pending document with that path, at once (a revision of a document that was already
- *     pending included);
- *   - the turn's end opens every document that became pending during the turn and was not
- *     opened in it (a build or code review record, a workflow driven from a script).
- * A turn opens a document at most once. Nothing here throws to the chat host: a failed
- * read of the pending list or a failed open is logged and that call opens nothing.
+ * The controller declares what it presents by calling `insrc_present` with the documents'
+ * artifact ids or paths; the provider mapper puts that list on the tool-call event and the chat
+ * host passes it to `declared`. Only a declaration opens anything: the presenter reads no tool
+ * result and does not guess at the end of a turn what became pending.
+ *
+ * A turn opens a document at most once. Nothing here throws to the chat host: a failed read of
+ * the pending list or a failed open is logged and shown through the outcome.
  *
  * Free of vscode: the pending list and the open are injected.
  */
@@ -29,9 +27,9 @@ export interface ReviewPresenterDeps {
 }
 
 /**
- * What a declaration came to (Story E20261015067b05b6:S001): the declared names that are open in
- * the review pane for this turn, the ones that are not pending, and whether the pending list could
- * not be read (then nothing is opened and no name is classified).
+ * What a declaration came to: the declared names that are open in the review pane for this turn,
+ * the ones that are not pending, and whether the pending list could not be read (then nothing is
+ * opened and no name is classified).
  */
 export interface DeclaredOutcome {
   readonly opened: readonly string[];
@@ -46,9 +44,7 @@ export interface PresentedTurn {
    * Opens the pending document each name resolves to, once per turn and in order. Never rejects.
    */
   declared(documents: readonly string[]): Promise<DeclaredOutcome>;
-  /** A tool result's whole text. */
-  toolResult(output: string): void;
-  /** The turn is over. A second call does nothing. */
+  /** The turn is over. A turn opens only what it declared, so nothing is opened at its end. */
   end(): void;
 }
 
@@ -56,38 +52,14 @@ export interface ReviewPresenter {
   begin(): PresentedTurn;
 }
 
-/** What a turn knows; a turn begun while the one before it has not ended carries that turn's on. */
+/** What a turn knows. */
 interface TurnState {
-  /** The ids pending when the turn began; undefined while unread or when the read failed. */
-  before: ReadonlySet<string> | undefined;
   readonly opened: Set<string>;
   /** The ids whose open call threw (they are in `opened` too, so they are not tried again). */
   readonly failed: Set<string>;
-  /** The turn's calls, one behind another. */
+  /** The turn's declarations, one behind another. */
   queue: Promise<void>;
 }
-
-const BLOCK = 'pendingApproval';
-
-/** The path a tool result presents, or undefined when it presents none. */
-export function presentedPathOf(output: string): string | undefined {
-  if (!output.includes(BLOCK)) return undefined;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(output);
-  } catch {
-    return undefined;
-  }
-  if (typeof parsed !== 'object' || parsed === null) return undefined;
-  const block = (parsed as Record<string, unknown>)[BLOCK];
-  if (typeof block !== 'object' || block === null) return undefined;
-  const path = (block as Record<string, unknown>)['artifactPath'];
-  return typeof path === 'string' && path !== '' ? path : undefined;
-}
-
-/** Both paths are absolute and resolved the same way, so they are equal; a list path that is the presented path's tail is tolerated. */
-const samePath = (listed: string, presented: string): boolean =>
-  listed === presented || (listed !== '' && presented.endsWith(`/${listed}`));
 
 /** A declared name names a pending document by its artifact id (compared without regard to case: the daemon lists `-s5` for some records and `-S001` for others) or by its path, absolute or repo-relative. */
 const namesDocument = (name: string, doc: PendingDocument): boolean =>
@@ -97,8 +69,6 @@ const errorText = (err: unknown): string => (err instanceof Error ? err.message 
 
 export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresenter {
   const { log } = deps;
-  /** The newest turn's handle and state; `ended` says whether that turn is over. */
-  let newest: { readonly handle: PresentedTurn; readonly state: TurnState; ended: boolean } | undefined;
 
   async function read(what: string): Promise<readonly PendingDocument[] | undefined> {
     try {
@@ -121,87 +91,43 @@ export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresente
     }
   }
 
-  const enqueue = (state: TurnState, work: () => Promise<void>): void => {
-    state.queue = state.queue.then(work).catch((err: unknown) => {
-      log.error(`review presenter: ${errorText(err)}`);
-    });
-  };
-
   return {
     begin(): PresentedTurn {
-      let state: TurnState;
-      if (newest !== undefined && !newest.ended) {
-        // The turn before this one is still running: whatever it makes pending is new to this
-        // one too, so its start list and what it opened are carried on.
-        state = newest.state;
-      } else {
-        const fresh: TurnState = { before: undefined, opened: new Set(), failed: new Set(), queue: Promise.resolve() };
-        // Asked for now, not when the queue comes round to it: the list is the one of this moment.
-        const atStart = read('at the start of the turn');
-        enqueue(fresh, async () => {
-          const docs = await atStart;
-          if (docs !== undefined) fresh.before = new Set(docs.map((d) => d.id));
-        });
-        state = fresh;
-      }
-      const mine: { readonly handle: PresentedTurn; readonly state: TurnState; ended: boolean } = {
-        state,
-        ended: false,
-        handle: {
-          declared(documents: readonly string[]): Promise<DeclaredOutcome> {
-            return new Promise<DeclaredOutcome>((resolve) => {
-              enqueue(state, async () => {
-                const outcome: { opened: string[]; notPending: string[]; unreadable: boolean } = { opened: [], notPending: [], unreadable: false };
-                try {
-                  const docs = await read('for a declared document');
-                  if (docs === undefined) {
-                    outcome.unreadable = true;
-                  } else {
-                    for (const name of documents) {
-                      const doc = docs.find((d) => namesDocument(name, d));
-                      if (doc === undefined) {
-                        outcome.notPending.push(name);
-                        continue;
-                      }
-                      open(state, doc);
-                      // Shown in this turn, now or by an earlier declaration; an open that failed is left out.
-                      if (!state.failed.has(doc.id)) outcome.opened.push(name);
-                    }
-                  }
-                } catch (err) {
-                  log.error(`review presenter: a declaration failed: ${errorText(err)}`);
+      const state: TurnState = { opened: new Set(), failed: new Set(), queue: Promise.resolve() };
+      return {
+        declared(documents: readonly string[]): Promise<DeclaredOutcome> {
+          return new Promise<DeclaredOutcome>((resolve) => {
+            state.queue = state.queue.then(async () => {
+              const outcome: { opened: string[]; notPending: string[]; unreadable: boolean } = { opened: [], notPending: [], unreadable: false };
+              try {
+                const docs = await read('for a declared document');
+                if (docs === undefined) {
                   outcome.unreadable = true;
-                } finally {
-                  resolve(outcome);
+                } else {
+                  for (const name of documents) {
+                    const doc = docs.find((d) => namesDocument(name, d));
+                    if (doc === undefined) {
+                      outcome.notPending.push(name);
+                      continue;
+                    }
+                    open(state, doc);
+                    // Shown in this turn, now or by an earlier declaration; an open that failed is left out.
+                    if (!state.failed.has(doc.id)) outcome.opened.push(name);
+                  }
                 }
-              });
+              } catch (err) {
+                log.error(`review presenter: a declaration failed: ${errorText(err)}`);
+                outcome.unreadable = true;
+              } finally {
+                resolve(outcome);
+              }
             });
-          },
-          toolResult(output: string): void {
-            const path = presentedPathOf(output);
-            if (path === undefined) return;
-            enqueue(state, async () => {
-              const docs = await read('for a presented document');
-              const doc = docs?.find((d) => samePath(d.mdPath, path));
-              if (doc !== undefined) open(state, doc);
-            });
-          },
-          end(): void {
-            if (mine.ended) return;
-            mine.ended = true;
-            // A later turn carries this one's state on: its own end opens what is new.
-            if (newest !== mine) return;
-            enqueue(state, async () => {
-              // Without the start list there is no telling what is new.
-              if (state.before === undefined) return;
-              const docs = await read('at the end of the turn');
-              for (const doc of docs ?? []) if (!state.before.has(doc.id)) open(state, doc);
-            });
-          },
+          });
+        },
+        end(): void {
+          // Nothing to do: a turn opens only what it declared.
         },
       };
-      newest = mine;
-      return mine.handle;
     },
   };
 }

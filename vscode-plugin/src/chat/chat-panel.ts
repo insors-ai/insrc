@@ -832,15 +832,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       log.error(`chat: the review presenter failed on a declaration: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
-  const presentResult = (shown: PresentedTurn | undefined, ev: TurnEvent, canShow: () => boolean): void => {
-    presentDeclared(shown, ev, canShow);
-    if (shown === undefined || ev.kind !== 'tool-result' || ev.isError === true) return;
-    try {
-      shown.toolResult(ev.output);
-    } catch (err) {
-      log.error(`chat: the review presenter failed on a tool result: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  };
   const endPresented = (shown: PresentedTurn | undefined): void => {
     if (shown === undefined) return;
     try {
@@ -861,7 +852,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     turns.follow(s, {
       onEvent: (ev) => {
         if (shown === undefined) shown = beginPresented();
-        presentResult(shown, ev, () => session === s);
+        presentDeclared(shown, ev, () => session === s);
         // A followed turn's approval requests go through the queue like a live one's.
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with the row's
         // index. The write does not depend on whether the session is shown.
@@ -1571,7 +1562,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       },
       onEvent: (ev) => {
         // Story E20261013e62a9269:S001: before anything else, and whatever is done with the event below.
-        presentResult(shown, ev, () => true);
+        presentDeclared(shown, ev, () => true);
         // Story S004: the agent acted (a tool call, an edit or a tool result): this message is never retried.
         if (q !== undefined && (ev.kind === 'tool-call' || ev.kind === 'file-edit' || ev.kind === 'tool-result')) q.acted = true;
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.

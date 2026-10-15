@@ -232,6 +232,13 @@
         "choice": "Verify existing symbols first",
         "rationale": "User chose option 1.",
         "resolvedAt": "2026-10-15T10:27:56.470Z"
+      },
+      "q67ef84b9": {
+        "question": "The invariants cite c1-c3, defined at synthesize as the s1 bundles.",
+        "status": "resolved",
+        "choice": "Pin c1-c3 to concrete source refs in PLAN",
+        "rationale": "User chose option 1.",
+        "resolvedAt": "2026-10-15T10:30:44.457Z"
       }
     }
   },

@@ -282,6 +282,8 @@ When a workflow, build or review tool writes a document for approval, the daemon
 
 - `qd09e2042` — The contract names insrc_present and the present field as new; createReviewPresenter, presentedPathOf and the tool-call event are existing symbols.
   - **resolved**: Verify existing symbols first — User chose option 1. _(2026-10-15T10:27:56.470Z)_
+- `q67ef84b9` — The invariants cite c1-c3, defined at synthesize as the s1 bundles.
+  - **resolved**: Pin c1-c3 to concrete source refs in PLAN — User chose option 1. _(2026-10-15T10:30:44.457Z)_
 
 ## Citations
 

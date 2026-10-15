@@ -26,6 +26,7 @@ import { getLogger } from '../shared/logger.js';
 import type { RunWorkflowResult, WorkflowProgress } from '../daemon/workflow-rpc.js';
 import type { RunStatus } from '../daemon/workflow-run-registry.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
+import type { WorkflowPendingError, WorkflowPendingResult } from '../workflow/pending.js';
 import type { DocGenOutcome, RenderedDocumentShell, SerializableDocTypeRegistration } from '../docgen/types.js';
 import type { InsrcGuideResult } from '../daemon/guide-sections.js';
 import type { CodeReviewGrounding } from '../workflow/code-review/types.js';
@@ -302,6 +303,15 @@ export function approveWorkflow(
 	deps: UnaryRpcDeps = {},
 ): Promise<WorkflowApproveResult> {
 	return unaryRpc<WorkflowApproveResult>('workflow.approve', req, deps);
+}
+
+/** Forward a pending-list request to the daemon `workflow.pending` IPC: the
+ *  artifacts still awaiting approval, or a structured `{ error }`. Pure forward. */
+export function pendingWorkflow(
+	req: { repo: string },
+	deps: UnaryRpcDeps = {},
+): Promise<WorkflowPendingResult | WorkflowPendingError> {
+	return unaryRpc<WorkflowPendingResult | WorkflowPendingError>('workflow.pending', req, deps);
 }
 
 /** Abort a detached run mid-flight. */

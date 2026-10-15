@@ -2,7 +2,7 @@
  * Integration tests for the sc1 tool-schema registry that
  * `buildInsrcMcpServerWithRegistry` records at registration time. Proves:
  *  - the registry key set equals the actually-registered insrc_* tool set
- *    (all 11, incl. the self-registered insrc_schema), and validTools matches;
+ *    (all 13, incl. the self-registered insrc_schema), and validTools matches;
  *  - every recorded rawShape converts to JSON Schema without throwing (so the
  *    conversion error path never fires for the shipped shapes) — the schema is
  *    derived from the real registered shape (k1), not a stub;
@@ -29,6 +29,7 @@ const EXPECTED_TOOLS = [
 	'insrc_code_review_step',
 	'insrc_docgen',
 	'insrc_guide',
+	'insrc_present',
 	'insrc_review_step',
 	'insrc_schema',
 	'insrc_triage',
@@ -51,9 +52,9 @@ const EXPECTED_PHASES: Record<string, string[]> = {
 	insrc_workflow_run: ['start', 'poll', 'abort'],
 };
 
-const PHASELESS_TOOLS = ['insrc_analyze', 'insrc_workflow_approve', 'insrc_docgen', 'insrc_schema', 'insrc_guide'];
+const PHASELESS_TOOLS = ['insrc_analyze', 'insrc_workflow_approve', 'insrc_docgen', 'insrc_schema', 'insrc_guide', 'insrc_present'];
 
-test('registry key set == registered tool set (all 11 incl. insrc_schema)', () => {
+test('registry key set == registered tool set (all 13 incl. insrc_schema)', () => {
 	const { schemaRegistry } = buildInsrcMcpServerWithRegistry();
 	assert.deepEqual([...schemaRegistry.keys()].sort(), EXPECTED_TOOLS);
 });
@@ -133,6 +134,14 @@ test('the injected skeleton (stripGuideSections) drops all guide markers, stays 
 	for (const tool of EXPECTED_TOOLS) {
 		assert.ok(skeleton.includes(tool), `the skeleton catalog should still name ${tool}`);
 	}
+});
+
+test("the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present", () => {
+	assert.ok(EXPECTED_TOOLS.includes('insrc_present'), 'EXPECTED_TOOLS lists insrc_present');
+	const { schemaRegistry } = buildInsrcMcpServerWithRegistry();
+	assert.ok(schemaRegistry.has('insrc_present'), 'the registry records insrc_present');
+	const skeleton = stripGuideSections(readSteeringBlock());
+	assert.match(skeleton, /^\| `insrc_present` \|/m, 'the catalog table carries an insrc_present row');
 });
 
 test('c00559b7 — insrc_triage start serves the optional specHash field, so an MCP client can send it', () => {

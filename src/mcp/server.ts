@@ -36,7 +36,7 @@ import { forwardStep } from './forward-step.js';
 import type { StepMcpEnvelope } from './forward-step.js';
 import { mcpProgressSink } from './progress-forward.js';
 import type { ProgressEvent } from '../shared/types.js';
-import { startRun, pollRun, abortRun, approveWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
+import { startRun, pollRun, abortRun, approveWorkflow, pendingWorkflow, type UnaryRpcDeps } from './daemon-stream.js';
 import type { WorkflowProgress } from '../daemon/workflow-rpc.js';
 import { WORKFLOW_NAMES } from '../workflow/types.js';
 import type { ZodRawShape } from 'zod';
@@ -958,6 +958,36 @@ export function buildInsrcMcpServerWithRegistry(): {
 		async (rawArgs) => handleWorkflowApprove(rawArgs),
 	);
 
+	registerAndRecord(
+		'insrc_present',
+		{
+			title: 'insrc present (declare the documents a turn shows for review)',
+			description:
+				'Declare the documents you are asking the user to review, BEFORE you ask them ' +
+				'to approve: the chat opens exactly the documents named here in its review pane. ' +
+				'Pass one to twenty artifact ids (for example `LLD-<hash>-S001`) or repo-relative ' +
+				'document paths. The answer lists which names are `presented` (pending approval ' +
+				'and openable) and which are `notPending` (misspelt, already approved, or with no ' +
+				'document file yet), so you can correct a mistake at once. Changes nothing and ' +
+				'approves nothing. `repo` falls back to the session workspace / INSRC_REPO.',
+			annotations: {
+				readOnlyHint:   true,
+				idempotentHint: true,
+				openWorldHint:  false,
+			},
+			inputSchema: {
+				documents: z.array(z.string().min(1))
+					.min(1)
+					.max(PRESENT_MAX_DOCUMENTS)
+					.describe('One to twenty artifact ids or repo-relative document paths the user is asked to review.'),
+				repo: z.string()
+					.describe('Absolute repo path; falls back to the session workspace / INSRC_REPO.')
+					.optional(),
+			},
+		},
+		async (rawArgs) => handleInsrcPresent(rawArgs),
+	);
+
 	// -------------------------------------------------------------------
 	// insrc_docgen -- the assistant-facing surface for docgen (s6). The
 	// third surface alongside the daemon tool (docgen_generate) + the IPC
@@ -1122,6 +1152,64 @@ export async function handleWorkflowApprove(
 		return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
 	} catch (e) {
 		return err(`insrc_workflow_approve: ${e instanceof Error ? e.message : String(e)}`);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// insrc_present dispatch — the controller declares the documents a turn shows.
+// ---------------------------------------------------------------------------
+
+/** The most documents one insrc_present call may name. */
+export const PRESENT_MAX_DOCUMENTS = 20;
+
+export interface InsrcPresentArgs {
+	readonly documents: readonly string[];
+	readonly repo?:     string | undefined;
+}
+
+/** Test seams: the pending-list call and the repo resolver. */
+export interface InsrcPresentDeps extends UnaryRpcDeps {
+	readonly resolveRepo?: ((explicit: string | undefined) => Promise<string | undefined>) | undefined;
+}
+
+/** True when the pending record names the document: the artifact id (compared
+ *  without regard to case, since the daemon lists `-s5` for some records and
+ *  `-S001` for others) or the document's repo-relative or absolute path. */
+function namesPending(name: string, doc: { artifactId: string; mdPath: string }): boolean {
+	if (doc.artifactId.toLowerCase() === name.toLowerCase()) return true;
+	return doc.mdPath === name || doc.mdPath.endsWith(`/${name}`);
+}
+
+/** Answer which declared names are pending and openable. Reads the pending list
+ *  through the daemon; changes nothing. */
+export async function handleInsrcPresent(
+	args: InsrcPresentArgs,
+	deps: InsrcPresentDeps = {},
+): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
+	const err = (msg: string): { content: { type: 'text'; text: string }[]; isError: boolean } =>
+		({ content: [{ type: 'text', text: msg }], isError: true });
+
+	const docs: unknown = args.documents;
+	if (!Array.isArray(docs) || docs.length === 0 || docs.length > PRESENT_MAX_DOCUMENTS
+		|| docs.some((d) => typeof d !== 'string' || d.length === 0)) {
+		return err('insrc_present: `documents` must be one to ' + PRESENT_MAX_DOCUMENTS + ' non-empty strings (artifact ids or repo-relative paths).');
+	}
+	const names = [...new Set(docs as string[])];
+
+	const repo = await (deps.resolveRepo ?? resolveRepoPath)(args.repo);
+	if (repo === undefined || repo.length === 0) {
+		return err('insrc_present: no repo (pass `repo`, or run in a registered repo) — the pending list cannot be read.');
+	}
+	try {
+		const pending = await pendingWorkflow({ repo }, deps);
+		if ('error' in pending) return err(`insrc_present: ${pending.error}`);
+		// A record with no document file (an empty mdPath) cannot be shown, so it is not presentable.
+		const openable = pending.artifacts.filter((a) => a.mdPath !== '');
+		const presented = names.filter((n) => openable.some((a) => namesPending(n, a)));
+		const notPending = names.filter((n) => !presented.includes(n));
+		return { content: [{ type: 'text', text: JSON.stringify({ presented, notPending }) }] };
+	} catch (e) {
+		return err(`insrc_present: ${e instanceof Error ? e.message : String(e)}`);
 	}
 }
 

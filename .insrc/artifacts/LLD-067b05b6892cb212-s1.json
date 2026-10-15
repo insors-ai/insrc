@@ -1,0 +1,752 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792058614869-taragn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-15T10:06:05.580Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 150709,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "067b05b6892cb212",
+    "epicSlug": "declare-documents-turn-presents-instead-parsing",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792058614869-taragn",
+    "hldEffectiveHash": "067b05b6892cb21255d8599959339ec68e79a29a16f81898050da02e01c41782",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers every stated need of the Story: the declaration is read from the tool-call input rather than the tool-result output, the output-parsing path and the end-of-turn guess are removed, a name that is not pending has defined handling, and the steering text is updated.",
+          "evidence": "The Story's recorded need (memory turn-declares-documents.md) reads: 'a structured declaration read from the turn's tool-call INPUT …; remove the output-parsing path and the end-of-turn guess; decide what happens when a named document is not pending; update the steering text (src/prompts/steering-block.md)'. The LLD maps these to ac1–ac4. Section 2.1 drops toolResult and end-of-turn opening, 2.2 removes presentedPathOf, section 4 reports a not-pending name in the chat and in notPending, and migration step 4 rewrites steering-block.md. Rejected alternative a3 (a daemon ledger) is not built. [files: vscode-plugin/src/chat/review-presenter.ts, src/prompts/steering-block.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the presenter JSON-parses each tool result for a top-level pendingApproval.artifactPath, and at the end of a turn it opens whatever became pending since the turn began.",
+          "evidence": "review-presenter.ts:55-68: presentedPathOf calls JSON.parse(output) and reads parsed['pendingApproval']['artifactPath']. Lines 137-147: end() opens every doc for which `!state.before.has(doc.id)`. A non-JSON preview makes JSON.parse throw, and the function then returns undefined. [files: vscode-plugin/src/chat/review-presenter.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Codex mapper handles only command_execution and tool_call items on item.completed, so an mcp_tool_call item falls through unmapped; the tool-call event carries no input.",
+          "evidence": "cli-adapter.ts:752 has `if (itemType === 'command_execution' || itemType === 'tool_call')`. Any other item type reaches `emitAssistantText(turnId, text, state)` with an empty text (lines 779-781). The tool-call variant in stream-events.ts:33-49 has only tool, mcp, command and callId. The Codex branch never sets mcp. [files: vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/stream-events.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The chat host feeds the presenter from two paths: the followed live turn and the hosted run.",
+          "evidence": "chat-panel.ts:838-841: followLiveTurn calls beginPresented() on its first event, then presentResult(shown, ev). chat-panel.ts:1508 and 1551: runTurn calls `const shown = beginPresented()`, and the sink's onEvent calls presentResult(shown, ev). presentResult (line 813-820) currently passes only non-error tool-result events. [files: vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No workflow.pending wrapper exists in daemon-stream.ts, so a new one is needed. The MCP-side handler pattern (resolve the repo, then call a unary IPC) already exists and can be followed.",
+          "evidence": "daemon-stream.ts exports runWorkflowStream, startRun, pollRun, resolveRepoForCwd, approveWorkflow, abortRun, fetchCodeReview*, docgen*, guide* and review streams, but nothing for workflow.pending. server.ts:1099-1126 handleWorkflowApprove calls resolveRepoPath(args.repo) and then approveWorkflow(..., deps), which is the same shape the design proposes. [files: src/mcp/daemon-stream.ts, src/mcp/server.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The chat's pending lookup in docs-review-client.ts is reused as it is and already drops records with no document file.",
+          "evidence": "docs-review-client.ts:133-140: pendingDocuments() calls 'workflow.pending' and returns `res.artifacts.filter((a) => typeof a.mdPath === 'string' && a.mdPath !== '')`. extension.ts:580-581 wires it into createReviewPresenter. [files: vscode-plugin/src/chat/docs-review-client.ts, vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The real Codex capture pins the shape: mcp_tool_call with a bare tool name and an arguments object, emitted on both item.started and item.completed, with the completed item status failed.",
+          "evidence": "codex-mcp-tool-call.jsonl lines 4-5: {\"type\":\"item.started\",\"item\":{\"id\":\"item_1\",\"type\":\"mcp_tool_call\",\"server\":\"stub\",\"tool\":\"insrc_present\",\"arguments\":{\"documents\":[...]},...\"status\":\"in_progress\"}}, then item.completed with the same arguments and \"status\":\"failed\" (error 'MCP tool call requires approval, but approval policy is never'). The item type has no 'approval' in it, so the approval branch at cli-adapter.ts:730 does not take it. [files: vscode-plugin/src/chat/__tests__/fixtures/codex-mcp-tool-call.jsonl, vscode-plugin/src/chat/cli-adapter.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The golden tool-surface fixture holds twelve tools compared index by index after a name sort, so insrc_present belongs between insrc_guide and insrc_review_step, and the count and the test title change to thirteen.",
+          "evidence": "forward-step.test.ts:176-189 has the title 'the twelve tools …', `assert.equal(golden.length, 12)`, the surface sorted by localeCompare, and a per-index JSON compare. In tool-surface.golden.json, insrc_guide (line 426) is followed directly by insrc_review_step (line 441). [files: src/mcp/__tests__/forward-step.test.ts, src/mcp/__tests__/fixtures/tool-surface.golden.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "schema-registry.test.ts pins EXPECTED_TOOLS and PHASELESS_TOOLS, and asserts that the steering skeleton catalog names every tool, so the new tool must be added to both lists and to the catalog.",
+          "evidence": "schema-registry.test.ts:25 defines EXPECTED_TOOLS and line 54 defines PHASELESS_TOOLS. Line 58 asserts `[...schemaRegistry.keys()].sort()` equals EXPECTED_TOOLS. Line 134 asserts `skeleton.includes(tool)` for every expected tool, with the message 'the skeleton catalog should still name …'. [files: src/mcp/__tests__/schema-registry.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "steering-template.md only points at steering-block.md, so the approval text changes in steering-block.md, where the guide sections also live.",
+          "evidence": "steering-template.md:12 says 'The canonical block content lives in src/prompts/steering-block.md'. It contains no approval procedure. schema-registry.test.ts:110-120 shows readWorkflowGuide reads its per-workflow guide sections from that same steering asset. [files: src/mcp/steering-template.md, src/prompts/steering-block.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The new present field is live-only. A tool-call event persists only as a marker row, so stored transcripts and old sessions are unchanged.",
+          "evidence": "chat-panel.ts:1700-1733 appendEvent: a tool-call event is written only as `{ role: 'marker', text: marker.label, cssClass: marker.cssClass, at }` through markerFor. No event field other than the label is stored. The existing callId field is documented the same way ('Live-only: never persisted into the transcript', stream-events.ts:44-47). [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/stream-events.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An artifact id must be matched without regard to the case of its story part, because the daemon lists both -s1 and -S001 forms.",
+          "evidence": "The working tree has .insrc/artifacts/LLD-067b05b6892cb212-s1.json and LLD-370be5a6c8eee9c3-S001.json, so both casings exist on disk. [files: .insrc/artifacts/LLD-067b05b6892cb212-s1.json, .insrc/artifacts/LLD-370be5a6c8eee9c3-S001.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A not-pending name and an unreadable pending list can be shown as a line through the chat's existing information-line output.",
+          "evidence": "chat-panel.ts:710 defines `const postInfo = (turnId: string, text: string): void`, which is used for live-only notes (lines 741, 2095, 2109, 2160). The presenter already catches read and open failures and logs them without throwing (review-presenter.ts:81-105), which matches the 'swallowed' error contract. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/review-presenter.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A declared repo-relative path resolves to the same pending document as an artifact id.",
+          "evidence": "The design states this as an edge case and has a unit test for it ('a declared artifact id and a declared path each open the matching pending document once'). The current samePath helper (review-presenter.ts:71-72) checks `presented.endsWith('/' + listed)`, where listed is the absolute mdPath, so it would not match a relative declared path. The rewrite must reverse that check (absolute listed path ends with '/' + declared path). The design leaves the matching rule to the implementation, and the named test covers it. The builder should note that the existing helper cannot be reused unchanged. [files: vscode-plugin/src/chat/review-presenter.ts]",
+          "action": "At build time, write the path matcher so that a repo-relative declaration matches the tail of the absolute mdPath; do not reuse samePath as it is.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion ac1–ac4 maps to named tests. The suites the design rewrites (the presenter and chat-panel tests that pin toolResult and the end-of-turn open) exist and use node:test through tsx.",
+          "evidence": "Section 5's acceptance mapping lists proving tests for ac1, ac2, ac3 and ac4. The live behaviour (VS Code and Codex) is marked as live tests. chat-panel.ts:813-828 is the toolResult/end path those tests pin. The MCP-side tests (forward-step.test.ts, schema-registry.test.ts) are node:test files, as stated. [files: src/mcp/__tests__/forward-step.test.ts, src/mcp/__tests__/schema-registry.test.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 15,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-15T10:09:48.402Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-15T10:12:22.774Z",
+    "rangeBase": "8f3e094f7f50d0b16908a82af1df5836d5abfebe",
+    "questionResolutions": {
+      "qd09e2042": {
+        "question": "The contract names insrc_present and the present field as new; createReviewPresenter, presentedPathOf and the tool-call event are existing symbols.",
+        "status": "resolved",
+        "choice": "Verify existing symbols first",
+        "rationale": "User chose option 1.",
+        "resolvedAt": "2026-10-15T10:27:56.470Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "A turn now says which documents to show for review by calling a new insrc_present tool with their ids, and the chat opens exactly those in the review pane. The chat reads the declaration from the tool call's own small input, not from any tool result, so a large result that the CLI shortens can no longer make a review document fail to open. Both providers are covered: the Claude tool_use input and the Codex mcp_tool_call arguments, whose shape was captured from a real Codex run and is pinned as a fixture. The old reading of tool output and the end-of-turn guess are removed, a name that is not pending is reported in the chat and to the controller, and the steering tells the controller to declare what it presents.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Declare the documents a turn presents instead of parsing tool output"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "createReviewPresenter",
+          "signature": "function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresenter  // PresentedTurn changes from { toolResult(output: string): void; end(): void } to { declared(documents: readonly string[]): Promise<DeclaredOutcome>; end(): void }, with DeclaredOutcome = { opened: string[]; notPending: string[]; unreadable: boolean }",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ReviewPresenterDeps",
+              "purpose": "the pending-list lookup, the review pane's open call and the logger (no callback is added: the outcome comes back from declared)",
+              "optional": false
+            },
+            {
+              "name": "documents",
+              "type": "readonly string[]",
+              "purpose": "the artifact ids or document paths a turn declared, read from the turn's insrc_present tool call",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewPresenter",
+            "meaning": "a presenter whose turn handle opens, once per turn and in order, the pending document each declared name resolves to, and answers a DeclaredOutcome naming what opened, which names were not pending and whether the pending list could not be read; the chat host turns that outcome into a line in the chat. It opens nothing the turn did not declare"
+          },
+          "errors": [
+            {
+              "type": "swallowed",
+              "condition": "a pending list that cannot be read, or a failing open, is logged and shown through the outcome (unreadable, or a name left out of opened); nothing is thrown to the chat host"
+            }
+          ],
+          "preconditions": [
+            "the declaration comes from a tool-call event of the insrc_present tool"
+          ],
+          "postconditions": [
+            "no tool-result text is read",
+            "no document is opened at the end of a turn that the turn did not declare",
+            "a document is opened at most once in a turn",
+            "the chat host, not extension.ts, shows a line for a not-pending name or an unreadable pending list, through the chat's existing information-line output"
+          ]
+        },
+        {
+          "name": "presentedPathOf",
+          "signature": "function presentedPathOf(output: string): string | undefined  // removed",
+          "parameters": [
+            {
+              "name": "output",
+              "type": "string",
+              "purpose": "a tool result's text; the function is removed with the output-parsing path",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "undefined",
+            "meaning": "removed: nothing parses a tool result for a document path any more"
+          },
+          "errors": [
+            {
+              "type": "removed",
+              "condition": "any caller of presentedPathOf fails to compile, which is how the build finds every remaining use"
+            }
+          ],
+          "preconditions": [
+            "no caller remains"
+          ],
+          "postconditions": [
+            "the 'pendingApproval' text is no longer searched for in a tool result by the chat"
+          ]
+        },
+        {
+          "name": "tool-call",
+          "signature": "{ kind: 'tool-call'; turnId: string; tool: string; mcp?: { server: string; name: string }; command?: string; callId?: string; present?: readonly string[] | undefined }",
+          "parameters": [
+            {
+              "name": "present",
+              "type": "readonly string[] | undefined",
+              "purpose": "the documents the call declares, set only for the insrc_present tool, from its input's documents list",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TurnEvent",
+            "meaning": "the existing tool-call event, with the declared documents when the call is insrc_present; every other tool-call event is as it was. The Claude mapper reads the tool_use input. The Codex mapper reads an item of type mcp_tool_call on item.completed only, when its tool is exactly insrc_present, and takes the documents from its arguments object (the shape captured from codex-cli 0.162.1: id, server, tool as a bare name, arguments as a JSON object, result, error, status). The same call also arrives on item.started with the same arguments; it is ignored there, so a call declares once. A call whose completed item reports status failed still declares, because its arguments are present"
+          },
+          "errors": [
+            {
+              "type": "swallowed",
+              "condition": "an input that is not an array of strings leaves present absent; the call is still shown as a tool row"
+            }
+          ],
+          "preconditions": [
+            "the provider reported the tool call's input"
+          ],
+          "postconditions": [
+            "present is live-only and is never saved in the transcript",
+            "present holds at most 20 non-empty strings",
+            "a Codex insrc_present call produces one present declaration, not two"
+          ]
+        },
+        {
+          "name": "insrc_present",
+          "signature": "insrc_present(input: { documents: string[]; repo?: string | undefined }): { presented: string[]; notPending: string[] }  // new MCP tool",
+          "parameters": [
+            {
+              "name": "documents",
+              "type": "string[]",
+              "purpose": "one to twenty artifact ids (for example LLD-<hash>-S001) or repo-relative document paths the controller asks the user to review",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "the repository whose pending list is checked; resolved as insrc_workflow_approve does (the explicit repo, INSRC_REPO, or the repository registered for the working directory)",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "{ presented: string[]; notPending: string[] }",
+            "meaning": "the names that are pending approval and presentable (they have a document file) and the names that are not, so the controller can see a mistake at once. The tool's answer is for the controller; the chat opens independently of it, from the declaration alone"
+          },
+          "errors": [
+            {
+              "type": "invalid-input",
+              "condition": "documents is empty, holds more than twenty names, or holds a non-string; the tool answers an error and the chat opens nothing"
+            },
+            {
+              "type": "repo-required",
+              "condition": "no repo resolves (not explicit, not INSRC_REPO, and the working directory is in no registered repository), so the pending list cannot be read; the tool answers an error and the chat opens nothing"
+            }
+          ],
+          "preconditions": [
+            "the daemon's pending list can be read through the workflow.pending IPC, which the tool's MCP-side handler calls with the resolved repo"
+          ],
+          "postconditions": [
+            "the result is a few short strings, never a document body",
+            "the tool changes no artifact and approves nothing",
+            "a pending record with no document file (an empty mdPath) is reported under notPending, as the chat's lookup also drops it, so the two answers agree",
+            "the chat opens a declared name whether or not the tool succeeded: only the mapper's input check gates the declaration, and the chat resolves each name through its own pending list, so a tool-side failure never hides a document that is pending in the workspace; the real Codex capture shows a failed call (approval policy never) still carrying its arguments"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TurnEvent (tool-call)",
+        "change": "field-add",
+        "details": "The tool-call turn event gains an optional present list, set by the provider mappers from the input of the insrc_present MCP tool only. It is live-only and is not written to the transcript, so stored rows and old sessions are unchanged. The review presenter's turn handle changes from reading tool results and the end of the turn to receiving a declared list; the chat host feeds it from the tool-call event. The MCP server registers the new insrc_present tool, its input schema is added to the schema registry, and the steering block, the steering template and the guide's approval text are rewritten to tell the controller to call it. Codex: a real capture (codex-cli 0.162.1, pinned as vscode-plugin/src/chat/__tests__/fixtures/codex-mcp-tool-call.jsonl) shows an MCP call as an item of type mcp_tool_call with server, tool (a bare name, not server-qualified), arguments (a JSON object) and status, emitted on item.started and again on item.completed. The Codex mapper in cli-adapter.ts, which today handles only command_execution and tool_call items on item.completed, gains a branch for mcp_tool_call on item.completed only, matches tool equal to insrc_present, reads arguments.documents as an array of strings (no JSON-string form is accepted, since none was observed) and sets present; started items are ignored so the call declares once, and a failed completed item still declares. It also sets the event's mcp field from server and tool, which that mapper never set before. Registering insrc_present also changes the schema registry's expected tool list and the steering skeleton's tool catalog, which schema-registry.test.ts pins, so that list and the catalog row are updated in the same commit; the CLAUDE.md copies of the steering block are refreshed by repo.add and are not edited by hand. The MCP tool surface is pinned by a golden fixture: forward-step.test.ts asserts the tool list against tool-surface.golden.json, so insrc_present is inserted into the fixture in name-sorted position, between insrc_guide and insrc_review_step, because forward-step.test.ts compares the sorted live surface to the golden list index by index, the count rises to thirteen (the 'twelve tools' test title and the length check of 12 in forward-step.test.ts are updated), and schema-registry.test.ts's EXPECTED_TOOLS and PHASELESS_TOOLS are updated. The MCP-side handler needs a new unary workflow.pending wrapper in daemon-stream.ts (none exists), and the chat's pending lookup in docs-review-client.ts is reused as it is: it already drops records with no document file. The chat host passes a declaration from both of its feed paths, the followed live turn and the hosted run. The existing presenter and chat-panel tests that pin toolResult and the end-of-turn open are rewritten to the declared contract, and steering-template.md only points at the steering block, so the approval text changes in steering-block.md and the guide.",
+        "callSites": [
+          "vscode-plugin/src/chat/review-presenter.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/stream-events.ts",
+          "vscode-plugin/src/chat/cli-adapter.ts",
+          "vscode-plugin/src/extension.ts",
+          "src/mcp/server.ts",
+          "src/mcp/schema",
+          "src/prompts/steering-block.md",
+          "src/mcp/__tests__/schema-registry.test.ts",
+          "src/mcp/__tests__/forward-step.test.ts",
+          "src/mcp/__tests__/fixtures/tool-surface.golden.json",
+          "src/mcp/daemon-stream.ts",
+          "vscode-plugin/src/chat/docs-review-client.ts",
+          "vscode-plugin/src/chat/__tests__/fixtures/codex-mcp-tool-call.jsonl"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The controller does not call insrc_present when it asks for approval",
+          "detection": "Nothing in the turn's events is a tool-call of insrc_present, so the presenter receives no declaration",
+          "response": "Nothing opens; the controller's own text still asks for the decision and gives the document's path",
+          "userImpact": "The user has to open the document by hand, as the steering and the controller's message say how",
+          "recoverable": true
+        },
+        {
+          "scenario": "A declared name is not pending (misspelt, already approved, or not yet written)",
+          "detection": "The presenter looks the name up in the pending list and finds no artifact id or path that matches",
+          "response": "Nothing is opened for that name and the chat shows one line naming it; the insrc_present result also lists it under notPending so the controller can correct it",
+          "userImpact": "The user sees which document was not shown and why, not a silent miss",
+          "recoverable": true
+        },
+        {
+          "scenario": "The pending list cannot be read when a declaration arrives",
+          "detection": "The presenter's read of the pending list rejects or answers an error; declared() answers unreadable: true in its outcome",
+          "response": "It is logged, nothing opens for that declaration, and the chat host shows a line saying the documents could not be opened",
+          "userImpact": "The user is told and can open the documents by hand",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tool call's input is not an array of strings or is over the limit",
+          "detection": "The provider mapper checks the input's documents list: an array of at most twenty non-empty strings",
+          "response": "present is left absent and the tool call still shows as a tool row; the tool itself answers an invalid-input error to the controller. A call whose tool-side work fails for another reason (no repo resolves, or Codex refusing the call for approval policy) still carries a valid declaration, and the chat still opens what is pending",
+          "userImpact": "Nothing opens for a malformed call, and the controller is told its call was malformed",
+          "recoverable": true
+        },
+        {
+          "scenario": "The review pane's open call fails",
+          "detection": "The open callback throws",
+          "response": "The error is logged and the presenter goes on with the next declared name; that name is not retried in the turn",
+          "userImpact": "One document may not open; the others do",
+          "recoverable": true
+        },
+        {
+          "scenario": "A pending record has no document file (an empty mdPath), as some BUILD records do before their markdown exists",
+          "detection": "The pending list entry has an empty mdPath; both the tool's check and the chat's lookup drop such entries",
+          "response": "The name is reported as not pending by the tool and by the chat, never as presented",
+          "userImpact": "The controller and the user are told it cannot be shown, and the controller can give the path in its message",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Codex version reports an MCP call in a different shape than the captured one (a different item type, server-qualified tool name, or arguments as a string)",
+          "detection": "The Codex mapper matches only an mcp_tool_call item whose tool is exactly insrc_present with an arguments object; any other shape yields no present value",
+          "response": "The call shows as an ordinary tool row and nothing is declared; the pinned fixture test fails when the pinned shape itself is changed in the repo, and a newer Codex shape would need a new capture and fixture",
+          "userImpact": "A Codex turn on a changed CLI opens nothing until the mapper is updated; the controller's message still gives the document path",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "the same document declared twice in one turn, or in two insrc_present calls",
+          "expected": "It is opened once for the turn"
+        },
+        {
+          "input": "a Codex insrc_present call, which arrives on item.started and again on item.completed with the same arguments",
+          "expected": "Only the completed item declares, so the call declares once"
+        },
+        {
+          "input": "a Codex insrc_present call whose completed item has status failed and an error message",
+          "expected": "It still declares, because the arguments are present, and the chat opens what is pending"
+        },
+        {
+          "input": "several documents declared in one call",
+          "expected": "Each opens in the order given, in the same quiet way as one"
+        },
+        {
+          "input": "a declaration made after the document is already open in the pane",
+          "expected": "The pane shows it again as it does for a re-open, without a second tab"
+        },
+        {
+          "input": "a name given as a repo-relative path or as an artifact id",
+          "expected": "Both resolve to the same pending document; an id is matched without regard to the case of its story part (the daemon lists LLD-<hash>-s5 for some records and -S001 for others)"
+        },
+        {
+          "input": "a name that matches one of the hundreds of old pending records",
+          "expected": "It opens only if it was declared; nothing is opened because it is pending"
+        },
+        {
+          "input": "a result carrying a pendingApproval block that nothing declared",
+          "expected": "Nothing opens, because the chat no longer reads tool results; the controller is told by its steering to declare"
+        },
+        {
+          "input": "a turn that ends with no declaration",
+          "expected": "Nothing opens at the end of the turn"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A presented pane still opens quietly in the editor group the review pane uses, once per document per turn, and a failure in the presenter is logged and never thrown into the chat host",
+          "source": "c1"
+        },
+        {
+          "text": "The chat host still begins a presented turn once per turn and ends it with the turn, and tool results are still rendered as rows; only what the presenter does with them changes",
+          "source": "c2"
+        },
+        {
+          "text": "Stored transcript rows and old sessions are unchanged: the declared list is live-only and is never saved; Codex command_execution and tool_call items map exactly as before",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run through tsx (npx tsx --test), as the existing chat and MCP tests",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The presenter opens exactly the declared documents, and the provider mappers read the declaration from the tool call's input",
+          "subjects": [
+            "a declared artifact id and a declared path each open the matching pending document once, in order",
+            "a declared name that is not pending opens nothing and is reported by name",
+            "a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing",
+            "the same document declared twice in a turn opens once",
+            "an unreadable pending list and a failing open are logged and never thrown",
+            "the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call",
+            "an input that is not a list of at most twenty non-empty strings leaves present absent",
+            "the declared list is not written into the saved transcript",
+            "the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one",
+            "a Codex mcp_tool_call insrc_present item with status failed still sets present",
+            "a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before",
+            "declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable",
+            "a declared artifact id matches the pending list's id without regard to the case of its story part"
+          ],
+          "fixturesNeeded": [
+            "a fake pending list and a recording open callback",
+            "a scripted Claude tool_use line for insrc_present",
+            "vscode-plugin/src/chat/__tests__/fixtures/codex-mcp-tool-call.jsonl, the real codex-cli 0.162.1 capture (its completed item reports failed, which the capture's approval policy produced)"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The tool, the chat host and the steering agree",
+          "subjects": [
+            "insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list",
+            "the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything",
+            "the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist",
+            "the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval",
+            "the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome",
+            "the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present",
+            "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+            "insrc_present with a resolver that finds no repo answers an error and presents nothing",
+            "a pending record with no document file is reported as not pending by the tool and by the chat",
+            "the chat host feeds the declaration from both a followed live turn and a hosted run",
+            "the chat opens a declared pending document even when the insrc_present tool call itself failed"
+          ],
+          "fixturesNeeded": [
+            "the MCP server's tool registry test harness",
+            "the chat host with a recording presenter",
+            "the MCP resolve-repo dependencies injected with a resolver that returns nothing"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "What only a running VS Code and a running Codex show",
+          "subjects": [
+            "a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat",
+            "a Codex chat turn that calls insrc_present opens the declared document in the review pane"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a declared artifact id and a declared path each open the matching pending document once, in order",
+            "the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call",
+            "the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything",
+            "a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat",
+            "the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one",
+            "a Codex mcp_tool_call insrc_present item with status failed still sets present",
+            "a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before",
+            "a Codex chat turn that calls insrc_present opens the declared document in the review pane",
+            "a declared artifact id matches the pending list's id without regard to the case of its story part",
+            "the chat host feeds the declaration from both a followed live turn and a hosted run",
+            "the chat opens a declared pending document even when the insrc_present tool call itself failed"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing",
+            "the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "a declared name that is not pending opens nothing and is reported by name",
+            "insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list",
+            "an unreadable pending list and a failing open are logged and never thrown",
+            "an input that is not a list of at most twenty non-empty strings leaves present absent",
+            "declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable",
+            "the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome",
+            "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+            "insrc_present with a resolver that finds no repo answers an error and presents nothing",
+            "a pending record with no document file is reported as not pending by the tool and by the chat"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval",
+            "the same document declared twice in a turn opens once",
+            "the declared list is not written into the saved transcript",
+            "the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The review presenter infers what to open: it JSON-parses each tool result for a top-level pendingApproval.artifactPath, and at the end of a turn it opens whatever became pending since the turn began. The Claude CLI replaces an oversized MCP result with a non-JSON preview, so a large workflow result opens nothing, and the end-of-turn guess depends on a pending list that holds hundreds of old records. The tool-call turn event carries no input, and the Codex mapper handles only command_execution and tool_call items, so a Codex mcp_tool_call item falls through unmapped (review-presenter.ts, chat-panel.ts, stream-events.ts and cli-adapter.ts, from the s1 bundles).",
+      "stateAfter": "The controller declares what it presents by calling a new insrc_present tool, whose input names the documents. Each provider mapper puts that list on the tool-call turn event (Claude from the tool_use input; Codex from the arguments object of a completed mcp_tool_call item, in the shape captured from codex-cli 0.162.1), the chat host hands it to the presenter, and the presenter opens exactly those pending documents once each, reporting any name that is not pending. The presenter no longer reads tool results or guesses at the end of a turn, and the steering text, the steering template and the guide tell the controller to declare before it asks for approval.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the insrc_present MCP tool with its input schema and its answer of presented and notPending, validated against the daemon's pending list; it changes nothing and can ship before anything calls it, and update the schema registry's expected tool list in schema-registry.test.ts and the steering skeleton's tool catalog row, the golden tool-surface fixture and its count in forward-step.test.ts, and PHASELESS_TOOLS; the tool's handler runs MCP-side and reads the pending list through the workflow.pending IPC for the resolved repo, with a new workflow.pending wrapper in daemon-stream.ts for its handler",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Extend the tool-call turn event with the optional present list and set it in the provider mappers from the insrc_present input only, live-only: the Claude mapper from the tool_use input, and the Codex mapper from the completed mcp_tool_call item's arguments object, with the real capture pinned as a fixture and tested",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Change the presenter's turn handle to take a declared list and open exactly those pending documents once each, with a not-pending report that the chat shows as a line; feed it from the tool-call event in the chat host",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Rewrite the steering block, the steering template and the guide's approval text to tell the controller to call insrc_present before it asks for approval, and to give the document's path in its message as well",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Remove presentedPathOf, the reading of tool results and the end-of-turn guess, with the tests that pinned them, only after the steps above are in",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The MCP tool is additive and the turn event field is optional, so an older plugin shows an insrc_present call as an ordinary tool row and keeps its old behaviour until it is updated, and an older daemon without the tool simply lacks it. The daemon (which serves the MCP tools) should be updated before the plugin that stops reading tool results, or the controller would have no tool to call. Stored transcript rows and old sessions are unaffected.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "A dedicated present tool whose input names the documents",
+        "oneLineSummary": "The controller calls insrc_present with the documents to open; the chat reads that call's small input from the turn event and opens exactly those.",
+        "approach": "Add one MCP tool, insrc_present, taking a list of artifact ids or document paths. The controller calls it whenever it asks the user to review or approve something. The tool validates the names against the daemon's pending list and returns a short result naming any that are not pending. The chat host reads the declaration from the turn's tool-call event, which is extended to carry the declared documents for this tool only (read by each provider mapper from the call's input: the Claude tool_use input, or the arguments object of a Codex mcp_tool_call item), resolves each name through the pending list and opens it quietly in the review pane. A name that does not resolve is shown in the chat as a line, not guessed at. The old parsing of tool output and the end-of-turn guess are removed, and the steering text and guide tell the controller to call insrc_present before asking for approval.",
+        "pros": [
+          "The contract is explicit and sits in the turn's own tool call, with a tiny input that no result truncation can touch",
+          "One new tool and one small event extension, with no change to every other tool",
+          "The tool can answer the controller at once if a document is not pending, so a mistake is visible to both the controller and the user",
+          "Both providers expose the call's input on the stream, verified live for Codex"
+        ],
+        "cons": [
+          "The controller must remember to call it, so the steering has to say so and a missing call means nothing opens",
+          "Adds a declared-documents field to the turn event for one tool"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "A present field on every workflow and review tool",
+        "oneLineSummary": "Each existing insrc tool takes an optional present list in its input, and the chat reads it from that call.",
+        "approach": "Add an optional present field (artifact ids or paths) to the inputs of insrc_workflow_step, insrc_build_step, insrc_review_step, insrc_code_review_step and the others that end in an approval. The chat reads the field from each tool-call event's input. The field is declared in each tool's schema and the steering says to set it on the call that produces a document for approval.",
+        "pros": [
+          "The declaration rides on the call that creates the document, so no extra call"
+        ],
+        "cons": [
+          "Eight or more schemas change, and every new tool must remember the field",
+          "The document does not exist yet when the call is made (the call is what creates it), so the name cannot be checked against the pending list at declaration time",
+          "Larger tool-call inputs for tools that already carry big payloads"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Also explicit, but it changes eight or more schemas, and the document does not exist yet when the declaring call is made, so the name cannot be validated then."
+      },
+      {
+        "id": "a3",
+        "name": "The daemon records what each tool presents and the chat follows it",
+        "oneLineSummary": "The tools register presented documents with the daemon, and the chat reads that record, with no controller declaration.",
+        "approach": "When a workflow, build or review tool writes a document for approval, the daemon records it as presented in a small ledger. The chat host reads the ledger for the turn through IPC and opens what it holds. The controller declares nothing.",
+        "pros": [
+          "No controller action, so nothing to forget",
+          "Independent of the CLI's result handling"
+        ],
+        "cons": [
+          "It is not an explicit contract in the turn: the chat still infers what to open, now from the daemon's record",
+          "A new daemon ledger and an IPC for it, plus rules for when an entry expires",
+          "It would open documents the controller did not mean to show the user"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "It removes the controller's declaration, which is the point of the request: the chat would still infer what to open, now from a daemon ledger, and could open what was not meant to be shown."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "The contract names insrc_present and the present field as new; createReviewPresenter, presentedPathOf and the tool-call event are existing symbols.",
+      "The invariants cite c1-c3, defined at synthesize as the s1 bundles.",
+      "The Story has no acceptance criteria; ac1-ac4 were derived from its stated needs.",
+      "The controller must call insrc_present for anything to open; the steering text is the only enforcement, and a missing call is visible as nothing opening.",
+      "The Codex shape is verified against codex-cli 0.162.1 only; a newer Codex that changes the item type, the tool naming or the arguments shape would open nothing until the mapper and the pinned fixture are updated."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: The output-parsing presenter (review-presenter.ts, docs-review-client.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: How the chat host feeds the presenter and where it is built (chat-panel.ts, extension.ts)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: What a turn event carries about a tool call, and the Codex and Claude mappers (stream-events.ts, cli-adapter.ts)"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/fixtures/codex-mcp-tool-call.jsonl",
+      "quotedText": "{\"type\":\"item.completed\",\"item\":{\"id\":\"item_1\",\"type\":\"mcp_tool_call\",\"server\":\"stub\",\"tool\":\"insrc_present\",\"arguments\":{\"documents\":[\"LLD-abc-S001\",\"docs/x.md\"]}"
+    }
+  ]
+}

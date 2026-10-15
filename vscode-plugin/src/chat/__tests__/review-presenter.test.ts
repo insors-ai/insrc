@@ -130,6 +130,16 @@ const TARGET = { artifactId: 'LLD-abc-s7', mdPath: '/home/dev/repo/docs/epics/x/
 const contents = (p: PaneKit): Array<Record<string, unknown>> => p.posted.filter((m) => m['type'] === 'docs-content');
 
 
+// Shared vector: src/mcp/__tests__/present-dispatch.test.ts applies the same rule to the same two documents.
+test('a name that matches more than one pending document opens nothing and is reported, and a full repo-relative path or an id opens one', async () => {
+  const A = doc('PLAN-aaa-S001', 'docs/standalone/a/S001/PLAN.md');
+  const B = doc('PLAN-bbb-S001', 'docs/standalone/b/S001/PLAN.md');
+  const k = kit([A, B]);
+  const outcome = await k.presenter.begin().declared(['PLAN.md', 'S001/PLAN.md', 'docs/standalone/a/S001/PLAN.md', 'plan-bbb-s001']);
+  assert.deepEqual(outcome, { opened: ['docs/standalone/a/S001/PLAN.md', 'plan-bbb-s001'], notPending: ['PLAN.md', 'S001/PLAN.md'], unreadable: false });
+  assert.deepEqual(ids(k), ['PLAN-aaa-S001', 'PLAN-bbb-S001'], 'only the unambiguous names opened, by their own documents');
+});
+
 test('docs review host: openArtifact with quiet creates the pane with quiet when there is none and reveals an existing one without taking focus; without quiet both are as before', async () => {
   // QUIET, no pane yet: created with quiet, not revealed; the document is opened with reveal.
   const q = pane();

@@ -440,7 +440,7 @@
 	{
 		"name": "insrc_present",
 		"title": "insrc present (declare the documents a turn shows for review)",
-		"description": "Declare the documents you are asking the user to review, BEFORE you ask them to approve: the chat opens exactly the documents named here in its review pane. Pass one to twenty artifact ids (for example `LLD-<hash>-S001`) or repo-relative document paths. The answer lists which names are `presented` (pending approval and openable) and which are `notPending` (misspelt, already approved, or with no document file yet), so you can correct a mistake at once. Changes nothing and approves nothing. `repo` falls back to the session workspace / INSRC_REPO.",
+		"description": "Declare the documents you are asking the user to review, BEFORE you ask them to approve: the chat opens exactly the documents named here in its review pane. Pass one to twenty artifact ids (for example `LLD-<hash>-S001`) or repo-relative document paths. The answer lists which names are `presented` (pending approval and openable) and which are `notPending` (misspelt, already approved, with no document file yet, or a path that matches more than one document), so you can correct a mistake at once. Changes nothing and approves nothing. `repo` falls back to the session workspace / INSRC_REPO.",
 		"inputSchema": {
 			"type": "object",
 			"properties": {

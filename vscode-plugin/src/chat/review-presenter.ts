@@ -28,7 +28,7 @@ export interface ReviewPresenterDeps {
 
 /**
  * What a declaration came to: the declared names that are open in the review pane for this turn,
- * the ones that are not pending, and whether the pending list could not be read (then nothing is
+ * the ones that are not pending (or match more than one pending document), and whether the pending list could not be read (then nothing is
  * opened and no name is classified).
  */
 export interface DeclaredOutcome {
@@ -62,6 +62,7 @@ interface TurnState {
 }
 
 /** A declared name names a pending document by its artifact id (compared without regard to case: the daemon lists `-s5` for some records and `-S001` for others) or by its path, absolute or repo-relative. */
+// The daemon-side twin is `namesPending` in src/mcp/server.ts (insrc_present's answer): keep the two in step.
 const namesDocument = (name: string, doc: PendingDocument): boolean =>
   doc.id.toLowerCase() === name.toLowerCase() || doc.mdPath === name || doc.mdPath.endsWith(`/${name}`);
 
@@ -105,7 +106,10 @@ export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresente
                   outcome.unreadable = true;
                 } else {
                   for (const name of documents) {
-                    const doc = docs.find((d) => namesDocument(name, d));
+                    // A name that matches more than one pending document (a bare `PLAN.md` among several
+                    // Stories') is ambiguous: it is reported, never guessed at by opening the first.
+                    const matches = docs.filter((d) => namesDocument(name, d));
+                    const doc = matches.length === 1 ? matches[0] : undefined;
                     if (doc === undefined) {
                       outcome.notPending.push(name);
                       continue;

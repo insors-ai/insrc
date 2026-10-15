@@ -967,8 +967,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'to approve: the chat opens exactly the documents named here in its review pane. ' +
 				'Pass one to twenty artifact ids (for example `LLD-<hash>-S001`) or repo-relative ' +
 				'document paths. The answer lists which names are `presented` (pending approval ' +
-				'and openable) and which are `notPending` (misspelt, already approved, or with no ' +
-				'document file yet), so you can correct a mistake at once. Changes nothing and ' +
+				'and openable) and which are `notPending` (misspelt, already approved, with no ' +
+				'document file yet, or a path that matches more than one document), so you can ' +
+				'correct a mistake at once. Changes nothing and ' +
 				'approves nothing. `repo` falls back to the session workspace / INSRC_REPO.',
 			annotations: {
 				readOnlyHint:   true,
@@ -1174,7 +1175,10 @@ export interface InsrcPresentDeps extends UnaryRpcDeps {
 
 /** True when the pending record names the document: the artifact id (compared
  *  without regard to case, since the daemon lists `-s5` for some records and
- *  `-S001` for others) or the document's repo-relative or absolute path. */
+ *  `-S001` for others) or the document's repo-relative or absolute path.
+ *  The chat plugin applies the same rule in `namesDocument`
+ *  (vscode-plugin/src/chat/review-presenter.ts): keep the two in step, which the
+ *  shared vectors in present-dispatch.test.ts and review-presenter.test.ts check. */
 function namesPending(name: string, doc: { artifactId: string; mdPath: string }): boolean {
 	if (doc.artifactId.toLowerCase() === name.toLowerCase()) return true;
 	return doc.mdPath === name || doc.mdPath.endsWith(`/${name}`);
@@ -1186,8 +1190,7 @@ export async function handleInsrcPresent(
 	args: InsrcPresentArgs,
 	deps: InsrcPresentDeps = {},
 ): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
-	const err = (msg: string): { content: { type: 'text'; text: string }[]; isError: boolean } =>
-		({ content: [{ type: 'text', text: msg }], isError: true });
+	const err = errorResult;
 
 	const docs: unknown = args.documents;
 	if (!Array.isArray(docs) || docs.length === 0 || docs.length > PRESENT_MAX_DOCUMENTS
@@ -1205,7 +1208,9 @@ export async function handleInsrcPresent(
 		if ('error' in pending) return err(`insrc_present: ${pending.error}`);
 		// A record with no document file (an empty mdPath) cannot be shown, so it is not presentable.
 		const openable = pending.artifacts.filter((a) => a.mdPath !== '');
-		const presented = names.filter((n) => openable.some((a) => namesPending(n, a)));
+		// A name that matches more than one document (a bare `PLAN.md` among several Stories') is
+		// ambiguous: it is reported as not presented rather than guessed at.
+		const presented = names.filter((n) => openable.filter((a) => namesPending(n, a)).length === 1);
 		const notPending = names.filter((n) => !presented.includes(n));
 		return { content: [{ type: 'text', text: JSON.stringify({ presented, notPending }) }] };
 	} catch (e) {

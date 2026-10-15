@@ -818,7 +818,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (outcome.unreadable) {
       postInfo(`present-note-${++presentNotes}`, 'The documents for review could not be opened: the pending list could not be read.');
     } else if (outcome.notPending.length > 0) {
-      postInfo(`present-note-${++presentNotes}`, `Not shown for review, because not pending approval: ${outcome.notPending.join(', ')}.`);
+      postInfo(`present-note-${++presentNotes}`, `Not shown for review (not pending approval, or the name matches more than one document): ${outcome.notPending.join(', ')}.`);
     }
   };
   const presentDeclared = (shown: PresentedTurn | undefined, ev: TurnEvent, canShow: () => boolean): void => {

@@ -114,3 +114,24 @@ test('insrc_present: a daemon error or an unreachable daemon is answered as an e
 	assert.equal(down.isError, true);
 	assert.match(text(down), /daemon is not running/);
 });
+
+// Shared vector: vscode-plugin/src/chat/__tests__/review-presenter.test.ts applies the same rule
+// to the same two pending documents (a name that matches more than one is ambiguous, never guessed).
+test('a name that matches more than one pending document is not presented, and a full repo-relative path or an id is', async () => {
+	const daemon = await fakeDaemon({
+		artifacts: [
+			{ artifactId: 'PLAN-aaa-S001', kind: 'PLAN', title: 'a', mdPath: '/repo/docs/standalone/a/S001/PLAN.md', openQuestionCount: 0, state: 'pending' },
+			{ artifactId: 'PLAN-bbb-S001', kind: 'PLAN', title: 'b', mdPath: '/repo/docs/standalone/b/S001/PLAN.md', openQuestionCount: 0, state: 'pending' },
+		],
+	});
+	try {
+		const out = await handleInsrcPresent(
+			{ documents: ['PLAN.md', 'S001/PLAN.md', 'docs/standalone/a/S001/PLAN.md', 'plan-bbb-s001'] },
+			{ connect: daemon.connect, resolveRepo: repoIs('/repo') },
+		);
+		assert.deepEqual(JSON.parse(text(out)), {
+			presented: ['docs/standalone/a/S001/PLAN.md', 'plan-bbb-s001'],
+			notPending: ['PLAN.md', 'S001/PLAN.md'],
+		});
+	} finally { await daemon.close(); }
+});

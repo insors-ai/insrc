@@ -228,6 +228,8 @@ The host preprocesses assistant markdown, replacing code references with markdow
   - **resolved**: Accept derived ac1-ac3 as-is — User approved the LLD with the derivation disclosed; PLAN notes they were derived. _(2026-10-15T05:32:51.759Z)_
 - `qdf0d2c9a` — The contract entry for the two new messages is named open-attachment (an existing message) as a schema workaround; they are the new open-link and open-code-ref messages.
   - **resolved**: Keep the workaround, document the alias — User chose no schema work for a naming quirk; plan and tests use open-link and open-code-ref. _(2026-10-15T05:33:23.411Z)_
+- `qa6f82020` — A live click must confirm an http link opens in the browser exactly once and a code reference opens at its line; no automated test can prove VS Code's own behaviour.
+  - **resolved**: Automated seam test plus live check _(2026-10-15T05:33:44.919Z)_
 
 ## Citations
 

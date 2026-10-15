@@ -192,6 +192,12 @@
         "choice": "Keep the workaround, document the alias",
         "rationale": "User chose no schema work for a naming quirk; plan and tests use open-link and open-code-ref.",
         "resolvedAt": "2026-10-15T05:33:23.411Z"
+      },
+      "qa6f82020": {
+        "question": "A live click must confirm an http link opens in the browser exactly once and a code reference opens at its line; no automated test can prove VS Code's own behaviour.",
+        "status": "resolved",
+        "choice": "Automated seam test plus live check",
+        "resolvedAt": "2026-10-15T05:33:44.919Z"
       }
     }
   },

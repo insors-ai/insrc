@@ -30,23 +30,47 @@ function within(dir: string, path: string): boolean {
   return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
 }
 
+type ResolveFs = Pick<typeof nodeFsp, 'realpath' | 'stat'>;
+
+/**
+ * The real path of the regular file `relPath` names under `root`, or undefined. `relPath` is
+ * refused when it is absolute or when `..` takes it out of `container` (the whole of `root`
+ * unless a narrower folder is given), checked as written and again once symlinks are resolved,
+ * so a link inside the folder cannot lead out of it. It never throws.
+ */
+export async function resolveWithin(
+  root: string,
+  relPath: string,
+  fs: ResolveFs = nodeFsp,
+  container: string = root,
+): Promise<string | undefined> {
+  try {
+    if (typeof relPath !== 'string' || relPath === '' || isAbsolute(relPath)) return undefined;
+    const file = resolve(root, relPath);
+    // As written: a '..' that leaves the container is refused before anything is touched.
+    if (!within(container, file)) return undefined;
+    // As it really is: a symlink under the container must not lead out of it.
+    const realContainer = await fs.realpath(container);
+    const realFile = await fs.realpath(file);
+    if (!within(realContainer, realFile)) return undefined;
+    const stat = await fs.stat(realFile);
+    return stat.isFile() ? realFile : undefined;
+  } catch {
+    return undefined; // missing, unreadable, or no such folder
+  }
+}
+
 export function createCompanionReader(deps: CompanionReaderDeps): CompanionReader {
   const fs = deps.fs ?? nodeFsp;
   return async (relPath) => {
     try {
       const root = deps.root();
       if (root === undefined || root === '') return undefined;
-      if (typeof relPath !== 'string' || !/\.html$/i.test(relPath) || isAbsolute(relPath)) return undefined;
-      const docs = resolve(root, 'docs');
-      const file = resolve(root, relPath);
-      // As written: a '..' that leaves docs/ is refused before anything is touched.
-      if (!within(docs, file)) return undefined;
-      // As it really is: a symlink under docs/ must not lead out of it.
-      const realDocs = await fs.realpath(docs);
-      const realFile = await fs.realpath(file);
-      if (!within(realDocs, realFile) || !/\.html$/i.test(realFile)) return undefined;
+      if (typeof relPath !== 'string' || !/\.html$/i.test(relPath)) return undefined;
+      const realFile = await resolveWithin(root, relPath, fs, resolve(root, 'docs'));
+      if (realFile === undefined || !/\.html$/i.test(realFile)) return undefined;
       const stat = await fs.stat(realFile);
-      if (!stat.isFile() || stat.size > COMPANION_MAX_BYTES) return undefined;
+      if (stat.size > COMPANION_MAX_BYTES) return undefined;
       return await fs.readFile(realFile, 'utf8');
     } catch {
       return undefined; // missing, unreadable, or no docs/ folder

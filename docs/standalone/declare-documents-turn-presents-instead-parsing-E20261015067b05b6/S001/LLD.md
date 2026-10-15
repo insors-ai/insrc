@@ -286,6 +286,8 @@ When a workflow, build or review tool writes a document for approval, the daemon
   - **resolved**: Pin c1-c3 to concrete source refs in PLAN — User chose option 1. _(2026-10-15T10:30:44.457Z)_
 - `q1daf4a0e` — The Story has no acceptance criteria; ac1-ac4 were derived from its stated needs.
   - **resolved**: Accept derived ac1-ac4 as-is — User chose option 1. _(2026-10-15T10:31:35.250Z)_
+- `q89143172` — The controller must call insrc_present for anything to open; the steering text is the only enforcement, and a missing call is visible as nothing opening.
+  - **resolved**: Accept steering-only enforcement — User: steering only is fine for now; the PLAN must carry a note that this may need to be revisited (e.g. a daemon-side reminder or missing-call detection) if steering-only proves unreliable. _(2026-10-15T10:33:02.190Z)_
 
 ## Citations
 

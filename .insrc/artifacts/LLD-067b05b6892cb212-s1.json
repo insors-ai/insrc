@@ -246,6 +246,13 @@
         "choice": "Accept derived ac1-ac4 as-is",
         "rationale": "User chose option 1.",
         "resolvedAt": "2026-10-15T10:31:35.250Z"
+      },
+      "q89143172": {
+        "question": "The controller must call insrc_present for anything to open; the steering text is the only enforcement, and a missing call is visible as nothing opening.",
+        "status": "resolved",
+        "choice": "Accept steering-only enforcement",
+        "rationale": "User: steering only is fine for now; the PLAN must carry a note that this may need to be revisited (e.g. a daemon-side reminder or missing-call detection) if steering-only proves unreliable.",
+        "resolvedAt": "2026-10-15T10:33:02.190Z"
       }
     }
   },

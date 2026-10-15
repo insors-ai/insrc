@@ -16,7 +16,7 @@ import { createInMemoryChatSessionStore } from '../session-store.js';
 import type { ProviderRegistry, StreamAdapter } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import { createAttachmentStore } from '../attachment-store.js';
-import { allOf, bodyStub, fire, textNode, type BodyStub } from './fake-dom.js';
+import { allOf, bodyStub, fire, textNode, textOf, type BodyStub } from './fake-dom.js';
 import { fakeAttachmentFs } from './fake-attachment-fs.js';
 
 const ROW_PX = 10;
@@ -405,7 +405,7 @@ test('transcript-row: a diff row without replaces appends a widget stamped with 
   const [first, second] = widgets(v);
   assert.equal(rowOf(first!), 1);
   assert.equal(rowOf(second!), 2);
-  assert.equal(byClass(first!, 'insrc-diffw__text')[0]!.textContent, 'v1 0');
+  assert.equal(textOf(byClass(first!, 'insrc-diffw__text')[0]!), 'v1 0');
 
   // The reader opens the first widget; a later version redraws it in place and it stays open.
   fire(byClass(first!, 'insrc-diffw__more')[0]!, 'click');
@@ -414,7 +414,7 @@ test('transcript-row: a diff row without replaces appends a widget stamped with 
   assert.equal(v.term.children.length, 3, 'no new node for a later version');
   assert.equal(widgets(v)[0], first, 'the same widget');
   assert.ok(first!.className.includes('insrc-diffw--open'));
-  assert.equal(byClass(first!, 'insrc-diffw__text')[0]!.textContent, 'v2 0');
+  assert.equal(textOf(byClass(first!, 'insrc-diffw__text')[0]!), 'v2 0');
   assert.equal(byClass(first!, 'insrc-diffw__line').length, 12);
   assert.equal(rowOf(first!), 1, 'it keeps its own row index');
 
@@ -479,11 +479,11 @@ test('diff widget: a diff row in a session-restored window and in a transcript-p
   const [w] = widgets(v);
   assert.ok(w, 'the restored diff row is in the transcript element');
   assert.equal(rowOf(w!), 101);
-  assert.equal(byClass(w!, 'insrc-diffw__text')[0]!.textContent, 'latest');
+  assert.equal(textOf(byClass(w!, 'insrc-diffw__text')[0]!), 'latest');
   assert.equal(byClass(w!, 'insrc-diffw__path')[0]!.attrs['title'], 'src/a.ts');
   // A restored widget is remembered too: a live later version redraws it.
   v.msg({ type: 'transcript-row', rowIndex: 104, row: diffRowMsg({ sid: undefined, replaces: 'k-9', lines: ['+newer'] }) });
-  assert.equal(byClass(w!, 'insrc-diffw__text')[0]!.textContent, 'newer');
+  assert.equal(textOf(byClass(w!, 'insrc-diffw__text')[0]!), 'newer');
 
   // An older page: its diff row is drawn above the held rows.
   fire(v.bar, 'click');

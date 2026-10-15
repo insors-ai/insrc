@@ -695,7 +695,6 @@ const claudeMapper: ProviderMapper = {
   },
 };
 
-/** claude MCP tool-use names look like `mcp__<server>__<name>`. */
 /** The MCP tool a controller calls to declare the documents a turn presents for review. */
 const PRESENT_TOOL = 'insrc_present';
 /** The most documents one declaration may name (the tool's own limit). */
@@ -712,6 +711,7 @@ function declaredDocuments(value: unknown): readonly string[] | undefined {
   return docs;
 }
 
+/** claude MCP tool-use names look like `mcp__<server>__<name>`. */
 function parseMcpTool(tool: string): { server: string; name: string } | undefined {
   const m = /^mcp__([^_]+(?:_[^_]+)*)__(.+)$/.exec(tool);
   if (!m || m[1] === undefined || m[2] === undefined) return undefined;

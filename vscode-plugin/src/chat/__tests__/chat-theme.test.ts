@@ -336,6 +336,7 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.histchip::before',
     '.insrc-approval__btn--approve:hover',
     // Epic babd84c6e2fb480a Story S001: a link or code reference the page made clickable has no href, so it needs its own link look.
+    '.insrc-diffw__line[data-diff-path]',
     '.insrc-diffw__text .hljs-comment,.insrc-diffw__text .hljs-quote,.insrc-diffw__text .hljs-doctag',
     '.insrc-diffw__text .hljs-keyword,.insrc-diffw__text .hljs-selector-tag',
     '.insrc-diffw__text .hljs-meta,.insrc-diffw__text .hljs-attribute,.insrc-diffw__text .hljs-attr,.insrc-diffw__text .hljs-tag,.insrc-diffw__text .hljs-name,.insrc-diffw__text .hljs-selector-class,.insrc-diffw__text .hljs-selector-id',

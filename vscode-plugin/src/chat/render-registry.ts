@@ -232,6 +232,7 @@ export const RENDER_REGISTRY_STYLE =
   `.insrc-diffw__line--add .insrc-diffw__sign{color:var(--pass);}` +
   `.insrc-diffw__line--del{background:var(--del-bg);outline:1px solid var(--del-border);outline-offset:-1px;}` +
   `.insrc-diffw__line--del .insrc-diffw__sign{color:var(--red);}` +
+  `.insrc-diffw__line[data-diff-path]{cursor:pointer;}` +
   `.insrc-diffw__line--ctx{color:var(--muted);}` +
   // Epic 00d80121c593053c Story S001: syntax token colours. highlight.js has no token variables in a webview, so each class
   // takes one of the chat's existing :root colours (themselves VS Code theme variables); they approximate the editor's
@@ -372,7 +373,16 @@ export function renderRegistryWebviewSource(): string {
     // Epic babd84c6e2fb480a Story S001: the link-open sink. chat-panel registers a callback via onLinkOpen(cb); one
     // delegated click handler on the document hands it the message for a clicked link or code reference.
     `var LDEC=null;function onLinkOpen(cb){LDEC=cb;}` +
-    `if(document.addEventListener)document.addEventListener('click',function(e){onLinkClick(e,function(p){if(LDEC)LDEC(p);});});` +
+    // Epic 00d80121c593053c Story S001: a click on a diff line, or on the path in a widget's header, opens that file at
+    // that line: it posts the same open-code-ref message through the same sink, and the host does the opening. A
+    // line carries its path and its new-side line as data attributes, written when the row is built. A click that
+    // ends a text selection opens nothing, so a line can still be copied.
+    `function diffRefOf(t){while(t&&t.nodeType===1){var dp=t.getAttribute?t.getAttribute('data-diff-path'):null;` +
+    `if(dp)return {path:dp,line:t.getAttribute('data-diff-line')};t=t.parentNode;}return null;}` +
+    `function onDiffClick(e){try{var r=diffRefOf(e&&e.target);if(!r||!LDEC)return;` +
+    `var sel=document.getSelection?String(document.getSelection()):'';if(sel!=='')return;` +
+    `var n=parseInt(r.line||'',10);LDEC(n>0?{type:'open-code-ref',path:r.path,line:n}:{type:'open-code-ref',path:r.path});}catch(x){}}` +
+    `if(document.addEventListener)document.addEventListener('click',function(e){onLinkClick(e,function(p){if(LDEC)LDEC(p);});onDiffClick(e);});` +
     `function attSize(n){n=typeof n==='number'&&n>=0?n:0;` +
     `if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(1)+' MB';}` +
     `function attChip(a){` +
@@ -590,7 +600,7 @@ export function renderRegistryWebviewSource(): string {
     `var kids=box.children;while(kids&&kids.length)box.removeChild(kids[0]);box.textContent='';` +
     `var head=dEl('div','insrc-diffw__head');var chev=dEl('span','insrc-diffw__chev','');head.appendChild(chev);` +
     `head.appendChild(dEl('span','insrc-diffw__glyph','\\u270e'));` +
-    `var p=String(row.path!=null?row.path:'');var path=dEl('span','insrc-diffw__path');path.appendChild(dEl('bdi','',p));path.setAttribute('title',p);head.appendChild(path);` +
+    `var p=String(row.path!=null?row.path:'');var path=dEl('span','insrc-diffw__path');path.appendChild(dEl('bdi','',p));path.setAttribute('title',p);if(p){path.setAttribute('data-diff-path',p);if((row.newStart||0)>0)path.setAttribute('data-diff-line',String(row.newStart));}head.appendChild(path);` +
     `var kind=row.binary?'binary file':row.fileState==='new'?'new file':row.fileState==='deleted'?'deleted':'';` +
     `if(kind)head.appendChild(dEl('span','insrc-diffw__kind',kind));` +
     `var stat=dEl('span','insrc-diffw__stat');stat.appendChild(dEl('span','insrc-diffw__a','+'+(row.added||0)));stat.appendChild(dEl('span','insrc-diffw__d','\\u2212'+(row.removed||0)));head.appendChild(stat);` +
@@ -601,6 +611,7 @@ export function renderRegistryWebviewSource(): string {
     `var oldNo=row.oldStart||0,newNo=row.newStart||0;` +
     `for(var i=0;i<lines.length;i++){var l=String(lines[i]);var c=l.charAt(0);var note=c==='\\\\';` +
     `var r=dEl('div','insrc-diffw__line insrc-diffw__line--'+(c==='+'?'add':c==='-'?'del':note?'note':'ctx')+(i>=DIFF_LIMIT?' insrc-diffw__line--more':''));` +
+    `if(!note&&p){r.setAttribute('data-diff-path',p);if(newNo>0)r.setAttribute('data-diff-line',String(newNo));}` +
     `r.appendChild(dEl('span','insrc-diffw__num',note?'':String(c==='-'?oldNo:newNo)));` +
     `r.appendChild(dEl('span','insrc-diffw__sign',c==='+'?'+':c==='-'?'\\u2212':''));` +
     `var tx=dEl('span','insrc-diffw__text');var runs=toks&&toks[i];` +
@@ -616,7 +627,7 @@ export function renderRegistryWebviewSource(): string {
     `more.textContent=isOpen?'show less':'show '+hidden+' more line'+(hidden===1?'':'s');}` +
     `function toggle(){isOpen=!isOpen;paint();}` +
     `head.setAttribute('role','button');head.setAttribute('tabindex','0');` +
-    `head.addEventListener('click',toggle);more.addEventListener('click',toggle);` +
+    `head.addEventListener('click',function(e){var t=e&&e.target;while(t){if(t===path)return;t=t.parentNode;}toggle();});more.addEventListener('click',toggle);` +
     `head.addEventListener('keydown',function(e){if(e&&(e.key==='Enter'||e.key===' ')){if(e.preventDefault)e.preventDefault();toggle();}});` +
     `box.appendChild(more);paint();return box;}` +
     // A row with `replaces` is a later version of a section and a withdrawn one is gone: neither

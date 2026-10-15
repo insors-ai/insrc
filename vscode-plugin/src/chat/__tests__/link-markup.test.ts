@@ -237,7 +237,7 @@ test('the chat page and the review pane both include the linkify and click wirin
     assert.match(html, /\.insrc-md a\[data-url\]/, `${name}: handled links have a pointer`);
   }
   // Each page hands the click to the host over its own channel.
-  assert.match(chatHtml, /document\.addEventListener\('click',function\(e\)\{onLinkClick\(e,function\(p\)\{if\(LDEC\)LDEC\(p\);\}\);\}\);/);
+  assert.match(chatHtml, /document\.addEventListener\('click',function\(e\)\{onLinkClick\(e,function\(p\)\{if\(LDEC\)LDEC\(p\);\}\);onDiffClick\(e\);\}\);/);
   assert.match(chatHtml, /reg\.onLinkOpen\(function\(p\)\{vs\.postMessage\(\{v:1,payload:p\}\);\}\);/);
   assert.match(reviewHtml, /document\.addEventListener\('click',function\(e\)\{onLinkClick\(e,function\(p\)\{vs\.postMessage\(\{v:1,payload:p\}\);\}\);\}\);/);
   assert.equal(count(reviewHtml, "document.addEventListener('click'"), 1, 'review: one delegated click handler');

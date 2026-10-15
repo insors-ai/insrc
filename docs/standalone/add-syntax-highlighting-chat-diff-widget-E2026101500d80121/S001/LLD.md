@@ -236,6 +236,8 @@ Do the tokenising in the extension host with a TextMate engine and grammars, and
   - **resolved**: Keep workaround, document alias — As decided for the links story: no schema work; tasks and tests use the real new names. _(2026-10-15T09:01:26.748Z)_
 - `q1daf4a0e` — The Story has no acceptance criteria; ac1-ac4 were derived from its stated needs.
   - **resolved**: Accept derived ac1-ac4 as-is — The user approved the LLD, which states the derivation; ac5 (click to open) came from the user's own review comment. _(2026-10-15T09:02:01.225Z)_
+- `q5937c2fd` — Whether fenced code blocks in assistant replies share the highlighter is left out of this Story and is a candidate follow-up.
+  - **resolved**: Defer, but keep the highlighter reusable _(2026-10-15T09:02:29.451Z)_
 
 ## Citations
 

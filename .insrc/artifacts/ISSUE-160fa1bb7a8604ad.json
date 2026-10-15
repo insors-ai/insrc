@@ -21,7 +21,11 @@
     "epicSlug": "end-running-state-only-running-turn",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-15T04:44:45.400Z",
+    "parentRef": {
+      "slug": "end-running-state-only-running-turn"
+    }
   },
   "body": {
     "title": "End the running state only on the running turn's own done, not on an informational line's",

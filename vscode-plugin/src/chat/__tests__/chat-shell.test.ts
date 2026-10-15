@@ -637,3 +637,26 @@ test('chat shell: the progress widget is never hidden: idle at the start, workin
   v.msg({ type: 'session-restored', sessionId: 's2', transcript: [], mode: 'manual' });
   assert.equal(state(), 'progress idle|idle|hidden=false');
 });
+
+test("chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do", () => {
+  const v = runShell();
+  const prog = v.el('insrc-progress') as BodyStub & { className?: string };
+  const prompt = v.el('insrc-prompt') as BodyStub;
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [], mode: 'manual' });
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  assert.deepEqual([prog.className, prompt.textContent], ['progress', '\u25a0'], 'working, with Stop');
+
+  // An informational line (a retry note) arrives under its own turn id, closed by a marked done: still running.
+  v.msg({ type: 'turn-event', event: { kind: 'assistant-delta', turnId: 'queue-retry-x', text: 'the turn failed with overloaded; retrying (attempt 1 of 3)' } });
+  v.msg({ type: 'turn-event', event: { kind: 'done', turnId: 'queue-retry-x', ok: true }, info: true });
+  assert.deepEqual([prog.className, prompt.textContent], ['progress', '\u25a0'], 'the line did not end the turn');
+
+  // The turn's own done ends it.
+  v.msg({ type: 'turn-event', event: { kind: 'done', turnId: 't1', ok: true } });
+  assert.deepEqual([prog.className, prompt.textContent], ['progress idle', '\u276f'], "the turn's done ends it");
+
+  // So does the turn's own error, and a done that is not marked, whatever its turn id, is read as a turn's.
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  v.msg({ type: 'turn-event', event: { kind: 'error', turnId: 't2', message: 'boom' } });
+  assert.deepEqual([prog.className, prompt.textContent], ['progress idle', '\u276f'], "the turn's error ends it");
+});

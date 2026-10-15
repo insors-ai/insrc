@@ -405,6 +405,9 @@ test('a retry stores and posts one retrying line, still in the stored transcript
   await out;
   h.runs[0]!.proc.exitNow();
   const line = 'the turn failed with overloaded; retrying (attempt 1 of 3)';
+  // The done that closes the line is marked informational, so the page does not read it as the end of the turn (ISSUE-160fa1bb).
+  const infoDones = h.fc.posted.filter((p) => p.payload.type === 'turn-event' && (p.payload['event'] as { kind?: string; turnId?: string }).kind === 'done' && String((p.payload['event'] as { turnId?: string }).turnId).startsWith('queue-retry-'));
+  assert.ok(infoDones.length >= 1 && infoDones.every((p) => p.payload['info'] === true), 'the retry line closes with a marked done');
   const rows = h.store.get(s.id)!.transcript;
   assert.equal(rows.filter((r) => r.role === 'assistant' && r.text === line).length, 1, 'one stored retrying line');
   assert.ok(rows.some((r) => r.role === 'assistant' && r.text === 'partial answer'), 'the partial text is kept');

@@ -1825,7 +1825,7 @@ test('S002 ac3: renderShell embeds a single #insrc-progress widget above the inp
   // It is animated (a keyframed spinner) and status routes to it, not a transcript row.
   assert.match(html, /@keyframes insrc-blink/, 'the widget is animated');
   assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label\);\}/, 'status drives the progress widget (gated on running), not a row');
-  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|ev\.kind==='error'\)\)\{setRunning\(false\);setIdle\(\);\}/, 'done/error puts the widget idle (never hides it) + restores Send');
+  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|ev\.kind==='error'\)&&!m\.info\)\{setRunning\(false\);setIdle\(\);\}/, "a turn's done/error puts the widget idle (never hides it) + restores Send; the done that closes an informational line (info) does not");
 });
 
 test('S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)', async () => {

@@ -703,7 +703,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // A self-contained informational assistant message (its own turn id, so it closes itself).
   const postInfo = (turnId: string, text: string): void => {
     post({ type: 'turn-event', event: { kind: 'assistant-delta', turnId, text } });
-    post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true } });
+    post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true }, info: true }); // closes the line, not a turn (ISSUE-160fa1bb)
   };
 
   // Story S004: an informational line that is also stored (postInfo is live-only), so a reload still
@@ -712,7 +712,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const ev: TurnEvent = { kind: 'assistant-delta', turnId, text };
     const rowIndex = appendEvent(s, ev);
     postLive(ev, rowIndex);
-    post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true } });
+    post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true }, info: true }); // closes the line, not a turn (ISSUE-160fa1bb)
     trySave(s);
   };
 
@@ -1297,7 +1297,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // builds a detached node, so the handler appends it) — never a silent block.
       `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){pager.append(_c);}}` +
       `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}});` +
-      `if(ev&&(ev.kind==='done'||ev.kind==='error')){setRunning(false);setIdle();}}` +
+      `if(ev&&(ev.kind==='done'||ev.kind==='error')&&!m.info){setRunning(false);setIdle();}}` +
       // ISSUE-6a811b8a: more requests queued behind the shown card — update its '1 of N' in place.
       `else if(m.type==='approval-position'){reg.approvalPosition(m.requestId,m.position,m.total);}` +
       // Story E20261013b2e8109f:S001: a row the host pushed outside the event path. A later version

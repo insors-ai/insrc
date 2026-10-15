@@ -82,7 +82,9 @@ export type PermissionMode = 'manual' | 'edit-auto' | 'auto';
 export type HostToWebview =
   // Story E20261012ddc4ede1:S001 (additive): `rowIndex` is the absolute transcript index of the row
   // this event wrote; absent on an event that writes no row (status, approval-request).
-  | { readonly type: 'turn-event'; readonly event: TurnEvent; readonly rowIndex?: number | undefined }
+  // ISSUE-160fa1bb7a8604ad (additive): `info` marks the done that closes an informational line the host posts under its
+  // own turn id; the page does not read it as the end of the running turn.
+  | { readonly type: 'turn-event'; readonly event: TurnEvent; readonly rowIndex?: number | undefined; readonly info?: boolean | undefined }
   // Story E20261012ddc4ede1:S001 (additive): `transcript` is a window of the session's rows, not
   // necessarily all of them. `firstIndex` is the absolute index of transcript[0] (absent = 0) and
   // `total` the number of rows in the whole transcript.

@@ -198,6 +198,12 @@
         "status": "resolved",
         "choice": "Automated seam test plus live check",
         "resolvedAt": "2026-10-15T05:33:44.919Z"
+      },
+      "q8b6fe6e8": {
+        "question": "Whether VS Code places a clicked file in the chosen group is checked live, as the review pane placement is.",
+        "status": "resolved",
+        "choice": "Both: unit test plus a live check",
+        "resolvedAt": "2026-10-15T05:33:54.529Z"
       }
     }
   },

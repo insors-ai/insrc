@@ -230,6 +230,8 @@ The host preprocesses assistant markdown, replacing code references with markdow
   - **resolved**: Keep the workaround, document the alias — User chose no schema work for a naming quirk; plan and tests use open-link and open-code-ref. _(2026-10-15T05:33:23.411Z)_
 - `qa6f82020` — A live click must confirm an http link opens in the browser exactly once and a code reference opens at its line; no automated test can prove VS Code's own behaviour.
   - **resolved**: Automated seam test plus live check _(2026-10-15T05:33:44.919Z)_
+- `q8b6fe6e8` — Whether VS Code places a clicked file in the chosen group is checked live, as the review pane placement is.
+  - **resolved**: Both: unit test plus a live check _(2026-10-15T05:33:54.529Z)_
 
 ## Citations
 

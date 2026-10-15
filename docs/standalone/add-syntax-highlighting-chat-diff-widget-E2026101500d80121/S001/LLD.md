@@ -240,6 +240,8 @@ Do the tokenising in the extension host with a TextMate engine and grammars, and
   - **resolved**: Defer, but keep the highlighter reusable _(2026-10-15T09:02:29.451Z)_
 - `q3ef3c8d4` — Which languages the bundled subset holds, and the size it adds to the one inline script, are settled and recorded at build; the generator builds the core plus subset with esbuild, a different step from marked's prebuilt-file copy.
   - **resolved**: Fix list plus a size budget — Languages: typescript, javascript, json, python, go, java, scala, bash, yaml, css, xml/html, markdown, plus Dockerfile and Makefile by name. Budget: the added highlighter source stays under 250 KB, enforced by a test. _(2026-10-15T09:02:55.110Z)_
+- `qb88b727a` — The section's path is relative to the folder the diff ran in, and the host resolves a clicked path from the first workspace folder; if the chat's folder is not that workspace folder, the click is refused and logged. Carrying the folder with the click is left for a follow-up.
+  - **resolved**: Accept the limitation, defer to follow-up _(2026-10-15T09:03:07.824Z)_
 
 ## Citations
 

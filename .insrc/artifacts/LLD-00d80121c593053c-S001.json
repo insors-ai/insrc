@@ -253,6 +253,12 @@
         "choice": "Fix list plus a size budget",
         "rationale": "Languages: typescript, javascript, json, python, go, java, scala, bash, yaml, css, xml/html, markdown, plus Dockerfile and Makefile by name. Budget: the added highlighter source stays under 250 KB, enforced by a test.",
         "resolvedAt": "2026-10-15T09:02:55.110Z"
+      },
+      "qb88b727a": {
+        "question": "The section's path is relative to the folder the diff ran in, and the host resolves a clicked path from the first workspace folder; if the chat's folder is not that workspace folder, the click is refused and logged. Carrying the folder with the click is left for a follow-up.",
+        "status": "resolved",
+        "choice": "Accept the limitation, defer to follow-up",
+        "resolvedAt": "2026-10-15T09:03:07.824Z"
       }
     }
   },

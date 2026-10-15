@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
 import { DIFF_HIGHLIGHT_SOURCE } from '../diff-highlight.js';
 
-type Run = { text: string; cls?: string };
+type Run = { text: string; cls?: string | undefined };
 interface Page {
   diffLang(path: string): string | undefined;
   hljsRuns(html: string): Run[][] | undefined;

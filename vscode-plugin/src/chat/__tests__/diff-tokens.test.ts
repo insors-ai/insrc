@@ -14,7 +14,7 @@ import { allOf, bodyStub, fire, textNode, textOf, type BodyStub } from './fake-d
 interface Registry { renderRow(vm: unknown): BodyStub | null }
 
 /** The registry over the fake DOM; `withHljs` evaluates the real highlighter in the same context first. */
-function registry(opts: { withHljs?: boolean; hljs?: unknown } = {}): Registry {
+function registry(opts: { withHljs?: boolean | undefined; hljs?: unknown } = {}): Registry {
   const ctx: Record<string, unknown> = {
     document: { createElement: (tag: string) => bodyStub(tag), createTextNode: (t: string) => textNode(t), addEventListener: () => {} },
   };
@@ -24,7 +24,7 @@ function registry(opts: { withHljs?: boolean; hljs?: unknown } = {}): Registry {
   return make(ctx['document'], () => bodyStub('div'));
 }
 
-interface Row { path: string; oldStart: number; newStart: number; lines: string[]; added?: number; removed?: number }
+interface Row { path: string; oldStart: number; newStart: number; lines: string[]; added?: number | undefined; removed?: number | undefined }
 const diffRow = (row: Row): BodyStub => {
   const box = registry().renderRow({ kind: 'diff', meta: { added: 0, removed: 0, ...row } });
   assert.ok(box, 'the widget is built');

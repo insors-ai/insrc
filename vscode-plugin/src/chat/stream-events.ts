@@ -46,6 +46,13 @@ export type TurnEvent =
        * call's row by it. Live-only: never persisted into the transcript.
        */
       readonly callId?: string;
+      /**
+       * Story E20261015067b05b6:S001 (additive, live-only): the documents an `insrc_present` call
+       * declares for review, read by the provider mapper from the call's own input (one to twenty
+       * non-empty strings). Absent on every other call and on a malformed declaration. Never
+       * persisted: markerFor keeps only a label.
+       */
+      readonly present?: readonly string[] | undefined;
     }
   | {
       readonly kind: 'file-edit';

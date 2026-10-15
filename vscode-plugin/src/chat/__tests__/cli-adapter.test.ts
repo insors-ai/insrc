@@ -417,6 +417,54 @@ test('claude: a command-less tool_use omits command (renders as the tool name, k
   assert.equal(tc!.command, undefined, 'command is omitted for a command-less tool');
 });
 
+// ---- Story E20261015067b05b6:S001 t3: ToolCallEvent.present (the documents a turn declares) ----
+
+const claudeToolUse = (name: string, input: unknown): string[] => [
+  JSON.stringify({ type: 'system', subtype: 'init', session_id: 's' }),
+  JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'tu1', name, input }] } }),
+  JSON.stringify({ type: 'result' }),
+];
+const presentOf = async (lines: string[]): Promise<readonly string[] | undefined> => {
+  const { deps } = depsFor({ lines });
+  const reg = createProviderRegistry(deps);
+  const tc = (await collect(reg.get('claude').run(REQ({ provider: 'claude' })))).find((e) => e.kind === 'tool-call') as
+    | { present?: readonly string[] }
+    | undefined;
+  assert.ok(tc, 'a tool-call was emitted');
+  return tc.present;
+};
+
+test('the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call', async () => {
+  const docs = ['LLD-abc-S001', 'docs/x/PLAN.md'];
+  // Server-qualified name, whichever server the MCP is registered under.
+  assert.deepEqual(await presentOf(claudeToolUse('mcp__insrc__insrc_present', { documents: docs })), docs);
+  assert.deepEqual(await presentOf(claudeToolUse('mcp__plugin_insrc_insrc__insrc_present', { documents: docs })), docs);
+  // Every other tool leaves it off, even with the same input; a different tool named alike is not it.
+  assert.equal(await presentOf(claudeToolUse('mcp__insrc__insrc_workflow_approve', { documents: docs })), undefined);
+  assert.equal(await presentOf(claudeToolUse('Bash', { command: 'ls', documents: docs })), undefined);
+  assert.equal(await presentOf(claudeToolUse('insrc_present', { documents: docs })), undefined, 'an unqualified Claude name is not an MCP call');
+});
+
+test('an input that is not a list of at most twenty non-empty strings leaves present absent', async () => {
+  const twenty = Array.from({ length: 20 }, (_, i) => `LLD-${i}`);
+  assert.deepEqual(await presentOf(claudeToolUse('mcp__insrc__insrc_present', { documents: twenty })), twenty);
+  for (const bad of [
+    { documents: [] },
+    { documents: [...twenty, 'LLD-21'] },
+    { documents: ['LLD-a', ''] },
+    { documents: ['LLD-a', 7] },
+    { documents: 'LLD-a' },
+    { documents: { 0: 'LLD-a' } },
+    {},
+  ]) {
+    assert.equal(await presentOf(claudeToolUse('mcp__insrc__insrc_present', bad)), undefined, JSON.stringify(bad));
+  }
+  // The call itself still shows as a tool row.
+  const { deps } = depsFor({ lines: claudeToolUse('mcp__insrc__insrc_present', { documents: [] }) });
+  const events = await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
+  assert.ok(events.some((e) => e.kind === 'tool-call' && e.mcp?.name === 'insrc_present'));
+});
+
 test('codex: a command_execution item sets command from item.command', async () => {
   const lines = [
     JSON.stringify({ type: 'thread.started', thread_id: 't' }),

@@ -613,11 +613,15 @@ const claudeMapper: ProviderMapper = {
             if (command !== undefined && typeof block['id'] === 'string' && block['id'] !== '') {
               (state.toolCommands ??= {})[block['id'] as string] = command;
             }
+            // The declaration lives in the call's own input (never a tool result): Claude names the
+            // tool server-qualified, so it is matched on the parsed MCP name, whichever server it is.
+            const present = mcp?.name === PRESENT_TOOL ? declaredDocuments(input['documents']) : undefined;
             out.push({
               kind: 'tool-call',
               turnId,
               tool: toolName,
               ...(mcp ? { mcp } : {}),
+              ...(present !== undefined ? { present } : {}),
               ...(command !== undefined ? { command } : {}),
               ...(typeof block['id'] === 'string' && block['id'] !== '' ? { callId: block['id'] as string } : {}),
             });
@@ -692,6 +696,22 @@ const claudeMapper: ProviderMapper = {
 };
 
 /** claude MCP tool-use names look like `mcp__<server>__<name>`. */
+/** The MCP tool a controller calls to declare the documents a turn presents for review. */
+const PRESENT_TOOL = 'insrc_present';
+/** The most documents one declaration may name (the tool's own limit). */
+const PRESENT_MAX_DOCUMENTS = 20;
+
+/** The documents a declaration names: a list of one to twenty non-empty strings, else undefined. */
+function declaredDocuments(value: unknown): readonly string[] | undefined {
+  if (!Array.isArray(value) || value.length === 0 || value.length > PRESENT_MAX_DOCUMENTS) return undefined;
+  const docs: string[] = [];
+  for (const d of value as unknown[]) {
+    if (typeof d !== 'string' || d === '') return undefined;
+    docs.push(d);
+  }
+  return docs;
+}
+
 function parseMcpTool(tool: string): { server: string; name: string } | undefined {
   const m = /^mcp__([^_]+(?:_[^_]+)*)__(.+)$/.exec(tool);
   if (!m || m[1] === undefined || m[2] === undefined) return undefined;

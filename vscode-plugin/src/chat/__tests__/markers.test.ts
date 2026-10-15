@@ -170,3 +170,15 @@ test("phase 'waiting' maps to 'Waiting for the previous turn to finish' in both 
   const webviewMarkerFor = eval(`(${markerWebviewSource()})`) as (e: unknown) => MarkerLine | null;
   assert.deepEqual(webviewMarkerFor(event), expected);
 });
+
+test('the declared list is not written into the saved transcript', () => {
+  const plain = markerFor({ kind: 'tool-call', turnId: 't', tool: 'mcp__insrc__insrc_present', mcp: { server: 'insrc', name: 'insrc_present' } });
+  const declared = markerFor({
+    kind: 'tool-call', turnId: 't', tool: 'mcp__insrc__insrc_present', mcp: { server: 'insrc', name: 'insrc_present' },
+    present: ['LLD-secret-S001', 'docs/private/PLAN.md'],
+  });
+  // What persists is a class and a label only: the declaration changes neither, and appears in neither.
+  assert.deepEqual(declared, plain);
+  assert.ok(!JSON.stringify(declared).includes('LLD-secret-S001'));
+  assert.ok(!JSON.stringify(declared).includes('docs/private'));
+});

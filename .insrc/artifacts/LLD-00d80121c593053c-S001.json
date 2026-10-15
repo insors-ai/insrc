@@ -233,6 +233,13 @@
         "choice": "Keep workaround, document alias",
         "rationale": "As decided for the links story: no schema work; tasks and tests use the real new names.",
         "resolvedAt": "2026-10-15T09:01:26.748Z"
+      },
+      "q1daf4a0e": {
+        "question": "The Story has no acceptance criteria; ac1-ac4 were derived from its stated needs.",
+        "status": "resolved",
+        "choice": "Accept derived ac1-ac4 as-is",
+        "rationale": "The user approved the LLD, which states the derivation; ac5 (click to open) came from the user's own review comment.",
+        "resolvedAt": "2026-10-15T09:02:01.225Z"
       }
     }
   },

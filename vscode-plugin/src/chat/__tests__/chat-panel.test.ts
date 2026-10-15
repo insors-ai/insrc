@@ -22,7 +22,7 @@ import { markerFor, WAITING_LABEL } from '../markers.js';
 import { fakeLiveProc, patchOf, waitFor, type FakeLiveProc } from './fixtures.js';
 import type { DiffView } from '../edit-governor.js';
 import type { TranscriptEntry } from '../session-store.js';
-import { createReviewPresenter, type ReviewPresenter } from '../review-presenter.js';
+import { createReviewPresenter, type DeclaredOutcome, type ReviewPresenter } from '../review-presenter.js';
 import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 import { DatabaseSync } from 'node:sqlite';
@@ -4972,7 +4972,7 @@ interface PresenterSpy {
   readonly calls: string[];
   readonly presenter: ReviewPresenter;
 }
-function presenterSpy(o: { throwOn?: 'begin' | 'result' | 'end' } = {}): PresenterSpy {
+function presenterSpy(o: { throwOn?: 'begin' | 'result' | 'end' | 'declared'; outcome?: DeclaredOutcome } = {}): PresenterSpy {
   const calls: string[] = [];
   let n = 0;
   return {
@@ -4983,6 +4983,11 @@ function presenterSpy(o: { throwOn?: 'begin' | 'result' | 'end' } = {}): Present
         calls.push(`begin#${id}`);
         if (o.throwOn === 'begin') throw new Error('presenter down');
         return {
+          declared: async (documents) => {
+            calls.push(`declared#${id}:${documents.join(',')}`);
+            if (o.throwOn === 'declared') throw new Error('presenter down');
+            return o.outcome ?? { opened: [...documents], notPending: [], unreadable: false };
+          },
           toolResult: (output) => {
             calls.push(`result#${id}:${output}`);
             if (o.throwOn === 'result') throw new Error('presenter down');
@@ -5192,7 +5197,7 @@ test("chat host: a turn followed by a second message still passes its tool resul
     begin: () => {
       const a = spy.presenter.begin();
       const b = real.begin();
-      return { toolResult: (o) => { a.toolResult(o); b.toolResult(o); }, end: () => { a.end(); b.end(); } };
+      return { declared: async (d) => { await a.declared(d); return b.declared(d); }, toolResult: (o) => { a.toolResult(o); b.toolResult(o); }, end: () => { a.end(); b.end(); } };
     },
   };
   const h = presentedHarness(both);
@@ -5225,4 +5230,121 @@ test('chat host: submitExternal in a window without a queue answers unavailable 
   } finally {
     host.dispose();
   }
+});
+
+// ---------------------------------------------------------------------------
+// Story E20261015067b05b6:S001 — the turn declares the documents it presents.
+// ---------------------------------------------------------------------------
+
+/** A turn's tool call to insrc_present, as a provider mapper reports it. */
+const presentCall = (n: number, present: readonly string[] | undefined): TurnEvent =>
+  ({ kind: 'tool-call', turnId: `t${n}`, tool: 'mcp__insrc__insrc_present', mcp: { server: 'insrc', name: 'insrc_present' }, ...(present !== undefined ? { present } : {}) }) as TurnEvent;
+const infoTexts = (fc: FakeChannel): string[] =>
+  turnEvents(fc).filter((e) => e.kind === 'assistant-delta' && e.turnId.startsWith('present-note-')).map((e) => (e as { text: string }).text);
+
+test("the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything", async () => {
+  const spy = presenterSpy();
+  const h = presentedHarness(spy.presenter);
+  h.fc.send(env('submit-turn', { text: 'show me' }));
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed(presentCall(1, undefined));                                         // a call with no declaration
+  h.runs[0]!.feed({ kind: 'tool-call', turnId: 't1', tool: 'Bash', command: 'ls' } as TurnEvent); // another tool
+  h.runs[0]!.feed(presentCall(1, ['LLD-aaa-S001', 'docs/x/PLAN.md']));
+  h.runs[0]!.feed({ kind: 'assistant-delta', turnId: 't1', text: 'see the pane' });
+  h.runs[0]!.feed(doneOf(1));
+  await waitFor(() => spy.calls.includes('end#1'));
+  assert.deepEqual(spy.calls, ['begin#1', 'declared#1:LLD-aaa-S001,docs/x/PLAN.md', 'end#1'], 'the declared list, once, and no tool-call text or other event');
+
+  // With the real presenter: exactly the declared document opens, a pending one nobody declared does not,
+  // and the end of the turn opens nothing more.
+  const list = [
+    { id: 'LLD-aaa-S001', mdPath: '/repo/docs/x/LLD.md' },
+    { id: 'BUILD-old-S001', mdPath: '/repo/docs/x/BUILD.md' },
+  ];
+  const opened: string[] = [];
+  const real = createReviewPresenter({ pendingDocuments: async () => [...list], open: (t) => void opened.push(t.artifactId), log: { warn: () => {}, error: () => {} } });
+  const r = presentedHarness(real);
+  r.fc.send(env('submit-turn', { text: 'show me' }));
+  await waitFor(() => r.runs.length === 1);
+  r.runs[0]!.feed(presentCall(1, ['LLD-aaa-S001']));
+  await waitFor(() => opened.length === 1);
+  r.runs[0]!.feed(doneOf(1));
+  await waitFor(() => dones(r.fc) === 1);
+  await runsSettled();
+  assert.deepEqual(opened, ['LLD-aaa-S001']);
+});
+
+test("the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome", async () => {
+  const notPending = presenterSpy({ outcome: { opened: ['LLD-aaa-S001'], notPending: ['LLD-zzz-S001', 'docs/gone.md'], unreadable: false } });
+  const a = presentedHarness(notPending.presenter);
+  a.fc.send(env('submit-turn', { text: 'show me' }));
+  await waitFor(() => a.runs.length === 1);
+  a.runs[0]!.feed(presentCall(1, ['LLD-aaa-S001', 'LLD-zzz-S001', 'docs/gone.md']));
+  await waitFor(() => infoTexts(a.fc).length === 1);
+  assert.match(infoTexts(a.fc)[0]!, /LLD-zzz-S001, docs\/gone\.md/);
+  assert.ok(!infoTexts(a.fc)[0]!.includes('LLD-aaa-S001'), 'the opened name is not listed');
+
+  const unreadable = presenterSpy({ outcome: { opened: [], notPending: [], unreadable: true } });
+  const b = presentedHarness(unreadable.presenter);
+  b.fc.send(env('submit-turn', { text: 'show me' }));
+  await waitFor(() => b.runs.length === 1);
+  b.runs[0]!.feed(presentCall(1, ['LLD-aaa-S001']));
+  await waitFor(() => infoTexts(b.fc).length === 1);
+  assert.match(infoTexts(b.fc)[0]!, /pending list could not be read/);
+
+  // Everything opened: no line. A presenter that throws on a declaration: logged, no line, the turn goes on.
+  const fine = presenterSpy();
+  const c = presentedHarness(fine.presenter);
+  c.fc.send(env('submit-turn', { text: 'show me' }));
+  await waitFor(() => c.runs.length === 1);
+  c.runs[0]!.feed(presentCall(1, ['LLD-aaa-S001']));
+  await waitFor(() => fine.calls.some((x) => x.startsWith('declared')));
+  const bad = presenterSpy({ throwOn: 'declared' });
+  const d = presentedHarness(bad.presenter);
+  d.fc.send(env('submit-turn', { text: 'show me' }));
+  await waitFor(() => d.runs.length === 1);
+  d.runs[0]!.feed(presentCall(1, ['LLD-aaa-S001']));
+  d.runs[0]!.feed(doneOf(1));
+  await waitFor(() => dones(d.fc) === 1);
+  await runsSettled();
+  assert.deepEqual([infoTexts(c.fc), infoTexts(d.fc)], [[], []]);
+  assert.equal(d.errors.filter((e) => /review presenter failed on a declaration/.test(e)).length, 1);
+});
+
+test('the chat host feeds the declaration from both a followed live turn and a hosted run', async () => {
+  // A hosted run.
+  const run = presenterSpy();
+  const h = presentedHarness(run.presenter);
+  h.fc.send(env('submit-turn', { text: 'show me' }));
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed(presentCall(1, ['LLD-aaa-S001']));
+  await waitFor(() => run.calls.includes('declared#1:LLD-aaa-S001'));
+
+  // A followed live turn (this window's saved turn, picked up after a reload).
+  const fol = presenterSpy();
+  const { store, id } = storeWithLiveTurn(1);
+  const f = presentedHarness(fol.presenter, { store, hostPid: 2 });
+  f.fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => f.resumes.length === 1);
+  f.resumes[0]!.feed(presentCall(1, ['PLAN-bbb-S001', 'docs/x/PLAN.md']));
+  await waitFor(() => fol.calls.some((x) => x.startsWith('declared')));
+  assert.deepEqual(fol.calls, ['begin#1', 'declared#1:PLAN-bbb-S001,docs/x/PLAN.md']);
+  f.resumes[0]!.feed(doneOf(1));
+  await waitFor(() => fol.calls.includes('end#1'));
+});
+
+test('the chat opens a declared pending document even when the insrc_present tool call itself failed', async () => {
+  const list = [{ id: 'LLD-aaa-S001', mdPath: '/repo/docs/x/LLD.md' }];
+  const opened: string[] = [];
+  const real = createReviewPresenter({ pendingDocuments: async () => [...list], open: (t) => void opened.push(t.artifactId), log: { warn: () => {}, error: () => {} } });
+  const h = presentedHarness(real);
+  h.fc.send(env('submit-turn', { text: 'show me' }));
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed(presentCall(1, ['LLD-aaa-S001']));
+  // The call failed (the tool answered an error, or the CLI refused it): the declaration was already made.
+  h.runs[0]!.feed({ kind: 'tool-result', turnId: 't1', command: 'insrc_present', output: 'insrc_present: no repo', isError: true } as TurnEvent);
+  await waitFor(() => opened.length === 1);
+  assert.deepEqual(opened, ['LLD-aaa-S001']);
+  h.runs[0]!.feed(doneOf(1));
+  await waitFor(() => dones(h.fc) === 1);
 });

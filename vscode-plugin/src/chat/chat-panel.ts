@@ -32,7 +32,7 @@ import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type
 import type { ChatSessionStore, ChatSession, TranscriptEntry } from './session-store.js';
 import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
 import type { TurnEvent } from './stream-events.js';
-import type { PresentedTurn, ReviewPresenter } from './review-presenter.js';
+import type { DeclaredOutcome, PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
 import type { ChatQueueWorker, QueueAction, QueuedTurnRunner, WaitingOn } from './chat-queue-worker.js';
 import { projectOutbox } from './chat-outbox.js';
@@ -810,7 +810,30 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       return undefined;
     }
   };
-  const presentResult = (shown: PresentedTurn | undefined, ev: TurnEvent): void => {
+  // Story E20261015067b05b6:S001: the documents a turn declared were opened or were not: say so in the
+  // chat, as a line under no turn of its own (live only: it is about the review pane, not the conversation).
+  let presentNotes = 0;
+  const reportDeclared = (outcome: DeclaredOutcome, canShow: () => boolean): void => {
+    if (disposed || !canShow()) return;
+    if (outcome.unreadable) {
+      postInfo(`present-note-${++presentNotes}`, 'The documents for review could not be opened: the pending list could not be read.');
+    } else if (outcome.notPending.length > 0) {
+      postInfo(`present-note-${++presentNotes}`, `Not shown for review, because not pending approval: ${outcome.notPending.join(', ')}.`);
+    }
+  };
+  const presentDeclared = (shown: PresentedTurn | undefined, ev: TurnEvent, canShow: () => boolean): void => {
+    if (shown === undefined || ev.kind !== 'tool-call' || ev.present === undefined) return;
+    try {
+      shown
+        .declared(ev.present)
+        .then((outcome) => reportDeclared(outcome, canShow))
+        .catch((err: unknown) => log.error(`chat: the review presenter failed on a declaration: ${err instanceof Error ? err.message : String(err)}`));
+    } catch (err) {
+      log.error(`chat: the review presenter failed on a declaration: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  const presentResult = (shown: PresentedTurn | undefined, ev: TurnEvent, canShow: () => boolean): void => {
+    presentDeclared(shown, ev, canShow);
     if (shown === undefined || ev.kind !== 'tool-result' || ev.isError === true) return;
     try {
       shown.toolResult(ev.output);
@@ -838,7 +861,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     turns.follow(s, {
       onEvent: (ev) => {
         if (shown === undefined) shown = beginPresented();
-        presentResult(shown, ev);
+        presentResult(shown, ev, () => session === s);
         // A followed turn's approval requests go through the queue like a live one's.
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with the row's
         // index. The write does not depend on whether the session is shown.
@@ -1548,7 +1571,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       },
       onEvent: (ev) => {
         // Story E20261013e62a9269:S001: before anything else, and whatever is done with the event below.
-        presentResult(shown, ev);
+        presentResult(shown, ev, () => true);
         // Story S004: the agent acted (a tool call, an edit or a tool result): this message is never retried.
         if (q !== undefined && (ev.kind === 'tool-call' || ev.kind === 'file-edit' || ev.kind === 'tool-result')) q.acted = true;
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.

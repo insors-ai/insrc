@@ -246,6 +246,13 @@
         "status": "resolved",
         "choice": "Defer, but keep the highlighter reusable",
         "resolvedAt": "2026-10-15T09:02:29.451Z"
+      },
+      "q3ef3c8d4": {
+        "question": "Which languages the bundled subset holds, and the size it adds to the one inline script, are settled and recorded at build; the generator builds the core plus subset with esbuild, a different step from marked's prebuilt-file copy.",
+        "status": "resolved",
+        "choice": "Fix list plus a size budget",
+        "rationale": "Languages: typescript, javascript, json, python, go, java, scala, bash, yaml, css, xml/html, markdown, plus Dockerfile and Makefile by name. Budget: the added highlighter source stays under 250 KB, enforced by a test.",
+        "resolvedAt": "2026-10-15T09:02:55.110Z"
       }
     }
   },

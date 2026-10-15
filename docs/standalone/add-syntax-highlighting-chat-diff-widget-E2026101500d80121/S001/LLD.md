@@ -238,6 +238,8 @@ Do the tokenising in the extension host with a TextMate engine and grammars, and
   - **resolved**: Accept derived ac1-ac4 as-is — The user approved the LLD, which states the derivation; ac5 (click to open) came from the user's own review comment. _(2026-10-15T09:02:01.225Z)_
 - `q5937c2fd` — Whether fenced code blocks in assistant replies share the highlighter is left out of this Story and is a candidate follow-up.
   - **resolved**: Defer, but keep the highlighter reusable _(2026-10-15T09:02:29.451Z)_
+- `q3ef3c8d4` — Which languages the bundled subset holds, and the size it adds to the one inline script, are settled and recorded at build; the generator builds the core plus subset with esbuild, a different step from marked's prebuilt-file copy.
+  - **resolved**: Fix list plus a size budget — Languages: typescript, javascript, json, python, go, java, scala, bash, yaml, css, xml/html, markdown, plus Dockerfile and Makefile by name. Budget: the added highlighter source stays under 250 KB, enforced by a test. _(2026-10-15T09:02:55.110Z)_
 
 ## Citations
 

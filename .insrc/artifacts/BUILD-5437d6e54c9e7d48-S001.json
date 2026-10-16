@@ -4,11 +4,12 @@
     "epicHash": "5437d6e54c9e7d48",
     "storyId": "S001",
     "createdAt": "2026-10-16T12:29:31.630Z",
-    "updatedAt": "2026-10-16T12:36:16.256Z",
+    "updatedAt": "2026-10-16T12:57:13.595Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-16T11:52:08.782Z",
-    "epicSlug": "graph-store-write-transaction-whose-callback"
+    "epicSlug": "graph-store-write-transaction-whose-callback",
+    "approvedAt": "2026-10-16T12:57:13.743Z"
   },
   "body": {
     "tasks": [
@@ -32,12 +33,89 @@
     "changeLog": [
       {
         "target": {
-          "file": "vscode-plugin/package-lock.json"
+          "file": ".insrc/artifacts/CR-5437d6e54c9e7d48-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T12:36:16.256Z"
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/cr-fixes-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t1-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t2-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t3-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/migrations.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/store-health.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/write-txn-atomic.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/migrations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T12:57:13.595Z"
       }
     ],
-    "commit": "91892140"
+    "commit": "faf973a8"
   }
 }

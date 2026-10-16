@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-16T12:29:31.630Z  ·  **Updated:** 2026-10-16T12:36:16.256Z
+**Standalone:** yes  ·  **Created:** 2026-10-16T12:29:31.630Z  ·  **Updated:** 2026-10-16T12:57:13.595Z
 
-**Commit:** 91892140
+**Commit:** faf973a8
 
 ## Summary
 
@@ -20,4 +20,15 @@ New src/db/graph/__tests__/lmdb-txn-semantics.test.ts pins lmdb's behaviour (rea
 
 ## Changes
 
-- `vscode-plugin/package-lock.json` — **insrc-build** (2026-10-16T12:36:16.256Z)
+- `.insrc/artifacts/CR-5437d6e54c9e7d48-S001.json` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/CR.md` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/cr-fixes-suites.md` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t1-suites.md` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t2-suites.md` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t3-suites.md` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `src/db/graph/__tests__/lmdb-txn-semantics.test.ts` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `src/db/graph/__tests__/migrations.test.ts` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `src/db/graph/__tests__/store-health.test.ts` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `src/db/graph/__tests__/write-txn-atomic.test.ts` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `src/db/graph/migrations.ts` — **insrc-build** (2026-10-16T12:57:13.595Z)
+- `src/db/graph/store.ts` — **insrc-build** (2026-10-16T12:57:13.595Z)

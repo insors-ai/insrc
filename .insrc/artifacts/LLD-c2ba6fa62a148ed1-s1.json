@@ -247,7 +247,9 @@
         "rationale": "Stakeholder decision 2026-10-14: keep the HLD c-ids; the plan carries the crosswalk c4->bundle 1, c6->2, c1/c5->3, c7->4, graphCompleteness->6.",
         "resolvedAt": "2026-10-14T08:46:10.872Z"
       }
-    }
+    },
+    "staleAckedAt": "2026-10-14T08:46:40.256Z",
+    "staleAckedReason": "Stale only because AMD-c2ba6fa62a148ed1-2 was approved after this LLD on 2026-10-14; the LLD itself proposed AMD-2 and already designs its field (IndexState.reasonCounts), so the amended HLD changes nothing it relies on. Both approved together by the stakeholder."
   },
   "body": {
     "summary": {

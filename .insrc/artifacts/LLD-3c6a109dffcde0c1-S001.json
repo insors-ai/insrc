@@ -236,6 +236,13 @@
         "choice": "Accept partial, proceed with note",
         "rationale": "Provenance quirk only; the facts hold.",
         "resolvedAt": "2026-10-16T07:41:58.077Z"
+      },
+      "q0ea4eae1": {
+        "question": "Resolved from the code: the chat page parses :N, :N-M and :N:C in a code reference (vscode-plugin/src/chat/link-markup.ts), so the check accepts those line forms.",
+        "status": "resolved",
+        "choice": "Mirror the chat parser exactly",
+        "rationale": "Matches the LLD: accept :N, :N-M, :N:C.",
+        "resolvedAt": "2026-10-16T07:42:08.875Z"
       }
     }
   },

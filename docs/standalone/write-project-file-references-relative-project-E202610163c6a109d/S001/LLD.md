@@ -234,6 +234,8 @@ Do a2, and in addition resolve each project-relative entry against the artifact'
   - **resolved**: Record it as an untouched consumer that must not break — The LLD does not change the 'boundary' kind; the daemon loop must keep working. _(2026-10-16T07:41:29.501Z)_
 - `qb77997ac` — Audit partial (dm2, ts2): the ValidationFailure entry carries its invariant in s5 rather than a citation id of its own, and the node:test framework comes from the project's documented test command, not from the s1 test.locate result.
   - **resolved**: Accept partial, proceed with note — Provenance quirk only; the facts hold. _(2026-10-16T07:41:58.077Z)_
+- `q0ea4eae1` — Resolved from the code: the chat page parses :N, :N-M and :N:C in a code reference (vscode-plugin/src/chat/link-markup.ts), so the check accepts those line forms.
+  - **resolved**: Mirror the chat parser exactly — Matches the LLD: accept :N, :N-M, :N:C. _(2026-10-16T07:42:08.875Z)_
 
 ## Citations
 

@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792155082970-r8i20l",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-16T12:51:23.059Z",
+    "model": "claude:opus",
+    "elapsedMs": 89442,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5437d6e54c9e7d48",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T11:52:08.782Z",
+    "epicSlug": "graph-store-write-transaction-whose-callback",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "5437d6e54c9e7d48",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/db/graph/__tests__/lmdb-txn-semantics.test.ts",
+        "src/db/graph/__tests__/migrations.test.ts",
+        "src/db/graph/__tests__/store-health.test.ts",
+        "src/db/graph/__tests__/write-txn-atomic.test.ts",
+        "src/db/graph/migrations.ts",
+        "src/db/graph/store.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/db/graph/__tests__/write-txn-atomic.test.ts:1",
+            "message": "Present but unverified: all four promised new or changed test files (write-txn-atomic, store-health, migrations, lmdb-txn-semantics) are in the diff, and each one calls the changed code by name: withWriteTxn, runMigrations, and getGraphStore on a fresh path. No build record exists, and I was not allowed to run the suites here, so whether they pass is unconfirmed. The empty testsReaching edges on store.ts and migrations.ts come from file-level diff entities, which the graph does not link to tests. They are not evidence of a coverage gap, so I have not reported them as HIGH breaches.",
+            "expectationRef": "promised tests: write-txn-atomic / store-health / migrations / lmdb-txn-semantics",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/db/graph/store.ts:607",
+            "message": "The first-boot write in getGraphStore now runs in root.childTransaction so that a throw leaves no partial first boot. No test makes writeSchemaVersion or provisionSharedModulesRows throw and then checks that nothing was kept. Every fresh-path test (for example the second lmdb-txn-semantics case) only covers the successful first boot. The new rollback behaviour of this call site is therefore not exercised. The lmdb-txn-semantics pin covers the library's child-transaction semantics, but not this call site.",
+            "expectationRef": "getGraphStore first-boot childTransaction (abort on throw)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/db/graph/store.ts:916",
+            "message": "withWriteTxn now wraps the childTransaction result in Promise.resolve because a child transaction opened inside an already-open transaction returns a plain value. No test calls withWriteTxn while a transaction is already open, so this nested-return branch is not exercised.",
+            "expectationRef": "withWriteTxn nested-child plain-value path",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/db/graph/__tests__/store-health.test.ts:93",
+            "message": "The plan promised that lock-loss-detection.test.ts and lock-loss-reproduction.test.ts pass unchanged. Neither file is in the diff, and there is no build record, so I cannot confirm from here that they pass. Their pass-state is unverified, not missing.",
+            "expectationRef": "lock-loss-detection.test.ts and lock-loss-reproduction.test.ts pass unchanged",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/db/graph/store.ts:909",
+            "message": "The compile-time guard `SyncResult<T>` is the only thing that stops a partial write. When a callback's return type is `any` (for example a helper typed `(s) => any` that is actually async), `SyncResult<any>` resolves to `any`, so the callback type-checks. At run time the thenable is refused and the writes made before the first await are aborted. The refused Promise keeps running, though, so every write it makes after an await commits as a standalone lmdb write while the caller sees a rejection. The doc comment says this. The hole is narrow (it needs an `any`-typed callback), but the result is the same partial-write state this Story set out to remove. A lint rule or an explicit `unknown` constraint on callers would close it.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts:56",
+            "message": "`root.close()` is only reached on the success path. If any of the three assert.rejects/assert.throws calls above it fails, the finally block calls `rmSync` on a directory whose LMDB environment is still open in this process, and the handle leaks for the rest of the test run. Moving the close into the finally block, guarded so it runs once, keeps a failing pin from leaving an open environment behind.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 4
+    },
+    "feedback": [
+      {
+        "id": "7d57c0a6",
+        "author": "subho@insors.io (decision, recorded by the controller)",
+        "timestamp": "2026-10-16T12:53:09.556Z",
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "comment": "Accepted with notes (stakeholder decision 2026-10-16, option A). Round 2's quality MED (unhandled rejection from a refused async callback) and two LOWs (cwd-dependent child, raw handle not closed on failure) were fixed in b5457c0d with a falsifying mutation. Remaining: MED 'tests present but unverified' -- the build gate ran every named test and all passed (S001/TESTS.md; t1-t3 verdicts passed), and src/db suites 521/521 at b5457c0d (S001/evidence/cr-fixes-suites.md). MED 'first-boot throw untested' -- its callback is two writes in one child transaction; child-transaction rollback is pinned by lmdb-txn-semantics.test.ts and exercised by write-txn-atomic and migrations tests; a failure seam in store open is not worth the gap. LOWs accepted: the nested Promise.resolve branch is defensive (no caller nests today); an any-typed callback can evade the type guard (documented in the doc comment; the run-time refusal still reports it); lmdb-txn-semantics closes its env only on success (a failing pin is reported regardless); lock-loss suites passed at the gate in t3.",
+        "kind": "comment"
+      }
+    ]
+  }
+}

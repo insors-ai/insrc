@@ -52,22 +52,26 @@ validateBodyAndCitations<Body>(artifact: WorkflowArtifact<Body>, renderedBody: s
 **Postconditions:**
 - The existing boundary and citation results are unchanged for an artifact whose path fields are well formed
 - A path failure lists each offending entry in details, so the retry prompt names what to fix
+- It passes the artifact's meta.repoPath to checkPathForms
 
 ### 2.2 `checkPathForms (new)`
 
 ```typescript
-checkPathForms(citations: readonly Citation[], callSites: readonly string[]): ValidationResult
+checkPathForms(citations: readonly Citation[], callSites: readonly string[], repoPath?: string): ValidationResult
 ```
 
 **Parameters:**
 - `citations: readonly Citation[]` — Only citations of kind code or doc are checked; their ref is path[:line]
 - `callSites: readonly string[]` — The call sites of an LLD's data model changes; empty for artifacts without them
+- `repoPath: string | undefined` _(optional)_ — The artifact's meta.repoPath, passed by validateBodyAndCitations. When given, an absolute path that starts with it is refused, because a project file is written relative to the project root; the comparison is on the strings only
 
 **Returns:** `ValidationResult` — ok, or a 'paths' failure naming every entry that is not a path
 
 **Postconditions:**
 - Looks only at the strings: never reads the disk and never resolves a path against the repo
-- A project path is accepted when it is a bare relative path with an optional line form (:N, :N-M or :N:C) and an optional #anchor, with no leading ./, no .. segment, no whitespace and no characters outside a path; an absolute path and an http(s) URL are accepted as external references
+- A project path is accepted when it is a bare relative path with an optional line form (:N, :N-M or :N:C) and an optional #anchor, or a project directory written with a trailing slash, with no leading ./, no .. segment, no whitespace and no characters outside a path; an absolute path and an http(s) URL are accepted as external references
+- With repoPath, an absolute path that starts with the project root followed by a slash is refused as a project file written in full; an absolute path elsewhere stays external
+- A path followed by a symbol name (src/a.ts:name or src/a.ts::name) is refused with a message that says to keep only the path and name the symbol in the text beside it
 
 ### 2.3 `PATH_FORM_RULE (new)`
 
@@ -85,7 +89,7 @@ export const PATH_FORM_RULE: string
 
 ### 3.1 `ValidationFailure` — field-modify
 
-The kind union gains 'paths', next to 'schema' | 'citations' | 'boundary'. No consumer switches exhaustively on it. The daemon's correction loop only tests for 'boundary', so a 'paths' failure takes the same plain re-emit as a citations failure. The in-session phase (the one controllers use through insrc_workflow_step) builds the error code from the kind, so a path failure comes back as a retryable 'synthesize-paths' error with the offending entries in its message, and the controller re-emits.
+The kind union gains 'paths', next to 'schema' | 'citations' | 'boundary'. No consumer switches exhaustively on it. The daemon's correction loop only tests for 'boundary', so a 'paths' failure takes the same plain re-emit as a citations failure. The in-session phase (the one controllers use through insrc_workflow_step) builds the error code from the kind, so a path failure comes back as a retryable 'synthesize-paths' error with the offending entries in its message, and the controller re-emits. validateBodyAndCitations passes meta.repoPath to the check as an optional third argument.
 
 **Call sites:**
 - `src/workflow/synthesizer.ts`
@@ -131,10 +135,13 @@ The bare string-array schemas for callSites and pathsCited gain a description th
 | An LLD with no dataModelChanges, or an artifact that is not an LLD | No call sites are read; only the citations are checked. |
 | A ref with a line range such as 'src/workflow/synthesizer.ts:93-96', or a line and column such as ':93:5' | Accepted: the chat page links :N, :N-M and :N:C (CREF_CORE in vscode-plugin/src/chat/link-markup.ts) and opens the file at the first line. |
 | A path with a leading './' or a '..' segment | Rejected: it is not written relative to the project root. |
-| An absolute path in a code citation | Accepted by the check as an external file written in full; the chat's link opener refuses a path outside the workspace, so it is not clickable, which is intended. |
+| An absolute path in a code citation | Accepted by the check as an external file written in full, unless it lies inside the project root (meta.repoPath), when it is refused because a project file is written relative to the root; the chat's link opener refuses a path outside the workspace, so an external path is not clickable, which is intended. |
 | A doc citation whose ref is a path with an anchor, such as 'docs/plans/workflow-define.md#as-built-deltas' | Accepted: a relative path with a #anchor; existing records use this form. |
 | A doc citation whose ref is an http(s) URL | Accepted as an external reference written in full; a URL is not a project path and is never refused. |
 | A project file with no extension, such as Makefile or LICENSE | Accepted by the check, which does not require an extension; the chat page links only names with a known extension, so it is not clickable, which is outside this Story. |
+| A code or doc citation or call site that names a symbol after the path, such as 'src/workflow/id.ts::storyIdToOrdinal' or 'src/workflow/synthesizer.ts:validateCitations' | Refused, with a message that says to keep only the path (optionally with :N) and name the symbol in the text beside it; existing records use the '::' form in 13 call sites. |
+| A project directory with a trailing slash, such as 'src/workflow/' | Accepted: a directory is a legitimate reference; it takes no line suffix. |
+| A root-anchored project path such as '/src/workflow/synthesizer.ts', or the project root itself | Not detected: the check reads only strings and cannot tell a root-anchored project path from an external absolute path, and it matches the project root only as a prefix followed by a slash. This is a known limit of the chosen alternative. |
 
 **Invariants to preserve**
 
@@ -211,7 +218,7 @@ Do a2, and in addition resolve each project-relative entry against the artifact'
 - **[[c4]]** `code` `src/workflow/runners/design-story/schemas.ts:260` — "callSites:  { type: 'array', items: { type: 'string' } },"
 - **[[c5]]** `code` `src/workflow/artifacts/lld.ts:388` — "for (const cs of d.callSites) l.push(`- \`${cs}\``);"
 - **[[c6]]** `code` `src/workflow/synthesizer.ts:207` — "export function validateBodyAndCitations<Body>("
-- **[[c7]]** `prior-artifact` `docs/standalone/write-project-file-references-relative-project-E2026101667124d9a/ISSUE.md`
+- **[[c7]]** `prior-artifact` `docs/standalone/write-project-file-references-relative-project-E202610163c6a109d/ISSUE.md`
 
 ## 9. Open questions
 
@@ -222,27 +229,20 @@ Do a2, and in addition resolve each project-relative entry against the artifact'
 - Audit partial (dm2, ts2): the ValidationFailure entry carries its invariant in s5 rather than a citation id of its own, and the node:test framework comes from the project's documented test command, not from the s1 test.locate result.
 - Resolved from the code: the chat page parses :N, :N-M and :N:C in a code reference (vscode-plugin/src/chat/link-markup.ts), so the check accepts those line forms.
 
-## Resolved questions
+<!-- insrc:review -->
 
-- `q1611e728` — Decision: a2 does not catch a well-formed but shortened path (for example artifacts/plan.ts), the defect the issue names first; only the shared prompt rule prevents it. Accept that limit, or choose a3, which also requires the path to exist under the repo but must then tell a planned new file from a wrong path and makes validation depend on the working tree?
-  - **resolved**: Accept a2's limit — User approved the LLD with a2 chosen and its known gap stated. _(2026-10-16T07:39:35.320Z)_
-- `qa10b3984` — Acceptance criteria are derived from the issue (the Story has none): ac1 the rule reaches the prompts and schema descriptions; ac2 a bad entry is refused with the entry named; ac3 a well-formed project or external path is accepted and a well-formed artifact's result is unchanged.
-  - **resolved**: Adopt the derived ACs as stated — The approved LLD carries ac1-ac3 as its acceptance mapping. _(2026-10-16T07:40:22.215Z)_
-- `qe21d7779` — Audit partial (cd1): checkPathForms and PATH_FORM_RULE are new symbols this Story creates, so they are not in an s1 bundle.
-  - **resolved**: Accept as new-symbol partial — The symbols are created by this Story, so they cannot be in the index. _(2026-10-16T07:41:00.840Z)_
-- `q1dab013f` — Audit partial (dm1): src/daemon/workflow-rpc.ts is a call site found by a grep for 'boundary' (it tests failure.kind === 'boundary'), not by an s1 bundle.
-  - **resolved**: Record it as an untouched consumer that must not break — The LLD does not change the 'boundary' kind; the daemon loop must keep working. _(2026-10-16T07:41:29.501Z)_
-- `qb77997ac` — Audit partial (dm2, ts2): the ValidationFailure entry carries its invariant in s5 rather than a citation id of its own, and the node:test framework comes from the project's documented test command, not from the s1 test.locate result.
-  - **resolved**: Accept partial, proceed with note — Provenance quirk only; the facts hold. _(2026-10-16T07:41:58.077Z)_
-- `q0ea4eae1` — Resolved from the code: the chat page parses :N, :N-M and :N:C in a code reference (vscode-plugin/src/chat/link-markup.ts), so the check accepts those line forms.
-  - **resolved**: Mirror the chat parser exactly — Matches the LLD: accept :N, :N-M, :N:C. _(2026-10-16T07:42:08.875Z)_
+## Review
 
-## Citations
+### ✅ Review `PASS` — design.story (design.story)
 
-- **[[c1]]** `analyze-bundle` `Path-valued fields and the prompts around them across the authoring workflows`
-- **[[c2]]** `analyze-bundle` `Shared prompt fragments and where each is interpolated`
-- **[[c3]]** `analyze-bundle` `Write-time validation of a synthesized artifact`
-- **[[c4]]** `code` `src/workflow/runners/design-story/schemas.ts:260` — "callSites:  { type: 'array', items: { type: 'string' } },"
-- **[[c5]]** `code` `src/workflow/artifacts/lld.ts:388` — "for (const cs of d.callSites) l.push(`- \`${cs}\``);"
-- **[[c6]]** `code` `src/workflow/synthesizer.ts:207` — "export function validateBodyAndCitations<Body>("
-- **[[c7]]** `prior-artifact` `docs/standalone/write-project-file-references-relative-project-E2026101667124d9a/ISSUE.md`
+**0 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-16T08:13:17.731Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

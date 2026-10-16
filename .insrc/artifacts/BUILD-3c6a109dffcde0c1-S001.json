@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "3c6a109dffcde0c1",
+    "storyId": "S001",
+    "createdAt": "2026-10-16T07:48:15.718Z",
+    "updatedAt": "2026-10-16T08:23:14.166Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-16T07:26:45.787Z",
+    "epicSlug": "write-project-file-references-relative-project",
+    "approvedAt": "2026-10-16T08:23:14.462Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "Added the 'paths' failure kind and checkPathForms to synthesizer.ts and called it from validateBodyAndCitations after the boundary and citation checks. After code review: absolute paths inside the project root are refused by string comparison, project directories are accepted, a path naming a symbol gets a message saying what to keep, and a path segment may hold any character except whitespace, slash, colon and hash (so app/[id]/page.tsx passes).",
+    "testRecord": {
+      "md": "docs/standalone/write-project-file-references-relative-project-E202610163c6a109d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-3c6a109dffcde0c1-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T08:23:14.166Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/write-project-file-references-relative-project-E202610163c6a109d/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T08:23:14.166Z"
+      }
+    ],
+    "commit": "69074897"
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792135101874-crnsdx",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T07:20:38.220Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 136345,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "67124d9a509d2bfd",
+    "epicSlug": "write-project-file-references-relative-project",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-16T07:23:22.126Z",
+    "parentRef": {
+      "slug": "write-project-file-references-relative-project"
+    }
+  },
+  "body": {
+    "title": "Write project file references relative to the project root and external ones in full",
+    "reproduction": "Open LLD-1cd9a4c34f403a80-s1 (its call sites, in the Data model section) in the review pane, where file references are clickable. It lists the call site 'src/workflow/artifacts/plan.ts (new artifact module defining PlanTask, mirroring artifacts/lld.ts)'. Clicking it does nothing: the whole item, prose included, is drawn as one code span, so the reference is not a path, and the shortened 'artifacts/lld.ts' and 'artifacts/plan.ts' in the same record are not paths from the project root either. Expected: every file inside the project is written relative to the project root (src/workflow/artifacts/plan.ts, optionally with :line), on its own and without prose in the same span, and every file outside the project is written with its full path, so each one opens.",
+    "rootCause": "Nothing tells the authoring stages how to write a file reference, and nothing checks it. The schemas for the path-valued fields are bare string arrays: dataModel[].callSites in the design.story schema (src/workflow/runners/design-story/schemas.ts:260) and pathsCited in the analyze-bundle schemas of define, design.epic, design.story and plan carry no description or pattern. The step prompts only say callSites come from the analyze bundles (src/workflow/runners/design-story/index.ts:295); they say nothing about the form of a path. The model therefore writes shortened paths and adds explanations to the same string. The renderer then turns each callSites entry into a single code span (src/workflow/artifacts/lld.ts:388), so an entry with prose becomes one span that is not a path. The chat plugin's clickable references resolve only from the workspace root and refuse anything else (vscode-plugin/src/chat/link-opener.ts), which is why such references silently do nothing.",
+    "fixIntent": "Make the authoring stages write references in one form and say so where they write them: a file inside the project is written relative to the project root (optionally with :line), never shortened and never with prose in the same code span; a file outside the project is written with its full path. Put the rule in the step prompts that author path-valued fields and describe it in the schemas of those fields, defined once and shared like the existing scope rule. Consider a write-time check that flags an entry that is not a root-relative path (or an absolute external one), or that does not resolve from the root, so a bad reference is caught when the artifact is written and not when someone clicks it. The existing records are not rewritten."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/schemas.ts:260",
+      "quotedText": "callSites:  { type: 'array', items: { type: 'string' } },"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/index.ts:295",
+      "quotedText": "'- `dataModel[].callSites` come from s1 analyze bundles.',"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/lld.ts:388",
+      "quotedText": "if (d.callSites.length > 0) { l.push('**Call sites:**'); for (const cs of d.callSites) l.push(`- \\`${cs}\\``); }"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/schemas.ts:32",
+      "quotedText": "pathsCited: { type: 'array', items: { type: 'string', minLength: 1 } },"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/link-opener.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/LLD-1cd9a4c34f403a80-s1.json",
+      "quotedText": "src/workflow/artifacts/plan.ts (new artifact module defining PlanTask, mirroring artifacts/lld.ts)"
+    }
+  ]
+}

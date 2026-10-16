@@ -228,6 +228,8 @@ Do a2, and in addition resolve each project-relative entry against the artifact'
   - **resolved**: Accept a2's limit — User approved the LLD with a2 chosen and its known gap stated. _(2026-10-16T07:39:35.320Z)_
 - `qa10b3984` — Acceptance criteria are derived from the issue (the Story has none): ac1 the rule reaches the prompts and schema descriptions; ac2 a bad entry is refused with the entry named; ac3 a well-formed project or external path is accepted and a well-formed artifact's result is unchanged.
   - **resolved**: Adopt the derived ACs as stated — The approved LLD carries ac1-ac3 as its acceptance mapping. _(2026-10-16T07:40:22.215Z)_
+- `qe21d7779` — Audit partial (cd1): checkPathForms and PATH_FORM_RULE are new symbols this Story creates, so they are not in an s1 bundle.
+  - **resolved**: Accept as new-symbol partial — The symbols are created by this Story, so they cannot be in the index. _(2026-10-16T07:41:00.840Z)_
 
 ## Citations
 

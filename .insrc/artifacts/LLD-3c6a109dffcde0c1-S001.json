@@ -215,6 +215,13 @@
         "choice": "Adopt the derived ACs as stated",
         "rationale": "The approved LLD carries ac1-ac3 as its acceptance mapping.",
         "resolvedAt": "2026-10-16T07:40:22.215Z"
+      },
+      "qe21d7779": {
+        "question": "Audit partial (cd1): checkPathForms and PATH_FORM_RULE are new symbols this Story creates, so they are not in an s1 bundle.",
+        "status": "resolved",
+        "choice": "Accept as new-symbol partial",
+        "rationale": "The symbols are created by this Story, so they cannot be in the index.",
+        "resolvedAt": "2026-10-16T07:41:00.840Z"
       }
     }
   },

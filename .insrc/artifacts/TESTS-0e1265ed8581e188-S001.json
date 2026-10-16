@@ -1,0 +1,277 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "0e1265ed8581e188",
+    "storyId": "S001",
+    "createdAt": "2026-10-16T06:40:42.435Z",
+    "updatedAt": "2026-10-16T06:40:42.435Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-16T05:57:42.283Z",
+    "epicSlug": "start-daemon-when-extension-activates-finds"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "cb91914f",
+        "ranAt": "2026-10-16T06:40:42.435Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a start is skipped when the fresh reachability check just before it finds the daemon running",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "a start is skipped when the fresh reachability check just before it finds the daemon running",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "runReachabilityProbe answers the state it pushed into the status surface",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "runReachabilityProbe answers the state it pushed into the status surface",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+                "title": "a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the extension entry passes the daemon lifecycle controller into the activation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "the extension entry passes the daemon lifecycle controller into the activation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the extension entry runs the settings pull, the update check and onboarding only after activation has settled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/__tests__/activation.test.ts",
+                "title": "the extension entry runs the settings pull, the update check and onboarding only after activation has settled",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "after VS Code restarts with the installed daemon stopped, the daemon is running and the status bar shows it",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Run by the user on 2026-10-16 with the rebuilt vsix installed (build cb91914f). First run (build 6f330297, before the settled ordering): with the daemon stopped, a window reload started it, but a stale 'daemon is not running - start the daemon' toast also appeared (the settings pull raced the start); that run is not counted as a pass and led to the onSettled ordering. Second run (cb91914f): the daemon was restarted by the extension and the update check found nothing to update because the daemon was already at origin. Third run, after pushing main so origin was ahead of the installed daemon: the user stopped the daemon, reloaded, and reported the single word 'worked'. I read that as: the daemon started on its own with no stale toast and the update check ran (Update prompt) in the same activation. The user's reply did not itemise those observations, so this is recorded as reported on that reading, not independently confirmed."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/__tests__/activation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 499,
+            "titles": [
+              {
+                "title": "runReachabilityProbe pushes the derived running/stopped/errored state into the status surface",
+                "result": "pass"
+              },
+              {
+                "title": "runReachabilityProbe degrades a hung probe to errored within the bounded deadline",
+                "result": "pass"
+              },
+              {
+                "title": "runReachabilityProbe never throws even if reachability() rejects",
+                "result": "pass"
+              },
+              {
+                "title": "activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves",
+                "result": "pass"
+              },
+              {
+                "title": "the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)",
+                "result": "pass"
+              },
+              {
+                "title": "only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)",
+                "result": "pass"
+              },
+              {
+                "title": "a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running",
+                "result": "pass"
+              },
+              {
+                "title": "no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given",
+                "result": "pass"
+              },
+              {
+                "title": "a start is skipped when the fresh reachability check just before it finds the daemon running",
+                "result": "pass"
+              },
+              {
+                "title": "a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation",
+                "result": "pass"
+              },
+              {
+                "title": "a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'",
+                "result": "pass"
+              },
+              {
+                "title": "runReachabilityProbe answers the state it pushed into the status surface",
+                "result": "pass"
+              },
+              {
+                "title": "the extension entry passes the daemon lifecycle controller into the activation",
+                "result": "pass"
+              },
+              {
+                "title": "activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws",
+                "result": "pass"
+              },
+              {
+                "title": "the extension entry runs the settings pull, the update check and onboarding only after activation has settled",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 277,
+            "titles": [
+              {
+                "title": "run(action) spawns bash <ctlScript> <action> for each lifecycle action and derives state from reachability on exit 0",
+                "result": "pass"
+              },
+              {
+                "title": "run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "run(action) with a missing ctl script returns errored/not-installed WITHOUT spawning",
+                "result": "pass"
+              },
+              {
+                "title": "install() spawns bash <bundledInstaller> -y; exit 0 → reachability; codes 1/2 → mapped reason",
+                "result": "pass"
+              },
+              {
+                "title": "install() with a missing bundled installer returns errored/reinstall WITHOUT spawning",
+                "result": "pass"
+              },
+              {
+                "title": "isInstalled() is true iff the compiled daemon entry exists, false for a clone-without-build, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: vscode-plugin/src/daemon/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)",
+                "result": "pass"
+              },
+              {
+                "title": "a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

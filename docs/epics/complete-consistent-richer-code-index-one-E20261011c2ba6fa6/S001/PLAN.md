@@ -1,0 +1,262 @@
+<!-- insrc:artifact PLAN-c2ba6fa62a148ed1-s1 -->
+
+# Plan: E20261016c2ba6fa6:S001
+
+## Summary
+
+**Epic:** `complete-consistent-richer-code-index-one`
+**LLD run:** `wf-1791967065899-rngh1j`
+**LLD effective hash:** `8ec1c5d92f54...`
+
+Building s1 means changing how the store writes relationships so none is lost, recording each repository's completeness, and surfacing it. The work starts in the store (three new tables, the migration, the per-repository state and the pending-row rules), moves to the indexer (the cross-file pass's modes and classes, re-exports, the reindex from scratch), then to the daemon's status replies, the CLI and both editor plugins and the analyzer, and ends with a reindex of this repository measured against the issue's caller counts.
+
+## Contents
+
+1. [Tasks](#1-tasks)
+2. [Test-strategy coverage](#2-test-strategy-coverage)
+3. [References](#3-references)
+
+## 1. Tasks
+
+| # | Task | Size | Depends on | Tests | Derived from |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **`t1`** Store: three new sub-DBs and the V4->V5 migration step | M | — | unit: src/db/graph/__tests__/migration-v4-to-v5.test.ts: V4 store migrates to 5 with three sub-DBs and one IndexStateRow per repository; a throwing step leaves version 4; integration: src/db/__tests__/repos-lmdb.test.ts: repo.remove deletes the index_state row | [[c10]] [[c14]] [[c7]] |
+| 2 | **`t2`** IndexState: reads, in-transaction count updates, completeness | M | `t1` | unit: src/db/__tests__/index-state.test.ts: completenessOf table test, undefined state, reason lines, recount on open corrects a hand-edited count, unregistered repoId row deleted, aborted transaction leaves counts | [[c7]] [[c12]] |
+| 3 | **`t3`** Pending-row writes keep and count every relationship | L | `t2` | unit: src/db/__tests__/relations-awaiting-target.test.ts: edge / keep-awaiting / unwritable per input, one row per relationship, boundary kind kept as external-endpoint, promotions re-key and return counts; integration: src/indexer/__tests__/external-endpoints.test.ts and messaging-endpoints.test.ts pass with the new promoteResolvedBatch return | [[c1]] [[c2]] [[c12]] |
+| 4 | **`t4`** Pending-row deletes, meta updates and the by-target read keep the counts true | M | `t3` | unit: src/db/__tests__/relations-pending-upkeep.test.ts: the three delete functions decrement counts and remove by-target entries; meta merge keeps awaitsId and clears stale candidates; listUnresolvedRelations opts.awaiting across repositories | [[c3]] [[c12]] |
+| 5 | **`t5`** Writers carry meta.repo and the missing-file class | S | `t4` | unit: src/indexer/__tests__/resolver-file-target.test.ts: missing relative import is no-candidate/target-file-missing; resolved relations carry meta.repo; DEPENDS_ON and Pass 1 rewire carry meta.repo and absolute meta.file | [[c4]] [[c6]] [[c5]] |
+| 6 | **`t6`** TypeScript parser emits pending EXPORTS rows for re-exports | S | `t3` | unit: src/indexer/parser/__tests__/typescript-reexports.test.ts: the three re-export forms produce pending EXPORTS rows; other files unchanged | [[c11]] |
+| 7 | **`t7`** One file-selection predicate shared by the full index and the cross-file pass | S | — | unit: src/indexer/__tests__/file-selection.test.ts: predicate classes .png, .min.js, lock file, >256 KB JSON as not-code, ignored .ts as excluded-by-ignore, .css/.json as selected; integration: existing indexer full-index fixtures select the same files | [[c6]] [[c5]] |
+| 8 | **`t8`** Cross-file pass: modes, Pass 0 and a class for every row | L | `t4`, `t5`, `t6`, `t7` | integration: src/indexer/__tests__/first-index-order.test.ts: ac1 fixture (mutation: keep-awaiting branch removed fails it); integration: src/indexer/__tests__/cross-file-modes.test.ts: settle promotes awaited targets (mutation: committedFiles not passed), settle classes JSON.parse and logo.png rows, reconcile leaves fullIndexFinished, file-target classes fixture (mutation: selection rule not applied) | [[c5]] [[c12]] |
+| 9 | **`t9`** Re-exports: EXPORTS edges, export_names, and calls through barrels | M | `t6`, `t8` | integration: src/indexer/__tests__/reexport-callers.test.ts: ac3 fixture with alias, nested, star and cyclic re-exports; empty EXPORTS edge value; stale target ignored (mutation: export_names lookup removed fails the alias case) | [[c5]] [[c11]] |
+| 10 | **`t10`** Entity deletes clean export_names; the repository delete can return incoming edges to pending | M | `t3` | integration: src/db/__tests__/delete-entities-by-id.test.ts: barrel re-index and delete leave no export_names entry under the old u64 (mutation: cleanup removed); integration: src/db/__tests__/entities-return-to-pending.test.ts: hand-written cross-repository edge returned to pending; forced failure leaves both sides | [[c6]] [[c10]] [[c12]] |
+| 11 | **`t11`** The full index rebuilds a repository from scratch and records its state | L | `t2`, `t8`, `t9`, `t10` | integration: src/indexer/__tests__/full-index-rebuild.test.ts: hand-deleted edge restored by repo.reindex (mutation: unchanged-hash skip kept), unreadable file in uncommittedFiles, repository entity and DEPENDS_ON stored, interruption leaves fullIndexFinished false and start-up queues it, cross-repository restore without reindexing A, no export_names under old u64s after reindex | [[c6]] [[c14]] [[c12]] |
+| 12 | **`t12`** Daemon replies carry completeness | M | `t2` | integration: src/daemon/__tests__/repo-completeness.test.ts: repo.list, repo.stats and daemon.status carry completeness beside the unchanged status; unattributedUnwritable | [[c8]] [[c7]] |
+| 13 | **`t13`** CLI Repos pane shows completeness | S | `t12` | unit: src/cli/panes/__tests__/ReposPane-completeness.test.ts: ink render of complete, incomplete and field-less rows | [[c8]] |
+| 14 | **`t14`** JetBrains status dialog shows completeness | M | `t12` | unit: jetbrains-plugin RepoStatsGatewayTest.kt: decode a recorded repo.stats reply (complete, incomplete, no field); unit: jetbrains-plugin RepoStatusPopupLayoutTest.kt: the dialog shows the reasons | [[c8]] |
+| 15 | **`t15`** VS Code Daemon tab lists repositories with completeness | M | `t12` | unit: vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts and detail-renderers.test.ts: RepoRef completeness and the Daemon tab list; smoke: headless-Chrome screenshot of the rendered Daemon tab, read by eye | [[c8]] |
+| 16 | **`t16`** Analyzer lookups state an incomplete repository | M | `t2` | integration: src/analyze/explore/__tests__/completeness-all-lookups.test.ts: five lookups notEstablished for an incomplete repository, executor sets the field at all three constructions (mutation: one construction left without it); unit: graphCompleteness existing-argument behaviour unchanged | [[c9]] |
+| 17 | **`t17`** Ship and smoke on this repository | M | `t11`, `t12`, `t13`, `t14`, `t15`, `t16` | smoke: S001/smoke.md on this repository: before/after counts, runGrepSearch 4 and stripReviewSection 4 outside test files, unwritable 0, doc summaries regenerated, completeness on all four surfaces | [[c13]] [[c14]] |
+
+### 1.1 E20261016c2ba6fa6:S001:T001 — Store: three new sub-DBs and the V4->V5 migration step
+
+In src/db/graph/store.ts open unresolved_by_target (dupsort, awaited id -> pending row id), export_names (dupsort, (file u64, exported name) -> target id) and index_state (repoId -> IndexStateRow) beside unresolved_by_file; IndexStateRow encode/decode in src/db/graph/codec.ts; SCHEMA_VERSION 4 -> 5 and MIGRATION_V4_TO_V5 in src/db/graph/migrations.ts, which opens the three sub-DBs and writes an IndexStateRow per workspace repository with fullIndexFinished false and pending counts recounted from the existing rows. removeRepo (src/db/repos.ts:177) deletes the repository's index_state row with its registry row. Anchors: unresolvedByFile is opened at src/db/graph/store.ts:558 (open_ at :532-536 opens dupsort sub-DBs); none of unresolved_by_target, export_names or index_state exists in src today. The migration runner runs each step and writes the new version in one transaction (src/db/graph/migrations.ts:442-447, store.root.transaction), and src/db/graph/__tests__/migrations.test.ts already proves a throwing step leaves the previous version (the test 'runMigrations leaves intermediate version on disk after a per-step crash', :151-176: the throwing step at :156 rejects at :159 and the stored version stays 2 at :165); row codecs live in src/db/graph/codec.ts (e.g. decodeEdgeProps at :209). removeRepo (src/db/repos.ts:177) removes the registry row inside withWriteTxn (:196-199); the index_state delete goes in that same callback.
+
+**Acceptance checks:**
+- A V4 store opened by the new code is at version 5 with the three sub-DBs and one IndexStateRow per workspace repository, fullIndexFinished false, pending counts equal to a recount of the existing rows
+- A migration whose run throws leaves the stored version at 4 and the store unchanged
+- V1->V2, V2->V3 and V3->V4 steps are untouched (existing migration tests pass)
+- repo.remove leaves no index_state row for the removed repository
+
+### 1.2 E20261016c2ba6fa6:S001:T002 — IndexState: reads, in-transaction count updates, completeness
+
+A module beside the store holds IndexState (sc1 with reasonCounts, AMD-2): readIndexState(repoPath); helpers that move pending counts by class and reason and count unwritables by reason, called only inside an open write transaction; the daemon-wide unattributed counter; the recount on open as a check (a difference corrected and logged at warn; only registered repoIds visited, an unregistered repoId's row deleted); completenessOf(state | undefined) -> RepoCompleteness with one reason line per non-zero cause, awaiting rows split by reason, 'no-candidate' rows not a cause. Anchors: write transactions are lmdb-js root.transaction (withWriteTxn, src/db/graph/store.ts:882-886), which aborts every write when its callback throws; the count helpers run only inside such a callback. Depends on t1 for the index_state sub-DB and its codec. Rule for every count write: the row writes and the count updates of one change go in ONE synchronous callback of withWriteTxn (src/db/graph/store.ts:882) with no await between them, so a throw aborts both.
+
+**Acceptance checks:**
+- graphComplete and complete follow the sc1 formula for every combination of the inputs (table test)
+- completenessOf(undefined) reads not complete with 'a reindex is needed'
+- A count update inside a transaction that then throws leaves the stored counts unchanged
+- A hand-edited count is corrected on open with a warn log; an unregistered repoId's row is deleted
+- A test throws inside a withWriteTxn callback after writing a pending row and its count, and asserts neither is visible afterwards
+
+### 1.3 E20261016c2ba6fa6:S001:T003 — Pending-row writes keep and count every relationship
+
+In src/db/relations.ts: upsertResolvedRelations keeps a code-symbol relation with an absent target as one pending row keyed makeUnresolvedRelationId(repo, from, kind, awaitedId), meta {awaitsId, class 'awaiting-target', reason 'target-not-stored-yet', absolute file, repo} (a boundary kind with class 'external-endpoint'), indexed in unresolved_by_target; a missing source or unknown kind is counted unwritable against meta.repo or the unattributed counter and logged at warn. upsertUnresolvedRelations counts every row by class and indexes awaitsId rows; a dropped row is counted with its reason. promoteToResolved / promoteResolvedBatch re-key a row kept awaiting (old row and index entries removed, new written, counts moved, absolute meta.file kept), advance the generation, and return { promoted, keptAwaiting, unwritable }. Anchors (today's behaviour): upsertResolvedRelations (src/db/relations.ts:120) skips a relation whose endpoint is not stored (:135-138) or whose kind has no byte (:139-143) with only a debug count (:148-153); upsertUnresolvedRelations (:211) drops rows at :223-229 and :253-263; promoteToResolved (:385-405) and promoteResolvedBatch (:422-440) delete the pending row even when the edge is skipped (:397-403, :433-437). Depends on t2 for the in-transaction count helpers.
+
+**Acceptance checks:**
+- Every input of upsertResolvedRelations ends as an edge, one pending row awaiting the target, or a counted unwritable; none is dropped
+- Writing the same relationship twice while its target is absent leaves one row and an awaiting count of 1
+- promoteResolvedBatch's returned { promoted, keptAwaiting, unwritable } is checked directly in src/db/__tests__/relations-awaiting-target.test.ts and relations-lmdb.test.ts (which already calls it, :322-366); promoteResolvedBatch has three production callers (src/indexer/cross-file-resolver.ts:335, src/indexer/external-endpoints.ts:142, src/indexer/messaging-endpoints.ts:141), all of which ignore the value; the endpoint suites (external-endpoints.test.ts, messaging-endpoints.test.ts) and the cross-file suites are regression coverage for them. promoteToResolved has no production caller (only relations-lmdb.test.ts:255), and its test is updated with it
+- A boundary relation with an absent target is kept as 'external-endpoint' and does not count against graphComplete
+
+### 1.4 E20261016c2ba6fa6:S001:T004 — Pending-row deletes, meta updates and the by-target read keep the counts true
+
+deleteUnresolvedRowInTxn (src/db/relations.ts:463) removes the row's unresolved_by_target entry and decrements its class and reason counts in the same transaction, which covers deleteUnresolvedForFile (:312), deleteUnresolvedForRepoFile (:344) and deleteUnresolvedForRepo (:365) and their callers; updateUnresolvedMeta / updateUnresolvedMetaBatch merge meta (awaitsId, file, repo, specifier, exportedAs kept), move the counts on a class change and clear candidates on a class other than 'ambiguous'; listUnresolvedRelations gains opts.awaiting, reading rows awaiting the given ids from every repository through unresolved_by_target. Anchors: updateUnresolvedMeta (src/db/relations.ts:407) and updateUnresolvedMetaBatch (:442) replace meta today (`const next = { ...row, meta, attemptedAt }`, :417 and :453); deleteUnresolvedRowInTxn is at :463; listUnresolvedRelations (:277) scans the pending table without a file scope (:300-307). Depends on t3 for the by-target index writes it must undo. deleteUnresolvedRowInTxn has five callers: the three delete functions (:333, :360, :380) and the two promotions (promoteToResolved :403, promoteResolvedBatch :437). The helper decrements the removed row's class and reason counts; the promotions rely on it for that and add only the counts of what they write (an edge adds none; a re-keyed awaiting row adds its own), so no removal is counted twice.
+
+**Acceptance checks:**
+- A kept-awaiting row is removed by deleteUnresolvedForFile(<absolute path>) and its count decremented; each of the three delete functions decrements what it removes
+- A reclass keeps awaitsId and specifier and clears stale candidates
+- listUnresolvedRelations with opts.awaiting returns two rows awaiting one id, one of them held by another repository, without scanning the pending table
+- A promotion that writes the edge leaves the class counts lowered by exactly one; one that re-keys an awaiting row leaves the awaiting count unchanged (no double decrement)
+
+### 1.5 E20261016c2ba6fa6:S001:T005 — Writers carry meta.repo and the missing-file class
+
+resolveRelations (src/indexer/resolver.ts) keeps a relative import that resolves to no file unresolved with class 'no-candidate', reason 'target-file-missing', and puts meta.repo on every resolved relation; indexManifest writes DEPENDS_ON with meta.repo = meta.file = repoPath; the cross-file Pass 1 rewire writes meta.repo and the importing file's absolute meta.file. Anchors: resolveRelations (src/indexer/resolver.ts:63) keeps an import unresolved when resolveImportPath finds no file (:105-107); indexManifest is the private method at src/indexer/index.ts:1080 and writes DEPENDS_ON with no meta at :1111-1113; Pass 1's rewire writes IMPORTS with no meta at src/indexer/cross-file-resolver.ts:242-244. Depends on t4 for the counted, merged pending writes.
+
+**Acceptance checks:**
+- A relative import of './missing.js' is 'no-candidate' with reason 'target-file-missing'; one of an existing file resolves to its file id as today
+- A refused DEPENDS_ON or rewire is counted against the repository, not the unattributed counter
+- A DEPENDS_ON kept awaiting is removed only by deleteUnresolvedForRepo
+
+### 1.6 E20261016c2ba6fa6:S001:T006 — TypeScript parser emits pending EXPORTS rows for re-exports
+
+In src/indexer/parser/typescript.ts the export_statement branch emits, for `export { a, b as c } from './y.js'`, a pending EXPORTS row per name from the file entity (rawTo = local name, meta { specifier, exportedAs, file, repo }), and for `export * from './y.js'` one row with rawTo '*'. src/db/graph/keys.ts is read-only (EXPORTS keeps byte 7). Anchors: the export_statement branch of the TypeScript parser recurses only into a declaration (src/indexer/parser/typescript.ts:189-196) and emits nothing for a re-export; EXPORTS is byte 7 (src/db/graph/keys.ts:29, read-only). Depends on t3 for pending rows being stored and counted.
+
+**Acceptance checks:**
+- The three re-export forms produce the expected pending rows (new src/indexer/parser/__tests__/typescript-reexports.test.ts)
+- Files without re-exports parse to the same entities and relations as before
+
+### 1.7 E20261016c2ba6fa6:S001:T007 — One file-selection predicate shared by the full index and the cross-file pass
+
+Extract the full index's per-file rule (src/indexer/index.ts:630-640: the repository's ignore list, a parser for the extension or basename, not generated or minified) plus the artifact parser's skip rules (SKIP_BASENAMES and MAX_SIZE, artifact.ts:89, :117-118, exported for it) into one predicate returning 'selected' | 'not-code' | 'excluded-by-ignore'; fullIndex's selection loop calls it. Story s6 later replaces its ignore part. Anchors: src/indexer/index.ts:630 lists files with listRepoFiles(repoPath, resolveRepoIgnore(repoPath)); :634-635 keep a file only when a parser handles its extension or basename; :636-639 skip isGeneratedOrMinified (GENERATED_FILE_PATTERN at :90); the artifact parser returns no entities for SKIP_BASENAMES or source over MAX_SIZE = 256 KB (src/indexer/parser/artifact.ts:89, :117-118).
+
+**Acceptance checks:**
+- fullIndex selects exactly the same files as before on the existing indexer fixtures
+- The predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as 'not-code', a .ts under an ignored directory as 'excluded-by-ignore', and a .css/.json under the limit as 'selected'
+
+### 1.8 E20261016c2ba6fa6:S001:T008 — Cross-file pass: modes, Pass 0 and a class for every row
+
+In src/indexer/cross-file-resolver.ts: an explicit mode ('full' | 'settle' | 'repository', default 'repository') and committedFiles; Pass 0 promotes code-symbol rows whose awaited target is stored (settle: rows awaiting the committed files' entities; full: rows awaiting any entity of the repository, from any repository; repository: its own); rows awaiting a never-stored FILE id are classed by the t7 predicate ('not-code' -> 'no-candidate' reason 'target-not-code'; 'excluded-by-ignore' and a selected file not stored stay awaiting with reasons 'target-excluded-by-ignore' / 'target-not-committed'); Pass 2 writes 'ambiguous' or 'no-candidate' (reason 'no-match') in every mode; full mode classes leftover unattempted code-symbol rows 'no-candidate'; the result gains completedById and pendingByClass. runSettlePass (src/indexer/index.ts:856) passes mode 'settle' with the settled files; resolveAfterReconcile (src/indexer/index.ts:568) passes 'repository'. Anchors: runCrossFileResolver is at src/indexer/cross-file-resolver.ts:107 (result type CrossFileResolveResult at :99; Pass 1 :159-256, Pass 2 :269-351); runSettlePass is the private method at src/indexer/index.ts:856 (it calls the pass per file with scopeFile at :864-866) and resolveAfterReconcile the protected method at src/indexer/index.ts:568 (:570). Depends on t4 (by-target read, meta merge), t5 (missing-file class, meta on writes), t6 (EXPORTS rows exist to be left for t9) and t7 (the selection predicate it classes file targets by). runCrossFileResolver has three indexer callers: fullIndex (src/indexer/index.ts:707, given mode 'full' by t11), runSettlePass (:864-866, mode 'settle' with committedFiles, this task) and resolveAfterReconcile (:570, mode 'repository', this task).
+
+**Acceptance checks:**
+- ac1 fixture: a file sorting earlier imports and calls into a later one; after a first full index both edges are stored and findCallers returns the call site
+- After a settle that adds a call to JSON.parse, the row is 'no-candidate' and a complete repository stays complete; a settle that creates an awaited target promotes the rows awaiting it
+- An import of './logo.png' is 'no-candidate' (target-not-code); one of a .ts in an ignored directory stays awaiting (target-excluded-by-ignore)
+- resolveAfterReconcile changes neither fullIndexFinished nor the classes only a full index sets
+
+### 1.9 E20261016c2ba6fa6:S001:T009 — Re-exports: EXPORTS edges, export_names, and calls through barrels
+
+In src/indexer/cross-file-resolver.ts: Pass 1b resolves each pending EXPORTS row to the named exported entity of the file its specifier resolves to (or that file entity for '*'), writes the EXPORTS edge with today's empty value and the export_names entry (file u64, exported name) -> target id in one transaction; resolveCall widens a caller's candidates by looking up the call's raw name in export_names of each imported file, following '*' entries to their source files, transitively with a visited set, ignoring an entry whose target is not stored. Anchors: resolveCall is at src/indexer/cross-file-resolver.ts:465 and matches candidates by raw name (:494); no EXPORTS edge is written today, and every edge the store writes has an empty value (`s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0))`, src/db/relations.ts:434). Depends on t6 (the pending EXPORTS rows) and t8 (the pass structure and modes it extends).
+
+**Acceptance checks:**
+- ac3 fixture: calls through `export { f } from`, an aliased re-export (g() resolves to f), a barrel of a barrel and `export *` resolve; a re-export cycle terminates with the name 'no-candidate'
+- The stored EXPORTS edge value is empty and export_names holds (barrel, 'g') -> f
+- An export_names entry pointing at a deleted target is ignored
+
+### 1.10 E20261016c2ba6fa6:S001:T010 — Entity deletes clean export_names; the repository delete can return incoming edges to pending
+
+In src/db/entities.ts detachDeleteEntitiesInTxn removes every export_names entry keyed by each deleted u64 in the same transaction; deleteEntitiesForRepo (:560-583) gains { returnIncomingToPending } which, before the delete, writes every relationship another repository holds into the repository's entities back as a pending row of the holder awaiting the entity id, in one transaction with the counts, and returns { returnedToPending }. Anchors: deleteEntitiesForRepo is at src/db/entities.ts:560-583 and reaches detachDeleteEntitiesInTxn (:1099-1135) through detachDeleteEntities (:1087); the whole-file replacement calls it at :485. Depends on t3 for writing returned relationships as counted pending rows; export_names exists from t1.
+
+**Acceptance checks:**
+- Re-indexing then deleting a barrel leaves no export_names entry under its old u64
+- With the option, a hand-written edge from repository A into B is a pending row of A awaiting B's entity after B's delete; a forced failure leaves both B's rows and A's edge untouched
+- Without the option the delete behaves as today
+
+### 1.11 E20261016c2ba6fa6:S001:T011 — The full index rebuilds a repository from scratch and records its state
+
+fullIndex (src/indexer/index.ts:606-768): return incoming relationships to pending, delete the repository's rows in both stores (deleteEntitiesForRepo with the option, deleteUnresolvedForRepo; document summaries and exploration cache go too and doc-summarise-repo regenerates the summaries), reset IndexState (generation advanced, fullIndexFinished false), index every selected file with cleanFirst semantics, so indexFile's unchanged-hash skip (src/indexer/index.ts:1031-1036) does not apply, record uncommittedFiles for a thrown error or a false return, store the repository entity before indexManifest, run the cross-file pass in 'full' mode, set endpointPassFailed and fullIndexFinished. Daemon start-up queues a full index for every repository whose fullIndexFinished is false (beside today's rule in src/indexer/index.ts:286-300). Anchors: fullIndex is the private method at src/indexer/index.ts:606-768; it calls indexFile(filePath, repoPath, false) (:655), and indexFile skips a file whose stored hash is unchanged unless cleanFirst (:1031-1036) and returns false on a read failure (:1027-1029), which the loop counts as skipped (:656); the start-up rule that queues full indexes is in src/indexer/index.ts:286-300 (enqueue at :300). Depends on t2 (state), t8 and t9 (the 'full' pass), t10 (the delete with return to pending and export_names cleanup). It changes fullIndex's call at src/indexer/index.ts:707 to pass mode 'full'.
+
+**Acceptance checks:**
+- ac2 integration: a store with a hand-deleted cross-file edge and unchanged hashes gets the edge back from repo.reindex
+- A file whose read fails during a full index is in uncommittedFiles and the repository reads not complete
+- DEPENDS_ON edges from the repository entity are stored for a manifest fixture
+- A full index made to throw part-way leaves fullIndexFinished false, and start-up queues that repository
+- Repository B's reindex restores repository A's hand-written edge into B through Pass 0 without reindexing A
+- After a reindex of the ac3 fixture no export_names entry remains under an old u64 and calls through the barrel still resolve
+
+### 1.12 E20261016c2ba6fa6:S001:T012 — Daemon replies carry completeness
+
+repo.list, repo.stats and daemon.status (src/daemon/index.ts, src/daemon/repo-stats.ts, src/daemon/status.ts) return completeness: RepoCompleteness beside the unchanged four-value status; DaemonStatus gains unattributedUnwritable; the types in src/shared/types.ts. Anchors: repo.list (src/daemon/index.ts:580-582), repo.stats (:589-599, collectRepoStats in src/daemon/repo-stats.ts:122) and daemon.status (:1043-1066, src/daemon/status.ts:49-75); the status union is at src/shared/types.ts:696. Depends on t2 for completenessOf.
+
+**Acceptance checks:**
+- Each reply carries completeness for an incomplete and a complete repository, with status unchanged
+- Existing repo-stats and daemon-status contract tests pass unchanged apart from the added field
+
+### 1.13 E20261016c2ba6fa6:S001:T013 — CLI Repos pane shows completeness
+
+src/cli/panes/ReposPane.tsx RepoRow shows 'incomplete' with the count and the first reason beside the status for an incomplete repository, nothing extra for a complete one, and treats an absent field as unknown. Anchors: the per-repository row is the RepoRow component in src/cli/panes/ReposPane.tsx:201 (rendered at :193), not the db codec's RepoRow interface (src/db/graph/codec.ts:90). Depends on t12 for the field in daemon.status.
+
+**Acceptance checks:**
+- Rendered rows (ink test) show the incomplete marker and count, and none for a complete repository
+
+### 1.14 E20261016c2ba6fa6:S001:T014 — JetBrains status dialog shows completeness
+
+RepoStatsDto (DaemonGateway.kt) gains the completeness field (absent decodes as unknown); RepoStatusDialog.kt shows complete/incomplete with the reasons and counts. Anchors: RepoStatsDto in jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt (around :344-357) and the dialog's rendering in actions/RepoStatusDialog.kt (around :99-114). Depends on t12 for the field in repo.stats.
+
+**Acceptance checks:**
+- RepoStatsGatewayTest decodes a recorded repo.stats reply with one complete and one incomplete repository, and one without the field
+- The dialog layout test shows the reasons for the incomplete repository
+
+### 1.15 E20261016c2ba6fa6:S001:T015 — VS Code Daemon tab lists repositories with completeness
+
+RepoRef (vscode-plugin/src/panels/types.ts:84-87) gains completeness; registeredRepos (daemon-gateway.ts:73-78) carries it from repo.list; the Daemon tab renderer (detail-renderers.ts) lists each repository with status and completeness, dispatched by webview-host.ts as today. Anchors: RepoRef at vscode-plugin/src/panels/types.ts:84-87, registeredRepos at daemon-gateway.ts:73-78, the Daemon tab renderer in detail-renderers.ts (doc comment 'The Daemon tab (ac1)' at :18-20), dispatched by webview-host.ts (:202). Depends on t12 for the field in repo.list.
+
+**Acceptance checks:**
+- detail-renderers and daemon-gateway tests cover a complete, an incomplete and a field-less repository
+- A headless-Chrome screenshot of the rendered Daemon tab is read and shows the list as designed
+
+### 1.16 E20261016c2ba6fa6:S001:T016 — Analyzer lookups state an incomplete repository
+
+ExplorationRunnerContext (src/analyze/explore/types.ts) gains repoCompleteness, set at all three context constructions in executor.ts (around :216, :522, :584); graphCompleteness adds only repoCompleteness? to its parameter; usage.example, import.graph, class.hierarchy, data-model.trace and convention.detect pass it, so an incomplete repository yields notEstablished with the reasons in the basis note. Anchors: graphCompleteness (src/analyze/explore/completeness-facts.ts:66-74) has 19 call sites in 14 files; only the five relationship lookups pass repoCompleteness (src/analyze/explore/usage-example.ts:141/:183, src/analyze/explore/import-graph.ts:106/:181, src/analyze/explore/class-hierarchy.ts:113/:187, src/analyze/explore/data-model-trace.ts:105/:206, src/analyze/explore/convention-detect.ts:114/:169). The other nine callers (concept-resolve, manifests-locate, symbol-locate, test-locate, discovery-entrypoints, discovery-modules, structure-module-tree, surface-functional, adherence) do not walk relationships and keep their calls unchanged; the field is optional. ExplorationRunnerContext (src/analyze/explore/types.ts:880-905) is built at three PRODUCTION places in src/analyze/explore/executor.ts (the object literals at :214-218, :520-524 and :582-586; the only three uses of ignoreFilter in a context). Depends on t2 for completenessOf. repoCompleteness is optional on ExplorationRunnerContext: about ten test fixtures in src/analyze/explore/__tests__/ (e.g. completeness-all-lookups.test.ts:109, failed-lookups.test.ts:209) build a context without it and keep compiling; absent means no repository facts, so the lookup's completeness is computed as today.
+
+**Acceptance checks:**
+- Each of the five lookups reports notEstablished with the counts for an incomplete repository and as today for a complete one
+- graphCompleteness's 19 existing call sites compile and behave unchanged; the nine non-relationship callers do not pass repoCompleteness
+
+### 1.17 E20261016c2ba6fa6:S001:T017 — Ship and smoke on this repository
+
+Update the installed daemon and restart it from ~/.insrc/daemon; the migration runs and every repository reads 'a reindex is needed'; let this repository's queued full index end; record in S001/smoke.md: before and after counts of pending rows (by kind before, by class and reason after), unwritable 0, findCallers(runGrepSearch) = 4 outside test files, findCallers(stripReviewSection) = 4, the doc summaries regenerated, completeness shown by repo.stats, the CLI, JetBrains and the VS Code Daemon tab. Depends on every earlier task through t11 (the reindex) and t12-t16 (the surfaces it checks). Test-file callers of runGrepSearch are in src/daemon/tools/builtins/search/__tests__/grep-core.test.ts and grep-omitted.test.ts.
+
+**Acceptance checks:**
+- smoke.md records runGrepSearch 4 and stripReviewSection 4 stored callers, unwritable 0, and the class counts
+- The four status surfaces show the repository's completeness
+- The doc-summarise-repo job for this repository completes and its summary count after the reindex equals the count before (or the difference is explained in smoke.md)
+
+## 2. Test-strategy coverage
+
+| LLD strategy item | Covered by |
+| :--- | :--- |
+| upsertResolvedRelations: both endpoints stored -> edge; target absent -> pending row of the same kind awaiting the target id (meta.awaitsId, class 'awaiting-target', indexed in unresolved_by_target); source absent -> unwritable 'source-missing' against meta.repo, or the daemon-wide unattributed counter when there is none; kind without byte -> unwritable 'unknown-kind' (src/db/__tests__/relations-awaiting-target.test.ts) | `t3` |
+| upsertUnresolvedRelations: row without meta.file/meta.repo and row of an unregistered repository counted unwritable with reason, not dropped | `t3` |
+| promoteToResolved and promoteResolvedBatch: absent target keeps the row rewritten to await the id (row NOT deleted); absent source deletes the stale row and counts it; returned {promoted, keptAwaiting, unwritable} | `t3` |
+| listUnresolvedRelations with opts.awaiting reads through unresolved_by_target; two rows awaiting one id are both returned | `t4` |
+| completenessOf: undefined state -> not complete with 'a reindex is needed'; each non-zero cause yields one reason line with its count; ambiguous and external-endpoint rows do not make the graph incomplete; complete = graphComplete when embeddingAvailable is false (src/db/__tests__/index-state.test.ts) | `t2` |
+| IndexState pending counts recounted on store open from each row's stored meta.class, with persisted fields carried over across closeGraphStore/reopen | `t1`, `t2` |
+| TypeScript parser emits pending EXPORTS rows for `export { f } from`, `export { f as g } from` and `export * from` with rawTo, specifier and exportedAs (src/indexer/parser/__tests__/typescript-reexports.test.ts) | `t6` |
+| graphCompleteness with an incomplete repoCompleteness returns notEstablished with the repository's reasons in the basis note; with a complete one returns as today | `t16` |
+| transactional counts: a write transaction made to throw after its row writes leaves both the pending rows and the index_state counts unchanged; a store whose index_state counts are edited by hand is corrected on open from the stored classes with a warn log | `t2`, `t3` |
+| resolveRelations: a relative IMPORTS of './missing.js' (no file on disk) is returned unresolved with meta.class 'no-candidate' and reason 'target-file-missing'; one of an existing file resolves to its file id as today; every resolved relation carries meta.repo | `t5` |
+| graphCompleteness: existing callers' arguments (returned, found, limited, skipped, partlyRead, rule) give the same Completeness as before; only repoCompleteness changes the result | `t16` |
+| updateUnresolvedMetaBatch merges meta (awaitsId and specifier survive a reclass) and moves the class counts; each of deleteUnresolvedForFile, deleteUnresolvedForRepoFile and deleteUnresolvedForRepo decrements the counts it removes (mutation check: the replace-meta behaviour restored loses awaitsId) | `t4` |
+| path form of kept-awaiting rows: a relation kept awaiting by upsertResolvedRelations (with and without its own meta.file), by a promotion and by a Pass 1 rewire is removed by deleteUnresolvedForFile(<absolute path>) and its count decremented; a DEPENDS_ON kept awaiting is removed only by deleteUnresolvedForRepo (mutation check: building meta.file from the entity row's repo-relative filePath leaves the row and the test fails) | `t3`, `t4`, `t5` |
+| ac1 fixture: a.ts imports and calls b.ts's fn (a sorts before b); a first full index stores the IMPORTS and the CALLS, findCallers(fn) returns a.ts's call site, and IndexState reads complete (src/indexer/__tests__/first-index-order.test.ts) | `t8` |
+| re-export fixture: c.ts calls f() imported from index.ts which does `export { f } from './b'`; plus `export { f as g } from './b'` with a call g(), a barrel of a barrel, `export * from`, and a two-file re-export cycle; findCallers(f) returns the call sites through the barrel including g(), export_names holds (barrel, 'g') -> f, the stored EXPORTS edge value is empty, and the cycle terminates with the name left 'no-candidate' (src/indexer/__tests__/reexport-callers.test.ts) | `t9` |
+| runCrossFileResolver Pass 0: a pending row awaiting an id is promoted once the target's file is indexed, with committedFiles given (settle) and omitted (full index); counts in CrossFileResolveResult.completedById and pendingByClass | `t8` |
+| fullIndex reindex: a store with a deliberately lost cross-file edge (an edge deleted by hand, the file hashes unchanged) is rebuilt by repo.reindex with the edge back; the unchanged-hash skip does not apply; uncommittedFiles records a file whose parse throws; the repository entity is stored and a DEPENDS_ON edge is written for a two-repository manifest fixture | `t11` |
+| cross-repository restore (a guard; no indexer writes such an edge today, so the fixture WRITES A's CALLS edge into B's entity by hand with upsertRelations): B is reindexed while A is not; A's edge is returned to pending before B's delete and restored by B's 'full' Pass 0 through unresolved_by_target; A's counts return to zero awaiting; a forced failure of the return-to-pending transaction leaves B's rows and A's edge untouched | `t10`, `t11` |
+| interruption: fullIndexFinished false after a full index made to throw part-way, and the daemon start-up path queues a full index for that repository | `t11` |
+| MIGRATION_V4_TO_V5 on a V4 store built with today's code: sub-DBs opened, an IndexState row with fullIndexFinished false per workspace repository, SCHEMA_VERSION 5 stored, earlier steps untouched; a failing run leaves the version at 4 (src/db/graph/__tests__/migration-v4-to-v5.test.ts) | `t1` |
+| repo.stats, repo.list and daemon.status handlers return completeness beside an unchanged four-value status (src/daemon/__tests__/repo-completeness.test.ts) | `t12` |
+| executor puts repoCompleteness on ExplorationRunnerContext; usage.example, import.graph, class.hierarchy, data-model.trace and convention.detect outputs read notEstablished with the counts for an incomplete repository (extends src/analyze/explore/__tests__/completeness-all-lookups.test.ts) | `t16` |
+| completeness and file-target classes, one fixture repository: imports of './missing.js', './logo.png', './vendor/lib.min.js' and a JSON over 256 KB read 'no-candidate' (reasons 'target-file-missing' / 'target-not-code') and the repository reads complete; adding an import of a .ts file in a directory the ignore list excludes makes it read not complete with the reason line '1 relationship points at files an ignore rule excludes'; an import of a .css file resolves to the stored file entity (mutation check: with the selection rule not applied, the .png import keeps the repository incomplete) | `t7`, `t8` |
+| endpoint passes: a boundary relation kept with class 'external-endpoint' when its target is absent does not make the repository incomplete and is not promoted by Pass 0; external-endpoints and messaging-endpoints suites still pass with promoteResolvedBatch's new return | `t3`, `t8` |
+| unattributed refusal: a resolved relation with no meta.repo and an unstored source increments DaemonStatus.unattributedUnwritable and no repository's state | `t3`, `t12` |
+| settle: a file event that creates the target of awaiting rows; runSettlePass promotes them at the settle (mutation check: with committedFiles not passed they stay pending) | `t8` |
+| reconcile: resolveAfterReconcile runs in 'repository' mode and leaves fullIndexFinished and the classes a full index set unchanged | `t8` |
+| one row per relationship: a raw-name row re-keyed by a promotion that keeps it awaiting, then the same relationship written through upsertResolvedRelations' keep-awaiting branch, leaves one row and an awaiting-target count of 1 (mutation check: re-keying removed gives 2) | `t3`, `t4` |
+| meta.repo on Pass 1's import rewire: a refused rewire is counted against the repository, not the unattributed counter | `t5` |
+| the executor sets repoCompleteness at all three context constructions in executor.ts, and each of the five relationship lookups reports notEstablished for an incomplete repository (extends completeness-all-lookups.test.ts; mutation check: one construction left without it fails) | `t16` |
+| repo.remove leaves no index_state row, export_names entry or unresolved_by_target entry for the removed repository, and a store reopened afterwards does not recount it | `t1`, `t10` |
+| settle: a file event adds a file importing './logo.png'; after the settle the row is 'no-candidate' with reason 'target-not-code', by the same rule the full index applies | `t8` |
+| unreadable file: a selected file whose read fails during a full index (removed between listing and read via an injected listing, or with its permissions removed) is in uncommittedFiles and the repository reads not complete (mutation check: with only thrown errors recorded, the test fails) | `t11` |
+| completeness after a settle: in a repository that reads complete, a file event adds a call to `JSON.parse` and to an unknown library function; after the settle both rows are 'no-candidate' (reason 'no-match') and the repository still reads complete (mutation check: with Pass 2 leaving UNRESOLVED rows unclassed outside 'full' mode, it reads incomplete and the test fails) | `t8` |
+| export_names upkeep: re-index a barrel (content changed) and then delete it; after each, no export_names entry remains under its old u64, and after the re-index the entries under the new u64 resolve calls as before (mutation check: without the cleanup in detachDeleteEntitiesInTxn, an entry remains and the test fails) | `t10`, `t11` |
+| RepoCompleteness shape in src/shared/types.ts matches the mirrored DTOs: vscode-plugin daemon-gateway type and JetBrains RepoStatsDto deserialization (a JSON fixture of a repo.stats reply decoded by each plugin's existing test harness) | `t14`, `t15` |
+| CLI ReposPane RepoRow renders 'incomplete' with the count beside the status for an incomplete repository and nothing extra for a complete one (ink-testing-library render) | `t13` |
+| VS Code Daemon tab lists the repositories with status and completeness (webview source test plus a headless-Chrome screenshot per the webview visual verification recipe) | `t15` |
+| VS Code: RepoRef carries completeness from registeredRepos, and the Daemon tab renderer in detail-renderers.ts lists each repository with status and completeness (webview source test plus a headless-Chrome screenshot read by eye) | `t15` |
+| before: record findCallers counts for runGrepSearch (expected 0 today) and stripReviewSection (1 today) and the grep counts (4 and 4) | `t17` |
+| before the reindex: record the count of pending rows by kind for this repository (today's store holds no class) | `t17` |
+| repo.reindex of this repository without removing it; after it ends: runGrepSearch has 4 callers outside test files (src/daemon/tools/builtins/search/grep.ts:222, probe.ts:62, config-trace.ts:104, search-text.ts:104) and stripReviewSection has 4 (start.ts:72, findings.ts:90 and verdicts.ts:92 through src/workflow/review/index.ts, run-artifact.ts:84) | `t17` |
+| after the reindex: repo.stats for this repository reports the four class counts (awaiting-target, ambiguous, no-candidate, external-endpoint) and unwritable, with unwritable expected 0 and awaiting-target 0; any non-zero awaiting-target is listed by row and explained in smoke.md | `t17` |
+| repo.stats for this repository shows completeness with its reasons and counts; the CLI, the JetBrains RepoStatusDialog and the VS Code Daemon tab show it | `t17` |
+| the record of the run is written to the Story folder's smoke.md | `t17` |
+| after the reindex: the doc-summarise-repo job for this repository runs to completion and the repository's summaries are present again (count before and after recorded in smoke.md) | `t17` |
+| callers in test files (__tests__ or *.test.ts) are counted apart: runGrepSearch's calls from grep-core.test.ts and grep-omitted.test.ts, if stored, are reported separately and do not change the measure of 4, which the issue states for production call sites | `t17` |
+
+## 3. References
+
+- **[[c1]]** `prior-artifact` `LLD s1 api: upsertResolvedRelations / upsertUnresolvedRelations (absent target kept as one pending row keyed by the awaited id, absolute meta.file, meta.repo; unwritable counted with its reason or in the unattributed counter)`
+- **[[c2]]** `prior-artifact` `LLD s1 api: promoteToResolved / promoteResolvedBatch (row kept awaiting is re-keyed; counts moved; returns { promoted, keptAwaiting, unwritable }; three callers)`
+- **[[c3]]** `prior-artifact` `LLD s1 api: listUnresolvedRelations opts.awaiting, updateUnresolvedMetaBatch (meta merged), deleteUnresolvedForFile / ForRepoFile / ForRepo (counts decremented through deleteUnresolvedRowInTxn)`
+- **[[c4]]** `prior-artifact` `LLD s1 api: resolveRelations (a relative import resolving to no file is 'no-candidate', reason 'target-file-missing'; meta.repo on resolved relations)`
+- **[[c5]]** `prior-artifact` `LLD s1 api: runCrossFileResolver (modes, Pass 0, Pass 1 meta, Pass 1b and export_names, Pass 2 classes in every mode, file-target classification), runSettlePass, resolveAfterReconcile`
+- **[[c6]]** `prior-artifact` `LLD s1 api: fullIndex (reindex from scratch, return to pending, uncommittedFiles, repository entity, shared file-selection rule), indexManifest, deleteEntitiesForRepo`
+- **[[c7]]** `prior-artifact` `LLD s1 api: IndexState with reasonCounts (sc1, AMD-c2ba6fa62a148ed1-2), RepoCompleteness / completenessOf, removeRepo`
+- **[[c8]]** `prior-artifact` `LLD s1 api: repo.stats / repo.list / daemon.status completeness and dataModelChanges RegisteredRepo / RepoStats / DaemonStatus (CLI, JetBrains, VS Code surfaces)`
+- **[[c9]]** `prior-artifact` `LLD s1 api: graphCompleteness (repoCompleteness? added) and dataModelChanges ExplorationRunnerContext`
+- **[[c10]]** `prior-artifact` `LLD s1 dataModelChanges: unresolved_by_target, export_names and index_state sub-DBs; SCHEMA_VERSION 5 / MIGRATION_V4_TO_V5`
+- **[[c11]]** `prior-artifact` `LLD s1 dataModelChanges: EXPORTS edge and the TypeScript parser's re-export rows`
+- **[[c12]]** `prior-artifact` `LLD s1 errorPaths: error cases, edge cases and invariants to preserve`
+- **[[c13]]** `prior-artifact` `LLD s1 testStrategy: smoke level (ac2 measure on this repository)`
+- **[[c14]]** `prior-artifact` `LLD s1 migration: steps 1-6 (migration on open, recount, start-up queue for fullIndexFinished false, readers of the field, ship)`

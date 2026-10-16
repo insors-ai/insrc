@@ -39,3 +39,10 @@ test('buildSummariserProvider: uses a CLI only when summariserProvider is explic
 		assert.ok(buildSummariserProvider(cfg({ summariserProvider: kind })) instanceof CliProvider, kind);
 	}
 });
+
+test('buildSummariserProvider: a CLI summariser pins the cheap tier\'s model but drops an Ollama-style id', () => {
+	const pinned = buildSummariserProvider(cfg({ summariserProvider: 'cli-claude', summariserModel: 'haiku' }));
+	assert.equal((pinned as unknown as { defaultModel?: string }).defaultModel, 'haiku');
+	const halfEdited = buildSummariserProvider(cfg({ summariserProvider: 'cli-claude', summariserModel: 'qwen3.6:27b' }));
+	assert.equal((halfEdited as unknown as { defaultModel?: string }).defaultModel, undefined, 'an Ollama id is not forwarded to a CLI');
+});

@@ -278,8 +278,11 @@ export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider {
 	const kind = cfg.summariserProvider;
 	if (kind === 'cli-claude' || kind === 'cli-codex') {
 		const cliKind = kind === 'cli-claude' ? 'claude' : 'codex';
-		// Pin the cheap tier's model; an empty model means the CLI's own default.
-		const model = cfg.summariserModel !== '' ? cfg.summariserModel : undefined;
+		// Pin the cheap tier's model, but never forward an Ollama-shaped id (a config
+		// left half-edited from the old local default, e.g. cli-claude with
+		// `qwen3.6:27b`): the CLI can't honor it, so it degrades to the CLI's own
+		// default model, as the shaper does.
+		const model = cfg.summariserModel !== '' && !isOllamaModelId(cfg.summariserModel) ? cfg.summariserModel : undefined;
 		log.info({ kind: cliKind, model: model ?? '(cli default)' }, 'summariser provider: routing through CliProvider');
 		return new CliProvider({ kind: cliKind, ...(model !== undefined ? { model } : {}) });
 	}

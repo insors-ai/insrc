@@ -20,6 +20,7 @@
 
 import { registerRunner } from '../../executor.js';
 import type { StepRunner, StepRunnerContext } from '../../types.js';
+import { PATH_FORM_RULE } from '../scope-prompts.js';
 import { issueCaptureSchema, issueChecklistSchema } from './schemas.js';
 
 /** The bugfix magnitude carried from sc1 onto the run's start params. */
@@ -51,6 +52,7 @@ const issueCapture: StepRunner = {
 				'- `rootCause`:    the DIAGNOSED cause (grounded on the code), not a guess.',
 				'- `fixIntent`:    WHAT the correction will do (intent), NOT the implementation/diff. Do not design the fix.',
 				'- Cite every claim: at least one `citations[]` entry; ids are `cN`.',
+				PATH_FORM_RULE,
 				'',
 				'Emit the capture JSON matching the schema now.',
 			].join('\n'),

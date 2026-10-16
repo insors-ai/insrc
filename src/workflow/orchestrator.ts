@@ -154,6 +154,7 @@ import { assertEpicHash, computeEpicHash } from './hash.js';
 import { SIZE_CLASSES, type SizeClass } from './triage/types.js';
 import { isStandaloneParams, standaloneStoryContext } from './runners/design-story/standalone.js';
 import { deriveSlug } from './slug.js';
+import { PATH_FORM_RULE } from './runners/scope-prompts.js';
 
 const log = getLogger('workflow:orchestrator');
 
@@ -316,6 +317,7 @@ function stubSynthesizer(
 		'',
 		'Every claim in `body.summary` or `body.bulletList` MUST cite at least one entry from `citations[]` using the `[[cN]]` marker.',
 		'Every citation MUST reference one of the three step outputs (s1, s2, s3) — cite them as { kind: "step-output", ref: "s1" | "s2" | "s3" }.',
+		PATH_FORM_RULE,
 		'',
 		'Do NOT include code fences, do NOT invent facts that are not in the step outputs.',
 	].join('\n');
@@ -622,6 +624,7 @@ function brainstormSynthesizer(
 		'- Do NOT invent facts absent from s1. Do NOT add a category outside s1.category.',
 		'- `citations[]` grounds the spec in the elicitation: at least one citation of',
 		'  { kind: "step-output", ref: "s1" }. Cite ids as `cN`.',
+		PATH_FORM_RULE,
 	].join('\n');
 	const userTurn = [
 		`Focus (the rough idea): ${intent.focus}`,
@@ -821,6 +824,7 @@ function issueSynthesizer(
 		'  metadata (magnitude, parent) to the body.',
 		'- `fixIntent` stays INTENT-only (what the correction does), never the implementation/diff.',
 		'- Do NOT invent facts absent from s1. `citations[]` preserves the s1 citations (at least one); ids are `cN`.',
+		PATH_FORM_RULE,
 	].join('\n');
 	const userTurn = [
 		`Defect (the bugfix focus): ${intent.focus}`,
@@ -971,6 +975,7 @@ function defineSynthesizer(
 		'- `body.constraints` MUST be verbatim from s2.constraints (same ids, same sources).',
 		'- `body.stories` MUST preserve s3 Stories verbatim.',
 		'- `citations[]` MUST be the UNION of s2.citations + s3.citations, de-duplicated by id. No new citation ids invented at this step.',
+		PATH_FORM_RULE,
 		'- `openQuestions` is populated from s4 verdict: every `missed`/`ambiguous` result (except the sb1/sb2/sb3 hard-fail items — those fail the whole synthesize) becomes an open question phrased as "Item <itemId>: <notes|verdict>".',
 		'- `body.flavor` matches s1.flavor exactly.',
 		'- `body.title`: a short (3-8 words), outcome-phrased name for what this delivers, e.g.',
@@ -1472,6 +1477,7 @@ function designEpicSynthesizer(
 		COMPONENT_CONTENT_GATE_RULE,
 		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- `citations[]` MUST reference analyze bundles from s1 for every module/api name that appears in the framework body.',
+		PATH_FORM_RULE,
 	].join('\n');
 	const userTurn = [
 		`Focus: ${intent.focus}`,
@@ -2001,7 +2007,7 @@ function designStorySynthesizer(
 		'',
 		'HARD RULES:',
 		'- `body.hldContextSlice` MUST be verbatim from the HLD context slice below.',
-		'- `body.contractDetails`, `body.dataModelChanges`, `body.interactionWithShared` MUST be verbatim from s4.',
+		'- `body.contractDetails`, `body.dataModelChanges`, `body.interactionWithShared` MUST be verbatim from s4, except that every `callSites` entry is written in the form the file-reference rule below requires.',
 		'- `body.summary` MUST be carried verbatim from s4.summary when s4 emitted one; `body.contextRefs` MUST be carried verbatim from s4.contextRefs when s4 emitted them. Omit either when s4 has none — the renderer derives the HLD-context reference from the Epic hash by default (do NOT invent contextRefs).',
 		'- `body.errorPaths` MUST be verbatim from s5.',
 		'- `body.testStrategy` MUST be verbatim from s6.',
@@ -2017,6 +2023,7 @@ function designStorySynthesizer(
 		COMPONENT_CONTENT_GATE_RULE,
 		FEEDBACK_NEVER_AUTHOR_RULE,
 		'- Citation ids `cN` reference `citations[]`; every claim in body cites at least one.',
+		PATH_FORM_RULE,
 	].join('\n');
 	const userTurn = [
 		`Focus: ${intent.focus}   Epic: ${epicHash}   Story: ${storyId}`,
@@ -2559,6 +2566,7 @@ function planSynthesizer(
 		'- `body.testStrategyCoverage` MUST be the s5 testStrategyCoverage verbatim.',
 		'- `body.summary` MUST be carried verbatim from s5.summary when s5 emitted one (a `{ prose, audience? }` object). Omit it when s5 has none.',
 		'- `citations[]` define the `derivedFrom` grounding ids (c1, c2, ...). Every id used in any Task\'s `derivedFrom` MUST appear in `citations[]`, and every citation MUST be referenced by at least one Task (no dead citations). Each citation grounds an LLD handoff item — cite it as { kind: "prior-artifact", ref: "LLD <storyId> <handoff item>" } or an analyze bundle from s1.',
+		PATH_FORM_RULE,
 		FEEDBACK_NEVER_AUTHOR_RULE,
 	].join('\n');
 	const userTurn = [

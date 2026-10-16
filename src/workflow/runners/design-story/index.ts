@@ -27,7 +27,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { registerRunner } from '../../executor.js';
 import { requireApprovedEpic, requireApprovedHld } from '../../gates.js';
 import { extractHldContextSlice } from '../../artifacts/lld.js';
-import { ANTI_OVERREACH_RULE, SMALLEST_SHAPE_RULE } from '../scope-prompts.js';
+import { ANTI_OVERREACH_RULE, PATH_FORM_RULE, SMALLEST_SHAPE_RULE } from '../scope-prompts.js';
 import { ER_CONTENT_GATE_RULE } from '../../artifacts/companion/er-schema.js';
 import { UX_CONTENT_GATE_RULE } from '../../artifacts/companion/ux-schema.js';
 import { SEQUENCE_CONTENT_GATE_RULE } from '../../artifacts/companion/sequence-schema.js';
@@ -148,6 +148,7 @@ const contextAssemble = llmPauseRunner({
 				'- Use `insrc_analyze_step` for every code claim. Do NOT invent module or symbol names.',
 				'- This step is READ-ONLY discovery. Do not propose a solution.',
 				ANTI_OVERREACH_RULE,
+				PATH_FORM_RULE,
 				'',
 				'What to do (Story-scoped):',
 				'  1. Run `symbol.locate` on any API names in the HLD shared contracts this Story owns/consumes so you have current signatures.',
@@ -307,6 +308,7 @@ const contractDetail = llmPauseRunner({
 				'- Leave `contextRefs` OUT to let the engine derive the HLD-context reference from the Epic — the default de-dup (ac2).',
 				'- Set it only to point at a DIFFERENT upstream artifact section: `{ sourceArtifactId: "HLD-<hash>"|"DEF-<hash>", sectionId: "<number-prefixed-section-slug>" }`. NEVER copy the referenced prose into this LLD.',
 				ANTI_OVERREACH_RULE,
+				PATH_FORM_RULE,
 				'',
 				'HLD AMENDMENT PROPOSAL (optional):',
 				'  If designing this contract reveals a small, localised HLD change (a shared contract needs one more field, a method signature needs to add a parameter, ownership of one contract needs to move between Stories, etc.), you MAY emit `hld.amendmentProposal` with `{ amendment: <typed>, rationale: <string>, citations: [] }`. Do NOT propose an amendment for a fundamental HLD rework — those need a back-flow, not an amendment. Rough threshold: if >30% of shared contracts would need changing, do NOT amend.',

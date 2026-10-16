@@ -334,10 +334,11 @@ test('promoteResolvedBatch writes all edges + removes all unresolved rows', asyn
 	const list = await listUnresolvedRelations(null, REPO);
 	assert.equal(list.length, 2);
 
-	await promoteResolvedBatch(null, [
+	const result = await promoteResolvedBatch(null, [
 		{ unresolved: list.find(u => u.rawTo === './t1')!, targetEntityId: t1.id },
 		{ unresolved: list.find(u => u.rawTo === './t2')!, targetEntityId: t2.id },
 	]);
+	assert.deepEqual(result, { promoted: 2, keptAwaiting: 0, unwritable: 0 });
 	assert.equal(await countOutEdges(await getU64(a.id)), 2);
 	assert.equal((await listUnresolvedRelations(null, REPO)).length, 0);
 });
@@ -363,7 +364,7 @@ test('updateUnresolvedMetaBatch updates each row', async () => {
 });
 
 test('promoteResolvedBatch on empty array is a no-op', async () => {
-	await promoteResolvedBatch(null, []);
+	assert.deepEqual(await promoteResolvedBatch(null, []), { promoted: 0, keptAwaiting: 0, unwritable: 0 });
 });
 
 test('updateUnresolvedMetaBatch on empty array is a no-op', async () => {

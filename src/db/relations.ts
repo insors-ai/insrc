@@ -47,8 +47,10 @@ import {
 	type GraphStore,
 } from './graph/store.js';
 import {
+	encodeEntityKey,
 	encodeOutEdgeKey,
 	encodeInEdgeKey,
+	encodeRepoKey,
 	encodeUnresolvedByFileKey,
 	prefixSuccessor,
 	RELATION_KIND_BYTE,
@@ -56,10 +58,13 @@ import {
 } from './graph/keys.js';
 import {
 	encodeUnresolvedRow,
+	decodeEntityRow,
 	decodeUnresolvedRow,
 	decodeRepoRow,
 	type UnresolvedRow,
 } from './graph/codec.js';
+import { advanceGenerationInTxn, countUnwritableInTxn, movePendingInTxn, type PendingSlot } from './graph/index-state-rows.js';
+import { awaitingReasonOf, BOUNDARY_RELATION_KINDS, pendingClassOf } from './graph/pending-class.js';
 
 const log = getLogger('db.relations');
 
@@ -117,6 +122,13 @@ export async function upsertRelations(_db: DbClient, relations: Relation[]): Pro
 	if (unresolved.length > 0) await upsertUnresolvedRelations(unresolved);
 }
 
+/**
+ * Write resolved relationships. Each input ends as exactly one of: an edge
+ * (both endpoints stored), ONE pending row awaiting the target by its id (the
+ * target is not stored yet; kept until the cross-file pass completes it), or a
+ * counted unwritable with its reason (no source entity, or a kind with no
+ * byte), logged at warn. Nothing is dropped silently (Epic c2ba6fa6 s1).
+ */
 async function upsertResolvedRelations(relations: Relation[]): Promise<void> {
 	const unique = dedupeResolvedRelations(relations);
 	if (unique.length < relations.length) {
@@ -127,28 +139,34 @@ async function upsertResolvedRelations(relations: Relation[]): Promise<void> {
 	}
 	if (unique.length === 0) return;
 
-	let skipped = 0;
+	const refused: Array<{ kind: string; from: string; to: string; reason: string }> = [];
+	let keptAwaiting = 0;
+	const now = Date.now();
 	await withWriteTxn(s => {
 		for (const r of unique) {
-			const fromU64 = lookupU64ByStringId(s, r.from);
-			const toU64   = lookupU64ByStringId(s, r.to);
-			if (fromU64 === undefined || toU64 === undefined) {
-				skipped++;
+			const kindByte = RELATION_KIND_BYTE[r.kind as InternalRelationKind];
+			const fromU64  = lookupU64ByStringId(s, r.from);
+			if (kindByte === undefined || fromU64 === undefined) {
+				const reason = kindByte === undefined ? 'unknown-kind' : 'source-missing';
+				countUnwritableInTxn(s, repoIdOfMetaInTxn(s, r.meta), reason);
+				refused.push({ kind: r.kind, from: r.from, to: r.to, reason });
 				continue;
 			}
-			const kindByte = RELATION_KIND_BYTE[r.kind as InternalRelationKind];
-			if (kindByte === undefined) {
-				skipped++;
+			const toU64 = lookupU64ByStringId(s, r.to);
+			if (toU64 === undefined) {
+				writePendingRowInTxn(s, awaitingRowFor(s, fromU64, r.from, r.kind, r.to, r.meta, now));
+				keptAwaiting++;
 				continue;
 			}
 			s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
 			s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
 		}
 	});
-	if (skipped > 0) {
-		log.debug(
-			{ skipped, total: unique.length },
-			'upsertResolvedRelations: skipped edges with missing endpoints or unknown kind',
+	if (keptAwaiting > 0) log.debug({ keptAwaiting, total: unique.length }, 'upsertResolvedRelations: kept relationships awaiting a target not stored yet');
+	if (refused.length > 0) {
+		log.warn(
+			{ refused: refused.length, total: unique.length, first: refused.slice(0, 20) },
+			'upsertResolvedRelations: relationships the store could not write (counted as unwritable)',
 		);
 	}
 }
@@ -208,28 +226,32 @@ export async function deleteRelationsForRepo(_db: DbClient, _repo: string): Prom
 // Unresolved relations -- cross-file resolver queue
 // ---------------------------------------------------------------------------
 
+/**
+ * Write pending relationships. Every stored row is counted under its class
+ * (and reason) in its repository's IndexState, in the same transaction; a row
+ * awaiting an entity id is also indexed by that id. A row without its file or
+ * repository, or of an unregistered repository, is counted unwritable with its
+ * reason (daemon-wide when it names no registered repository) and logged at warn.
+ */
 async function upsertUnresolvedRelations(relations: Relation[]): Promise<void> {
 	if (relations.length === 0) return;
 
 	const attemptedAt = Date.now();
+	const refused: Array<{ kind: string; from: string; to: string; reason: string }> = [];
 
 	// De-duplicate within the batch (last-wins by computed id)
 	type Tuple = { id: string; row: UnresolvedRow; repoPath: string };
 	const tupleById = new Map<string, Tuple>();
+	const withoutFile: Relation[] = [];
 	for (const r of relations) {
 		const meta     = r.meta ?? {};
 		const fromFile = typeof meta['file'] === 'string' ? meta['file'] as string : '';
 		const repo     = typeof meta['repo'] === 'string' ? meta['repo'] as string : '';
 		if (fromFile === '' || repo === '') {
-			log.debug(
-				{ kind: r.kind, from: r.from, to: r.to },
-				'unresolved relation missing meta.file/meta.repo -- dropping',
-			);
+			withoutFile.push(r);
 			continue;
 		}
 		const id = makeUnresolvedRelationId(repo, r.from, r.kind, r.to);
-		// repoId resolved per-row inside the txn (it's not on the
-		// public Relation type; we look up by path)
 		const row: UnresolvedRow = {
 			id,
 			repoId:      0, // back-filled inside the txn
@@ -242,36 +264,33 @@ async function upsertUnresolvedRelations(relations: Relation[]): Promise<void> {
 		};
 		tupleById.set(id, { id, row, repoPath: repo });
 	}
-	if (tupleById.size === 0) return;
+	if (tupleById.size === 0 && withoutFile.length === 0) return;
 
 	await withWriteTxn(s => {
-		const repoIdCache = new Map<string, number>();
+		for (const r of withoutFile) {
+			countUnwritableInTxn(s, repoIdOfMetaInTxn(s, r.meta), 'pending-without-file');
+			refused.push({ kind: r.kind, from: r.from, to: r.to, reason: 'pending-without-file' });
+		}
+		const repoIdCache = new Map<string, number | undefined>();
 		for (const t of tupleById.values()) {
-			let repoId = repoIdCache.get(t.repoPath);
+			if (!repoIdCache.has(t.repoPath)) repoIdCache.set(t.repoPath, repoIdByPathInTxn(s, t.repoPath));
+			const repoId = repoIdCache.get(t.repoPath);
 			if (repoId === undefined) {
-				const found = repoIdByPathInTxn(s, t.repoPath);
-				if (found === undefined) {
-					// No registered repo. Skip rather than auto-allocate
-					// here: upsertEntities is the canonical creation
-					// point in the indexer flow, so by the time we hit
-					// unresolved relations the repo should exist.
-					log.debug(
-						{ repo: t.repoPath, id: t.id },
-						'upsertUnresolvedRelations: repo not registered; dropping',
-					);
-					continue;
-				}
-				repoId = found;
-				repoIdCache.set(t.repoPath, repoId);
+				// No registered repo: upsertEntities is the canonical creation
+				// point, so this is a caller error; it is counted, not dropped silently.
+				countUnwritableInTxn(s, undefined, 'repository-not-registered');
+				refused.push({ kind: t.row.kind, from: t.row.fromEntity, to: t.row.rawTo, reason: 'repository-not-registered' });
+				continue;
 			}
-			const row: UnresolvedRow = { ...t.row, repoId };
-			// Write the canonical row
-			s.unresolved.put(t.id, encodeUnresolvedRow(row));
-			// Maintain the (repoId, fromFile) -> id dupsort index
-			const idxKey = encodeUnresolvedByFileKey(repoId, row.fromFile);
-			s.unresolvedByFile.put(idxKey, Buffer.from(t.id, 'utf8'));
+			writePendingRowInTxn(s, { ...t.row, repoId });
 		}
 	});
+	if (refused.length > 0) {
+		log.warn(
+			{ refused: refused.length, total: relations.length, first: refused.slice(0, 20) },
+			'upsertUnresolvedRelations: pending relationships the store could not keep (counted as unwritable)',
+		);
+	}
 }
 
 export async function listUnresolvedRelations(
@@ -382,26 +401,22 @@ export async function deleteUnresolvedForRepo(_db: DbClient, repo: string): Prom
 	});
 }
 
+/** What a batch of promotions did. */
+export interface PromoteResult {
+	/** Rows that became edges. */
+	promoted:     number;
+	/** Rows kept pending because their target is not stored (re-keyed to await it by id). */
+	keptAwaiting: number;
+	/** Rows counted unwritable (no source entity, or a kind with no byte). */
+	unwritable:   number;
+}
+
 export async function promoteToResolved(
 	_db: DbClient,
 	unresolved: UnresolvedRelation,
 	targetEntityId: string,
 ): Promise<void> {
-	await withWriteTxn(s => {
-		const fromU64 = lookupU64ByStringId(s, unresolved.fromEntity);
-		const toU64   = lookupU64ByStringId(s, targetEntityId);
-		const kindByte = RELATION_KIND_BYTE[unresolved.kind as InternalRelationKind];
-		if (fromU64 !== undefined && toU64 !== undefined && kindByte !== undefined) {
-			s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
-			s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
-		} else {
-			log.debug(
-				{ unresolvedId: unresolved.id, fromEntity: unresolved.fromEntity, targetEntityId, kind: unresolved.kind },
-				'promoteToResolved: missing endpoint or unknown kind; resolved edge skipped (unresolved row still removed)',
-			);
-		}
-		deleteUnresolvedRowInTxn(s, unresolved.id);
-	});
+	await promoteResolvedBatch(_db, [{ unresolved, targetEntityId }]);
 }
 
 export async function updateUnresolvedMeta(
@@ -419,24 +434,62 @@ export async function updateUnresolvedMeta(
 	});
 }
 
+/**
+ * Complete pending rows whose target was found. Per row: both endpoints stored
+ * -> the edge is written and the row removed; the target not stored -> the row
+ * is KEPT, re-keyed to await the target by its id (one row per relationship);
+ * no source entity -> the stale row is removed and counted unwritable; a kind
+ * with no byte -> counted unwritable and the row kept. Counts move in the same
+ * transaction; each repository with a promotion advances its generation once.
+ */
 export async function promoteResolvedBatch(
 	_db: DbClient,
 	items: ReadonlyArray<{ unresolved: UnresolvedRelation; targetEntityId: string }>,
-): Promise<void> {
-	if (items.length === 0) return;
+): Promise<PromoteResult> {
+	const result: PromoteResult = { promoted: 0, keptAwaiting: 0, unwritable: 0 };
+	if (items.length === 0) return result;
+	const refused: Array<{ id: string; kind: string; reason: string }> = [];
+	const now = Date.now();
 	await withWriteTxn(s => {
-		for (const item of items) {
-			const { unresolved, targetEntityId } = item;
-			const fromU64 = lookupU64ByStringId(s, unresolved.fromEntity);
-			const toU64   = lookupU64ByStringId(s, targetEntityId);
+		const promotedRepos = new Set<number>();
+		for (const { unresolved, targetEntityId } of items) {
+			const stored = getPendingRowInTxn(s, unresolved.id);
+			const repoId = stored?.repoId ?? repoIdByPathInTxn(s, unresolved.repo);
 			const kindByte = RELATION_KIND_BYTE[unresolved.kind as InternalRelationKind];
-			if (fromU64 !== undefined && toU64 !== undefined && kindByte !== undefined) {
-				s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
-				s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
+			if (kindByte === undefined) {
+				countUnwritableInTxn(s, repoId, 'unknown-kind');
+				refused.push({ id: unresolved.id, kind: unresolved.kind, reason: 'unknown-kind' });
+				result.unwritable++;
+				continue;
 			}
-			deleteUnresolvedRowInTxn(s, unresolved.id);
+			const fromU64 = lookupU64ByStringId(s, unresolved.fromEntity);
+			if (fromU64 === undefined) {
+				removePendingRowInTxn(s, unresolved.id);
+				countUnwritableInTxn(s, repoId, 'source-missing');
+				refused.push({ id: unresolved.id, kind: unresolved.kind, reason: 'source-missing' });
+				result.unwritable++;
+				continue;
+			}
+			const toU64 = lookupU64ByStringId(s, targetEntityId);
+			if (toU64 === undefined) {
+				const meta = { ...(stored?.meta ?? unresolved.meta) };
+				removePendingRowInTxn(s, unresolved.id);
+				writePendingRowInTxn(s, awaitingRowFor(s, fromU64, unresolved.fromEntity, unresolved.kind, targetEntityId, meta, now));
+				result.keptAwaiting++;
+				continue;
+			}
+			s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
+			s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
+			removePendingRowInTxn(s, unresolved.id);
+			if (repoId !== undefined) promotedRepos.add(repoId);
+			result.promoted++;
 		}
+		for (const repoId of promotedRepos) advanceGenerationInTxn(s, repoId);
 	});
+	if (refused.length > 0) {
+		log.warn({ refused: refused.length, total: items.length, first: refused.slice(0, 20) }, 'promoteResolvedBatch: pending relationships the store could not complete (counted as unwritable)');
+	}
+	return result;
 }
 
 export async function updateUnresolvedMetaBatch(
@@ -459,6 +512,105 @@ export async function updateUnresolvedMetaBatch(
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
+
+function slotOf(row: UnresolvedRow): PendingSlot {
+	const cls = pendingClassOf(row);
+	return cls === 'awaiting-target' ? { cls, reason: awaitingReasonOf(row) } : { cls };
+}
+
+function getPendingRowInTxn(s: GraphStore, id: string): UnresolvedRow | undefined {
+	const buf = s.unresolved.get(id);
+	return buf === undefined ? undefined : decodeUnresolvedRow(buf as Buffer);
+}
+
+/** The by-target index key of a row awaiting an entity id, or undefined. */
+function awaitedKey(row: UnresolvedRow): Buffer | undefined {
+	return row.meta['awaitsId'] === true ? Buffer.from(row.rawTo, 'utf8') : undefined;
+}
+
+/**
+ * Store one pending row with its by-file and by-target index entries and its
+ * count. A row already stored under the same id is replaced (its count and
+ * index entries removed first), so one relationship is always one row.
+ */
+function writePendingRowInTxn(s: GraphStore, row: UnresolvedRow): void {
+	removePendingRowInTxn(s, row.id);
+	s.unresolved.put(row.id, encodeUnresolvedRow(row));
+	s.unresolvedByFile.put(encodeUnresolvedByFileKey(row.repoId, row.fromFile), Buffer.from(row.id, 'utf8'));
+	const target = awaitedKey(row);
+	if (target !== undefined) s.unresolvedByTarget.put(target, Buffer.from(row.id, 'utf8'));
+	movePendingInTxn(s, row.repoId, undefined, slotOf(row));
+}
+
+/** Remove one pending row, its index entries and its count. */
+function removePendingRowInTxn(s: GraphStore, id: string): void {
+	const row = getPendingRowInTxn(s, id);
+	if (row === undefined) return;
+	s.unresolvedByFile.remove(encodeUnresolvedByFileKey(row.repoId, row.fromFile), Buffer.from(id, 'utf8'));
+	const target = awaitedKey(row);
+	if (target !== undefined) s.unresolvedByTarget.remove(target, Buffer.from(id, 'utf8'));
+	s.unresolved.remove(id);
+	movePendingInTxn(s, row.repoId, slotOf(row), undefined);
+}
+
+/**
+ * The pending row that keeps a relationship whose source is stored and whose
+ * target is not: keyed by the awaited id, with the source's repository and
+ * its ABSOLUTE file (the form the parser writes and unresolved_by_file is
+ * keyed by; the relation's own meta.file when present, else rebuilt from the
+ * entity row; a source with no file, the repository entity, uses the
+ * repository root). A boundary kind is classed 'external-endpoint'.
+ */
+function awaitingRowFor(
+	s: GraphStore,
+	fromU64: bigint,
+	fromEntity: string,
+	kind: RelationKind,
+	targetEntityId: string,
+	meta: Record<string, unknown> | undefined,
+	attemptedAt: number,
+): UnresolvedRow {
+	const source = decodeEntityRow(s.entity.get(encodeEntityKey(fromU64)) as Buffer);
+	const repoPath = repoPathOfInTxn(s, source.repoId) ?? source.rootPath;
+	const ownFile = typeof meta?.['file'] === 'string' && (meta['file'] as string) !== '' ? meta['file'] as string : undefined;
+	const file = ownFile ?? (source.filePath === '' || source.filePath === '.' ? repoPath : absolutePath(source.filePath, source.rootPath));
+	const boundary = BOUNDARY_RELATION_KINDS.has(kind);
+	const { reason: _ignored, candidates: _stale, ...rest } = meta ?? {};
+	void _ignored; void _stale;
+	return {
+		id:          makeUnresolvedRelationId(repoPath, fromEntity, kind, targetEntityId),
+		repoId:      source.repoId,
+		fromEntity,
+		fromFile:    file,
+		kind,
+		rawTo:       targetEntityId,
+		meta:        {
+			...rest,
+			file,
+			repo:     repoPath,
+			awaitsId: true,
+			class:    boundary ? 'external-endpoint' : 'awaiting-target',
+			...(boundary ? {} : { reason: 'target-not-stored-yet' }),
+		},
+		attemptedAt,
+	};
+}
+
+function absolutePath(filePath: string, root: string): string {
+	if (filePath.startsWith('/') || root === '') return filePath;
+	return root.endsWith('/') ? `${root}${filePath}` : `${root}/${filePath}`;
+}
+
+function repoPathOfInTxn(s: GraphStore, repoId: number): string | undefined {
+	const buf = s.repo.get(encodeRepoKey(repoId));
+	return buf === undefined ? undefined : decodeRepoRow(buf as Buffer).path;
+}
+
+/** The registered repository a relationship's meta.repo names, if any. */
+function repoIdOfMetaInTxn(s: GraphStore, meta: Record<string, unknown> | undefined): number | undefined {
+	const repo = meta?.['repo'];
+	return typeof repo === 'string' && repo !== '' ? repoIdByPathInTxn(s, repo) : undefined;
+}
 
 function deleteUnresolvedRowInTxn(s: GraphStore, id: string): void {
 	const buf = s.unresolved.get(id);

@@ -28,12 +28,20 @@ jobs:
         with:
           node-version: '22'
 
-      # Install at the REPO ROOT: the vscode-plugin package has no lockfile of
-      # its own (`npm ci` needs one) and its build tools — tsc, tsx, esbuild —
-      # resolve from the root node_modules. npm adds ancestor node_modules/.bin
+      # Install at the REPO ROOT too: the plugin's build tools — tsc, tsx — resolve
+      # from the root node_modules. npm adds ancestor node_modules/.bin
       # to PATH when running a script from the nested package, so the
       # vscode:prepublish typecheck + bundle find their binaries.
       - name: Install dependencies (repo root)
+        run: npm ci
+
+      # The plugin declares its own runtime dependency (marked ^4.3.0; the repo
+      # root has a newer major) and now has its own lockfile. `vsce package` runs
+      # `npm list --production` in this folder and fails with "missing: marked@^4.3.0"
+      # unless it is installed here (the 2026-10-04 run failed this way), and the
+      # esbuild bundle must inline the same marked the plugin is tested with.
+      - name: Install dependencies (plugin)
+        working-directory: vscode-plugin
         run: npm ci
 
       - name: Bundle the extension (esbuild)

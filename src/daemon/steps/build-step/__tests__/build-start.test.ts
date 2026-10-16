@@ -393,9 +393,11 @@ test('Trivial route: the first implement stamps HEAD and writes its task-less re
 		assert.equal(readFileSync(stampFile(fx, 's1'), 'utf8'), bytes, 'the task-less record must not trigger a re-stamp or a skip');
 
 		// The Trivial route had no base before; with the stamp it records its work.
-		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
+		let judgePrompt = '';
+		_setBuildValidateProviderForTests({ async runReviewSession<T>(prompt: string) { judgePrompt = prompt; return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
 		try { await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL }); } finally { _setBuildValidateProviderForTests(undefined); }
 		assert.deepEqual(changeLog(fx, 's1'), ['trivial-work.ts']);
+		assert.match(judgePrompt, /## Stated scope\n\nAdd a flag\.\n/, 'the judge sees the Trivial build\'s stated scope (ISSUE-ae2d83c6)');
 	} finally { fx.cleanup(); }
 });
 

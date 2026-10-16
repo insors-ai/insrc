@@ -227,6 +227,13 @@
         "choice": "Verify host nonces all inline scripts",
         "rationale": "Verified: stampScriptNonce in vscode-plugin/src/chat/docs-review-panel.ts (line 2437) gives every script tag without a nonce the pane's nonce, so the new inline script needs no special handling.",
         "resolvedAt": "2026-10-16T09:15:00.740Z"
+      },
+      "qf0569a95": {
+        "question": "Open: rvFrameMessage checks the type, length and line of a message but does not itself reject an absolute path or a .. segment; it leaves those to the host's openCodeRef check, which refuses them. Decide whether the pane should also refuse them.",
+        "status": "resolved",
+        "choice": "Leave it to the host",
+        "rationale": "The LLD as approved leaves absolute and .. paths to the host's openCodeRef check, the trust boundary.",
+        "resolvedAt": "2026-10-16T09:15:52.326Z"
       }
     }
   },

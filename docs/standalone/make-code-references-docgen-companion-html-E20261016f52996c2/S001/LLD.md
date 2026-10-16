@@ -265,6 +265,8 @@ The companion shell renders a path in a description table as a link-like element
   - **resolved**: Keep the script in both shells — The LLD as approved includes both docgen shells and the companion shell. _(2026-10-16T09:13:52.707Z)_
 - `q704fbe07` — Open: the pane's frame inherits the page's CSP (script-src with a nonce), so the new inline script must carry the nonce the host gives the other inline scripts. Confirm that the host adds the nonce to every inline script tag of a companion page, and not only to the scripts it knows.
   - **resolved**: Verify host nonces all inline scripts — Verified: stampScriptNonce in vscode-plugin/src/chat/docs-review-panel.ts (line 2437) gives every script tag without a nonce the pane's nonce, so the new inline script needs no special handling. _(2026-10-16T09:15:00.740Z)_
+- `qf0569a95` — Open: rvFrameMessage checks the type, length and line of a message but does not itself reject an absolute path or a .. segment; it leaves those to the host's openCodeRef check, which refuses them. Decide whether the pane should also refuse them.
+  - **resolved**: Leave it to the host — The LLD as approved leaves absolute and .. paths to the host's openCodeRef check, the trust boundary. _(2026-10-16T09:15:52.326Z)_
 
 ## Citations
 

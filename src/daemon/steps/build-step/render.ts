@@ -18,6 +18,7 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { hldMdRel, lldMdRel, planMdRel } from '../../../workflow/storage.js';
+import { SMALLEST_CHANGE_RULE } from '../../../workflow/runners/scope-prompts.js';
 import { resolveWorkflowRef, type ResolvedRef } from '../../../workflow/tracker/resolve.js';
 import type { PlanTask } from '../../../workflow/artifacts/plan.js';
 import type { BuildStepError } from './types.js';
@@ -164,7 +165,7 @@ export function renderImplementPrompt(repoPath: string, ref: ResolvedTask, resol
 	const decisions = resolvedDecisions.trim().length > 0
 		? resolvedDecisions
 		: '_No design decisions were resolved for this Task; use your judgment within the stated scope._';
-	return fill(template, { ...baseVars(repoPath, ref), resolvedDecisions: decisions, mergeRule: MERGE_RULE });
+	return fill(template, { ...baseVars(repoPath, ref), resolvedDecisions: decisions, mergeRule: MERGE_RULE, smallestChangeRule: SMALLEST_CHANGE_RULE });
 }
 
 /** Shown in a validate prompt's check-results section when no evidence was given. */
@@ -219,6 +220,7 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 	}
 	lines.push(
 		'', '## Resolved design decisions', '', decisions,
+		'', '## The smallest complete change', '', SMALLEST_CHANGE_RULE,
 		'', '## Definition of done', '',
 		`- \`${TYPECHECK_CMD}\` is clean.`,
 		`- \`${TEST_CMD}\` passes (add or extend tests for the change).`,

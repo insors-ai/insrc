@@ -31,7 +31,7 @@ import { finalizeArtifact } from '../orchestrator.js';
 import { approveArtifactByJsonPath } from '../gates.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths } from '../storage.js';
-import { ANTI_OVERREACH_RULE } from '../runners/scope-prompts.js';
+import { ANTI_OVERREACH_RULE, SMALLEST_CHANGE_RULE, SMALLEST_SHAPE_RULE } from '../runners/scope-prompts.js';
 import type { LldBody } from '../artifacts/lld.js';
 import type { WorkflowIntent } from '../types.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
@@ -257,4 +257,44 @@ test('epic-parented design.story: CONSUMING a sibling-owned contract is not an a
 			assert.equal(isAdjacentBoundaryFail, false, 'a legitimate consume must not trip the adjacent-scope guard');
 		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// The smallest complete change (Story E2026101614851595:S001)
+// ---------------------------------------------------------------------------
+
+test('the alternatives prompt carries the design rule next to the scope rule and keeps its other rules', () => {
+	const ds = readFileSync(join(SRC, 'runners/design-story/index.ts'), 'utf8');
+	const start = ds.indexOf("id: 'alternatives.enumerate'");
+	const block = ds.slice(start, ds.indexOf('userTurn:', start));
+	// Its other HARD RULES are all still there, in order, with the new rule just before the scope rule.
+	const lines = ['Alternatives must fit within the HLD', 'Every alternative respects the shared contracts', 'No implementation, no task lists.', 'SMALLEST_SHAPE_RULE', 'ANTI_OVERREACH_RULE'];
+	let at = -1;
+	for (const line of lines) {
+		const found = block.indexOf(line);
+		assert.ok(found > at, `"${line}" is in the alternatives prompt, in order`);
+		at = found;
+	}
+	// The rule's content: reuse through the analyzer, a smallest alternative, nothing dropped to look small.
+	assert.match(SMALLEST_SHAPE_RULE, /`insrc_analyze_step`/);
+	assert.match(SMALLEST_SHAPE_RULE, /at least one alternative the smallest that fully meets the Story/);
+	assert.match(SMALLEST_SHAPE_RULE, /validation at trust boundaries/);
+	assert.match(SMALLEST_SHAPE_RULE, /larger alternatives the Story really needs stay on the list/);
+	// The other design prompts do not carry it.
+	assert.equal((ds.match(/SMALLEST_SHAPE_RULE/g) ?? []).length, 2, 'one import and one use');
+});
+
+test('each prompt site references the shared rule constants instead of carrying its own copy of the wording', () => {
+	const ds = readFileSync(join(SRC, 'runners/design-story/index.ts'), 'utf8');
+	const render = readFileSync(join(SRC, '../daemon/steps/build-step/render.ts'), 'utf8');
+	const template = readFileSync(join(SRC, '../prompts/build/implement-task.md'), 'utf8');
+	// The build sites use the constant, once in the plan-driven renderer and once in the standalone one.
+	assert.equal((render.match(/SMALLEST_CHANGE_RULE/g) ?? []).length, 3, 'one import and two uses');
+	assert.match(template, /\{\{smallestChangeRule\}\}/);
+	// No site spells out the wording itself.
+	for (const [name, text] of [['render.ts', render], ['implement-task.md', template], ['design-story/index.ts', ds]] as const) {
+		assert.equal(text.includes('take the first option that fully works'), false, `${name} does not copy the build rule`);
+		assert.equal(text.includes('at least one alternative the smallest'), false, `${name} does not copy the design rule`);
+	}
+	assert.ok(SMALLEST_CHANGE_RULE.length > 0 && SMALLEST_SHAPE_RULE.length > 0);
 });

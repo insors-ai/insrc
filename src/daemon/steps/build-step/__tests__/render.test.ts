@@ -13,6 +13,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { SMALLEST_CHANGE_RULE } from '../../../../workflow/runners/scope-prompts.js';
+
 import {
 	renderImplementPrompt,
 	renderStandaloneImplementPrompt,
@@ -192,4 +194,66 @@ test("the implement prompt tells the builder to pass the cases for each listed t
 	assert.ok(!renderCheckEvidence({ typecheck, tests }).includes('Named tests'));
 	const withNamed = renderCheckEvidence({ typecheck, tests: { ...tests, files: [], namedTests: [{ name: 'n', level: 'unit', source: 'mapping', files: [], cases: [{ file: 'a.test.ts', title: 't', result: 'pass' }] }] } });
 	assert.ok(withNamed.includes("#### Named tests\n- unit: n\n  - pass: 't' in `a.test.ts`"));
+});
+
+// ---------------------------------------------------------------------------
+// The smallest complete change (Story E2026101614851595:S001)
+// ---------------------------------------------------------------------------
+
+const implementPrompts = (): string[] => [
+	renderImplementPrompt('/repo', TASK, ''),
+	renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '' }),
+	renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'x', resolvedDecisions: '' }),
+];
+
+test('every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left', () => {
+	for (const prompt of implementPrompts()) {
+		const start = prompt.indexOf('## The smallest complete change');
+		assert.ok(start >= 0, 'has the section');
+		const next = prompt.indexOf('\n## ', start + 1);
+		assert.ok(prompt.slice(start, next).includes(SMALLEST_CHANGE_RULE), 'the shared rule sits inside the section');
+		assert.equal(prompt.includes('{{'), false, 'no placeholder is left');
+		assert.equal(prompt.includes('smallestChangeRule'), false);
+	}
+});
+
+test('the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut', () => {
+	// The ladder, in order.
+	const steps = ['Does it need to exist at all?', 'already in this codebase', 'standard library or a platform feature', 'installed dependency', 'Can it be one line', 'minimum code that works'];
+	let at = -1;
+	for (const step of steps) {
+		const found = SMALLEST_CHANGE_RULE.indexOf(step);
+		assert.ok(found > at, `"${step}" comes in order`);
+		at = found;
+	}
+	assert.match(SMALLEST_CHANGE_RULE, /first option that fully works/);
+	// The analyzer rung, with its fall-back.
+	assert.match(SMALLEST_CHANGE_RULE, /`insrc_analyze_step`/);
+	assert.match(SMALLEST_CHANGE_RULE, /search and read the code yourself/);
+	// The limits.
+	assert.match(SMALLEST_CHANGE_RULE, /the Task \(or the LLD\) is the spec/);
+	assert.match(SMALLEST_CHANGE_RULE, /tests it names are still required/);
+	assert.match(SMALLEST_CHANGE_RULE, /validation at trust boundaries/);
+	assert.match(SMALLEST_CHANGE_RULE, /error handling that prevents data loss/);
+	assert.match(SMALLEST_CHANGE_RULE, /security or accessibility/);
+	assert.match(SMALLEST_CHANGE_RULE, /never about the change/);
+});
+
+test('the implement prompts keep every section and rule they had before the new section was added', () => {
+	for (const prompt of implementPrompts()) {
+		assert.ok(prompt.includes('## Merging upstream'));
+		assert.match(prompt, /git merge --no-ff/);
+		assert.ok(prompt.includes(SWEEP));
+		assert.ok(prompt.includes(TYPECHECK));
+	}
+	const [plan, small, trivial] = implementPrompts() as [string, string, string];
+	assert.match(plan, /Implement exactly\s+this Task/);
+	assert.ok(plan.includes('## Process') && plan.includes('## Guardrails'));
+	assert.ok(plan.indexOf('## The smallest complete change') < plan.indexOf('## Process'), 'before the process steps');
+	assert.ok(small.includes('## Definition of done') && small.includes('## Submitting the tests'));
+	assert.ok(small.indexOf('## The smallest complete change') < small.indexOf('## Definition of done'));
+	assert.ok(!trivial.includes('## Submitting the tests'), 'a Trivial build still has no tests section');
+	assert.match(trivial, /make the smallest correct edit/);
+	// The validate prompts are untouched: no smallest-change section.
+	for (const prompt of validatePrompts('evidence')) assert.equal(prompt.includes('The smallest complete change'), false);
 });

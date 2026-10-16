@@ -27,7 +27,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { registerRunner } from '../../executor.js';
 import { requireApprovedEpic, requireApprovedHld } from '../../gates.js';
 import { extractHldContextSlice } from '../../artifacts/lld.js';
-import { ANTI_OVERREACH_RULE } from '../scope-prompts.js';
+import { ANTI_OVERREACH_RULE, SMALLEST_SHAPE_RULE } from '../scope-prompts.js';
 import { ER_CONTENT_GATE_RULE } from '../../artifacts/companion/er-schema.js';
 import { UX_CONTENT_GATE_RULE } from '../../artifacts/companion/ux-schema.js';
 import { SEQUENCE_CONTENT_GATE_RULE } from '../../artifacts/companion/sequence-schema.js';
@@ -201,6 +201,7 @@ const alternativesEnumerate = llmPauseRunner({
 				'- Alternatives must fit within the HLD (do not propose a different framework — that is what back-flow / amendments are for).',
 				'- Every alternative respects the shared contracts this Story owns/consumes.',
 				'- No implementation, no task lists.',
+				SMALLEST_SHAPE_RULE,
 				ANTI_OVERREACH_RULE,
 			].join('\n'),
 			userTurn: [

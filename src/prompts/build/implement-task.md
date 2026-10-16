@@ -20,6 +20,9 @@ this Task — do not exceed its scope.**
 ## Resolved design decisions
 {{resolvedDecisions}}
 
+## The smallest complete change
+{{smallestChangeRule}}
+
 ## Process
 1. For design context, read the Story LLD (`{{lldPath}}`) and HLD (`{{hldPath}}`);
    for conventions, read `CLAUDE.md`. Stay within this Task's stated surface.

@@ -210,8 +210,9 @@ test('every implement prompt, plan-driven and standalone Small and Trivial, carr
 	for (const prompt of implementPrompts()) {
 		const start = prompt.indexOf('## The smallest complete change');
 		assert.ok(start >= 0, 'has the section');
-		const next = prompt.indexOf('\n## ', start + 1);
-		assert.ok(prompt.slice(start, next).includes(SMALLEST_CHANGE_RULE), 'the shared rule sits inside the section');
+		const found = prompt.indexOf('\n## ', start + 1);
+		const section = prompt.slice(start, found < 0 ? undefined : found);
+		assert.ok(section.includes(SMALLEST_CHANGE_RULE), 'the shared rule sits inside the section');
 		assert.equal(prompt.includes('{{'), false, 'no placeholder is left');
 		assert.equal(prompt.includes('smallestChangeRule'), false);
 	}

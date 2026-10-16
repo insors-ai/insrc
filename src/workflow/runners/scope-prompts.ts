@@ -54,7 +54,7 @@ export const SMALLEST_CHANGE_RULE: string = [
 	'',
 	'The limits: the Task (or the LLD) is the spec, so build everything it asks for, and the tests it names are still required. ' +
 		'Never cut validation at trust boundaries, error handling that prevents data loss, security or accessibility. ' +
-		'End your report with what you deliberately left out or did not check.',
+		'In your report, say what you deliberately left out or did not check.',
 ].join('\n');
 
 /** Design side: two HARD RULES for the alternatives step, before ANTI_OVERREACH_RULE. */

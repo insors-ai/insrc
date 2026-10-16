@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -85,3 +85,22 @@ Run at 2026-10-16T16:40:24.707Z on commit `36a18e3a`. Tests check: **passed**. 1
 | `src/db/__tests__/relations-lmdb.test.ts` | 0 | 24 | 3 s |  |
 | `src/indexer/__tests__/external-endpoints.test.ts` | 0 | 13 | 2 s |  |
 | `src/indexer/__tests__/messaging-endpoints.test.ts` | 0 | 7 | 1.3 s |  |
+
+## t4
+
+Run at 2026-10-16T16:46:20.693Z on commit `7225408a`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/db/__tests__/relations-pending-upkeep.test.ts: the three delete functions decrement counts and remove by-target entries; meta merge keeps awaitsId and clears stale candidates; listUnresolvedRelations opts.awaiting across repositories**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | each of the three delete functions removes its rows, their by-target entries and their counts | `src/db/__tests__/relations-pending-upkeep.test.ts` |
+| pass | a reclass merges meta: awaitsId and specifier survive, a stale candidates list is cleared, and the counts move | `src/db/__tests__/relations-pending-upkeep.test.ts` |
+| pass | listUnresolvedRelations with opts.awaiting returns the rows awaiting an id from every repository, without scanning the pending table | `src/db/__tests__/relations-pending-upkeep.test.ts` |
+| pass | promotions count each removal once: an edge lowers the class count by exactly one; a re-key leaves the awaiting count unchanged | `src/db/__tests__/relations-pending-upkeep.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/relations-pending-upkeep.test.ts` | 0 | 4 | 1.1 s |  |

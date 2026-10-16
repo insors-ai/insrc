@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-16T16:40:24.707Z",
+    "updatedAt": "2026-10-16T16:46:20.693Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -577,6 +577,69 @@
               },
               {
                 "title": "no-op: a repo with no messaging rows produces no endpoints",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "7225408a",
+        "ranAt": "2026-10-16T16:46:20.693Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/relations-pending-upkeep.test.ts: the three delete functions decrement counts and remove by-target entries; meta merge keeps awaitsId and clears stale candidates; listUnresolvedRelations opts.awaiting across repositories",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+                "title": "each of the three delete functions removes its rows, their by-target entries and their counts",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+                "title": "a reclass merges meta: awaitsId and specifier survive, a stale candidates list is cleared, and the counts move",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+                "title": "listUnresolvedRelations with opts.awaiting returns the rows awaiting an id from every repository, without scanning the pending table",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+                "title": "promotions count each removal once: an edge lowers the class count by exactly one; a re-key leaves the awaiting count unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1128,
+            "titles": [
+              {
+                "title": "each of the three delete functions removes its rows, their by-target entries and their counts",
+                "result": "pass"
+              },
+              {
+                "title": "a reclass merges meta: awaitsId and specifier survive, a stale candidates list is cleared, and the counts move",
+                "result": "pass"
+              },
+              {
+                "title": "listUnresolvedRelations with opts.awaiting returns the rows awaiting an id from every repository, without scanning the pending table",
+                "result": "pass"
+              },
+              {
+                "title": "promotions count each removal once: an edge lowers the class count by exactly one; a re-key leaves the awaiting count unchanged",
                 "result": "pass"
               }
             ],

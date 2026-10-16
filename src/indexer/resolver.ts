@@ -86,14 +86,18 @@ export function resolveRelations(
 
   const language = detectLanguage(filePath, entities);
 
+  // Every resolved relation names its repository (Epic c2ba6fa6 s1), so the
+  // store counts one it cannot write against this repository.
+  const withRepo = (rel: Relation): Relation => ({ ...rel, meta: { ...rel.meta, repo } });
+
   return relations.map(rel => {
-    if (rel.resolved) return rel;
+    if (rel.resolved) return withRepo(rel);
 
     // CALLS: resolve by matching callee name to local entities
     if (rel.kind === 'CALLS') {
       const targetId = localByName.get(rel.to);
       if (targetId && targetId !== rel.from) {
-        return { ...rel, to: targetId, resolved: true };
+        return withRepo({ ...rel, to: targetId, resolved: true });
       }
       return rel; // keep unresolved — may resolve in cross-file pass
     }
@@ -104,10 +108,12 @@ export function resolveRelations(
     const specifier = rel.to;
     const absPath   = resolveImportPath(filePath, specifier, repo, language);
 
-    if (!absPath) return rel; // can't resolve — keep unresolved
+    // No file on disk for the specifier: kept pending, classed so it does not
+    // count as awaiting a target that could ever be stored.
+    if (!absPath) return { ...rel, meta: { ...rel.meta, class: 'no-candidate', reason: 'target-file-missing' } };
 
     const targetId = makeEntityId(repo, absPath, 'file', absPath);
-    return { ...rel, to: targetId, resolved: true };
+    return withRepo({ ...rel, to: targetId, resolved: true });
   });
 }
 

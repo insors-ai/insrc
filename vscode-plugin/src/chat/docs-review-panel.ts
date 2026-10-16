@@ -2056,7 +2056,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `b.setAttribute('type','button');b.setAttribute('role','tab');b.setAttribute('aria-selected',on?'true':'false');` +
       `if(rel)b.setAttribute('title',rel);` +
       `b.addEventListener('click',function(){rvShowTab(rel);});tabsEl.appendChild(b);});}` +
-      `function rvDropFrame(){while(frameHostEl.firstChild)frameHostEl.removeChild(frameHostEl.firstChild);}` +
+      `var companionFrame=null;` +
+      `function rvDropFrame(){companionFrame=null;while(frameHostEl.firstChild)frameHostEl.removeChild(frameHostEl.firstChild);}` +
       // Show the markdown ('') or one HTML document. An HTML document is asked for from
       // the host each time its tab is chosen; until the answer arrives the tab shows its
       // path and a line.
@@ -2076,7 +2077,15 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `if(typeof m.html!=='string'){htmlNoteEl.textContent='This document cannot be shown here. Open the file to see it.';return;}` +
       `htmlNoteEl.textContent='';` +
       `var f=document.createElement('iframe');f.className='rv-frame';f.setAttribute('sandbox','allow-scripts');f.setAttribute('title',tab);` +
-      `f.setAttribute('srcdoc',m.html);frameHostEl.appendChild(f);}` +
+      `f.setAttribute('srcdoc',m.html);frameHostEl.appendChild(f);companionFrame=f;}` +
+      // A click on a code reference inside the companion page. The page cannot reach the host, so it
+      // posts to this window; the message is taken only from the frame shown now, only with a path of
+      // sane length and a line that is a positive integer, and is then sent on as the same
+      // open-code-ref a chat reference sends. The host decides whether the path may be opened.
+      `function rvFrameMessage(d){if(!d||d.type!=='insrc-open-code-ref')return;` +
+      `if(typeof d.path!=='string'||d.path.length<1||d.path.length>512)return;` +
+      `if(d.line!==undefined&&!(typeof d.line==='number'&&d.line>0&&d.line<=10000000&&Math.floor(d.line)===d.line))return;` +
+      `vs.postMessage({v:1,payload:d.line===undefined?{type:'open-code-ref',path:d.path}:{type:'open-code-ref',path:d.path,line:d.line}});}` +
       // The result of a decision: the buttons work again and the line says what happened.
       `function rvResult(m){if(!shown||m.artifactId!==shown.artifactId)return;busy=false;` +
       // Recorded with every comment: the drafts and the field are done with. Otherwise
@@ -2221,7 +2230,10 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `titleEl.textContent=String((known&&known.title)||m.artifactId);` +
       `if(m.reveal===true){view='doc';if(listNote){listNote='';rvRows();}rvListSave();}` +
       `rvApplyView();}` +
-      `window.addEventListener('message',function(e){var m=e.data&&e.data.payload;if(!m)return;` +
+      `window.addEventListener('message',function(e){` +
+      // Whatever the companion frame sends is a reference click or nothing: never a host message.
+      `if(companionFrame&&e.source===companionFrame.contentWindow){rvFrameMessage(e.data);return;}` +
+      `var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
       `else if(m.type==='docs-content'){renderContent(m);}` +
       `else if(m.type==='docs-decision-result'){rvResult(m);}` +

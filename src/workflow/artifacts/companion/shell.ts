@@ -28,6 +28,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { docgenAssetDir } from '../../../docgen/render/shell.js';
+import { CODE_REF_SCRIPT } from '../../../docgen/render/code-ref-script.js';
 import { DiagramGenerationError } from './render.js';
 import { escapeHtml } from './html-escape.js';
 import type { CompanionHeader } from './types.js';
@@ -164,6 +165,7 @@ function bootScript(visual: CompanionVisual): string {
 		"document.querySelectorAll('#stage svg').forEach(function(svg){var vb=svg.viewBox&&svg.viewBox.baseVal;",
 		"if(vb&&vb.width){svg.setAttribute('width',vb.width);svg.setAttribute('height',vb.height);svg.style.maxWidth='none';}});",
 		'pz.fit();',
+		'if(window.insrcMarkCodeRefs)window.insrcMarkCodeRefs();',
 		"}).catch(function(err){document.getElementById('stage').textContent='Diagram could not be drawn: '+err;});",
 	].join('');
 }
@@ -200,6 +202,7 @@ const STYLE = [
 	'table.dt th{text-align:left;background:#eef1f6;color:#44505e;font-weight:600;padding:7px 10px;border:1px solid #d6dbe1}',
 	'table.dt td{padding:7px 10px;border:1px solid #d6dbe1;vertical-align:top}',
 	'td.missing{color:#9aa4af}',
+	'[data-insrc-path]{cursor:pointer}',
 	'.tag{display:inline-block;font-size:11px;border-radius:9px;padding:1px 8px;background:#eef1f6;color:#44505e}',
 	'.tag.pk{background:#fde9c9;color:#8a5300}.tag.fk{background:#dcebff;color:#174ea6}',
 	'.tag.call{background:#e6ecfb;color:#1f3a8a}.tag.ret{background:#e7f5ea;color:#1a7f37}',
@@ -220,6 +223,7 @@ export function renderCompanionPage(header: CompanionHeader, page: CompanionPage
 	const scripts = [
 		...(visual.kind === 'mermaid' && runtime.mermaid !== undefined ? [inlineScript(runtime.mermaid)] : []),
 		inlineScript(runtime.panzoom),
+		inlineScript(CODE_REF_SCRIPT),
 		inlineScript(bootScript(visual)),
 	].join('\n');
 	const description = page.description.length > 0

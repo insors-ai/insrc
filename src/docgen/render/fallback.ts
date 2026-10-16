@@ -29,6 +29,7 @@ import { spawn } from 'node:child_process';
 
 import type { DocumentIR, RenderedDocumentShell } from '../types.js';
 import { renderNarrativeBand } from './narrative.js';
+import { CODE_REF_SCRIPT } from './code-ref-script.js';
 
 // ── t1 · oversized predicate ───────────────────────────────────────────────
 
@@ -233,12 +234,14 @@ export function assembleFallbackShell(
   #docgen-diagram { width: 100%; height: 100vh; }
   #docgen-diagram svg { width: 100%; height: 100%; }
   #docgen-error { color: #b00020; padding: 8px; font-family: monospace; }
+  [data-insrc-path] { cursor: pointer; }
 </style>
 </head>
 <body>
 <div id="docgen-error"></div>
 <div id="docgen-diagram"${diagramStyle}>${svg}</div>${narrative}
 <script>${svgPanZoom}</script>
+<script>${CODE_REF_SCRIPT}</script>
 <script>${init}</script>
 </body>
 </html>`;

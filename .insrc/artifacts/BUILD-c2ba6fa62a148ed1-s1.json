@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "createdAt": "2026-10-16T13:00:16.421Z",
+    "updatedAt": "2026-10-16T13:00:16.421Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Three new sub-DBs (unresolved_by_target, export_names, index_state), SCHEMA_VERSION 5 and MIGRATION_V4_TO_V5 writing an IndexStateRow per workspace repository (fullIndexFinished false; pending counts recounted from the stored rows by their stored class, unattempted rows under 'awaiting-target'/reason 'unattempted'); removeRepo deletes the row in the same transaction as the registry row. The class rules and BOUNDARY_RELATION_KINDS live in src/db/graph/pending-class.ts (re-exported by the cross-file pass). A throwing step leaves nothing, now that the runner uses a child transaction (ISSUE-5437d6e5). Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t1-suites.md (src/db + src/indexer: 766 tests, 766 pass; two falsifying mutations).",
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-5437d6e54c9e7d48-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-5437d6e54c9e7d48-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-5437d6e54c9e7d48.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-5437d6e54c9e7d48-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-5437d6e54c9e7d48-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-5437d6e54c9e7d48-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/5437d6e54c9e7d48-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t1-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/cr-fixes-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t1-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t2-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t3-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/repos-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/migrations.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/operational.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/store-health.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/write-txn-atomic.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/codec.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/migrations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/pending-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/db/repos.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/cross-file-resolver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T13:00:16.421Z"
+      }
+    ],
+    "commit": "fcc6d7ab"
+  }
+}

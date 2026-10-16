@@ -13,7 +13,8 @@
     "reviewedBy": "daemon",
     "epicCreatedAt": "2026-10-16T11:52:08.782Z",
     "epicSlug": "graph-store-write-transaction-whose-callback",
-    "standalone": true
+    "standalone": true,
+    "approvedAt": "2026-10-16T12:56:18.838Z"
   },
   "body": {
     "kind": "code-review",

@@ -150,7 +150,7 @@ test('upsertRelations is idempotent across calls', async () => {
 	assert.equal(await countOutEdges(await getU64(a.id)), 1);
 });
 
-test('upsertRelations skips resolved edges with missing endpoints', async () => {
+test('upsertRelations writes no edge when an endpoint is missing (the relationship is kept pending or counted unwritable; see relations-awaiting-target.test.ts)', async () => {
 	const a = makeEntity('a');
 	await upsertEntities(null, [a]);
 	// `to` doesn't exist
@@ -229,7 +229,7 @@ test('listUnresolvedRelations with file scope filters correctly', async () => {
 	assert.equal(aOnly[0]!.rawTo, './m1');
 });
 
-test('unresolved row missing meta.file/repo is dropped', async () => {
+test('an unresolved row missing meta.file/repo is not stored (it is counted unwritable; see relations-awaiting-target.test.ts)', async () => {
 	const a = makeEntity('a');
 	await upsertEntities(null, [a]);
 	await upsertRelations(null, [

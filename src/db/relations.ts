@@ -297,12 +297,32 @@ export async function listUnresolvedRelations(
 	_db: DbClient,
 	repo: string,
 	scopeFile?: string,
+	opts?: { readonly awaiting?: readonly string[] | undefined },
 ): Promise<UnresolvedRelation[]> {
 	const store = await getGraphStore();
 	const repoId = repoIdByPathInTxn(store, repo);
 	if (repoId === undefined) return [];
 
 	const out: UnresolvedRelation[] = [];
+
+	if (opts?.awaiting !== undefined) {
+		// Rows awaiting one of these entity ids, from EVERY repository, read
+		// through unresolved_by_target: proportional to the matches, not the table.
+		const seen = new Set<string>();
+		const pathById = new Map<number, string | undefined>();
+		for (const awaited of opts.awaiting) {
+			for (const value of store.unresolvedByTarget.getValues(Buffer.from(awaited, 'utf8'))) {
+				const id = (value as Buffer).toString('utf8');
+				if (seen.has(id)) continue;
+				seen.add(id);
+				const row = getPendingRowInTxn(store, id);
+				if (row === undefined) continue;
+				if (!pathById.has(row.repoId)) pathById.set(row.repoId, repoPathOfInTxn(store, row.repoId));
+				out.push(rowToUnresolved(row, pathById.get(row.repoId) ?? ''));
+			}
+		}
+		return out;
+	}
 
 	if (scopeFile !== undefined) {
 		// Use the (repoId, fromFile) dupsort index for an O(matches) scan.
@@ -425,13 +445,7 @@ export async function updateUnresolvedMeta(
 	meta: Record<string, unknown>,
 ): Promise<void> {
 	const attemptedAt = Date.now();
-	await withWriteTxn(s => {
-		const buf = s.unresolved.get(id);
-		if (buf === undefined) return;
-		const row = decodeUnresolvedRow(buf as Buffer);
-		const next: UnresolvedRow = { ...row, meta, attemptedAt };
-		s.unresolved.put(id, encodeUnresolvedRow(next));
-	});
+	await withWriteTxn(s => { updatePendingMetaInTxn(s, id, meta, attemptedAt); });
 }
 
 /**
@@ -499,13 +513,7 @@ export async function updateUnresolvedMetaBatch(
 	if (items.length === 0) return;
 	const attemptedAt = Date.now();
 	await withWriteTxn(s => {
-		for (const { id, meta } of items) {
-			const buf = s.unresolved.get(id);
-			if (buf === undefined) continue;
-			const row = decodeUnresolvedRow(buf as Buffer);
-			const next: UnresolvedRow = { ...row, meta, attemptedAt };
-			s.unresolved.put(id, encodeUnresolvedRow(next));
-		}
+		for (const { id, meta } of items) updatePendingMetaInTxn(s, id, meta, attemptedAt);
 	});
 }
 
@@ -540,6 +548,24 @@ function writePendingRowInTxn(s: GraphStore, row: UnresolvedRow): void {
 	const target = awaitedKey(row);
 	if (target !== undefined) s.unresolvedByTarget.put(target, Buffer.from(row.id, 'utf8'));
 	movePendingInTxn(s, row.repoId, undefined, slotOf(row));
+}
+
+/**
+ * Merge `meta` into a pending row's stored meta (awaitsId, file, repo,
+ * specifier and exportedAs survive), clear a stale candidates list when the
+ * class becomes anything but 'ambiguous' and no new list is given, and move
+ * the row's count when its class or reason changes.
+ */
+function updatePendingMetaInTxn(s: GraphStore, id: string, meta: Record<string, unknown>, attemptedAt: number): void {
+	const row = getPendingRowInTxn(s, id);
+	if (row === undefined) return;
+	const merged: Record<string, unknown> = { ...row.meta, ...meta };
+	if (merged['class'] !== 'ambiguous' && !('candidates' in meta)) delete merged['candidates'];
+	const next: UnresolvedRow = { ...row, meta: merged, attemptedAt };
+	const before = slotOf(row);
+	const after = slotOf(next);
+	s.unresolved.put(id, encodeUnresolvedRow(next));
+	if (before.cls !== after.cls || before.reason !== after.reason) movePendingInTxn(s, row.repoId, before, after);
 }
 
 /** Remove one pending row, its index entries and its count. */
@@ -612,15 +638,9 @@ function repoIdOfMetaInTxn(s: GraphStore, meta: Record<string, unknown> | undefi
 	return typeof repo === 'string' && repo !== '' ? repoIdByPathInTxn(s, repo) : undefined;
 }
 
+/** Every pending-row delete removes the row, its index entries and its count (Epic c2ba6fa6 s1). */
 function deleteUnresolvedRowInTxn(s: GraphStore, id: string): void {
-	const buf = s.unresolved.get(id);
-	if (buf === undefined) return;
-	const row = decodeUnresolvedRow(buf as Buffer);
-	const idxKey = encodeUnresolvedByFileKey(row.repoId, row.fromFile);
-	// Remove the specific id from the dupsort index (other ids under
-	// the same key persist).
-	s.unresolvedByFile.remove(idxKey, Buffer.from(id, 'utf8'));
-	s.unresolved.remove(id);
+	removePendingRowInTxn(s, id);
 }
 
 function repoIdByPathInTxn(s: GraphStore, path: string): number | undefined {

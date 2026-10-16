@@ -1,0 +1,612 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792135419222-dzfrxi",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T07:26:45.787Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 186562,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c6a109dffcde0c1",
+    "epicSlug": "write-project-file-references-relative-project",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1792135419222-dzfrxi",
+    "hldEffectiveHash": "3c6a109dffcde0c18281a30e395abdc5b0a99bd930b4749fcefc69a17d60459c",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers every part of the issue's fix intent: one shared rule in the step prompts and in the schema descriptions of path-valued fields, a write-time check that was considered, and no rewrite of existing records.",
+          "evidence": "ISSUE.md Fix intent asks for: the rule in the step prompts that author path-valued fields, described in the schemas, 'defined once and shared like the existing scope rule'; a write-time check to be considered (a root-relative/absolute shape check, or one that the path resolves); and 'The existing records are not rewritten.' The LLD covers PATH_FORM_RULE in scope-prompts beside ANTI_OVERREACH_RULE, descriptions on callSites/pathsCited, checkPathForms (a2), a3 weighed and rejected, and §6 'Records already written are not changed or re-checked.' The open question about the shortened-path limit is surfaced honestly. [files: docs/standalone/write-project-file-references-relative-project-E2026101667124d9a/ISSUE.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "validateBodyAndCitations today runs only the scope-boundary check, then the citation-grounding check, and does not look at the form of a path.",
+          "evidence": "src/workflow/synthesizer.ts:207-214: `const boundary = checkScopeBoundary(...); if (!boundary.ok) return boundary; return validateCitations(renderedBody, artifact.citations);`. validateCitations (93-133) checks only id shape, duplicates and dangling [[cN]] refs. [files: src/workflow/synthesizer.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The callSites and pathsCited schemas are bare string arrays with no description or pattern.",
+          "evidence": "design-story/schemas.ts:260 `callSites:  { type: 'array', items: { type: 'string' } }`; pathsCited `{ type: 'array', items: { type: 'string', minLength: 1 } }` at design-story/schemas.ts:32, design-epic/schemas.ts:32, plan/schemas.ts:65, define/schemas.ts:81-84. [files: src/workflow/runners/design-story/schemas.ts, src/workflow/runners/design-epic/schemas.ts, src/workflow/runners/plan/schemas.ts, src/workflow/runners/define/schemas.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design.story synthesize prompt has a 'verbatim from s4' hard rule covering dataModelChanges, so an exception for call sites is needed.",
+          "evidence": "src/workflow/orchestrator.ts:2004: \"'- `body.contractDetails`, `body.dataModelChanges`, `body.interactionWithShared` MUST be verbatim from s4.'\" [files: src/workflow/orchestrator.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The chat page links :N, :N-M and :N:C after a code path (CREF_CORE).",
+          "evidence": "vscode-plugin/src/chat/link-markup.ts:21 CREF_CORE ends `(?::(\\d+)(?:-\\d+)?(?::\\d+)?)?`, so :N, :N-M, :N:C (and :N-M:C) are matched, and only names with a known extension (CREF_EXT) are linked, as the edge-case table says. [files: vscode-plugin/src/chat/link-markup.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "PATH_FORM_RULE and checkPathForms are new; the shared fragment module scope-prompts.ts exists and already holds once-defined rules imported at each site.",
+          "evidence": "A grep for checkPathForms or PATH_FORM_RULE finds nothing. src/workflow/runners/scope-prompts.ts:22 `export const ANTI_OVERREACH_RULE`, :43 SMALLEST_CHANGE_RULE, :61 SMALLEST_SHAPE_RULE; imported in plan/index.ts:24 and design-story/index.ts:30. [files: src/workflow/runners/scope-prompts.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Citation kinds 'code' and 'doc' exist, so the check can tell path refs from refs that are not paths.",
+          "evidence": "src/workflow/types.ts:443 `readonly kind: 'step-output' | 'analyze-bundle' | 'doc' | 'code' | 'stakeholder' | 'convention' | 'prior-artifact';` [files: src/workflow/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "validateBodyAndCitations is shared by every synthesize finalize in orchestrator.ts (stub, brainstorm, issue, define, design.epic, design.story incl. standalone, plan), and the LLD finalize paths pass the body, so the check can read dataModelChanges[].callSites.",
+          "evidence": "Callers at orchestrator.ts:496, 741, 916, 1229, 1873, 2251, 2439, 2694. Synthesizers stubSynthesizer:309, brainstormSynthesizer:602, issueSynthesizer:809, defineSynthesizer:935, designEpicSynthesizer:1453, designStorySynthesizer:1982, planSynthesizer:2546. 2251 and 2439 (finalizeStandaloneLld) pass `body: authored.body as LldBody`; lld.ts:146 `dataModelChanges`, :84 `callSites`. [files: src/workflow/orchestrator.ts, src/workflow/artifacts/lld.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No consumer switches exhaustively on ValidationFailure.kind; the only kind tests are workflow-rpc.ts (=== 'boundary') and the in-session synthesize phase, which builds `synthesize-${kind}`.",
+          "evidence": "grep for `.kind === '...'` finds only src/daemon/workflow-rpc.ts:278 and :292 (boundary) plus tests; src/daemon/steps/workflow-step/phases/synthesize.ts:59 `const code = failure.ok ? 'synthesize-unknown' : `synthesize-${failure.kind}`;`. Adding 'paths' to the union at synthesizer.ts:52 breaks no exhaustive switch. [files: src/workflow/synthesizer.ts, src/daemon/workflow-rpc.ts, src/daemon/steps/workflow-step/phases/synthesize.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing records are never re-validated, so the many stored code citations with prose in their ref keep loading and rendering.",
+          "evidence": "Stored records do carry prose refs, e.g. .insrc/artifacts/AMD-ad0d45c9d690f8c1-1.json:20 \"src/daemon/index.ts:913 (daemon.status returns ...)\" and LLD-870ed3dd246225f4-s2.json:541 \"src/docgen/extract/component-dependency.ts (commit 77f4296) — ...\". validateBodyAndCitations is called only from the finalize* functions in orchestrator.ts at synthesize time, never on load, so these records are untouched. The record shapes stay string, as §6 says. [files: src/workflow/orchestrator.ts, .insrc/artifacts/AMD-ad0d45c9d690f8c1-1.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A 'paths' failure takes the daemon's plain re-emit loop like a citations failure, bounded by maxSynthAttempts, and in-session it comes back as a retryable 'synthesize-paths' error.",
+          "evidence": "src/daemon/workflow-rpc.ts:247 `maxAttempts = opts.maxSynthAttempts ?? 4`; the correction branch at :278 needs kind === 'boundary', and the non-retryable throw at :311 needs `retryable === false`. A 'paths' failure with retryable left absent falls through to the attempt loop with feedback. In synthesize.ts:62 `retryable = failure.retryable ?? true`, and the code is `synthesize-paths`. [files: src/daemon/workflow-rpc.ts, src/daemon/steps/workflow-step/phases/synthesize.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A call site copied from s4 can actually be corrected on re-emit, because the synthesize prompt gains an exception to its verbatim rule.",
+          "evidence": "Without the exception, orchestrator.ts:2004 makes dataModelChanges verbatim from s4, so a re-emit could not fix a prose call site and would loop to the attempt limit. The LLD states the exception in §2.3 postconditions and §3.2, and tests it ('the design.story synthesize prompt lets a call site taken from s4 be corrected to the path form'). [files: src/workflow/orchestrator.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion (ac1 to ac3) maps to named tests that exercise it, in the repo's node:test/tsx framework under src/workflow/__tests__.",
+          "evidence": "In §5 the acceptance mapping gives ac1 the prompt and schema-description tests, ac2 the refusal tests plus the validateBodyAndCitations paths-failure test and the s4-exception prompt test, and ac3 the accept tests plus 'keeps the citation result for a well-formed artifact'. The repo uses `npx tsx --test` with tests in src/workflow/__tests__ (for example adjacent-scope-gate.test.ts). [files: src/workflow/__tests__/adjacent-scope-gate.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 13,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-16T07:35:34.831Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-16T07:38:32.406Z",
+    "rangeBase": "632f42c5a399c30c7f89f16023156fe22f5c8927",
+    "questionResolutions": {
+      "q1611e728": {
+        "question": "Decision: a2 does not catch a well-formed but shortened path (for example artifacts/plan.ts), the defect the issue names first; only the shared prompt rule prevents it. Accept that limit, or choose a3, which also requires the path to exist under the repo but must then tell a planned new file from a wrong path and makes validation depend on the working tree?",
+        "status": "resolved",
+        "choice": "Accept a2's limit",
+        "rationale": "User approved the LLD with a2 chosen and its known gap stated.",
+        "resolvedAt": "2026-10-16T07:39:35.320Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The authoring stages learn one way to write a file reference and the artifact check enforces its shape. A project file is written relative to the project root, with an optional line number, on its own and with no prose beside it; a file outside the project is written with its full path. The rule is defined once and placed in the prompts and the schema descriptions of the fields that carry paths, and a new check refuses an artifact whose call sites or code and doc citations are not in that form, so the model is told which entries to fix and re-emits. Existing records are not rewritten.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Write project file references relative to the project root and external ones in full"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "validateBodyAndCitations",
+          "signature": "validateBodyAndCitations<Body>(artifact: WorkflowArtifact<Body>, renderedBody: string): ValidationResult",
+          "parameters": [
+            {
+              "name": "artifact",
+              "type": "WorkflowArtifact<Body>",
+              "purpose": "The artifact; its citations and, for an LLD, its dataModelChanges[].callSites are the path fields to check",
+              "optional": false
+            },
+            {
+              "name": "renderedBody",
+              "type": "string",
+              "purpose": "The rendered markdown, checked for boundary and citation grounding as today",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ValidationResult",
+            "meaning": "ok, or a failure; a path failure is returned after the boundary and citation checks pass"
+          },
+          "errors": [
+            {
+              "type": "ValidationFailure kind 'paths'",
+              "condition": "a call site, or the ref of a citation of kind code or doc, is not in the path form"
+            }
+          ],
+          "preconditions": [
+            "The artifact has already passed its schema check"
+          ],
+          "postconditions": [
+            "The existing boundary and citation results are unchanged for an artifact whose path fields are well formed",
+            "A path failure lists each offending entry in details, so the retry prompt names what to fix"
+          ]
+        },
+        {
+          "name": "checkPathForms (new)",
+          "signature": "checkPathForms(citations: readonly Citation[], callSites: readonly string[]): ValidationResult",
+          "parameters": [
+            {
+              "name": "citations",
+              "type": "readonly Citation[]",
+              "purpose": "Only citations of kind code or doc are checked; their ref is path[:line]",
+              "optional": false
+            },
+            {
+              "name": "callSites",
+              "type": "readonly string[]",
+              "purpose": "The call sites of an LLD's data model changes; empty for artifacts without them",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ValidationResult",
+            "meaning": "ok, or a 'paths' failure naming every entry that is not a path"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Looks only at the strings: never reads the disk and never resolves a path against the repo",
+            "A project path is accepted when it is a bare relative path with an optional line form (:N, :N-M or :N:C) and an optional #anchor, with no leading ./, no .. segment, no whitespace and no characters outside a path; an absolute path and an http(s) URL are accepted as external references"
+          ]
+        },
+        {
+          "name": "PATH_FORM_RULE (new)",
+          "signature": "export const PATH_FORM_RULE: string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The one wording of the rule, for the step prompts and the schema descriptions. It also says that a path copied from a step output that is not in this form is written in this form instead of copied as it is."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Defined once in the shared prompt fragments module and imported at every site, like ANTI_OVERREACH_RULE",
+            "The design.story synthesize prompt states the exception beside its 'verbatim from s4' hard rule: dataModelChanges are copied from s4 except that a call site is written in the path form"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ValidationFailure",
+        "change": "field-modify",
+        "details": "The kind union gains 'paths', next to 'schema' | 'citations' | 'boundary'. No consumer switches exhaustively on it. The daemon's correction loop only tests for 'boundary', so a 'paths' failure takes the same plain re-emit as a citations failure. The in-session phase (the one controllers use through insrc_workflow_step) builds the error code from the kind, so a path failure comes back as a retryable 'synthesize-paths' error with the offending entries in its message, and the controller re-emits.",
+        "callSites": [
+          "src/workflow/synthesizer.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/daemon/steps/workflow-step/phases/synthesize.ts"
+        ]
+      },
+      {
+        "entity": "dataModel[].callSites and pathsCited field descriptions",
+        "change": "field-modify",
+        "details": "The bare string-array schemas for callSites and pathsCited gain a description that carries the shared rule wording, and the synthesize prompts that emit citations carry the rule itself; no pattern is added to the schema, because a violation is reported by the check with the entries named, not by a generic schema error. The design.story synthesize prompt's 'verbatim from s4' hard rule gets the one stated exception for call sites.",
+        "callSites": [
+          "src/workflow/runners/design-story/schemas.ts",
+          "src/workflow/runners/define/schemas.ts",
+          "src/workflow/runners/design-epic/schemas.ts",
+          "src/workflow/runners/plan/schemas.ts",
+          "src/workflow/orchestrator.ts",
+          "src/workflow/runners/issue/index.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A call site or a code or doc citation ref carries prose beside the path, for example 'src/workflow/artifacts/plan.ts (new artifact module)'.",
+          "detection": "checkPathForms finds whitespace or a character outside a path in the entry and adds it to the failure details.",
+          "response": "validateBodyAndCitations returns a 'paths' failure naming the entry; the synthesize turn is re-emitted with the entries listed. A call site that came from the s4 step is corrected in the re-emit, because the rule in the synthesize prompt lets the synthesizer write it in the path form instead of copying s4 verbatim.",
+          "userImpact": "None once re-emitted; the artifact is not written until every entry is a path.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A model keeps emitting a bad path on every re-emit.",
+          "detection": "The retry limit that bounds a citations failure is reached (the daemon-side loop), or, in a controller-driven run, the controller stops re-emitting; the in-session error stays retryable.",
+          "response": "The synthesize turn fails with the 'paths' failure and its details, as a citations failure does today.",
+          "userImpact": "The stage reports the entries that were refused instead of writing a record with references that do nothing.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A well-formed project path that is shortened, such as artifacts/plan.ts, is emitted.",
+          "detection": "Not detected: the check reads only the string and cannot tell a shortened path from a path to another directory.",
+          "response": "None at write time; the shared rule in the prompts is what prevents it.",
+          "userImpact": "The reference is written and does nothing when clicked, as today; this is the known limit of the chosen alternative.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A citation of kind code with ref 'src/workflow/synthesizer.ts:93'",
+          "expected": "Accepted: a relative path with a line number."
+        },
+        {
+          "input": "A citation of kind code with ref '/home/user/.insrc/daemon/out/index.js'",
+          "expected": "Accepted: an absolute path is an external file written in full."
+        },
+        {
+          "input": "A citation of kind analyze-bundle, step-output, stakeholder, convention or prior-artifact",
+          "expected": "Not checked: the ref of those kinds is not a path."
+        },
+        {
+          "input": "An LLD with no dataModelChanges, or an artifact that is not an LLD",
+          "expected": "No call sites are read; only the citations are checked."
+        },
+        {
+          "input": "A ref with a line range such as 'src/workflow/synthesizer.ts:93-96', or a line and column such as ':93:5'",
+          "expected": "Accepted: the chat page links :N, :N-M and :N:C (CREF_CORE in vscode-plugin/src/chat/link-markup.ts) and opens the file at the first line."
+        },
+        {
+          "input": "A path with a leading './' or a '..' segment",
+          "expected": "Rejected: it is not written relative to the project root."
+        },
+        {
+          "input": "An absolute path in a code citation",
+          "expected": "Accepted by the check as an external file written in full; the chat's link opener refuses a path outside the workspace, so it is not clickable, which is intended."
+        },
+        {
+          "input": "A doc citation whose ref is a path with an anchor, such as 'docs/plans/workflow-define.md#as-built-deltas'",
+          "expected": "Accepted: a relative path with a #anchor; existing records use this form."
+        },
+        {
+          "input": "A doc citation whose ref is an http(s) URL",
+          "expected": "Accepted as an external reference written in full; a URL is not a project path and is never refused."
+        },
+        {
+          "input": "A project file with no extension, such as Makefile or LICENSE",
+          "expected": "Accepted by the check, which does not require an extension; the chat page links only names with a known extension, so it is not clickable, which is outside this Story."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The existing boundary and citation results are unchanged for an artifact whose path fields are well formed; the path check runs after them.",
+          "source": "c3"
+        },
+        {
+          "text": "A well-formed bundle path from s1 (pathsCited) still validates; the schema gains a description only, never a pattern.",
+          "source": "c1"
+        },
+        {
+          "text": "The shared prompt fragments are defined once and imported at each site, so the new rule cannot drift between steps.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "checkPathForms accepts the path forms and refuses prose, leading ./, .. segments, whitespace and other non-path text, naming each offending entry.",
+          "subjects": [
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a root-relative path with and without a line number",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an absolute path as an external file",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a call site with prose beside the path and names it",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a leading ./ and a .. segment",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms checks only citations of kind code and doc",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a path with a line range, a column and a #anchor",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an http(s) URL in a doc citation"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "validateBodyAndCitations runs the path check after the boundary and citation checks and leaves a well-formed artifact's result unchanged.",
+          "subjects": [
+            "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations returns a paths failure for an LLD whose call site carries prose",
+            "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps the citation result for a well-formed artifact"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The shared rule is defined once and reaches every prompt and schema description that authors a path.",
+          "subjects": [
+            "src/workflow/__tests__/path-forms.test.ts: every synthesize prompt and the step prompts that author paths contain PATH_FORM_RULE",
+            "src/workflow/__tests__/path-forms.test.ts: the callSites and pathsCited schema descriptions carry the rule wording",
+            "src/workflow/__tests__/path-forms.test.ts: the design.story synthesize prompt lets a call site taken from s4 be corrected to the path form"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/workflow/__tests__/path-forms.test.ts: every synthesize prompt and the step prompts that author paths contain PATH_FORM_RULE",
+            "src/workflow/__tests__/path-forms.test.ts: the callSites and pathsCited schema descriptions carry the rule wording"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a call site with prose beside the path and names it",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a leading ./ and a .. segment",
+            "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations returns a paths failure for an LLD whose call site carries prose",
+            "src/workflow/__tests__/path-forms.test.ts: the design.story synthesize prompt lets a call site taken from s4 be corrected to the path form"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a root-relative path with and without a line number",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an absolute path as an external file",
+            "src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps the citation result for a well-formed artifact",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a path with a line range, a column and a #anchor",
+            "src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an http(s) URL in a doc citation"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with tsx (npx tsx --test), tests under src/workflow/__tests__"
+    },
+    "migration": {
+      "stateBefore": "The path-valued fields (dataModel[].callSites, the analyze-bundle pathsCited, and the ref of a code or doc citation) are bare strings. Nothing states the form of a path to the model and validateBodyAndCitations checks only boundary rules and citation grounding, so a shortened path or a path with prose beside it is written as it is emitted (search.text and file reads of src/workflow/synthesizer.ts, src/workflow/runners/design-story/schemas.ts and src/workflow/artifacts/lld.ts in s1).",
+      "stateAfter": "The shared rule PATH_FORM_RULE sits in every synthesize prompt and in the step prompts and schema field descriptions that author paths, and validateBodyAndCitations also runs checkPathForms on call sites and on the refs of code and doc citations, returning a 'paths' failure that names the entries to fix. Records already written are not changed or re-checked.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add PATH_FORM_RULE to the shared prompt fragments module and describe the path-valued schema fields with it.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the 'paths' kind to the validation failure and the path check, and call it from validateBodyAndCitations after the boundary and citation checks.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Interpolate the rule into every synthesize prompt in src/workflow/orchestrator.ts (stub, brainstorm, issue, define, design.epic, design.story, plan), because validateBodyAndCitations is shared by all of them, and into the step prompts that author callSites or pathsCited.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "An artifact already on disk is neither rewritten nor re-validated: the check runs only when a stage synthesizes a new artifact. The record shapes are unchanged (call sites and refs remain strings), so every reader and renderer of an existing record keeps working. A new synthesize that previously passed with a prose-bearing call site or ref now fails once and is re-emitted.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Rule in prompts and schema descriptions only",
+        "oneLineSummary": "Define the path rule once in scope-prompts.ts and put it in the prompts and field descriptions that author path-valued fields; add no check.",
+        "approach": "Add one shared constant (beside ANTI_OVERREACH_RULE) that states the form: a project file is written relative to the project root with an optional :line, never shortened and never with prose in the same span; an external file is written with its full path. Interpolate it into every synthesize prompt in src/workflow/orchestrator.ts (each of which emits citations) and into the step prompts that author callSites and pathsCited, and add a description to those schema fields that points at the same wording. Nothing rejects a bad path, so a model that ignores the rule is not caught.",
+        "pros": [
+          "Smallest change: one constant, a few interpolation sites and schema descriptions",
+          "Follows the existing pattern for shared prompt fragments, so the wording cannot drift",
+          "Fixes the cause the issue names: nothing tells the stages how to write a path"
+        ],
+        "cons": [
+          "Nothing catches a bad path, so a lapse is found only when someone clicks it",
+          "Depends on the model following prompt text"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Fixes the stated cause with the smallest change, but leaves nothing to catch a lapse, and the issue asks to consider a write-time check."
+      },
+      {
+        "id": "a2",
+        "name": "Rule plus a shape check at write time",
+        "oneLineSummary": "a1, plus a check in the artifact validation that rejects a path-valued field that is not a bare root-relative or absolute path.",
+        "approach": "Do a1, and add a check beside the citation check in src/workflow/synthesizer.ts that reads the path fields the artifact carries (an LLD's callSites, and the ref of a citation of kind code or doc) and fails with kind 'paths' and the offending entries in details. pathsCited is a step output, not part of the artifact, so it gets the schema description only and is not checked at write time. A project path passes when it is a bare path, optionally with a line form the chat page already links (:N, :N-M or :N:C), that does not start with ./ or contain .. or spaces or prose; an external path passes when it is absolute. The check looks only at the string, never at the disk, so it is deterministic and needs no repo access. The failure goes through the existing retry loop, so the model is told which entries to fix.",
+        "pros": [
+          "A bad path is caught when the artifact is written and corrected by the existing re-emit",
+          "Catches the two seen defects: prose in the span, and a form that is not a path",
+          "No disk access: the same result in tests and in the daemon"
+        ],
+        "cons": [
+          "A shortened path such as artifacts/plan.ts still passes the shape check, because only the disk can say it does not resolve",
+          "Adds a new failure kind to the validation result and to its callers"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Rule plus a check that the path resolves from the root",
+        "oneLineSummary": "a2, and the check also requires every project path to exist under meta.repoPath.",
+        "approach": "Do a2, and in addition resolve each project-relative entry against the artifact's meta.repoPath and fail an entry that does not exist there. This is the only form that catches a shortened path. It also fails a path to a file the story is about to create (a planned new file in callSites or a plan task), so it needs an allowance for new files, and it makes validation depend on the state of the working tree at write time.",
+        "pros": [
+          "Catches the shortened path, the defect the issue names first",
+          "Matches the issue's wording: flag a path that does not resolve from the root"
+        ],
+        "cons": [
+          "A file the story creates does not exist yet, so the check must tell a planned file from a wrong one, which it cannot do from the string",
+          "Validation now depends on the working tree, so the same artifact can pass in one checkout and fail in another",
+          "Largest change and the most likely to reject good artifacts"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Catches the shortened path but cannot tell a planned new file from a wrong one from the string, and makes validation depend on the working tree. It risks rejecting good artifacts, so it is the wrong trade for a bugfix."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [
+      "Decision: a2 does not catch a well-formed but shortened path (for example artifacts/plan.ts), the defect the issue names first; only the shared prompt rule prevents it. Accept that limit, or choose a3, which also requires the path to exist under the repo but must then tell a planned new file from a wrong path and makes validation depend on the working tree?",
+      "Acceptance criteria are derived from the issue (the Story has none): ac1 the rule reaches the prompts and schema descriptions; ac2 a bad entry is refused with the entry named; ac3 a well-formed project or external path is accepted and a well-formed artifact's result is unchanged.",
+      "Audit partial (cd1): checkPathForms and PATH_FORM_RULE are new symbols this Story creates, so they are not in an s1 bundle.",
+      "Audit partial (dm1): src/daemon/workflow-rpc.ts is a call site found by a grep for 'boundary' (it tests failure.kind === 'boundary'), not by an s1 bundle.",
+      "Audit partial (dm2, ts2): the ValidationFailure entry carries its invariant in s5 rather than a citation id of its own, and the node:test framework comes from the project's documented test command, not from the s1 test.locate result.",
+      "Resolved from the code: the chat page parses :N, :N-M and :N:C in a code reference (vscode-plugin/src/chat/link-markup.ts), so the check accepts those line forms."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "Path-valued fields and the prompts around them across the authoring workflows"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "Shared prompt fragments and where each is interpolated"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "Write-time validation of a synthesized artifact"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/schemas.ts:260",
+      "quotedText": "callSites:  { type: 'array', items: { type: 'string' } },"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/lld.ts:388",
+      "quotedText": "for (const cs of d.callSites) l.push(`- \\`${cs}\\``);"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/synthesizer.ts:207",
+      "quotedText": "export function validateBodyAndCitations<Body>("
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/write-project-file-references-relative-project-E2026101667124d9a/ISSUE.md"
+    }
+  ]
+}

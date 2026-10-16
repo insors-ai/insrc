@@ -200,12 +200,15 @@ test('a throwing step leaves neither its rows nor its version write; earlier ste
 		await closeGraphStore();
 		const raw = open({ path: join(dir, 'graph.lmdb'), maxDbs: 32 });
 		const meta = raw.openDB({ name: 'meta', keyEncoding: 'ordered-binary' });
-		assert.equal(meta.get('schema_version'), 2, `${shape}: the throwing step's version write is not kept`);
-		assert.equal(meta.get(`${shape}-row-a`), 'a', `${shape}: the earlier step stays committed`);
-		assert.equal(meta.get(`${shape}-row-b`), undefined, `${shape}: the throwing step's rows are not kept`);
-		assert.equal(meta.get(`${shape}-row-b2`), undefined, `${shape}: nor rows written after an await`);
-		await meta.put('schema_version', SCHEMA_VERSION);   // so the next open does not migrate
-		await raw.close();
+		try {
+			assert.equal(meta.get('schema_version'), 2, `${shape}: the throwing step's version write is not kept`);
+			assert.equal(meta.get(`${shape}-row-a`), 'a', `${shape}: the earlier step stays committed`);
+			assert.equal(meta.get(`${shape}-row-b`), undefined, `${shape}: the throwing step's rows are not kept`);
+			assert.equal(meta.get(`${shape}-row-b2`), undefined, `${shape}: nor rows written after an await`);
+		} finally {
+			await meta.put('schema_version', SCHEMA_VERSION);   // so the next open does not migrate
+			await raw.close();
+		}
 	}
 });
 

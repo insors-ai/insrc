@@ -83,3 +83,20 @@ test('an async callback is refused with "withWriteTxn callbacks must be synchron
 	const store = await getGraphStore();
 	assert.equal(store.meta.get('async-prefix'), undefined, 'the write made before the Promise was returned is not kept');
 });
+
+test('a refused async callback that rejects later raises no unhandled rejection', async () => {
+	const unhandled: unknown[] = [];
+	const onUnhandled = (reason: unknown): void => { unhandled.push(reason); };
+	process.on('unhandledRejection', onUnhandled);
+	try {
+		await assert.rejects(
+			// @ts-expect-error -- a Promise-returning callback does not type-check
+			withWriteTxn(async () => { await new Promise(r => setTimeout(r, 5)); throw new Error('late'); }),
+			/withWriteTxn callbacks must be synchronous/,
+		);
+		await new Promise(r => setTimeout(r, 50));   // past the callback's own rejection
+		assert.deepEqual(unhandled, []);
+	} finally {
+		process.off('unhandledRejection', onUnhandled);
+	}
+});

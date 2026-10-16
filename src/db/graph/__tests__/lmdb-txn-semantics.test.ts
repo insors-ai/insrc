@@ -16,7 +16,8 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { open } from 'lmdb';
 
@@ -36,8 +37,8 @@ function presentInFreshProcess(path: string, keys: readonly string[]): Record<st
 		await root.close();
 		process.stdout.write(JSON.stringify(out));
 	`;
-	// cwd is the repository, so the child resolves the same installed lmdb.
-	return JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { cwd: process.cwd(), encoding: 'utf8' })) as Record<string, boolean>;
+	// cwd is this test's directory, so the child resolves the repository's installed lmdb wherever the suite is started from.
+	return JSON.parse(execFileSync(process.execPath, ['--input-type=module', '-e', script], { cwd: dirname(fileURLToPath(import.meta.url)), encoding: 'utf8' })) as Record<string, boolean>;
 }
 
 test('lmdb behaviour pin: after a reopen in a fresh process, root.transaction keeps a throwing callback\'s write, root.childTransaction and root.transactionSync discard it', async () => {

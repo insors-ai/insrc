@@ -888,7 +888,11 @@ function isThenable(v: unknown): boolean {
  * child callback holds the write transaction open across its await, and a
  * second caller arriving then runs nested inside it and loses its writes if
  * the first throws. The type refuses a Promise-returning callback; at run
- * time a thenable result is refused by aborting the child.
+ * time a thenable result is refused by aborting the child; only what the
+ * callback wrote before returning it is discarded. The refused Promise keeps
+ * running: a write it makes after an await is a standalone lmdb write that
+ * commits, and its rejection is swallowed so it cannot crash the process.
+ * The compile-time type is the guard; the run-time refusal reports misuse.
  *
  * On a store that lost its locks the library's transaction NEVER settles, so
  * the wait is bounded: each time the bound passes, the store is probed with
@@ -902,7 +906,11 @@ export async function withWriteTxn<T>(
 	const store = await getGraphStore();
 	const run = (): T => {
 		const result = fn(store) as T;
-		if (isThenable(result)) throw new Error('withWriteTxn callbacks must be synchronous');
+		if (isThenable(result)) {
+			// Never awaited: handle its rejection so it is not an unhandled rejection.
+			(result as PromiseLike<unknown>).then(undefined, () => { /* refused callback */ });
+			throw new Error('withWriteTxn callbacks must be synchronous');
+		}
 		return result;
 	};
 	// A child transaction nested in an open one returns a plain value, not a promise.

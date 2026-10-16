@@ -241,6 +241,13 @@
         "choice": "Accept derived ACs as-is",
         "rationale": "The approved LLD carries ac1-ac4 as its acceptance mapping.",
         "resolvedAt": "2026-10-16T09:16:34.915Z"
+      },
+      "q00d6a48c": {
+        "question": "Audit partial (cd1): CODE_REF_SCRIPT and rvFrameMessage are new symbols this Story creates, so they are not in an s1 bundle.",
+        "status": "resolved",
+        "choice": "Accept as expected-absent",
+        "rationale": "The symbols are created by this Story, so they cannot be in the index.",
+        "resolvedAt": "2026-10-16T09:17:07.138Z"
       }
     }
   },

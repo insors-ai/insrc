@@ -269,6 +269,8 @@ The companion shell renders a path in a description table as a link-like element
   - **resolved**: Leave it to the host — The LLD as approved leaves absolute and .. paths to the host's openCodeRef check, the trust boundary. _(2026-10-16T09:15:52.326Z)_
 - `qaa3e7e97` — Acceptance criteria are derived from the Story's user value (the Story has none): ac1 the call-sequence label shows the repo-relative path and line; ac2 the page script marks references and posts a click; ac3 the pane forwards only from its own frame and with valid fields; ac4 the script's grammar is the chat page's.
   - **resolved**: Accept derived ACs as-is — The approved LLD carries ac1-ac4 as its acceptance mapping. _(2026-10-16T09:16:34.915Z)_
+- `q00d6a48c` — Audit partial (cd1): CODE_REF_SCRIPT and rvFrameMessage are new symbols this Story creates, so they are not in an s1 bundle.
+  - **resolved**: Accept as expected-absent — The symbols are created by this Story, so they cannot be in the index. _(2026-10-16T09:17:07.138Z)_
 
 ## Citations
 

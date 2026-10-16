@@ -868,10 +868,26 @@ export async function closeGraphStore(): Promise<void> {
 // Txn helpers (Phase 1.5 will harden these with timing + retry)
 // ---------------------------------------------------------------------------
 
+/** A synchronous callback's result: a Promise-returning callback does not type-check. */
+type SyncResult<T> = T extends PromiseLike<unknown> ? never : T;
+
+function isThenable(v: unknown): boolean {
+	return typeof v === 'object' && v !== null && typeof (v as { then?: unknown }).then === 'function';
+}
+
 /**
  * Run `fn` inside an LMDB write transaction. Single-writer at a time
- * (LMDB serializes write txns); concurrent callers queue up. Throws
- * propagate; the txn aborts and partial changes are discarded.
+ * (LMDB serializes write txns); concurrent callers queue up. When `fn`
+ * throws, nothing it wrote is kept and the promise rejects with its error.
+ *
+ * `fn` runs as an lmdb CHILD transaction (ISSUE-5437d6e5). lmdb's plain
+ * `transaction()` batches many callers into one shared write transaction and
+ * commits a throwing callback's writes; a child transaction is aborted on a
+ * throw while its batch neighbours commit. `fn` must be synchronous: an async
+ * child callback holds the write transaction open across its await, and a
+ * second caller arriving then runs nested inside it and loses its writes if
+ * the first throws. The type refuses a Promise-returning callback; at run
+ * time a thenable result is refused by aborting the child.
  *
  * On a store that lost its locks the library's transaction NEVER settles, so
  * the wait is bounded: each time the bound passes, the store is probed with
@@ -880,10 +896,16 @@ export async function closeGraphStore(): Promise<void> {
  * slow, and the wait goes on.
  */
 export async function withWriteTxn<T>(
-	fn: (store: GraphStore) => T | Promise<T>,
+	fn: (store: GraphStore) => SyncResult<T>,
 ): Promise<T> {
 	const store = await getGraphStore();
-	const txn = (store.root.transaction(() => fn(store)) as Promise<T>).then(value => ({ value }));
+	const run = (): T => {
+		const result = fn(store) as T;
+		if (isThenable(result)) throw new Error('withWriteTxn callbacks must be synchronous');
+		return result;
+	};
+	// A child transaction nested in an open one returns a plain value, not a promise.
+	const txn = Promise.resolve(store.root.childTransaction(run) as T | Promise<T>).then(value => ({ value }));
 
 	for (;;) {
 		let timer: NodeJS.Timeout | undefined;

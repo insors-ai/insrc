@@ -90,6 +90,8 @@ test("health record: after locks-lost a further store call throws the named erro
 	store.root.close = (() => { libraryCalls++; return realClose(); }) as typeof store.root.close;
 	store.root.transactionSync = ((fn: () => unknown) => { libraryCalls++; return realTxnSync(fn); }) as typeof store.root.transactionSync;
 	store.root.transaction = ((fn: () => unknown) => { libraryCalls++; return realTxn(fn); }) as typeof store.root.transaction;
+	const realChild = store.root.childTransaction.bind(store.root);
+	store.root.childTransaction = ((fn: () => unknown) => { libraryCalls++; return realChild(fn); }) as typeof store.root.childTransaction;
 
 	assert.equal(recordStoreFailureIfLockError(badRslot(), 'a read'), true);
 
@@ -149,11 +151,19 @@ test('slow healthy write: the probe runs and returns, nothing is recorded, the w
 	setStoreProbeObserverForTests(r => probes.push(r));
 	setWriteProbeAfterMsForTests(100);
 
-	const result = await withWriteTxn(async s => {
-		await new Promise(r => setTimeout(r, 450));   // held open past the bound, several times over
-		await s.meta.put('slow', 'done');
-		return 'finished';
-	});
+	// withWriteTxn takes only synchronous callbacks (ISSUE-5437d6e5), so the
+	// write is made slow by delaying the library's settlement instead: no
+	// transaction is held open, which would nest the write rather than queue it.
+	const realChild = store.root.childTransaction.bind(store.root);
+	store.root.childTransaction = ((fn: () => unknown) =>
+		Promise.resolve(realChild(fn)).then(v => new Promise<unknown>(r => setTimeout(() => r(v), 450)))  // past the bound, several times over
+	) as typeof store.root.childTransaction;
+	let result: string;
+	try {
+		result = await withWriteTxn(s => { void s.meta.put('slow', 'done'); return 'finished'; });
+	} finally {
+		store.root.childTransaction = realChild;
+	}
 
 	assert.equal(result, 'finished');
 	assert.ok(probes.length >= 2, `the probe ran at each bound (ran ${probes.length} times)`);

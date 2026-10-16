@@ -100,8 +100,23 @@ approve), first DECLARE what you are about to show: call
 example `LLD-<hash>-S001`) or repo-relative path. Then PRESENT a concise summary
 (give the document's path in your message too) and ASK the user; only on their
 explicit in-chat yes call `insrc_workflow_approve({ artifactPath })` (or
-`{ epicHash }` to batch). Review before you approve — see
+`{ epicHash }` to batch). Review a DEF, HLD or LLD before you approve it — see
 `insrc_guide({ workflow: 'review' })`.
+
+### Review discipline (applies to every review)
+
+**Only two reviews are mandatory:** a DEF, HLD or LLD before its approval
+(`insrc_review_step`), and the code review that completes a Story's BUILD
+(`insrc_code_review_step`). Do not review anything else — an ISSUE, SPEC or
+PLAN, or any other stage — unless the user asks for it; present it and ask for
+approval instead.
+
+**At most three review rounds per cycle.** A round is one review call
+(`insrc_review_step` or `insrc_code_review_step`), whatever its verdict. After
+the third round on the same artifact or code, STOP: show the user the latest
+review's findings and what the earlier rounds changed, and ASK whether to run
+another cycle of up to three rounds, approve with an override reason, or change
+course. Do not start a fourth review until the user says so.
 
 The chat opens exactly the documents you declare with `insrc_present`; it does
 not work out what to open from tool output, so a document you do not declare is
@@ -150,8 +165,9 @@ clarify → fold → show → confirm convergence in chat:
 - at a fork, present the options and record the choice's `ruledOut`
   alternatives in `nonGoals`.
 
-Then resume ONCE with `confirmed: true` and no open items. Review + approve the
-resulting **SpecArtifact** (same present-ask-approve discipline), then seed
+Then resume ONCE with `confirmed: true` and no open items. Present + approve the
+resulting **SpecArtifact** (same present-ask-approve discipline; no review
+unless the user asks), then seed
 `insrc_triage` / `define` / `design.story` from the approved spec. Skip
 brainstorm when the request is already a clear, scoped spec — go straight to
 triage.
@@ -302,7 +318,14 @@ override), THEN declare the document with `insrc_present`, present-ask-approve
 with `insrc_workflow_approve({ artifactPath })`. A withheld artifact comes back from
 approve in `skipped[]` with a reason (relay it); pass `overrideReview` only with
 the user's explicit override reason. An ISSUE, SPEC or PLAN needs no review,
-only the user's approval.
+only the user's approval: do not review one unless the user asks.
+
+**At most three review rounds per cycle.** A round is one review call
+(`insrc_review_step` or `insrc_code_review_step`), whatever its verdict. After
+the third round on the same artifact or code, STOP: show the user the latest
+review's findings and what the earlier rounds changed, and ASK whether to run
+another cycle of up to three rounds, approve with an override reason, or change
+course. Do not start a fourth review until the user says so.
 <!-- insrc:guide:review:end -->
 
 <!-- insrc:guide:code-review:start -->
@@ -333,6 +356,13 @@ and flag the caveat honestly — never fabricate a HIGH from empty grounding.
 PRESENT the verdict, then COMPLETE the Story by approving its **BUILD** artifact
 (see the `build` guide — BUILD approval is the code-review-gated completion act,
 and a Story with no code review is always withheld).
+
+**At most three review rounds per cycle.** A round is one review call
+(`insrc_review_step` or `insrc_code_review_step`), whatever its verdict. After
+the third round on the same artifact or code, STOP: show the user the latest
+review's findings and what the earlier rounds changed, and ASK whether to run
+another cycle of up to three rounds, approve with an override reason, or change
+course. Do not start a fourth review until the user says so.
 <!-- insrc:guide:code-review:end -->
 
 <!-- insrc:guide:tracker:start -->
@@ -362,14 +392,16 @@ classifies it `bugfix` and routes it to the `issue` stage.
 2. **Run the `issue` stage** with `insrc_workflow_step` (turn-by-turn, like every
    workflow). It writes an **IssueArtifact** — the single defect record (root
    cause, reproduction, fix intent) that also becomes the GitHub issue body.
-   Review it (`insrc_review_step`), then present-ask-approve.
+   It needs no review (only a DEF, HLD or LLD and the code review are
+   mandatory): present-ask-approve.
 3. **Approve the issue** with `insrc_workflow_approve`. Approval AUTO-ADVANCES the
    bugfix chain: the daemon locates + stamps the fix's parent, checks the advance
    gate, and routes to the next stage (build for small, design.story for sized).
    The approval result carries a `followOn` entry describing what fired; relay a
    failed advance (`ok:false`) rather than assuming it advanced.
 4. **Continue the routed chain** (build, or design.story → plan → build), each
-   with its usual review + present-ask-approve gate. Completing the bugfix BUILD
+   with its own present-ask-approve gate and a review only where one is
+   mandatory (the LLD, and the code review of the build). Completing the bugfix BUILD
    is the code-review-gated completion act, exactly as for a feature story.
 
 Do NOT patch a bug off-ledger. Skip triage only for a one-liner the user

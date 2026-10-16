@@ -160,7 +160,9 @@ export function activate(context: vscode.ExtensionContext): void {
   };
   registerWorkspaceCommands({ commands, consent, status, registrar, folders });
 
-  activateExtension({ client, status });
+  // Story E202610160e1265ed:S001: the controller lets activation start an installed daemon that the
+  // probe finds stopped.
+  activateExtension({ client, status, controller });
 
   // S003 daemon-auto-update: keep the locally-installed daemon current. This is the
   // SOLE vscode importer, so it binds the real seams — the daemon-owned update+restart

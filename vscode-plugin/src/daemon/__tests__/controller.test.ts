@@ -144,3 +144,19 @@ test('source-scan: vscode-plugin/src/daemon/ imports only node builtins + the sh
     }
   }
 });
+
+test('a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before', async () => {
+  const runner = new FakeRunner(0);
+  const ctl = createDaemonLifecycleController({ runner, paths: fixturePaths({ ctl: true }), client: fakeClient('running') });
+  const plain = await ctl.run('start', { plain: true });
+  assert.equal(plain.ok, true);
+  const ctlScript = runner.calls[0]![1]!;
+  assert.deepEqual(runner.calls[0], ['bash', ctlScript, 'start', '--skip-sync', '--skip-install', '--skip-build']);
+  // Without options, or with plain off, the command is what it always was.
+  await ctl.run('start');
+  await ctl.run('start', {});
+  await ctl.run('restart', { plain: false });
+  assert.deepEqual(runner.calls[1], ['bash', ctlScript, 'start']);
+  assert.deepEqual(runner.calls[2], ['bash', ctlScript, 'start']);
+  assert.deepEqual(runner.calls[3], ['bash', ctlScript, 'restart']);
+});

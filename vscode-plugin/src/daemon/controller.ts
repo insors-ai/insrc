@@ -15,6 +15,13 @@ import type { DaemonPaths } from './paths.js';
 
 export type LifecycleAction = 'start' | 'stop' | 'restart' | 'update';
 
+export interface LifecycleRunOptions {
+  plain?: boolean | undefined;
+}
+
+/** daemon-ctl.sh flags that make a start spawn the built daemon without updating it. */
+const PLAIN_FLAGS = ['--skip-sync', '--skip-install', '--skip-build'] as const;
+
 export interface LifecycleResult {
   ok: boolean;
   state: 'running' | 'stopped' | 'errored';
@@ -26,8 +33,12 @@ export interface DaemonLifecycleController {
   isInstalled(): Promise<boolean>;
   /** Provision the daemon from the bundled installer (caller must have consent). */
   install(): Promise<LifecycleResult>;
-  /** Run a lifecycle action through daemon-ctl.sh. */
-  run(action: LifecycleAction): Promise<LifecycleResult>;
+  /**
+   * Run a lifecycle action through daemon-ctl.sh. `plain` adds --skip-sync, --skip-install and
+   * --skip-build, so a start only spawns the daemon that is already built (no pull, install or
+   * build); without it the command is exactly what it always was.
+   */
+  run(action: LifecycleAction, options?: LifecycleRunOptions | undefined): Promise<LifecycleResult>;
 }
 
 /** daemon-ctl.sh's documented exit codes → a user-facing reason. */
@@ -85,11 +96,11 @@ export function createDaemonLifecycleController(deps: ControllerDeps): DaemonLif
       return { ok: false, state: 'errored', message: installerReason(code) };
     },
 
-    async run(action: LifecycleAction): Promise<LifecycleResult> {
+    async run(action: LifecycleAction, options?: LifecycleRunOptions | undefined): Promise<LifecycleResult> {
       if (!existsSync(paths.ctlScript)) {
         return { ok: false, state: 'errored', message: 'insrc daemon is not installed — run Install first' };
       }
-      const { code } = await runner.run(['bash', paths.ctlScript, action]);
+      const { code } = await runner.run(['bash', paths.ctlScript, action, ...(options?.plain === true ? PLAIN_FLAGS : [])]);
       if (code === 0) {
         return { ok: true, state: await reachability() };
       }

@@ -10,6 +10,7 @@
  */
 import type { IpcClient, DaemonReachability } from '../../src/shared/ipc-client.js';
 import type { StatusSurface, DaemonUiState } from './surfaces/status-surface.js';
+import type { DaemonLifecycleController } from './daemon/controller.js';
 
 /** Default bound for the activation reachability probe (ms). */
 export const DEFAULT_PROBE_TIMEOUT_MS = 3000;
@@ -19,6 +20,11 @@ export interface ActivationDeps {
   status: StatusSurface;
   /** Bound for the reachability probe; defaults to {@link DEFAULT_PROBE_TIMEOUT_MS}. */
   probeTimeoutMs?: number | undefined;
+  /**
+   * Story E202610160e1265ed:S001: lets activation start an installed daemon the probe finds
+   * stopped. Absent -> activation only probes, as before.
+   */
+  controller?: Pick<DaemonLifecycleController, 'isInstalled' | 'run'> | undefined;
 }
 
 /** Reachability is a subset of the UI states; map it straight through. */
@@ -31,7 +37,7 @@ function toUiState(reachability: DaemonReachability): DaemonUiState {
  * state into the status surface. Never throws: `client.reachability()` already
  * classifies its own failures, and a timeout degrades to 'errored'.
  */
-export async function runReachabilityProbe(deps: ActivationDeps): Promise<void> {
+export async function runReachabilityProbe(deps: ActivationDeps): Promise<DaemonUiState> {
   const timeoutMs = deps.probeTimeoutMs ?? DEFAULT_PROBE_TIMEOUT_MS;
   let timer: ReturnType<typeof setTimeout> | undefined;
 
@@ -54,7 +60,39 @@ export async function runReachabilityProbe(deps: ActivationDeps): Promise<void> 
     if (timer !== undefined) clearTimeout(timer);
   }
 
-  deps.status.set({ state: toUiState(reachability) });
+  const state = toUiState(reachability);
+  deps.status.set({ state });
+  return state;
+}
+
+/** Shown when a start reports success but the daemon still does not answer. */
+const NO_ANSWER_AFTER_START = 'the daemon did not answer after start';
+
+/**
+ * Story E202610160e1265ed:S001: start an installed daemon that the probe found stopped, once, as
+ * a plain start (nothing is pulled, installed or built) and show the result. It starts nothing for
+ * any other probed state, for a daemon that is not installed, or when another window has already
+ * brought the daemon up since the probe. Never rejects: a failed start is an errored status.
+ */
+export async function startDaemonIfStopped(deps: ActivationDeps, probed: DaemonUiState): Promise<void> {
+  const controller = deps.controller;
+  if (controller === undefined || probed !== 'stopped') return;
+  try {
+    if (!(await controller.isInstalled())) return;
+    // Another window may have started it since the probe: do not restart what is now up.
+    if ((await deps.client.reachability()) === 'running') {
+      deps.status.set({ state: 'running' });
+      return;
+    }
+    const result = await controller.run('start', { plain: true });
+    if (result.ok && result.state !== 'running') {
+      deps.status.set({ state: 'errored', detail: NO_ANSWER_AFTER_START });
+    } else {
+      deps.status.set({ state: result.state, detail: result.message });
+    }
+  } catch {
+    deps.status.set({ state: 'errored' });
+  }
 }
 
 /**
@@ -67,9 +105,11 @@ export function activateExtension(deps: ActivationDeps): void {
   try {
     // Fire-and-forget: activation returns immediately; the probe updates status
     // off the critical path. Errors are contained inside the probe.
-    void runReachabilityProbe(deps).catch(() => {
-      deps.status.set({ state: 'errored' });
-    });
+    void runReachabilityProbe(deps)
+      .then((probed) => startDaemonIfStopped(deps, probed))
+      .catch(() => {
+        deps.status.set({ state: 'errored' });
+      });
   } catch {
     deps.status.set({ state: 'errored' });
   }

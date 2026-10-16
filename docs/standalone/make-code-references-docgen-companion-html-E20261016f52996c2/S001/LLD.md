@@ -271,6 +271,8 @@ The companion shell renders a path in a description table as a link-like element
   - **resolved**: Accept derived ACs as-is — The approved LLD carries ac1-ac4 as its acceptance mapping. _(2026-10-16T09:16:34.915Z)_
 - `q00d6a48c` — Audit partial (cd1): CODE_REF_SCRIPT and rvFrameMessage are new symbols this Story creates, so they are not in an s1 bundle.
   - **resolved**: Accept as expected-absent — The symbols are created by this Story, so they cannot be in the index. _(2026-10-16T09:17:07.138Z)_
+- `qed61b94a` — Audit partial (dm2): the call-frame label change states the invariant it must keep, which s5 cites, but the data model entry carries no citation id of its own.
+  - **resolved**: Accept partial and record a note — Provenance quirk only; s5 states and cites the invariant. _(2026-10-16T09:17:39.622Z)_
 
 ## Citations
 

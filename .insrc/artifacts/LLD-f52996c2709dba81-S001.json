@@ -248,6 +248,13 @@
         "choice": "Accept as expected-absent",
         "rationale": "The symbols are created by this Story, so they cannot be in the index.",
         "resolvedAt": "2026-10-16T09:17:07.138Z"
+      },
+      "qed61b94a": {
+        "question": "Audit partial (dm2): the call-frame label change states the invariant it must keep, which s5 cites, but the data model entry carries no citation id of its own.",
+        "status": "resolved",
+        "choice": "Accept partial and record a note",
+        "rationale": "Provenance quirk only; s5 states and cites the invariant.",
+        "resolvedAt": "2026-10-16T09:17:39.622Z"
       }
     }
   },

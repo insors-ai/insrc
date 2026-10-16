@@ -50,7 +50,7 @@ function walk(root: El, out: El[] = []): El[] {
 }
 
 interface Posted { msg: Record<string, unknown>; origin: string }
-interface Page { posted: Posted[]; down(target: El, x: number, y: number): void; click(target: El, x: number, y: number): void; rescan(): void }
+interface Page { posted: Posted[]; down(target: El, x: number, y: number): void; click(target: El, x: number, y: number, detail?: number): void; rescan(): void }
 
 /** Runs the script over `root`; the page's events go through the document's capture listeners. */
 function load(root: El): Page {
@@ -68,7 +68,7 @@ function load(root: El): Page {
   return {
     posted,
     down: (target, x, y) => fire('pointerdown', { target, clientX: x, clientY: y, button: 0 }),
-    click: (target, x, y) => fire('click', { target, clientX: x, clientY: y }),
+    click: (target, x, y, detail) => fire('click', { target, clientX: x, clientY: y, ...(detail === undefined ? {} : { detail }) }),
     rescan: () => (window['insrcMarkCodeRefs'] as () => void)(),
   };
 }
@@ -148,6 +148,35 @@ test('src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a bare
   assert.equal(dotted.getAttribute('data-insrc-path'), null);
   press(page, bare);
   assert.deepEqual(page.posted, []);
+});
+
+test('src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: an element marked from text that is later replaced loses its mark, so a click on the drawn diagram opens nothing', () => {
+  // A Mermaid page is marked once before the diagram is drawn, when its <pre> holds the source.
+  const pre = el('pre', 'sequenceDiagram\n  A->>B: call (src/a/b.ts:12)');
+  const empty = el('g');
+  const page = load(el('body', pre));
+  assert.equal(pre.getAttribute('data-insrc-path'), 'src/a/b.ts', 'marked from the source text');
+  // The diagram replaces the text with an SVG, and the page marks again.
+  pre.childNodes = [];
+  empty.parentNode = pre;
+  pre.childNodes.push(empty);
+  page.rescan();
+  assert.equal(pre.getAttribute('data-insrc-path'), null);
+  assert.equal(pre.getAttribute('data-insrc-line'), null);
+  press(page, empty, pre);
+  assert.deepEqual(page.posted, [], 'a click on the empty canvas posts nothing');
+});
+
+test('src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a click with no press before it, as the keyboard sends, is read at its own target', () => {
+  const box = el('span', 'a/b.ts:1');
+  const other = el('span', 'c/d.ts:2');
+  const page = load(el('div', box, other));
+  page.down(other, 100, 100);           // a press that never ended in a click
+  page.click(other, 100, 100);          // ...is spent by the click that follows it
+  page.posted.length = 0;
+  page.down(other, 300, 300);           // a stale press
+  page.click(box, 0, 0, 0);             // a keyboard activation: detail 0, no position
+  assert.deepEqual(page.posted.map(p => ({ ...p.msg })), [{ type: 'insrc-open-code-ref', path: 'a/b.ts', line: 1 }]);
 });
 
 test('src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the script stops no event and the posted origin is any, as the frame has an opaque origin', () => {

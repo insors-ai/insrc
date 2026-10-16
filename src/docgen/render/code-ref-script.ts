@@ -21,7 +21,10 @@
  * on a box inside it is delivered to the viewport; the element and position are therefore
  * recorded at pointerdown, in the capture phase. And the pan/zoom drag must keep working, so the
  * script stops no event, leaves pointer capture alone, and treats a press that moved more than 4
- * pixels as a drag. Marking sets attributes only (the page's style gives a marked element its
+ * pixels as a drag; a click with no press before it (the keyboard, detail 0) uses its own target.
+ * Marking is repeatable: an element whose text no longer holds a reference loses its mark, so the
+ * diagram's source text, marked before the diagram is drawn, does not stay marked once the
+ * diagram replaces it. Marking sets attributes only (the page's style gives a marked element its
  * pointer cursor); it never splits or edits a text node.
  *
  * It imports from neither page shell, so both can inline it. The source is ES5-style and holds
@@ -41,7 +44,9 @@ for(var i=0;i<all.length;i++){var el=all[i];
 var tag=String(el.tagName||'').toLowerCase();
 if(tag==='script'||tag==='style')continue;
 var m=RE.exec(ownText(el));
-if(!m)continue;
+if(!m){
+if(el.getAttribute('data-insrc-path')){el.removeAttribute('data-insrc-path');el.removeAttribute('data-insrc-line');}
+continue;}
 el.setAttribute('data-insrc-path',m[1]);
 if(m[2])el.setAttribute('data-insrc-line',m[2]);else if(el.removeAttribute)el.removeAttribute('data-insrc-line');
 }
@@ -56,7 +61,7 @@ down={t:e.target,x:e.clientX,y:e.clientY};},true);
 document.addEventListener('click',function(e){try{
 var d=down;down=null;
 var t=e.target;
-if(d){var dx=e.clientX-d.x,dy=e.clientY-d.y;
+if(d&&e.detail!==0){var dx=e.clientX-d.x,dy=e.clientY-d.y;
 if(dx*dx+dy*dy>DRAG*DRAG)return;
 t=d.t;}
 var el=markedFrom(t);if(!el)return;

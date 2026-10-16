@@ -165,7 +165,7 @@ function bootScript(visual: CompanionVisual): string {
 		"document.querySelectorAll('#stage svg').forEach(function(svg){var vb=svg.viewBox&&svg.viewBox.baseVal;",
 		"if(vb&&vb.width){svg.setAttribute('width',vb.width);svg.setAttribute('height',vb.height);svg.style.maxWidth='none';}});",
 		'pz.fit();',
-		'window.insrcMarkCodeRefs();',
+		'if(window.insrcMarkCodeRefs)window.insrcMarkCodeRefs();',
 		"}).catch(function(err){document.getElementById('stage').textContent='Diagram could not be drawn: '+err;});",
 	].join('');
 }

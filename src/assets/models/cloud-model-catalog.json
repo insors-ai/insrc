@@ -8,9 +8,9 @@
       { "id": "claude-haiku-4-5-20251001", "displayName": "Claude Haiku 4.5" }
     ],
     "cli-codex": [
-      { "id": "gpt-5-codex", "displayName": "GPT-5 Codex" },
-      { "id": "gpt-5", "displayName": "GPT-5" },
-      { "id": "o4-mini", "displayName": "o4-mini" }
+      { "id": "gpt-6-astra", "displayName": "GPT-6 Astra" },
+      { "id": "gpt-6.1-sol", "displayName": "GPT-6.1 Sol" },
+      { "id": "gpt-6-luna", "displayName": "GPT-6 Luna" }
     ]
   }
 }

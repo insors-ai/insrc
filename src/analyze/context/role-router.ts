@@ -77,7 +77,7 @@ export interface RoleRouterDeps {
 export interface RoleRouter {
 	/** Resolve (and memoize per (role,repoPath)) the provider for a reasoning role. */
 	resolveProviderForRole(role: RoleId, cfg: AnalyzeConfig, repoPath?: string): ResolvedProvider;
-	/** Resolve the background doc-summariser (stays LOCAL by default, k-summariser). */
+	/** Resolve the background doc-summariser (follows the cheap tier, k-summariser). */
 	resolveSummariser(cfg: AnalyzeConfig): ResolvedProvider;
 }
 
@@ -129,7 +129,7 @@ function resolveRoleInternal(
 	//    → built-in DEFAULT_TIERS[tier]. The legacy shaperProvider knob (or a
 	//    per-repo/per-run CLI default) still wins over the built-in defaults so an
 	//    operator who pinned one backend keeps it; only a truly unconfigured run
-	//    falls to the built-in tier defaults (critical→high CLI, peripheral→local).
+	//    falls to the built-in tier defaults (critical→high CLI, peripheral→cheapest CLI).
 	const globalExplicit = cfg.shaperProviderExplicit ? cfg.shaperProvider : undefined;
 	const legacyExplicit = globalExplicit !== undefined || deps.repoOverride !== undefined || deps.clientDefault !== undefined;
 	const configuredTier: TierModel | undefined = byRepo?.tiers?.[tier] ?? cfg.tiering.tiers?.[tier];

@@ -71,6 +71,17 @@ test('empty tiering BUT an explicit legacy shaperProvider still wins over the bu
 	assert.equal(r.runner, 'cli-codex'); // legacy explicit beats DEFAULT_TIERS
 });
 
+test('a configured cheap tier wins over the built-in cheap default', () => {
+	const NARROW = 'analyze.narrow'; // taxonomy: peripheral → cheap
+	const builtIn = resolveRole(NARROW, cfg(), undefined);
+	assert.equal(builtIn.tier, 'cheap');
+	assert.equal(builtIn.runner, 'cli-claude');
+	assert.equal(builtIn.model, 'haiku');
+	const configured = resolveRole(NARROW, cfg({ tiers: { cheap: { runner: 'ollama', model: 'qwen3.6:27b' } } }), undefined);
+	assert.equal(configured.runner, 'ollama');
+	assert.equal(configured.model, 'qwen3.6:27b');
+});
+
 // ── resolveRole: role→tier assignment + tier model ──────────────────────────
 
 test('roleTiers assigns a peripheral role a cheap tier with a concrete model', () => {

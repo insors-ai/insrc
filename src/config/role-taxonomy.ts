@@ -90,7 +90,7 @@ const ROLES: readonly RoleDescriptor[] = [
 	{ id: 'analyze.aggregate',             criticality: 'peripheral', defaultTier: 'mid'  },  // runtimes/shared/aggregator
 	{ id: 'analyze.narrow',                criticality: 'peripheral', defaultTier: 'cheap' }, // explore probes (capability-reuse-check, doc-decision-trace, doc-constraint-enumerate)
 
-	// (C) Indexing — PERIPHERAL → cheap (already local by default today).
+	// (C) Indexing — PERIPHERAL → cheap (the cheapest CLI model by default).
 	{ id: 'indexer.summarise',             criticality: 'peripheral', defaultTier: 'cheap' }, // summariser
 ];
 

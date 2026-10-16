@@ -379,7 +379,7 @@ Minimal shape:
     "tiers": {
       "core":  { "runner": "cli-claude", "model": "opus" },
       "mid":   { "runner": "cli-claude", "model": "sonnet" },
-      "cheap": { "runner": "ollama",     "model": "qwen3.6:27b" }
+      "cheap": { "runner": "cli-claude", "model": "haiku" }
     },
     "shaper": {
       "structuredOutputRetries": 3,
@@ -424,8 +424,8 @@ local/embedder surface (not a reasoning tier).
 Not every operation needs the strongest model. Design, review, build,
 and validation are **accuracy-critical** and should run on a high-end
 model; synthesis and grounding are fine on a mid model; classification,
-narrow probes, tracker rendering, and summaries can run on a cheap local
-model. The daemon resolves a **model per reasoning role** through a single
+narrow probes, tracker rendering, and summaries can run on a cheap model
+(by default the Claude CLI's `haiku`, so no machine needs a local model). The daemon resolves a **model per reasoning role** through a single
 `RoleRouter` choke point — no operation bypasses it, so cloud access is
 always via the `claude`/`codex` CLI subprocess (never a direct REST call).
 
@@ -436,13 +436,15 @@ always via the `claude`/`codex` CLI subprocess (never a direct REST call).
 | :--- | :--- | :--- |
 | `core` (high) | `cli-claude` / `opus` | design, review, build, validate, define — the critical roles |
 | `mid` | `cli-claude` / `sonnet` | synthesis, grounding/context assembly, HLD framework/rollout |
-| `cheap` | `ollama` / `qwen3.6:27b` | classification, narrow probes, tracker rendering, summaries |
+| `cheap` | `cli-claude` / `haiku` | classification, narrow probes, tracker rendering, summaries |
 
 These built-in defaults apply out of the box — with **no** tiering config,
 critical roles already resolve to `opus`, mid to `sonnet`, and peripheral
-to the local model. The installer preconfigures `models.tiers` for
-your chosen CLI (Claude → `opus`/`sonnet`; Codex → `gpt-5.5`); `cheap`
-stays local either way.
+to `haiku`. The installer preconfigures `models.tiers` for your chosen CLI
+(Claude → `opus`/`sonnet`/`haiku`; Codex → `gpt-6-astra`/`gpt-6.1-sol`/`gpt-6-luna`).
+The background document summariser follows the `cheap` tier, so it makes one
+CLI call per document; set `cheap` to `ollama` to keep summaries local.
+Configs written before this default keep the tiers they name.
 
 **Config shape** (flat under `models.*`; every key optional):
 
@@ -452,7 +454,7 @@ stays local either way.
   "tiers": {
     "core":  { "runner": "cli-claude", "model": "opus" },
     "mid":   { "runner": "cli-claude", "model": "sonnet" },
-    "cheap": { "runner": "ollama",     "model": "qwen3.6:27b" }
+    "cheap": { "runner": "cli-claude", "model": "haiku" }
   },
   "tasks": { "analyze.synthesize": "cheap" },
   "byRepo": {

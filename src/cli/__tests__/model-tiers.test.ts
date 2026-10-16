@@ -28,7 +28,7 @@ test('empty tiering: tiers = DEFAULT_TIERS (source default), coreFloor = mid (de
 	const eff = computeEffectiveTiers({});
 	assert.deepEqual(eff.tiers.core, { runner: 'cli-claude', model: 'opus' });
 	assert.deepEqual(eff.tiers.mid, { runner: 'cli-claude', model: 'sonnet' });
-	assert.deepEqual(eff.tiers.cheap, { runner: 'ollama', model: 'qwen3.6:27b' });
+	assert.deepEqual(eff.tiers.cheap, { runner: 'cli-claude', model: 'haiku' });
 	assert.equal(eff.tierSource.core, 'default');
 	assert.equal(eff.coreFloor, 'mid');
 	assert.equal(eff.coreFloorSource, 'default');
@@ -51,9 +51,9 @@ test('empty tiering: a peripheral role resolves to its taxonomy default (mid/che
 // ── config overlay ──────────────────────────────────────────────────────────
 
 test('a configured tier model overrides the default and is marked source=config', () => {
-	const t: AnalyzeTiering = { tiers: { mid: { runner: 'cli-codex', model: 'gpt-5.5' } } };
+	const t: AnalyzeTiering = { tiers: { mid: { runner: 'cli-codex', model: 'gpt-6.1-sol' } } };
 	const eff = computeEffectiveTiers(t);
-	assert.deepEqual(eff.tiers.mid, { runner: 'cli-codex', model: 'gpt-5.5' });
+	assert.deepEqual(eff.tiers.mid, { runner: 'cli-codex', model: 'gpt-6.1-sol' });
 	assert.equal(eff.tierSource.mid, 'config');
 	assert.equal(eff.tierSource.core, 'default'); // untouched tier stays default
 });

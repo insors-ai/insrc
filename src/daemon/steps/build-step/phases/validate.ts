@@ -176,7 +176,7 @@ export function renderCheckEvidence(results: ValidationCheckResults): string {
 
 /** Resolve the edit-session provider for build validation. Validation is a
  *  critical (`build`) role → resolves the HIGH (core) tier via the RoleRouter
- *  (default: claude opus; codex `gpt-5.5` for a Codex install, or whatever the
+ *  (default: claude opus; codex `gpt-6-astra` for a Codex install, or whatever the
  *  operator pinned core to). Edit sessions require a CLI (`runEditSession`), so a
  *  non-CLI resolution (an operator who pinned core→ollama) falls back to claude. */
 function resolveValidateProvider(repoPath: string): ValidateProvider {

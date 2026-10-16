@@ -320,8 +320,8 @@
           },
           "insrc.models.tiers.cheap.runner": {
             "type": "string",
-            "default": "ollama",
-            "markdownDescription": "cheap-tier backend (local by default): 'ollama' | 'cli-claude' | 'cli-codex'",
+            "default": "cli-claude",
+            "markdownDescription": "cheap-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'",
             "scope": "machine",
             "enum": [
               "ollama",
@@ -331,8 +331,8 @@
           },
           "insrc.models.tiers.cheap.model": {
             "type": "string",
-            "default": "qwen3.6:27b",
-            "markdownDescription": "cheap-tier model id (Ollama local by default)",
+            "default": "haiku",
+            "markdownDescription": "cheap-tier model id (e.g. haiku)",
             "scope": "machine"
           },
           "insrc.models.coreFloor": {

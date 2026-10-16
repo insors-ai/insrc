@@ -267,20 +267,19 @@ export function buildShaperProvider(
  * Deliberately SEPARATE from `buildShaperProvider`: summarisation runs during
  * indexing over many docs, so it must NOT inherit the interactive
  * `shaperProvider` (which the operator may have pinned to a cloud CLI, or which
- * the per-run MCP client sets) — that would spawn a `claude`/`codex` subprocess
- * per doc, serial + quota-burning. This ignores the client-provider ambient
- * context entirely and builds strictly from `cfg.summariser*`,
- * defaulting to LOCAL `ollama` (`qwen3.6:27b`, a MoE). Only if the operator
- * explicitly sets `models.tiers.cheap.runner` to a `cli-*` does it use
- * a CLI.
+ * the per-run MCP client sets). This ignores the client-provider ambient
+ * context entirely and builds strictly from `cfg.summariser*`, which follow the
+ * CHEAP tier: a CLI by default (haiku), because not every machine can run even a
+ * small local model, and an `ollama` cheap tier keeps summarising local. A CLI
+ * summariser costs one serial subprocess per doc, so it always pins the cheap
+ * tier's model and never runs on the CLI's own default model.
  */
 export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider {
 	const kind = cfg.summariserProvider;
 	if (kind === 'cli-claude' || kind === 'cli-codex') {
 		const cliKind = kind === 'cli-claude' ? 'claude' : 'codex';
-		// The default summariserModel (`qwen3.6:27b`) is an Ollama id — never
-		// forward it to a CLI; only pin a CLI model when set explicitly.
-		const model = cfg.summariserModelExplicit && cfg.summariserModel !== '' ? cfg.summariserModel : undefined;
+		// Pin the cheap tier's model; an empty model means the CLI's own default.
+		const model = cfg.summariserModel !== '' ? cfg.summariserModel : undefined;
 		log.info({ kind: cliKind, model: model ?? '(cli default)' }, 'summariser provider: routing through CliProvider');
 		return new CliProvider({ kind: cliKind, ...(model !== undefined ? { model } : {}) });
 	}

@@ -11,13 +11,13 @@
 import type { SystemInfo } from './system-info.js';
 
 /**
- * The default local model (Ollama) — the single generalist that backs both the
- * cheap reasoning tier and the indexer's `coreModel`. The setup flow writes
- * this rather than a hardware-sized `qwen3-coder` pick, so `config list` /
- * `insrc setup` agree with the built-in `models.local.coreModel` /
- * `models.tiers.cheap.model` catalog defaults. Keep in sync with
- * src/config/config-catalog.ts + src/config/local.ts + src/config/analyze.ts
- * (DEFAULT_TIERS.cheap) + scripts/insrc-daemon-install.sh.
+ * The default local model (Ollama) — the single generalist that backs the
+ * indexer's `coreModel` (and an `ollama` cheap tier, when an operator picks it).
+ * The setup flow writes this rather than a hardware-sized `qwen3-coder` pick, so
+ * `config list` / `insrc setup` agree with the built-in `models.local.coreModel`
+ * catalog default. The built-in cheap tier is no longer local (it is
+ * `cli-claude` / `haiku`). Keep in sync with src/config/config-catalog.ts +
+ * src/config/local.ts.
  */
 export const DEFAULT_LOCAL_MODEL = 'qwen3.6:27b';
 
@@ -184,8 +184,7 @@ function pickEmbedding(
 /**
  * The local generalist model. Fixed to `DEFAULT_LOCAL_MODEL` (qwen3.6:27b) — no
  * longer a hardware-sized `qwen3-coder` pick, so `insrc setup` writes/pulls the
- * same model the built-in `models.local.coreModel` / `models.tiers.cheap`
- * catalog defaults name. Hardware only determines the GPU-vs-CPU note + the
+ * same model the built-in `models.local.coreModel` catalog default names. Hardware only determines the GPU-vs-CPU note + the
  * context-shape sizing (via `vramNeeded`). (Field stays named `coder` on
  * ModelRecommendation for back-compat; it now holds the local model.)
  */

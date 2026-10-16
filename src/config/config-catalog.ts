@@ -105,8 +105,8 @@ export const CONFIG_CATALOG: readonly ConfigOption[] = [
 	{ path: 'models.tiers.core.model',   type: 'string', default: '',               desc: 'core-tier model id (empty ⇒ CLI default, e.g. opus)', group: 'Models — tiers' },
 	{ path: 'models.tiers.mid.runner',   type: 'enum',   default: 'cli-claude',     desc: "mid-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
 	{ path: 'models.tiers.mid.model',    type: 'string', default: 'sonnet',         desc: 'mid-tier model id (e.g. sonnet)', group: 'Models — tiers' },
-	{ path: 'models.tiers.cheap.runner', type: 'enum',   default: 'ollama',         desc: "cheap-tier backend (local by default): 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
-	{ path: 'models.tiers.cheap.model',  type: 'string', default: 'qwen3.6:27b', desc: 'cheap-tier model id (Ollama local by default)', group: 'Models — tiers' },
+	{ path: 'models.tiers.cheap.runner', type: 'enum',   default: 'cli-claude',     desc: "cheap-tier backend: 'ollama' | 'cli-claude' | 'cli-codex'", enumValues: ['ollama', 'cli-claude', 'cli-codex'], group: 'Models — tiers' },
+	{ path: 'models.tiers.cheap.model',  type: 'string', default: 'haiku',       desc: 'cheap-tier model id (e.g. haiku)', group: 'Models — tiers' },
 	{ path: 'models.coreFloor',          type: 'enum',   default: 'mid',            desc: "min tier for critical tasks: 'core' | 'mid' | 'cheap'", enumValues: ['core', 'mid', 'cheap'], group: 'Models — tiers' },
 	// models.tasks.<roleId> and models.byRepo.<repoPath>.{tiers,tasks,coreFloor} are dynamic-key
 	// overrides — set them directly in ~/.insrc/config.json (see docs/daemon.md).

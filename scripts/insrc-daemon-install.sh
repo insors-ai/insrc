@@ -274,10 +274,10 @@ esac
 # ---------------------------------------------------------------------------
 # Step 4b: preferred CLI + per-role model tiers (Epic per-role-per-step)
 #   The RoleRouter routes each operation to a capability tier: core (high) for
-#   design/review/build, mid for synthesis/grounding, cheap (local Ollama) for
+#   design/review/build, mid for synthesis/grounding, cheap (the cheapest CLI model) for
 #   classification/probes/summaries. Preconfigure the tier->model map for the
 #   chosen CLI. Absent this, the daemon's built-in defaults apply (claude
-#   opus/sonnet + local); a Codex user wants the map rewritten below.
+#   opus/sonnet/haiku); a Codex user wants the map rewritten below.
 # ---------------------------------------------------------------------------
 CLI_CHOICE="claude"
 if [ "$ASSUME_YES" -eq 0 ]; then
@@ -289,20 +289,20 @@ if [ "$ASSUME_YES" -eq 0 ]; then
 	esac
 fi
 if [ "$CLI_CHOICE" = "codex" ]; then
-	ok "CLI: codex (core=gpt-5.5, mid=gpt-5.5, cheap=local ollama)"
+	ok "CLI: codex (core=gpt-6-astra, mid=gpt-6.1-sol, cheap=gpt-6-luna)"
 	ANALYZE_TIERS_JSON='"coreFloor": "core",
 		"tiers": {
-			"core":  { "runner": "cli-codex", "model": "gpt-5.5" },
-			"mid":   { "runner": "cli-codex", "model": "gpt-5.5" },
-			"cheap": { "runner": "ollama",    "model": "qwen3.6:27b" }
+			"core":  { "runner": "cli-codex", "model": "gpt-6-astra" },
+			"mid":   { "runner": "cli-codex", "model": "gpt-6.1-sol" },
+			"cheap": { "runner": "cli-codex", "model": "gpt-6-luna" }
 		},'
 else
-	ok "CLI: claude (core=opus, mid=sonnet, cheap=local ollama)"
+	ok "CLI: claude (core=opus, mid=sonnet, cheap=haiku)"
 	ANALYZE_TIERS_JSON='"coreFloor": "core",
 		"tiers": {
 			"core":  { "runner": "cli-claude", "model": "opus" },
 			"mid":   { "runner": "cli-claude", "model": "sonnet" },
-			"cheap": { "runner": "ollama",     "model": "qwen3.6:27b" }
+			"cheap": { "runner": "cli-claude", "model": "haiku" }
 		},'
 fi
 

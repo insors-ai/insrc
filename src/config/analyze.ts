@@ -116,14 +116,15 @@ export type RoleTierAssignment = Readonly<Record<string, TierName>>;
  * RoleRouter when a tier is configured NEITHER globally, per-repo, NOR via the
  * legacy `shaperProvider` key — so tiering works out of the box: critical roles
  * (design/review/build/validate) get the high CLI model, mid roles a cheaper CLI
- * model, peripheral roles the local model. Defaults to CLAUDE (the primary CLI);
- * the installer rewrites `models.tiers` for a Codex user
- * (core `gpt-5.4` / mid `gpt-5.4-mini`), and any config value overrides these.
+ * model, peripheral roles the cheapest CLI model (haiku), so no machine needs a
+ * local model to work. Defaults to CLAUDE (the primary CLI); the installer
+ * rewrites `models.tiers` for a Codex user (core `gpt-6-astra` / mid
+ * `gpt-6.1-sol` / cheap `gpt-6-luna`), and any config value overrides these.
  */
 export const DEFAULT_TIERS: Readonly<Record<TierName, TierModel>> = {
 	core:  { runner: 'cli-claude', model: 'opus' },
 	mid:   { runner: 'cli-claude', model: 'sonnet' },
-	cheap: { runner: 'ollama',     model: 'qwen3.6:27b' },
+	cheap: { runner: 'cli-claude', model: 'haiku' },
 };
 
 /** The tiering knobs that may appear globally or under a byRepo entry. */
@@ -168,15 +169,16 @@ export interface AnalyzeConfig {
 	 *  an empty core model means "the CLI's own default". */
 	readonly shaperModelExplicit: boolean;
 	/** Provider for BACKGROUND doc-summarisation during indexing. DERIVED from
-	 *  `models.tiers.cheap.runner` — the cheap/local tier, so summarising every
-	 *  doc stays local by default (a cloud CLI per doc is slow + quota-burning).
-	 *  See analyze/summariser/driver.ts. */
+	 *  `models.tiers.cheap.runner`, so it follows the cheap tier: a CLI by
+	 *  default (haiku), because not every machine can run a local model, and
+	 *  one CLI call per doc is serial and uses quota. Set the cheap tier to
+	 *  `ollama` to keep summarising local. See analyze/summariser/driver.ts. */
 	readonly summariserProvider: AnalyzeShaperProviderKind;
-	/** Summariser model. DERIVED from `models.tiers.cheap.model` (local MoE
-	 *  `qwen3.6:27b` by default). */
+	/** Summariser model. DERIVED from `models.tiers.cheap.model` (`haiku` by
+	 *  default). */
 	readonly summariserModel:    string;
-	/** True when `models.tiers.cheap.model` was set (guards forwarding an Ollama
-	 *  id to a CLI summariser provider). */
+	/** True when `models.tiers.cheap.model` was set in config.json (vs.
+	 *  defaulted). A CLI summariser pins the model either way. */
 	readonly summariserModelExplicit: boolean;
 	readonly shaper:         AnalyzeShaperConfig;
 	readonly maxPlanDepth:   MaxPlanDepthMap;
@@ -238,7 +240,7 @@ function resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel> {
  * preserving the "don't forward an unset default to a CLI / auto-pick from the
  * MCP client" behaviour the downstream shaper factory relies on.
  */
-function assembleConfig(
+export function assembleConfig(
 	tiering:      AnalyzeTiering,
 	shaper:       AnalyzeShaperConfig,
 	maxPlanDepth: MaxPlanDepthMap,

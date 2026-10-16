@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "workflow": "brainstorm",
+    "runId": "wf-1792157188375-fks35a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T13:31:07.106Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 278730,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "specHash": "be8bcc435fe0cf93",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-16T13:35:15.883Z"
+  },
+  "body": {
+    "title": "Team signoff and claim-based workflow",
+    "category": "design",
+    "intent": "Make the insrc workflow team-compatible by adding a third-party human SIGNOFF gate on top of the existing layers: other-party model review (meta.review) gates local approval (approvedAt), which gates opening a tracker-neutral signoff request (GitHub PR / GitLab MR / Jira approval). A stage advances only when that request completes (merge), checked on demand through a pluggable, capability-based, CLI-first tracker adapter (GitHub first; gh, glab; thin REST for Jira only; adapters missing a required capability are rejected at load). The signoff request is the signoff unit: approving it signs off every artifact it contains, with no partial signoff. When a reviewer requests changes, the claim holder revises on the request's branch, re-runs local approval, then pushes. Work is serialized by claims: the assignee of the stage unit's tracker issue (Epic DEF+HLD; Story LLD+PLAN; one claim per build Task, with Task issues forced on in team mode) is the lock. The assignee is read live from the tracker at every stage turn and assignment made directly in the tracker is honoured. The claim hard-blocks all mutating actions (authoring workflow steps, build, local approve, opening the signoff request) for anyone else while read-only analyze and review stay open; release is explicit only, with auto-release on completion, and a park/handoff step on reassignment. In-flight workflow state must be reconstructable from committed files so a handoff can resume. Stage issues are auto-created on first draft. Each developer keeps their own daemon and index, with repo files and the tracker as the shared truth. POLICY (team mode, signoffStages, claim enforcement, claim units) is central, read from the remote default branch ref (.insrc/policy.json, written by `insrc team init`), and not locally overridable; CONFIG (adapter/target, binaries/auth, branch prefix, commitArtifacts) is local and exposed via CONFIG_CATALOG, VS Code settings and the TUI Setup pane.",
+    "scopeBoundary": "Repos without a policy file behave exactly as today. The decisions are pinned by the user's final decisions in docs/plans/team-workflow.md; no material decision remains open. The scope stops at the team gating model (signoff request, claims, policy/config split, tracker adapter interface); it does not cover reviewer rules, which the external system owns, a shared team daemon, polling or webhooks, or a provisional mode.",
+    "nonGoals": [
+      "No provisional mode: every gated transition blocks until the signoff request completes",
+      "Signoff is never called a review and never counts toward meta.review; meta.review and local approval semantics are unchanged",
+      "No partial signoff of a request's contents (split the request instead)",
+      "insrc does not manage reviewer validity (who, how many, bots, stale dismissal, overrides); that is entirely the external system's",
+      "No polling or webhooks for completion detection; check on demand via the adapter",
+      "No direct cloud REST for GitHub/GitLab (CLI-first adapters only; REST only for Jira); no enforcement in host-agent MCP connectors, enforcement lives in the daemon",
+      "No stale-claim takeover; release is explicit (assignee or admin override) or automatic on completion detection",
+      "No shared team daemon or shared index; each developer keeps their own daemon",
+      "No committed team.json read from the working tree; policy is read only from the remote default branch ref and is not locally overridable",
+      "Repos without the policy file keep today's behavior unchanged"
+    ],
+    "decisions": [],
+    "openItems": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/plans/team-workflow.md"
+    }
+  ]
+}

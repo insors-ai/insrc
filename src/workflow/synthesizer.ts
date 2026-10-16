@@ -219,8 +219,11 @@ export function validateBodyAndCitations<Body>(
 // File-reference form
 // ---------------------------------------------------------------------------
 
-/** A project file: a bare relative path (a segment is anything but whitespace, `/`, `:` and `#`, so `app/[id]/page.tsx` is one), optionally `:N`, `:N-M` or `:N:C` (the forms the chat
- *  page links, CREF_CORE in vscode-plugin/src/chat/link-markup.ts) and `#anchor`. */
+/** A project file: a bare relative path, optionally `:N`, `:N-M` or `:N:C` (the line forms the chat page
+ *  links, CREF_CORE in vscode-plugin/src/chat/link-markup.ts) and `#anchor`. A segment is anything but
+ *  whitespace, `/`, `:` and `#`: this is deliberately wider than CREF_CORE, which links only names with a
+ *  known extension, so a file such as `app/[id]/page.tsx` or `Makefile` passes the check without being a
+ *  clickable link. The check refuses what is not a path (prose, notes); it does not promise a link. */
 const PROJECT_PATH_RE = /^(?:[^\s/:#]+\/)*[^\s/:#]+(?::\d+(?:-\d+)?(?::\d+)?)?(?:#[^\s#]+)?$/;
 
 /** A project directory: a bare relative path with a trailing slash. */

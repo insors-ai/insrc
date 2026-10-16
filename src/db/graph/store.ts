@@ -648,6 +648,18 @@ export async function getGraphStore(): Promise<GraphStore> {
 			}
 		}
 
+		// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are
+		// recounted from the stored classes; a row that differs is corrected and
+		// a row of an unregistered repository deleted. A failure is logged and
+		// does not stop the store opening: completeness is reported, not relied on.
+		try {
+			const { reconcileIndexStateInTxn } = await import('./index-state-rows.js');
+			const corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));
+			for (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');
+		} catch (e) {
+			log.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');
+		}
+
 		log.info(
 			{
 				initMs:        Date.now() - t0,

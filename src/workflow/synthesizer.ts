@@ -219,12 +219,12 @@ export function validateBodyAndCitations<Body>(
 // File-reference form
 // ---------------------------------------------------------------------------
 
-/** A project file: a bare relative path, optionally `:N`, `:N-M` or `:N:C` (the forms the chat
+/** A project file: a bare relative path (a segment is anything but whitespace, `/`, `:` and `#`, so `app/[id]/page.tsx` is one), optionally `:N`, `:N-M` or `:N:C` (the forms the chat
  *  page links, CREF_CORE in vscode-plugin/src/chat/link-markup.ts) and `#anchor`. */
-const PROJECT_PATH_RE = /^(?:[A-Za-z0-9_.@+~-]+\/)*[A-Za-z0-9_.@+~-]+(?::\d+(?:-\d+)?(?::\d+)?)?(?:#[^\s#]+)?$/;
+const PROJECT_PATH_RE = /^(?:[^\s/:#]+\/)*[^\s/:#]+(?::\d+(?:-\d+)?(?::\d+)?)?(?:#[^\s#]+)?$/;
 
 /** A project directory: a bare relative path with a trailing slash. */
-const PROJECT_DIR_RE = /^(?:[A-Za-z0-9_.@+~-]+\/)+$/;
+const PROJECT_DIR_RE = /^(?:[^\s/:#]+\/)+$/;
 
 /** A path followed by a symbol name, such as `src/foo.ts:finalize` or `src/foo.ts::Symbol`. */
 const SYMBOL_SUFFIX_RE = /^[A-Za-z0-9_.@+~/-]+::?[A-Za-z_$][\w$.]*$/;

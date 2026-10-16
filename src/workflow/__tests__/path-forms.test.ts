@@ -241,3 +241,13 @@ test('src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses the proj
   // A root of / would make every absolute path look like a project file, so it is ignored.
   assert.deepEqual(checkPathForms([code('c1', '/usr/lib/node_modules/tsx/dist/cli.mjs')], [], '/'), { ok: true });
 });
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a project path with brackets or parentheses in a segment', () => {
+  const result = checkPathForms(
+    [code('c1', 'app/[id]/page.tsx'), code('c2', 'app/(group)/layout.tsx:12'), doc('c3', 'docs/notes+draft.md#intro')],
+    ['src/routes/[...slug]/+page.svelte'],
+  );
+  assert.deepEqual(result, { ok: true });
+  // Whitespace is still what separates a path from prose.
+  assert.equal(checkPathForms([], ['app/[id]/page.tsx (the dynamic route)']).ok, false);
+});

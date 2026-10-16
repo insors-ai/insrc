@@ -49,7 +49,7 @@ export interface BoundaryFinding {
 export interface ValidationFailure {
 	readonly ok: false;
 	/** Which check failed. */
-	readonly kind: 'schema' | 'citations' | 'boundary';
+	readonly kind: 'schema' | 'citations' | 'boundary' | 'paths';
 	/** One-line human-readable message. */
 	readonly message: string;
 	/** Per-check details for the retry prompt. */
@@ -210,7 +210,73 @@ export function validateBodyAndCitations<Body>(
 ): ValidationResult {
 	const boundary = checkScopeBoundary(artifact.meta.workflow, renderedBody);
 	if (!boundary.ok) return boundary;
-	return validateCitations(renderedBody, artifact.citations);
+	const citations = validateCitations(renderedBody, artifact.citations);
+	if (!citations.ok) return citations;
+	return checkPathForms(artifact.citations, callSitesOf(artifact.body));
+}
+
+// ---------------------------------------------------------------------------
+// File-reference form
+// ---------------------------------------------------------------------------
+
+/** A project file: a bare relative path, optionally `:N`, `:N-M` or `:N:C` (the forms the chat
+ *  page links, CREF_CORE in vscode-plugin/src/chat/link-markup.ts) and `#anchor`. */
+const PROJECT_PATH_RE = /^(?:[A-Za-z0-9_.@+~-]+\/)*[A-Za-z0-9_.@+~-]+(?::\d+(?:-\d+)?(?::\d+)?)?(?:#[^\s#]+)?$/;
+
+/** An external file (an absolute path) or reference (an http(s) URL), written in full. */
+const EXTERNAL_REF_RE = /^(?:https?:\/\/\S+|\/\S+|[A-Za-z]:[\\/]\S+)$/;
+
+/** Why `ref` is not a file reference in the form `PATH_FORM_RULE` describes, or undefined when it is. */
+function pathFormProblem(ref: string): string | undefined {
+	if (EXTERNAL_REF_RE.test(ref)) return undefined;
+	if (/\s/.test(ref)) return 'it has whitespace, so prose or a note shares the span with the path';
+	if (ref.startsWith('./') || ref.startsWith('../')) return 'it starts with ./ or ../, so it is not written relative to the project root';
+	if (ref.split('/').some(seg => seg === '.' || seg === '..')) return 'it has a . or .. segment, so it is not written relative to the project root';
+	if (!PROJECT_PATH_RE.test(ref)) return 'it is not a path (a relative path with an optional :N, :N-M or :N:C and #anchor)';
+	return undefined;
+}
+
+/** The `dataModelChanges[].callSites` of an LLD body; empty for any other body. */
+function callSitesOf(body: unknown): readonly string[] {
+	const changes = (body as { dataModelChanges?: unknown } | null | undefined)?.dataModelChanges;
+	if (!Array.isArray(changes)) return [];
+	const out: string[] = [];
+	for (const change of changes) {
+		const sites = (change as { callSites?: unknown } | null)?.callSites;
+		if (Array.isArray(sites)) for (const site of sites) if (typeof site === 'string') out.push(site);
+	}
+	return out;
+}
+
+/**
+ * Check that an artifact's file references are written in the one form: the `ref` of a citation of
+ * kind `code` or `doc`, and an LLD's call sites. Looks at the strings only: it never reads the
+ * disk, so a well-formed but shortened path passes. Refs of the other citation kinds are not paths.
+ * Fails with kind `paths`, naming every offending entry.
+ */
+export function checkPathForms(
+	citations: readonly Citation[],
+	callSites: readonly string[],
+): ValidationResult {
+	const details: string[] = [];
+	for (const c of citations) {
+		if (c.kind !== 'code' && c.kind !== 'doc') continue;
+		const problem = pathFormProblem(c.ref);
+		if (problem !== undefined) details.push(`citation ${c.id} (${c.kind}) ref '${c.ref}': ${problem}`);
+	}
+	for (const site of callSites) {
+		const problem = pathFormProblem(site);
+		if (problem !== undefined) details.push(`call site '${site}': ${problem}`);
+	}
+	if (details.length > 0) {
+		return {
+			ok:      false,
+			kind:    'paths',
+			message: 'file references are not written in the required form',
+			details,
+		};
+	}
+	return { ok: true };
 }
 
 // ---------------------------------------------------------------------------

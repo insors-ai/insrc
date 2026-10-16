@@ -164,7 +164,7 @@ const s4ContractDetail = {
 			postconditions: ['returned Todo[] sorted by createdAt desc'],
 		},
 	],
-	dataModel: [{ entity: 'Todo', change: 'invariant-change' as const, details: 'add tag index invariant', callSites: ['src/todos/store.ts:filter'] }],
+	dataModel: [{ entity: 'Todo', change: 'invariant-change' as const, details: 'add tag index invariant', callSites: ['src/todos/store.ts:42'] }],
 	interactionWithShared: [
 		{ contractId: 'sc1', role: 'implements' as const, howDetails: 's1 owns TagFilterAPI as the primary implementation' },
 	],

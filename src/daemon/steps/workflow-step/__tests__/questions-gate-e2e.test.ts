@@ -297,7 +297,7 @@ function lldArtifact(openQuestions: readonly string[]): Record<string, unknown> 
 		body: {
 			hldContextSlice: hldSliceForS1,
 			contractDetails: { surfaceLevel: 'internal-shared', api: [{ name: 'TagFilterAPI.list', signature: 'list(tag: string): Todo[]', parameters: [{ name: 'tag', type: 'string', purpose: 'the tag', optional: false }], returns: { type: 'Todo[]', meaning: 'todos tagged with tag' }, errors: [{ type: 'UnknownTagError', condition: 'tag not registered' }], preconditions: ['tag non-empty'], postconditions: ['sorted desc'] }] },
-			dataModelChanges: [{ entity: 'Todo', change: 'invariant-change', details: 'add tag index invariant', callSites: ['src/todos/store.ts:filter'] }],
+			dataModelChanges: [{ entity: 'Todo', change: 'invariant-change', details: 'add tag index invariant', callSites: ['src/todos/store.ts:42'] }],
 			interactionWithShared: [{ contractId: 'sc1', role: 'implements', howDetails: 's1 owns TagFilterAPI' }],
 			errorPaths: { errorCases: [{ scenario: 'unknown tag', detection: 'lookup miss', response: 'throw', userImpact: 'empty', recoverable: true }], edgeCases: [{ input: 'empty tag', expected: 'empty array' }], invariantsToPreserve: [{ text: 'status filter still works', source: 'c1' }] },
 			testStrategy: { testLevels: [{ level: 'unit', purpose: 'list()', subjects: ['TagFilterAPI.list'] }], acceptanceMapping: [{ criterionId: 'ac1', provingTests: ['unit:TagFilterAPI.list'] }], testFramework: 'node:test' },
@@ -339,7 +339,7 @@ async function walkLldToSynthesize(repo: string): Promise<string> {
 			{ alternativeId: 'a1', constraintScore: [{ constraintId: 'ac1', verdict: 'satisfies' }, { constraintId: 'sc1', verdict: 'satisfies' }], winnerRank: 1, rationale: 'both' },
 			{ alternativeId: 'a2', constraintScore: [{ constraintId: 'ac1', verdict: 'partial' }, { constraintId: 'sc1', verdict: 'satisfies' }], winnerRank: 2, rationale: 'partial' },
 		], winnerId: 'a1', winnerRationale: 'a1 fully.' } },
-		{ id: 's4', response: { surfaceLevel: 'internal-shared', api: lldArtifact([]).body && (lldArtifact([]).body as { contractDetails: { api: unknown[] } }).contractDetails.api, dataModel: [{ entity: 'Todo', change: 'invariant-change', details: 'add tag index invariant', callSites: ['src/todos/store.ts:filter'] }], interactionWithShared: [{ contractId: 'sc1', role: 'implements', howDetails: 's1 owns TagFilterAPI' }] } },
+		{ id: 's4', response: { surfaceLevel: 'internal-shared', api: lldArtifact([]).body && (lldArtifact([]).body as { contractDetails: { api: unknown[] } }).contractDetails.api, dataModel: [{ entity: 'Todo', change: 'invariant-change', details: 'add tag index invariant', callSites: ['src/todos/store.ts:42'] }], interactionWithShared: [{ contractId: 'sc1', role: 'implements', howDetails: 's1 owns TagFilterAPI' }] } },
 		{ id: 's5', response: { errorCases: [{ scenario: 'unknown tag', detection: 'lookup miss', response: 'throw', userImpact: 'empty', recoverable: true }], edgeCases: [{ input: 'empty tag', expected: 'empty array' }], invariantsToPreserve: [{ text: 'status filter still works', source: 'c1' }] } },
 		{ id: 's6', response: { testLevels: [{ level: 'unit', purpose: 'list()', subjects: ['TagFilterAPI.list'] }], acceptanceMapping: [{ criterionId: 'ac1', provingTests: ['unit:TagFilterAPI.list'] }], testFramework: 'node:test' } },
 		{ id: 's7', response: { stateBefore: 'status only', stateAfter: 'status + tag', migrationSteps: [{ order: 1, action: 'add tag index', rollbackable: true }], backwardCompat: 'unchanged', zeroDowntime: true, dataRewriteRequired: false } },

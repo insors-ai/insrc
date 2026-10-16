@@ -24,6 +24,8 @@ import { defineContextSchema } from '../runners/define/schemas.js';
 import { hldContextSchema } from '../runners/design-epic/schemas.js';
 import { lldContextSchema, contractDetailSchema } from '../runners/design-story/schemas.js';
 import { planContextSchema } from '../runners/plan/schemas.js';
+import { checkPathForms, validateBodyAndCitations } from '../synthesizer.js';
+import type { Citation, WorkflowArtifact } from '../types.js';
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel: string): string => readFileSync(join(SRC, rel), 'utf8');
@@ -95,4 +97,114 @@ test('src/workflow/__tests__/path-forms.test.ts: the design.story synthesize pro
   assert.ok(line !== undefined, 'the verbatim-from-s4 rule is found');
   assert.match(line, /except that every `callSites` entry is written in the form the file-reference rule below requires/);
   assert.ok(text.indexOf('PATH_FORM_RULE') > text.indexOf(line), 'the rule follows the verbatim rule in the prompt');
+});
+
+const code = (id: string, ref: string): Citation => ({ id, kind: 'code', ref });
+const doc  = (id: string, ref: string): Citation => ({ id, kind: 'doc', ref });
+
+/** The details of a failed result, or an empty list when it passed. */
+const detailsOf = (result: ReturnType<typeof checkPathForms>): readonly string[] =>
+  result.ok ? [] : (result.details ?? []);
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a root-relative path with and without a line number', () => {
+  const result = checkPathForms(
+    [code('c1', 'src/workflow/synthesizer.ts'), code('c2', 'src/workflow/synthesizer.ts:93'), doc('c3', 'README.md')],
+    ['src/workflow/artifacts/plan.ts', 'src/workflow/artifacts/lld.ts:388'],
+  );
+  assert.deepEqual(result, { ok: true });
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an absolute path as an external file', () => {
+  const result = checkPathForms(
+    [code('c1', '/home/user/.insrc/daemon/out/index.js'), code('c2', 'C:\\Users\\me\\notes.md')],
+    ['/usr/lib/node_modules/tsx/dist/cli.mjs'],
+  );
+  assert.deepEqual(result, { ok: true });
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a call site with prose beside the path and names it', () => {
+  const prose = 'src/workflow/artifacts/plan.ts (new artifact module defining PlanTask, mirroring artifacts/lld.ts)';
+  const result = checkPathForms([], [prose, 'src/workflow/synthesizer.ts']);
+  assert.equal(result.ok, false);
+  assert.equal(result.ok ? '' : result.kind, 'paths');
+  const details = detailsOf(result);
+  assert.equal(details.length, 1, 'only the entry with prose is named');
+  assert.ok(details[0]!.includes(prose), 'the entry is named in full');
+  assert.match(details[0]!, /whitespace/);
+  // A code citation with a note in the same string is refused the same way.
+  const cited = checkPathForms([code('c1', 'synthesizer.ts validateCitations')], []);
+  assert.equal(cited.ok, false);
+  assert.ok(detailsOf(cited)[0]!.includes('citation c1'), 'the citation id is named');
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a leading ./ and a .. segment', () => {
+  const result = checkPathForms(
+    [code('c1', './src/workflow/synthesizer.ts'), code('c2', '../insrc/src/shared/types.ts'), code('c3', 'src/../src/shared/types.ts')],
+    [],
+  );
+  const details = detailsOf(result);
+  assert.equal(details.length, 3, 'all three entries are named');
+  assert.ok(details.every(d => /relative to the project root/.test(d)));
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms checks only citations of kind code and doc', () => {
+  const others: Citation[] = [
+    { id: 'c1', kind: 'analyze-bundle', ref: 'Path-valued fields and the prompts around them' },
+    { id: 'c2', kind: 'step-output', ref: 's1.analyzeBundles[0]' },
+    { id: 'c3', kind: 'stakeholder', ref: 'the user' },
+    { id: 'c4', kind: 'convention', ref: 'ESM imports use .js' },
+    { id: 'c5', kind: 'prior-artifact', ref: 'LLD S001 contractDetails: validateBodyAndCitations' },
+  ];
+  assert.deepEqual(checkPathForms(others, []), { ok: true });
+  // With no data model changes, an artifact reads no call sites.
+  const artifact = { meta: { workflow: 'plan' }, body: { tasks: [] }, citations: others } as unknown as WorkflowArtifact<unknown>;
+  assert.deepEqual(validateBodyAndCitations(artifact, 'a plan'), { ok: true });
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a path with a line range, a column and a #anchor', () => {
+  const result = checkPathForms(
+    [
+      code('c1', 'src/workflow/synthesizer.ts:93-96'),
+      code('c2', 'src/workflow/synthesizer.ts:93:5'),
+      code('c3', 'src/workflow/synthesizer.ts:93-96:5'),
+      doc('c4', 'docs/plans/workflow-define.md#as-built-deltas'),
+    ],
+    [],
+  );
+  assert.deepEqual(result, { ok: true });
+  // A suffix the chat page does not link is refused.
+  assert.equal(checkPathForms([code('c1', 'src/workflow/synthesizer.ts:filter')], []).ok, false);
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an http(s) URL in a doc citation', () => {
+  const result = checkPathForms(
+    [doc('c1', 'https://plugins.jetbrains.com/docs/intellij/embedded-browser-jcef.html'), doc('c2', 'http://localhost:8080/docs#intro')],
+    [],
+  );
+  assert.deepEqual(result, { ok: true });
+});
+
+const lld = (callSites: string[], citations: Citation[]): WorkflowArtifact<unknown> => ({
+  meta: { workflow: 'design.story' },
+  body: { dataModelChanges: [{ entity: 'ValidationFailure', change: 'field-modify', details: 'x', callSites }] },
+  citations,
+} as unknown as WorkflowArtifact<unknown>);
+
+test('src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations returns a paths failure for an LLD whose call site carries prose', () => {
+  const artifact = lld(['src/workflow/artifacts/plan.ts (new artifact module)'], [code('c1', 'src/workflow/synthesizer.ts:207')]);
+  const result = validateBodyAndCitations(artifact, 'body [[c1]]');
+  assert.equal(result.ok, false);
+  assert.equal(result.ok ? '' : result.kind, 'paths');
+  assert.ok(detailsOf(result)[0]!.includes('src/workflow/artifacts/plan.ts (new artifact module)'));
+  // The path check runs after the citation check: a dangling [[cN]] is still reported as a citations failure.
+  const dangling = validateBodyAndCitations(artifact, 'body [[c9]]');
+  assert.equal(dangling.ok ? '' : dangling.kind, 'citations');
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps the citation result for a well-formed artifact', () => {
+  const artifact = lld(['src/workflow/artifacts/plan.ts', 'src/daemon/workflow-rpc.ts:278'], [code('c1', 'src/workflow/synthesizer.ts:207')]);
+  assert.deepEqual(validateBodyAndCitations(artifact, 'body [[c1]]'), { ok: true });
+  const dangling = validateBodyAndCitations(artifact, 'body [[c2]]');
+  assert.equal(dangling.ok, false);
+  assert.equal(dangling.ok ? '' : dangling.kind, 'citations', 'the existing citation result is unchanged');
 });

@@ -105,7 +105,7 @@ function lldBodyFixture(): LldBody {
 			],
 		},
 		dataModelChanges: [
-			{ entity: 'Todo', change: 'invariant-change', details: 'add tag index invariant', callSites: ['src/todos/store.ts:filter'] },
+			{ entity: 'Todo', change: 'invariant-change', details: 'add tag index invariant', callSites: ['src/todos/store.ts:42'] },
 		],
 		interactionWithShared: [
 			{ contractId: 'sc1', role: 'implements', howDetails: 's1 owns the TagFilterAPI as the primary implementation' },

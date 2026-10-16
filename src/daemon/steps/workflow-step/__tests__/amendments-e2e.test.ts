@@ -143,7 +143,7 @@ const S4_WITH_PROPOSAL = {
 		errors: [{ type: 'UnknownTagError', condition: 'tag not registered' }],
 		preconditions: ['non-empty tag'], postconditions: ['sorted desc'],
 	}],
-	dataModel: [{ entity: 'Todo', change: 'invariant-change', details: 'index invariant', callSites: ['src/todos/store.ts:filter'] }],
+	dataModel: [{ entity: 'Todo', change: 'invariant-change', details: 'index invariant', callSites: ['src/todos/store.ts:42'] }],
 	interactionWithShared: [{ contractId: 'sc1', role: 'implements', howDetails: 'owns' }],
 	hld: {
 		amendmentProposal: {

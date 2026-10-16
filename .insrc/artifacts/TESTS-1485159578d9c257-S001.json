@@ -1,0 +1,207 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "1485159578d9c257",
+    "storyId": "S001",
+    "createdAt": "2026-10-16T07:07:06.830Z",
+    "updatedAt": "2026-10-16T07:07:06.830Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-16T06:59:03.923Z",
+    "epicSlug": "add-smallest-complete-change-ladder-build"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "a24c5023",
+        "ranAt": "2026-10-16T07:07:06.830Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the implement prompts keep every section and rule they had before the new section was added",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+                "title": "the implement prompts keep every section and rule they had before the new section was added",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the alternatives prompt carries the design rule next to the scope rule and keeps its other rules",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/adjacent-scope-gate.test.ts",
+                "title": "the alternatives prompt carries the design rule next to the scope rule and keeps its other rules",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "each prompt site references the shared rule constants instead of carrying its own copy of the wording",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/adjacent-scope-gate.test.ts",
+                "title": "each prompt site references the shared rule constants instead of carrying its own copy of the wording",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the third-party notice at the repository root names Ponytail, links its repository, carries its copyright line and its MIT licence text, and says where the ladder was used",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/third-party-notice.test.ts",
+                "title": "the third-party notice at the repository root names Ponytail, links its repository, carries its copyright line and its MIT licence text, and says where the ladder was used",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 447,
+            "titles": [
+              {
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "title": "both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own",
+                "result": "pass"
+              },
+              {
+                "title": "the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left",
+                "result": "pass"
+              },
+              {
+                "title": "the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts keep every section and rule they had before the new section was added",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/adjacent-scope-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 513,
+            "titles": [
+              {
+                "title": "design.story: a missed sbdry5 verdict is a non-retryable boundary hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: sbdry1-4 still hard-fail (regression — set was extended, not replaced)",
+                "result": "pass"
+              },
+              {
+                "title": "design.story: a PASSED sbdry5 does not trigger the boundary hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "sbdry5 is added to exactly ONE orchestrator boundaryIds set (the design.story s8 set)",
+                "result": "pass"
+              },
+              {
+                "title": "the anti-overreach rule is wired into both the design.story and plan runners",
+                "result": "pass"
+              },
+              {
+                "title": "ANTI_OVERREACH_RULE names adjacentBoundaries + consume-not-redesign + flag-not-silent",
+                "result": "pass"
+              },
+              {
+                "title": "epic-parented design.story: implementing a sibling-owned contract is a deterministic boundary hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "epic-parented design.story: CONSUMING a sibling-owned contract is not an adjacent-scope boundary fail",
+                "result": "pass"
+              },
+              {
+                "title": "the alternatives prompt carries the design rule next to the scope rule and keeps its other rules",
+                "result": "pass"
+              },
+              {
+                "title": "each prompt site references the shared rule constants instead of carrying its own copy of the wording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/third-party-notice.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 293,
+            "titles": [
+              {
+                "title": "the third-party notice at the repository root names Ponytail, links its repository, carries its copyright line and its MIT licence text, and says where the ladder was used",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

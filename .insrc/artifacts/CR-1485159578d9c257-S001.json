@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792134704110-tnhsu7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T07:11:44.282Z",
+    "model": "claude:opus",
+    "elapsedMs": 55357,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1485159578d9c257",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T06:59:03.923Z",
+    "epicSlug": "add-smallest-complete-change-ladder-build",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1485159578d9c257",
+    "storyId": "S001",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "THIRD_PARTY_NOTICES.md",
+        "src/daemon/steps/build-step/__tests__/render.test.ts",
+        "src/daemon/steps/build-step/render.ts",
+        "src/prompts/build/implement-task.md",
+        "src/workflow/__tests__/adjacent-scope-gate.test.ts",
+        "src/workflow/__tests__/third-party-notice.test.ts",
+        "src/workflow/runners/design-story/index.ts",
+        "src/workflow/runners/scope-prompts.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/runners/scope-prompts.ts:43",
+            "message": "Tests exist but their pass-state is unverified. testsReaching is empty here only because this changed symbol is a diff-level file entity with no graph edges. The diff does contain tests for both constants: render.test.ts imports SMALLEST_CHANGE_RULE and checks the ladder order, the analyzer rung and the limits; adjacent-scope-gate.test.ts imports both and checks SMALLEST_SHAPE_RULE's content. There is no build record, so these tests are not confirmed green.",
+            "expectationRef": "SMALLEST_CHANGE_RULE / SMALLEST_SHAPE_RULE",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/render.ts:168",
+            "message": "Tests exist but their pass-state is unverified. Both changed renderers are called directly by the new render.test.ts tests, which cover the plan-driven prompt and the standalone Small and Trivial prompts. The tests check that the section is there, that the rule sits inside it, that no '{{' placeholder is left, where the section is placed, and that the earlier sections are kept. There is no build record, so the pass-state is not confirmed.",
+            "expectationRef": "renderImplementPrompt / renderStandaloneImplementPrompt (smallestChangeRule injection)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/prompts/build/implement-task.md:23",
+            "message": "Tests exist but their pass-state is unverified. renderImplementPrompt fills this template, and render.test.ts asserts that the filled section is there and that no placeholder is left. adjacent-scope-gate.test.ts also asserts that the template contains the slot. Not confirmed green: there is no build record.",
+            "expectationRef": "{{smallestChangeRule}} template slot",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/runners/design-story/index.ts:204",
+            "message": "The test only checks the source text. adjacent-scope-gate.test.ts reads design-story/index.ts as a string and checks that 'SMALLEST_SHAPE_RULE' appears, in order, before ANTI_OVERREACH_RULE. No test runs the alternatives.enumerate runner to check that the system prompt it actually produces contains the rule's wording. The pass-state is also unverified, since there is no build record.",
+            "expectationRef": "alternativesEnumerate systemPrompt (SMALLEST_SHAPE_RULE)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "THIRD_PARTY_NOTICES.md:1",
+            "message": "A test exists but its pass-state is unverified. The new third-party-notice.test.ts reads this file and checks the Ponytail heading, the repository link, the copyright line, the MIT licence text, each place it names, and the credit in the source comment in scope-prompts.ts. Not confirmed green: there is no build record.",
+            "expectationRef": "THIRD_PARTY_NOTICES.md (Ponytail credit + MIT text)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/adjacent-scope-gate.test.ts:283",
+            "message": "These tests check the source text: they count how many times `SMALLEST_SHAPE_RULE` appears in design-story/index.ts (exactly 2) and `SMALLEST_CHANGE_RULE` appears in render.ts (exactly 3). A harmless refactor, such as a second import line, a mention in a comment or a re-export, would fail them even though the prompts still behave the same. The alternatives-block test also cuts the block with `indexOf('userTurn:', start)` and does not check that `start` is >= 0. If the `id: 'alternatives.enumerate'` literal is renamed, it ends up searching from -1, and the error points at the wrong cause. Checking the rendered prompt (the `systemPrompt` the runner builds) would be sturdier than reading the source.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/steps/build-step/__tests__/render.test.ts:214",
+            "message": "`prompt.indexOf('\\n## ', start + 1)` is passed to `slice` without checking for -1. If the smallest-change section were ever the last section, `slice(start, -1)` would quietly drop the last character instead of taking the rest of the prompt. Today a section always follows it, so this is a robustness nit, not a live defect.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/runners/scope-prompts.ts:58",
+            "message": "`SMALLEST_CHANGE_RULE` says 'End your report with what you deliberately left out or did not check'. implement-task.md already closes with its own report list ('report status (done / halted), files changed, the final test result, and the commit — then submit…'). The two instructions about the report's ending can pull against each other. The report is free text, so nothing breaks, but folding the left-out note into the template's closing report list would remove the ambiguity.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 6
+    }
+  }
+}

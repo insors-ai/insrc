@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "1485159578d9c257",
+    "storyId": "S001",
+    "createdAt": "2026-10-16T07:07:06.830Z",
+    "updatedAt": "2026-10-16T07:15:28.323Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicCreatedAt": "2026-10-16T06:59:03.923Z",
+    "epicSlug": "add-smallest-complete-change-ladder-build",
+    "approvedAt": "2026-10-16T07:15:28.611Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Added SMALLEST_CHANGE_RULE (the build ladder, with the insrc analyzer for the 'already in the codebase' rung and insrc's limits: the Task or LLD is the spec, named tests stay required, validation, error handling, security and accessibility are never cut) and SMALLEST_SHAPE_RULE (the design counterpart) to scope-prompts.ts, with a Ponytail (MIT) credit comment. The build rule is a new 'The smallest complete change' section in the implement template (via a smallestChangeRule placeholder) and in renderStandaloneImplementPrompt; the design rule is in the alternatives.enumerate prompt before ANTI_OVERREACH_RULE. THIRD_PARTY_NOTICES.md at the repository root credits Ponytail with its link and its MIT licence text copied from upstream. Tests extend the render and adjacent-scope tests and add a notice test.",
+    "testRecord": {
+      "md": "docs/standalone/add-smallest-complete-change-ladder-build-E2026101614851595/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "THIRD_PARTY_NOTICES.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T07:15:28.323Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/render.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T07:15:28.323Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T07:15:28.323Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/implement-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T07:15:28.323Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/adjacent-scope-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T07:15:28.323Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/third-party-notice.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T07:15:28.323Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/design-story/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T07:15:28.323Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/scope-prompts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T07:15:28.323Z"
+      }
+    ],
+    "commit": "06ab246e"
+  }
+}

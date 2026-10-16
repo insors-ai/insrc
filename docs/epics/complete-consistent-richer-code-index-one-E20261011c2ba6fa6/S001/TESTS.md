@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -104,3 +104,22 @@ Run at 2026-10-16T16:46:20.693Z on commit `7225408a`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/relations-pending-upkeep.test.ts` | 0 | 4 | 1.1 s |  |
+
+## t5
+
+Run at 2026-10-16T17:08:30.802Z on commit `ca2c1c2e`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/indexer/__tests__/resolver-file-target.test.ts: missing relative import is no-candidate/target-file-missing; resolved relations carry meta.repo; DEPENDS_ON and Pass 1 rewire carry meta.repo and absolute meta.file**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a relative import of a missing file is no-candidate with reason target-file-missing; one of an existing file resolves to its file id with meta.repo | `src/indexer/__tests__/resolver-file-target.test.ts` |
+| pass | a refused DEPENDS_ON from the manifest step is counted against the repository, not the unattributed counter | `src/indexer/__tests__/resolver-file-target.test.ts` |
+| pass | a DEPENDS_ON kept awaiting (manifest meta: repo and file are the repository path) is removed only by deleteUnresolvedForRepo | `src/indexer/__tests__/resolver-file-target.test.ts` |
+| pass | a Pass 1 rewire carries the repository and the importing file's absolute path | `src/indexer/__tests__/resolver-file-target.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/resolver-file-target.test.ts` | 0 | 4 | 1.1 s |  |

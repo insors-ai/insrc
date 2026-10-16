@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ae2d83c6ab06c595",
+    "storyId": "S001",
+    "createdAt": "2026-10-16T18:36:00.026Z",
+    "updatedAt": "2026-10-16T18:36:00.026Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-16T18:26:02.261Z",
+    "epicSlug": "let-build-gate-s-judge-read"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "687395c8",
+        "ranAt": "2026-10-16T18:36:00.026Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/steps/build-step/__tests__/build-start.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/render.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/steps/build-step/__tests__/render.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4666,
+            "titles": [
+              {
+                "title": "T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)",
+                "result": "pass"
+              },
+              {
+                "title": "T32: the build-start file left UNCOMMITTED (untracked) with nothing else dirty — the range is still derived, exact set",
+                "result": "pass"
+              },
+              {
+                "title": "T32 (tracked and modified): a build-start file that is the ONLY dirty tracked path does not stand in for the Story's work",
+                "result": "pass"
+              },
+              {
+                "title": "T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task 1) — the change log is EXACTLY both tasks' files",
+                "result": "pass"
+              },
+              {
+                "title": "T34: the same mid-build approval with the build-start file DELETED before task 2 — no file is written and the base is the pre-change one",
+                "result": "pass"
+              },
+              {
+                "title": "T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild's files",
+                "result": "pass"
+              },
+              {
+                "title": "T36 (plan-driven): implement writes NO BUILD record, and a batch approval then approves none for the Story",
+                "result": "pass"
+              },
+              {
+                "title": "T36 (Small route): implement stamps and writes NO BUILD record; a batch approval approves none",
+                "result": "pass"
+              },
+              {
+                "title": "Trivial route: the first implement stamps HEAD and writes its task-less record; a second implement keeps the stamp",
+                "result": "pass"
+              },
+              {
+                "title": "fail-open: a stamp that cannot be written leaves the implement result unchanged on every route",
+                "result": "pass"
+              },
+              {
+                "title": "a REFUSED implement stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T37: the completion writer excludes a COMMITTED build-start file — exact set",
+                "result": "pass"
+              },
+              {
+                "title": "T38: no resolvable base and a clean tree -> validate writes an EMPTY change log (no substituted range)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 544,
+            "titles": [
+              {
+                "title": "the validate prompts no longer instruct running the repo-wide sweep or any shell command, and the implement prompt still cites it",
+                "result": "pass"
+              },
+              {
+                "title": "both validate prompts place the given evidence text in an evidence section and ask for the judge verdict shape",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own",
+                "result": "pass"
+              },
+              {
+                "title": "the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompt tells the builder to pass the cases for each listed test at the validate turn, and the judge's evidence lists each named test with its cases and results; with no named tests the evidence reads as before",
+                "result": "pass"
+              },
+              {
+                "title": "every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left",
+                "result": "pass"
+              },
+              {
+                "title": "the build rule names each step of the ladder and the analyzer check, and the limits: the Task or LLD is the spec, the named tests stay required, and validation, error handling, security and accessibility are never cut",
+                "result": "pass"
+              },
+              {
+                "title": "the implement prompts keep every section and rule they had before the new section was added",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial standalone validate prompt carries the build's stated scope; a small one points at its LLD instead",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

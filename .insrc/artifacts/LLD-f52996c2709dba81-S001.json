@@ -255,6 +255,13 @@
         "choice": "Accept partial and record a note",
         "rationale": "Provenance quirk only; s5 states and cites the invariant.",
         "resolvedAt": "2026-10-16T09:17:39.622Z"
+      },
+      "qfa899f58": {
+        "question": "Audit partial (ts2): the node:test framework comes from the files in an s1 bundle and the project's documented test command; test.locate was not run.",
+        "status": "resolved",
+        "choice": "Accept the inferred framework",
+        "rationale": "Sibling tests (link-markup.test.ts and others) and the documented command show node:test; the project's other stories used it.",
+        "resolvedAt": "2026-10-16T09:17:55.283Z"
       }
     }
   },

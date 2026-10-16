@@ -273,6 +273,8 @@ The companion shell renders a path in a description table as a link-like element
   - **resolved**: Accept as expected-absent — The symbols are created by this Story, so they cannot be in the index. _(2026-10-16T09:17:07.138Z)_
 - `qed61b94a` — Audit partial (dm2): the call-frame label change states the invariant it must keep, which s5 cites, but the data model entry carries no citation id of its own.
   - **resolved**: Accept partial and record a note — Provenance quirk only; s5 states and cites the invariant. _(2026-10-16T09:17:39.622Z)_
+- `qfa899f58` — Audit partial (ts2): the node:test framework comes from the files in an s1 bundle and the project's documented test command; test.locate was not run.
+  - **resolved**: Accept the inferred framework — Sibling tests (link-markup.test.ts and others) and the documented command show node:test; the project's other stories used it. _(2026-10-16T09:17:55.283Z)_
 
 ## Citations
 

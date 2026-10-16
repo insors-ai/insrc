@@ -18,6 +18,12 @@ import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
 
 import { CODE_REF_SCRIPT } from '../../../../docgen/render/code-ref-script.js';
+import { assembleShell } from '../../../../docgen/render/shell.js';
+import { assembleFallbackShell } from '../../../../docgen/render/fallback.js';
+import { isOk } from '../../../../docgen/outcome.js';
+import type { DocumentIR } from '../../../../docgen/types.js';
+import { renderCompanionPage, type CompanionPageContent } from '../shell.js';
+import type { CompanionHeader } from '../types.js';
 
 interface Node_ { nodeType: number; parentNode: El | null }
 interface Text_ extends Node_ { nodeType: 3; data: string }
@@ -152,4 +158,62 @@ test('src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the sc
   assert.equal(page.posted[0]?.origin, '*');
   assert.ok(!CODE_REF_SCRIPT.includes('</script'));
   assert.ok(!CODE_REF_SCRIPT.includes('`'));
+});
+
+// ---------------------------------------------------------------------------
+// t4 — the three page shells carry the script
+// ---------------------------------------------------------------------------
+
+const HEADER: CompanionHeader = {
+  projectName: 'insrc', workItemId: 'E1:S001', sourceDoc: { id: 'LLD-1-S001', href: './LLD.md' },
+  date: '2026-10-16 10:00', user: 'U', contextLine: 'ctx',
+};
+const MERMAID_PAGE: CompanionPageContent = {
+  title: 'Calls', kindLabel: 'Sequence', narrative: 'Narrative.',
+  visual: { kind: 'mermaid', source: 'sequenceDiagram\n  A->>B: call' },
+  description: [{ columns: ['Step', 'Where'], rows: [['1', 'src/a/b.ts:3']] }],
+};
+const HTML_PAGE: CompanionPageContent = {
+  title: 'Mock', kindLabel: 'UX', visual: { kind: 'html', html: '<div>card</div>' },
+  description: [{ columns: ['#', 'Element'], rows: [['1', 'Email']] }],
+};
+const DOC_IR: DocumentIR = {
+  docType: 'call-sequence', scopeDescription: 'main', derived: { nodes: [{ id: 'a', label: 'main (src/a.ts:1)', kind: 'frame' }], edges: [] },
+  narrated: { sections: [] }, generatedAtRevision: 'rev1',
+};
+const CLICKABLE = /\[data-insrc-path\]\s*\{\s*cursor:\s*pointer/;
+const scriptBodies = (html: string): string[] => [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]!);
+
+test('src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the companion page and the docgen page carry the script, after the diagram is drawn', async () => {
+  const companion = renderCompanionPage(HEADER, MERMAID_PAGE, { panzoom: '/*PANZOOM*/', mermaid: '/*MERMAID*/' });
+  const bodies = scriptBodies(companion);
+  assert.equal(bodies.filter(b => b === CODE_REF_SCRIPT).length, 1, 'the companion page carries the script once');
+  assert.ok(bodies.findIndex(b => b === CODE_REF_SCRIPT) < bodies.findIndex(b => b.includes('mermaid.run')), 'before the boot script');
+  const boot = bodies.find(b => b.includes('mermaid.run'))!;
+  assert.ok(boot.indexOf('mermaid.run') < boot.indexOf('window.insrcMarkCodeRefs()'), 'the marking runs after the diagram is drawn');
+  assert.match(companion, CLICKABLE);
+  // A page with no Mermaid visual marks at load, by the script itself.
+  const html = renderCompanionPage(HEADER, HTML_PAGE, { panzoom: '/*PANZOOM*/' });
+  assert.equal(scriptBodies(html).filter(b => b === CODE_REF_SCRIPT).length, 1);
+  assert.match(html, CLICKABLE);
+  assert.match(html, /<h1>Mock<\/h1>/, 'and still renders its header and tables');
+  assert.match(html, /<table class="dt">/);
+
+  const out = await assembleShell(DOC_IR);
+  assert.ok(isOk(out), 'the docgen page is assembled');
+  if (!isOk(out)) return;
+  const docBodies = scriptBodies(out.value.html);
+  assert.equal(docBodies.filter(b => b === CODE_REF_SCRIPT).length, 1, 'the docgen page carries the script once');
+  const init = docBodies.find(b => b.includes('mermaid.run'))!;
+  assert.ok(init.indexOf('mermaid.run') < init.indexOf('window.insrcMarkCodeRefs()'), 'marked after the diagram is drawn');
+  assert.match(out.value.html, CLICKABLE);
+});
+
+test('src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the docgen fallback shell carries the script and marks references at load', () => {
+  const shell = assembleFallbackShell(DOC_IR, '<svg xmlns="http://www.w3.org/2000/svg"><text>main (src/a.ts:1)</text></svg>', '/* svgPanZoom */', '1.0.0');
+  const bodies = scriptBodies(shell.html);
+  assert.equal(bodies.filter(b => b === CODE_REF_SCRIPT).length, 1, 'carries the script once');
+  assert.match(shell.html, CLICKABLE);
+  assert.match(CODE_REF_SCRIPT, /markCodeRefs\(\);\s*\}\)\(\);\s*$/, 'the script marks once on load');
+  assert.match(shell.html, /<div id="docgen-diagram">/, 'the diagram is still shown');
 });

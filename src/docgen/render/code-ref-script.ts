@@ -21,7 +21,8 @@
  * on a box inside it is delivered to the viewport; the element and position are therefore
  * recorded at pointerdown, in the capture phase. And the pan/zoom drag must keep working, so the
  * script stops no event, leaves pointer capture alone, and treats a press that moved more than 4
- * pixels as a drag. Marking sets attributes only; it never splits or edits a text node.
+ * pixels as a drag. Marking sets attributes only (the page's style gives a marked element its
+ * pointer cursor); it never splits or edits a text node.
  *
  * It imports from neither page shell, so both can inline it. The source is ES5-style and holds
  * no backtick and no `</script`.
@@ -43,7 +44,7 @@ var m=RE.exec(ownText(el));
 if(!m)continue;
 el.setAttribute('data-insrc-path',m[1]);
 if(m[2])el.setAttribute('data-insrc-line',m[2]);else if(el.removeAttribute)el.removeAttribute('data-insrc-line');
-if(el.style)el.style.cursor='pointer';}
+}
 }catch(e){}}
 function markedFrom(t){
 while(t&&t.nodeType===1){if(t.getAttribute('data-insrc-path'))return t;t=t.parentNode;}

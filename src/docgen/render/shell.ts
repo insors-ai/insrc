@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { DocumentIR, IrEdge, IrSection, RenderedDocumentShell } from '../types.js';
 import { ok, fallbackUnavailable } from '../outcome.js';
+import { CODE_REF_SCRIPT } from './code-ref-script.js';
 import type { DocGenOutcome } from '../types.js';
 import {
 	oversized,
@@ -206,6 +207,7 @@ mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutra
 (async () => {
   try {
     await mermaid.run({ querySelector: '.mermaid' });
+    if (window.insrcMarkCodeRefs) window.insrcMarkCodeRefs();
     var svg = document.querySelector('#docgen-diagram svg');
     if (svg && window.svgPanZoom) {
       svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
@@ -225,6 +227,7 @@ mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutra
   #docgen-diagram { width: 100%; height: 100vh; }
   #docgen-diagram svg { width: 100%; height: 100%; }
   #docgen-error { color: #b00020; padding: 8px; font-family: monospace; }
+  [data-insrc-path] { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -232,6 +235,7 @@ mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutra
 <div id="docgen-diagram"${diagramStyle}><pre class="mermaid">${escapeHtml(mermaidSource)}</pre></div>${narrative}
 <script>${mermaid}</script>
 <script>${svgPanZoom}</script>
+<script>${CODE_REF_SCRIPT}</script>
 <script>${init}</script>
 </body>
 </html>`;

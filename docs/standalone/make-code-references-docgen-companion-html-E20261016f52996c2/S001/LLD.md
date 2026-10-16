@@ -263,6 +263,8 @@ The companion shell renders a path in a description table as a link-like element
 
 - `qb192f323` — Open: is the docgen tool's own page (src/docgen/render/shell.ts) ever shown inside the review pane's frame, or only opened as a file or in a browser? The page script is added to both shells so a reference works wherever the page is shown in the pane; if the docgen page is never shown there, its inclusion can be dropped.
   - **resolved**: Keep the script in both shells — The LLD as approved includes both docgen shells and the companion shell. _(2026-10-16T09:13:52.707Z)_
+- `q704fbe07` — Open: the pane's frame inherits the page's CSP (script-src with a nonce), so the new inline script must carry the nonce the host gives the other inline scripts. Confirm that the host adds the nonce to every inline script tag of a companion page, and not only to the scripts it knows.
+  - **resolved**: Verify host nonces all inline scripts — Verified: stampScriptNonce in vscode-plugin/src/chat/docs-review-panel.ts (line 2437) gives every script tag without a nonce the pane's nonce, so the new inline script needs no special handling. _(2026-10-16T09:15:00.740Z)_
 
 ## Citations
 

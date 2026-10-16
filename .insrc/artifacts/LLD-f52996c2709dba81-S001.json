@@ -220,6 +220,13 @@
         "choice": "Keep the script in both shells",
         "rationale": "The LLD as approved includes both docgen shells and the companion shell.",
         "resolvedAt": "2026-10-16T09:13:52.707Z"
+      },
+      "q704fbe07": {
+        "question": "Open: the pane's frame inherits the page's CSP (script-src with a nonce), so the new inline script must carry the nonce the host gives the other inline scripts. Confirm that the host adds the nonce to every inline script tag of a companion page, and not only to the scripts it knows.",
+        "status": "resolved",
+        "choice": "Verify host nonces all inline scripts",
+        "rationale": "Verified: stampScriptNonce in vscode-plugin/src/chat/docs-review-panel.ts (line 2437) gives every script tag without a nonce the pane's nonce, so the new inline script needs no special handling.",
+        "resolvedAt": "2026-10-16T09:15:00.740Z"
       }
     }
   },

@@ -116,7 +116,16 @@
       "reviewedBy": "daemon"
     },
     "approvedAt": "2026-10-16T12:14:23.233Z",
-    "rangeBase": "0aca5fdeacba4ca0ac2eb9381fedea50a6094d5e"
+    "rangeBase": "0aca5fdeacba4ca0ac2eb9381fedea50a6094d5e",
+    "questionResolutions": {
+      "qee126d1a": {
+        "question": "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps four derived from the approved issue's fix intent (ac1 a throwing withWriteTxn callback leaves nothing; ac2 a throwing migration step leaves neither rows nor version; ac3 the lost-lock path unchanged; ac4 the lmdb behaviour pinned) [c4] [c5].",
+        "status": "resolved",
+        "choice": "Accept derived ACs as-is",
+        "rationale": "Stakeholder decision 2026-10-16: the four criteria come from the approved issue's fix intent; bugfix stories carry none of their own.",
+        "resolvedAt": "2026-10-16T12:17:17.702Z"
+      }
+    }
   },
   "body": {
     "summary": {

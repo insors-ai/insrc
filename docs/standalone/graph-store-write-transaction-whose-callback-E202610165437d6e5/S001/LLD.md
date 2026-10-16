@@ -208,20 +208,16 @@ withWriteTxn hands the callback a proxy GraphStore whose sub-DB handles record e
 
 - ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps four derived from the approved issue's fix intent (ac1 a throwing withWriteTxn callback leaves nothing; ac2 a throwing migration step leaves neither rows nor version; ac3 the lost-lock path unchanged; ac4 the lmdb behaviour pinned) [c4] [c5].
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qee126d1a` — ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps four derived from the approved issue's fix intent (ac1 a throwing withWriteTxn callback leaves nothing; ac2 a throwing migration step leaves neither rows nor version; ac3 the lost-lock path unchanged; ac4 the lmdb behaviour pinned) [c4] [c5].
+  - **resolved**: Accept derived ACs as-is — Stakeholder decision 2026-10-16: the four criteria come from the approved issue's fix intent; bugfix stories carry none of their own. _(2026-10-16T12:17:17.702Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 6 hold** · template `design-issue` · model `cli-claude:opus` · reviewed 2026-10-16T12:11:05.873Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `step-output` `s1 context.assemble bundle 1: the store write paths (src/db/graph/store.ts:882-910, :607-610, :935-947; src/db/graph/migrations.ts:442-448)`
+- **[[c2]]** `step-output` `s1 context.assemble bundle 2: lmdb-js 3.5.4 transaction semantics (node_modules/lmdb/write.js:655-704, :663-680, :897-939, :1024-1027) and the 2026-10-16 probes`
+- **[[c3]]** `step-output` `s1 context.assemble bundle 3: tests that pin the write paths (src/db/graph/__tests__/migrations.test.ts:151-176, lock-loss-detection.test.ts, store-health.test.ts:84-107)`
+- **[[c4]]** `prior-artifact` `docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/ISSUE.md`
+- **[[c5]]** `step-output` `s2-s8 alternatives, judgment, contract, error paths, test strategy, migration and audit`
+- **[[c6]]** `step-output` `s1 context.assemble bundle 4: interleaving of child transactions (node_modules/lmdb/write.js:666-671, :898, :909) and the probe of a caller nested during an async callback`

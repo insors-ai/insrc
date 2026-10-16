@@ -261,6 +261,9 @@ export function buildShaperProvider(
 	return new OllamaProvider(ollamaModel, local.host, cfg.shaper.ollamaNumCtx);
 }
 
+/** The built-in cheap model for each CLI, used when the configured cheap model cannot go to it. */
+const SUMMARISER_CLI_FALLBACK = { 'cli-claude': 'haiku', 'cli-codex': 'gpt-6-luna' } as const;
+
 /**
  * Provider for BACKGROUND doc-summarisation (analyze/summariser/driver.ts).
  *
@@ -280,11 +283,14 @@ export function buildSummariserProvider(cfg: AnalyzeConfig): LLMProvider {
 		const cliKind = kind === 'cli-claude' ? 'claude' : 'codex';
 		// Pin the cheap tier's model, but never forward an Ollama-shaped id (a config
 		// left half-edited from the old local default, e.g. cli-claude with
-		// `qwen3.6:27b`): the CLI can't honor it, so it degrades to the CLI's own
-		// default model, as the shaper does.
-		const model = cfg.summariserModel !== '' && !isOllamaModelId(cfg.summariserModel) ? cfg.summariserModel : undefined;
-		log.info({ kind: cliKind, model: model ?? '(cli default)' }, 'summariser provider: routing through CliProvider');
-		return new CliProvider({ kind: cliKind, ...(model !== undefined ? { model } : {}) });
+		// `qwen3.6:27b`): the CLI can't honor it, so the built-in cheap model for
+		// that CLI is used instead, and the CLI's own default model never runs.
+		const configured = cfg.summariserModel;
+		const usable = configured !== '' && !isOllamaModelId(configured);
+		const model = usable ? configured : SUMMARISER_CLI_FALLBACK[kind];
+		if (!usable) log.warn({ kind: cliKind, configured, model }, 'summariser provider: the cheap tier model is not a CLI model id; using the built-in cheap model');
+		log.info({ kind: cliKind, model }, 'summariser provider: routing through CliProvider');
+		return new CliProvider({ kind: cliKind, model });
 	}
 	log.info({ model: cfg.summariserModel, numCtx: cfg.shaper.ollamaNumCtx }, 'summariser provider: routing through OllamaProvider (local)');
 	const local = loadLocalProviderConfig();

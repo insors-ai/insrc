@@ -197,8 +197,8 @@ export function createRoleRouter(deps: RoleRouterDeps = {}): RoleRouter {
 			return built;
 		},
 		resolveSummariser(cfg) {
-			// Delegate to the summariser factory so the summariser-stays-local
-			// decoupling is wrapped, not re-implemented; stamp a resolution so
+			// Delegate to the summariser factory so the summariser's own provider
+			// rule (it follows the cheap tier) is wrapped, not re-implemented; stamp a resolution so
 			// summariser access is attributed like every other role.
 			const provider = buildSummariserProvider(cfg);
 			const resolution: RoleResolution = {

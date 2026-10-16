@@ -208,6 +208,13 @@
         "choice": "Accept a2's limit",
         "rationale": "User approved the LLD with a2 chosen and its known gap stated.",
         "resolvedAt": "2026-10-16T07:39:35.320Z"
+      },
+      "qa10b3984": {
+        "question": "Acceptance criteria are derived from the issue (the Story has none): ac1 the rule reaches the prompts and schema descriptions; ac2 a bad entry is refused with the entry named; ac3 a well-formed project or external path is accepted and a well-formed artifact's result is unchanged.",
+        "status": "resolved",
+        "choice": "Adopt the derived ACs as stated",
+        "rationale": "The approved LLD carries ac1-ac3 as its acceptance mapping.",
+        "resolvedAt": "2026-10-16T07:40:22.215Z"
       }
     }
   },

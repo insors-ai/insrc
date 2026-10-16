@@ -226,6 +226,8 @@ Do a2, and in addition resolve each project-relative entry against the artifact'
 
 - `q1611e728` — Decision: a2 does not catch a well-formed but shortened path (for example artifacts/plan.ts), the defect the issue names first; only the shared prompt rule prevents it. Accept that limit, or choose a3, which also requires the path to exist under the repo but must then tell a planned new file from a wrong path and makes validation depend on the working tree?
   - **resolved**: Accept a2's limit — User approved the LLD with a2 chosen and its known gap stated. _(2026-10-16T07:39:35.320Z)_
+- `qa10b3984` — Acceptance criteria are derived from the issue (the Story has none): ac1 the rule reaches the prompts and schema descriptions; ac2 a bad entry is refused with the entry named; ac3 a well-formed project or external path is accepted and a well-formed artifact's result is unchanged.
+  - **resolved**: Adopt the derived ACs as stated — The approved LLD carries ac1-ac3 as its acceptance mapping. _(2026-10-16T07:40:22.215Z)_
 
 ## Citations
 

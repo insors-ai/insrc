@@ -25,6 +25,11 @@ export interface ActivationDeps {
    * stopped. Absent -> activation only probes, as before.
    */
   controller?: Pick<DaemonLifecycleController, 'isInstalled' | 'run'> | undefined;
+  /**
+   * Called once when the probe and any automatic start have finished, whatever their outcome, so
+   * work that needs a reachable daemon (the settings pull, the update check, onboarding) can follow.
+   */
+  onSettled?: (() => void) | undefined;
 }
 
 /** Reachability is a subset of the UI states; map it straight through. */
@@ -102,6 +107,16 @@ export async function startDaemonIfStopped(deps: ActivationDeps, probed: DaemonU
  * activation must never throw (ac1).
  */
 export function activateExtension(deps: ActivationDeps): void {
+  let settledCalled = false;
+  const settle = (): void => {
+    if (settledCalled) return;
+    settledCalled = true;
+    try {
+      deps.onSettled?.();
+    } catch {
+      /* a throwing onSettled must never surface into activation */
+    }
+  };
   try {
     // Fire-and-forget: activation returns immediately; the probe updates status
     // off the critical path. Errors are contained inside the probe.
@@ -109,8 +124,10 @@ export function activateExtension(deps: ActivationDeps): void {
       .then((probed) => startDaemonIfStopped(deps, probed))
       .catch(() => {
         deps.status.set({ state: 'errored' });
-      });
+      })
+      .finally(settle);
   } catch {
     deps.status.set({ state: 'errored' });
+    settle();
   }
 }

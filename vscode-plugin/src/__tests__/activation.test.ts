@@ -234,8 +234,67 @@ test('runReachabilityProbe answers the state it pushed into the status surface',
 
 test('the extension entry passes the daemon lifecycle controller into the activation', () => {
   const src = readFileSync(join(PKG, 'extension.ts'), 'utf8');
-  assert.match(src, /activateExtension\(\{ client, status, controller \}\)/);
+  assert.match(src, /activateExtension\(\{ client, status, controller, onSettled: /);
   // It is the very controller the daemon commands use.
   assert.match(src, /const controller = createDaemonLifecycleController\(/);
   assert.match(src, /registerDaemonCommands\(\{ commands, consent, status, controller \}\)/);
+});
+
+test('activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws', async () => {
+  // After a successful automatic start: once, and only after the start has run.
+  const order: string[] = [];
+  const status = new FakeStatus();
+  const started = fakeController();
+  const spyRun = started.controller.run;
+  started.controller.run = async (a, o) => {
+    order.push('start');
+    return spyRun(a, o);
+  };
+  activateExtension({ client: sequenced('stopped', 'stopped'), status, controller: started.controller, onSettled: () => order.push('settled') });
+  assert.deepEqual(order, [], 'not called synchronously');
+  await settle();
+  assert.deepEqual(order, ['start', 'settled']);
+
+  // A running daemon, an errored probe and a daemon that is not installed: still settled, once, with no start.
+  for (const [client, ctl] of [
+    [sequenced('running'), fakeController()],
+    [sequenced('errored'), fakeController()],
+    [sequenced('stopped'), fakeController({ installed: false })],
+  ] as const) {
+    let n = 0;
+    activateExtension({ client, status: new FakeStatus(), controller: ctl.controller, onSettled: () => void (n += 1) });
+    await settle();
+    assert.equal(n, 1);
+    assert.deepEqual(ctl.calls, []);
+  }
+
+  // A start that throws, a probe that rejects and a hung probe: settled once each.
+  let thrown = 0;
+  activateExtension({ client: sequenced('stopped', 'stopped'), status: new FakeStatus(), controller: fakeController({ results: [new Error('boom')] }).controller, onSettled: () => void (thrown += 1) });
+  let rejected = 0;
+  activateExtension({ client: clientReturning(async () => { throw new Error('probe'); }), status: new FakeStatus(), onSettled: () => void (rejected += 1) });
+  let hung = 0;
+  activateExtension({ client: clientReturning(() => new Promise<DaemonReachability>(() => {})), status: new FakeStatus(), probeTimeoutMs: 10, onSettled: () => void (hung += 1) });
+  await new Promise((r) => setTimeout(r, 40));
+  assert.deepEqual([thrown, rejected, hung], [1, 1, 1]);
+
+  // A throwing onSettled is contained: nothing is thrown into activation and the status is kept.
+  const kept = new FakeStatus();
+  assert.doesNotThrow(() => activateExtension({ client: sequenced('running'), status: kept, onSettled: () => { throw new Error('callback'); } }));
+  await settle();
+  assert.equal(kept.current().state, 'running');
+});
+
+test('the extension entry runs the settings pull, the update check and onboarding only after activation has settled', () => {
+  const src = readFileSync(join(PKG, 'extension.ts'), 'utf8');
+  // The signal is made before activation is started, and activation resolves it.
+  const made = src.indexOf('const activationSettled = new Promise<void>');
+  const started = src.indexOf('activateExtension({ client, status, controller, onSettled: () => resolveActivationSettled() })');
+  assert.ok(made > 0 && started > made, 'the settled signal exists before activation starts');
+  // Each of the three waits for it, and none runs bare.
+  assert.match(src, /void activationSettled\.then\(\(\) => runDaemonFreshnessCheck\(\{/);
+  assert.doesNotMatch(src, /void runDaemonFreshnessCheck\(/);
+  assert.match(src, /void activationSettled\.then\(\(\) => configSync\.pullFromDaemon\(\)\);/);
+  assert.doesNotMatch(src, /void configSync\.pullFromDaemon\(\)/);
+  assert.match(src, /void \(async \(\) => \{\s*await activationSettled;\s*try \{\s*await runOnboarding\(/);
 });

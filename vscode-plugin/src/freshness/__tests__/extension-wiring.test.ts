@@ -23,8 +23,9 @@ function extensionSource(): string {
 test('extension.ts fires runDaemonFreshnessCheck WITHOUT await (fire-and-forget)', () => {
   const src = extensionSource();
   assert.match(src, /from '\.\/freshness\/daemon-freshness\.js'/, 'imports the flow module');
-  // Fired as `void runDaemonFreshnessCheck({` — never awaited (must not block activation, k6).
-  assert.match(src, /void runDaemonFreshnessCheck\(\{/, 'invoked as void (fire-and-forget)');
+  // Fired as `void activationSettled.then(() => runDaemonFreshnessCheck({` — after activation has
+  // settled (so the daemon an automatic start brought up is reachable), never awaited (k6).
+  assert.match(src, /void activationSettled\.then\(\(\) => runDaemonFreshnessCheck\(\{/, 'invoked as void (fire-and-forget), after activation settles');
   assert.doesNotMatch(src, /await\s+runDaemonFreshnessCheck/, 'never awaited');
 });
 
@@ -54,7 +55,7 @@ test('extension.ts consumes the daemon-owned sc1 IPC (client), never a controlle
   const src = extensionSource();
   // Extract exactly the runDaemonFreshnessCheck({ ... }); deps block and assert on
   // its contents (not the whole file), so the k2 check is scoped to the flow wiring.
-  const block = /void runDaemonFreshnessCheck\(\{([\s\S]*?)\n  \}\);/.exec(src);
+  const block = /runDaemonFreshnessCheck\(\{([\s\S]*?)\n  \}\)+;/.exec(src);
   assert.ok(block, 'the runDaemonFreshnessCheck({ ... }); block is present');
   const depsBlock = block![1]!;
   assert.match(depsBlock, /(^|\W)client,/, 'the freshness deps pass the shared ipc client');
@@ -64,7 +65,7 @@ test('extension.ts consumes the daemon-owned sc1 IPC (client), never a controlle
 
 test('extension.ts wires the reloadWindow seam to workbench.action.reloadWindow (S001 post-update nudge)', () => {
   const src = extensionSource();
-  const block = /void runDaemonFreshnessCheck\(\{([\s\S]*?)\n  \}\);/.exec(src);
+  const block = /runDaemonFreshnessCheck\(\{([\s\S]*?)\n  \}\)+;/.exec(src);
   assert.ok(block, 'the runDaemonFreshnessCheck({ ... }); block is present');
   const depsBlock = block![1]!;
   assert.match(depsBlock, /reloadWindow:/, 'the freshness deps pass a reloadWindow seam');

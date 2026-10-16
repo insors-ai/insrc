@@ -1,0 +1,683 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792130131235-625nyx",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T05:57:42.283Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 131044,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0e1265ed8581e188",
+    "epicSlug": "start-daemon-when-extension-activates-finds",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1792130131235-625nyx",
+    "hldEffectiveHash": "0e1265ed8581e1888c95a624b0b4060de440bee4af8096ecc4e7cb23f64bfae4",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story with a clear approach and a small surface: activation already probes reachability and the plugin already has a lifecycle controller that starts the daemon through daemon-ctl.sh; start it once when the probe finds it stopped. Design points: consent/onboarding state, which probe states trigger a start, once per activation, failure reporting.",
+    "authoredBy": "controller",
+    "rangeBase": "4b1713bbac07816cfdd627090a4e585ac659cdd7",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The derived criteria ac1–ac5 (start a stopped, installed daemon; skip running, errored or not-installed daemons; a failed start shows errored; a plain start; dependants wait for settle) are each designed in a contract, and the non-goals (no install, no update, no setting, no prompt) are not built.",
+          "evidence": "activation.ts:77-96 startDaemonIfStopped guards `probed !== 'stopped'`, `isInstalled()`, re-checks `client.reachability()`, then calls `controller.run('start', { plain: true })`. No install call, and no new setting or manifest entry. onSettled (ac5) is designed in §2.1/§2.5 and §3, but is not in the code yet; it is the remaining design delta. [files: vscode-plugin/src/activation.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the update check skips silently when the daemon is unreachable and still marks the plugin version as seen, so before this change a stopped daemon at a plugin upgrade lost the auto-update.",
+          "evidence": "daemon-freshness.ts:139 `if (!reachable) return; // skip silently (setLastSeen still runs in finally)` and :187 `await versionState.setLastSeen(versionState.current)` in the finally; :166 selfUpdate = current !== getLastSeen() → performUpdate without a prompt. [files: vscode-plugin/src/freshness/daemon-freshness.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The settings pull, the update check and onboarding all fire at once in extension.ts, in parallel with the activation probe.",
+          "evidence": "extension.ts:165 `activateExtension({ client, status, controller })` is followed at once by :175 `void runDaemonFreshnessCheck({`, :242 `void configSync.pullFromDaemon();` and :829-835 the onboarding IIFE. None of them waits for the probe. [files: vscode-plugin/src/extension.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "daemon-ctl.sh start stops a live pid-file daemon before spawning, and a start that does not become ready within 60 s exits 4.",
+          "evidence": "daemon-ctl.sh:260-264: if the PID_FILE pid is alive it runs `signal_stop` and `wait_for_daemon_stop || force_stop_daemon`. :268-269: `die \"daemon did not become ready within 60 s ...\" 4`. controller.ts:50 maps 4 to 'the daemon git / npm / build / start step failed'. [files: scripts/daemon-ctl.sh, vscode-plugin/src/daemon/controller.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A probe reports 'stopped' only when the socket is absent or refuses the connection, and reports 'errored' otherwise, so starting only on 'stopped' is safe.",
+          "evidence": "ipc-client.ts:25 `DaemonReachability = 'running' | 'stopped' | 'errored'`. :77-78 ENOENT/ECONNREFUSED give the 'daemon is not running' prefix, which the reachability classification keys off for 'stopped'. activation.ts:45 makes a timeout 'errored'. [files: src/shared/ipc-client.ts, vscode-plugin/src/activation.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused controller exposes isInstalled() (a check for the built entry) and run(action), and the plain option adds exactly --skip-sync/--skip-install/--skip-build, which daemon-ctl.sh accepts.",
+          "evidence": "controller.ts:80-86 isInstalled = existsSync(paths.daemonEntry). :23 PLAIN_FLAGS = ['--skip-sync','--skip-install','--skip-build']. :103 appends them only when options?.plain === true. daemon-ctl.sh:318-320 parses all three, and :255-257 skips sync, install and build accordingly. [files: vscode-plugin/src/daemon/controller.ts, scripts/daemon-ctl.sh]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Without options, run builds the same command line as before, so the only other caller (the insrc.daemon.* commands) is unchanged.",
+          "evidence": "The only callers of controller.run( are commands.ts:67 `controller.run(action)` and activation.ts:87. controller.ts:103 spreads [] when plain is not true, giving `['bash', ctlScript, action]` as before. [files: vscode-plugin/src/daemon/commands.ts, vscode-plugin/src/daemon/controller.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The source-scan tests that pin extension.ts call shapes still pass with the onSettled wiring as described (the onboarding IIFE keeps its guarded form, pullFromDaemon() is still a call, and the freshness block pattern is updated).",
+          "evidence": "onboarding/hosts/workspace activation tests match `/void \\(async \\(\\) =>[\\s\\S]*runOnboarding[\\s\\S]*catch \\{/` and `runOnboarding\\(\\{ controller, registrar, ... \\}\\)`; a leading `await` of the settled signal inside the IIFE keeps both. seam.test.ts:47 and truthful-sync.test.ts:209 need `configSync.pullFromDaemon()`, which is kept. extension-wiring.test.ts:27/57/67 need `void runDaemonFreshnessCheck({` and a `\\n  \\}\\);` block terminator; the design names this test as a call site whose block pattern is updated. :27 still passes if the inner call keeps `void`, and :28 forbids `await runDaemonFreshnessCheck`, so the wrapper must not await it directly. [files: vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts, vscode-plugin/src/onboarding/__tests__/activation.test.ts, vscode-plugin/src/config/__tests__/seam.test.ts]",
+          "action": "When wrapping, keep `void runDaemonFreshnessCheck({` and avoid `await runDaemonFreshnessCheck`, or update test :28 as well as the block regex.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Nothing stored changes shape. The only persisted state touched is the last-seen plugin version, and the design states its behaviour change: after a plugin upgrade, an auto-started daemon is now self-updated.",
+          "evidence": "There is no new globalState or workspaceState key. LAST_SEEN_PLUGIN_VERSION_KEY (extension.ts:85) is read and written by the unchanged freshness module (daemon-freshness.ts:166,187). The LLD edge-case table records the accepted change. [files: vscode-plugin/src/extension.ts, vscode-plugin/src/freshness/daemon-freshness.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each failure ends as a status state and never rejects into activation: a non-zero exit, ok:true while still unreachable, a throwing controller, and a probe timeout. onSettled runs in a finally and is wrapped.",
+          "evidence": "activation.ts:88-89 treats ok && state !== 'running' as errored with NO_ANSWER_AFTER_START. :91 shows ok:false as {state:'errored', detail: message}. :93-94 a catch sets errored. :108-112 the chain ends in a .catch. :79 skips 'errored' and 'unknown'. onboarding.ts:62 still offers install when isInstalled is false. Wrapping onSettled in a finally with containment is designed but not yet coded, so it is checked against the design. [files: vscode-plugin/src/activation.ts, vscode-plugin/src/onboarding/onboarding.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1–ac5 maps to at least one named test, and the subjects cover the re-check race, a success while still unreachable, the plain flags and the onSettled ordering.",
+          "evidence": "In §5 the acceptance table maps ac1 to 5 tests, ac2 to 2, ac3 to 2, ac4 to 1 and ac5 to 2. The fixture for the re-check asks for a fake client whose answers differ between the probe and the re-check, which matches the two reachability() calls in activation.ts:54 and :83. ac1's live test needs a real VS Code restart and has to be reported rather than run by the gate. [files: vscode-plugin/src/activation.ts]",
+          "action": "Report the live ac1 test via `reported` at validate.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-16T06:29:09.413Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-16T06:33:19.840Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "When VS Code starts and the extension finds an installed daemon that is not running, it now starts the daemon itself, once, and shows the result in the status bar. The start is a plain spawn of the daemon that is already built: it does not pull, install or build, so it never updates the daemon (updates stay behind the Update prompt of the freshness check). It starts only when the daemon is installed and reported stopped, never when it is merely erroring and never when it is not installed (installing stays the consented first-run step), and it checks once more just before starting that another window has not already started it. A start that fails, or that reports success but leaves the daemon unreachable, shows as an error with the reason and is not retried. The settings pull from the daemon, the daemon update check and the first-run onboarding, which all need a reachable daemon, now run once the probe and any start have settled, so they find the daemon up instead of failing while it is still stopped. A running daemon is left alone, and activation never blocks or throws.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Start the daemon when the extension activates and finds it stopped"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "ActivationDeps",
+          "signature": "interface ActivationDeps { client: IpcClient; status: StatusSurface; probeTimeoutMs?: number | undefined; controller?: Pick<DaemonLifecycleController, 'isInstalled' | 'run'> | undefined; onSettled?: (() => void) | undefined }",
+          "parameters": [
+            {
+              "name": "controller",
+              "type": "Pick<DaemonLifecycleController, 'isInstalled' | 'run'> | undefined",
+              "purpose": "the daemon lifecycle controller, so activation can start an installed daemon that the probe finds stopped; absent means activation behaves exactly as today",
+              "optional": true
+            },
+            {
+              "name": "onSettled",
+              "type": "(() => void) | undefined",
+              "purpose": "called once when the probe and any automatic start have finished, whatever their outcome, so work that needs a reachable daemon can follow them; absent means nothing is called",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ActivationDeps",
+            "meaning": "the dependencies of the activation shell, with one optional addition"
+          },
+          "errors": [],
+          "preconditions": [
+            "the controller, when given, is the one extension.ts builds for the daemon commands"
+          ],
+          "postconditions": [
+            "a deps object without controller is valid and never starts anything",
+            "onSettled is called at most once per activation, never throws into activation, and is called also when the probe or the start failed"
+          ]
+        },
+        {
+          "name": "runReachabilityProbe",
+          "signature": "function runReachabilityProbe(deps: ActivationDeps): Promise<DaemonUiState>  // was Promise<void>",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ActivationDeps",
+              "purpose": "the client to probe and the status surface to update",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DaemonUiState>",
+            "meaning": "the state the probe pushed into the status surface ('running', 'stopped' or 'errored'), so the caller can act on it; the status surface is updated exactly as before"
+          },
+          "errors": [
+            {
+              "type": "swallowed",
+              "condition": "a throwing or timed-out probe resolves 'errored', as today; it never rejects"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "the status surface holds the returned state"
+          ]
+        },
+        {
+          "name": "startDaemonIfStopped",
+          "signature": "function startDaemonIfStopped(deps: ActivationDeps, probed: DaemonUiState): Promise<void>  // new",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ActivationDeps",
+              "purpose": "the controller to start through and the status surface to update",
+              "optional": false
+            },
+            {
+              "name": "probed",
+              "type": "DaemonUiState",
+              "purpose": "the state the probe found",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "resolves once the start attempt, if any, is over; the status surface then shows the daemon running, or errored with the reason"
+          },
+          "errors": [
+            {
+              "type": "swallowed",
+              "condition": "a start that fails, throws, or reports success while the daemon is still not reachable leaves an errored status with the reason (the controller's message, or 'the daemon did not answer after start'); it never rejects"
+            }
+          ],
+          "preconditions": [
+            "deps.controller is present"
+          ],
+          "postconditions": [
+            "a start is attempted only when probed is 'stopped', the controller reports the daemon installed, and a fresh reachability check made just before the start does not find it running",
+            "when that fresh check finds the daemon running, no start is made and the status shows running",
+            "the start is a plain start: it passes the controller's plain option, so nothing is pulled, installed or built",
+            "no start is attempted for 'running', 'errored' or 'unknown', or for a daemon that is not installed",
+            "at most one start is attempted per call, and the activation calls it once"
+          ]
+        },
+        {
+          "name": "DaemonLifecycleController.run",
+          "signature": "run(action: LifecycleAction, options?: { plain?: boolean } | undefined): Promise<LifecycleResult>  // options is new",
+          "parameters": [
+            {
+              "name": "action",
+              "type": "LifecycleAction",
+              "purpose": "start, stop, restart or update, as today",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "{ plain?: boolean } | undefined",
+              "purpose": "plain: true adds --skip-sync, --skip-install and --skip-build to the daemon-ctl.sh command line, so a start only spawns the built daemon; absent or false runs the command exactly as today",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<LifecycleResult>",
+            "meaning": "as today: ok and the true post-action reachability, with the reason on failure"
+          },
+          "errors": [
+            {
+              "type": "swallowed",
+              "condition": "a missing ctl script answers an errored result 'insrc daemon is not installed'; a non-zero exit answers an errored result with daemon-ctl.sh's reason (exit 4, 'the daemon git / npm / build / start step failed', is also what a start that did not become ready within 60 s gives); it never throws"
+            }
+          ],
+          "preconditions": [
+            "the daemon is installed"
+          ],
+          "postconditions": [
+            "without options the command line is byte for byte what it is today, so the insrc.daemon.* commands and every other caller are unchanged"
+          ]
+        },
+        {
+          "name": "activateExtension",
+          "signature": "function activateExtension(deps: ActivationDeps): void",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ActivationDeps",
+              "purpose": "as before, plus the optional controller",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "returns at once; the probe and then the start run in the background, and onSettled, when given, is called once they have finished"
+          },
+          "errors": [
+            {
+              "type": "swallowed",
+              "condition": "any failure in the probe or the start leaves the status 'errored' and is never thrown into activation"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "activation does not wait for the probe or the start",
+            "the start, when it happens, comes after the probe has set 'stopped'",
+            "onSettled, when given, is called exactly once after the probe and any start have finished (the chain ends in a finally), also when either failed or threw; the call is wrapped so a throwing onSettled is contained"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ActivationDeps",
+        "change": "field-add",
+        "details": "ActivationDeps gains the optional controller field. extension.ts passes the controller it already builds for the daemon commands. runReachabilityProbe returns the state it set instead of nothing, which its existing callers (activateExtension and the tests) can ignore. startDaemonIfStopped is new and lives in activation.ts beside the probe; activateExtension chains it after the probe in the same fire-and-forget background. Before it starts, it asks the client for reachability once more and does nothing if the daemon is now running (another window won the race). DaemonLifecycleController.run gains an optional options argument whose plain flag adds --skip-sync --skip-install --skip-build to the daemon-ctl.sh start, so the automatic start only spawns the already built daemon and never pulls, installs or builds; the daemon is updated only through the freshness check's Update prompt or the Update command. A start that returns ok with the daemon still not running is shown as errored with the detail 'the daemon did not answer after start'. No new setting, command, manifest entry or daemon change is made, and onboarding is untouched: it still offers installation behind consent. ActivationDeps also gains the optional onSettled callback, which activateExtension calls once after the probe and any start have finished. extension.ts uses it so that three things that need a reachable daemon wait for it: the settings pull from the daemon (configSync.pullFromDaemon), the daemon update check (runDaemonFreshnessCheck) and the first-run onboarding (runOnboarding). All three are unchanged in themselves; they now run after activation has settled instead of at once, so after an automatic start they find the daemon up (no 'could not read daemon config' toast, the settings mirror is synced, the Update prompt or the update check's plugin-upgrade update can happen in the same activation, and onboarding sees the true registration state), and when the daemon is not installed or the start fails they behave as before. The extension entry keeps the call shapes its source-scan tests pin: the onboarding IIFE keeps its guarded form and only begins with an await of the settled signal, the settings pull is still a .pullFromDaemon() call, and the update check call is wrapped so that it runs after the signal, with its wiring test's block pattern updated to accept the wrapped form. The settings sync engine, the update check module, onboarding and the registrar are not changed.",
+        "callSites": [
+          "vscode-plugin/src/activation.ts",
+          "vscode-plugin/src/extension.ts",
+          "vscode-plugin/src/daemon/controller.ts",
+          "vscode-plugin/src/__tests__/activation.test.ts",
+          "vscode-plugin/src/daemon/__tests__/controller.test.ts",
+          "vscode-plugin/src/freshness/__tests__/extension-wiring.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The start fails (daemon-ctl.sh exits non-zero, for example because the daemon did not become ready within 60 seconds or a stale daemon could not be stopped)",
+          "detection": "controller.run('start', { plain: true }) answers ok:false with a message (its mapping of daemon-ctl.sh's exit codes, exit 4 for a start that did not become ready)",
+          "response": "The status surface shows errored with that message; the start is not retried in this activation",
+          "userImpact": "The status bar shows the daemon errored with why; the user can fix it and use the Start daemon command",
+          "recoverable": true
+        },
+        {
+          "scenario": "The start reports success but the daemon is still not reachable (slow to bind its socket, or it exited at once)",
+          "detection": "controller.run answers ok:true with a post-start state other than 'running'",
+          "response": "startDaemonIfStopped treats it as a failed start: the status surface shows errored with the detail 'the daemon did not answer after start'; it is not retried",
+          "userImpact": "The status bar shows errored with a reason, never a bare 'stopped'; the user can use the Start daemon command",
+          "recoverable": true
+        },
+        {
+          "scenario": "The controller throws instead of answering",
+          "detection": "the call to controller.isInstalled() or controller.run('start', { plain: true }) rejects inside startDaemonIfStopped",
+          "response": "It is caught; the status surface shows 'errored'; nothing is thrown into activation",
+          "userImpact": "The status bar shows errored; the daemon commands still work",
+          "recoverable": true
+        },
+        {
+          "scenario": "The probe cannot tell (it times out or throws)",
+          "detection": "runReachabilityProbe resolves 'errored' after the deadline or on an exception",
+          "response": "No start is attempted, since 'errored' may mean a daemon that is up but not answering; the status shows errored as today",
+          "userImpact": "The user sees errored and can restart the daemon by hand",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon is stopped and not installed",
+          "detection": "controller.isInstalled() resolves false",
+          "response": "No start is attempted and the status stays 'stopped'; installing remains the consented first-run onboarding step",
+          "userImpact": "The user is offered installation by onboarding as before",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "the daemon is already running when VS Code starts",
+          "expected": "The probe says 'running'; nothing is started"
+        },
+        {
+          "input": "no controller is passed in the deps",
+          "expected": "Activation behaves exactly as today: probe and status only"
+        },
+        {
+          "input": "several VS Code windows start at once with the daemon stopped",
+          "expected": "Each re-checks reachability just before starting and skips the start when another window has already brought the daemon up. Two windows that both pass the check in the same instant can still both start; daemon-ctl.sh start stops a daemon whose pid file is alive before it spawns, so they can restart each other's daemon before one remains. This narrow window is accepted, with no lock"
+        },
+        {
+          "input": "the origin has newer commits than the installed daemon when the automatic start runs",
+          "expected": "The daemon that is already built is started as it is; nothing is pulled. The update check runs after activation has settled, so it finds the daemon up and can offer the Update prompt in this same activation"
+        },
+        {
+          "input": "the first-run onboarding and the update check, which also need the daemon",
+          "expected": "Both run after activation has settled, so neither overlaps the start: onboarding's register offer reads the true registration state from a running daemon, and the update check finds the daemon up. When the daemon is not installed, onboarding's install offer comes after the probe, a few seconds later than before"
+        },
+        {
+          "input": "the daemon is stopped and not installed, or the automatic start fails",
+          "expected": "Activation still settles, then the settings pull, the update check and onboarding run and behave exactly as they do today with an unreachable daemon: the pull shows its 'could not read daemon config' toast, the update check skips silently, onboarding offers install"
+        },
+        {
+          "input": "the daemon is already running at activation",
+          "expected": "Activation settles after the probe, and the settings pull and the update check run then, one probe later than before; nothing else differs"
+        },
+        {
+          "input": "the installed checkout was never built (no out/daemon/index.js)",
+          "expected": "isInstalled() is false, so no start is attempted and the status stays 'stopped', as for a daemon that is not installed"
+        },
+        {
+          "input": "the plugin was upgraded since the last activation, the daemon was stopped, and the automatic start brought it up",
+          "expected": "The update check's own plugin-upgrade path (versionState current differs from last seen) then updates and restarts the daemon without a prompt, as it does today whenever the daemon is reachable at that point. This is accepted: before, a stopped daemon made the check skip and mark the new version as seen without updating"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Activation never blocks and never throws: the probe and any start run in the background, and every failure ends as a status state",
+          "source": "c1"
+        },
+        {
+          "text": "Installing the daemon stays behind the consent gate and the first-run onboarding; the extension starts only a daemon that is already installed",
+          "source": "c3"
+        },
+        {
+          "text": "The lifecycle commands (insrc.daemon.start and the others) and their status reflection behave exactly as before: the controller's run without the new option builds the same command line",
+          "source": "c2"
+        },
+        {
+          "text": "The automatic start itself never updates the daemon: updates come from the update check (its Update prompt, or its own plugin-upgrade path) and the Update command",
+          "source": "c3"
+        },
+        {
+          "text": "A deps object without a controller leaves the activation's probe-only behaviour byte for byte as it is",
+          "source": "c1"
+        },
+        {
+          "text": "The settings pull, the update check and onboarding keep their own behaviour, errors and notifications; only the moment they start changes, to after activation has settled",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test run through tsx (npx tsx --test), as the existing activation and daemon tests",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The activation starts an installed, stopped daemon once, and otherwise starts nothing",
+          "subjects": [
+            "a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running",
+            "no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given",
+            "a start is skipped when the fresh reachability check just before it finds the daemon running",
+            "a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation",
+            "a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'",
+            "runReachabilityProbe answers the state it pushed into the status surface",
+            "activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws"
+          ],
+          "fixturesNeeded": [
+            "the fake client and fake status surface the activation tests already use, with a client whose reachability answers can differ between the probe and the re-check",
+            "a fake controller recording isInstalled and run calls and their options"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The controller's plain start adds the skip flags and nothing else changes",
+          "subjects": [
+            "a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before"
+          ],
+          "fixturesNeeded": [
+            "the fake subprocess runner the controller tests already use"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The extension entry hands the controller to the activation",
+          "subjects": [
+            "the extension entry passes the daemon lifecycle controller into the activation",
+            "the extension entry runs the settings pull, the update check and onboarding only after activation has settled"
+          ],
+          "fixturesNeeded": [
+            "the extension entry's source, as the other wiring tests read it"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "What only a real VS Code restart with a real daemon shows",
+          "subjects": [
+            "after VS Code restarts with the installed daemon stopped, the daemon is running and the status bar shows it"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running",
+            "runReachabilityProbe answers the state it pushed into the status surface",
+            "the extension entry passes the daemon lifecycle controller into the activation",
+            "after VS Code restarts with the installed daemon stopped, the daemon is running and the status bar shows it",
+            "the extension entry runs the settings pull, the update check and onboarding only after activation has settled"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given",
+            "a start is skipped when the fresh reachability check just before it finds the daemon running"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation",
+            "a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws",
+            "the extension entry runs the settings pull, the update check and onboarding only after activation has settled"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "On activation the extension fires a reachability probe and shows the result in the status surface; it never starts anything. ActivationDeps holds only the client, the status surface and an optional probe timeout, and an installed but stopped daemon stays stopped until the user runs the Start daemon command (activation.ts, daemon/commands.ts and extension.ts from the s1 bundles).",
+      "stateAfter": "The probe also reports the state it found. When that state is 'stopped' and the lifecycle controller says the daemon is installed, activation checks reachability once more and, if the daemon is still not up, starts it once as a plain start (no pull, install or build) and shows running, or errored with the reason. Everything else is as before. Activation then signals that it has settled, and the settings pull, the daemon update check and the first-run onboarding run after that signal instead of at once.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Give the lifecycle controller's run an optional plain option that adds --skip-sync, --skip-install and --skip-build to the start command; without it the command line is unchanged",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Make the reachability probe answer the state it pushed into the status surface, and add the optional controller to the activation's dependencies; with no controller given, behaviour is unchanged",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the start-if-stopped step beside the probe (re-check reachability, plain start, success without reachability treated as failure) and chain it after the probe in the activation's background run, guarded to the stopped-and-installed case and to one attempt",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the optional onSettled callback to the activation's dependencies, called once after the probe and any start have finished; in the extension entry, have the settings pull, the daemon update check and the first-run onboarding wait for it",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Pass the daemon lifecycle controller from the extension entry into the activation, which is what turns the behaviour on",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive and internal: the new activation dependency and the controller's new option are both optional, the probe's extra return value is ignored by its existing callers, and no command, setting, manifest entry, IPC or daemon behaviour changes. Removing the controller from the entry's call turns the feature off again.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Start it inside the activation probe, silently, once",
+        "oneLineSummary": "When the activation probe finds the daemon stopped and installed, run the controller's start once and show the result in the status surface.",
+        "approach": "ActivationDeps gains an optional controller. After the probe sets 'stopped', activation asks the controller whether the daemon is installed and, if so, runs start once and reflects its result (running, or errored with the controller's message) in the status surface, in the same fire-and-forget background as the probe. It starts only on 'stopped' (never on 'errored', where something is up but wrong), at most once per activation, and never when the daemon is not installed, since installing stays the consented onboarding step. A start that fails shows as errored with the reason and is not retried. Without a controller in the deps, activation behaves exactly as today. The start is a plain spawn (no pull, install or build) and a fresh reachability check just before it skips the start when another window already brought the daemon up.",
+        "pros": [
+          "Smallest change: one dependency added to the existing probe, reusing the controller and the status surface",
+          "Matches the request: the daemon is up after a restart with no click",
+          "Starting an installed daemon is the same action as the insrc.daemon.start command, which already needs no consent"
+        ],
+        "cons": [
+          "Starts a background process without asking each time",
+          "No way to turn it off short of stopping the extension"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Start it silently, with a setting to turn it off",
+        "oneLineSummary": "Same as a1, gated by a new insrc.daemon.autoStart setting that defaults to on.",
+        "approach": "As a1, but activation first reads a machine-scoped boolean setting insrc.daemon.autoStart (default true) and starts the daemon only when it is on. The setting is declared in the extension manifest and in the daemon's config catalog so the settings sync and the catalog-versus-manifest test stay in step.",
+        "pros": [
+          "A user who does not want a background process started for them can turn it off",
+          "Same start behaviour as a1 when on"
+        ],
+        "cons": [
+          "A new setting touches the manifest, the daemon's config catalog and their parity tests, which is more than the request asked for",
+          "A second place to look when the daemon does not come up"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Same behaviour with an opt-out, at the cost of the manifest and catalog changes the request did not ask for; it can be added later if wanted."
+      },
+      {
+        "id": "a3",
+        "name": "Ask first with a Start button",
+        "oneLineSummary": "When the probe finds the daemon stopped, show a notification with a Start button instead of starting it.",
+        "approach": "After the probe sets 'stopped' and the daemon is installed, activation shows a notification through the consent gate with a Start action; only an accept runs the controller's start. A decline or dismiss leaves the daemon stopped, and nothing is remembered.",
+        "pros": [
+          "Nothing starts without the user saying so",
+          "Reuses the consent gate"
+        ],
+        "cons": [
+          "The user has to click on every VS Code start, which is the step they asked to be rid of",
+          "Does not meet the stated expectation that the daemon is started"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Does not start the daemon by itself, so it does not meet the request."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "There is no setting to turn the automatic start off (alternative a2); it can be added later if wanted.",
+      "Two windows that pass the re-check in the same instant can still both start the daemon and restart each other's before one remains; this is accepted with no lock.",
+      "The Story has no acceptance criteria; ac1-ac5 were derived from its stated need and from the live check, where the settings pull raced the start."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1: The activation shell and its probe (activation.ts)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: The daemon lifecycle controller and commands (daemon/controller.ts, daemon/commands.ts)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: How extension.ts wires activation, the controller and onboarding"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1: Existing tests for activation and the controller"
+    }
+  ]
+}

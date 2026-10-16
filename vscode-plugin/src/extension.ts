@@ -162,7 +162,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // Story E202610160e1265ed:S001: the controller lets activation start an installed daemon that the
   // probe finds stopped.
-  activateExtension({ client, status, controller });
+  // The settings pull, the update check and onboarding all need a reachable daemon, so they wait for
+  // activation to settle (the probe and any automatic start finished) instead of racing the start.
+  let resolveActivationSettled: () => void = () => {};
+  const activationSettled = new Promise<void>((resolve) => {
+    resolveActivationSettled = resolve;
+  });
+  activateExtension({ client, status, controller, onSettled: () => resolveActivationSettled() });
 
   // S003 daemon-auto-update: keep the locally-installed daemon current. This is the
   // SOLE vscode importer, so it binds the real seams — the daemon-owned update+restart
@@ -172,7 +178,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // version over globalState + packageJSON.version (self-update trigger, k4). Fired
   // fire-and-forget like runReachabilityProbe so it never blocks activation (k6); the
   // flow module itself never rejects, so no .catch is needed.
-  void runDaemonFreshnessCheck({
+  void activationSettled.then(() => runDaemonFreshnessCheck({
     client,
     daemonRoot: paths.daemonRoot,
     gitLsRemote: (root, branch) =>
@@ -198,7 +204,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // respawns the MCP host so claude/codex reconnect to the freshly updated daemon.
     reloadWindow: () =>
       Promise.resolve(vscode.commands.executeCommand('workbench.action.reloadWindow')).then(() => undefined),
-  });
+  }));
 
   // S001-settings-UI sc8: the ConfigSync engine that keeps the native
   // `contributes.configuration` surface truthful to the daemon. The real
@@ -239,7 +245,7 @@ export function activate(context: vscode.ExtensionContext): void {
     keyMap: MERGED_KEY_MAP,
   });
   // Reconcile the native mirror with the daemon on activation (non-blocking).
-  void configSync.pullFromDaemon();
+  void activationSettled.then(() => configSync.pullFromDaemon());
   // Live-push each native insrc.* edit to the daemon (diff/validate/write in sc8).
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {
@@ -827,6 +833,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // step the developer skips stays reachable via its durable command (ac2); the
   // uninstall reversal is the vscode:uninstall hook (src/uninstall.ts).
   void (async () => {
+    await activationSettled;
     try {
       await runOnboarding({ controller, registrar, registry, consent, status, folders, prompts, onboarded });
     } catch {

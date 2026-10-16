@@ -10,12 +10,13 @@
     "triageRationale": "bugfix/small: prompt text in one module plus one spec field; existing render test updated.",
     "epicCreatedAt": "2026-10-16T18:26:02.261Z",
     "epicSlug": "let-build-gate-s-judge-read",
-    "updatedAt": "2026-10-16T18:36:00.026Z"
+    "updatedAt": "2026-10-16T19:01:40.987Z",
+    "approvedAt": "2026-10-16T19:01:41.122Z"
   },
   "body": {
     "focus": "Both build-gate judge prompts (src/daemon/steps/build-step/render.ts renderStandaloneValidatePrompt and src/prompts/build/validate-task.md) let the judge read the repository with read-only commands as well as read tools, still telling it not to run the typecheck or tests and not to change anything, so a codex judge can read. A trivial standalone build's validate prompt carries the build's stated scope (the standalone focus), passed from src/daemon/steps/build-step/phases/validate.ts. The prompt test pinning the old wording is updated; tests show both prompts permit read-only commands and the trivial prompt includes the scope. Implements ISSUE-ae2d83c6ab06c595.",
     "producesLld": false,
-    "commit": "687395c8",
+    "commit": "00f14111",
     "tasks": [
       {
         "id": "S001",
@@ -29,24 +30,101 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/BUILD-e48e33ae6af03720-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-ae2d83c6ab06c595.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/TESTS-c2ba6fa62a148ed1-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T18:36:00.026Z"
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-e48e33ae6af03720-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/e48e33ae6af03720-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T18:36:00.026Z"
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
       },
       {
         "target": {
           "file": "docs/standalone/send-codex-structured-output-schemas-openai-E20261016e48e33ae/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T18:36:00.026Z"
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-codex-structured-output-schemas-openai-E20261016e48e33ae/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/render.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/validate-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T19:01:40.987Z"
       }
     ]
   }

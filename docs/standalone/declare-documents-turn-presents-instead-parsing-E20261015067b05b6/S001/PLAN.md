@@ -8,7 +8,7 @@
 **LLD run:** `wf-1792058614869-taragn`
 **LLD effective hash:** `067b05b6892c...`
 
-Building this Story adds one small MCP tool, insrc_present, and a live-only list of declared documents on the chat's tool-call event, read from each provider's own tool-call input (Claude's tool_use, Codex's mcp_tool_call with the shape captured and pinned from a real run). The presenter then opens exactly those pending documents and reports any that are not pending, the chat host feeds it from both paths and shows the outcome, the steering tells the controller to declare, and the old reading of tool output and the end-of-turn guess are removed last. Steering-only enforcement is accepted for now and the plan notes it should be revisited if it proves unreliable.
+Building this Story adds one small MCP tool, insrc_present, and a live-only list of declared documents on the chat's tool-call event, read from each provider's own tool-call input (Claude's tool_use, Codex's mcp_tool_call with the shape captured and pinned from a real run). The presenter then opens exactly those pending documents and reports any that are not pending, the chat host feeds it from both paths and shows the outcome, the steering tells the controller to declare, and the old reading of tool output and the end-of-turn guess are removed last. Steering-only enforcement is accepted for now and the plan notes it should be revisited if it proves unreliable. The Codex chat live check is deferred to a follow-up.
 
 ## Contents
 
@@ -27,7 +27,7 @@ Building this Story adds one small MCP tool, insrc_present, and a live-only list
 | 5 | **`t5`** Presenter: open exactly the declared documents | M | `t1` | unit: a declared artifact id and a declared path each open the matching pending document once, in order; unit: a declared name that is not pending opens nothing and is reported by name; unit: the same document declared twice in a turn opens once; unit: an unreadable pending list and a failing open are logged and never thrown; unit: declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable; unit: a declared artifact id matches the pending list's id without regard to the case of its story part | [[c1]] [[c2]] [[c3]] |
 | 6 | **`t6`** Chat host feeds declarations and shows the outcome | M | `t3`, `t4`, `t5` | integration: the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything; integration: the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome; integration: the chat host feeds the declaration from both a followed live turn and a hosted run; integration: the chat opens a declared pending document even when the insrc_present tool call itself failed | [[c1]] [[c2]] [[c3]] |
 | 7 | **`t7`** Rewrite the steering and guide text | S | `t2` | integration: the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval | [[c1]] [[c4]] |
-| 8 | **`t8`** Remove the output-parsing path and run the live checks | M | `t6`, `t7` | unit: a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing; integration: the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist; live: a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat; live: a Codex chat turn that calls insrc_present opens the declared document in the review pane | [[c1]] [[c2]] [[c3]] [[c4]] |
+| 8 | **`t8`** Remove the output-parsing path and run the live checks | M | `t6`, `t7` | unit: a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing; integration: the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist; live: a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat | [[c1]] [[c2]] [[c3]] [[c4]] |
 
 ### 1.1 E20261015067b05b6:S001:T001 — Verify the existing symbols match the LLD
 
@@ -93,13 +93,13 @@ Rewrite the approval and guide prose in steering-block.md so the controller call
 
 ### 1.8 E20261015067b05b6:S001:T008 — Remove the output-parsing path and run the live checks
 
-Once everything above is in, remove presentedPathOf, toolResult on the presented turn, the chat host's tool-result feed to the presenter and the end-of-turn opening of whatever became pending, along with the TurnState fields only they used and the tests that pinned them. Nothing in the chat reads a tool result to decide what to open. Then run the two live checks against the finished behaviour: a declared document opens in the review pane even when the workflow result was large, and a Codex chat turn that calls insrc_present opens the declared document.
+Once everything above is in, remove presentedPathOf, toolResult on the presented turn, the chat host's tool-result feed to the presenter and the end-of-turn opening of whatever became pending, along with the TurnState fields only they used and the tests that pinned them. Nothing in the chat reads a tool result to decide what to open. Then run the live check against the finished behaviour: a declared document opens in the review pane even when the workflow result was large. The Codex chat live check (a Codex turn that calls insrc_present opens the declared document) is deferred by the user to a follow-up, because the insrc MCP server is not registered in Codex; until it is run, the Codex mapper rests on the unit tests against the pinned real capture.
 
 **Acceptance checks:**
 - presentedPathOf, toolResult and the end-of-turn guess no longer exist and nothing references them
 - A turn with no declaration opens nothing at its end, and a result carrying a pendingApproval block opens nothing
 - The chat, presenter and extension tests and the type check pass
-- The two live checks were run by the user and their results recorded as reported, not run by the gate
+- The live check was run by the user and its result recorded as reported, not run by the gate; the Codex chat live check is deferred
 
 ## 2. Test-strategy coverage
 
@@ -130,7 +130,6 @@ Once everything above is in, remove presentedPathOf, toolResult on the presented
 | the chat host feeds the declaration from both a followed live turn and a hosted run | `t6` |
 | the chat opens a declared pending document even when the insrc_present tool call itself failed | `t6` |
 | a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat | `t8` |
-| a Codex chat turn that calls insrc_present opens the declared document in the review pane | `t8` |
 
 ## 3. References
 

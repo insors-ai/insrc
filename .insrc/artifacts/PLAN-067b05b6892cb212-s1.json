@@ -25,12 +25,12 @@
     "lldRunId": "wf-1792058614869-taragn",
     "lldEffectiveHash": "067b05b6892cb21255d8599959339ec68e79a29a16f81898050da02e01c41782",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-15T11:31:53.153Z",
-    "rangeBase": "44ce459f4d06aae04b56f8a0340150a614e1b03d"
+    "rangeBase": "44ce459f4d06aae04b56f8a0340150a614e1b03d",
+    "approvedAt": "2026-10-15T12:16:20.423Z"
   },
   "body": {
     "summary": {
-      "prose": "Building this Story adds one small MCP tool, insrc_present, and a live-only list of declared documents on the chat's tool-call event, read from each provider's own tool-call input (Claude's tool_use, Codex's mcp_tool_call with the shape captured and pinned from a real run). The presenter then opens exactly those pending documents and reports any that are not pending, the chat host feeds it from both paths and shows the outcome, the steering tells the controller to declare, and the old reading of tool output and the end-of-turn guess are removed last. Steering-only enforcement is accepted for now and the plan notes it should be revisited if it proves unreliable.",
+      "prose": "Building this Story adds one small MCP tool, insrc_present, and a live-only list of declared documents on the chat's tool-call event, read from each provider's own tool-call input (Claude's tool_use, Codex's mcp_tool_call with the shape captured and pinned from a real run). The presenter then opens exactly those pending documents and reports any that are not pending, the chat host feeds it from both paths and shows the outcome, the steering tells the controller to declare, and the old reading of tool output and the end-of-turn guess are removed last. Steering-only enforcement is accepted for now and the plan notes it should be revisited if it proves unreliable. The Codex chat live check is deferred to a follow-up.",
       "audience": "product"
     },
     "tasks": [
@@ -278,7 +278,7 @@
       {
         "id": "t8",
         "title": "Remove the output-parsing path and run the live checks",
-        "summary": "Once everything above is in, remove presentedPathOf, toolResult on the presented turn, the chat host's tool-result feed to the presenter and the end-of-turn opening of whatever became pending, along with the TurnState fields only they used and the tests that pinned them. Nothing in the chat reads a tool result to decide what to open. Then run the two live checks against the finished behaviour: a declared document opens in the review pane even when the workflow result was large, and a Codex chat turn that calls insrc_present opens the declared document.",
+        "summary": "Once everything above is in, remove presentedPathOf, toolResult on the presented turn, the chat host's tool-result feed to the presenter and the end-of-turn opening of whatever became pending, along with the TurnState fields only they used and the tests that pinned them. Nothing in the chat reads a tool result to decide what to open. Then run the live check against the finished behaviour: a declared document opens in the review pane even when the workflow result was large. The Codex chat live check (a Codex turn that calls insrc_present opens the declared document) is deferred by the user to a follow-up, because the insrc MCP server is not registered in Codex; until it is run, the Codex mapper rests on the unit tests against the pinned real capture.",
         "size": "M",
         "order": 8,
         "dependsOn": [
@@ -289,7 +289,7 @@
           "presentedPathOf, toolResult and the end-of-turn guess no longer exist and nothing references them",
           "A turn with no declaration opens nothing at its end, and a result carrying a pendingApproval block opens nothing",
           "The chat, presenter and extension tests and the type check pass",
-          "The two live checks were run by the user and their results recorded as reported, not run by the gate"
+          "The live check was run by the user and its result recorded as reported, not run by the gate; the Codex chat live check is deferred"
         ],
         "derivedFrom": [
           "c1",
@@ -309,10 +309,6 @@
           {
             "level": "live",
             "name": "a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat"
-          },
-          {
-            "level": "live",
-            "name": "a Codex chat turn that calls insrc_present opens the declared document in the review pane"
           }
         ]
       }
@@ -465,12 +461,6 @@
       },
       {
         "lldStrategyItem": "a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat",
-        "coveredByTaskIds": [
-          "t8"
-        ]
-      },
-      {
-        "lldStrategyItem": "a Codex chat turn that calls insrc_present opens the declared document in the review pane",
         "coveredByTaskIds": [
           "t8"
         ]

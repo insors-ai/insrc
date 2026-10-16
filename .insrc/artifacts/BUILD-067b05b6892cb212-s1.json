@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "createdAt": "2026-10-15T11:32:13.593Z",
+    "updatedAt": "2026-10-16T05:54:07.541Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "epicSlug": "declare-documents-turn-presents-instead-parsing",
+    "approvedAt": "2026-10-16T05:54:07.762Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "Removed the output-parsing path: presentedPathOf, toolResult on the presented turn, the chat host's tool-result feed, the end-of-turn opening and the start-list state are gone; a turn opens only what it declares through declared(). The presenter, chat host and their tests were rewritten to the declared contract. The Claude live check was run by the user after installing the rebuilt plugin; the Codex chat live check is deferred (the insrc MCP server is not registered in Codex).",
+    "testRecord": {
+      "md": "docs/standalone/declare-documents-turn-presents-instead-parsing-E20261015067b05b6/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-067b05b6892cb212-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T05:54:07.541Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/declare-documents-turn-presents-instead-parsing-E20261015067b05b6/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-16T05:54:07.541Z"
+      }
+    ],
+    "commit": "8e965f38"
+  }
+}

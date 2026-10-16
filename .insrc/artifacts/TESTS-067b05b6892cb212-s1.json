@@ -1,0 +1,2081 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "createdAt": "2026-10-15T11:32:13.593Z",
+    "updatedAt": "2026-10-15T12:16:34.103Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "epicSlug": "declare-documents-turn-presents-instead-parsing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "44ce459f",
+        "ranAt": "2026-10-15T11:32:13.593Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the existing symbols the LLD changes or removes match its before state (read and recorded, reported)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Read in code: (1) review-presenter.ts: createReviewPresenter(deps) returns begin(): PresentedTurn {toolResult(output), end()}; exported presentedPathOf(output) JSON-parses for pendingApproval.artifactPath; end() opens whatever became pending since the turn began; ReviewPresenterDeps = {pendingDocuments(), open({artifactId, mdPath}), log} - matches the LLD before state. (2) stream-events.ts line 32-49: the tool-call TurnEvent has turnId, tool, mcp?, command?, callId? and no input/present field - matches. (3) cli-adapter.ts Claude mapper (about 598-623) builds tool-call from a tool_use block with the block's input in hand; the Codex mapper (about 740-775) handles only item.completed items of type command_execution or tool_call and reads item.tool/command/id, with no mcp and no arguments - matches. ONE CLARIFICATION, no contradiction: Claude's tool_use name is server-qualified (mcp__<server>__insrc_present, parsed by parseMcpTool into mcp {server, name}), while Codex's tool is the bare name; so the Claude mapper must match mcp.name === 'insrc_present' (any server name) and the Codex mapper tool === 'insrc_present', which fits the LLD's 'only for the insrc_present tool'. Recorded in this BUILD summary."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t2",
+        "commit": "1d3c1ea2",
+        "ranAt": "2026-10-15T11:34:44.617Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/present-dispatch.test.ts",
+                "title": "insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/schema-registry.test.ts",
+                "title": "the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "insrc_present with a resolver that finds no repo answers an error and presents nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/present-dispatch.test.ts",
+                "title": "insrc_present with a resolver that finds no repo answers an error and presents nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a pending record with no document file is reported as not pending by the tool and by the chat",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/present-dispatch.test.ts",
+                "title": "a pending record with no document file is reported as not pending by the tool and by the chat",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 816,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/present-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 535,
+            "titles": [
+              {
+                "title": "insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_present with a resolver that finds no repo answers an error and presents nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a pending record with no document file is reported as not pending by the tool and by the chat",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_present: a daemon error or an unreachable daemon is answered as an error, never as presented",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/schema-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 591,
+            "titles": [
+              {
+                "title": "registry key set == registered tool set (all 13 incl. insrc_schema)",
+                "result": "pass"
+              },
+              {
+                "title": "validTools (from an omitted-tool lookup) equals the registry key set (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "every recorded rawShape converts to JSON Schema without throwing (k1)",
+                "result": "pass"
+              },
+              {
+                "title": "a real registered shape is served, not a stub (insrc_workflow_step)",
+                "result": "pass"
+              },
+              {
+                "title": "each multi-turn record phases[] equals its handler accepted set (lockstep)",
+                "result": "pass"
+              },
+              {
+                "title": "phaseless tools carry no phases",
+                "result": "pass"
+              },
+              {
+                "title": "readWorkflowGuide over the REAL steering asset resolves every WorkflowKey to a non-empty section",
+                "result": "pass"
+              },
+              {
+                "title": "the injected skeleton (stripGuideSections) drops all guide markers, stays shorter, and still names every tool",
+                "result": "pass"
+              },
+              {
+                "title": "the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — insrc_triage start serves the optional specHash field, so an MCP client can send it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "a0ce5de1",
+        "ranAt": "2026-10-15T11:36:21.709Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an input that is not a list of at most twenty non-empty strings leaves present absent",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "an input that is not a list of at most twenty non-empty strings leaves present absent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the declared list is not written into the saved transcript",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/markers.test.ts",
+                "title": "the declared list is not written into the saved transcript",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1286,
+            "titles": [
+              {
+                "title": "claude: text turn maps to status + assistant-delta(s) + done(ok)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff",
+                "result": "pass"
+              },
+              {
+                "title": "claude: is_error result maps to done(ok:false)",
+                "result": "pass"
+              },
+              {
+                "title": "nothing is yielded after the terminal event, even if the stream continues",
+                "result": "pass"
+              },
+              {
+                "title": "codex: item.completed + turn.completed maps to assistant-delta + done(ok)",
+                "result": "pass"
+              },
+              {
+                "title": "an in-stream error is terminal: nothing (incl. a second done) is yielded after it",
+                "result": "pass"
+              },
+              {
+                "title": "a stdout stream error surfaces as a terminal error event (never throws/rejects)",
+                "result": "pass"
+              },
+              {
+                "title": "abandoning the stream early kills the subprocess (no orphan)",
+                "result": "pass"
+              },
+              {
+                "title": "the terminal done carries the captured native session id (resume handle for S005)",
+                "result": "pass"
+              },
+              {
+                "title": "error path 1: spawn throws synchronously -> terminal error event (never rejects)",
+                "result": "pass"
+              },
+              {
+                "title": "error path 2: ENOENT spawn error -> terminal error naming the missing CLI",
+                "result": "pass"
+              },
+              {
+                "title": "error path 3: non-zero exit with no terminal event -> error carrying the stderr tail",
+                "result": "pass"
+              },
+              {
+                "title": "error path 4: an auth-failure stderr -> a re-login error message",
+                "result": "pass"
+              },
+              {
+                "title": "error path 5: an unparseable stream line is skipped+warned, not fatal",
+                "result": "pass"
+              },
+              {
+                "title": "cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)",
+                "result": "pass"
+              },
+              {
+                "title": "run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop",
+                "result": "pass"
+              },
+              {
+                "title": "cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group",
+                "result": "pass"
+              },
+              {
+                "title": "after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles",
+                "result": "pass"
+              },
+              {
+                "title": "cancel(): unknown/finished turnId is a no-op (idempotent, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "capabilities.resume is true for both providers; a resume request passes the native flag",
+                "result": "pass"
+              },
+              {
+                "title": "ProviderRegistry.available lists only installed agentic CLIs (never Ollama)",
+                "result": "pass"
+              },
+              {
+                "title": "ProviderRegistry.get() on an absent provider throws unknown-provider",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a Bash tool_use sets ToolCallEvent.command from input.command",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a command-less tool_use omits command (renders as the tool name, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call",
+                "result": "pass"
+              },
+              {
+                "title": "an input that is not a list of at most twenty non-empty strings leaves present absent",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a command_execution item sets command from item.command",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a tool_call item without a command omits command (k2)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result with empty content still emits a tool-result (empty output)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a completed command_execution with output emits both a tool-call and a tool-result",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: an error event -> undefined; an unknown provider -> undefined",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied with a nested input.command sets event.command",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a top-level command takes precedence over input.command",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir, on a grant with no readDirs (no sandbox widening on a click)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: an unparseable line is skipped+logged, never thrown (as today)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: decide() on an unknown turn is a safe no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a marker-only text block emits the selection-request with NO empty assistant-delta",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a malformed marker -> NO event, the raw text stays a delta, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a no-marker delta behaves exactly as today",
+                "result": "pass"
+              },
+              {
+                "title": "claude: tool-call and its tool-result carry the tool_use id as callId",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a command item with an id carries it as callId on both events; an id-less item omits it",
+                "result": "pass"
+              },
+              {
+                "title": "the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line",
+                "result": "pass"
+              },
+              {
+                "title": "marker lines reaching a mapper produce no events",
+                "result": "pass"
+              },
+              {
+                "title": "run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits",
+                "result": "pass"
+              },
+              {
+                "title": "a beginTurn failure falls back to the pipe with one logged error",
+                "result": "pass"
+              },
+              {
+                "title": "resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one",
+                "result": "pass"
+              },
+              {
+                "title": "resume()'s handed-over process stops the recorded pid's group only while its start time matches",
+                "result": "pass"
+              },
+              {
+                "title": "65cb63f7: a prompt starting with \"-\" or \"--\" reaches claude and codex verbatim, after the end-of-options marker",
+                "result": "pass"
+              },
+              {
+                "title": "claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'",
+                "result": "pass"
+              },
+              {
+                "title": "claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today",
+                "result": "pass"
+              },
+              {
+                "title": "codex argv is unchanged by readDirs",
+                "result": "pass"
+              },
+              {
+                "title": "codex is started with no input stream and claude keeps its input open; a decision for codex is reported as undeliverable and written nowhere",
+                "result": "pass"
+              },
+              {
+                "title": "the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits",
+                "result": "pass"
+              },
+              {
+                "title": "claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither",
+                "result": "pass"
+              },
+              {
+                "title": "codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied",
+                "result": "pass"
+              },
+              {
+                "title": "a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/markers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 314,
+            "titles": [
+              {
+                "title": "markerFor maps every sc2 status phase to the right class + label",
+                "result": "pass"
+              },
+              {
+                "title": "markerFor(tool-call): bare ev.tool with no mcp, `${server} · ${name}` with mcp (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "markerFor: file-edit/done(ok true+false)/error map to the right class + label",
+                "result": "pass"
+              },
+              {
+                "title": "markerFor(assistant-delta) -> null; an unknown/forward kind -> null (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "S004: markerFor(approval-request) -> null (live-only card, never a durable marker, k4)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): markerFor(tool-result) -> null (persisted structurally, not a flat marker, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 (ux polish): markerFor(permission-outcome) -> null (persisted structurally, not a flat marker, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): markerFor(selection-request) + markerFor(selection-outcome) -> null (persisted structurally / live-only, k4)",
+                "result": "pass"
+              },
+              {
+                "title": "every markerFor cssClass is one of the five sc1 insrc-term__marker--* stems",
+                "result": "pass"
+              },
+              {
+                "title": "parity: eval(markerWebviewSource()) computes {cssClass,label} deepEqual to markerFor for every sample (drift fails build)",
+                "result": "pass"
+              },
+              {
+                "title": "markerWebviewSource() is CSP-safe: only the five marker classes, no import/remote/asWebviewUri/vscode",
+                "result": "pass"
+              },
+              {
+                "title": "phase 'waiting' maps to 'Waiting for the previous turn to finish' in both markerFor and the webview mirror",
+                "result": "pass"
+              },
+              {
+                "title": "the declared list is not written into the saved transcript",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "df95566d",
+        "ranAt": "2026-10-15T11:37:56.950Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a Codex mcp_tool_call insrc_present item with status failed still sets present",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "a Codex mcp_tool_call insrc_present item with status failed still sets present",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+                "title": "a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1292,
+            "titles": [
+              {
+                "title": "claude: text turn maps to status + assistant-delta(s) + done(ok)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff",
+                "result": "pass"
+              },
+              {
+                "title": "claude: is_error result maps to done(ok:false)",
+                "result": "pass"
+              },
+              {
+                "title": "nothing is yielded after the terminal event, even if the stream continues",
+                "result": "pass"
+              },
+              {
+                "title": "codex: item.completed + turn.completed maps to assistant-delta + done(ok)",
+                "result": "pass"
+              },
+              {
+                "title": "an in-stream error is terminal: nothing (incl. a second done) is yielded after it",
+                "result": "pass"
+              },
+              {
+                "title": "a stdout stream error surfaces as a terminal error event (never throws/rejects)",
+                "result": "pass"
+              },
+              {
+                "title": "abandoning the stream early kills the subprocess (no orphan)",
+                "result": "pass"
+              },
+              {
+                "title": "the terminal done carries the captured native session id (resume handle for S005)",
+                "result": "pass"
+              },
+              {
+                "title": "error path 1: spawn throws synchronously -> terminal error event (never rejects)",
+                "result": "pass"
+              },
+              {
+                "title": "error path 2: ENOENT spawn error -> terminal error naming the missing CLI",
+                "result": "pass"
+              },
+              {
+                "title": "error path 3: non-zero exit with no terminal event -> error carrying the stderr tail",
+                "result": "pass"
+              },
+              {
+                "title": "error path 4: an auth-failure stderr -> a re-login error message",
+                "result": "pass"
+              },
+              {
+                "title": "error path 5: an unparseable stream line is skipped+warned, not fatal",
+                "result": "pass"
+              },
+              {
+                "title": "cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)",
+                "result": "pass"
+              },
+              {
+                "title": "run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop",
+                "result": "pass"
+              },
+              {
+                "title": "cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group",
+                "result": "pass"
+              },
+              {
+                "title": "after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles",
+                "result": "pass"
+              },
+              {
+                "title": "cancel(): unknown/finished turnId is a no-op (idempotent, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "capabilities.resume is true for both providers; a resume request passes the native flag",
+                "result": "pass"
+              },
+              {
+                "title": "ProviderRegistry.available lists only installed agentic CLIs (never Ollama)",
+                "result": "pass"
+              },
+              {
+                "title": "ProviderRegistry.get() on an absent provider throws unknown-provider",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a Bash tool_use sets ToolCallEvent.command from input.command",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a command-less tool_use omits command (renders as the tool name, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call",
+                "result": "pass"
+              },
+              {
+                "title": "an input that is not a list of at most twenty non-empty strings leaves present absent",
+                "result": "pass"
+              },
+              {
+                "title": "the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one",
+                "result": "pass"
+              },
+              {
+                "title": "a Codex mcp_tool_call insrc_present item with status failed still sets present",
+                "result": "pass"
+              },
+              {
+                "title": "a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a command_execution item sets command from item.command",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a tool_call item without a command omits command (k2)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a tool_result with empty content still emits a tool-result (empty output)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a completed command_execution with output emits both a tool-call and a tool-result",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)",
+                "result": "pass"
+              },
+              {
+                "title": "deriveChatTitle: an error event -> undefined; an unknown provider -> undefined",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied with a nested input.command sets event.command",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a top-level command takes precedence over input.command",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir, on a grant with no readDirs (no sandbox widening on a click)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: an unparseable line is skipped+logged, never thrown (as today)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t5: decide() on an unknown turn is a safe no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a marker-only text block emits the selection-request with NO empty assistant-delta",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)",
+                "result": "pass"
+              },
+              {
+                "title": "claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a malformed marker -> NO event, the raw text stays a delta, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a no-marker delta behaves exactly as today",
+                "result": "pass"
+              },
+              {
+                "title": "claude: tool-call and its tool-result carry the tool_use id as callId",
+                "result": "pass"
+              },
+              {
+                "title": "codex: a command item with an id carries it as callId on both events; an id-less item omits it",
+                "result": "pass"
+              },
+              {
+                "title": "the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line",
+                "result": "pass"
+              },
+              {
+                "title": "marker lines reaching a mapper produce no events",
+                "result": "pass"
+              },
+              {
+                "title": "run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits",
+                "result": "pass"
+              },
+              {
+                "title": "a beginTurn failure falls back to the pipe with one logged error",
+                "result": "pass"
+              },
+              {
+                "title": "resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one",
+                "result": "pass"
+              },
+              {
+                "title": "resume()'s handed-over process stops the recorded pid's group only while its start time matches",
+                "result": "pass"
+              },
+              {
+                "title": "65cb63f7: a prompt starting with \"-\" or \"--\" reaches claude and codex verbatim, after the end-of-options marker",
+                "result": "pass"
+              },
+              {
+                "title": "claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'",
+                "result": "pass"
+              },
+              {
+                "title": "claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today",
+                "result": "pass"
+              },
+              {
+                "title": "codex argv is unchanged by readDirs",
+                "result": "pass"
+              },
+              {
+                "title": "codex is started with no input stream and claude keeps its input open; a decision for codex is reported as undeliverable and written nowhere",
+                "result": "pass"
+              },
+              {
+                "title": "the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits",
+                "result": "pass"
+              },
+              {
+                "title": "claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither",
+                "result": "pass"
+              },
+              {
+                "title": "codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied",
+                "result": "pass"
+              },
+              {
+                "title": "a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "f922fe04",
+        "ranAt": "2026-10-15T11:39:20.750Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a declared artifact id and a declared path each open the matching pending document once, in order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+                "title": "a declared artifact id and a declared path each open the matching pending document once, in order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a declared name that is not pending opens nothing and is reported by name",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+                "title": "a declared name that is not pending opens nothing and is reported by name",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the same document declared twice in a turn opens once",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+                "title": "the same document declared twice in a turn opens once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "an unreadable pending list and a failing open are logged and never thrown",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+                "title": "an unreadable pending list and a failing open are logged and never thrown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+                "title": "declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a declared artifact id matches the pending list's id without regard to the case of its story part",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+                "title": "a declared artifact id matches the pending list's id without regard to the case of its story part",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1031,
+            "titles": [
+              {
+                "title": "review presenter: a tool result that carries a pendingApproval path opens the pending document with that absolute path once; the same path again in the turn does not; a path that is not pending, a result with no such block and one that is not JSON open nothing",
+                "result": "pass"
+              },
+              {
+                "title": "review presenter: at the end of a turn each document that became pending during the turn and was not opened yet is opened; a document pending before the turn is not; a failed pending read opens nothing and is logged",
+                "result": "pass"
+              },
+              {
+                "title": "review presenter: a later turn opens a document again when it is presented again; several documents in one turn are opened in order, so the last presented is the one on show",
+                "result": "pass"
+              },
+              {
+                "title": "review presenter: a turn begun while the one before it has not ended takes over that turn's start list and what it opened; the earlier turn's end then opens nothing and the later turn's end opens what became pending since the earlier one began",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: openArtifact with quiet creates the pane with quiet when there is none and reveals an existing one without taking focus; without quiet both are as before",
+                "result": "pass"
+              },
+              {
+                "title": "a declared artifact id and a declared path each open the matching pending document once, in order",
+                "result": "pass"
+              },
+              {
+                "title": "a declared name that is not pending opens nothing and is reported by name",
+                "result": "pass"
+              },
+              {
+                "title": "the same document declared twice in a turn opens once",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable pending list and a failing open are logged and never thrown",
+                "result": "pass"
+              },
+              {
+                "title": "declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable",
+                "result": "pass"
+              },
+              {
+                "title": "a declared artifact id matches the pending list's id without regard to the case of its story part",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "fe5dcbb6",
+        "ranAt": "2026-10-15T11:47:06.257Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the chat host feeds the declaration from both a followed live turn and a hosted run",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "the chat host feeds the declaration from both a followed live turn and a hosted run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the chat opens a declared pending document even when the insrc_present tool call itself failed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+                "title": "the chat opens a declared pending document even when the insrc_present tool call itself failed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4475,
+            "titles": [
+              {
+                "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
+                "result": "pass"
+              },
+              {
+                "title": "single-in-flight: a second submit waits for the first, which reports to its end — no interleave; the first is not killed (H1/M2)",
+                "result": "pass"
+              },
+              {
+                "title": "new-chat mid-stream stops the prior turn (no cross-session post) (M3)",
+                "result": "pass"
+              },
+              {
+                "title": "malformed submit-turn (non-string text) is a no-op, no unhandled rejection (M4)",
+                "result": "pass"
+              },
+              {
+                "title": "an errored turn persists its transcript rows (L3)",
+                "result": "pass"
+              },
+              {
+                "title": "empty/whitespace submit-turn is a no-op (no run)",
+                "result": "pass"
+              },
+              {
+                "title": "a terminal error TurnEvent is posted inline; unknown-provider is surfaced, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "onDidDispose cancels the active turn and stops posting further",
+                "result": "pass"
+              },
+              {
+                "title": "unknown / edit-* / docs-* inbound messages are accepted-but-ignored no-ops",
+                "result": "pass"
+              },
+              {
+                "title": "no provider installed: open posts an error notice (no crash)",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell: one nonce'd inline script + strict CSP + sc1 style + no remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "rendered shell mints a FRESH nonce per render",
+                "result": "pass"
+              },
+              {
+                "title": "S004 rendered shell: non-delta turn-events route through the marker mapper (sc1 class, not the bare bracket)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a tool-result event persists a STRUCTURED role:tool-result row (command+output), never a marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (ux polish): a turn with NO tool-result events persists a byte-identical transcript (no tool-result rows)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 shell: provider-selector options == available + history-dropdown; one script + CSP intact",
+                "result": "pass"
+              },
+              {
+                "title": "S005 shell: empty providers.available -> disabled selector",
+                "result": "pass"
+              },
+              {
+                "title": "S005 open() posts a history-list",
+                "result": "pass"
+              },
+              {
+                "title": "open()/close leaves NO empty session in history — the chat opens a draft, persisted only on first turn",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: the first turn swaps the truncated-prompt title for the LLM-derived name (+ refreshes history)",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: a failed/empty derivation keeps the truncated-prompt fallback",
+                "result": "pass"
+              },
+              {
+                "title": "LLM titling: with no deriveTitle injected, the truncated-prompt fallback is kept (no built-in CLI call)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S005 open-chat: restores a prior transcript; a missing id is a no-op + refreshes history",
+                "result": "pass"
+              },
+              {
+                "title": "S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent",
+                "result": "pass"
+              },
+              {
+                "title": "S005 switching chat mid-stream cancels the in-flight turn (single-in-flight preserved)",
+                "result": "pass"
+              },
+              {
+                "title": "S005 a first-turn error still refreshes the history dropdown (title label)",
+                "result": "pass"
+              },
+              {
+                "title": "S008 integration: a turn persists each marker row with cssClass === markerFor(ev).cssClass (ac2); assistant rows carry none",
+                "result": "pass"
+              },
+              {
+                "title": "S008 integration: open-chat restore posts marker rows carrying their cssClass (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: overflow and unreadable push one marker row each and post it as transcript-row",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: the restored window and an older page carry each section's latest version at its first row's place",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths",
+                "result": "pass"
+              },
+              {
+                "title": "diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "S006 integration: set-edit-mode updates + persists session.editMode",
+                "result": "pass"
+              },
+              {
+                "title": "S006: without editGovernance the host behaves as before (no transcript-row; file-edit marker still renders)",
+                "result": "pass"
+              },
+              {
+                "title": "S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce'd script; CSP/textContent invariants intact",
+                "result": "pass"
+              },
+              {
+                "title": "S001 ac1: submit-turn posts a live user-row (the prompt appears during the turn, not only on reload)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 lc1: two identical prompts yield two distinct-keyed live user-rows",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)",
+                "result": "pass"
+              },
+              {
+                "title": "S002: a cancel-turn with no active turn is an idempotent no-op (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 (ux-polish) ac1/ac2/t3: the leading \">\" prompt (#insrc-prompt) is the send/stop control; the trailing #insrc-send button is retired",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac4: the no-CLI capability gate is the sole render-time disable and still wins",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) ac1/ac2/ac3: the lock starts closed and is settled at all three session transitions",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (74bc0120) regression: the lock is additive — the surrounding handlers are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac1: the fixed-region layout holds — #insrc-term is the only scroll region; header + input stay flex:0",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "S002: an empty submit is a host no-op (no turn starts)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac3: renderShell embeds a single #insrc-progress widget above the input, not hidden and starting idle",
+                "result": "pass"
+              },
+              {
+                "title": "S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption CSS (inline, CSP-safe)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): renderShell has the SINGLE merged mode control + wires the approval seams",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — #insrc-input has no box chrome, rows=2 kept, ❯ top-aligned",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac2: the placeholder gains the interrupt hint",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar",
+                "result": "pass"
+              },
+              {
+                "title": "UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an invalid set-permission-mode is dropped (mode unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 t7: permission-decision with no active turn is a safe no-op (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt() supersedes an already-live channel (prior disposed; single active channel)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 adopt() with no agentic CLI posts the same error a fresh open does",
+                "result": "pass"
+              },
+              {
+                "title": "S001 the webview posts a ready handshake AFTER attaching its message listener (initial load + every reload)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates",
+                "result": "pass"
+              },
+              {
+                "title": "S001 ready before any open-time delivery still populates history (models the dropped initial post)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): approving a permission-denied request re-runs the blocked action with the tool pre-allowed, resuming the session",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): denying a permission-denied request does NOT re-run (the turn stays denied)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a tool-gate WITH a command re-runs naming the EXACT command (not the vague nudge) + pre-allows the tool",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a tool-gate WITHOUT a command falls back to the tool-name phrasing (+ allowedTools)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts an informational message; argv/allowlist untouched",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-block — no re-run; posts ONLY the rejected outcome chip",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): an in-turn request is relayed to adapter.decide (codex/in-turn relay); an id the host does not hold still falls through",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: approving a tool-gate WITH a command re-runs with [toolName] but posts ZERO user-row echoes (suppressEcho)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: a NORMAL user turn still posts its user-row echo (suppressEcho gates ONLY the synthetic grant re-run)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac2: the tool-name FALLBACK grant (no command) also suppresses the echo + records the approved outcome",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac3: a dir-block Approve records an approved outcome (even though it does NOT re-run)",
+                "result": "pass"
+              },
+              {
+                "title": "S003 ac4: after an approve, the persisted transcript carries the outcome row and NO approval-request (the pending card never replays)",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): set-permission-mode persists onto the active (saved) session",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the mode FOLLOWS the session — opening a chat adopts its persisted mode",
+                "result": "pass"
+              },
+              {
+                "title": "S001 (bugfix): the webview sets the mode control from a restored session",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): renderShell wires the selection decision sink + routes selection turn-events (approval path intact)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision records the outcome (chosen LABELS) AND continues the run via a synthesized user turn",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision for an unknown/stale requestId is a safe no-op (no outcome, no run)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 (ux polish): a selection-decision with an empty/invalid selected list is dropped (no outcome, no run)",
+                "result": "pass"
+              },
+              {
+                "title": "a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits",
+                "result": "pass"
+              },
+              {
+                "title": "with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed",
+                "result": "pass"
+              },
+              {
+                "title": "Stop ends the running process at once and the waiting message then runs; with the queue every message runs, in order, one answer each",
+                "result": "pass"
+              },
+              {
+                "title": "a lock failure other than a dropped wait is logged and shown, never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "a turn whose adapter fails to start releases the session lease (the next turn does not wait)",
+                "result": "pass"
+              },
+              {
+                "title": "a turn records its cursor on the session as lines are handled and clears it at the terminal event",
+                "result": "pass"
+              },
+              {
+                "title": "after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end",
+                "result": "pass"
+              },
+              {
+                "title": "a cursor whose generation is gone (rolled over twice) is cleared without resuming",
+                "result": "pass"
+              },
+              {
+                "title": "a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over",
+                "result": "pass"
+              },
+              {
+                "title": "switching chat or closing the panel stops following a turn writing to the session file without stopping its process, and showing the session again resumes it; a turn without one is still stopped",
+                "result": "pass"
+              },
+              {
+                "title": "Stop ends a resumed turn's process through the handle resume() hands over",
+                "result": "pass"
+              },
+              {
+                "title": "closing the panel mid-turn leaves a session-file turn running with its cursor saved",
+                "result": "pass"
+              },
+              {
+                "title": "a failing store save or a failing process stop never becomes an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "a save failing at the end of a turn is logged; the turn still ends cleanly and the history is refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "a save failing while the derived title is stored is logged, never an unhandled rejection, and the history is still refreshed",
+                "result": "pass"
+              },
+              {
+                "title": "a failing save of a selection or permission outcome is logged and the run still continues",
+                "result": "pass"
+              },
+              {
+                "title": "a failing edit-governor call is logged, never an unhandled rejection",
+                "result": "pass"
+              },
+              {
+                "title": "three requests in one turn: only the first card is posted (with '1 of 3')",
+                "result": "pass"
+              },
+              {
+                "title": "a turn followed after reload routes its approval-requests through the queue and its end ends the batch",
+                "result": "pass"
+              },
+              {
+                "title": "Stop with requests queued records each as rejected and clears the queue",
+                "result": "pass"
+              },
+              {
+                "title": "outcome rows: one role:'permission-outcome' row per decision, in decision order, and no approval-request rows (restore shows only chips)",
+                "result": "pass"
+              },
+              {
+                "title": "the second card is posted only after the first is decided; a decision on a waiting card's id does nothing",
+                "result": "pass"
+              },
+              {
+                "title": "live-turn provider with two requests: decide() is called for the first before the second card is posted; no follow-up turn is started",
+                "result": "pass"
+              },
+              {
+                "title": "an in-turn request that carries a toolName is relayed with decide(), not batched (routing by resolution)",
+                "result": "pass"
+              },
+              {
+                "title": "approving all three starts exactly one follow-up turn, after the last decision and the turn's end, with allowedTools = all three tools and a prompt naming the three approved actions",
+                "result": "pass"
+              },
+              {
+                "title": "no approval ever supersedes a running follow-up: turns.start is called once per batch",
+                "result": "pass"
+              },
+              {
+                "title": "deny: a denied request gets a rejected chip, the next request is still asked, and the follow-up names it as denied; all denied -> no follow-up and an informational message",
+                "result": "pass"
+              },
+              {
+                "title": "a follow-up that is refused again forms the next batch and its follow-up carries the previous batch's grants",
+                "result": "pass"
+              },
+              {
+                "title": "a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn",
+                "result": "pass"
+              },
+              {
+                "title": "a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip",
+                "result": "pass"
+              },
+              {
+                "title": "a request joining the queue while the head is shown updates the shown card in place (one card per requestId)",
+                "result": "pass"
+              },
+              {
+                "title": "reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue",
+                "result": "pass"
+              },
+              {
+                "title": "live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none",
+                "result": "pass"
+              },
+              {
+                "title": "write-then-post order: when each live row is posted, the transcript already holds it at that index",
+                "result": "pass"
+              },
+              {
+                "title": "a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard",
+                "result": "pass"
+              },
+              {
+                "title": "load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0",
+                "result": "pass"
+              },
+              {
+                "title": "load-older for another session id, or with a malformed before or sessionId, posts nothing",
+                "result": "pass"
+              },
+              {
+                "title": "session-restored carries firstIndex 0 and total while the whole transcript is still sent",
+                "result": "pass"
+              },
+              {
+                "title": "the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total",
+                "result": "pass"
+              },
+              {
+                "title": "the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin",
+                "result": "pass"
+              },
+              {
+                "title": "opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0",
+                "result": "pass"
+              },
+              {
+                "title": "ready, new-chat and open-chat post the same windowed session-restored",
+                "result": "pass"
+              },
+              {
+                "title": "a ready after older pages were requested posts the latest window again, with the approval head after it",
+                "result": "pass"
+              },
+              {
+                "title": "the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows",
+                "result": "pass"
+              },
+              {
+                "title": "the chat panel run over the file store: a turn's saves append only that turn's rows, a restored session shows the same rows, and a failing save is logged without breaking the turn",
+                "result": "pass"
+              },
+              {
+                "title": "host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment",
+                "result": "pass"
+              },
+              {
+                "title": "host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored",
+                "result": "pass"
+              },
+              {
+                "title": "host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store",
+                "result": "pass"
+              },
+              {
+                "title": "host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit waits for an attachment still being written, and the message carries every chip in order",
+                "result": "pass"
+              },
+              {
+                "title": "host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it",
+                "result": "pass"
+              },
+              {
+                "title": "host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing",
+                "result": "pass"
+              },
+              {
+                "title": "host: a submit with blank text and an attachment supersedes queued approvals",
+                "result": "pass"
+              },
+              {
+                "title": "host: with the queue, a submit with blank text and an attachment leaves the waiting cards as they are, waits, and runs once they are decided",
+                "result": "pass"
+              },
+              {
+                "title": "host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a run turn begins a presenter turn just before it starts, passes each tool result that is not an error, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its tool results and ends it when the follow ended; a ready message during a run turn begins nothing, and the run turn's end still opens a newly pending document",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: a turn followed by a second message still passes its tool results to the presenter, which opens the document it presents, once",
+                "result": "pass"
+              },
+              {
+                "title": "chat host: submitExternal in a window without a queue answers unavailable with a note and keeps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host feeds the declaration from both a followed live turn and a hosted run",
+                "result": "pass"
+              },
+              {
+                "title": "the chat opens a declared pending document even when the insrc_present tool call itself failed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "dbb08be0",
+        "ranAt": "2026-10-15T11:48:18.646Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/present-steering.test.ts",
+                "title": "the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/present-steering.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 454,
+            "titles": [
+              {
+                "title": "the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "44286557",
+        "ranAt": "2026-10-15T12:16:34.103Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+                "title": "a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+                "title": "the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "a document the controller declares opens in the review pane even when the workflow result was large, and a name that is not pending is reported in the chat",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Run by the user in the insrc chat, 2026-10-15, after installing the rebuilt vsix and reloading the window. I called insrc_guide (build, a large result) and then insrc_present with ['ISSUE-83c85f38afad7843', 'LLD-nope-S001']; the tool answered presented:[ISSUE-83c85f38afad7843], notPending:[LLD-nope-S001]. The user reported: the issue record (Keep a chat turn's reply when the CLI answers a queued item first) opened in the review pane, and the chat showed the line 'Not shown for review, because not pending approval: LLD-nope-S001.' An earlier attempt, before the rebuilt plugin was installed, failed (nothing opened, no line) because the installed extension was the old build; it is not counted. Note: the large result was a guide text, not a truncated workflow result."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 482,
+            "titles": [
+              {
+                "title": "a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing",
+                "result": "pass"
+              },
+              {
+                "title": "the output-parsing path is gone: presentedPathOf and the end-of-turn guess no longer exist",
+                "result": "pass"
+              },
+              {
+                "title": "docs review host: openArtifact with quiet creates the pane with quiet when there is none and reveals an existing one without taking focus; without quiet both are as before",
+                "result": "pass"
+              },
+              {
+                "title": "a declared artifact id and a declared path each open the matching pending document once, in order",
+                "result": "pass"
+              },
+              {
+                "title": "a declared name that is not pending opens nothing and is reported by name",
+                "result": "pass"
+              },
+              {
+                "title": "the same document declared twice in a turn opens once",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable pending list and a failing open are logged and never thrown",
+                "result": "pass"
+              },
+              {
+                "title": "declared answers an outcome naming what opened, which names were not pending, and whether the pending list was unreadable",
+                "result": "pass"
+              },
+              {
+                "title": "a declared artifact id matches the pending list's id without regard to the case of its story part",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

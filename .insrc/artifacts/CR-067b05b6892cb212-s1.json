@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792067111437-dgd1k4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-15T12:25:11.437Z",
+    "model": "claude:opus",
+    "elapsedMs": 404365,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-15T10:06:05.580Z",
+    "epicSlug": "declare-documents-turn-presents-instead-parsing",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "067b05b6892cb212",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "src/mcp/__tests__/fixtures/tool-surface.golden.json",
+        "src/mcp/__tests__/forward-step.test.ts",
+        "src/mcp/__tests__/present-dispatch.test.ts",
+        "src/mcp/__tests__/present-steering.test.ts",
+        "src/mcp/__tests__/schema-registry.test.ts",
+        "src/mcp/daemon-stream.ts",
+        "src/mcp/server.ts",
+        "src/prompts/steering-block.md",
+        "vscode-plugin/assets/steering-block.md",
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/__tests__/fixtures/codex-mcp-tool-call.jsonl",
+        "vscode-plugin/src/chat/__tests__/markers.test.ts",
+        "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
+        "vscode-plugin/src/chat/chat-panel.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/review-presenter.ts",
+        "vscode-plugin/src/chat/stream-events.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/review-presenter.ts:1",
+            "message": "Present but unverified. Commit 8e965f38 changed namesDocument / createReviewPresenter (a name matching more than one pending document is now reported, not guessed) and chat-panel.ts after the build gate's last test run (t8, commit 44286557). It also added a test for this: review-presenter.test.ts:134 'a name that matches more than one pending document opens nothing and is reported, and a full repo-relative path or an id opens one'. No gate run covers that commit, and this reviewer's re-run of the plugin suites did not finish, so whether the new test and the re-touched presenter and chat-host tests pass is unconfirmed. The MCP-side counterpart (present-dispatch.test.ts:120, server.ts namesPending/handleInsrcPresent) was re-run here and passes (21/21 across present-dispatch, present-steering, schema-registry, forward-step).",
+            "expectationRef": "namesDocument (ambiguous-match change in 8e965f38)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/mcp/server.ts:1182",
+            "message": "`namesPending` uses the same matching rule as the plugin's `namesDocument`: case-insensitive id, exact path, or `/`-suffix path. The duplication is deliberate. The two live in separate packages (daemon MCP server and VS Code plugin), the doc comment cross-references them, and shared test vectors in present-dispatch.test.ts and review-presenter.test.ts keep them in step. The remaining risk is drift if one copy is edited without its test vectors. This is an observation only, not a blocker.",
+            "counterpartRef": "namesDocument (vscode-plugin/src/chat/review-presenter.ts)",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

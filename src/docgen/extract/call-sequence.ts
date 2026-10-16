@@ -25,7 +25,7 @@
  * code re-extracts to a byte-identical IR (ac2's determinism sibling from s2).
  */
 
-import { basename } from 'node:path';
+import { basename, isAbsolute, relative, sep } from 'node:path';
 
 import type { DocumentIR, IrNode, IrEdge } from '../types.js';
 import { ok, emptyScope, notFound, sourceNotReady } from '../outcome.js';
@@ -82,9 +82,16 @@ export interface CallGraphReader {
 	calleesOf(entityId: string): Promise<readonly CallFrameRef[]>;
 }
 
-/** Label a frame with its indexed name + location: `name (file:line)` (ac1). */
-function frameLabel(f: CallFrameRef): string {
-	return `${f.name} (${basename(f.file)}:${f.startLine})`;
+/** Label a frame with its indexed name + location: `name (file:line)` (ac1). With a repo root
+ *  the file is written relative to it, with forward slashes, so a click can open it; without a
+ *  root, or for a file outside it, the label keeps the base name. */
+function frameLabel(f: CallFrameRef, repoRoot?: string): string {
+	let file = basename(f.file);
+	if (repoRoot !== undefined && repoRoot !== '') {
+		const rel = relative(repoRoot, f.file);
+		if (rel !== '' && !rel.startsWith('..') && !isAbsolute(rel)) file = rel.split(sep).join('/');
+	}
+	return `${f.name} (${file}:${f.startLine})`;
 }
 
 /**
@@ -98,10 +105,11 @@ export function buildCallSequenceIR(
 	walk:             CallWalk,
 	revision:         string,
 	scopeDescription: string,
+	repoRoot?:        string,
 ): DocumentIR {
 	const frameNodes: IrNode[] = walk.frames.map(f => ({
 		id:       f.entityId,
-		label:    frameLabel(f),
+		label:    frameLabel(f, repoRoot),
 		kind:     'call-frame',
 		citation: { entityId: f.entityId },
 	}));
@@ -214,7 +222,7 @@ export function makeExtract(reader: CallGraphReader) {
 
 		const walk = await walkCallSequence(entry, scope.maxDepth, reader);
 		const desc = `call sequence from ${scope.symbol} (depth ${scope.maxDepth})`;
-		return ok(buildCallSequenceIR(walk, revision, desc));
+		return ok(buildCallSequenceIR(walk, revision, desc, scope.repoRoot));
 	};
 }
 

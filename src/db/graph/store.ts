@@ -22,6 +22,9 @@
  *     in_edge                      (u64+u8+u64) -> empty
  *     unresolved                   u64 BE       -> msgpack(UnresolvedRelation)
  *     unresolved_by_file           (u32+utf8)   -> dupsort u64 unresolved_id
+ *     unresolved_by_target         utf8 awaited entity id -> dupsort utf8 unresolved_id   (schema_version >= 5)
+ *     export_names                 (u64+utf8)   -> dupsort utf8 target entity id          (schema_version >= 5)
+ *     index_state                  u32 BE repoId -> msgpack(IndexStateRow)                (schema_version >= 5)
  *
  *   Plans (2):
  *     plan                         utf8         -> msgpack(Plan)
@@ -124,8 +127,17 @@ const MAX_DBS = 32;
  *           to point at the matching namespace row, drops phantom
  *           workspace rows whose path is empty / banned / non-
  *           existent, and bumps the version.
+ *   v4 -- external-service graph vocabulary (additive kinds; no rewrite).
+ *   v5 -- nothing lost from the index (Epic c2ba6fa6, Story s1):
+ *         - `unresolved_by_target`: a pending relationship that awaits
+ *           a target by its entity id, found by that id.
+ *         - `export_names`: the names a file re-exports, alias included.
+ *         - `index_state`: one IndexStateRow per workspace repository.
+ *         The v4 -> v5 migration writes an IndexStateRow for every
+ *         workspace repository with fullIndexFinished false and its
+ *         pending counts recounted from the stored rows.
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 const META_SCHEMA_VERSION = 'schema_version';
 
@@ -250,6 +262,9 @@ export interface GraphStore {
 	inEdge:              AnyDb;
 	unresolved:          AnyDb;
 	unresolvedByFile:    AnyDb;
+	unresolvedByTarget:  AnyDb;
+	exportNames:         AnyDb;
+	indexState:          AnyDb;
 
 	// Plans
 	plan:                AnyDb;
@@ -556,6 +571,9 @@ export async function getGraphStore(): Promise<GraphStore> {
 			inEdge:             open_('in_edge'),
 			unresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),
 			unresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),
+			unresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),
+			exportNames:        open_('export_names', { dupSort: true }),
+			indexState:         open_('index_state'),
 
 			// Plans -- `plan` is utf8 id keyed; planStep keys are pre-
 			// encoded composite Buffers so binary is fine

@@ -61,6 +61,7 @@ import {
   type UnresolvedRelation,
 } from '../db/relations.js';
 import { inNeighbors, outNeighbors } from '../db/graph/edges.js';
+import { BOUNDARY_RELATION_KINDS } from '../db/graph/pending-class.js';
 import type { SourceRoots } from './source-roots.js';
 
 const log = getLogger('cross-file-resolver');
@@ -80,9 +81,7 @@ const CALL_TARGET_KINDS: readonly EntityKind[] = ['function', 'method', 'class']
  * `else` fall-through below — so a future `default` handler can never silently
  * mis-resolve a boundary row to a code entity. See external-endpoints.ts.
  */
-export const BOUNDARY_RELATION_KINDS: ReadonlySet<RelationKind> = new Set<RelationKind>([
-  'CALLS_HTTP', 'PUBLISHES_TO', 'SUBSCRIBES_TO', 'CALLS_RPC',
-]);
+export { BOUNDARY_RELATION_KINDS };
 
 // ---------------------------------------------------------------------------
 // Public surface (unchanged)

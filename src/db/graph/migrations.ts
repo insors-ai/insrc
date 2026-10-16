@@ -52,10 +52,12 @@ import {
 	decodeEntityRow,
 	decodeRepoRow,
 	encodeEntityRow,
+	encodeIndexStateRow,
 	encodeRepoRow,
 	type EntityRow,
 	type RepoRow,
 } from './codec.js';
+import { emptyIndexStateRow, recountPending } from './pending-class.js';
 import type { GraphStore } from './store.js';
 
 const log = getLogger('graph-migrations');
@@ -377,6 +379,34 @@ const MIGRATION_V3_TO_V4: Migration = {
 };
 
 /**
+ * v4 -> v5: nothing lost from the index (Epic c2ba6fa6, Story s1). The three
+ * new sub-DBs (unresolved_by_target, export_names, index_state) are opened by
+ * getGraphStore; this step writes one IndexStateRow per workspace repository,
+ * with fullIndexFinished false, so every repository reads as not complete
+ * until its next full index, and with its pending counts recounted from the
+ * stored rows. No existing key, value or kind byte is rewritten.
+ */
+export const MIGRATION_V4_TO_V5: Migration = {
+	from: 4,
+	to:   5,
+	description: 'index state (sc1): an IndexStateRow per workspace repository, not complete until its next full index; pending counts recounted',
+	run: (store) => {
+		const counts = recountPending(store);
+		for (const { value } of store.repo.getRange()) {
+			const repo = decodeRepoRow(value as Buffer);
+			if (repo.kind !== 'workspace') continue;
+			const row = emptyIndexStateRow();
+			const c = counts.get(repo.id);
+			if (c !== undefined) {
+				row.pending = c.pending;
+				row.reasonCounts.awaiting = c.awaiting;
+			}
+			store.indexState.put(encodeRepoKey(repo.id), encodeIndexStateRow(row));
+		}
+	},
+};
+
+/**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
  * and we don't want to introduce a cycle).
@@ -407,6 +437,7 @@ export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V1_TO_V2,
 	MIGRATION_V2_TO_V3,
 	MIGRATION_V3_TO_V4,
+	MIGRATION_V4_TO_V5,
 ];
 
 /**

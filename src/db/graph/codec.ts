@@ -243,6 +243,33 @@ export const encodeUnresolvedRow = (r: UnresolvedRow): Buffer => encode(r);
 export const decodeUnresolvedRow = (b: Buffer): UnresolvedRow => decode(b);
 
 // ---------------------------------------------------------------------------
+// Index state -- value of `index_state` sub-DB (key: u32 BE repoId)
+// ---------------------------------------------------------------------------
+
+/** The class of a pending relationship (sc1 PendingClass). */
+export type PendingClass = 'awaiting-target' | 'ambiguous' | 'no-candidate' | 'external-endpoint';
+
+/**
+ * One workspace repository's recorded index state (sc1 IndexState, with
+ * AMD-c2ba6fa62a148ed1-2's reasonCounts). The derived graphComplete and
+ * complete are not stored; they are computed from these fields.
+ */
+export interface IndexStateRow {
+	generation:         number;
+	pending:            Record<PendingClass, number>;
+	unwritable:         number;
+	reasonCounts:       { unwritable: Record<string, number>; awaiting: Record<string, number> };
+	unembedded:         number;
+	embeddingAvailable: boolean;
+	uncommittedFiles:   string[];
+	fullIndexFinished:  boolean;
+	endpointPassFailed: boolean;
+}
+
+export const encodeIndexStateRow = (r: IndexStateRow): Buffer => encode(r);
+export const decodeIndexStateRow = (b: Buffer): IndexStateRow => decode(b);
+
+// ---------------------------------------------------------------------------
 // Plan + plan_step rows
 // ---------------------------------------------------------------------------
 

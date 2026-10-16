@@ -145,7 +145,9 @@ test('SCHEMA_VERSION constant is exported and stable', () => {
 	// v4 (E20260806914cbf5e:S001, sc1) registers the external-service graph
 	// vocabulary — additive EntityKind/RelationKind + endpoint fields, no-op
 	// v3->v4 migration (no row rewrite).
-	assert.equal(SCHEMA_VERSION, 4);
+	// v5 (Epic c2ba6fa6, Story s1) adds unresolved_by_target, export_names and
+	// index_state, and writes an IndexStateRow per workspace repository.
+	assert.equal(SCHEMA_VERSION, 5);
 });
 
 // ---------------------------------------------------------------------------

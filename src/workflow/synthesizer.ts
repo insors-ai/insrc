@@ -212,7 +212,7 @@ export function validateBodyAndCitations<Body>(
 	if (!boundary.ok) return boundary;
 	const citations = validateCitations(renderedBody, artifact.citations);
 	if (!citations.ok) return citations;
-	return checkPathForms(artifact.citations, callSitesOf(artifact.body));
+	return checkPathForms(artifact.citations, callSitesOf(artifact.body), artifact.meta.repoPath);
 }
 
 // ---------------------------------------------------------------------------
@@ -223,15 +223,26 @@ export function validateBodyAndCitations<Body>(
  *  page links, CREF_CORE in vscode-plugin/src/chat/link-markup.ts) and `#anchor`. */
 const PROJECT_PATH_RE = /^(?:[A-Za-z0-9_.@+~-]+\/)*[A-Za-z0-9_.@+~-]+(?::\d+(?:-\d+)?(?::\d+)?)?(?:#[^\s#]+)?$/;
 
+/** A project directory: a bare relative path with a trailing slash. */
+const PROJECT_DIR_RE = /^(?:[A-Za-z0-9_.@+~-]+\/)+$/;
+
+/** A path followed by a symbol name, such as `src/foo.ts:finalize` or `src/foo.ts::Symbol`. */
+const SYMBOL_SUFFIX_RE = /^[A-Za-z0-9_.@+~/-]+::?[A-Za-z_$][\w$.]*$/;
+
 /** An external file (an absolute path) or reference (an http(s) URL), written in full. */
 const EXTERNAL_REF_RE = /^(?:https?:\/\/\S+|\/\S+|[A-Za-z]:[\\/]\S+)$/;
 
 /** Why `ref` is not a file reference in the form `PATH_FORM_RULE` describes, or undefined when it is. */
-function pathFormProblem(ref: string): string | undefined {
+function pathFormProblem(ref: string, repoPath?: string): string | undefined {
+	if (repoPath !== undefined && repoPath !== '' && ref.startsWith(repoPath.replace(/\/+$/, '') + '/')) {
+		return 'it is an absolute path inside the project, so it is not written relative to the project root';
+	}
 	if (EXTERNAL_REF_RE.test(ref)) return undefined;
 	if (/\s/.test(ref)) return 'it has whitespace, so prose or a note shares the span with the path';
 	if (ref.startsWith('./') || ref.startsWith('../')) return 'it starts with ./ or ../, so it is not written relative to the project root';
 	if (ref.split('/').some(seg => seg === '.' || seg === '..')) return 'it has a . or .. segment, so it is not written relative to the project root';
+	if (PROJECT_DIR_RE.test(ref)) return undefined;
+	if (SYMBOL_SUFFIX_RE.test(ref)) return 'it names a symbol after the path; keep only the path (optionally with :N) and name the symbol in the text beside it';
 	if (!PROJECT_PATH_RE.test(ref)) return 'it is not a path (a relative path with an optional :N, :N-M or :N:C and #anchor)';
 	return undefined;
 }
@@ -251,21 +262,23 @@ function callSitesOf(body: unknown): readonly string[] {
 /**
  * Check that an artifact's file references are written in the one form: the `ref` of a citation of
  * kind `code` or `doc`, and an LLD's call sites. Looks at the strings only: it never reads the
- * disk, so a well-formed but shortened path passes. Refs of the other citation kinds are not paths.
+ * disk, so a well-formed but shortened path passes. With `repoPath`, an absolute path inside the project
+ * is refused too (a project file is written relative to the root), by its string prefix alone. Refs of the other citation kinds are not paths.
  * Fails with kind `paths`, naming every offending entry.
  */
 export function checkPathForms(
 	citations: readonly Citation[],
 	callSites: readonly string[],
+	repoPath?: string,
 ): ValidationResult {
 	const details: string[] = [];
 	for (const c of citations) {
 		if (c.kind !== 'code' && c.kind !== 'doc') continue;
-		const problem = pathFormProblem(c.ref);
+		const problem = pathFormProblem(c.ref, repoPath);
 		if (problem !== undefined) details.push(`citation ${c.id} (${c.kind}) ref '${c.ref}': ${problem}`);
 	}
 	for (const site of callSites) {
-		const problem = pathFormProblem(site);
+		const problem = pathFormProblem(site, repoPath);
 		if (problem !== undefined) details.push(`call site '${site}': ${problem}`);
 	}
 	if (details.length > 0) {

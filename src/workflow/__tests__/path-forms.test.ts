@@ -208,3 +208,28 @@ test('src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps 
   assert.equal(dangling.ok, false);
   assert.equal(dangling.ok ? '' : dangling.kind, 'citations', 'the existing citation result is unchanged');
 });
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses an absolute path inside the project when it knows the project root', () => {
+  const root = '/home/user/work/insrc';
+  const inside = checkPathForms([code('c1', `${root}/src/workflow/synthesizer.ts:93`)], [`${root}/src/workflow/artifacts/plan.ts`], root);
+  const details = detailsOf(inside);
+  assert.equal(details.length, 2, 'both entries are named');
+  assert.ok(details.every(d => /inside the project/.test(d)));
+  // A path outside the project, and a sibling directory that merely shares the prefix, stay external.
+  assert.deepEqual(checkPathForms([code('c1', '/home/user/other/file.ts'), code('c2', `${root}-old/file.ts`)], [], root), { ok: true });
+  // Without a root there is nothing to compare, so an absolute path is external as before.
+  assert.deepEqual(checkPathForms([code('c1', `${root}/src/a.ts`)], []), { ok: true });
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a path that names a symbol and says what to keep', () => {
+  for (const ref of ['src/workflow/synthesizer.ts:validateCitations', 'src/workflow/id.ts::storyIdToOrdinal']) {
+    const details = detailsOf(checkPathForms([], [ref]));
+    assert.equal(details.length, 1, `${ref} is refused`);
+    assert.match(details[0]!, /names a symbol after the path; keep only the path/);
+  }
+});
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a project directory with a trailing slash', () => {
+  assert.deepEqual(checkPathForms([code('c1', 'src/workflow/'), doc('c2', 'docs/plans/')], ['src/workflow/runners/']), { ok: true });
+  assert.equal(checkPathForms([], ['src/work flow/']).ok, false, 'a directory with a space is still refused');
+});

@@ -177,9 +177,6 @@ export interface AnalyzeConfig {
 	/** Summariser model. DERIVED from `models.tiers.cheap.model` (`haiku` by
 	 *  default). */
 	readonly summariserModel:    string;
-	/** True when `models.tiers.cheap.model` was set in config.json (vs.
-	 *  defaulted). A CLI summariser pins the model either way. */
-	readonly summariserModelExplicit: boolean;
 	readonly shaper:         AnalyzeShaperConfig;
 	readonly maxPlanDepth:   MaxPlanDepthMap;
 	/** Per-role model tiering (sc1). `tiers` is always fully populated (parsed
@@ -235,10 +232,11 @@ function resolveTiers(tiering: AnalyzeTiering): Record<TierName, TierModel> {
 /**
  * Assemble the AnalyzeConfig from a parsed tiering + runtime knobs. Models are
  * DERIVED from the tiers — the shaper (interactive reasoning) from `tiers.core`,
- * the summariser (background/local) from `tiers.cheap`. The `*Explicit` flags
+ * the summariser (background) from `tiers.cheap`. The shaper's `*Explicit` flags
  * reflect whether that tier was actually set in config (vs. a built-in default),
  * preserving the "don't forward an unset default to a CLI / auto-pick from the
- * MCP client" behaviour the downstream shaper factory relies on.
+ * MCP client" behaviour the downstream shaper factory relies on. The summariser
+ * has no such flag: it always follows the cheap tier and pins its model.
  */
 export function assembleConfig(
 	tiering:      AnalyzeTiering,
@@ -253,7 +251,6 @@ export function assembleConfig(
 		shaperModelExplicit:     (tiering.tiers?.core?.model ?? '') !== '',
 		summariserProvider:      tiers.cheap.runner,
 		summariserModel:         tiers.cheap.model,
-		summariserModelExplicit: (tiering.tiers?.cheap?.model ?? '') !== '',
 		shaper,
 		maxPlanDepth,
 		tiering: { ...tiering, tiers },

@@ -28,7 +28,6 @@ function cfg(tiering: AnalyzeTiering = {}, over: Partial<AnalyzeConfig> = {}): A
 		shaperModelExplicit: false,
 		summariserProvider: 'ollama',
 		summariserModel: 'qwen3.6:35b-a3b',
-		summariserModelExplicit: false,
 		shaper: { maxToolTurns: 40, structuredOutputRetries: 3, ollamaNumCtx: 32768, ollamaNumPredict: 20480 },
 		maxPlanDepth: { XS: 2, S: 3, M: 4, L: 5, XL: 6 },
 		tiering,
@@ -178,7 +177,7 @@ test('resolveProviderForRole attaches a resolution record with the resolved tier
 	assert.ok(rp.provider);
 });
 
-test('resolveSummariser stays local (ollama) regardless of the shaper/role tiering', () => {
+test('resolveSummariser follows the summariser config (cheap tier), not the shaper/role tiering', () => {
 	const t: AnalyzeTiering = { roleTiers: { synthesize: 'core' }, tiers: { core: { runner: 'cli-claude', model: 'opus' } } };
 	const rp = createRoleRouter().resolveSummariser(cfg(t));
 	assert.equal(rp.resolution.runner, 'ollama');

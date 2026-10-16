@@ -19,7 +19,6 @@ function cfg(over: Partial<AnalyzeConfig> = {}): AnalyzeConfig {
 		shaperModelExplicit: false,
 		summariserProvider: 'ollama',
 		summariserModel: 'qwen3.6:35b-a3b',
-		summariserModelExplicit: false,
 		shaper: { maxToolTurns: 40, structuredOutputRetries: 3, ollamaNumCtx: 32768, ollamaNumPredict: 20480 },
 		maxPlanDepth: { XS: 2, S: 3, M: 4, L: 5, XL: 6 },
 		...over,

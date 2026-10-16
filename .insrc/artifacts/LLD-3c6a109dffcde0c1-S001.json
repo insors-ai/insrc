@@ -229,6 +229,13 @@
         "choice": "Record it as an untouched consumer that must not break",
         "rationale": "The LLD does not change the 'boundary' kind; the daemon loop must keep working.",
         "resolvedAt": "2026-10-16T07:41:29.501Z"
+      },
+      "qb77997ac": {
+        "question": "Audit partial (dm2, ts2): the ValidationFailure entry carries its invariant in s5 rather than a citation id of its own, and the node:test framework comes from the project's documented test command, not from the s1 test.locate result.",
+        "status": "resolved",
+        "choice": "Accept partial, proceed with note",
+        "rationale": "Provenance quirk only; the facts hold.",
+        "resolvedAt": "2026-10-16T07:41:58.077Z"
       }
     }
   },

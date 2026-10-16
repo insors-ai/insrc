@@ -232,6 +232,8 @@ Do a2, and in addition resolve each project-relative entry against the artifact'
   - **resolved**: Accept as new-symbol partial — The symbols are created by this Story, so they cannot be in the index. _(2026-10-16T07:41:00.840Z)_
 - `q1dab013f` — Audit partial (dm1): src/daemon/workflow-rpc.ts is a call site found by a grep for 'boundary' (it tests failure.kind === 'boundary'), not by an s1 bundle.
   - **resolved**: Record it as an untouched consumer that must not break — The LLD does not change the 'boundary' kind; the daemon loop must keep working. _(2026-10-16T07:41:29.501Z)_
+- `qb77997ac` — Audit partial (dm2, ts2): the ValidationFailure entry carries its invariant in s5 rather than a citation id of its own, and the node:test framework comes from the project's documented test command, not from the s1 test.locate result.
+  - **resolved**: Accept partial, proceed with note — Provenance quirk only; the facts hold. _(2026-10-16T07:41:58.077Z)_
 
 ## Citations
 

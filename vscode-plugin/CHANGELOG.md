@@ -3,10 +3,10 @@
 All notable changes to the insrc VS Code extension. The Marketplace shows this file
 on the extension's Changelog tab.
 
-## Unreleased
+## 0.5.15 - 2026-10-16
 
-Everything since 0.5.13, the last version published to the Marketplace. The version in
-`package.json` is 0.5.14, which has not been published; bump it before releasing.
+Everything since 0.5.13, the last version published before this one. Version 0.5.14 was
+never published; its changes are included here.
 
 ### Chat
 

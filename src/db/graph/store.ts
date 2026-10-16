@@ -604,7 +604,8 @@ export async function getGraphStore(): Promise<GraphStore> {
 			// hits the migration path, so without this call the four
 			// `kind: 'shared-modules'` rows would be missing.
 			const { provisionSharedModulesRows } = await import('./migrations.js');
-			await root.transaction(() => {
+			// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).
+			await root.childTransaction(() => {
 				writeSchemaVersion(store, SCHEMA_VERSION);
 				provisionSharedModulesRows(store);
 			});

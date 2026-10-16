@@ -411,7 +411,7 @@ export const MIGRATIONS: readonly Migration[] = [
 
 /**
  * Apply registered migrations to advance `stored` → `target`. Each
- * step runs inside its own write txn (`store.root.transaction`) so a
+ * step runs inside its own write txn (`store.root.childTransaction`) so a
  * multi-step path doesn't pile into one giant txn.
  *
  * Returns the count of migrations applied (0 when stored == target).
@@ -439,11 +439,14 @@ export async function runMigrations(
 		}
 
 		const t0 = Date.now();
-		await store.root.transaction(async () => {
+		// A CHILD transaction (ISSUE-5437d6e5): lmdb's plain transaction()
+		// commits whatever a throwing callback wrote; a child transaction is
+		// aborted, so a step that throws leaves neither its rows nor the
+		// version write behind. The step may be async: migrations run inside
+		// the store's open, before any caller can reach the store, so no other
+		// writer can nest inside this transaction while it awaits.
+		await store.root.childTransaction(async () => {
 			await step.run(store);
-			// Advance the version IN THE SAME TXN so a crash either
-			// rolls everything (including the version write) back, or
-			// commits everything atomically.
 			await store.meta.put(META_SCHEMA_VERSION, step.to);
 		});
 		applied++;

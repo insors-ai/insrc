@@ -1,0 +1,708 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792141097950-4yoc59",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-16T09:01:43.796Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 205842,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f52996c2709dba81",
+    "epicSlug": "make-code-references-docgen-companion-html",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1792141097950-4yoc59",
+    "hldEffectiveHash": "f52996c2709dba81fe4915f1464c893263fbcb452adba06ee356a6cad72dfc8b",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The four derived acceptance criteria (repo-relative label, page script marks and posts, pane forwards only from its own frame, grammar shared with the chat page) are each designed. Nothing outside the stated scope is built: alternative a2's IR and builder changes are rejected and not built.",
+          "evidence": "There is no upstream SPEC or HLD (standalone), so the intent is the Story's focus. Sections 2.1 to 2.4 design one element per ac: buildCallSequenceIR/frameLabel for ac1, CODE_REF_SCRIPT for ac2, rvFrameMessage for ac3, and the pin test for ac4. Section 7.2 keeps companion builders and the IR unchanged, and section 3 limits the IR change to the label text. [files: src/docgen/extract/call-sequence.ts, vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today frameLabel labels a call frame with only the base name of its file and the line, and makeExtract, which has scope.repoRoot, is the builder's only production caller.",
+          "evidence": "call-sequence.ts:86-88: `return `${f.name} (${basename(f.file)}:${f.startLine})`;`. The only production call is line 217, `return ok(buildCallSequenceIR(walk, revision, desc));`, inside makeExtract, where `scope.repoRoot` is in hand (line 207). The other callers are in __tests__/call-sequence.test.ts. [files: src/docgen/extract/call-sequence.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The pane's companion frame is sandboxed with allow-scripts only and gets the page as srcdoc. It inherits the pane's CSP, so a script in it runs only with the pane's nonce.",
+          "evidence": "docs-review-panel.ts:2078-2079: `f.setAttribute('sandbox','allow-scripts');... f.setAttribute('srcdoc',m.html)`. The pane's CSP at line 1960 is `script-src 'nonce-${nonce}'`, and the comment at 2072-2073 says the frame inherits it. [files: vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The companion pan/zoom viewport captures the pointer on pointerdown and handles drag, wheel and double-click zoom. A click's target is therefore the viewport, so the script has to record the element at pointerdown.",
+          "evidence": "panzoom.js:97-102: the pointerdown listener on vp calls `vp.setPointerCapture(ev.pointerId)`. Lines 90 and 116 handle wheel and dblclick zoom on vp. None of these handlers calls stopPropagation, so a capture-phase document listener sees pointerdown first, as the design assumes. [files: src/assets/artifacts/companion/panzoom.js]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The host's openCodeRef refuses a non-string path or a '..' segment and resolves the path inside the workspace root, logging 'a code reference was not opened' when it cannot.",
+          "evidence": "link-opener.ts:62-69: `if (typeof path !== 'string' || path.split(/[\\\\/]/).includes('..'))` gives a warning, then `resolveWithin(root, path, fs)`. When that returns undefined it logs `a code reference was not opened: ... is not a file inside the workspace`. The line is clamped at 71. [files: vscode-plugin/src/chat/link-opener.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused chat grammar CREF_EXT/CREF_CORE exists with the stated shape (relative path, optional :N, :N-M, :N:C). It allows a bare file name, which the new script intentionally narrows by requiring a '/'.",
+          "evidence": "link-markup.ts:20-21: `CREF_CORE='((?:[A-Za-z0-9_.@-]+/)*[A-Za-z0-9_@-][A-Za-z0-9_.@-]*\\\\.(?:'+CREF_EXT+'))(?::(\\\\d+)(?:-\\\\d+)?(?::\\\\d+)?)?'`. The directory group is `*` (zero or more), so a bare name matches, as the design's edge-case table says. [files: vscode-plugin/src/chat/link-markup.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "CODE_REF_SCRIPT and rvFrameMessage are new. No page script that posts a clicked reference and no frame-message handler exist today, and the existing open-code-ref payload is reused unchanged.",
+          "evidence": "A grep for 'insrc-open-code-ref' and rvFrameMessage finds nothing. The pane's only window message listener (docs-review-panel.ts:2224-2228) reads `e.data.payload` and handles docs-list, docs-content, docs-decision-result and docs-companion. The open-code-ref shape is in protocol.ts:306, and the host case is at docs-review-panel.ts:2354. [files: vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/chat/protocol.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.3",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Putting CODE_REF_SCRIPT in a standalone src/docgen/render/code-ref-script.ts avoids an import cycle between the companion shell and the docgen shells.",
+          "evidence": "companion/shell.ts:30 already imports `docgenAssetDir` from '../../../docgen/render/shell.js', and fallback.ts:24-25 forbids importing from shell.ts. A leaf module imported by all three adds no cycle. [files: src/workflow/artifacts/companion/shell.ts, src/docgen/render/fallback.ts, src/docgen/render/shell.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both docgen page shells (Mermaid buildHtml and assembleFallbackShell) and the companion renderCompanionPage are the full set of page builders that need the script. The Mermaid shells can run it after mermaid.run resolves, and the fallback can run it at load.",
+          "evidence": "shell.ts:204-216: the init does `await mermaid.run(...)` inside an async IIFE with a catch that writes #docgen-error. fallback.ts:216-224 has no Mermaid; the SVG is inline at 240. companion/shell.ts:160-167 calls `mermaid.run(...).then(...)` with a catch, and the HTML visual calls init with fitOnLoad (158). These three are the only HTML page assemblers in src/docgen/render and the companion folder. [files: src/docgen/render/shell.ts, src/docgen/render/fallback.ts, src/workflow/artifacts/companion/shell.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adding an optional fourth parameter repoRoot to buildCallSequenceIR leaves the existing 3-argument test callers valid.",
+          "evidence": "call-sequence.test.ts calls `buildCallSequenceIR(walk, 'rev1', 'scope')` and similar at lines 52, 71, 85, 99, 109, 167 and 179. With an optional fourth parameter these still type-check, and frameLabel keeps its base-name output when the root is absent. [files: src/docgen/extract/__tests__/call-sequence.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Only the call-frame label text changes. Node ids, edge ids and citations are built independently of the label, so stored citations still resolve.",
+          "evidence": "call-sequence.ts:102-107: node `id: f.entityId`, `citation: { entityId: f.entityId }`. Edge ids at 110 are built from step indices and entity ids, and only `label: frameLabel(f)` changes. Callees can come from outside the repo root (the CALLS neighbours in call-graph-reader.ts:55-71 are not repo-filtered), and the design's base-name fallback covers that case. [files: src/docgen/extract/call-sequence.ts, src/docgen/extract/call-graph-reader.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A new inline script tag in a companion page gets the pane's nonce from the host (this answers open question 2), so it runs in the frame rather than being silently blocked by the CSP.",
+          "evidence": "docs-review-panel.ts:2437-2438: `stampScriptNonce` replaces `/<script\\b(?![^>]*\\bnonce\\s*=)/gi` with `<script nonce=...>`, so every script tag without a nonce gets one. It is applied to every companion text at line 1696, `html = stampScriptNonce(text, shellNonce)`. Open question 2 can be closed as confirmed. [files: vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "Close open question 2 as confirmed (stampScriptNonce stamps every un-nonced script).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A flat { type: 'insrc-open-code-ref' } message from the frame cannot be confused with a host message by the pane's existing listener, and a message from another window is ignored by comparing e.source with the current frame.",
+          "evidence": "The existing listener at docs-review-panel.ts:2224 does `var m=e.data&&e.data.payload;if(!m)return;`, so a flat frame message is a no-op there. rvDropFrame (2059) removes the old frame on every tab change and rvCompanion (2078) creates a new one. The design must therefore compare against the frame currently in frameHostEl, which is what its precondition states. [files: vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of ac1 to ac4 maps to named tests. The contract test pinning the script's grammar to the plugin's CREF_EXT/CREF_CORE can live in the root src test tree, because root tests already read vscode-plugin source files.",
+          "evidence": "Section 5 maps every ac to tests. Root tests already read plugin files: src/mcp/__tests__/review-rule-text.test.ts:25 reads `vscode-plugin/assets/steering-block.md`, and src/config/__tests__/retired-roles.test.ts:48 reads `vscode-plugin/package.json`. A pin test that reads link-markup.ts as text is feasible. Minor: the code-ref-script tests are placed under src/workflow/artifacts/companion/__tests__ although the module lives in src/docgen/render; this does not block. [files: src/mcp/__tests__/review-rule-text.test.ts, vscode-plugin/src/chat/link-markup.ts]",
+          "action": "Optionally place the code-ref-script tests under src/docgen/render/__tests__ beside the module.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-16T09:09:46.329Z",
+      "model": "cli-claude:opus",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-16T09:12:24.880Z",
+    "rangeBase": "d3add8d893703104f9d36ef03a6a050cbe411746",
+    "questionResolutions": {
+      "qb192f323": {
+        "question": "Open: is the docgen tool's own page (src/docgen/render/shell.ts) ever shown inside the review pane's frame, or only opened as a file or in a browser? The page script is added to both shells so a reference works wherever the page is shown in the pane; if the docgen page is never shown there, its inclusion can be dropped.",
+        "status": "resolved",
+        "choice": "Keep the script in both shells",
+        "rationale": "The LLD as approved includes both docgen shells and the companion shell.",
+        "resolvedAt": "2026-10-16T09:13:52.707Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "A code reference that shows in a diagram or a description table of a companion page, or in a docgen page, opens its file at the line when you click it in the review pane, as references in the chat and the document body already do. The docgen call-sequence diagram now labels each frame with its repo-relative path and line, so there is a reference to click. The page's script marks the elements that hold a reference and posts the clicked reference to the pane, and the pane forwards it only when the message comes from its own companion frame. The host's check of the target is unchanged.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Make code references in docgen and companion HTML clickable in the review pane"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "buildCallSequenceIR",
+          "signature": "buildCallSequenceIR(walk: CallWalk, revision: string, scopeDescription: string, repoRoot?: string): DocumentIR",
+          "parameters": [
+            {
+              "name": "walk",
+              "type": "CallWalk",
+              "purpose": "The completed call walk whose frames become the diagram's nodes",
+              "optional": false
+            },
+            {
+              "name": "revision",
+              "type": "string",
+              "purpose": "The pinned index revision, unchanged",
+              "optional": false
+            },
+            {
+              "name": "scopeDescription",
+              "type": "string",
+              "purpose": "The scope text, unchanged",
+              "optional": false
+            },
+            {
+              "name": "repoRoot",
+              "type": "string | undefined",
+              "purpose": "The scope's repo root. When given, a frame is labelled with its path relative to the root and the line",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DocumentIR",
+            "meaning": "The call-sequence IR; each call-frame node label reads 'name (path:line)' with the path relative to the repo root"
+          },
+          "errors": [],
+          "preconditions": [
+            "The frames' files are absolute paths from the index"
+          ],
+          "postconditions": [
+            "Without repoRoot, or for a file outside the root, the label keeps its present form",
+            "The label's path uses forward slashes on every platform",
+            "Node ids, edges and citations are unchanged"
+          ]
+        },
+        {
+          "name": "frameLabel",
+          "signature": "frameLabel(f: CallFrameRef, repoRoot?: string): string",
+          "parameters": [
+            {
+              "name": "f",
+              "type": "CallFrameRef",
+              "purpose": "The frame to label",
+              "optional": false
+            },
+            {
+              "name": "repoRoot",
+              "type": "string | undefined",
+              "purpose": "The repo root to make the file relative to",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "'name (relative/path.ts:line)'; the base name form when there is no root or the file is outside it"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "With a root, the text between the parentheses is a path with a directory part and a line, so the page script finds it",
+            "The base-name fallback (no root, or a file outside it) has no directory part, so the page script does not mark it and it is not clickable"
+          ]
+        },
+        {
+          "name": "CODE_REF_SCRIPT (new)",
+          "signature": "export const CODE_REF_SCRIPT: string",
+          "parameters": [],
+          "returns": {
+            "type": "string",
+            "meaning": "The inline script for a docgen or companion page: after the page is drawn it marks each element whose own text holds a code reference, and when a plain click lands on a marked element posts { type: 'insrc-open-code-ref', path, line? } to the parent window. It is defined in a standalone module, src/docgen/render/code-ref-script.ts, that imports from neither page shell, and the companion shell and both docgen shells import it, so there is no import cycle"
+          },
+          "errors": [],
+          "preconditions": [
+            "It runs after Mermaid has drawn the diagram, and once at load for a page with no Mermaid run (a page with no Mermaid visual, and the docgen subprocess fallback whose SVG is already in the page)",
+            "The companion's pan/zoom viewport captures the pointer on pointerdown (src/assets/artifacts/companion/panzoom.js), so a click's target is the viewport and not the element under the pointer"
+          ],
+          "postconditions": [
+            "It reads the page and posts one message; it opens nothing itself and changes no text",
+            "It marks an element, never splits a text node, so Mermaid's layout and the pan/zoom script are not disturbed",
+            "It finds the clicked element at pointerdown (a capture-phase listener on the document runs before the viewport captures the pointer), not from the click event's target, so a box inside the pan/zoom viewport is clickable",
+            "A click counts only when the pointer moved at most 4 pixels between pointerdown and click; a press-move-release beyond that is a pan and posts nothing",
+            "It stops no event and does not touch pointer capture, so pan, wheel zoom and double-click zoom work as before",
+            "A reference needs a directory part (a '/'), so a bare file name is never marked; otherwise it uses the chat page's reference grammar, and a test pins the two copies together"
+          ]
+        },
+        {
+          "name": "rvFrameMessage (new)",
+          "signature": "rvFrameMessage(e: MessageEvent): void",
+          "parameters": [
+            {
+              "name": "e",
+              "type": "MessageEvent",
+              "purpose": "A window message, from the host or from the companion frame",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Posts the existing open-code-ref payload to the host when the message is a valid reference from the pane's own companion frame; otherwise does nothing"
+          },
+          "errors": [],
+          "preconditions": [
+            "rvCompanion has created the frame whose window is compared with e.source"
+          ],
+          "postconditions": [
+            "A message whose source is not the current companion frame's window is ignored",
+            "path must be a non-empty string of bounded length and line, when present, a positive integer; anything else is ignored",
+            "It posts { type: 'open-code-ref', path, line } and nothing else, so the host's openCodeRef check applies unchanged"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CallFrame node label (DocumentIR)",
+        "change": "field-modify",
+        "details": "The label of a call-frame node changes from 'name (base.ts:line)' to 'name (relative/path.ts:line)' when the scope's repo root is known. Node ids, edge ids and citations do not change, so a record that cites a frame is unaffected. Existing generated documents keep the old label until regenerated. The only production caller of the builder is makeExtract in src/docgen/extract/call-sequence.ts, which has the scope and passes scope.repoRoot; src/docgen/extract/call-graph-reader.ts only builds the frame references and does not change. The existing tests in src/docgen/extract/__tests__/call-sequence.test.ts call the builder with three arguments and are unaffected, since the fourth is optional.",
+        "callSites": [
+          "src/docgen/extract/call-sequence.ts"
+        ]
+      },
+      {
+        "entity": "FrameCodeRef message",
+        "change": "new",
+        "details": "The message the page posts to the parent: { type: 'insrc-open-code-ref', path: string, line?: number }. It carries a repo-relative path and a 1-based line and nothing else. The pane turns it into the existing open-code-ref message, whose path and line fields are what the host already validates. The docgen tool has two page shells, the Mermaid one (src/docgen/render/shell.ts) and the subprocess fallback (assembleFallbackShell in src/docgen/render/fallback.ts, which inlines an already drawn SVG), and both carry the script; the fallback runs it once at load because it has no Mermaid run.",
+        "callSites": [
+          "src/docgen/render/code-ref-script.ts",
+          "src/workflow/artifacts/companion/shell.ts",
+          "src/docgen/render/shell.ts",
+          "src/docgen/render/fallback.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts",
+          "vscode-plugin/src/chat/link-opener.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A page in the frame posts a message with a path that is not a plain relative path (an absolute path, a .. segment, a non-string, or a very long string).",
+          "detection": "rvFrameMessage checks the type, that path is a non-empty string of bounded length and that line, when present, is a positive integer, and drops the message when any check fails; the host's openCodeRef then checks the target again before opening.",
+          "response": "The message is ignored: nothing is posted to the host and nothing is shown.",
+          "userImpact": "None: a malformed click does nothing. A valid but outside-the-workspace path reaches the host, whose check refuses it as it does for the chat.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A window other than the pane's current companion frame posts a message of the same shape.",
+          "detection": "rvFrameMessage compares e.source with the current frame's contentWindow and ignores the message when they differ.",
+          "response": "The message is ignored.",
+          "userImpact": "None: only the companion the pane itself created can ask for a file to be opened.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The script runs before Mermaid has drawn the diagram, so it finds no text to mark.",
+          "detection": "The script marks references in a step that runs after mermaid.run resolves (and once at load for a page with no Mermaid visual); a test drives both orders against the page builder.",
+          "response": "References are marked after the diagram is drawn; if Mermaid fails to draw, the page's existing failure note is shown and nothing is marked.",
+          "userImpact": "A diagram that fails to draw has no clickable references, as it has nothing else either.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A reference in a diagram is a well-formed path to a file that does not exist in the workspace.",
+          "detection": "The host's link opener cannot resolve the file inside the workspace and logs a warning (link-opener.ts).",
+          "response": "The host logs 'a code reference was not opened' and does nothing else; the page does nothing more.",
+          "userImpact": "Nothing visible happens and the log has a warning, exactly as for a dead reference in the chat.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A call-sequence frame whose file is outside the repo root, or a document built with no repoRoot",
+          "expected": "The label keeps its present base-name form, 'name (base.ts:12)'. It has no directory part, so the page script does not mark it: it is not clickable and nothing opens a same-named file at the workspace root."
+        },
+        {
+          "input": "A label with one reference, such as 'validate (src/workflow/synthesizer.ts:207)'",
+          "expected": "The element holding that text is marked and a click opens src/workflow/synthesizer.ts at line 207."
+        },
+        {
+          "input": "An element whose text holds two references",
+          "expected": "The first reference in the text is the one a click opens; the element is marked once."
+        },
+        {
+          "input": "A description-table cell holding a path with no line, such as a component's repo path",
+          "expected": "The cell is marked and a click opens the file at its top."
+        },
+        {
+          "input": "A component box labelled with only a file name, such as 'shell.ts'",
+          "expected": "Not marked, because the page script requires a directory part; its full path is clickable in the description table."
+        },
+        {
+          "input": "A path on Windows, where the index holds backslashes",
+          "expected": "The label's path is written with forward slashes, so it matches the grammar and the host receives a forward-slash path."
+        },
+        {
+          "input": "A text that looks like a file but is prose, such as 'e.g. foo.ts' in a narrative",
+          "expected": "It matches the grammar and is marked like any other reference; the host refuses it if no such file exists in the workspace."
+        },
+        {
+          "input": "A plain click on a marked box inside the pan/zoom viewport, which captures the pointer on pointerdown",
+          "expected": "The element recorded at pointerdown is the marked box, the pointer moved at most 4 pixels, and the reference is posted."
+        },
+        {
+          "input": "A press on a marked box, a move of more than 4 pixels and a release (a pan)",
+          "expected": "The viewport pans as before and no reference is posted."
+        },
+        {
+          "input": "A double-click on a marked box",
+          "expected": "The viewport zooms as before, and each of the two clicks posts the reference, so the host is asked to open the same file twice; opening an already open file again changes nothing."
+        },
+        {
+          "input": "A bare file name or a root-level file such as 'package.json' in text",
+          "expected": "Not marked, because it has no directory part; the chat page, whose grammar allows it, would link it, so this is the one difference between the two grammars."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The host's openCodeRef check (workspace root, no .. segments) is unchanged; the pane forwards the existing open-code-ref payload and nothing else.",
+          "source": "c3"
+        },
+        {
+          "text": "The companion frame keeps sandbox='allow-scripts' only and the page's CSP, so the frame still cannot navigate, submit forms, share an origin or reach the network.",
+          "source": "c3"
+        },
+        {
+          "text": "The call-sequence node ids, edge ids and citations do not change; only the label text does.",
+          "source": "c1"
+        },
+        {
+          "text": "The chat page's reference grammar is the single definition of a reference; the copy in the page script is pinned to it by a test.",
+          "source": "c4"
+        },
+        {
+          "text": "The script marks elements and does not split or rewrite text nodes, so Mermaid's layout and the pan/zoom script are not disturbed.",
+          "source": "c2"
+        },
+        {
+          "text": "The companion's pan/zoom behaviour (drag to pan, wheel and double-click to zoom, pointer capture) is unchanged; the script only listens, in the capture phase, and stops no event.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The call-sequence label carries the repo-relative path and line, and keeps its old form when it cannot.",
+          "subjects": [
+            "src/docgen/extract/__tests__/call-sequence-label.test.ts: a call frame is labelled with its path relative to the repo root and its line",
+            "src/docgen/extract/__tests__/call-sequence-label.test.ts: a frame outside the root, or a build with no root, keeps the base-name label",
+            "src/docgen/extract/__tests__/call-sequence-label.test.ts: node ids, edge ids and citations do not change with the label"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The page script marks the elements that hold a reference and posts the clicked reference, without changing the page's text.",
+          "subjects": [
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: an element holding a path and line is marked, and a click posts that path and line to the parent",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a table cell holding a path with no line is marked and posts the path alone",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: text with no reference is not marked and a click on it posts nothing",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: marking changes no text node",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the companion page and the docgen page carry the script, after the diagram is drawn",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a click on a marked box inside the pan/zoom viewport, which captures the pointer, posts the reference",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a press, a move past the drag threshold and a release posts nothing",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a bare file name is not marked",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the docgen fallback shell carries the script and marks references at load"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The pane forwards a reference only from its own companion frame and only when the fields are valid.",
+          "subjects": [
+            "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a reference from the companion frame is posted to the host as an open-code-ref message",
+            "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a reference from any other window is ignored",
+            "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a message with a missing, non-string or oversized path, or a line that is not a positive integer, is ignored",
+            "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: the frame keeps sandbox allow-scripts only"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The page script and the chat page share one definition of a code reference.",
+          "subjects": [
+            "src/docgen/__tests__/code-ref-grammar-pin.test.ts: the page script's reference grammar equals the chat page's CREF_EXT and CREF_CORE except that it requires a directory part"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/docgen/extract/__tests__/call-sequence-label.test.ts: a call frame is labelled with its path relative to the repo root and its line",
+            "src/docgen/extract/__tests__/call-sequence-label.test.ts: a frame outside the root, or a build with no root, keeps the base-name label",
+            "src/docgen/extract/__tests__/call-sequence-label.test.ts: node ids, edge ids and citations do not change with the label"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: an element holding a path and line is marked, and a click posts that path and line to the parent",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a table cell holding a path with no line is marked and posts the path alone",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: text with no reference is not marked and a click on it posts nothing",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: marking changes no text node",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the companion page and the docgen page carry the script, after the diagram is drawn",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a click on a marked box inside the pan/zoom viewport, which captures the pointer, posts the reference",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a press, a move past the drag threshold and a release posts nothing",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: a bare file name is not marked",
+            "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the docgen fallback shell carries the script and marks references at load"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a reference from the companion frame is posted to the host as an open-code-ref message",
+            "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a reference from any other window is ignored",
+            "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a message with a missing, non-string or oversized path, or a line that is not a positive integer, is ignored",
+            "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: the frame keeps sandbox allow-scripts only"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/docgen/__tests__/code-ref-grammar-pin.test.ts: the page script's reference grammar equals the chat page's CREF_EXT and CREF_CORE except that it requires a directory part"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with tsx (npx tsx --test), tests under __tests__ beside the code; the plugin's tests run with npm test in vscode-plugin; the page script's tests run the CODE_REF_SCRIPT string in node:vm against a hand-rolled fake document (capture-phase listeners, element text, a pointer-capturing viewport, a stubbed mermaid.run promise), as the plugin's link-markup tests do, since there is no DOM library"
+    },
+    "migration": {
+      "stateBefore": "A docgen call-sequence label shows only the base name of a frame's file (frameLabel in src/docgen/extract/call-sequence.ts), the companion and docgen pages carry no script that reports a click, and the review pane's companion frame is sandboxed with allow-scripts only, so a click inside it never reaches the pane's own link handler (vscode-plugin/src/chat/docs-review-panel.ts, s1 bundles 1 to 3).",
+      "stateAfter": "A call-sequence label shows the repo-relative path and line when the repo root is known. The companion page and both docgen page shells carry CODE_REF_SCRIPT, which marks elements holding a code reference and posts the clicked reference to the parent. The pane's rvFrameMessage accepts that message only from its own companion frame and posts the existing open-code-ref message to the host. Documents already generated keep their old labels and scripts until regenerated.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Pass the scope's repo root into the call-sequence IR builder and label each frame with its root-relative path and line, keeping the old label when there is no root.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the page script that marks reference elements and posts a click to the parent, and include it in the companion page shell and in both docgen page shells (the Mermaid one after the diagram is drawn, the subprocess fallback once at load).",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the pane's message rule that accepts a reference only from its own companion frame, validates the fields, and forwards the existing open-code-ref message to the host.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add the test that pins the page script's reference grammar to the chat page's grammar.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored record changes. A call-frame node keeps its id, edges and citation, so anything that cites a frame still resolves; only the label text changes, and only for a build made with a repo root. A companion or docgen page already written has no script and no marked references until it is regenerated, and it still opens as before. The host's open-code-ref handler and its validation are unchanged, so the chat and the document body are unaffected. A page that posts the new message to a pane that does not know it (an older installed extension) is ignored by that pane.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One scanning script in the page, one forwarding rule in the pane",
+        "oneLineSummary": "The page's script finds code references in its text and posts a click to the pane, which accepts it only from its own frame and forwards it as the existing open-code-ref message.",
+        "approach": "Add one inline script to the page shells (the companion shell, and the docgen shell if it is opened in the pane). It reads the rendered page for text that matches the code-reference grammar the chat page already uses (a relative path with an optional :N, :N-M or :N:C), marks each match as a reference, and on a click posts one message to the parent window carrying only the path and the line. The pane adds one window message rule: it takes the message only when its source is the companion frame it created, checks the two fields are a string and a positive integer, and posts the existing open-code-ref payload to the host, whose check (the workspace root, no .. segments) is unchanged. Separately, the call-sequence label is changed to the repo-relative path with the line, so the diagram text holds a reference to find.",
+        "pros": [
+          "The diagram builders do not change: any reference in the text becomes clickable, in diagrams and in the description tables",
+          "One grammar (the chat page's) decides what a reference is, so the chat, the document and the frame agree",
+          "The host's validation is untouched, and the new pane rule is a single source check"
+        ],
+        "cons": [
+          "Mermaid draws text inside SVG, so the script must find a reference split across SVG text parts and wrap it without breaking the pan/zoom layout",
+          "A shortened or prose-bearing label (such as the component box's file name alone) is not a reference, so those boxes stay unclickable until their labels carry the path",
+          "The script runs inside the sandboxed frame, so it cannot be unit-tested without a fake DOM"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Builders emit references as data; the page script only wires clicks",
+        "oneLineSummary": "Each builder marks its references (path and line) in the page, as data attributes on description-table cells and a map from diagram node id to reference, and the script wires clicks from that.",
+        "approach": "Extend the companion builders and the docgen IR so a reference is a typed field, not text to be found: a description-table cell can carry {path, line}, and a Mermaid node's id maps to {path, line} in a JSON block embedded in the page. The shell renders a table reference as an element with data-path and data-line, and the script, after Mermaid has drawn the SVG, looks up each node by id and makes it a click target. The click posts the same message to the pane, which forwards it as in a1. The call-sequence label is changed to the repo-relative path with the line, and the IR node carries the same reference as its citation.",
+        "pros": [
+          "Exact: a reference is what the builder says it is, with no text matching and no false matches",
+          "A box whose label is only a file name can still link to its full path",
+          "The script is small and easy to test with a fake DOM"
+        ],
+        "cons": [
+          "Every companion kind and the docgen IR need a change, so the surface is much larger",
+          "The IR and the page need a new field and a node-id map, and Mermaid node ids must be stable across its rendering",
+          "Existing records and companions already written do not gain links until they are regenerated"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "The most exact, since the builder says what the reference is, and it can link a box labelled with only a file name. But it changes every companion kind and the docgen IR plus a node-id map, which is far more than the stated scope needs, and existing companions do not gain links."
+      },
+      {
+        "id": "a3",
+        "name": "Description tables only, plus the repo-relative label",
+        "oneLineSummary": "Make the references in the description tables clickable and fix the call-sequence label, leaving diagram nodes as they are.",
+        "approach": "The companion shell renders a path in a description table as a link-like element and posts the click to the pane, which forwards it as in a1. The call-sequence label becomes the repo-relative path with the line. Nothing reads the SVG, so Mermaid's output is untouched and there is no text matching in the diagram.",
+        "pros": [
+          "The smallest change, with no interaction with Mermaid or the pan/zoom script",
+          "Deterministic: the table cell is the reference, so there is nothing to find"
+        ],
+        "cons": [
+          "The diagram boxes, which the call-sequence fix was meant to help, are still not clickable",
+          "Falls short of the story: references in a docgen diagram would open nothing"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Smallest, but it leaves the diagram boxes unclickable, so a docgen call-sequence diagram would still open nothing, which is the point of the Story."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Open: is the docgen tool's own page (src/docgen/render/shell.ts) ever shown inside the review pane's frame, or only opened as a file or in a browser? The page script is added to both shells so a reference works wherever the page is shown in the pane; if the docgen page is never shown there, its inclusion can be dropped.",
+      "Open: the pane's frame inherits the page's CSP (script-src with a nonce), so the new inline script must carry the nonce the host gives the other inline scripts. Confirm that the host adds the nonce to every inline script tag of a companion page, and not only to the scripts it knows.",
+      "Open: rvFrameMessage checks the type, length and line of a message but does not itself reject an absolute path or a .. segment; it leaves those to the host's openCodeRef check, which refuses them. Decide whether the pane should also refuse them.",
+      "Acceptance criteria are derived from the Story's user value (the Story has none): ac1 the call-sequence label shows the repo-relative path and line; ac2 the page script marks references and posts a click; ac3 the pane forwards only from its own frame and with valid fields; ac4 the script's grammar is the chat page's.",
+      "Audit partial (cd1): CODE_REF_SCRIPT and rvFrameMessage are new symbols this Story creates, so they are not in an s1 bundle.",
+      "Audit partial (dm2): the call-frame label change states the invariant it must keep, which s5 cites, but the data model entry carries no citation id of its own.",
+      "Audit partial (ts2): the node:test framework comes from the files in an s1 bundle and the project's documented test command; test.locate was not run."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "How docgen labels a call frame and where the path comes from"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "The companion page that the review pane shows in a frame"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "How the review pane shows a companion and handles clicks"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "The reference grammar and the host check that already exist"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/docgen/extract/call-sequence.ts:87",
+      "quotedText": "return `${f.name} (${basename(f.file)}:${f.startLine})`;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:2078",
+      "quotedText": "f.className='rv-frame';f.setAttribute('sandbox','allow-scripts');"
+    }
+  ]
+}

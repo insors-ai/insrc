@@ -234,7 +234,8 @@ const EXTERNAL_REF_RE = /^(?:https?:\/\/\S+|\/\S+|[A-Za-z]:[\\/]\S+)$/;
 
 /** Why `ref` is not a file reference in the form `PATH_FORM_RULE` describes, or undefined when it is. */
 function pathFormProblem(ref: string, repoPath?: string): string | undefined {
-	if (repoPath !== undefined && repoPath !== '' && ref.startsWith(repoPath.replace(/\/+$/, '') + '/')) {
+	const root = repoPath?.replace(/\/+$/, '') ?? '';
+	if (root !== '' && (ref === root || ref.startsWith(root + '/'))) {
 		return 'it is an absolute path inside the project, so it is not written relative to the project root';
 	}
 	if (EXTERNAL_REF_RE.test(ref)) return undefined;

@@ -233,3 +233,11 @@ test('src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a projec
   assert.deepEqual(checkPathForms([code('c1', 'src/workflow/'), doc('c2', 'docs/plans/')], ['src/workflow/runners/']), { ok: true });
   assert.equal(checkPathForms([], ['src/work flow/']).ok, false, 'a directory with a space is still refused');
 });
+
+test('src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses the project root itself and ignores a root of /', () => {
+  const root = '/home/user/work/insrc';
+  assert.equal(checkPathForms([code('c1', root)], [], root).ok, false, 'the root itself is refused');
+  assert.equal(checkPathForms([code('c1', `${root}/`)], [], `${root}/`).ok, false, 'the root with a trailing slash is refused');
+  // A root of / would make every absolute path look like a project file, so it is ignored.
+  assert.deepEqual(checkPathForms([code('c1', '/usr/lib/node_modules/tsx/dist/cli.mjs')], [], '/'), { ok: true });
+});

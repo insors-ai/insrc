@@ -357,6 +357,15 @@
     "reviewOverride": {
       "reason": "Daemon review of DEF-315d510cb28100e2 returned block (0 HIGH, 12 MED, 8 LOW). Each MED finding was checked against the repo and external documentation: six hold as written; four hold with wording notes (terminal client's tracker settings, catalog definition site, tracker-tool design approval status, state-store anchor); one is better supported than the DEF assumes (PR state is already readable); one (Jira approvals) is externally open and deferred to the Jira adapter. No finding was shown not to hold. The wording notes and open items are carried to design.",
       "at": "2026-10-16T15:23:36.256Z"
+    },
+    "questionResolutions": {
+      "q425abf90": {
+        "question": "Item a2: One assumption is low confidence (Jira approval can stand in for a signoff request, unverified); how a Jira approval refers to artifact content must be verified at design.",
+        "status": "resolved",
+        "choice": "Reference by artifact id + version only",
+        "rationale": "Jira follows the GitHub pattern: the daemon creates the Epic, Story and Task issues in Jira, as tracker-auto does for GitHub, and writes the Jira issue key back into the artifact record. The binding is the recorded issue key plus the artifact id and version; no content hash for now. The HLD must carry a note on artifact versioning: record which artifact version a Jira signoff request was opened for, and treat a hash or snapshot binding as a later hardening. A git sync (pull or push) also runs a Jira sync that writes Jira status back into the artifact tracker record, as tracker.sync does for GitHub, and the user can trigger the Jira sync explicitly. A failing or slow Jira call never blocks the git operation; it only reports. Completion is still read live from the tracker when a stage is attempted.",
+        "resolvedAt": "2026-10-16T16:35:16.152Z"
+      }
     }
   },
   "body": {

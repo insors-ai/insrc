@@ -52,10 +52,12 @@ import {
 	decodeEntityRow,
 	decodeRepoRow,
 	encodeEntityRow,
+	encodeIndexStateRow,
 	encodeRepoRow,
 	type EntityRow,
 	type RepoRow,
 } from './codec.js';
+import { emptyIndexStateRow, recountPending } from './pending-class.js';
 import type { GraphStore } from './store.js';
 
 const log = getLogger('graph-migrations');
@@ -377,6 +379,34 @@ const MIGRATION_V3_TO_V4: Migration = {
 };
 
 /**
+ * v4 -> v5: nothing lost from the index (Epic c2ba6fa6, Story s1). The three
+ * new sub-DBs (unresolved_by_target, export_names, index_state) are opened by
+ * getGraphStore; this step writes one IndexStateRow per workspace repository,
+ * with fullIndexFinished false, so every repository reads as not complete
+ * until its next full index, and with its pending counts recounted from the
+ * stored rows. No existing key, value or kind byte is rewritten.
+ */
+export const MIGRATION_V4_TO_V5: Migration = {
+	from: 4,
+	to:   5,
+	description: 'index state (sc1): an IndexStateRow per workspace repository, not complete until its next full index; pending counts recounted',
+	run: (store) => {
+		const counts = recountPending(store);
+		for (const { value } of store.repo.getRange()) {
+			const repo = decodeRepoRow(value as Buffer);
+			if (repo.kind !== 'workspace') continue;
+			const row = emptyIndexStateRow();
+			const c = counts.get(repo.id);
+			if (c !== undefined) {
+				row.pending = c.pending;
+				row.reasonCounts.awaiting = c.awaiting;
+			}
+			store.indexState.put(encodeRepoKey(repo.id), encodeIndexStateRow(row));
+		}
+	},
+};
+
+/**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
  * and we don't want to introduce a cycle).
@@ -407,11 +437,12 @@ export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V1_TO_V2,
 	MIGRATION_V2_TO_V3,
 	MIGRATION_V3_TO_V4,
+	MIGRATION_V4_TO_V5,
 ];
 
 /**
  * Apply registered migrations to advance `stored` → `target`. Each
- * step runs inside its own write txn (`store.root.transaction`) so a
+ * step runs inside its own write txn (`store.root.childTransaction`) so a
  * multi-step path doesn't pile into one giant txn.
  *
  * Returns the count of migrations applied (0 when stored == target).
@@ -439,11 +470,14 @@ export async function runMigrations(
 		}
 
 		const t0 = Date.now();
-		await store.root.transaction(async () => {
+		// A CHILD transaction (ISSUE-5437d6e5): lmdb's plain transaction()
+		// commits whatever a throwing callback wrote; a child transaction is
+		// aborted, so a step that throws leaves neither its rows nor the
+		// version write behind. The step may be async: migrations run inside
+		// the store's open, before any caller can reach the store, so no other
+		// writer can nest inside this transaction while it awaits.
+		await store.root.childTransaction(async () => {
 			await step.run(store);
-			// Advance the version IN THE SAME TXN so a crash either
-			// rolls everything (including the version write) back, or
-			// commits everything atomically.
 			await store.meta.put(META_SCHEMA_VERSION, step.to);
 		});
 		applied++;

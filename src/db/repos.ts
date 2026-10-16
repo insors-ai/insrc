@@ -197,6 +197,7 @@ export async function removeRepo(_db: DbClient, path: string): Promise<void> {
 		const id = findRepoIdByPath(s, path);
 		if (id === undefined) return;
 		s.repo.remove(encodeRepoKey(id));
+		s.indexState.remove(encodeRepoKey(id));
 	});
 }
 

@@ -13,9 +13,12 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { open } from 'lmdb';
+
 import {
 	closeGraphStore,
 	getGraphStore,
+	SCHEMA_VERSION,
 	setGraphStorePath,
 	type GraphStore,
 } from '../store.js';
@@ -173,6 +176,40 @@ test('runMigrations leaves intermediate version on disk after a per-step crash',
 	const applied = await runMigrations(store, stored, 3, fixedReg);
 	assert.equal(applied, 1);
 	assert.equal(await readVersion(store), 3);
+});
+
+test('a throwing step leaves neither its rows nor its version write; earlier steps stay committed (ISSUE-5437d6e5)', async () => {
+	for (const shape of ['sync', 'async'] as const) {
+		const store = await getGraphStore();
+		await store.meta.put('schema_version', 1);
+		const reg: Migration[] = [
+			{ from: 1, to: 2, description: 'a', run: (s) => { void s.meta.put(`${shape}-row-a`, 'a'); } },
+			shape === 'sync'
+				? { from: 2, to: 3, description: 'b (throws)', run: (s) => { void s.meta.put(`${shape}-row-b`, 'b'); throw new Error('boom'); } }
+				: { from: 2, to: 3, description: 'b (throws after an await)', run: async (s) => {
+					void s.meta.put(`${shape}-row-b`, 'b');
+					await new Promise(r => setTimeout(r, 5));
+					void s.meta.put(`${shape}-row-b2`, 'b');
+					throw new Error('boom');
+				} },
+		];
+		await assert.rejects(() => runMigrations(store, 1, 3, reg), /boom/);
+
+		// Read back from disk with the library directly: opening through the
+		// store module would run the real migration chain from version 2.
+		await closeGraphStore();
+		const raw = open({ path: join(dir, 'graph.lmdb'), maxDbs: 32 });
+		const meta = raw.openDB({ name: 'meta', keyEncoding: 'ordered-binary' });
+		try {
+			assert.equal(meta.get('schema_version'), 2, `${shape}: the throwing step's version write is not kept`);
+			assert.equal(meta.get(`${shape}-row-a`), 'a', `${shape}: the earlier step stays committed`);
+			assert.equal(meta.get(`${shape}-row-b`), undefined, `${shape}: the throwing step's rows are not kept`);
+			assert.equal(meta.get(`${shape}-row-b2`), undefined, `${shape}: nor rows written after an await`);
+		} finally {
+			await meta.put('schema_version', SCHEMA_VERSION);   // so the next open does not migrate
+			await raw.close();
+		}
+	}
 });
 
 // ---------------------------------------------------------------------------

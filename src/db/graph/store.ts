@@ -22,6 +22,9 @@
  *     in_edge                      (u64+u8+u64) -> empty
  *     unresolved                   u64 BE       -> msgpack(UnresolvedRelation)
  *     unresolved_by_file           (u32+utf8)   -> dupsort u64 unresolved_id
+ *     unresolved_by_target         utf8 awaited entity id -> dupsort utf8 unresolved_id   (schema_version >= 5)
+ *     export_names                 (u64+utf8)   -> dupsort utf8 target entity id          (schema_version >= 5)
+ *     index_state                  u32 BE repoId -> msgpack(IndexStateRow)                (schema_version >= 5)
  *
  *   Plans (2):
  *     plan                         utf8         -> msgpack(Plan)
@@ -124,8 +127,17 @@ const MAX_DBS = 32;
  *           to point at the matching namespace row, drops phantom
  *           workspace rows whose path is empty / banned / non-
  *           existent, and bumps the version.
+ *   v4 -- external-service graph vocabulary (additive kinds; no rewrite).
+ *   v5 -- nothing lost from the index (Epic c2ba6fa6, Story s1):
+ *         - `unresolved_by_target`: a pending relationship that awaits
+ *           a target by its entity id, found by that id.
+ *         - `export_names`: the names a file re-exports, alias included.
+ *         - `index_state`: one IndexStateRow per workspace repository.
+ *         The v4 -> v5 migration writes an IndexStateRow for every
+ *         workspace repository with fullIndexFinished false and its
+ *         pending counts recounted from the stored rows.
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 const META_SCHEMA_VERSION = 'schema_version';
 
@@ -250,6 +262,9 @@ export interface GraphStore {
 	inEdge:              AnyDb;
 	unresolved:          AnyDb;
 	unresolvedByFile:    AnyDb;
+	unresolvedByTarget:  AnyDb;
+	exportNames:         AnyDb;
+	indexState:          AnyDb;
 
 	// Plans
 	plan:                AnyDb;
@@ -556,6 +571,9 @@ export async function getGraphStore(): Promise<GraphStore> {
 			inEdge:             open_('in_edge'),
 			unresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),
 			unresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),
+			unresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),
+			exportNames:        open_('export_names', { dupSort: true }),
+			indexState:         open_('index_state'),
 
 			// Plans -- `plan` is utf8 id keyed; planStep keys are pre-
 			// encoded composite Buffers so binary is fine
@@ -604,7 +622,8 @@ export async function getGraphStore(): Promise<GraphStore> {
 			// hits the migration path, so without this call the four
 			// `kind: 'shared-modules'` rows would be missing.
 			const { provisionSharedModulesRows } = await import('./migrations.js');
-			await root.transaction(() => {
+			// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).
+			await root.childTransaction(() => {
 				writeSchemaVersion(store, SCHEMA_VERSION);
 				provisionSharedModulesRows(store);
 			});
@@ -868,10 +887,30 @@ export async function closeGraphStore(): Promise<void> {
 // Txn helpers (Phase 1.5 will harden these with timing + retry)
 // ---------------------------------------------------------------------------
 
+/** A synchronous callback's result: a Promise-returning callback does not type-check. */
+type SyncResult<T> = T extends PromiseLike<unknown> ? never : T;
+
+function isThenable(v: unknown): boolean {
+	return typeof v === 'object' && v !== null && typeof (v as { then?: unknown }).then === 'function';
+}
+
 /**
  * Run `fn` inside an LMDB write transaction. Single-writer at a time
- * (LMDB serializes write txns); concurrent callers queue up. Throws
- * propagate; the txn aborts and partial changes are discarded.
+ * (LMDB serializes write txns); concurrent callers queue up. When `fn`
+ * throws, nothing it wrote is kept and the promise rejects with its error.
+ *
+ * `fn` runs as an lmdb CHILD transaction (ISSUE-5437d6e5). lmdb's plain
+ * `transaction()` batches many callers into one shared write transaction and
+ * commits a throwing callback's writes; a child transaction is aborted on a
+ * throw while its batch neighbours commit. `fn` must be synchronous: an async
+ * child callback holds the write transaction open across its await, and a
+ * second caller arriving then runs nested inside it and loses its writes if
+ * the first throws. The type refuses a Promise-returning callback; at run
+ * time a thenable result is refused by aborting the child; only what the
+ * callback wrote before returning it is discarded. The refused Promise keeps
+ * running: a write it makes after an await is a standalone lmdb write that
+ * commits, and its rejection is swallowed so it cannot crash the process.
+ * The compile-time type is the guard; the run-time refusal reports misuse.
  *
  * On a store that lost its locks the library's transaction NEVER settles, so
  * the wait is bounded: each time the bound passes, the store is probed with
@@ -880,10 +919,20 @@ export async function closeGraphStore(): Promise<void> {
  * slow, and the wait goes on.
  */
 export async function withWriteTxn<T>(
-	fn: (store: GraphStore) => T | Promise<T>,
+	fn: (store: GraphStore) => SyncResult<T>,
 ): Promise<T> {
 	const store = await getGraphStore();
-	const txn = (store.root.transaction(() => fn(store)) as Promise<T>).then(value => ({ value }));
+	const run = (): T => {
+		const result = fn(store) as T;
+		if (isThenable(result)) {
+			// Never awaited: handle its rejection so it is not an unhandled rejection.
+			(result as PromiseLike<unknown>).then(undefined, () => { /* refused callback */ });
+			throw new Error('withWriteTxn callbacks must be synchronous');
+		}
+		return result;
+	};
+	// A child transaction nested in an open one returns a plain value, not a promise.
+	const txn = Promise.resolve(store.root.childTransaction(run) as T | Promise<T>).then(value => ({ value }));
 
 	for (;;) {
 		let timer: NodeJS.Timeout | undefined;

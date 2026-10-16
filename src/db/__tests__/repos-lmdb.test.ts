@@ -22,7 +22,10 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { closeGraphStore, setGraphStorePath } from '../graph/store.js';
+import { closeGraphStore, getGraphStore, setGraphStorePath, withWriteTxn } from '../graph/store.js';
+import { decodeRepoRow, encodeIndexStateRow } from '../graph/codec.js';
+import { encodeRepoKey } from '../graph/keys.js';
+import { emptyIndexStateRow } from '../graph/pending-class.js';
 import {
 	addRepo, removeRepo, listRepos, updateRepoStatus,
 	InvalidRepoPathError, validateRepoPath, validateRepoPathShape,
@@ -110,6 +113,27 @@ test('removeRepo by path deletes the row', async () => {
 	const list = await listRepos(null);
 	assert.equal(list.length, 1);
 	assert.equal(list[0]!.path, '/repo/b');
+});
+
+test('removeRepo deletes the repository\'s index_state row with its registry row (Epic c2ba6fa6 s1/t1)', async () => {
+	await addRepo(null, makeRepo({ path: '/repo/a' }));
+	await addRepo(null, makeRepo({ path: '/repo/b' }));
+	const store = await getGraphStore();
+	const idOf = (path: string): number => {
+		for (const { value } of store.repo.getRange()) {
+			const r = decodeRepoRow(value as Buffer);
+			if (r.path === path) return r.id;
+		}
+		throw new Error(`no repo ${path}`);
+	};
+	const a = idOf('/repo/a');
+	const b = idOf('/repo/b');
+	await withWriteTxn(s => {
+		for (const id of [a, b]) s.indexState.put(encodeRepoKey(id), encodeIndexStateRow(emptyIndexStateRow()));
+	});
+	await removeRepo(null, '/repo/a');
+	assert.equal(store.indexState.get(encodeRepoKey(a)), undefined);
+	assert.ok(store.indexState.get(encodeRepoKey(b)) !== undefined, 'the other repository keeps its row');
 });
 
 test('removeRepo on unknown path is a silent no-op', async () => {

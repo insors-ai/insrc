@@ -1,0 +1,208 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s1",
+    "createdAt": "2026-10-16T13:00:16.421Z",
+    "updatedAt": "2026-10-16T13:00:16.421Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "fcc6d7ab",
+        "ranAt": "2026-10-16T13:00:16.421Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/graph/__tests__/migration-v4-to-v5.test.ts: V4 store migrates to 5 with three sub-DBs and one IndexStateRow per repository; a throwing step leaves version 4",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+                "title": "a v4 store opened by this code is at version 5 with one IndexStateRow per workspace repository, not complete, its pending counts recounted from the stored rows",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+                "title": "a v4 -> v5 step that throws leaves the stored version at 4 and writes no IndexStateRow",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+                "title": "the registry keeps V1->V2, V2->V3 and V3->V4 in order and appends V4->V5",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/repos-lmdb.test.ts: repo.remove deletes the index_state row",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/repos-lmdb.test.ts",
+                "title": "removeRepo deletes the repository's index_state row with its registry row (Epic c2ba6fa6 s1/t1)",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+                "title": "removing a repository after the migration leaves no index_state row for it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/repos-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2928,
+            "titles": [
+              {
+                "title": "addRepo + listRepos round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with explicit name overrides basename derivation",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with empty name falls back to basename",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo on existing path updates in place (same repo_id semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo with multiple paths creates multiple rows",
+                "result": "pass"
+              },
+              {
+                "title": "removeRepo by path deletes the row",
+                "result": "pass"
+              },
+              {
+                "title": "removeRepo deletes the repository's index_state row with its registry row (Epic c2ba6fa6 s1/t1)",
+                "result": "pass"
+              },
+              {
+                "title": "removeRepo on unknown path is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "listRepos on empty registry returns empty array",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus mutates only status / lastIndexed / errorMsg",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus on unknown path is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "updateRepoStatus with errorMsg surfaces it on listRepos",
+                "result": "pass"
+              },
+              {
+                "title": "all four status values round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "lastIndexed sentinel: absent when never indexed, present after first index",
+                "result": "pass"
+              },
+              {
+                "title": "lastIndexed survives close + reopen",
+                "result": "pass"
+              },
+              {
+                "title": "many repos round-trip without collision (linear-scan correctness)",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo updates status without losing addedAt",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects empty string",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects non-string input",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects relative paths",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects filesystem root + system / volatile dirs",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape normalises trailing-slash + .. segments",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPathShape rejects normalised banned root (e.g. `/Users/.`)",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPath (full) accepts an existing temp directory",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoPath (full) rejects non-existent path",
+                "result": "pass"
+              },
+              {
+                "title": "addRepo rejects empty / banned-root paths via shape validation",
+                "result": "pass"
+              },
+              {
+                "title": "registry codec: decodeRepoRow keeps lastRun, and a status write without lastRun keeps the stored one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1589,
+            "titles": [
+              {
+                "title": "a v4 store opened by this code is at version 5 with one IndexStateRow per workspace repository, not complete, its pending counts recounted from the stored rows",
+                "result": "pass"
+              },
+              {
+                "title": "a v4 -> v5 step that throws leaves the stored version at 4 and writes no IndexStateRow",
+                "result": "pass"
+              },
+              {
+                "title": "the registry keeps V1->V2, V2->V3 and V3->V4 in order and appends V4->V5",
+                "result": "pass"
+              },
+              {
+                "title": "removing a repository after the migration leaves no index_state row for it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

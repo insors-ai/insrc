@@ -1246,9 +1246,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  134207,
-  bytes:  134271,
-  sha256: 'afe18712682504dea70e0e0030b1cfbeb96ce69db1baa36c59b9cca22977e81f',
+  chars:  134749,
+  bytes:  134813,
+  sha256: '6f35df398d5a4756659f5db5c3969412a76fbefd333ea4246b3707af1e0e747a',
 } as const;
 
 function renderShellFor(nonce: string): string {

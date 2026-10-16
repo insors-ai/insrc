@@ -267,6 +267,8 @@ The companion shell renders a path in a description table as a link-like element
   - **resolved**: Verify host nonces all inline scripts — Verified: stampScriptNonce in vscode-plugin/src/chat/docs-review-panel.ts (line 2437) gives every script tag without a nonce the pane's nonce, so the new inline script needs no special handling. _(2026-10-16T09:15:00.740Z)_
 - `qf0569a95` — Open: rvFrameMessage checks the type, length and line of a message but does not itself reject an absolute path or a .. segment; it leaves those to the host's openCodeRef check, which refuses them. Decide whether the pane should also refuse them.
   - **resolved**: Leave it to the host — The LLD as approved leaves absolute and .. paths to the host's openCodeRef check, the trust boundary. _(2026-10-16T09:15:52.326Z)_
+- `qaa3e7e97` — Acceptance criteria are derived from the Story's user value (the Story has none): ac1 the call-sequence label shows the repo-relative path and line; ac2 the page script marks references and posts a click; ac3 the pane forwards only from its own frame and with valid fields; ac4 the script's grammar is the chat page's.
+  - **resolved**: Accept derived ACs as-is — The approved LLD carries ac1-ac4 as its acceptance mapping. _(2026-10-16T09:16:34.915Z)_
 
 ## Citations
 

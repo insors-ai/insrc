@@ -234,6 +234,13 @@
         "choice": "Leave it to the host",
         "rationale": "The LLD as approved leaves absolute and .. paths to the host's openCodeRef check, the trust boundary.",
         "resolvedAt": "2026-10-16T09:15:52.326Z"
+      },
+      "qaa3e7e97": {
+        "question": "Acceptance criteria are derived from the Story's user value (the Story has none): ac1 the call-sequence label shows the repo-relative path and line; ac2 the page script marks references and posts a click; ac3 the pane forwards only from its own frame and with valid fields; ac4 the script's grammar is the chat page's.",
+        "status": "resolved",
+        "choice": "Accept derived ACs as-is",
+        "rationale": "The approved LLD carries ac1-ac4 as its acceptance mapping.",
+        "resolvedAt": "2026-10-16T09:16:34.915Z"
       }
     }
   },

@@ -62,3 +62,19 @@ export const SMALLEST_SHAPE_RULE: string = [
 	'- Prefer shapes that reuse what the codebase already has: ask the insrc analyzer (`insrc_analyze_step`) whether it already does what an alternative would add. Make at least one alternative the smallest that fully meets the Story, and add no option, abstraction or flexibility nobody asked for.',
 	'- Small is not an excuse to drop validation at trust boundaries, error handling that prevents data loss, security or accessibility, and larger alternatives the Story really needs stay on the list.',
 ].join('\n');
+
+/**
+ * Shared prompt fragment: how a file reference is written.
+ *
+ * The chat plugin's clickable code references resolve only from the workspace root, so a shortened
+ * path, or prose inside the same code span, silently does nothing. `checkPathForms` in
+ * `../synthesizer.ts` enforces the shape of what this rule describes.
+ *
+ * Defined ONCE and used at every prompt site and in the descriptions of the path-valued schema fields.
+ */
+export const PATH_FORM_RULE: string =
+	'- [HARD] WRITE FILE REFERENCES IN ONE FORM. A file inside the project is written relative to the project root ' +
+	'(`src/workflow/synthesizer.ts`), optionally followed by `:N`, `:N-M` or `:N:C` and, for a doc, `#anchor`: never shortened ' +
+	'(not `synthesizer.ts` or `workflow/synthesizer.ts`), never with `./` or `..`, and never with a note or any other prose in the same ' +
+	'code span or string. A file outside the project is written with its full path (absolute path or URL). ' +
+	'A path you copy from a step output that is not in this form is written in this form, not copied as it is.';

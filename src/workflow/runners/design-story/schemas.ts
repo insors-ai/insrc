@@ -9,6 +9,7 @@
  */
 
 import { ER_DEFINITION_PROPERTY_SCHEMA } from '../../artifacts/companion/er-schema.js';
+import { PATH_FORM_RULE } from '../scope-prompts.js';
 
 // ---------------------------------------------------------------------------
 // s1 — LldContext
@@ -29,7 +30,7 @@ export const lldContextSchema = {
 					kind:    { type: 'string', minLength: 1 },
 					focus:   { type: 'string', minLength: 1 },
 					summary: { type: 'string', minLength: 1 },
-					pathsCited: { type: 'array', items: { type: 'string', minLength: 1 } },
+					pathsCited: { type: 'array', description: PATH_FORM_RULE, items: { type: 'string', minLength: 1 } },
 				},
 				additionalProperties: false,
 			},
@@ -257,7 +258,7 @@ export const contractDetailSchema = {
 					change:     { enum: ['new', 'field-add', 'field-modify', 'field-remove', 'invariant-change'] },
 					details:    { type: 'string', minLength: 1 },
 					schemaDiff: { type: 'string' },
-					callSites:  { type: 'array', items: { type: 'string' } },
+					callSites:  { type: 'array', description: PATH_FORM_RULE, items: { type: 'string' } },
 				},
 				additionalProperties: false,
 			},

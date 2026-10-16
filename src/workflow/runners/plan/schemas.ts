@@ -9,6 +9,8 @@
  * Kept as data so the runner file stays readable.
  */
 
+import { PATH_FORM_RULE } from '../scope-prompts.js';
+
 // A PlanTask without its tests[] (enumerate / critique / finalize). The
 // `test-strategy.write` step re-emits the tasks WITH tests filled.
 const taskCoreProps = {
@@ -62,7 +64,7 @@ export const planContextSchema = {
 					kind:       { type: 'string', minLength: 1 },
 					focus:      { type: 'string', minLength: 1 },
 					summary:    { type: 'string', minLength: 1 },
-					pathsCited: { type: 'array', items: { type: 'string', minLength: 1 } },
+					pathsCited: { type: 'array', description: PATH_FORM_RULE, items: { type: 'string', minLength: 1 } },
 				},
 			},
 		},

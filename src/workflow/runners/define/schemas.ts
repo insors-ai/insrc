@@ -10,6 +10,8 @@
  * assembly + finalize logic.
  */
 
+import { PATH_FORM_RULE } from '../scope-prompts.js';
+
 // ---------------------------------------------------------------------------
 // s1 — DefineContext
 // ---------------------------------------------------------------------------
@@ -80,6 +82,7 @@ export const defineContextSchema = {
 					summary: { type: 'string', minLength: 1 },
 					pathsCited: {
 						type:  'array',
+						description: PATH_FORM_RULE,
 						items: { type: 'string', minLength: 1 },
 					},
 				},

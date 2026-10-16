@@ -230,6 +230,8 @@ Do a2, and in addition resolve each project-relative entry against the artifact'
   - **resolved**: Adopt the derived ACs as stated — The approved LLD carries ac1-ac3 as its acceptance mapping. _(2026-10-16T07:40:22.215Z)_
 - `qe21d7779` — Audit partial (cd1): checkPathForms and PATH_FORM_RULE are new symbols this Story creates, so they are not in an s1 bundle.
   - **resolved**: Accept as new-symbol partial — The symbols are created by this Story, so they cannot be in the index. _(2026-10-16T07:41:00.840Z)_
+- `q1dab013f` — Audit partial (dm1): src/daemon/workflow-rpc.ts is a call site found by a grep for 'boundary' (it tests failure.kind === 'boundary'), not by an s1 bundle.
+  - **resolved**: Record it as an untouched consumer that must not break — The LLD does not change the 'boundary' kind; the daemon loop must keep working. _(2026-10-16T07:41:29.501Z)_
 
 ## Citations
 

@@ -222,6 +222,13 @@
         "choice": "Accept as new-symbol partial",
         "rationale": "The symbols are created by this Story, so they cannot be in the index.",
         "resolvedAt": "2026-10-16T07:41:00.840Z"
+      },
+      "q1dab013f": {
+        "question": "Audit partial (dm1): src/daemon/workflow-rpc.ts is a call site found by a grep for 'boundary' (it tests failure.kind === 'boundary'), not by an s1 bundle.",
+        "status": "resolved",
+        "choice": "Record it as an untouched consumer that must not break",
+        "rationale": "The LLD does not change the 'boundary' kind; the daemon loop must keep working.",
+        "resolvedAt": "2026-10-16T07:41:29.501Z"
       }
     }
   },

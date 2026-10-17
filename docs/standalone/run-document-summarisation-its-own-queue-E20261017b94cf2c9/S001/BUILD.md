@@ -2,29 +2,22 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-17T13:31:05.601Z  ·  **Updated:** 2026-10-17T13:31:05.601Z
+**Standalone:** yes  ·  **Created:** 2026-10-17T13:31:05.601Z  ·  **Updated:** 2026-10-17T13:43:11.087Z
 
-**Commit:** 36a2bcaf
+**Commit:** 099f6dcc
 
 ## Summary
 
-IndexQueue now holds an index lane and a summary lane (doc-summarise-repo and doc-summarise-entity), each with its own FIFO, drain loop and in-flight job; start runs both loops at the same time (awaited in turn, not Promise.all) and resolves when both stop. A single-document job goes ahead of a queued sweep; takeDocSummaryEdit, laneStatus and isStopping are added; depth, isProcessing and depthForRepo span both lanes; codeIndexWorkFor reads the index lane only. The existing code-index-work test asserts index-lane order only. Ten mutations each fail the tests.
+writeDocSummaryIfCurrent looks up the entity id, reads its row and compares sha256 of the stored body with summary.contentHash inside one write transaction (atomic with the entity delete, which removes the id mapping, row and summary together), then writes the same two rows writeDocSummary writes through its own helper. writeDocSummary is byte-for-byte unchanged (b9d84623 restored it after the gate's first verdict). summariseDoc routes both writes through the new function: entity-gone / body-changed become { ok: false, skipped }, a thrown summary write stays persistence-failed, a thrown placeholder write keeps the model error. Five of six mutations fail the tests; the sixth (writing when the row is absent but the id mapping is present) is equivalent, since that state cannot occur.
 
 ## Tasks validated
 
 - ✓ `t1`
+- ✓ `t2`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/BUILD-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `.insrc/artifacts/TESTS-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/BUILD.md` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/TESTS.md` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `src/daemon/index.ts` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `src/daemon/server.ts` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `src/understanding/__tests__/service.test.ts` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `src/understanding/__tests__/storage.test.ts` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `src/understanding/service.ts` — **insrc-build** (2026-10-17T13:31:05.601Z)
-- `src/understanding/storage.ts` — **insrc-build** (2026-10-17T13:31:05.601Z)
+- `.insrc/artifacts/TESTS-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T13:43:11.087Z)
+- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/TESTS.md` — **insrc-build** (2026-10-17T13:43:11.087Z)

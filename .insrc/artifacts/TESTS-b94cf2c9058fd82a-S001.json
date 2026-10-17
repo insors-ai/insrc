@@ -4,7 +4,7 @@
     "epicHash": "b94cf2c9058fd82a",
     "storyId": "S001",
     "createdAt": "2026-10-17T13:31:05.601Z",
-    "updatedAt": "2026-10-17T13:31:05.601Z",
+    "updatedAt": "2026-10-17T13:43:11.087Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T13:11:51.789Z",
     "epicSlug": "run-document-summarisation-its-own-queue"
@@ -106,6 +106,162 @@
               },
               {
                 "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b9d84623",
+        "ranAt": "2026-10-17T13:43:11.087Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/doc-summaries-lmdb.test.ts: writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo; writeDocSummary is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummary + getDocSummary round-trip",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummary overwrites an existing summary",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummary rejects an unknown entity",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummary rejects an unregistered repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts: summariseDoc reports a summary the conditional write did not store as skipped entity-gone or body-changed, a thrown summary write as persistence-failed, a thrown placeholder write with the original model error, and a placeholder write that finds the entity gone or changed as skipped with that reason",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "a summary of a document rewritten or deleted while it was summarised is not stored, and is reported as skipped body-changed or entity-gone",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "a summary write that throws is reported as persistence-failed",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "when the model fails, a placeholder write that throws keeps the model error, and one that finds the document gone or rewritten reports that instead",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1446,
+            "titles": [
+              {
+                "title": "a summary of a document rewritten or deleted while it was summarised is not stored, and is reported as skipped body-changed or entity-gone",
+                "result": "pass"
+              },
+              {
+                "title": "a summary write that throws is reported as persistence-failed",
+                "result": "pass"
+              },
+              {
+                "title": "when the model fails, a placeholder write that throws keeps the model error, and one that finds the document gone or rewritten reports that instead",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3369,
+            "titles": [
+              {
+                "title": "writeDocSummary + getDocSummary round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "writeDocSummary overwrites an existing summary",
+                "result": "pass"
+              },
+              {
+                "title": "getDocSummary returns null for unknown entity",
+                "result": "pass"
+              },
+              {
+                "title": "getDocSummary returns null for known entity with no summary",
+                "result": "pass"
+              },
+              {
+                "title": "writeDocSummary rejects an unknown entity",
+                "result": "pass"
+              },
+              {
+                "title": "writeDocSummary rejects an unregistered repo",
+                "result": "pass"
+              },
+              {
+                "title": "writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo",
+                "result": "pass"
+              },
+              {
+                "title": "listDocSummariesForRepo returns every summary for the repo",
+                "result": "pass"
+              },
+              {
+                "title": "countDocSummariesForRepo matches the list length",
+                "result": "pass"
+              },
+              {
+                "title": "listDocSummaryEntityIdsForRepo returns the same entity ids",
+                "result": "pass"
+              },
+              {
+                "title": "listDocSummariesForRepo returns empty for an unregistered repo",
+                "result": "pass"
+              },
+              {
+                "title": "deleteDocSummary drops primary + secondary index",
+                "result": "pass"
+              },
+              {
+                "title": "deleteDocSummariesForRepo scoped drop",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForFile cascades to the summary row",
+                "result": "pass"
+              },
+              {
+                "title": "placeholder rows persist the errorCode field",
                 "result": "pass"
               }
             ],

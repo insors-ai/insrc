@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -32,3 +32,32 @@ Run at 2026-10-17T13:31:05.601Z on commit `36a2bcaf`. Tests check: **passed**. 6
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/queue-code-index-work.test.ts` | 0 | 2 | 0.7 s |  |
 | `src/daemon/__tests__/queue-lanes.test.ts` | 0 | 5 | 0.6 s |  |
+
+## t2
+
+Run at 2026-10-17T13:43:11.087Z on commit `b9d84623`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/db/__tests__/doc-summaries-lmdb.test.ts: writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo; writeDocSummary is unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | writeDocSummary + getDocSummary round-trip | `src/db/__tests__/doc-summaries-lmdb.test.ts` |
+| pass | writeDocSummary overwrites an existing summary | `src/db/__tests__/doc-summaries-lmdb.test.ts` |
+| pass | writeDocSummary rejects an unknown entity | `src/db/__tests__/doc-summaries-lmdb.test.ts` |
+| pass | writeDocSummary rejects an unregistered repo | `src/db/__tests__/doc-summaries-lmdb.test.ts` |
+| pass | writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo | `src/db/__tests__/doc-summaries-lmdb.test.ts` |
+
+**unit: src/analyze/summariser/__tests__/summarise-doc-current.test.ts: summariseDoc reports a summary the conditional write did not store as skipped entity-gone or body-changed, a thrown summary write as persistence-failed, a thrown placeholder write with the original model error, and a placeholder write that finds the entity gone or changed as skipped with that reason**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a summary of a document rewritten or deleted while it was summarised is not stored, and is reported as skipped body-changed or entity-gone | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` |
+| pass | a summary write that throws is reported as persistence-failed | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` |
+| pass | when the model fails, a placeholder write that throws keeps the model error, and one that finds the document gone or rewritten reports that instead | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` | 0 | 3 | 1.4 s |  |
+| `src/db/__tests__/doc-summaries-lmdb.test.ts` | 0 | 15 | 3.4 s |  |

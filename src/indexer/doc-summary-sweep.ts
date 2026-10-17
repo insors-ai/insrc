@@ -74,5 +74,6 @@ export async function runDocSummarySweep(entityIds: readonly string[], deps: Doc
 		done += 1;
 		deps.onProgress(done, entityIds.length);
 	}
-	return { ...counts, stopped: false };
+	// Shutdown during the last document still counts as a stopped sweep.
+	return { ...counts, stopped: deps.shouldStop() };
 }

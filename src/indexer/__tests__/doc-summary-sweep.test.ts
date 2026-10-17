@@ -101,4 +101,9 @@ test('once shouldStop is true the sweep returns stopped after the summary in pro
 	const counts2 = await runDocSummarySweep(['a'], w2.deps);
 	assert.deepEqual(w2.events, ['edit:x'], 'stopped after the edit in progress');
 	assert.equal(counts2.stopped, true);
+
+	// Shutdown during the last (here the only) document.
+	const w3 = world({ stopAfterSummaries: 1 });
+	const counts3 = await runDocSummarySweep(['only'], w3.deps);
+	assert.deepEqual(counts3, { summarised: 1, skipped: 0, failed: 0, gone: 0, stopped: true });
 });

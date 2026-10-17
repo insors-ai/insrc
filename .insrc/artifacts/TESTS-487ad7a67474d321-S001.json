@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "487ad7a67474d321",
+    "storyId": "S001",
+    "createdAt": "2026-10-17T19:00:24.732Z",
+    "updatedAt": "2026-10-17T19:28:23.952Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-17T10:47:23.903Z",
+    "epicSlug": "send-codex-only-schema-keywords-strict"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "acb85bfc",
+        "ranAt": "2026-10-17T19:28:23.952Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1760,
+            "titles": [
+              {
+                "title": "a codex structured completion sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out every format but date-time, and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the analyzer bundle schema reaches codex without uniqueItems or any other refused keyword",
+                "result": "pass"
+              },
+              {
+                "title": "a codex structured completion rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a schema with a format the reply check cannot enforce, anywhere including a branch the copy leaves out, is refused before codex is called; the same word as data or as a property name is not",
+                "result": "pass"
+              },
+              {
+                "title": "a schema whose $ref points into a part the codex copy leaves out or renames (also under a property named like a data keyword) is refused before codex is called; a $ref into a kept part is sent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

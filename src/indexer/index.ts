@@ -3,7 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { join, extname, resolve, relative, sep } from 'node:path';
 import type { DbClient } from '../db/client.js';
-import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope } from '../shared/types.js';
+import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity } from '../shared/types.js';
+import type { SummariseDocResult } from '../analyze/summariser/index.js';
 import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById } from '../db/entities.js';
 import {
   upsertRelations,
@@ -214,6 +215,8 @@ export class IndexerService {
    * paths. Now we restrict to the explicitly-registered roots.
    */
   private readonly registeredRepos: Set<string> = new Set();
+  /** The running document-summary sweep's progress (summarySweepProgress). */
+  private sweepProgress: { repoPath: string; done: number; total: number } | undefined = undefined;
 
   /** How long to wait after the last file event before kicking the
    *  cross-file pass on the incremental path. Sits *on top of* the
@@ -915,9 +918,20 @@ export class IndexerService {
    * swallowed; the sweep continues so partial progress accumulates
    * even if some docs consistently break.
    */
-  private async docSummariseRepo(repoPath: string): Promise<void> {
+  /** The running document-summary sweep's progress, or undefined when none runs (Story b94cf2c9 S001). */
+  summarySweepProgress(): { repoPath: string; done: number; total: number } | undefined {
+    return this.sweepProgress === undefined ? undefined : { ...this.sweepProgress };
+  }
+
+  /** Summarise one document; a seam so tests run the sweep without a model. */
+  protected async summariseEntity(entity: Entity): Promise<SummariseDocResult> {
     const { summariseDoc } = await import('../analyze/summariser/index.js');
-    const { listEntitiesForRepo } = await import('../db/entities.js');
+    return summariseDoc({ db: this.db, entity });
+  }
+
+  private async docSummariseRepo(repoPath: string): Promise<void> {
+    const { listEntitiesForRepo, getEntity } = await import('../db/entities.js');
+    const { runDocSummarySweep } = await import('./doc-summary-sweep.js');
     const entities = await listEntitiesForRepo(this.db, repoPath);
     const docs = entities.filter(e => e.kind === 'document' || e.kind === 'section');
     if (docs.length === 0) {
@@ -926,32 +940,26 @@ export class IndexerService {
     }
     log.info({ repo: repoPath, count: docs.length }, 'doc summariser: sweep started');
     const t0 = Date.now();
-    let summarised = 0, skipped = 0, failed = 0;
-    for (const entity of docs) {
-      try {
-        const res = await summariseDoc({ db: this.db, entity });
-        if (res.ok) {
-          if (res.skipped === 'unchanged') skipped += 1;
-          else                             summarised += 1;
-        } else {
-          failed += 1;
-        }
-      } catch (err) {
-        // summariseDoc is designed not to throw for LLM/schema
-        // failures, but a bug or an OOM could still throw. Log +
-        // continue so one bad entity doesn't stop the sweep.
-        failed += 1;
-        log.warn(
-          { repo: repoPath, entityId: entity.id, err: err instanceof Error ? err.message : String(err) },
-          'doc summariser: entity threw (continuing sweep)',
-        );
-      }
+    this.sweepProgress = { repoPath, done: 0, total: docs.length };
+    try {
+      // The sweep re-reads each document before summarising it, runs queued
+      // single-document jobs first, and stops between documents on shutdown.
+      const counts = await runDocSummarySweep(docs.map(e => e.id), {
+        getEntity:  id => getEntity(this.db, id),
+        summarise:  entity => this.summariseEntity(entity),
+        takeEdit:   () => this.queue.takeDocSummaryEdit(),
+        runEdit:    entityId => this.docSummariseEntity(entityId),
+        shouldStop: () => this.queue.isStopping,
+        onProgress: (done, total) => { this.sweepProgress = { repoPath, done, total }; },
+      });
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      log.info(
+        { repo: repoPath, ...counts, elapsed: `${elapsed}s` },
+        counts.stopped ? 'doc summariser: sweep stopped' : 'doc summariser: sweep complete',
+      );
+    } finally {
+      this.sweepProgress = undefined;
     }
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-    log.info(
-      { repo: repoPath, summarised, skipped, failed, elapsed: `${elapsed}s` },
-      'doc summariser: sweep complete',
-    );
   }
 
   /**
@@ -960,7 +968,6 @@ export class IndexerService {
    * makes no-op saves collapse to a hash compare.
    */
   private async docSummariseEntity(entityId: string): Promise<void> {
-    const { summariseDoc } = await import('../analyze/summariser/index.js');
     const { getEntity } = await import('../db/entities.js');
     const entity = await getEntity(this.db, entityId);
     if (entity === null) {
@@ -968,7 +975,7 @@ export class IndexerService {
       return;
     }
     try {
-      await summariseDoc({ db: this.db, entity });
+      await this.summariseEntity(entity);
     } catch (err) {
       log.warn(
         { entityId, err: err instanceof Error ? err.message : String(err) },

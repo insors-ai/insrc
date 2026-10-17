@@ -74,6 +74,7 @@ const CASES: readonly Case[] = [
   { cls: 'ai.insors.insrc.jetbrains.settings.InsrcSettingsTrackerTest', name: 'parseCatalog keeps repoFields and an older daemon without them gives an empty list' },
   { cls: 'ai.insors.insrc.jetbrains.settings.InsrcSettingsTrackerTest', name: 'readRepoSettings maps loaded, a daemon refusal and a transport fault' },
   { cls: 'ai.insors.insrc.jetbrains.settings.InsrcSettingsTrackerTest', name: 'writeRepoSetting calls repo_settings_set and maps saved, a refusal and a transport fault' },
+  { cls: 'ai.insors.insrc.jetbrains.settings.InsrcSettingsTrackerTest', name: 'repo_settings_set keeps a null value on the wire as an explicit null while config_write still drops it' },
   { cls: 'ai.insors.insrc.jetbrains.settings.InsrcSettingsTrackerTest', name: "the page reads each repo's settings on the pooled thread and hands them with repoFields to PerRepoSection" },
   { cls: 'ai.insors.insrc.jetbrains.settings.InsrcSettingsTrackerTest', name: 'a ghHost edit goes to writeRepoSetting, a model-tier edit still goes to writeSetting' },
   { cls: 'ai.insors.insrc.jetbrains.settings.InsrcSettingsTrackerTest', name: "a refused tracker edit is reported with the daemon's message and stays pending" },

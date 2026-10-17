@@ -171,11 +171,6 @@ test('get returns what set wrote and shows an outside write', async () => {
 		assert.equal(outside.values['ghHost'], 'edited.example');
 		assert.deepEqual(outside.resolved, { type: 'github', owner: 'by', repo: 'hand', source: 'per-repo-config' });
 
-		// An absent value (a client whose serializer drops nulls) clears the key too.
-		writeFileSync(f.path, JSON.stringify({ repos: { [REPO]: { ghHost: 'h', owner: 'o' } } }));
-		const absent = payloadOf(await f.call('repo.settings.set', { repo: REPO, key: 'ghHost' }));
-		assert.deepEqual(absent.values, { owner: 'o' });
-
 		// null clears a key and the default entry and other repos survive.
 		writeFileSync(f.path, JSON.stringify({ default: { type: 'none' }, repos: { [REPO]: { ghHost: 'h', owner: 'o', repo: 'r' }, '/other': { owner: 'x' } } }));
 		await f.call('repo.settings.set', { repo: REPO, key: 'ghHost', value: null });

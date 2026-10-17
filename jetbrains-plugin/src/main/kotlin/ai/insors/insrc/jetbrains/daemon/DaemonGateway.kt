@@ -702,8 +702,8 @@ interface DaemonGateway {
      * over the `repo.settings.set` IPC — NOT config.write. [value] is a String or
      * Boolean. Never throws: ok is [SaveResult.Saved], a daemon refusal (any error
      * code) is [SaveResult.Rejected] carrying its message, and a transport fault is
-     * [SaveResult.Unavailable]. A null value is sent as an ABSENT `value` (the wire
-     * serializer drops nulls), which the daemon treats as a clear.
+     * [SaveResult.Unavailable]. A null value is an explicit JSON null on the wire (the
+     * transport keeps nulls for this one method), which the daemon reads as a clear.
      */
     fun writeRepoSetting(repoPath: String, key: String, value: Any?): SaveResult
 
@@ -1093,7 +1093,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
 
     override fun writeRepoSetting(repoPath: String, key: String, value: Any?): SaveResult =
         try {
-            // A null value is dropped by the serializer, so the daemon sees an absent `value` and clears the row.
+            // A null value is an explicit clear; the transport keeps it as JSON null for this method.
             val r = rpc.call(
                 METHOD_REPO_SETTINGS_SET,
                 mapOf(PARAM_REPO to repoPath, PARAM_KEY to key, PARAM_VALUE to value),

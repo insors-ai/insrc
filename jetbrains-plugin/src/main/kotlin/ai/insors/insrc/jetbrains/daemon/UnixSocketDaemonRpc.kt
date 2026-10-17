@@ -37,14 +37,27 @@ class UnixSocketDaemonRpc(
     private val log = logger<UnixSocketDaemonRpc>()
     private val ids = AtomicLong(0)
 
-    override fun call(method: String, params: Map<String, Any?>): DaemonResult {
+    /** Same as [gson] but keeps null values, for the one method where null is meaningful. */
+    private val nullKeepingGson: Gson = gson.newBuilder().serializeNulls().create()
+
+    /**
+     * The request line for [method]. Nulls are dropped from params by default (a CLEAR on
+     * config.write is an ABSENT value). `repo.settings.set` is the exception: a null
+     * `value` there is an explicit clear, so that one call keeps its nulls.
+     */
+    internal fun requestLine(id: Long, method: String, params: Map<String, Any?>): String {
+        val g = if (method == DaemonGatewayImpl.METHOD_REPO_SETTINGS_SET) nullKeepingGson else gson
         val request = JsonObject().apply {
             addProperty("jsonrpc", "2.0")
-            addProperty("id", ids.incrementAndGet())
+            addProperty("id", id)
             addProperty("method", method)
-            add("params", gson.toJsonTree(params))
+            add("params", g.toJsonTree(params))
         }
-        val line = gson.toJson(request) + "\n"
+        return g.toJson(request) + "\n"
+    }
+
+    override fun call(method: String, params: Map<String, Any?>): DaemonResult {
+        val line = requestLine(ids.incrementAndGet(), method, params)
 
         val reply =
             try {

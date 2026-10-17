@@ -196,8 +196,7 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 			const p = (params ?? {}) as { repo?: unknown; key?: unknown; value?: unknown };
 			const repo = await registered(p.repo);
 			if (typeof repo !== 'string') return repo;
-			// An absent value clears the row, like config.write: a client whose serializer drops nulls (the JetBrains one) sends no value.
-			const checked = validateRepoSetting(typeof p.key === 'string' ? p.key : '', p.value === undefined ? null : p.value);
+			const checked = validateRepoSetting(typeof p.key === 'string' ? p.key : '', p.value);
 			if (!checked.ok) return fail(checked.code, checked.message);
 			const written = await writeKeys(repo, { [p.key as string]: checked.value }, configPath());
 			const failed = asData(written);

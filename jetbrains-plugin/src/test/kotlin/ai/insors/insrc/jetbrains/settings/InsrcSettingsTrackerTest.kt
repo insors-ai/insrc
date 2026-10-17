@@ -120,7 +120,7 @@ class InsrcSettingsTrackerTest {
         assertEquals("repo.settings.set", calls.single().first, "not config.write")
         assertEquals(mapOf<String, Any?>("repo" to "/work/a", "key" to "ghHost", "value" to "ghe.example.com"), calls.single().second)
 
-        // A null value is passed as null in the map; the wire serializer drops it, which the daemon reads as a clear.
+        // A null value is passed through as null; the transport keeps it as a JSON null (see the wire test below).
         val cleared = mutableListOf<Map<String, Any?>>()
         DaemonGatewayImpl(FakeDaemonRpc { _, p -> cleared.add(p); DaemonResult(ok = true, data = mapOf("ok" to true)) })
             .writeRepoSetting("/work/a", "ghPath", null)
@@ -135,6 +135,18 @@ class InsrcSettingsTrackerTest {
         val down = DaemonGatewayImpl(FakeDaemonRpc { _, _ -> throw DaemonUnavailableException("daemon is not running") })
             .writeRepoSetting("/work/a", "ghHost", "x")
         assertInstanceOf(SaveResult.Unavailable::class.java, down)
+    }
+
+    @Test
+    fun `repo_settings_set keeps a null value on the wire as an explicit null while config_write still drops it`() {
+        val rpc = ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpc()
+        val clear = rpc.requestLine(1, "repo.settings.set", mapOf("repo" to "/work/a", "key" to "ghPath", "value" to null))
+        assertTrue(clear.contains("\"value\":null"), "an explicit null clears the row: $clear")
+        val set = rpc.requestLine(2, "repo.settings.set", mapOf("repo" to "/work/a", "key" to "ghHost", "value" to "h"))
+        assertTrue(set.contains("\"value\":\"h\""))
+        // The existing method keeps its convention: a null is dropped (a clear omits `value`).
+        val config = rpc.requestLine(3, "config.write", mapOf("path" to listOf("a"), "value" to null))
+        assertFalse(config.contains("value"), "config.write still omits a null value: $config")
     }
 
     @Test

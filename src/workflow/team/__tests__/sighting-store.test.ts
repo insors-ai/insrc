@@ -12,6 +12,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -153,4 +154,30 @@ test('the lock refuses a second holder and takes over a lock older than 30 secon
 test('safe ref names accept what git accepts and refuse what could be read as an option or break a ref', () => {
 	for (const ok of ['main', 'release/1.2', 'équipe', '分支', 'feature_x-1', 'release+team', 'fix#12', 'a;b']) assert.equal(isSafeRefName(ok), true, ok);
 	for (const bad of ['', '-x', '--upload-pack=x', 'a..b', 'a/', 'a.', 'a.lock', 'a b', 'a\tb', 'a@{b', 'a~1', 'a^', 'a:b', 'a?', 'a*', 'a[b', 'a\\b', 'a//b', '/a', '@']) assert.equal(isSafeRefName(bad), false, JSON.stringify(bad));
+});
+
+test('a subdirectory of a repository shares the repository root\'s sighting key and lock', () => {
+	const { root, teamDir } = scratch();
+	try {
+		const repo = join(root, 'work');
+		mkdirSync(join(repo, 'sub', 'deeper'), { recursive: true });
+		execFileSync('git', ['init', '-q', repo]);
+		assert.equal(sightingKey(join(repo, 'sub', 'deeper')), sightingKey(repo));
+		assert.equal(sightingPath(join(repo, 'sub'), teamDir), sightingPath(repo, teamDir));
+		const held = acquireLock(repo, teamDir);
+		assert.ok(held.ok);
+		assert.equal(acquireLock(join(repo, 'sub'), teamDir).ok, false, 'the lock is per repository, not per directory');
+		if (held.ok) held.release();
+	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('a lock that fails while being initialised is removed, not left behind', () => {
+	const { root, teamDir, repoA } = scratch();
+	try {
+		const failing = (): never => { throw Object.assign(new Error('no space left on device'), { code: 'ENOSPC' }); };
+		const failed = acquireLock(repoA, teamDir, Date.now, failing);
+		assert.equal(failed.ok, false);
+		assert.deepEqual(readdirSync(join(teamDir, 'seen')).filter(f => f.endsWith('.lock')), [], 'no orphan lock');
+		assert.equal(acquireLock(repoA, teamDir).ok, true, 'the next caller is not told a refresh is running');
+	} finally { rmSync(root, { recursive: true, force: true }); }
 });

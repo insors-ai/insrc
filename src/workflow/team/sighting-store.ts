@@ -23,6 +23,7 @@ import { join, resolve } from 'node:path';
 
 import { PATHS } from '../../shared/paths.js';
 import { publishCreateOnly } from './create-only.js';
+import { runGit } from './git.js';
 import type { PolicyAnchor } from './types.js';
 
 export type BranchSource = 'remote' | 'user';
@@ -63,15 +64,25 @@ export function isSafeRefName(name: string): boolean {
 	return !(name.endsWith('/') || name.endsWith('.') || name.endsWith('.lock'));
 }
 
-/** 16 hex characters of the sha256 of the repository's real path. */
-export function sightingKey(repo: string): string {
-	let real: string;
-	try {
-		real = realpathSync(repo);
-	} catch {
-		real = resolve(repo);
+/**
+ * The repository's identity: the real path of its work-tree root, so a subdirectory and the root share one sighting and
+ * one lock. A directory that is not inside a git work tree is identified by its own real path.
+ */
+function repoIdentity(repo: string): string {
+	const top = runGit(repo, ['rev-parse', '--show-toplevel']);
+	const root = top.ok ? top.stdout.trim() : '';
+	for (const candidate of [root, repo]) {
+		if (candidate === '') continue;
+		try {
+			return realpathSync(candidate);
+		} catch { /* try the next candidate */ }
 	}
-	return createHash('sha256').update(real).digest('hex').slice(0, 16);
+	return resolve(repo);
+}
+
+/** 16 hex characters of the sha256 of the repository's identity. */
+export function sightingKey(repo: string): string {
+	return createHash('sha256').update(repoIdentity(repo)).digest('hex').slice(0, 16);
 }
 
 function seenDir(teamDir: string): string {
@@ -202,7 +213,12 @@ function lockHolder(path: string, token: string): LockResult {
  * write a refresh makes is itself atomic (unique-temp rename, create-only link, and
  * git's own atomic ref update), so an overlap in the rare reclaim window is harmless.
  */
-export function acquireLock(repo: string, teamDir: string = PATHS.team, now: () => number = Date.now): LockResult {
+export function acquireLock(
+	repo: string,
+	teamDir: string = PATHS.team,
+	now: () => number = Date.now,
+	writeToken: (fd: number, token: string) => void = (fd, token) => { writeSync(fd, token); }, // test seam
+): LockResult {
 	try {
 		mkdirSync(seenDir(teamDir), { recursive: true });
 	} catch (err) {
@@ -214,7 +230,14 @@ export function acquireLock(repo: string, teamDir: string = PATHS.team, now: () 
 	const create = (): LockResult | undefined => {
 		try {
 			const fd = openSync(path, 'wx');
-			try { writeSync(fd, token); } finally { closeSync(fd); }
+			try {
+				writeToken(fd, token);
+			} catch (err) {
+				try { unlinkSync(path); } catch { /* best effort */ } // do not leave a lock nobody holds
+				throw err;
+			} finally {
+				closeSync(fd);
+			}
 			return lockHolder(path, token);
 		} catch (err) {
 			if ((err as NodeJS.ErrnoException).code !== 'EEXIST') {

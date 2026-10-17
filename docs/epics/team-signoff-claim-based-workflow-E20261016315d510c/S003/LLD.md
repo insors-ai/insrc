@@ -329,6 +329,8 @@ Add repo.githubEntry.get and repo.githubEntry.set that move the entry JSON as is
 
 - `sg1` — [sg1 / ambiguous] The story says developers can edit 'tool locations and sign-in', but insrc stores no secrets and sign-in stays with the tracker's CLI. This LLD makes sign-in a read-only status row plus an editable ghHost (the host gh is signed in to). Is that what 'edit sign-in' should mean, or should it be something else?
   - **resolved**: Sign-in is a read-only status row computed live from gh (signed in as X, not signed in, gh not found, timed out); the only editable part is ghHost, the host gh signs in to (default github.com). No secret is stored. — Owner chose option A on 2026-10-17: satisfies 'see sign-in' with live truth and gives GitHub Enterprise users something to edit, inside the no-secrets rule. _(2026-10-17T12:39:59.765Z)_
+- `sg2` — [sg2 / missed] ghPath, ghHost and branchPattern are stored and shown by this story, but no story makes the gh runner or branch creation read them. Which story consumes them, so a developer who sets them sees an effect? (Candidate: an s1 follow-up for ghPath/ghHost and the handoff story s6 for branchPattern.)
+  - **resolved**: Split ownership: s1 follow-up + s6 — Owner chose option A on 2026-10-17: s3 stores and shows ghPath, ghHost and branchPattern only; the gh runner reading ghPath and ghHost is an s1 follow-up and branchPattern is consumed by s6 (handoff). The three rows carry a note 'saved; not used yet' until then. _(2026-10-17T12:40:42.103Z)_
 
 ## Citations
 

@@ -1,7 +1,7 @@
 import { randomUUID, createHash } from 'node:crypto';
 import { Type } from '@sinclair/typebox';
 import type { TSchema } from '@sinclair/typebox';
-import { getGraphStore, withWriteTxn } from '../db/graph/store.js';
+import { getGraphStore, getGraphStorePath, withWriteTxn } from '../db/graph/store.js';
 import type { GraphStore } from '../db/graph/store.js';
 import { prefixSuccessor } from '../db/graph/keys.js';
 import { AssessmentError, AttemptSchema, AuditSchema, CommandSchema, DeleteSchema, LearnerSchema, DomainSchemas,
@@ -55,8 +55,9 @@ export class UnderstandingService {
   private readonly schemas = new DomainSchemas();
   private readonly transitions = new Map<string, TransitionHandler>();
   private constructor() {}
-  static async open(storagePath: string, socketPath: string): Promise<UnderstandingService> {
-    enforcePrivatePaths(storagePath, socketPath);
+  static async open(socketPath: string): Promise<UnderstandingService> {
+    await getGraphStore();
+    enforcePrivatePaths(getGraphStorePath(), socketPath);
     await initializeAssessmentStorage();
     const service = new UnderstandingService();
     await service.recover();

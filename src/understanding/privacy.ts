@@ -15,8 +15,13 @@ export function enforcePrivatePaths(storagePath: string, socketPath: string, uid
   try {
     secure(dirname(storagePath), 'directory');
     secure(dirname(socketPath), 'directory');
-    secure(storagePath, 'directory');
-    for (const name of readdirSync(storagePath)) secure(join(storagePath, name), 'file');
+    if (lstatSync(storagePath).isDirectory()) {
+      secure(storagePath, 'directory');
+      for (const name of readdirSync(storagePath)) secure(join(storagePath, name), 'file');
+    } else {
+      secure(storagePath, 'file');
+      secure(`${storagePath}-lock`, 'file');
+    }
     secure(socketPath, 'socket');
   } catch { throw new AssessmentError('unavailable'); }
 }

@@ -327,7 +327,10 @@ let _path: string = PATHS.lmdb;
  * the test, otherwise the singleton is already pinned to the old
  * path. Pair with `closeGraphStore()` in test setup/teardown.
  */
+export function getGraphStorePath(): string { return _path; }
+
 export function setGraphStorePath(path: string): void {
+	if (_instance !== null || _initPromise !== null) throw new Error('close graph store before changing its path');
 	_path = path;
 }
 

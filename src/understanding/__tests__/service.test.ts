@@ -22,7 +22,7 @@ let serviceSocket: ReturnType<typeof createServer>;
 const owner: Owner = { ownerPrincipal: 'local-owner', learner: { key: 'learner', source: 'git', authority: 'git-email', subject: 'private-learner-sentinel', assurance: 'local-config', aliases: [] } };
 const scope: AssessmentScope = { repoId: 'repo', worktreeId: 'worktree', baseOid: null, stagedTreeOid: 'a'.repeat(40), commitMode: 'normal', parentOids: [], learnerKey: 'learner', policyRevision: 'p', evidenceRevision: 'e' };
 async function service(): Promise<UnderstandingService> {
-  const result = await UnderstandingService.open(join(dir, 'graph'), join(dir, 'service.sock'));
+  const result = await UnderstandingService.open(join(dir, 'service.sock'));
   result.register('answer', AttemptSchema, (_r, payload) => ({ state: 'answering', attempt: payload as AnswerAttempt }));
   return result;
 }
@@ -169,4 +169,16 @@ test('Assessment lifecycle logs omit private identity and answer content', () =>
   assert.ok(captured.includes('graph-store'));
   assert.ok(!captured.includes('private-learner-sentinel'));
   assert.ok(!captured.includes('private-answer-sentinel'));
+});
+
+
+test('Privacy covers the active production file layout and its lock file', async () => {
+  await closeGraphStore();
+  const database = join(dir, 'graph.lmdb');
+  setGraphStorePath(database);
+  const s = await UnderstandingService.open(join(dir, 'service.sock'));
+  assert.equal(statSync(database).mode & 0o777, 0o600);
+  assert.equal(statSync(`${database}-lock`).mode & 0o777, 0o600);
+  assert.throws(() => setGraphStorePath(join(dir, 'other')), /close graph store/);
+  await s.prepare(owner, scope, randomUUID());
 });

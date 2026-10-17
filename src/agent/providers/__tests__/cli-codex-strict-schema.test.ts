@@ -134,6 +134,7 @@ function mixedSchema(): StructuredSchema {
 			when:     { type: 'string', format: 'date-time' },
 			site:     { type: 'string', format: 'uri', pattern: '^https?://' },
 			either:   { anyOf: [{ type: 'array', items: { type: 'string' }, uniqueItems: true }, { type: 'null' }] },
+			pair:     { type: 'array', prefixItems: [{ type: 'array', items: { type: 'string' }, uniqueItems: true }, { oneOf: [{ type: 'object', properties: { k: { type: 'string' } } }, { type: 'null' }] }] },
 			// Property NAMES that match a refused keyword are data, not keywords.
 			not:         { type: 'string' },
 			uniqueItems: { type: 'boolean' },
@@ -142,7 +143,7 @@ function mixedSchema(): StructuredSchema {
 	};
 }
 
-test('the codex copy of a schema leaves out every keyword strict mode refuses and every unprobed format, keeps the rest, and leaves the caller\'s schema unchanged', () => {
+test('the codex copy of a schema leaves out every keyword strict mode refuses and every unprobed format, keeps the rest, makes prefixItems entries strict, and leaves the caller\'s schema unchanged', () => {
 	const schema = mixedSchema();
 	const copy = codexStrictSchema(schema) as Record<string, any>;
 	const seen = keywordsIn(copy);
@@ -155,6 +156,10 @@ test('the codex copy of a schema leaves out every keyword strict mode refuses an
 	assert.deepEqual(p.when, { type: 'string', format: 'date-time' }, 'date-time is kept');
 	assert.deepEqual(p.site, { type: 'string', pattern: '^https?://' }, 'uri is left out');
 	assert.deepEqual(p.either, { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] });
+	assert.deepEqual(p.pair, { type: 'array', prefixItems: [
+		{ type: 'array', items: { type: 'string' } },
+		{ anyOf: [{ type: 'object', properties: { k: { type: 'string' } }, required: ['k'], additionalProperties: false }, { type: 'null' }] },
+	] }, 'prefixItems entries are stripped and made strict');
 	assert.deepEqual(p.not, { type: 'string' }, 'a property named not is kept');
 	assert.deepEqual(p.uniqueItems, { type: 'boolean' }, 'a property named uniqueItems is kept');
 	assert.deepEqual(copy['required'], Object.keys(mixedSchema().properties as object));
@@ -175,16 +180,22 @@ test('the analyzer bundle schema reaches codex without uniqueItems or any other 
 	}
 });
 
-/** A schema with two constraints codex is not given: the items must be distinct, and `site` must be a URI. */
+/** A schema with three constraints codex is not given: the items must be distinct, `site` must be a URI,
+ *  and the first entry of `pair` must hold distinct items. */
 const DISTINCT: StructuredSchema = {
-	type: 'object', required: ['tags', 'site'], additionalProperties: false,
-	properties: { tags: { type: 'array', items: { type: 'string' }, uniqueItems: true }, site: { type: 'string', format: 'uri' } },
+	type: 'object', required: ['tags', 'site', 'pair'], additionalProperties: false,
+	properties: {
+		tags: { type: 'array', items: { type: 'string' }, uniqueItems: true },
+		site: { type: 'string', format: 'uri' },
+		pair: { type: 'array', prefixItems: [{ type: 'array', items: { type: 'string' }, uniqueItems: true }] },
+	},
 };
-const GOOD = { tags: ['a', 'b'], site: 'https://example.com/x' };
+const GOOD = { tags: ['a', 'b'], site: 'https://example.com/x', pair: [['a', 'b']] };
 
-test('a codex structured completion rejects a reply that breaks a keyword or a format left out of the codex copy, and accepts one that meets them', async () => {
+test('a codex structured completion rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them', async () => {
 	const dup = fakeCodex({ ...GOOD, tags: ['a', 'a'] });
 	const notUri = fakeCodex({ ...GOOD, site: 'not a uri' });
+	const dupFirst = fakeCodex({ ...GOOD, pair: [['a', 'a']] });
 	const good = fakeCodex(GOOD);
 	try {
 		await assert.rejects(
@@ -195,17 +206,23 @@ test('a codex structured completion rejects a reply that breaks a keyword or a f
 			new CliProvider({ kind: 'codex', binPath: notUri.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT),
 			/codex answer does not satisfy the caller's schema: \/site: must match format "uri"/,
 		);
+		await assert.rejects(
+			new CliProvider({ kind: 'codex', binPath: dupFirst.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT),
+			/codex answer does not satisfy the caller's schema: \/pair\/0: .*duplicate items/,
+		);
 		assert.deepEqual(await new CliProvider({ kind: 'codex', binPath: good.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT), GOOD);
 	} finally {
 		dup.cleanup();
 		notUri.cleanup();
+		dupFirst.cleanup();
 		good.cleanup();
 	}
 });
 
-test('a codex reviewer session rejects a reply that breaks a keyword or a format left out of the codex copy, and accepts one that meets them', async () => {
+test('a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them', async () => {
 	const dup = fakeCodex({ ...GOOD, tags: ['a', 'a'] });
 	const notUri = fakeCodex({ ...GOOD, site: 'not a uri' });
+	const dupFirst = fakeCodex({ ...GOOD, pair: [['a', 'a']] });
 	const good = fakeCodex(GOOD);
 	const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-codex-review-cwd-')));
 	try {
@@ -217,10 +234,15 @@ test('a codex reviewer session rejects a reply that breaks a keyword or a format
 			new CliProvider({ kind: 'codex', binPath: notUri.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
 			/codex review session answer does not satisfy the caller's schema: \/site: must match format "uri"/,
 		);
+		await assert.rejects(
+			new CliProvider({ kind: 'codex', binPath: dupFirst.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
+			/codex review session answer does not satisfy the caller's schema: \/pair\/0: .*duplicate items/,
+		);
 		assert.deepEqual(await new CliProvider({ kind: 'codex', binPath: good.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }), GOOD);
 	} finally {
 		dup.cleanup();
 		notUri.cleanup();
+		dupFirst.cleanup();
 		good.cleanup();
 		rmSync(cwd, { recursive: true, force: true });
 	}

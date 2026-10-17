@@ -29,6 +29,7 @@
  */
 
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
+import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
 import { getLogger } from '../../shared/logger.js';
 import { ModelCallFailedError } from './model-call-error.js';
@@ -88,19 +89,20 @@ export function validateAgainstSchema<T>(
 
 /**
  * The check for a codex reply. Unlike `validateAgainstSchema` it enforces
- * `format`: the copy codex is given leaves formats out (`codexStrictSchema`),
- * so this check is where they hold (ISSUE-487ad7a67474d321). A format name
- * ajv-formats does not define is not enforced here or anywhere else.
+ * `format`, and it reads draft 2020-12 (so `prefixItems` holds): the copy
+ * codex is given leaves out constraints (`codexStrictSchema`), and this check
+ * is where they hold (ISSUE-487ad7a67474d321). A format name ajv-formats does
+ * not define is not enforced here or anywhere else.
  */
 export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): ValidationResult<T> {
 	return validateWith<T>(codexReplyAjv, schema, raw);
 }
 
-const codexReplyAjv = new Ajv({ allErrors: true, useDefaults: false, removeAdditional: false, strict: false });
+const codexReplyAjv = new Ajv2020({ allErrors: true, useDefaults: false, removeAdditional: false, strict: false });
 // A CommonJS module: under NodeNext its default import is the whole module, whose `default` is the plugin.
 ajvFormats.default(codexReplyAjv);
 
-function validateWith<T>(instance: Ajv, schema: StructuredSchema, raw: unknown): ValidationResult<T> {
+function validateWith<T>(instance: Ajv | Ajv2020, schema: StructuredSchema, raw: unknown): ValidationResult<T> {
 	let validate: ValidateFunction;
 	try {
 		validate = instance.compile(schema);
@@ -338,7 +340,7 @@ function processInPlace(node: unknown): void {
 	}
 
 	// Schema-array fields. Each entry is itself a schema.
-	for (const arrKey of ['anyOf', 'allOf'] as const) {
+	for (const arrKey of ['anyOf', 'allOf', 'prefixItems'] as const) {
 		const arr = obj[arrKey];
 		if (Array.isArray(arr)) {
 			for (const item of arr) { processInPlace(item); }

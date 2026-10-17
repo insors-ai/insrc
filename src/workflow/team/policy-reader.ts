@@ -39,7 +39,7 @@ export interface ReaderOptions {
 type Found =
 	| { readonly kind: 'policy'; readonly policy: TeamPolicy }
 	| { readonly kind: 'invalid'; readonly reason: string }
-	| { readonly kind: 'error'; readonly reason: string }
+	| { readonly kind: 'error'; readonly reason: string; /** true when the file is known to exist but could not be read */ readonly exists: boolean }
 	| { readonly kind: 'missing' };
 
 export function isGitRepo(repo: string, timeoutMs?: number): boolean {
@@ -77,12 +77,14 @@ function resolveSha(repo: string, rev: string): string | undefined {
  * (a timeout, a damaged object, output too large) is an 'error', never taken for absence.
  */
 function readAt(repo: string, rev: string, label: string, fetchedAt: string, anchor: PolicyAnchor): Found {
-	if (resolveSha(repo, rev) === undefined) return { kind: 'missing' };
-	const tree = runGit(repo, ['ls-tree', '--name-only', rev, '--', POLICY_PATH]);
-	if (!tree.ok) return { kind: 'error', reason: `the policy file on ${label} could not be looked up: ${tree.stderr}` };
+	// Pin the revision to one commit so the lookup and the read cannot see a ref that moves in between.
+	const sha = resolveSha(repo, rev);
+	if (sha === undefined) return { kind: 'missing' };
+	const tree = runGit(repo, ['ls-tree', '--name-only', sha, '--', POLICY_PATH]);
+	if (!tree.ok) return { kind: 'error', reason: `the policy file on ${label} could not be looked up: ${tree.stderr}`, exists: false };
 	if (tree.stdout.trim().length === 0) return { kind: 'missing' };
-	const shown = runGit(repo, ['show', `${rev}:${POLICY_PATH}`]);
-	if (!shown.ok) return { kind: 'error', reason: `the policy file on ${label} could not be read: ${shown.stderr}` };
+	const shown = runGit(repo, ['show', `${sha}:${POLICY_PATH}`]);
+	if (!shown.ok) return { kind: 'error', reason: `the policy file on ${label} could not be read: ${shown.stderr}`, exists: true };
 	const parsed = parsePolicyFile(shown.stdout);
 	if (!parsed.ok) return { kind: 'invalid', reason: `policy file on ${label} is invalid: ${parsed.reason}` };
 	return { kind: 'policy', policy: buildTeamPolicy(parsed.value, { ref: label, fetchedAt, anchor }) };
@@ -92,13 +94,25 @@ function trackingRef(remote: string, branch: string): string {
 	return `refs/remotes/${remote}/${branch}`;
 }
 
-/** Tracking refs of `remote` (symbolic HEAD skipped) that carry the policy file. */
-function refsCarryingPolicy(repo: string, remote: string): string[] {
+type Scan =
+	| { readonly kind: 'found'; readonly ref: string }
+	| { readonly kind: 'none' }
+	| { readonly kind: 'error'; readonly reason: string };
+
+/**
+ * Do any tracking refs of `remote` (the symbolic HEAD skipped) carry the policy file?
+ * A listing or lookup that fails is an 'error', never taken for "no policy".
+ */
+function scanForPolicy(repo: string, remote: string): Scan {
 	const listed = runGit(repo, ['for-each-ref', '--format=%(refname)', `refs/remotes/${remote}/`]);
-	if (!listed.ok) return [];
+	if (!listed.ok) return { kind: 'error', reason: `the fetched refs of remote '${remote}' could not be listed: ${listed.stderr}` };
 	const head = `refs/remotes/${remote}/HEAD`;
-	return listed.stdout.split('\n').map(r => r.trim()).filter(r => r.length > 0 && r !== head)
-		.filter(r => runGit(repo, ['cat-file', '-e', `${r}:${POLICY_PATH}`]).ok);
+	for (const ref of listed.stdout.split('\n').map(r => r.trim()).filter(r => r.length > 0 && r !== head)) {
+		const tree = runGit(repo, ['ls-tree', '--name-only', ref, '--', POLICY_PATH]);
+		if (!tree.ok) return { kind: 'error', reason: `${ref} could not be searched for the policy file: ${tree.stderr}` };
+		if (tree.stdout.trim().length > 0) return { kind: 'found', ref };
+	}
+	return { kind: 'none' };
 }
 
 export function readPolicy(repo: string, opts: ReaderOptions = {}): PolicyResult<TeamPolicy | 'none'> {
@@ -113,8 +127,9 @@ export function readPolicy(repo: string, opts: ReaderOptions = {}): PolicyResult
 /** A sighting exists: the repo is known to carry a policy, so it is never 'none'. */
 function readKnownRepo(repo: string, s: Sighting): PolicyResult<TeamPolicy | 'none'> {
 	const ref = trackingRef(s.remote, s.branch);
-	const anchor = s.anchor.known ? s.anchor : mergeAnchor(s.anchor, findAnchor(repo, ref));
-	let found = readAt(repo, ref, ref, s.refreshedAt, anchor);
+	const pinned = resolveSha(repo, ref) ?? ref; // one commit for the anchor and the read
+	const anchor = s.anchor.known ? s.anchor : mergeAnchor(s.anchor, findAnchor(repo, pinned));
+	let found = readAt(repo, pinned, ref, s.refreshedAt, anchor);
 	let from = ref;
 	if (found.kind === 'missing' && resolveSha(repo, ref) === undefined) {
 		// The tracking ref is gone (remote removed, ref pruned): the commit the last refresh recorded still holds the policy.
@@ -147,29 +162,29 @@ function readUnseen(repo: string, now: string, teamDir: string | undefined, publ
 	const branch = remoteHeadBranch(repo, remote);
 
 	if (branch === undefined) {
-		const carrying = refsCarryingPolicy(repo, remote);
-		if (carrying.length === 0) return { ok: true, value: 'none' };
+		const scan = scanForPolicy(repo, remote);
+		if (scan.kind === 'none') return { ok: true, value: 'none' };
+		if (scan.kind === 'error') return { ok: false, reason: scan.reason };
 		return {
 			ok: false,
-			reason: `the default branch of remote '${remote}' is not known, and a fetched ref (${carrying[0]}) carries .insrc/policy.json; `
+			reason: `the default branch of remote '${remote}' is not known, and a fetched ref (${scan.ref}) carries .insrc/policy.json; `
 				+ `run 'team refresh --branch <default-branch-name>' to name the default branch`,
 		};
 	}
 
 	const ref = trackingRef(remote, branch);
-	const anchor = findAnchor(repo, ref);
-	const found = readAt(repo, ref, ref, now, anchor);
-	if (found.kind === 'missing') return { ok: true, value: 'none' };
-	if (found.kind === 'error') return { ok: false, reason: found.reason };
-
-	// First observation of a policy file (valid or invalid): remember this repo as a team repo, create-only.
 	const sha = resolveSha(repo, ref);
-	if (sha !== undefined) {
-		try {
-			publish(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
-		} catch (err) {
-			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record first sighting; the result is unchanged');
-		}
+	if (sha === undefined) return { ok: true, value: 'none' };
+	const anchor = findAnchor(repo, sha);
+	const found = readAt(repo, sha, ref, now, anchor);
+	if (found.kind === 'missing') return { ok: true, value: 'none' };
+	if (found.kind === 'error' && !found.exists) return { ok: false, reason: found.reason };
+
+	// First observation of a policy file (valid, invalid or unreadable): remember this repo as a team repo, create-only.
+	try {
+		publish(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
+	} catch (err) {
+		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record first sighting; the result is unchanged');
 	}
 	return found.kind === 'policy' ? { ok: true, value: found.policy } : { ok: false, reason: found.reason };
 }

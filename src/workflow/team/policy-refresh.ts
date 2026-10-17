@@ -98,7 +98,7 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 
 	// Tell "the file is not on the branch" (ls-tree succeeds and lists nothing) from any other git failure,
 	// which must never be mistaken for a removal.
-	const tree = localGit(repo, ['ls-tree', '--name-only', ref, '--', POLICY_PATH], deadline);
+	const tree = localGit(repo, ['ls-tree', '--name-only', commit, '--', POLICY_PATH], deadline);
 	if (!tree.ok) return fail(`could not look for the policy file on ${ref} (${tree.stderr}); nothing was changed`);
 
 	if (tree.stdout.trim().length === 0) {
@@ -124,10 +124,10 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 		return { ok: true, value: { kind: 'absent', branch, warnings } };
 	}
 
-	const shown = localGit(repo, ['show', `${ref}:${POLICY_PATH}`], deadline);
+	const shown = localGit(repo, ['show', `${commit}:${POLICY_PATH}`], deadline);
 	if (!shown.ok) return fail(`the policy file on ${ref} could not be read (${shown.stderr}); nothing was changed`);
 	const parsed = parsePolicyFile(shown.stdout);
-	const anchor = mergeAnchor(sighting?.anchor, (opts.anchor ?? findAnchor)(repo, ref, () => deadline.remainingMs()));
+	const anchor = mergeAnchor(sighting?.anchor, (opts.anchor ?? findAnchor)(repo, commit, () => deadline.remainingMs()));
 	// An anchor lookup that ran out of time reads as 'unknown'; never record a result the deadline cut short.
 	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before the policy could be recorded; nothing was recorded');
 	try {

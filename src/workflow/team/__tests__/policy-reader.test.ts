@@ -253,5 +253,37 @@ test('a policy file that exists but cannot be read is refused, never taken for a
 		const result = readPolicy(clone, { teamDir: f.teamDir });
 		assert.equal(result.ok, false, 'an unreadable policy must not read as none');
 		if (!result.ok) assert.match(result.reason, /could not be read/);
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the repo is remembered as a team repo even though the file could not be read');
+
+		// Even if the tracking ref later disappears, the repo is still known to carry a policy: never none.
+		git(clone, 'remote', 'remove', 'origin');
+		const after = readPolicy(clone, { teamDir: f.teamDir });
+		assert.notDeepEqual(after, { ok: true, value: 'none' });
+	} finally { f.cleanup(); }
+});
+
+test('a branch with non-ASCII letters is a valid default branch', () => {
+	const f = makeFixture();
+	try {
+		const { bare, work } = makeOrigin(f);
+		git(work, 'checkout', '-q', '-b', 'équipe');
+		commitFile(work, POLICY_PATH, VALID_POLICY, 'adopt policy on a non-ASCII default branch');
+		git(work, 'push', '-q', 'origin', 'équipe');
+		git(bare, 'symbolic-ref', 'HEAD', 'refs/heads/équipe');
+		const clone = cloneOf(f, bare, 'clone');
+		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir })).source.ref, 'refs/remotes/origin/équipe');
+	} finally { f.cleanup(); }
+});
+
+test('a ref listing that fails is refused, not taken for no policy', () => {
+	const f = makeFixture();
+	try {
+		const { bare } = makeOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		git(clone, 'remote', 'set-head', 'origin', '-d');
+		// A corrupt packed-refs file makes the ref listing fail.
+		writeFileSync(join(clone, '.git', 'packed-refs'), 'this is not a valid packed-refs file\n');
+		const result = readPolicy(clone, { teamDir: f.teamDir });
+		assert.equal(result.ok, false);
 	} finally { f.cleanup(); }
 });

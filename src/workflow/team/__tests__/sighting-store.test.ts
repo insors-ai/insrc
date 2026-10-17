@@ -19,6 +19,7 @@ import { join } from 'node:path';
 import {
 	LOCK_STALE_MS,
 	REFRESH_DEADLINE_MS,
+	isSafeRefName,
 	acquireLock,
 	mergeAnchor,
 	publishSightingIfAbsent,
@@ -147,4 +148,9 @@ test('the lock refuses a second holder and takes over a lock older than 30 secon
 		if (again.ok) again.release();
 		assert.deepEqual(readdirSync(join(teamDir, 'seen')).filter(f => f.endsWith('.takeover')), [], 'the takeover guard is cleaned up');
 	} finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test('safe ref names allow letters and digits in any script, and still refuse option-like or traversing names', () => {
+	for (const ok of ['main', 'release/1.2', 'équipe', '分支', 'feature_x-1']) assert.equal(isSafeRefName(ok), true, ok);
+	for (const bad of ['', '-x', '--upload-pack=x', 'a..b', 'a/', 'a.lock', 'a b', 'a;b', '$(x)']) assert.equal(isSafeRefName(bad), false, bad);
 });

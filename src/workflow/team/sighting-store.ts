@@ -53,7 +53,7 @@ export const LOCK_STALE_MS = 30_000;
 
 /** Remote and branch names go into git argv: keep them to a safe, boring alphabet. */
 export function isSafeRefName(name: string): boolean {
-	return /^[A-Za-z0-9][A-Za-z0-9._\/-]*$/.test(name) && !name.includes('..') && !name.endsWith('/') && !name.endsWith('.lock');
+	return /^[\p{L}\p{N}][\p{L}\p{N}._\/-]*$/u.test(name) && !name.includes('..') && !name.endsWith('/') && !name.endsWith('.lock');
 }
 
 /** 16 hex characters of the sha256 of the repository's real path. */
@@ -120,7 +120,12 @@ export function readSighting(repo: string, teamDir: string = PATHS.team): Sighti
 function writeUniqueTemp(repo: string, sighting: Sighting, teamDir: string): string {
 	mkdirSync(seenDir(teamDir), { recursive: true });
 	const tmp = join(seenDir(teamDir), `${sightingKey(repo)}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`);
-	writeFileSync(tmp, JSON.stringify(sighting, null, 2) + '\n', { flag: 'wx' });
+	try {
+		writeFileSync(tmp, JSON.stringify(sighting, null, 2) + '\n', { flag: 'wx' });
+	} catch (err) {
+		try { unlinkSync(tmp); } catch { /* never created */ }
+		throw err;
+	}
 	return tmp;
 }
 

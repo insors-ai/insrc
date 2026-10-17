@@ -18,8 +18,8 @@ export function publishCreateOnly(dest: string, content: string): 'created' | 'e
 	const dir = dirname(dest);
 	mkdirSync(dir, { recursive: true });
 	const tmp = join(dir, `.${basename(dest)}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`);
-	writeFileSync(tmp, content, { flag: 'wx' });
 	try {
+		writeFileSync(tmp, content, { flag: 'wx' });
 		linkSync(tmp, dest);
 		return 'created';
 	} catch (err) {

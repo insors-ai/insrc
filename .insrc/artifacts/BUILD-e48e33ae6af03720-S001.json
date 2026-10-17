@@ -10,12 +10,13 @@
     "triageRationale": "bugfix/small: one file, reuses the existing strict-schema helper, one test.",
     "epicCreatedAt": "2026-10-16T17:38:08.183Z",
     "epicSlug": "send-codex-structured-output-schemas-openai",
-    "updatedAt": "2026-10-17T05:25:36.210Z"
+    "updatedAt": "2026-10-17T06:01:57.191Z",
+    "approvedAt": "2026-10-17T06:01:57.391Z"
   },
   "body": {
     "focus": "Both codex paths of CliProvider (structured completion src/agent/providers/cli-provider.ts:274-278 and review session :386-390) send codex the strict form of the caller's schema, produced by the existing processSchemaForOpenAIStrict (src/agent/providers/structured-output.ts:266) on a copy, so the caller's schema object is unchanged. A test shows a schema without additionalProperties reaches codex's --output-schema file in strict form in both paths and the caller's schema is not modified. Implements ISSUE-e48e33ae6af03720.",
     "producesLld": false,
-    "commit": "bbfe1317",
+    "commit": "f141774d",
     "tasks": [
       {
         "id": "S001",
@@ -32,224 +33,224 @@
           "file": ".insrc/artifacts/BUILD-91640defac1b5816-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/BUILD-ae2d83c6ab06c595-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/CR-91640defac1b5816-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/CR-ae2d83c6ab06c595-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-91640defac1b5816.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-ae2d83c6ab06c595.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-e48e33ae6af03720.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TESTS-91640defac1b5816-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TESTS-ae2d83c6ab06c595-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TESTS-c2ba6fa62a148ed1-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/build-start/91640defac1b5816-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": ".insrc/build-start/ae2d83c6ab06c595-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "docs/standalone/send-codex-structured-output-schemas-openai-E20261016e48e33ae/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/__tests__/render.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/phases/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/render.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/validation-checks.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       },
       {
         "target": {
           "file": "src/prompts/build/validate-task.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:25:36.210Z"
+        "timestamp": "2026-10-17T06:01:57.191Z"
       }
     ]
   }

@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792172257112-612k5g",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-16T17:38:08.183Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 31059,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "e48e33ae6af03720",
+    "epicSlug": "send-codex-structured-output-schemas-openai",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-16T17:38:47.519Z",
+    "parentRef": {
+      "slug": "both-cli-providers-reject-top-level"
+    }
+  },
+  "body": {
+    "title": "Send codex structured-output schemas in OpenAI strict form",
+    "reproduction": "Route a model tier to the codex CLI (in ~/.insrc/config.json the core and mid tiers set to cli-codex), then run any step that asks codex for structured output with a schema whose objects do not declare additionalProperties: false. Observed on 2026-10-16: the build gate's validate phase for Epic c2ba6fa6, Story s1, task t5 sent its judge schema to codex, codex answered HTTP 400 \"Invalid schema for response_format 'codex_output_schema': 'schema.additionalProperties' is required to be supplied and to be false when strict is true\", and the gate failed with unparseable-verdict. Expected: codex accepts the schema and returns a verdict, as claude does for the same schema.",
+    "rootCause": "CliProvider writes the caller's schema to the file it passes to codex's --output-schema flag exactly as given, in both of its codex paths: the structured completion (src/agent/providers/cli-provider.ts:274-278) and the review session (src/agent/providers/cli-provider.ts:386-390). codex runs output schemas in strict mode, which requires additionalProperties: false and a complete required list on every object. Most callers' schemas are not written that way; the build gate's judge schema (src/daemon/steps/build-step/phases/validate.ts:92-109) declares neither on its root object nor on its checks items. The repository already has processSchemaForOpenAIStrict (src/agent/providers/structured-output.ts:266), which produces exactly that form, but no codex path calls it.",
+    "fixIntent": "Both codex paths send codex the strict form of the caller's schema, produced by the existing processSchemaForOpenAIStrict on a copy, so the caller's own schema object is left unchanged (callers reuse constant schemas, and the claude path and the answer's validation keep using the original). A test shows a schema without additionalProperties reaches codex's --output-schema file in strict form in both paths, and that the caller's schema is not modified."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:274-278",
+      "quotedText": "writeFileSync(schemaPath, JSON.stringify(schema));\nconst args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:386-390",
+      "quotedText": "writeFileSync(schemaPath, JSON.stringify(schema));\nconst { events } = await this.runCodex(codexReviewSessionArgs(schemaPath, exec.cwd, this.modelArgs()), prompt, exec);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:266",
+      "quotedText": "export function processSchemaForOpenAIStrict(schema: StructuredSchema): StructuredSchema {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/steps/build-step/phases/validate.ts:92-109",
+      "quotedText": "const JUDGE_VERDICT_SCHEMA: StructuredSchema = {\n\ttype: 'object',\n\trequired: ['taskId', 'passed', 'checks', 'scopeRespected', 'reason'],"
+    }
+  ]
+}

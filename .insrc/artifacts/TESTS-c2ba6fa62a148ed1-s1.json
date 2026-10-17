@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-16T13:00:16.421Z",
+    "updatedAt": "2026-10-16T17:08:30.802Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -196,6 +196,513 @@
               },
               {
                 "title": "removing a repository after the migration leaves no index_state row for it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "73c86f8b",
+        "ranAt": "2026-10-16T16:27:42.080Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/index-state.test.ts: completenessOf table test, undefined state, reason lines, recount on open corrects a hand-edited count, unregistered repoId row deleted, aborted transaction leaves counts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/index-state.test.ts",
+                "title": "completenessOf table test: graphComplete and complete follow the sc1 formula for every combination of the inputs, and reasons are empty exactly when complete",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/index-state.test.ts",
+                "title": "completenessOf(undefined) reads not complete with \"a reindex is needed\"",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/index-state.test.ts",
+                "title": "completeness reason lines: one per non-zero cause with its count, awaiting rows split by reason, no-candidate and ambiguous rows not a cause",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/index-state.test.ts",
+                "title": "an aborted transaction leaves the counts unchanged: a callback that writes a pending row and its count, then throws, leaves neither",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/index-state.test.ts",
+                "title": "recount on open corrects a hand-edited count with a warn log, and deletes the row of an unregistered repoId",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/index-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 806,
+            "titles": [
+              {
+                "title": "completenessOf table test: graphComplete and complete follow the sc1 formula for every combination of the inputs, and reasons are empty exactly when complete",
+                "result": "pass"
+              },
+              {
+                "title": "completenessOf(undefined) reads not complete with \"a reindex is needed\"",
+                "result": "pass"
+              },
+              {
+                "title": "completeness reason lines: one per non-zero cause with its count, awaiting rows split by reason, no-candidate and ambiguous rows not a cause",
+                "result": "pass"
+              },
+              {
+                "title": "an aborted transaction leaves the counts unchanged: a callback that writes a pending row and its count, then throws, leaves neither",
+                "result": "pass"
+              },
+              {
+                "title": "recount on open corrects a hand-edited count with a warn log, and deletes the row of an unregistered repoId",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "36a18e3a",
+        "ranAt": "2026-10-16T16:40:24.707Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/relations-awaiting-target.test.ts: edge / keep-awaiting / unwritable per input, one row per relationship, boundary kind kept as external-endpoint, promotions re-key and return counts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+                "title": "each input of a resolved write ends as an edge, one pending row awaiting the target, or a counted unwritable",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+                "title": "writing the same relationship twice while its target is absent leaves one row and an awaiting count of 1",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+                "title": "a boundary relation with an absent target is kept as external-endpoint and does not count against graphComplete",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+                "title": "promotions: an edge removes the row and advances the generation; an absent target re-keys the row to await it; a missing source removes and counts it; the batch reports each",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-lmdb.test.ts",
+                "title": "promoteResolvedBatch writes all edges + removes all unresolved rows",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/indexer/__tests__/external-endpoints.test.ts and messaging-endpoints.test.ts pass with the new promoteResolvedBatch return",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/external-endpoints.test.ts",
+                "title": "t1 ac1: one externalEndpoint node per distinct resolved target, with a CALLS_HTTP edge from each caller",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/external-endpoints.test.ts",
+                "title": "t1 unresolved (k5): an un-pinnable URL mints an unresolved node carrying rawExpression + a CALLS_HTTP edge, never dropped",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/external-endpoints.test.ts",
+                "title": "t1 dangling `from`: a CALLS_HTTP whose caller no longer exists is skipped (no node, no edge)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/external-endpoints.test.ts",
+                "title": "t2 idempotency: re-running on identical rows deletes nothing and yields the same node set",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/messaging-endpoints.test.ts",
+                "title": "ac1: publish + subscribe to the SAME topic => ONE node, TWO edges (direction on the edge)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/messaging-endpoints.test.ts",
+                "title": "idempotency: re-running over identical rows yields the identical node set and GC deletes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1103,
+            "titles": [
+              {
+                "title": "each input of a resolved write ends as an edge, one pending row awaiting the target, or a counted unwritable",
+                "result": "pass"
+              },
+              {
+                "title": "writing the same relationship twice while its target is absent leaves one row and an awaiting count of 1",
+                "result": "pass"
+              },
+              {
+                "title": "a boundary relation with an absent target is kept as external-endpoint and does not count against graphComplete",
+                "result": "pass"
+              },
+              {
+                "title": "promotions: an edge removes the row and advances the generation; an absent target re-keys the row to await it; a missing source removes and counts it; the batch reports each",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/relations-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3021,
+            "titles": [
+              {
+                "title": "upsertRelation writes a single resolved edge to both mirrors",
+                "result": "pass"
+              },
+              {
+                "title": "upsertRelations bulk-writes multiple resolved edges",
+                "result": "pass"
+              },
+              {
+                "title": "upsertRelations dedupes intra-batch duplicates by (from, to, kind)",
+                "result": "pass"
+              },
+              {
+                "title": "upsertRelations is idempotent across calls",
+                "result": "pass"
+              },
+              {
+                "title": "upsertRelations skips resolved edges with missing endpoints",
+                "result": "pass"
+              },
+              {
+                "title": "upsertRelations on empty array is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "different relation kinds coexist on the same (from, to) pair",
+                "result": "pass"
+              },
+              {
+                "title": "upsertRelation routes unresolved to the queue",
+                "result": "pass"
+              },
+              {
+                "title": "upsertRelations splits resolved/unresolved correctly",
+                "result": "pass"
+              },
+              {
+                "title": "listUnresolvedRelations with file scope filters correctly",
+                "result": "pass"
+              },
+              {
+                "title": "unresolved row missing meta.file/repo is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "promoteToResolved writes the resolved edge + removes the unresolved row",
+                "result": "pass"
+              },
+              {
+                "title": "updateUnresolvedMeta writes the new meta + bumps attemptedAt",
+                "result": "pass"
+              },
+              {
+                "title": "updateUnresolvedMeta on unknown id is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "deleteUnresolvedForFile removes only that file's unresolved rows",
+                "result": "pass"
+              },
+              {
+                "title": "deleteUnresolvedForRepo removes everything for that repo only",
+                "result": "pass"
+              },
+              {
+                "title": "deleteUnresolvedForRepo on unknown repo is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "promoteResolvedBatch writes all edges + removes all unresolved rows",
+                "result": "pass"
+              },
+              {
+                "title": "updateUnresolvedMetaBatch updates each row",
+                "result": "pass"
+              },
+              {
+                "title": "promoteResolvedBatch on empty array is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "updateUnresolvedMetaBatch on empty array is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "makeUnresolvedRelationId is deterministic",
+                "result": "pass"
+              },
+              {
+                "title": "makeUnresolvedRelationId differs for different inputs",
+                "result": "pass"
+              },
+              {
+                "title": "resolved edges + unresolved rows survive close + reopen",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/external-endpoints.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2009,
+            "titles": [
+              {
+                "title": "t1 ac1: one externalEndpoint node per distinct resolved target, with a CALLS_HTTP edge from each caller",
+                "result": "pass"
+              },
+              {
+                "title": "t1 ac2 dedup: three call-sites to one target => one node, three CALLS_HTTP edges",
+                "result": "pass"
+              },
+              {
+                "title": "t1 ac2 per-repo: two repos calling the same target => two distinct nodes",
+                "result": "pass"
+              },
+              {
+                "title": "t1 cross-language: a TS and a Python edge to the same resolved identity share ONE language-agnostic node",
+                "result": "pass"
+              },
+              {
+                "title": "t1 resolved-vs-literal dedup: an interpolated expr resolving to the same host/path as a literal collapses to one node",
+                "result": "pass"
+              },
+              {
+                "title": "t1 unresolved (k5): an un-pinnable URL mints an unresolved node carrying rawExpression + a CALLS_HTTP edge, never dropped",
+                "result": "pass"
+              },
+              {
+                "title": "t1 dangling `from`: a CALLS_HTTP whose caller no longer exists is skipped (no node, no edge)",
+                "result": "pass"
+              },
+              {
+                "title": "t1 idempotency: re-running over identical rows yields the identical node/edge set; sc2 called once per distinct expr",
+                "result": "pass"
+              },
+              {
+                "title": "t1 no-op: a repo with no CALLS_HTTP rows produces no endpoints and leaves the graph unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "t2 edges-stat: one caller, two distinct raw exprs -> same identity => endpoints=1, edges=1 (not 2)",
+                "result": "pass"
+              },
+              {
+                "title": "t2 GC: an orphan externalEndpoint (no in-edge) is deleted while a live one survives the pass",
+                "result": "pass"
+              },
+              {
+                "title": "t2 GC full-clear: a repo whose HTTP calls were all removed ends with zero endpoint nodes",
+                "result": "pass"
+              },
+              {
+                "title": "t2 idempotency: re-running on identical rows deletes nothing and yields the same node set",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/messaging-endpoints.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1301,
+            "titles": [
+              {
+                "title": "ac1: publish + subscribe to the SAME topic => ONE node, TWO edges (direction on the edge)",
+                "result": "pass"
+              },
+              {
+                "title": "ac1 dedup: three producers to one topic => one node, three PUBLISHES_TO edges; sc2 called once",
+                "result": "pass"
+              },
+              {
+                "title": "ac2: a config-built topic resolves to an identity; an un-pinnable one still mints a resolved:false node",
+                "result": "pass"
+              },
+              {
+                "title": "idempotency: re-running over identical rows yields the identical node set and GC deletes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "cross-protocol GC: the messaging pass GCs an orphan messaging node but NEVER an HTTP node",
+                "result": "pass"
+              },
+              {
+                "title": "cross-protocol GC (symmetric): the HTTP pass never deletes a messaging endpoint",
+                "result": "pass"
+              },
+              {
+                "title": "no-op: a repo with no messaging rows produces no endpoints",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "7225408a",
+        "ranAt": "2026-10-16T16:46:20.693Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/relations-pending-upkeep.test.ts: the three delete functions decrement counts and remove by-target entries; meta merge keeps awaitsId and clears stale candidates; listUnresolvedRelations opts.awaiting across repositories",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+                "title": "each of the three delete functions removes its rows, their by-target entries and their counts",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+                "title": "a reclass merges meta: awaitsId and specifier survive, a stale candidates list is cleared, and the counts move",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+                "title": "listUnresolvedRelations with opts.awaiting returns the rows awaiting an id from every repository, without scanning the pending table",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+                "title": "promotions count each removal once: an edge lowers the class count by exactly one; a re-key leaves the awaiting count unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/relations-pending-upkeep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1128,
+            "titles": [
+              {
+                "title": "each of the three delete functions removes its rows, their by-target entries and their counts",
+                "result": "pass"
+              },
+              {
+                "title": "a reclass merges meta: awaitsId and specifier survive, a stale candidates list is cleared, and the counts move",
+                "result": "pass"
+              },
+              {
+                "title": "listUnresolvedRelations with opts.awaiting returns the rows awaiting an id from every repository, without scanning the pending table",
+                "result": "pass"
+              },
+              {
+                "title": "promotions count each removal once: an edge lowers the class count by exactly one; a re-key leaves the awaiting count unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "ca2c1c2e",
+        "ranAt": "2026-10-16T17:08:30.802Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/resolver-file-target.test.ts: missing relative import is no-candidate/target-file-missing; resolved relations carry meta.repo; DEPENDS_ON and Pass 1 rewire carry meta.repo and absolute meta.file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/resolver-file-target.test.ts",
+                "title": "a relative import of a missing file is no-candidate with reason target-file-missing; one of an existing file resolves to its file id with meta.repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/resolver-file-target.test.ts",
+                "title": "a refused DEPENDS_ON from the manifest step is counted against the repository, not the unattributed counter",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/resolver-file-target.test.ts",
+                "title": "a DEPENDS_ON kept awaiting (manifest meta: repo and file are the repository path) is removed only by deleteUnresolvedForRepo",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/resolver-file-target.test.ts",
+                "title": "a Pass 1 rewire carries the repository and the importing file's absolute path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/resolver-file-target.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1087,
+            "titles": [
+              {
+                "title": "a relative import of a missing file is no-candidate with reason target-file-missing; one of an existing file resolves to its file id with meta.repo",
+                "result": "pass"
+              },
+              {
+                "title": "a refused DEPENDS_ON from the manifest step is counted against the repository, not the unattributed counter",
+                "result": "pass"
+              },
+              {
+                "title": "a DEPENDS_ON kept awaiting (manifest meta: repo and file are the repository path) is removed only by deleteUnresolvedForRepo",
+                "result": "pass"
+              },
+              {
+                "title": "a Pass 1 rewire carries the repository and the importing file's absolute path",
                 "result": "pass"
               }
             ],

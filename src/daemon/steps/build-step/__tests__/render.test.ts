@@ -61,7 +61,10 @@ test('the validate prompts no longer instruct running the repo-wide sweep or any
 		assert.equal(prompt.includes('git show'), false, 'no git command');
 		const runLines = prompt.split('\n').filter(l => RUN_INSTRUCTION.test(l) && !/cannot run|do not try to run|daemon has already run|run by the daemon/i.test(l));
 		assert.deepEqual(runLines, [], 'no line instructs the judge to run a command');
-		assert.match(prompt, /cannot run commands/i);
+		// A codex judge reads only through commands, so read-only ones are allowed (ISSUE-ae2d83c6).
+		assert.doesNotMatch(prompt, /cannot run commands/i);
+		assert.match(prompt, /read-only\s+commands/i);
+		assert.match(prompt, /do not try to run the typecheck or the tests/i);
 	}
 
 	const implement = renderImplementPrompt('/repo', TASK, '');
@@ -257,4 +260,13 @@ test('the implement prompts keep every section and rule they had before the new 
 	assert.match(trivial, /make the smallest correct edit/);
 	// The validate prompts are untouched: no smallest-change section.
 	for (const prompt of validatePrompts('evidence')) assert.equal(prompt.includes('The smallest complete change'), false);
+});
+
+test('a trivial standalone validate prompt carries the build\'s stated scope; a small one points at its LLD instead', () => {
+	const trivial = renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'trivial', scope: 'Send codex the strict schema.', evidence: 'E' });
+	assert.match(trivial, /## Stated scope\n\nSend codex the strict schema\.\n/);
+	assert.equal(renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'trivial', evidence: 'E' }).includes('## Stated scope'), false, 'no empty section');
+	const small = renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', lldMdRel: 'docs/x/LLD.md', scope: 'ignored', evidence: 'E' });
+	assert.equal(small.includes('## Stated scope'), false);
+	assert.ok(small.includes('docs/x/LLD.md'));
 });

@@ -52,7 +52,7 @@ import type {
 } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
-import { rootUnionKey } from './structured-output.js';
+import { processSchemaForOpenAIStrict, rootUnionKey } from './structured-output.js';
 
 const log = getLogger('cli-provider');
 
@@ -108,6 +108,17 @@ export function claudeReviewSessionArgs(schema: StructuredSchema, modelArgs: rea
 		'--allowedTools', [...REVIEW_SESSION_READ_TOOLS, ...REVIEW_SESSION_ANALYZE_TOOLS].join(','),
 		...modelArgs,
 	];
+}
+
+/**
+ * The schema as codex's `--output-schema` file must hold it. codex runs output
+ * schemas in strict mode, which refuses any object without
+ * `additionalProperties: false` and a complete `required` list. The strict form
+ * is made on a copy, because callers reuse constant schemas and the helper
+ * rewrites in place (ISSUE-e48e33ae6af03720).
+ */
+function codexSchemaJson(schema: StructuredSchema): string {
+	return JSON.stringify(processSchemaForOpenAIStrict(structuredClone(schema)));
 }
 
 /** codex arguments for a reviewer session: a read-only sandbox, never `--full-auto`. */
@@ -274,7 +285,7 @@ export class CliProvider implements LLMProvider {
 		const tmpDir = mkdtempSync(join(tmpdir(), 'codex-schema-'));
 		try {
 			const schemaPath = join(tmpDir, 'schema.json');
-			writeFileSync(schemaPath, JSON.stringify(schema));
+			writeFileSync(schemaPath, codexSchemaJson(schema));
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
 			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd));
 			if (agentText === undefined) {
@@ -386,7 +397,7 @@ export class CliProvider implements LLMProvider {
 		const tmpDir = mkdtempSync(join(tmpdir(), 'codex-review-schema-'));
 		try {
 			const schemaPath = join(tmpDir, 'schema.json');
-			writeFileSync(schemaPath, JSON.stringify(schema));
+			writeFileSync(schemaPath, codexSchemaJson(schema));
 			const { events } = await this.runCodex(codexReviewSessionArgs(schemaPath, exec.cwd, this.modelArgs()), prompt, exec);
 			// A tool-using run narrates before it answers: the answer is the LAST message.
 			const messages = events.filter(e => e.type === 'item.completed' && e.item?.type === 'agent_message');

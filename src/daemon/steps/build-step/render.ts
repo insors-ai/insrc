@@ -240,6 +240,8 @@ export interface StandaloneValidateSpec {
 	readonly sizeClass: string;
 	/** Relative LLD md path to read (Small only; a Trivial build has no LLD). */
 	readonly lldMdRel?: string | undefined;
+	/** The build's stated scope, the standalone focus (Trivial only: it has no LLD to judge against). */
+	readonly scope?: string | undefined;
 	/** The daemon's check results, rendered into the prompt's check-results section. */
 	readonly evidence?: string | undefined;
 }
@@ -258,13 +260,16 @@ export function renderStandaloneValidatePrompt(spec: StandaloneValidateSpec): st
 		`the daemon's check results below, not from any summary** — whether it is ` +
 		`genuinely done. Be skeptical.`,
 		'',
-		'You can read the repository (read, search, list files). You cannot run commands, ' +
-		'and you do not need to: the daemon has already run the typecheck and the Story\'s ' +
-		'tests and reports the results below. Do not try to run them yourself.',
+		'You can read the repository with your read, search and list tools, or with read-only ' +
+		'commands that print, search or list files (`cat`, `rg`, `ls`, `git diff`, `git log`). ' +
+		'Do not try to run the typecheck or the tests: the daemon has already run them and ' +
+		'reports the results below. Do not change anything.',
 		'',
 	];
 	if (spec.lldMdRel !== undefined) {
 		lines.push(`## Design (LLD)`, '', `Read \`${spec.lldMdRel}\` — its contract, error paths, and test strategy define what "done" means.`, '');
+	} else if (spec.scope !== undefined && spec.scope.trim().length > 0) {
+		lines.push('## Stated scope', '', spec.scope.trim(), '');
 	}
 	lines.push(
 		'## Check results (run by the daemon)',

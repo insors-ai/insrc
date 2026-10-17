@@ -45,7 +45,7 @@ import { existsSync, statSync, readdirSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { getLogger } from '../shared/logger.js';
 import type { DbClient } from '../db/client.js';
-import type { Entity, EntityKind, Language, RelationKind } from '../shared/types.js';
+import type { Entity, EntityKind, Language, Relation, RelationKind } from '../shared/types.js';
 import {
   listEntitiesForRepo,
   listEntitiesByKind,
@@ -149,10 +149,22 @@ export async function runCrossFileResolver(
 // Pass 1: rewire module-stub IMPORTS to file-target IMPORTS
 // ---------------------------------------------------------------------------
 
-interface Rewire {
+export interface Rewire {
   readonly fromId:        string;
   readonly oldModuleId:   string;
   readonly targetFileId:  string;
+}
+
+/**
+ * The file -> file IMPORTS a Pass 1 rewire writes. It carries the repository
+ * and the importing file's absolute path (Epic c2ba6fa6 s1), so a refused or
+ * kept-pending rewire is counted against this repository and found by the file.
+ */
+export function rewireImportRelation(r: Rewire, repoRoot: string, byId: ReadonlyMap<string, Entity>): Relation {
+  return {
+    kind: 'IMPORTS', from: r.fromId, to: r.targetFileId, resolved: true,
+    meta: { repo: repoRoot, file: byId.get(r.fromId)?.file ?? repoRoot },
+  };
 }
 
 async function runPass1(
@@ -238,9 +250,7 @@ async function runPass1(
   const tMerge = Date.now();
   for (let i = 0; i < rewires.length; i += BATCH_SIZE) {
     const chunk = rewires.slice(i, i + BATCH_SIZE);
-    await upsertRelations(opts.db, chunk.map(r => ({
-      kind: 'IMPORTS' as const, from: r.fromId, to: r.targetFileId, resolved: true,
-    })));
+    await upsertRelations(opts.db, chunk.map(r => rewireImportRelation(r, opts.repoRoot, index.byId)));
   }
   log.info(
     {

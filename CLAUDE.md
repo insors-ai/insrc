@@ -257,8 +257,23 @@ approve), first DECLARE what you are about to show: call
 example `LLD-<hash>-S001`) or repo-relative path. Then PRESENT a concise summary
 (give the document's path in your message too) and ASK the user; only on their
 explicit in-chat yes call `insrc_workflow_approve({ artifactPath })` (or
-`{ epicHash }` to batch). Review before you approve — see
+`{ epicHash }` to batch). Review a DEF, HLD or LLD before you approve it — see
 `insrc_guide({ workflow: 'review' })`.
+
+### Review discipline (applies to every review)
+
+**Only two reviews are mandatory:** a DEF, HLD or LLD before its approval
+(`insrc_review_step`), and the code review that completes a Story's BUILD
+(`insrc_code_review_step`). Do not review anything else — an ISSUE, SPEC or
+PLAN, or any other stage — unless the user asks for it; present it and ask for
+approval instead.
+
+**At most three review rounds per cycle.** A round is one review call
+(`insrc_review_step` or `insrc_code_review_step`), whatever its verdict. After
+the third round on the same artifact or code, STOP: show the user the latest
+review's findings and what the earlier rounds changed, and ASK whether to run
+another cycle of up to three rounds, approve with an override reason, or change
+course. Do not start a fourth review until the user says so.
 
 The chat opens exactly the documents you declare with `insrc_present`; it does
 not work out what to open from tool output, so a document you do not declare is

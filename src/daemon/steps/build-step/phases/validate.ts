@@ -347,7 +347,7 @@ async function handleStandaloneValidate(
 		// the commit touched are run.
 		checks = trivialCheckPlan(repoPath);
 	}
-	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, evidence });
+	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence });
 	// Carry the route the caller declared into the persist. This branch KNOWS it is
 	// serving a standalone story; discarding that here left the shared persist to
 	// re-derive it from a definition head a Small story does not have (ISSUE-0855311b).

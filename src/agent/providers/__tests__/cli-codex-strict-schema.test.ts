@@ -134,7 +134,13 @@ function mixedSchema(): StructuredSchema {
 			when:     { type: 'string', format: 'date-time' },
 			site:     { type: 'string', format: 'uri', pattern: '^https?://' },
 			either:   { anyOf: [{ type: 'array', items: { type: 'string' }, uniqueItems: true }, { type: 'null' }] },
-			pair:     { type: 'array', prefixItems: [{ type: 'array', items: { type: 'string' }, uniqueItems: true }, { oneOf: [{ type: 'object', properties: { k: { type: 'string' } } }, { type: 'null' }] }] },
+			pair:     { type: 'array', prefixItems: [{ type: 'array', items: { type: 'string' }, uniqueItems: true }] },
+			// Never probed, and each holds a refused keyword.
+			deps:     { type: 'object', properties: { a: { type: 'string' } }, dependentSchemas: { a: { properties: { b: { type: 'array', uniqueItems: true } } } } },
+			rest:     { type: 'array', items: { type: 'string' }, unevaluatedItems: { not: { const: 'x' } } },
+			choice:   { oneOf: [{ type: 'object', properties: { k: { type: 'string' } } }, { type: 'null' }] },
+			// A format the reply check cannot enforce stays in the copy.
+			body:     { type: 'string', format: 'markdown' },
 			// Property NAMES that match a refused keyword are data, not keywords.
 			not:         { type: 'string' },
 			uniqueItems: { type: 'boolean' },
@@ -143,7 +149,7 @@ function mixedSchema(): StructuredSchema {
 	};
 }
 
-test('the codex copy of a schema leaves out every keyword strict mode refuses and every unprobed format, keeps the rest, makes prefixItems entries strict, and leaves the caller\'s schema unchanged', () => {
+test('the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out a format codex did not answer when the reply check enforces it, and leaves the caller\'s schema unchanged', () => {
 	const schema = mixedSchema();
 	const copy = codexStrictSchema(schema) as Record<string, any>;
 	const seen = keywordsIn(copy);
@@ -156,10 +162,11 @@ test('the codex copy of a schema leaves out every keyword strict mode refuses an
 	assert.deepEqual(p.when, { type: 'string', format: 'date-time' }, 'date-time is kept');
 	assert.deepEqual(p.site, { type: 'string', pattern: '^https?://' }, 'uri is left out');
 	assert.deepEqual(p.either, { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] });
-	assert.deepEqual(p.pair, { type: 'array', prefixItems: [
-		{ type: 'array', items: { type: 'string' } },
-		{ anyOf: [{ type: 'object', properties: { k: { type: 'string' } }, required: ['k'], additionalProperties: false }, { type: 'null' }] },
-	] }, 'prefixItems entries are stripped and made strict');
+	assert.deepEqual(p.pair, { type: 'array' }, 'prefixItems (never probed) is left out');
+	assert.deepEqual(p.deps, { type: 'object', properties: { a: { type: 'string' } }, required: ['a'], additionalProperties: false }, 'dependentSchemas is left out');
+	assert.deepEqual(p.rest, { type: 'array', items: { type: 'string' } }, 'unevaluatedItems is left out');
+	assert.deepEqual(p.choice, { anyOf: [{ type: 'object', properties: { k: { type: 'string' } }, required: ['k'], additionalProperties: false }, { type: 'null' }] }, 'oneOf is kept as the strict anyOf');
+	assert.deepEqual(p.body, { type: 'string', format: 'markdown' }, 'a format the reply check cannot enforce is kept');
 	assert.deepEqual(p.not, { type: 'string' }, 'a property named not is kept');
 	assert.deepEqual(p.uniqueItems, { type: 'boolean' }, 'a property named uniqueItems is kept');
 	assert.deepEqual(copy['required'], Object.keys(mixedSchema().properties as object));

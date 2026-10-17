@@ -31,6 +31,7 @@
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';
+import { formatNames } from 'ajv-formats/dist/formats.js';
 import { getLogger } from '../../shared/logger.js';
 import { ModelCallFailedError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
@@ -84,28 +85,9 @@ export function validateAgainstSchema<T>(
 	schema: StructuredSchema,
 	raw:    unknown,
 ): ValidationResult<T> {
-	return validateWith<T>(ajv, schema, raw);
-}
-
-/**
- * The check for a codex reply. Unlike `validateAgainstSchema` it enforces
- * `format`, and it reads draft 2020-12 (so `prefixItems` holds): the copy
- * codex is given leaves out constraints (`codexStrictSchema`), and this check
- * is where they hold (ISSUE-487ad7a67474d321). A format name ajv-formats does
- * not define is not enforced here or anywhere else.
- */
-export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): ValidationResult<T> {
-	return validateWith<T>(codexReplyAjv, schema, raw);
-}
-
-const codexReplyAjv = new Ajv2020({ allErrors: true, useDefaults: false, removeAdditional: false, strict: false });
-// A CommonJS module: under NodeNext its default import is the whole module, whose `default` is the plugin.
-ajvFormats.default(codexReplyAjv);
-
-function validateWith<T>(instance: Ajv | Ajv2020, schema: StructuredSchema, raw: unknown): ValidationResult<T> {
 	let validate: ValidateFunction;
 	try {
-		validate = instance.compile(schema);
+		validate = ajv.compile(schema);
 	} catch (err) {
 		return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] };
 	}
@@ -340,7 +322,7 @@ function processInPlace(node: unknown): void {
 	}
 
 	// Schema-array fields. Each entry is itself a schema.
-	for (const arrKey of ['anyOf', 'allOf', 'prefixItems'] as const) {
+	for (const arrKey of ['anyOf', 'allOf'] as const) {
 		const arr = obj[arrKey];
 		if (Array.isArray(arr)) {
 			for (const item of arr) { processInPlace(item); }
@@ -349,55 +331,86 @@ function processInPlace(node: unknown): void {
 }
 
 /**
- * Keywords codex's strict `--output-schema` refuses below the root, each
- * probed against the codex CLI on 2026-10-18 with a one-property schema
- * (400 "... is not permitted when strict is true"). `then` and `else` go with
- * `if`: without it they constrain nothing. Probed and ACCEPTED, so kept:
- * minItems, maxItems, prefixItems, minLength, maxLength, pattern, minimum,
- * maximum, exclusiveMinimum, multipleOf, const, enum, default, description,
- * title, examples, anyOf, patternProperties, $defs/$ref, a type list.
+ * The keywords the codex copy of a schema keeps: those probed against the
+ * codex CLI's strict `--output-schema` and accepted (2026-10-18; the probe and
+ * its raw results are in docs/standalone/send-codex-only-schema-keywords-strict-
+ * E20261017487ad7a6/S001/codex-strict-probe.md). Every other keyword is left
+ * out: the refused ones (uniqueItems, contains, not, allOf, if/then/else,
+ * propertyNames, minProperties, maxProperties) and any never probed. A codex
+ * reply is then held to the caller's full schema by `validateCodexReply`.
+ * `oneOf` is kept because the strict form rewrites it to the accepted `anyOf`.
  */
-const CODEX_REFUSED_KEYWORDS = [
-	'uniqueItems', 'contains', 'not', 'allOf', 'if', 'then', 'else',
-	'propertyNames', 'minProperties', 'maxProperties',
-] as const;
+const CODEX_KEPT_KEYWORDS: ReadonlySet<string> = new Set([
+	'type', 'properties', 'required', 'additionalProperties', 'items', 'anyOf', 'oneOf',
+	'$ref', '$defs', 'definitions', 'patternProperties',
+	'enum', 'const', 'default', 'description', 'title', 'examples',
+	'minItems', 'maxItems', 'minLength', 'maxLength', 'pattern',
+	'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf',
+	'format',
+]);
 
-/** The only `format` codex answered in the probe. With `uri` or `email`, codex
- *  never answered (twice each, up to 4 minutes), so other formats are dropped. */
+/** Keywords whose value maps names to schemas, and those whose value is a schema or a list of them. */
+const SCHEMA_MAPS = ['properties', 'patternProperties', '$defs', 'definitions'] as const;
+const SCHEMA_VALUES = ['items', 'additionalProperties', 'anyOf', 'oneOf'] as const;
+
+/** The only `format` codex answered in the probe; with `uri` or `email` codex never answered. */
 const CODEX_FORMATS: ReadonlySet<string> = new Set(['date-time']);
 
+/** The formats `validateCodexReply` enforces. */
+const CHECKED_FORMATS: ReadonlySet<string> = new Set(formatNames);
+
 /**
- * The copy of `schema` that codex's strict mode accepts: every refused keyword
- * (and every unprobed `format`) left out, then the strict form of
- * `processSchemaForOpenAIStrict`. The copy constrains less than the caller's
- * schema, so a codex reply must still be validated against the caller's schema
- * (ISSUE-487ad7a67474d321). The caller's schema is not modified.
+ * The copy of `schema` that codex's strict mode accepts: only the kept
+ * keywords, and no `format` codex was not seen to answer that the reply check
+ * enforces (a format the reply check cannot enforce is kept, so nothing is
+ * lost), then the strict form of `processSchemaForOpenAIStrict`. The caller's
+ * schema is not modified (ISSUE-487ad7a67474d321).
  */
 export function codexStrictSchema(schema: StructuredSchema): StructuredSchema {
-	const copy = structuredClone(schema);
-	dropCodexRefused(copy);
-	return processSchemaForOpenAIStrict(copy);
+	return processSchemaForOpenAIStrict(keepCodexKeywords(schema) as StructuredSchema);
 }
 
-function dropCodexRefused(node: unknown): void {
-	if (Array.isArray(node)) {
-		for (const item of node) { dropCodexRefused(item); }
-		return;
-	}
-	if (!isObject(node)) { return; }
-	for (const key of CODEX_REFUSED_KEYWORDS) { delete node[key]; }
-	if (typeof node['format'] === 'string' && !CODEX_FORMATS.has(node['format'])) { delete node['format']; }
-	// Recurse only where a value is a schema, so a PROPERTY named like a keyword is kept.
-	for (const mapKey of ['properties', 'patternProperties', 'definitions', '$defs'] as const) {
-		const m = node[mapKey];
-		if (isObject(m)) {
-			for (const k of Object.keys(m)) { dropCodexRefused(m[k]); }
+function keepCodexKeywords(node: unknown): unknown {
+	if (Array.isArray(node)) return node.map(keepCodexKeywords);
+	if (!isObject(node)) return node;
+	const out: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(node)) {
+		if (!CODEX_KEPT_KEYWORDS.has(key)) continue;
+		if (key === 'format' && typeof value === 'string' && !CODEX_FORMATS.has(value) && CHECKED_FORMATS.has(value)) continue;
+		if ((SCHEMA_MAPS as readonly string[]).includes(key) && isObject(value)) {
+			out[key] = Object.fromEntries(Object.entries(value).map(([name, sub]) => [name, keepCodexKeywords(sub)]));
+		} else if ((SCHEMA_VALUES as readonly string[]).includes(key)) {
+			out[key] = keepCodexKeywords(value);
+		} else {
+			out[key] = structuredClone(value);   // data: enum, const, default, examples, required, ...
 		}
 	}
-	for (const schemaKey of ['items', 'additionalProperties', 'prefixItems', 'anyOf', 'oneOf'] as const) {
-		if (node[schemaKey] !== undefined) { dropCodexRefused(node[schemaKey]); }
-	}
+	return out;
 }
+
+/**
+ * The check for a codex reply against the caller's FULL schema: the copy codex
+ * is given leaves constraints out (`codexStrictSchema`), and this is where
+ * they hold. Unlike `validateAgainstSchema` it reads draft 2020-12 (so
+ * `prefixItems`, `unevaluatedItems` and `dependentSchemas` hold) and enforces
+ * `format` (ISSUE-487ad7a67474d321).
+ */
+export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): ValidationResult<T> {
+	let validate: ValidateFunction;
+	try {
+		validate = codexReplyAjv.compile(schema);
+	} catch (err) {
+		return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] };
+	}
+	if (validate(raw)) {
+		return { ok: true, value: raw as T };
+	}
+	return { ok: false, errors: (validate.errors ?? []).map(formatAjvError) };
+}
+
+const codexReplyAjv = new Ajv2020({ allErrors: true, useDefaults: false, removeAdditional: false, strict: false });
+// A CommonJS module: under NodeNext its default import is the whole module, whose `default` is the plugin.
+ajvFormats.default(codexReplyAjv);
 
 function isObject(x: unknown): x is Record<string, unknown> {
 	return typeof x === 'object' && x !== null && !Array.isArray(x);

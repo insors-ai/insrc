@@ -124,13 +124,34 @@ Reading prompt from stdin...
 {"type":"turn.started"}
 ```
 
-## Outcome
+## Third run: two keywords kept without a probe until now
 
-- **Left out of the codex copy (refused):** uniqueItems, contains, not, allOf, if, propertyNames, minProperties, maxProperties. `then` and `else` go with `if`, because without it they constrain nothing.
-- **Left out of the codex copy (no answer):** `format` values other than `date-time`. `uri` and `email` got no answer on both runs.
-- **Kept:** every keyword marked ACCEPTED above.
+Run after these two entries were added to the script above, after its `'$defs/$ref'` entry:
+
+```ts
+	'definitions/$ref':S({ $ref: '#/definitions/s' }, { definitions: { s: { type: 'string' } } }),
+	exclusiveMaximum:  S({ type: 'number', exclusiveMaximum: 10 }),
+```
+
+Results:
+
+```
+ACCEPTED definitions/$ref (9671 ms) {"x":"ok"}
+ACCEPTED exclusiveMaximum (5656 ms) {"x":0}
+```
+
+## Outcome (the rule the code applies)
+
+- **The codex copy keeps only:**
+  - keywords probed and ACCEPTED above;
+  - `type`, `properties`, `required`, `additionalProperties`, `items` and `$ref`, which every probe schema used and codex accepted;
+  - `oneOf`, which the strict form rewrites to the accepted `anyOf`.
+
+  This is `CODEX_KEPT_KEYWORDS`. Every other keyword is left out: the refused ones (uniqueItems, contains, not, allOf, if/then/else, propertyNames, minProperties, maxProperties) and any never probed (for example prefixItems, dependentSchemas, unevaluatedItems).
+- **`format`:** only `date-time` is sent as is. Another format is left out when the reply check enforces it (an ajv-formats format name), because codex got no answer for `uri` and `email`. A format the reply check cannot enforce is kept in the copy, so nothing is lost.
+- **Reply check:** every codex reply is checked against the caller's FULL schema by `validateCodexReply`. That is ajv's draft 2020-12 build with ajv-formats, so prefixItems, dependentSchemas, unevaluatedItems and formats all hold on the reply.
 - **Not changed:** a pure dictionary object (an `additionalProperties` schema with no `properties`) is refused ("properties is required for object schemas"). It has no lossless strict form.
-- **Reply check:** every codex reply is validated against the caller's FULL schema by `validateCodexReply`, which enforces `format` through ajv-formats. A constraint left out of the copy is therefore still enforced on the reply.
+- **Shared code:** `processSchemaForOpenAIStrict` and `validateAgainstSchema` are unchanged.
 
 ## Live check after the fix
 

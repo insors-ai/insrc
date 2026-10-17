@@ -110,9 +110,16 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 		if (!head.ok) {
 			// A remote HEAD that still points at another retained branch would let the reader find that branch's old policy
 			// now that the record is gone: put the record back and fail closed rather than resurrect it.
-			if (remoteHeadPointsElsewhere(localGit, repo, remote, branch, deadline)) {
-				if (sighting !== undefined) { try { write(repo, sighting, opts.teamDir); } catch { /* the reader refuses a repo it cannot clear */ } }
-				return fail(`the policy file is absent on '${branch}', but refs/remotes/${remote}/HEAD still points at another branch and could not be updated (${head.warning}); the record was kept, so run the refresh again`);
+			if (remoteHeadMayBeStale(localGit, repo, remote, branch, deadline)) {
+				let restored = true;
+				if (sighting !== undefined) {
+					try { write(repo, sighting, opts.teamDir); } catch (err) {
+						restored = false;
+						log.error({ err: err instanceof Error ? err.message : String(err) }, 'could not restore the policy record');
+					}
+				}
+				return fail(`the policy file is absent on '${branch}', but refs/remotes/${remote}/HEAD may still point at another branch and could not be updated (${head.warning}); `
+					+ (restored ? 'the record was kept, so run the refresh again' : 'the record could not be put back, so the old branch\'s policy may be read until you run the refresh again'));
 			}
 			warnings.push(head.warning);
 		}
@@ -143,8 +150,12 @@ function setRemoteHead(localGit: LocalGit, repo: string, remote: string, branch:
 	return head.ok ? { ok: true } : { ok: false, warning: `could not update refs/remotes/${remote}/HEAD (${head.stderr}); the recorded branch is used instead` };
 }
 
-/** True when the remote HEAD is set and names a branch other than `branch`. */
-function remoteHeadPointsElsewhere(localGit: LocalGit, repo: string, remote: string, branch: string, deadline: Deadline): boolean {
+/**
+ * True unless the remote HEAD is known to be absent or to name `branch`. A HEAD that cannot be inspected
+ * (a failing git, a spent deadline) counts as possibly stale, so the caller fails closed.
+ */
+function remoteHeadMayBeStale(localGit: LocalGit, repo: string, remote: string, branch: string, deadline: Deadline): boolean {
 	const head = localGit(repo, ['symbolic-ref', '-q', `refs/remotes/${remote}/HEAD`], deadline);
-	return head.ok && head.stdout.trim() !== `refs/remotes/${remote}/${branch}`;
+	if (!head.ok) return head.stderr !== ''; // `-q` exits 1 with no message when the ref is simply not a symbolic ref
+	return head.stdout.trim() !== `refs/remotes/${remote}/${branch}`;
 }

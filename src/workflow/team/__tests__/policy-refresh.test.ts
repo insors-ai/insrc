@@ -290,3 +290,29 @@ test('a git failure while looking for the policy file is not mistaken for a remo
 		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the record is untouched');
 	} finally { f.cleanup(); }
 });
+
+test('removal fails closed when the remote HEAD cannot be inspected or the record cannot be put back', async () => {
+	const f = makeFixture();
+	try {
+		const { bare, work } = teamOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		assert.ok((await refreshPolicy(clone, { teamDir: f.teamDir })).ok);
+		removeAndCommit(work, POLICY_PATH, 'drop policy');
+		git(work, 'push', '-q', 'origin', 'main');
+		const headLock = join(clone, '.git', 'refs', 'remotes', 'origin', 'HEAD.lock');
+		writeFileSync(headLock, '');
+
+		// The HEAD update fails and the HEAD cannot be inspected either: unknown, so the record is kept.
+		const noInspect = (repo: string, args: readonly string[]): { ok: false; stderr: string } | { ok: true; stdout: string } =>
+			args[0] === 'symbolic-ref' && args.includes('-q') ? { ok: false, stderr: 'the refresh deadline passed' } : runGit(repo, args);
+		const unknown = await refreshPolicy(clone, { teamDir: f.teamDir, local: noInspect });
+		assert.equal(unknown.ok, false);
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid');
+
+		// Putting the record back fails too: the refresh still fails, and says the record could not be put back.
+		const failingWrite = (): never => { throw new Error('disk full'); };
+		const lost = await refreshPolicy(clone, { teamDir: f.teamDir, local: noInspect, write: failingWrite });
+		assert.equal(lost.ok, false);
+		if (!lost.ok) assert.match(lost.reason, /could not be put back/);
+	} finally { f.cleanup(); }
+});

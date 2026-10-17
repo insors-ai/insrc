@@ -1,0 +1,27 @@
+{
+  "id": "AMD-315d510cb28100e2-7",
+  "epicHash": "315d510cb28100e2",
+  "epicSlug": "team-signoff-claim-based-workflow",
+  "hldBaseRunId": "wf-1792177279312-j27596",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc1",
+    "field": {
+      "name": "issueOps",
+      "type": "IssueOps",
+      "optional": false,
+      "purpose": "Groups the issue operations that tracker-auto, the bugfix path and questions.ts need beyond the sketch (create returning the native id and typed flag, sub-issue link, close, comment, body read and write, label, milestone ensure and attach), all available under the issue-create capability. The sketch methods are unchanged."
+    },
+    "breaking": false
+  },
+  "rationale": "The HLD gives s1 the extraction of the tracker-auto issue calls and the bugfix create and close calls behind the port, and the sc1 sketch has no close, comment, body, label, milestone or sub-issue operation. One additive field keeps the sketch methods unchanged for s4, s5 and s7.",
+  "citations": [],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1792230275258-t3fyv1",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-17T09:48:38.282Z",
+  "status": "pending"
+}

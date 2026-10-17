@@ -1,0 +1,1223 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792230631252-uo0o81",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-17T09:55:02.552Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 271264,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "hldEffectiveHash": "0774bc0461d30d80827b4a0f767c36b58faa8d173b3c6a713d9215804823e330",
+    "hldAmendmentsApplied": [
+      "AMD-315d510cb28100e2-1",
+      "AMD-315d510cb28100e2-4"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S1 covers the upstream tracker capability checks, extraction and distinct missing-tool/sign-in errors.",
+          "evidence": "DEF S001 ac1–ac4 require successful capability-checked loading, refusal naming missing capabilities, GitHub parity and distinct tool/sign-in errors. HLD §5.1 assigns extraction and the timeout to s1. The proposed loader, adapter, runner and migration cover those responsibilities. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
+          "action": "Retain this scope.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The two compatibility exceptions have upstream authorization to relax ac3 and k4.",
+          "evidence": "DEF still says results are 'the same as before' and a policy-free repo behaves 'exactly as it does today'. HLD requires a 10-second timeout, but the reviewed documents do not establish acceptance of both exceptions. This LLD itself lists acceptance as an open question. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
+          "action": "Record explicit acceptance of the exceptions in the upstream contract before implementation.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Typed creation currently retries after every typed-attempt failure, and label lookup conflates failure with absence.",
+          "evidence": "ghCreateIssueTyped wraps both execution and parsing in an unconditional catch before the untyped POST: 'catch { /* org may not have issue types — fall through untyped */ }'. ghFindIssueByLabels uses 'catch { return undefined; }' and selects '.[0].number'. The shared execution helpers currently supply no timeout. [files: src/workflow/tracker/github.ts]",
+          "action": "Preserve the stated baseline in regression tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The documented configuration precedence matches current valid configuration behavior.",
+          "evidence": "resolveGithubConfig checks the repo entry before default. resolveEntry receives allowEntryTarget=false for default, accepts an own owner/repo pair without type, and uses gitOriginOwnerRepo for explicit type github without a complete target. Explicit none disables integration. [files: src/workflow/config/github.ts]",
+          "action": "Keep strict validation separate from this lenient resolver.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The port is new, while its detailed issue result and synchronous execution seam already exist with the stated shapes.",
+          "evidence": "Source searches found no existing TrackerPort or PortResult implementation. github.ts defines CreatedIssue with readonly ref:string, id:number and typed:boolean. TrackerExec accepts readonly argv and optional ExecFileSyncOptions; _setTrackerExecForTests replaces the shared executor. [files: src/workflow/tracker/github.ts]",
+          "action": "Reuse or re-export CreatedIssue consistently rather than maintaining duplicate definitions.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The migration inventory includes the production callers of the moved wrappers and preserves bugfix dependency signatures.",
+          "evidence": "Repository-wide searches locate these callers in tracker-auto.ts, bugfix/tracker.ts, questions.ts and setup.ts, plus listMyOpenTasks inside github.ts. Reading the implementations confirms readonly create labels, numeric childId, both optional factory options, and createBugfixTrackerIssue passing created.id to linkToParent. No additional production callers of queryTasks or ghCurrentLogin were found outside github.ts. [files: src/workflow/tracker-auto.ts, src/workflow/bugfix/tracker.ts, src/workflow/questions.ts, src/workflow/tracker/setup.ts, src/workflow/tracker/github.ts]",
+          "action": "Use this inventory for migration regression coverage.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S1 can retain existing stored tracker records without a migration.",
+          "evidence": "TrackerMeta stores optional string references and reference maps. readTrackerMeta returns the existing nested block; patchTrackerMeta merges '{ adapter: \"github\", ...prior, ...patch }'. The proposed port retains string IssueRef and leaves these writers and fields unchanged. HLD assigns units and revision additions to s4. [files: src/workflow/tracker/refs.ts, src/workflow/tracker-auto.ts, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
+          "action": "Pin existing record contents in the proposed parity tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design preserves the HLD sc1 signatures and has a durable supersession record for the competing abstraction.",
+          "evidence": "HLD §4.1 has the same synchronous loader and seven port methods; issueOps is explicitly proposed as an addition. HLD assigns policy reading to s2 and orchestration/revisions to s4. The earlier LLD contains 'Superseded (2026-10-17)' and 'Do not build from this document', naming this s1 port as the sole abstraction. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md]",
+          "action": "Carry the proposed issueOps amendment into the shared contract before dependent stories implement against it.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Throwing on failed port results, with the three documented exceptions, preserves the inspected legacy caller failure behavior.",
+          "evidence": "linkToParent catches link errors and returns false; closeBugfixTrackerIssue closes before returning closed and has no close catch. Relink recovery records then closes, while undefined lookup returns 'relink-by-label found no matching issue'. Epic adoption occurs before its create catch. questions.ts catches comment failures. ghCreateLabel returns false on any error, and ghEnsureMilestone swallows creation errors. [files: src/workflow/bugfix/tracker.ts, src/workflow/tracker-auto.ts, src/workflow/questions.ts, src/workflow/tracker/github.ts, src/workflow/tracker/setup.ts]",
+          "action": "Keep unwrapping inside the existing catch boundaries, as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each S001 acceptance criterion has a proposed test mapping supported by the existing test seam.",
+          "evidence": "DEF S001 ac1–ac4 map respectively to loader success, capability refusal, operation/caller parity and tool/sign-in classification tests in §6. TrackerExec exposes execution options needed to inspect timeout settings. Existing tasks tests assert the empty-login error, and bugfix tests cover link failure, close propagation and relink recovery. These are planned tests, not verified implementation results. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, src/workflow/tracker/github.ts, src/workflow/tracker/__tests__/tasks.test.ts, src/workflow/__tests__/bugfix-tracker.test.ts]",
+          "action": "Implement the mapped tests and run the affected suites; this review did not execute tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-17T09:55:06.379Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-17T10:09:50.333Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Story s1 puts every GitHub issue operation the workflow uses behind one tracker port that declares what it can do: creating and finding issues, linking sub-issues, labels, milestones, comments, body edits and closing, for the tracker-auto push, the bugfix path and the question comments. Loading a tracker for a policy is refused, naming the missing capability, when the tracker cannot do something the policy needs, and a missing gh tool or sign-in is reported as such. Results stay the same as today, with two recorded compatibility exceptions: a typed issue create is retried untyped only when the type is rejected (not after any failure), and migrated operations are bounded by a 10 second timeout. Every other caller of a moved wrapper is named, each call site keeps its own failure result through one unwrapping rule with three named exceptions, and repos without a policy keep their lenient, fail-open behaviour. The issue-status read, the task query and the other one-shot setup steps stay outside the port. The unbuilt tracker-tool design is superseded by the owner's decision of 2026-10-17, recorded in that design's own file.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-S001) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "TrackerPort and PortResult",
+          "purpose": "The only way the workflow library talks to a tracker. Declares capabilities, is checked against the capabilities the policy needs when loaded, returns structured results with a distinct error for a missing tool or sign-in, and can say who the signed-in user is so the gate knows who is acting. An issue reference is the existing owner/repo#N string. Owned by s1 because s1 is a root and every consumer depends on it.",
+          "interfaceSketch": "type TrackerKind = string;\ntype IssueRef = string; // 'owner/repo#N', as today\ntype Capability = 'claim' | 'issue-create' | 'signoff-request' | 'completion';\ntype PortResult<T> = { ok: true; value: T } | { ok: false; reason: string; kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected' };\ninterface TrackerPort {\n  readonly kind: TrackerKind;\n  readonly capabilities: ReadonlySet<Capability>;\n  whoAmI(): PortResult<string>; // the signed-in user's login\n  readAssignee(issue: IssueRef): PortResult<string | null>;\n  setAssignee(issue: IssueRef, who: string | null): PortResult<void>;\n  createIssue(spec: IssueSpec): PortResult<IssueRef>;\n  findIssue(labels: string[]): PortResult<IssueRef | null>;\n  openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>;\n  readSignoffState(ref: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'>;\n}\ninterface LoadTracker { (repo: string, needed: ReadonlySet<Capability>): PortResult<TrackerPort>; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s7"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1"
+        ],
+        "depends": [],
+        "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-S001 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Reading the policy file from the remote default branch ref, the cached last-fetched copy and the offline rule, finding the first default-branch commit that carried the policy file, the starter policy and the team setup command."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "The repo-scoped kind of row in the shared settings catalog whose reads and writes go to the per-repo map in github.json read by resolveGithubConfig; its rendering in VS Code, JetBrains and the terminal client; read-only display of policy values. Shares the single store with s1's target resolution."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Shared issue-creation code refactored out of autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan, find-by-label dedupe for Story and Task issues, forcing Task issues on in team mode, daemon-side triggering when a draft is first written, the terminal approve path kept as manual fallback, the inventory and classification of artifact write paths (including the two writeFileSync writers, and both verdicts.ts and run-artifact.ts as content writes when auto-fixes change the body), the single content-write helper and the revision minting, the bypass test that also detects raw writeFileSync on artifact paths, and the rule that an artifact without meta.revision reads as revision 0."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The team gate and its call sites (daemon step entry points and approveArtifactByJsonPath), the acting-user read through the port, claim and release commands, live assignee reads, the guarded-action list (code-review and analyze are never guarded; review is never refused), the report-only review for a non-holder through the review-fix decision on both review paths (verdicts.ts and run-artifact.ts), the typed TeamGateRefusedError, its handling beside ReviewBlockedError in approveWorkflowTarget and its formatting in the terminal client's approve case in src/cli/command.ts, the no-issue outcome handling, administrator release, and the declaration of the completion hook, shipped unregistered."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc4"
+          ],
+          "internal": "Parking a draft on a handoff branch, the issue note, resuming from committed files, and reconstructing in-flight workflow state from committed artifacts instead of the opaque token."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Opening the signoff request with the chosen artifacts, prerequisite checks for model review and local approval, registering the completion hook to produce the awaiting-signoff outcome, the on-demand completion check, automatic release of the claim on completion, recording sign-off together, grandfathering of artifacts approved before the policy anchor, and the separate display of signoff."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "Revision of an open request: re-run of local approval, push to the same request, discarding an earlier completion, refusing non-holders."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s9: Keep tracker issues and status in step with the work without a manual step"
+        }
+      ],
+      "rolloutPhase": "Phase A — foundational contracts",
+      "nonFunctional": {
+        "performance": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 10-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call.",
+        "security": "Policy is read only from the remote default branch ref and is not locally overridable; enforcement lives in the daemon-owned workflow library (k1); no tracker secrets are stored by insrc, sign-in stays with the tracker's CLI; administrators come only from the policy.",
+        "observability": "Every gate outcome other than allowed is logged with unit, action and reason; port failures carry their kind (missing-tool, missing-signin, unreachable, rejected).",
+        "durability": "Claim, issue and signoff state live in the tracker and in committed artifact files; the in-memory step state stores (100 entries, 1 hour) are not relied on for handoff. Artifact writes stay atomic through the existing helper."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "LoadTracker",
+          "signature": "(repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repo path whose tracker target is resolved by the strict resolver.",
+              "optional": false
+            },
+            {
+              "name": "needed",
+              "type": "ReadonlySet<Capability>",
+              "purpose": "Capabilities the policy needs, passed in so s1 never reads the policy.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PortResult<TrackerPort>",
+            "meaning": "The adapter when the configuration is valid, gh is present and signed in, and every needed capability is declared."
+          },
+          "errors": [
+            {
+              "type": "rejected",
+              "condition": "Malformed github.json, non-object file or entry, unsupported type, bad owner or repo, type none, no resolvable target, or a needed capability the tracker does not declare (the reason names it)."
+            },
+            {
+              "type": "missing-tool",
+              "condition": "The gh program is not installed."
+            },
+            {
+              "type": "missing-signin",
+              "condition": "gh is installed but not signed in."
+            },
+            {
+              "type": "unreachable",
+              "condition": "A gh command timed out after 10 s or the host cannot be reached."
+            }
+          ],
+          "preconditions": [
+            "repo is a registered repo path"
+          ],
+          "postconditions": [
+            "No reduced mode: either every needed capability is available or the load fails",
+            "The policy is not read and the lenient resolveGithubConfig is not changed",
+            "Used by team features only; lenient callers use the adapter factory instead"
+          ]
+        },
+        {
+          "name": "whoAmI",
+          "signature": "whoAmI(): PortResult<string>",
+          "parameters": [],
+          "returns": {
+            "type": "PortResult<string>",
+            "meaning": "The signed-in login, read through the existing ghCurrentLogin run inside the classified runner."
+          },
+          "errors": [
+            {
+              "type": "missing-signin",
+              "condition": "gh reports no sign-in, or ghCurrentLogin throws its 'returned no login' error for empty output, which whoAmI converts to this kind."
+            },
+            {
+              "type": "missing-tool",
+              "condition": "The gh program is not installed."
+            },
+            {
+              "type": "unreachable",
+              "condition": "Timeout or network failure."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No state changed",
+            "ghCurrentLogin keeps throwing an Error on an empty login with the same 'returned no login' message, so the tasks.test.ts assertions hold"
+          ]
+        },
+        {
+          "name": "readAssignee",
+          "signature": "readAssignee(issue: IssueRef): PortResult<string | null>",
+          "parameters": [
+            {
+              "name": "issue",
+              "type": "IssueRef",
+              "purpose": "owner/repo#N reference.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PortResult<string | null>",
+            "meaning": "The single assignee login, or null when unassigned."
+          },
+          "errors": [
+            {
+              "type": "rejected",
+              "condition": "More than one assignee, a malformed reference, or the issue does not exist."
+            },
+            {
+              "type": "unreachable",
+              "condition": "Timeout or network failure."
+            }
+          ],
+          "preconditions": [
+            "claim capability declared"
+          ],
+          "postconditions": [
+            "Read live every call, never cached"
+          ]
+        },
+        {
+          "name": "setAssignee",
+          "signature": "setAssignee(issue: IssueRef, who: string | null): PortResult<void>",
+          "parameters": [
+            {
+              "name": "issue",
+              "type": "IssueRef",
+              "purpose": "owner/repo#N reference.",
+              "optional": false
+            },
+            {
+              "name": "who",
+              "type": "string | null",
+              "purpose": "Login to assign, or null to clear every assignee.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PortResult<void>",
+            "meaning": "Success only after a re-read shows exactly the requested assignee set."
+          },
+          "errors": [
+            {
+              "type": "rejected",
+              "condition": "The tracker refuses the assignment, the reference is malformed, or the re-read shows a set other than the requested one (partial state)."
+            },
+            {
+              "type": "unreachable",
+              "condition": "A step timed out; the resulting state is unknown, is reported as such, and no step is retried."
+            }
+          ],
+          "preconditions": [
+            "claim capability declared"
+          ],
+          "postconditions": [
+            "The steps are: read the current assignees, remove every assignee other than who, add who (or remove all when who is null), re-read and compare",
+            "On success the issue has exactly the requested assignee, or none for null"
+          ]
+        },
+        {
+          "name": "createIssue",
+          "signature": "createIssue(spec: IssueSpec): PortResult<IssueRef>",
+          "parameters": [
+            {
+              "name": "spec",
+              "type": "IssueSpec",
+              "purpose": "Title, body, readonly labels, optional issueType and optional parent.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PortResult<IssueRef>",
+            "meaning": "The reference of the created issue; wraps issueOps.create and returns only its ref."
+          },
+          "errors": [
+            {
+              "type": "rejected",
+              "condition": "The tracker refuses the create."
+            },
+            {
+              "type": "unreachable",
+              "condition": "Timeout or network failure: returned as is and never followed by a second create."
+            }
+          ],
+          "preconditions": [
+            "issue-create capability declared"
+          ],
+          "postconditions": [
+            "A typed create is retried untyped only when the failure is a confirmed issue-type rejection (compatibility exception 1)",
+            "For Epic, Story and Task specs the labels, issue type and parent link match the current ghCreateIssueTyped and ghLinkSubIssue calls; a failed parent link does not fail the create"
+          ]
+        },
+        {
+          "name": "findIssue",
+          "signature": "findIssue(labels: string[]): PortResult<IssueRef | null>",
+          "parameters": [
+            {
+              "name": "labels",
+              "type": "string[]",
+              "purpose": "Labels the issue must carry, as in the sc1 sketch.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PortResult<IssueRef | null>",
+            "meaning": "The first matching issue the list returns, or null when none exists."
+          },
+          "errors": [
+            {
+              "type": "unreachable",
+              "condition": "A failed or timed-out lookup is an error, never reported as not found."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "First-result selection as in ghFindIssueByLabels, not a sort or minimum",
+            "Not found is ok with null; failure is ok:false",
+            "The two legacy callers of the lookup map ok:false to undefined, as ghFindIssueByLabels does today (autoPushEpicOnHld's adoption lookup and the bugfix close deps' findByLabels)"
+          ]
+        },
+        {
+          "name": "openSignoffRequest",
+          "signature": "openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>",
+          "parameters": [
+            {
+              "name": "spec",
+              "type": "SignoffRequestSpec",
+              "purpose": "Minimal request spec that s7 extends.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PortResult<SignoffRequestRef>",
+            "meaning": "Never ok for GitHub in s1."
+          },
+          "errors": [
+            {
+              "type": "rejected",
+              "condition": "signoff-request is not declared by the GitHub adapter."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No tracker call is made"
+          ]
+        },
+        {
+          "name": "readSignoffState",
+          "signature": "readSignoffState(ref: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'>",
+          "parameters": [
+            {
+              "name": "ref",
+              "type": "SignoffRequestRef",
+              "purpose": "Request reference.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PortResult<'open' | 'changes-requested' | 'completed'>",
+            "meaning": "Never ok for GitHub in s1."
+          },
+          "errors": [
+            {
+              "type": "rejected",
+              "condition": "completion is not declared by the GitHub adapter."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No tracker call is made"
+          ]
+        },
+        {
+          "name": "issueOps",
+          "signature": "readonly issueOps: IssueOps  // interface IssueOps { create(spec: IssueSpec): PortResult<CreatedIssue>; linkSubIssue(parent: IssueRef, childId: number): PortResult<void>; close(issue: IssueRef): PortResult<void>; comment(issue: IssueRef, body: string): PortResult<void>; readBody(issue: IssueRef): PortResult<string>; writeBody(issue: IssueRef, body: string): PortResult<void>; ensureLabel(name: string): boolean; ensureMilestone(title: string): void; attachMilestone(issue: IssueRef, title: string): PortResult<void>; }",
+          "parameters": [],
+          "returns": {
+            "type": "IssueOps",
+            "meaning": "The grouped issue operations over the existing wrappers ghCreateIssueTyped, ghLinkSubIssue (native numeric child id, as the bugfix dependency passes it), ghCloseIssue, ghComment, ghGetIssueBody, ghEditIssueBody, ghCreateLabel, ghEnsureMilestone and ghAttachMilestone, bound to one owner and repo."
+          },
+          "errors": [
+            {
+              "type": "rejected",
+              "condition": "The tracker refuses an operation, or the reference is malformed."
+            },
+            {
+              "type": "unreachable",
+              "condition": "A gh command timed out or the host is unreachable; a create is never repeated after it."
+            },
+            {
+              "type": "missing-tool",
+              "condition": "The gh program is not installed."
+            },
+            {
+              "type": "missing-signin",
+              "condition": "gh is installed but not signed in."
+            }
+          ],
+          "preconditions": [
+            "issue-create capability declared"
+          ],
+          "postconditions": [
+            "ONE unwrapping rule: every operation whose wrapper reported failure by throwing (create, linkSubIssue, close, comment, readBody, writeBody, attachMilestone) is unwrapped at its caller or dep adapter by throwing an Error on ok:false, so each existing catch, bestEffort guard and propagation behaves as before",
+            "Exactly three exceptions keep their non-throwing legacy result: lookups map findIssue ok:false to undefined, ensureLabel keeps ghCreateLabel's boolean (false on any error, including a timeout), ensureMilestone keeps swallowing a failed create",
+            "Labels, order and persisted TrackerMeta in tracker-auto are unchanged"
+          ]
+        },
+        {
+          "name": "ghCreateIssueTyped",
+          "signature": "ghCreateIssueTyped(owner: string, repo: string, title: string, body: string, labels: readonly string[], issueType?: string): CreatedIssue",
+          "parameters": [
+            {
+              "name": "labels",
+              "type": "readonly string[]",
+              "purpose": "Labels for the new issue; kept readonly exactly as in github.ts and TrackerCreateDeps.createIssue.",
+              "optional": false
+            },
+            {
+              "name": "issueType",
+              "type": "string",
+              "purpose": "Optional GitHub issue type.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "CreatedIssue",
+            "meaning": "Unchanged result shape { ref, id, typed }; issueOps.create wraps it."
+          },
+          "errors": [
+            {
+              "type": "GhCommandError",
+              "condition": "Now carries kind and reason; the untyped retry happens only for a confirmed issue-type rejection."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Compatibility exception 1: today every typed-create failure is swallowed and followed by an untyped POST; after s1 only a confirmed issue-type rejection is, so a typed POST that timed out or failed for another reason is not followed by a second POST, for solo callers too"
+          ]
+        },
+        {
+          "name": "defaultTrackerCreateDeps",
+          "signature": "defaultTrackerCreateDeps(opts?: { readonly labels?: readonly string[]; readonly promptOnLostRef?: PromptOnLostRef }): TrackerCreateDeps",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "{ readonly labels?: readonly string[]; readonly promptOnLostRef?: PromptOnLostRef }",
+              "purpose": "Existing options, preserved unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TrackerCreateDeps",
+            "meaning": "Bugfix create dependencies wired through the GitHub adapter bound to the owner and repo of each call; createIssue keeps returning CreatedIssue and linkSubIssue keeps taking the numeric child id and throwing on failure."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "TrackerCreateDeps is unchanged and createBugfixTrackerIssue still passes created.id to linkSubIssue",
+            "linkToParent still returns true after a successful link and false only when the dep throws",
+            "The opts argument keeps its current meaning"
+          ]
+        },
+        {
+          "name": "defaultTrackerCloseDeps",
+          "signature": "defaultTrackerCloseDeps(opts?: { readonly labels?: readonly string[]; readonly promptOnLostRef?: PromptOnLostRef }): TrackerCloseDeps",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "{ readonly labels?: readonly string[]; readonly promptOnLostRef?: PromptOnLostRef }",
+              "purpose": "Existing options, preserved unchanged; the relink-by-label recovery needs the same non-empty labels as the create side.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "TrackerCloseDeps",
+            "meaning": "closeIssue goes through issueOps.close and throws on failure; findByLabels goes through the adapter's findIssue and maps ok:false to undefined exactly as ghFindIssueByLabels does today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "closeBugfixTrackerIssue still propagates a failed close instead of returning status closed",
+            "In the relink-by-label recovery a found match is recorded with recordRef, closed through issueOps.close and returned as status closed with the ref, exactly as today",
+            "No labels, no match and a mapped lookup failure each return a skipped status, exactly as today; the recovery never creates an issue",
+            "TrackerCloseDeps is unchanged"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TrackerPort, PortResult, Capability, IssueSpec, SignoffRequestSpec, SignoffRequestRef, IssueOps, CreatedIssue",
+        "change": "new",
+        "details": "New types in src/workflow/tracker/port.ts: the sc1 sketch plus the issueOps field of the amendment. IssueSpec is title, body, readonly labels, optional issueType, optional parent; the signoff types are minimal placeholders that s7 extends by amendment. CreatedIssue is the existing { ref, id, typed } shape; IssueOps.linkSubIssue takes the native numeric child id so it matches the unchanged bugfix dependency.",
+        "callSites": [
+          "src/workflow/tracker/port.ts"
+        ]
+      },
+      {
+        "entity": "GitHub adapter factory",
+        "change": "new",
+        "details": "A factory bound to one owner and repo, needing no policy and no strict configuration, used by lenient fail-open callers (tracker-auto push functions, the bugfix deps, questions.ts) so a repo without the policy file behaves exactly as before apart from the two recorded compatibility exceptions. loadTracker builds the same adapter after the strict checks.",
+        "callSites": [
+          "src/workflow/tracker-auto.ts:93",
+          "src/workflow/bugfix/tracker.ts:419-456",
+          "src/workflow/questions.ts:466-481"
+        ]
+      },
+      {
+        "entity": "GhCommandError",
+        "change": "new",
+        "details": "Error carrying kind (missing-tool, missing-signin, unreachable, rejected) and reason, thrown by the new runGh runner that applies a 10 s timeout and classifies spawn ENOENT as missing-tool and an authentication failure as missing-signin. The migrated wrappers move onto runGh: the issue operations, ghCreateLabel and ghCurrentLogin. Their other callers are AFFECTED and named: (a) src/workflow/tracker/setup.ts ensureLabels calls ghCreateLabel for every setup label and inherits the 10 s timeout with unchanged failure behaviour (false on any error, so a timed-out label is recorded as failed); (b) listMyOpenTasks in github.ts is ghCurrentLogin's only non-test caller: its login read gains the 10 s timeout and a classified GhCommandError, still a thrown Error, and an empty login still throws the 'returned no login' message, so a login failure still propagates out of listMyOpenTasks before any search call. The 10 s timeout is compatibility exception 2 (HLD NFR). The other setup.ts functions, ghGetIssueState in sync.ts, queryTasks and commitAndPushArtifacts keep their current exec path. whoAmI maps ghCurrentLogin's thrown 'returned no login' error to missing-signin.",
+        "callSites": [
+          "src/workflow/tracker/github.ts:23-39",
+          "src/workflow/tracker/github.ts:111-120",
+          "src/workflow/tracker/github.ts:122-129",
+          "src/workflow/tracker/github.ts:408-412",
+          "src/workflow/tracker/github.ts:505-507",
+          "src/workflow/tracker/setup.ts:204-215"
+        ]
+      },
+      {
+        "entity": "StrictTrackerTarget",
+        "change": "new",
+        "details": "Result of the strict resolver used only by loadTracker. Precedence follows resolveGithubConfig: the repo's own entry first (explicit owner and repo, or type github falling back to the origin remote, an omitted type accepted when owner and repo are present); the default entry supplies enablement only and its owner and repo are never a target; type none, malformed JSON, a non-object file or entry, an unsupported type and a bad owner or repo are refusals. The lenient resolveGithubConfig is unchanged.",
+        "callSites": [
+          "src/workflow/config/github.ts:151-160",
+          "src/workflow/config/github.ts:196-262"
+        ]
+      },
+      {
+        "entity": "Compatibility exceptions to DEF ac3 and k4",
+        "change": "invariant-change",
+        "details": "Two deliberate, recorded differences from today's results, both reaching solo callers: (1) the typed create no longer retries untyped after a failure that is not a confirmed issue-type rejection (ghCreateIssueTyped today swallows every typed-create failure and retries, which can duplicate an issue after a timed-out committed POST); (2) migrated operations are bounded by the 10 s timeout from the HLD NFR, including setup label creation and the login read in listMyOpenTasks. Invariants c1 and c11 hold except for these two exceptions. They are surfaced for the user to accept.",
+        "callSites": [
+          "src/workflow/tracker/github.ts:151-175",
+          "src/workflow/tracker/github.ts:23-39"
+        ]
+      },
+      {
+        "entity": "Migrated call sites and their legacy failure results",
+        "change": "invariant-change",
+        "details": "tracker-auto.ts, bugfix/tracker.ts and questions.ts call the adapter instead of the wrappers under the one unwrapping rule: operations that threw are unwrapped by throwing, so bugfix linkToParent returns false in its catch, closeBugfixTrackerIssue propagates a failed close, the tracker-auto create try/catch and bestEffort calls and the questions.ts comment catch behave as before. Three exceptions keep their non-throwing legacy result: autoPushEpicOnHld's adoption lookup (called before the create try/catch and outside bestEffort) and the bugfix close deps' findByLabels map findIssue ok:false to undefined, ensureLabel returns a boolean, ensureMilestone swallows a failed create. Invariants c1 and c11 hold: same gh arguments, same order and the same persisted TrackerMeta, apart from the two compatibility exceptions. s4 refactors the orchestration of the three push functions afterwards on top of these call sites.",
+        "callSites": [
+          "src/workflow/tracker-auto.ts:102",
+          "src/workflow/tracker-auto.ts:123",
+          "src/workflow/tracker-auto.ts:130-155",
+          "src/workflow/tracker-auto.ts:165",
+          "src/workflow/tracker-auto.ts:213-230",
+          "src/workflow/tracker-auto.ts:245",
+          "src/workflow/tracker-auto.ts:290-310",
+          "src/workflow/tracker-auto.ts:345-362",
+          "src/workflow/bugfix/tracker.ts:142",
+          "src/workflow/bugfix/tracker.ts:176",
+          "src/workflow/bugfix/tracker.ts:191-208",
+          "src/workflow/bugfix/tracker.ts:266-287",
+          "src/workflow/bugfix/tracker.ts:290-325",
+          "src/workflow/questions.ts:466-481"
+        ]
+      },
+      {
+        "entity": "Operations that stay outside the port",
+        "change": "invariant-change",
+        "details": "ghGetIssueState in src/workflow/tracker/sync.ts (the issue-status read, which the HLD defers to the define extend); queryTasks (a graphql task search) and the query step of listMyOpenTasks, which keep their current execution path and have no non-test caller outside github.ts; the setup.ts functions other than label creation (ghTokenScopes, org issue types and projects: one-shot admin bootstrap, not a gate-time operation); and commitAndPushArtifacts (a git operation used by questions.ts, resolve-comment.ts and src/cli/services/workflow.ts). ghAuthOk stays exported for sync.ts and setup.ts. All keep today's behaviour and execution path.",
+        "callSites": [
+          "src/workflow/tracker/sync.ts",
+          "src/workflow/tracker/github.ts:474",
+          "src/workflow/tracker/github.ts:505-507",
+          "src/workflow/tracker/setup.ts",
+          "src/workflow/questions.ts:59",
+          "src/workflow/resolve-comment.ts"
+        ]
+      },
+      {
+        "entity": "TrackerCreateDeps",
+        "change": "field-modify",
+        "details": "Default wiring only; the interface is unchanged, createIssue keeps returning CreatedIssue and linkSubIssue keeps taking the numeric child id, so the current-behaviour invariant that the bugfix parent link uses created.id is preserved.",
+        "callSites": [
+          "src/workflow/bugfix/tracker.ts:106-130",
+          "src/workflow/bugfix/tracker.ts:419-436"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "s1 owns sc1 and implements the sketch exactly. GitHub declares claim and issue-create only; signoff-request and completion are undeclared so loadTracker refuses a policy that needs them, and the signoff methods return rejected without a tracker call. To deliver the HLD's full extraction scope, s1 proposes one additive amendment: the issueOps field (sharedContract.fieldAdd, breaking false); the sketch methods are unchanged so s4, s5 and s7 are unaffected. Supersession: the owner decided in chat on 2026-10-17 that s1 supersedes the unbuilt tracker-tool LLD-38436e90625a83a2-S001 (approvedAt unset). The durable record is the 'Superseded (2026-10-17)' note under that LLD's title in docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md, which settles the conflicting approval status the HLD names; its companion LLD-9a7bbe63297457c2-S001 needs its own decision. sc1 is the one tracker abstraction."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "gh is not installed",
+          "detection": "runGh sees a spawn failure with code ENOENT for the gh program.",
+          "response": "Throws GhCommandError kind missing-tool; loadTracker and whoAmI return ok:false naming gh as the missing tool.",
+          "userImpact": "The developer is told gh is missing and to install it; no gate is skipped.",
+          "recoverable": true
+        },
+        {
+          "scenario": "gh is installed but not signed in",
+          "detection": "gh auth status exits non-zero with its not-logged-in message, or a command fails with an authentication message.",
+          "response": "GhCommandError kind missing-signin; loadTracker returns ok:false naming the sign-in, with the gh auth login hint.",
+          "userImpact": "The developer is told to sign in; the error is distinct from a missing tool.",
+          "recoverable": true
+        },
+        {
+          "scenario": "whoAmI gets an empty login",
+          "detection": "ghCurrentLogin throws its 'returned no login' Error for empty output; the adapter catches that exception around the call and recognises it by its message.",
+          "response": "whoAmI returns ok:false kind missing-signin rather than an empty actor; ghCurrentLogin still throws the same message, so the tasks.test.ts assertion holds.",
+          "userImpact": "The gate never treats an empty string as the acting user.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The login read inside listMyOpenTasks fails or times out",
+          "detection": "ghCurrentLogin, now on the classified runner, throws a GhCommandError (missing tool, missing sign-in or unreachable) or its 'returned no login' Error; listMyOpenTasks does not catch it.",
+          "response": "The error propagates out of listMyOpenTasks before queryTasks runs, so no search call is made; it is still a thrown Error as before, now carrying a kind.",
+          "userImpact": "A caller of listMyOpenTasks sees the same kind of failure as before with a clearer reason and a bounded wait.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A gh command takes longer than 10 seconds (compatibility exception 2)",
+          "detection": "The exec timeout option set by runGh fires and the child is killed (ETIMEDOUT or killed signal).",
+          "response": "GhCommandError kind unreachable with the timeout reason; a create is never repeated after it. Callers keep their own failure handling (a catch, bestEffort or propagation).",
+          "userImpact": "The action is refused with the reason instead of hanging; for a create the outcome is unknown and the user is told to check the tracker before retrying.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A setup label create takes longer than 10 seconds",
+          "detection": "ghCreateLabel's migrated runGh call hits the timeout; ghCreateLabel catches the error as it catches every error.",
+          "response": "ghCreateLabel returns false, so setup ensureLabels records the label as failed exactly as for any other failure.",
+          "userImpact": "The setup step reports the label as failed instead of hanging; the rest of the setup is unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Typed create times out or fails for a reason other than the type (compatibility exception 1)",
+          "detection": "The typed POST fails with kind unreachable, missing-tool, missing-signin or a rejected failure whose message is not an issue-type rejection.",
+          "response": "issueOps.create returns the failure as is; there is no untyped retry, so no duplicate issue is created. Today such a failure is swallowed and followed by an untyped POST.",
+          "userImpact": "No duplicate; the caller may use findIssue by labels to adopt a committed issue. This is a recorded difference from today for solo callers too.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The organisation does not support issue types",
+          "detection": "The typed POST fails with kind rejected and a message that the issue type is unknown or unsupported.",
+          "response": "Retry once untyped and return the ref with typed false, as today.",
+          "userImpact": "The issue is created without a type, same as today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A sub-issue link fails in the bugfix path",
+          "detection": "The deps adapter unwraps ok:false from issueOps.linkSubIssue by throwing; linkToParent catches it.",
+          "response": "linkToParent returns false exactly as when ghLinkSubIssue threw; the create still succeeds with linked false.",
+          "userImpact": "Same as today: the issue is created and reported as not linked.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A close fails in the bugfix path",
+          "detection": "The deps adapter unwraps ok:false from issueOps.close by throwing; closeBugfixTrackerIssue does not catch it.",
+          "response": "The error propagates instead of the function returning status closed, exactly as when ghCloseIssue threw.",
+          "userImpact": "A failed close is never reported as closed.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A question comment fails in questions.ts",
+          "detection": "The call site unwraps ok:false from issueOps.comment by throwing inside the existing try; its catch logs 'tracker comment failed (best-effort)'.",
+          "response": "The failure is logged and swallowed, as when ghComment threw.",
+          "userImpact": "No change to what a user sees.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A migrated operation inside tracker-auto's create try/catch or bestEffort fails",
+          "detection": "The call site unwraps the PortResult and throws when ok is false; the existing try/catch reports a failed result and bestEffort catches and logs.",
+          "response": "The failure is reported or swallowed exactly as the thrown wrapper error was before; the push continues where it did before.",
+          "userImpact": "No change to what a user sees when a step fails.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The adoption lookup in autoPushEpicOnHld fails",
+          "detection": "The adapter's findIssue returns ok:false; the call site, which sits before the create try/catch and outside bestEffort, maps ok:false to undefined instead of throwing.",
+          "response": "adopted is undefined, so the function goes on to create the Epic issue exactly as it does today when ghFindIssueByLabels fails (a pre-existing behaviour, kept for k4 and not changed in s1).",
+          "userImpact": "Same as today; no new uncaught exception on a failed lookup.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The label lookup used by the relink-by-label recovery fails",
+          "detection": "The adapter's findIssue returns ok:false for a failed or timed-out lookup.",
+          "response": "The bugfix close deps map ok:false to undefined, exactly as ghFindIssueByLabels did; onLostRefOnClose returns a skipped status with 'relink-by-label found no matching issue'.",
+          "userImpact": "Same skipped message as today; the recovery never creates an issue.",
+          "recoverable": true
+        },
+        {
+          "scenario": "github.json is malformed, not an object, or the entry is not an object",
+          "detection": "The strict resolver parses the file itself and checks the shape; a JSON parse error or a wrong type is detected.",
+          "response": "loadTracker returns ok:false kind rejected naming the file problem; the lenient resolver is not consulted as a fallback. Lenient callers using the adapter factory are unaffected.",
+          "userImpact": "The developer is told which file is broken when a team feature needs the tracker; solo flows keep their current behaviour.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsupported tracker type, bad owner or repo, type none, or no resolvable target",
+          "detection": "The strict resolver checks the type is github (or omitted with owner and repo), owner and repo are non-empty valid names, and the origin remote parses when it is the fallback.",
+          "response": "loadTracker returns ok:false kind rejected naming the field.",
+          "userImpact": "A policy that needs a tracker is refused rather than assumed to be GitHub.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Only the default entry names an owner and repo",
+          "detection": "The strict resolver ignores owner and repo on the default entry, as resolveGithubConfig does.",
+          "response": "The target resolves from the repo's own entry or the origin remote, or loadTracker refuses when neither exists.",
+          "userImpact": "A global default can never point a repo at another repo's issues.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Policy needs a capability the tracker does not declare (signoff-request or completion on GitHub)",
+          "detection": "missingCapabilities(declared, needed) is non-empty.",
+          "response": "loadTracker returns ok:false kind rejected with the missing capability names; no reduced mode.",
+          "userImpact": "The team is told exactly what the tracker cannot do.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Issue has more than one assignee",
+          "detection": "readAssignee sees an assignees array longer than one.",
+          "response": "Returns ok:false kind rejected naming the assignees; never picks one.",
+          "userImpact": "The claim is not honoured until the tracker shows a single assignee.",
+          "recoverable": true
+        },
+        {
+          "scenario": "setAssignee leaves a partial state",
+          "detection": "After removing and adding, the re-read assignee set differs from the requested set, or a step fails midway.",
+          "response": "Returns ok:false kind rejected (state differs) or unreachable (a step timed out, state unknown); no step is retried and the actual set is named in the reason.",
+          "userImpact": "The caller sees the real state and decides; the gate never treats a partial change as a successful claim.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Lookup by labels fails for a team feature",
+          "detection": "The strict label lookup exits non-zero or times out, as opposed to returning an empty list.",
+          "response": "findIssue returns ok:false; an empty result returns ok with null. New team callers must check the result.",
+          "userImpact": "A failed lookup is never mistaken for not found by a caller that checks the result.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "needed is empty",
+          "expected": "loadTracker still validates configuration, gh and sign-in and returns the port."
+        },
+        {
+          "input": "A capability name in needed that is not one of the four",
+          "expected": "Reported as missing by name and refused."
+        },
+        {
+          "input": "Issue ref not in owner/repo#N form",
+          "expected": "Every operation taking an issue returns ok:false kind rejected without calling gh."
+        },
+        {
+          "input": "setAssignee(issue, null) on an unassigned issue",
+          "expected": "Succeeds with no assignee and no removal call."
+        },
+        {
+          "input": "setAssignee to a user when the issue has zero, one (the same user), one (another user) or several assignees",
+          "expected": "Ends with exactly that user as the only assignee, verified by the re-read; an already-correct set makes no change call."
+        },
+        {
+          "input": "findIssue with several matching issues",
+          "expected": "Returns the first result the list returns, as ghFindIssueByLabels does today."
+        },
+        {
+          "input": "Relink-by-label recovery finds a match",
+          "expected": "The match is recorded with recordRef, closed through issueOps.close and returned as status closed with that ref."
+        },
+        {
+          "input": "Relink-by-label recovery with no labels, no match, or a mapped lookup failure",
+          "expected": "Each returns a skipped status with the same reason text as today."
+        },
+        {
+          "input": "listMyOpenTasks with a working login",
+          "expected": "Resolves the current login and runs the same search as before (assignee:<me> is:open); only the login read is timed."
+        },
+        {
+          "input": "issueOps.linkSubIssue called with the numeric id from created.id",
+          "expected": "Runs the same sub_issues POST with sub_issue_id as ghLinkSubIssue does; no other CreatedIssue field is needed or passed."
+        },
+        {
+          "input": "Own entry has owner and repo but no type",
+          "expected": "Accepted as GitHub, as resolveGithubConfig accepts it."
+        },
+        {
+          "input": "Own entry has type github and no owner or repo",
+          "expected": "The target comes from the origin remote; loadTracker refuses when the remote does not parse."
+        },
+        {
+          "input": "issueOps.close on an already-closed issue",
+          "expected": "Succeeds as a no-op, as ghCloseIssue does today."
+        },
+        {
+          "input": "issueOps.ensureMilestone when the milestone already exists",
+          "expected": "The 422 is swallowed and the following attach proceeds, as today."
+        },
+        {
+          "input": "defaultTrackerCreateDeps and defaultTrackerCloseDeps called with and without opts",
+          "expected": "Both accept the optional labels and promptOnLostRef exactly as today; with no labels the relink-by-label recovery reports 'no labels' as today."
+        },
+        {
+          "input": "A readonly string[] passed as the labels of the detailed create",
+          "expected": "Accepted without a copy or cast, so assignment to TrackerCreateDeps.createIssue still type-checks."
+        },
+        {
+          "input": "Epic, Story and Task specs with parent",
+          "expected": "The same labels, type and sub-issue link as the current autoPush calls; a failed parent link does not fail the create."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A repo without the policy file behaves exactly as today, except for the two recorded compatibility exceptions (the narrowed typed-create retry and the 10 s timeout): lenient config and fail-open gh handling are kept because tracker-auto, the bugfix deps and questions.ts use the adapter factory, not the strict loadTracker; no tracker call is added.",
+          "source": "c1"
+        },
+        {
+          "text": "The results of the existing GitHub create, find, link, label, milestone, body, comment and close operations are the same through the port as before, except for the two recorded compatibility exceptions: same gh arguments, same order, same persisted TrackerMeta, the same failure result at every call site through the one unwrapping rule and its three named exceptions, and the bugfix create still hands created.id and the typed flag to its callers.",
+          "source": "c11"
+        },
+        {
+          "text": "No tracker secrets are stored by insrc; sign-in stays with the gh CLI.",
+          "source": "c12"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure rules: capability check, strict target resolution, failure classification, assignee handling.",
+          "subjects": [
+            "missingCapabilities names every capability the tracker does not declare",
+            "strict resolver refuses malformed JSON, a non-object file or entry, an unsupported type, a bad owner or repo, and type none",
+            "strict resolver accepts an own entry with owner and repo and no type, and an own entry with type github that falls back to the origin remote",
+            "strict resolver never takes a target from the default entry's owner and repo",
+            "runGh classifies ENOENT as missing-tool, an authentication failure as missing-signin, a timeout as unreachable and anything else as rejected",
+            "readAssignee returns the single login, null when unassigned, and rejected for more than one assignee or a malformed reference",
+            "setAssignee starting from zero, one (same user), one (another user) and several assignees ends with exactly the requested user, makes no change call when the set is already right, clears every assignee for null, and reports rejected or unreachable without a retry when the re-read differs or a step times out"
+          ],
+          "fixturesNeeded": [
+            "fake gh through _setTrackerExecForTests with a mutable assignee list",
+            "scratch HOME with a github.json and a scratch repo with an origin remote"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin the GitHub adapter against the TrackerPort contract and against the exact gh arguments and failure results of the existing wrappers, operation by operation, and pin the two compatibility exceptions.",
+          "subjects": [
+            "createIssue and issueOps.create yield the same gh commands, labels, issue type and parent link as ghCreateIssueTyped and ghLinkSubIssue for an Epic, a Story (with Epic parent) and a Task (with Story parent)",
+            "compatibility exception 1: a typed create that fails with a timeout, a missing tool, a missing sign-in or a non-type rejection is not followed by a second create, whereas the old behaviour would have retried untyped; this test states the old and the new behaviour side by side",
+            "a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+            "findIssue returns the first result like ghFindIssueByLabels when several issues match, ok with null when nothing matches, and ok:false when the lookup fails",
+            "issueOps.linkSubIssue(parent, childId), close, comment, readBody, writeBody, ensureLabel, ensureMilestone and attachMilestone each run the same gh argv as ghLinkSubIssue, ghCloseIssue, ghComment, ghGetIssueBody, ghEditIssueBody, ghCreateLabel, ghEnsureMilestone and ghAttachMilestone, compared with a recording fake gh",
+            "ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds",
+            "compatibility exception 2: a migrated operation that exceeds 10 s is killed and reported as unreachable, and the fake exec receives the timeout option",
+            "whoAmI returns the login on success, converts ghCurrentLogin's thrown 'no login' error to missing-signin, and fails with missing-tool for a missing gh, missing-signin for an unauthenticated gh, and unreachable for a timeout",
+            "signoff-request and completion are undeclared and the signoff methods return rejected without running gh"
+          ],
+          "fixturesNeeded": [
+            "recording fake gh that captures every argv and the options passed",
+            "Epic, Story and Task IssueSpec fixtures taken from tracker-auto.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove loadTracker end to end and that every migrated caller, and every other caller of a migrated wrapper, behaves as before including its failure result.",
+          "subjects": [
+            "loadTracker succeeds when gh is present and signed in and every needed capability is declared (claim, issue-create)",
+            "loadTracker refuses a policy needing signoff-request, naming it, and runs no reduced mode",
+            "loadTracker names gh as the missing tool when gh is not found, and names the sign-in when gh is not signed in",
+            "autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan produce the same gh argv sequence, the same best-effort behaviour on a failing step and the same persisted TrackerMeta as before, with the adapter factory and lenient configuration, including fail-open when gh is unavailable",
+            "autoPushEpicOnHld with a failing adoption lookup does not throw and still goes on to create the Epic issue, as today",
+            "a failing tracker-auto create is reported as a failed result by the existing try/catch, not thrown",
+            "questions.ts posts its comment through the adapter with the same argv, and a failed comment is logged in its catch",
+            "setup ensureLabels with a label create that times out records that label as failed and continues with the others, as for any failure",
+            "listMyOpenTasks still resolves the current login and runs the same search; a login failure (missing tool, missing sign-in, timeout) and an empty login each propagate as a thrown Error out of listMyOpenTasks before any search call is made, and the empty-login message still matches /no login/",
+            "queryTasks keeps its current execution path and results",
+            "defaultTrackerCreateDeps still returns CreatedIssue with ref, id and typed, createBugfixTrackerIssue still passes created.id to linkSubIssue, and a readonly string[] of labels type-checks against TrackerCreateDeps.createIssue",
+            "a failed sub-issue link makes linkToParent return false and the create still reports created with linked false",
+            "a failed close makes closeBugfixTrackerIssue propagate the error instead of returning status closed",
+            "the relink-by-label recovery with a lookup match records the ref with recordRef, closes it through issueOps.close and returns status closed with that ref",
+            "the relink-by-label recovery with no labels, with no match, and with a failed lookup mapped to undefined each return a skipped status with the same reason text as today and never create an issue",
+            "both default deps factories accept the optional labels and promptOnLostRef as today, including the 'no labels' result of the recovery when none are given",
+            "existing tracker.test.ts, tasks.test.ts (including the empty-login throw), setup.test.ts, tracker-auto.test.ts, tracker-tasks.test.ts and bugfix-tracker.test.ts keep passing unchanged, except the existing tests that pin the old catch-everything typed-create retry, which are updated to the new retry policy"
+          ],
+          "fixturesNeeded": [
+            "fake gh through _setTrackerExecForTests",
+            "scratch repo with and without github.json"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/workflow/tracker/__tests__/port.test.ts: loadTracker succeeds when every needed capability is declared",
+            "src/workflow/tracker/__tests__/port.test.ts: loadTracker with an empty needed set validates configuration and sign-in"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/tracker/__tests__/port.test.ts: loadTracker refuses a needed signoff-request capability naming it",
+            "src/workflow/tracker/__tests__/port.test.ts: missingCapabilities names every missing capability",
+            "src/workflow/tracker/__tests__/port.test.ts: strict resolver refuses malformed or unsupported configuration",
+            "src/workflow/tracker/__tests__/port.test.ts: strict resolver never takes a target from the default entry"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: Epic create parity with ghCreateIssueTyped",
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: Story create and Epic parent link parity",
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: Task create and Story parent link parity",
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable",
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: findIssue returns the first of several matches and separates failure from not found",
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper",
+            "src/workflow/__tests__/tracker-auto.test.ts: the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter",
+            "src/workflow/__tests__/tracker-auto.test.ts: a failing adoption lookup still leads to a create and does not throw",
+            "src/workflow/__tests__/tracker-auto.test.ts: a failing create is reported as a failed result, not thrown",
+            "src/workflow/__tests__/bugfix-tracker.test.ts: bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter",
+            "src/workflow/__tests__/bugfix-tracker.test.ts: a failed link makes linkToParent return false and a failed close propagates instead of reporting closed",
+            "src/workflow/__tests__/bugfix-tracker.test.ts: relink-by-label match is recorded, closed and returned as closed; no labels, no match and a failed lookup return skipped",
+            "src/workflow/__tests__/bugfix-tracker.test.ts: both default deps factories keep their optional opts",
+            "src/workflow/tracker/__tests__/setup.test.ts: ensureLabels with a timing-out label create records the label as failed",
+            "src/workflow/tracker/__tests__/tasks.test.ts: listMyOpenTasks propagates a classified or empty login failure before any search call",
+            "src/workflow/__tests__/questions.test.ts: a failed tracker comment is logged in the existing catch"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/workflow/tracker/__tests__/port.test.ts: loadTracker names gh as the missing tool",
+            "src/workflow/tracker/__tests__/port.test.ts: loadTracker names the missing sign-in",
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: runGh classifies ENOENT, authentication failure and timeout",
+            "src/workflow/tracker/__tests__/github-adapter.test.ts: whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable"
+          ]
+        }
+      ],
+      "testFramework": "node:test run through tsx (npx tsx --test), with the fake gh seam _setTrackerExecForTests"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Full extraction through one grouped IssueOps field added to sc1 by a single additive amendment, one failure-unwrapping rule with three named exceptions, and recorded compatibility exceptions",
+        "oneLineSummary": "TrackerPort keeps its sketch methods and gains one readonly issueOps: IssueOps field (fieldAdd, breaking false) whose linkSubIssue takes the numeric child id; every caller that relied on a thrown error unwraps ok:false by throwing; the narrowed typed-create retry and the 10 s timeout are recorded as the two compatibility exceptions.",
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "One sc1 methodAdd amendment per operation",
+        "oneLineSummary": "Add closeIssue, addComment, readIssueBody, writeIssueBody, linkSubIssue, ensureLabel, ensureMilestone and attachMilestone to TrackerPort individually.",
+        "costEstimate": "L",
+        "reasonRejected": "Same behaviour with far more contract churn: eight amendments to a contract s4, s5 and s7 consume."
+      },
+      {
+        "id": "a3",
+        "name": "Keep the catch-everything typed-create retry and no timeout",
+        "oneLineSummary": "Preserve both legacy behaviours exactly so no compatibility exception is needed.",
+        "costEstimate": "M",
+        "reasonRejected": "Keeps the duplicate-issue hazard the earlier reviews flagged and contradicts the HLD NFR that every tracker command has a 10 second timeout."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Compatibility exceptions for the user to accept: DEF ac3 and k4 say results are the same as before, but (1) the typed create no longer retries untyped after a failure that is not a confirmed issue-type rejection, and (2) migrated operations, including setup label creation and the login read in listMyOpenTasks, are bounded by the 10 s timeout from the HLD NFR. Both reach solo callers; both are pinned by tests; if either is unacceptable the alternative is to keep the old behaviour for the lenient callers.",
+      "s1 now edits the tracker-auto call sites that s4 later refactors (shared issue-creation code, find-by-label dedupe). The split is: s1 switches the calls mechanically with no change to labels, order or persisted TrackerMeta; s4 refactors the orchestration afterwards on top of the port (it depends on sc1). s4's LLD should cite this.",
+      "The adoption lookup in autoPushEpicOnHld creates the Epic issue when the lookup fails, which can duplicate an Epic after a transient lookup failure. This is a pre-existing behaviour kept unchanged for k4; s4's find-by-label dedupe work is the place to decide whether to change it.",
+      "The companion design LLD-9a7bbe63297457c2-S001 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-S001; it needs its own decision.",
+      "GitHub declares neither signoff-request nor completion; a policy needing them is refused at load until a later story adds those capabilities.",
+      "The 10 s timeout applies to the migrated operations, to setup label creation through ghCreateLabel and to the login read in listMyOpenTasks; queryTasks, the sync.ts status read and the rest of setup.ts keep no timeout until their own migration."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/config/github.ts:196-262"
+    },
+    {
+      "id": "c11",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tracker-auto.ts:102"
+    },
+    {
+      "id": "c12",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tracker/github.ts:111-120"
+    },
+    {
+      "id": "c13",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tracker/github.ts:151-175"
+    },
+    {
+      "id": "c14",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/bugfix/tracker.ts:419-456"
+    },
+    {
+      "id": "c15",
+      "kind": "doc",
+      "ref": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md"
+    },
+    {
+      "id": "c16",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tracker/github.ts:408-412"
+    },
+    {
+      "id": "c17",
+      "kind": "doc",
+      "ref": "docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md"
+    },
+    {
+      "id": "c18",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tracker-auto.ts:345-362"
+    },
+    {
+      "id": "c19",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tracker/setup.ts:204-215"
+    },
+    {
+      "id": "c20",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/bugfix/tracker.ts:290-325"
+    },
+    {
+      "id": "c21",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/tracker/github.ts:505-507"
+    },
+    {
+      "id": "c22",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/bugfix/tracker.ts:191-208"
+    },
+    {
+      "id": "c23",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/bugfix/tracker.ts:266-287"
+    }
+  ]
+}

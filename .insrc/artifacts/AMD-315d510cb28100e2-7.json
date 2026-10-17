@@ -23,5 +23,7 @@
     "stepId": "s4"
   },
   "proposedAt": "2026-10-17T09:48:38.282Z",
-  "status": "pending"
+  "status": "rejected",
+  "rejectedAt": "2026-10-17T10:15:56.279Z",
+  "rejectedReason": "superseded duplicate of AMD-315d510cb28100e2-8 (same sc1 issueOps fieldAdd, one per s1 LLD revision)"
 }

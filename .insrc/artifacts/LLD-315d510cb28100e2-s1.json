@@ -165,7 +165,16 @@
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-17T10:09:50.333Z"
+    "approvedAt": "2026-10-17T10:09:50.333Z",
+    "questionResolutions": {
+      "qcf73b12e": {
+        "question": "Compatibility exceptions for the user to accept: DEF ac3 and k4 say results are the same as before, but (1) the typed create no longer retries untyped after a failure that is not a confirmed issue-type rejection, and (2) migrated operations, including setup label creation and the login read in listMyOpenTasks, are bounded by the 10 s timeout from the HLD NFR. Both reach solo callers; both are pinned by tests; if either is unacceptable the alternative is to keep the old behaviour for the lenient callers.",
+        "status": "resolved",
+        "choice": "Accept both exceptions",
+        "rationale": "Accepted by the owner when approving the s1 LLD on 2026-10-17; recorded in docs/plans/team-workflow.md.",
+        "resolvedAt": "2026-10-17T10:20:04.310Z"
+      }
+    }
   },
   "body": {
     "summary": {

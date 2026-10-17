@@ -562,22 +562,24 @@ Preserve both legacy behaviours exactly so no compatibility exception is needed.
 - GitHub declares neither signoff-request nor completion; a policy needing them is refused at load until a later story adds those capabilities.
 - The 10 s timeout applies to the migrated operations, to setup label creation through ghCreateLabel and to the login read in listMyOpenTasks; queryTasks, the sync.ts status read and the rest of setup.ts keep no timeout until their own migration.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qcf73b12e` — Compatibility exceptions for the user to accept: DEF ac3 and k4 say results are the same as before, but (1) the typed create no longer retries untyped after a failure that is not a confirmed issue-type rejection, and (2) migrated operations, including setup label creation and the login read in listMyOpenTasks, are bounded by the 10 s timeout from the HLD NFR. Both reach solo callers; both are pinned by tests; if either is unacceptable the alternative is to keep the old behaviour for the lenient callers.
+  - **resolved**: Accept both exceptions — Accepted by the owner when approving the s1 LLD on 2026-10-17; recorded in docs/plans/team-workflow.md. _(2026-10-17T10:20:04.310Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 1 could not be verified · 9 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-17T09:55:06.379Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| coverage-of-intent | The two compatibility exceptions have upstream authorization to relax ac3 and k4. | DEF still says results are 'the same as before' and a policy-free repo behaves 'exactly as it does today'. HLD requires a 10-second timeout, but the reviewed documents do not establish acceptance of both exceptions. This LLD itself lists acceptance as an open question. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md] | Record explicit acceptance of the exceptions in the upstream contract before implementation. |
+- **[[c1]]** `analyze-bundle` `src/workflow/config/github.ts:196-262`
+- **[[c11]]** `analyze-bundle` `src/workflow/tracker-auto.ts:102`
+- **[[c12]]** `analyze-bundle` `src/workflow/tracker/github.ts:111-120`
+- **[[c13]]** `analyze-bundle` `src/workflow/tracker/github.ts:151-175`
+- **[[c14]]** `analyze-bundle` `src/workflow/bugfix/tracker.ts:419-456`
+- **[[c15]]** `doc` `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md`
+- **[[c16]]** `analyze-bundle` `src/workflow/tracker/github.ts:408-412`
+- **[[c17]]** `doc` `docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md`
+- **[[c18]]** `analyze-bundle` `src/workflow/tracker-auto.ts:345-362`
+- **[[c19]]** `analyze-bundle` `src/workflow/tracker/setup.ts:204-215`
+- **[[c20]]** `analyze-bundle` `src/workflow/bugfix/tracker.ts:290-325`
+- **[[c21]]** `analyze-bundle` `src/workflow/tracker/github.ts:505-507`
+- **[[c22]]** `analyze-bundle` `src/workflow/bugfix/tracker.ts:191-208`
+- **[[c23]]** `analyze-bundle` `src/workflow/bugfix/tracker.ts:266-287`

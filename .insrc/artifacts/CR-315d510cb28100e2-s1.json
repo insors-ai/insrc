@@ -1,0 +1,328 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792239080050-1n2pl4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-17T12:11:20.050Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 84245,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/bugfix-tracker.test.ts",
+        "src/workflow/__tests__/questions.test.ts",
+        "src/workflow/__tests__/tracker-auto.test.ts",
+        "src/workflow/bugfix/tracker.ts",
+        "src/workflow/config/__tests__/github.test.ts",
+        "src/workflow/config/github.ts",
+        "src/workflow/questions.ts",
+        "src/workflow/tracker-auto.ts",
+        "src/workflow/tracker/__tests__/fixtures/issue-ops-signatures-broken.ts",
+        "src/workflow/tracker/__tests__/fixtures/issue-ops-signatures.ts",
+        "src/workflow/tracker/__tests__/github-adapter.test.ts",
+        "src/workflow/tracker/__tests__/legacy-exec.test.ts",
+        "src/workflow/tracker/__tests__/port.test.ts",
+        "src/workflow/tracker/__tests__/setup.test.ts",
+        "src/workflow/tracker/__tests__/tasks.test.ts",
+        "src/workflow/tracker/__tests__/tracker.test.ts",
+        "src/workflow/tracker/github-adapter.ts",
+        "src/workflow/tracker/github.ts",
+        "src/workflow/tracker/port.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/bugfix-tracker.test.ts:unknown",
+            "message": "issue declares hasParentRef?: boolean without explicit | undefined. Source line numbers were not supplied.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/bugfix-tracker.test.ts:unknown",
+            "message": "makeCreateDeps declares spy?: CreateSpy without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/bugfix-tracker.test.ts:unknown",
+            "message": "makeCloseDeps declares spy?: CloseSpy without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/bugfix-tracker.test.ts:unknown",
+            "message": "adapterGh declares optional listOut and failOn properties without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/bugfix/tracker.ts:unknown",
+            "message": "defaultTrackerCreateDeps declares optional labels and promptOnLostRef properties without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/bugfix/tracker.ts:unknown",
+            "message": "defaultTrackerCloseDeps declares optional labels and promptOnLostRef properties without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/questions.ts:unknown",
+            "message": "recordResolution declares the optional commit property without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/github-adapter.test.ts:unknown",
+            "message": "fakeAssigneeGh declares optional stickyAdd and failOn properties without explicit | undefined. The undefined in failOn's return type does not make the property explicitly accept undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/github-adapter.test.ts:unknown",
+            "message": "recordingGh declares optional failOn without explicit | undefined on the property type; undefined appears only in the callback's return type.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/tasks.test.ts:unknown",
+            "message": "fakeGh declares login?: string without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/tracker.test.ts:unknown",
+            "message": "fakeGit declares optional nothingStaged and pushFails properties without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/github.ts:unknown",
+            "message": "runGh declares discardOutput?: boolean without explicit | undefined.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/bugfix-tracker.test.ts",
+            "message": "These changed symbols have empty testsReaching and therefore are not exercised under the supplied coverage contract. The file's passing tests do not supply the missing edges.",
+            "expectationRef": "src/workflow/__tests__/bugfix-tracker.test.ts (file), CreateSpy, makeCreateDeps, CloseSpy, makeCloseDeps, prompt, run",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/questions.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/__tests__/questions.test.ts (file), seedDef, seedLld, mkRepo, seedTrackedHld",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/tracker-auto.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/__tests__/tracker-auto.test.ts (file), makeFakeGh, fn, makeFailableGh, setupWithPlan, shapeOf, runAll, LABEL, TYPED, strip, failCreate",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/bugfix/tracker.ts",
+            "message": "These changed symbols have empty testsReaching. Passing promised tests do not override the supplied symbol-level coverage gaps.",
+            "expectationRef": "src/workflow/bugfix/tracker.ts (file), TrackerIssueResult, TrackerCloseResult, LostRefAction, LostRefContext, LostRefResolution, PromptOnLostRef, defaultPromptOnLostRef, AuthResult, TrackerCreateDeps, TrackerCloseDeps, createBugfixTrackerIssue, linkToParent, onLostRefAfterCreate, onLostRefOnClose, GithubTarget, NoneTarget, resolveConfigOrNone, errMessage, readIssueFromDisk, readRecordedRefFromDisk, recordRefToDisk, parentRefIdentifiers, defaultResolveParentIssueRef, unwrap, defaultTrackerCreateDeps",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/config/__tests__/github.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/config/__tests__/github.test.ts (file), withTempConfig",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/config/github.ts",
+            "message": "Every supplied changed symbol in this file has empty testsReaching.",
+            "expectationRef": "src/workflow/config/github.ts (file), TrackerAdapter, GithubEntry, GithubConfigFile, ResolvedGithubConfigSource, ResolvedGithubConfig, githubConfigPath, loadGithubConfigFile, GithubConfigError, resolveGithubConfig, resolveEntry, StrictTrackerTarget, strictRefuse, strictTarget, strictOrigin, resolveStrictTrackerTarget, strictEntry",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/questions.ts",
+            "message": "Every supplied changed symbol in this file has empty testsReaching.",
+            "expectationRef": "src/workflow/questions.ts (file), QuestionArtifactKind, questionId, OpenQuestionStatus, OpenQuestionView, openQuestions, unresolvedOpen, QuestionOption, QuestionWithOptions, GeneratedOptions, _setQuestionProviderForTests, optionProvider, generateQuestionOptions, questionsWithOptions, renderResolvedDecisions, renderResolvedQuestionsSection, QuestionArtifact, ArtifactLocation, locateArtifact, artifactOpenQuestions, RecordResolutionResult, recordResolution, resolutionSummary, commitAndComment, DeferredQuestion, listDeferred, collectDeferred, enumerateLldStoryIds",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker-auto.ts",
+            "message": "Every supplied changed symbol in this file has empty testsReaching.",
+            "expectationRef": "src/workflow/tracker-auto.ts (file), AutoPushResult, MetaShape, readMeta, gate, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan, relink, withResolvedTail, unwrap, bestEffort, readReview, postReviewComment, firstSentence",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/fixtures/issue-ops-signatures-broken.ts",
+            "message": "The changed file symbol has empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/__tests__/fixtures/issue-ops-signatures-broken.ts (file)",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/fixtures/issue-ops-signatures.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/__tests__/fixtures/issue-ops-signatures.ts (file), ok",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/__tests__/github-adapter.test.ts (file), execError, failWith, kindOf, hasType, fakeAssigneeGh, isEdit, assertCreateParity, run",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/legacy-exec.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/__tests__/legacy-exec.test.ts (file), legacyExecUsers",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/port.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/__tests__/port.test.ts (file), set, refusal, typeErrors, withLoader, execError",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/setup.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/__tests__/setup.test.ts (file), FakeOpts, fakeGh, withCfg, cleanup, stepFor",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/tasks.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/__tests__/tasks.test.ts (file), fakeGh, searchQueryArg",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/tracker.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/__tests__/tracker.test.ts (file), makeDefine, fakeGit, mkMultiEpicRepo, mkSingleEpicRepo, mkBystanderEpicRepo",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/github-adapter.ts",
+            "message": "Every supplied changed symbol in this file has empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/github-adapter.ts (file), failure, attempt, unsupported, readAssignees, sameLogin, readAssignee, setAssignee, createIssueOps, createGithubTracker, loadTracker",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/github.ts",
+            "message": "These changed symbols have empty testsReaching. Only _setTrackerExecForTests, ghCreateIssueTyped and ghLinkSubIssue have supplied reaching edges to passing test files.",
+            "expectationRef": "src/workflow/tracker/github.ts (file), TrackerExec, out, silent, GhFailureKind, GhCommandError, classifyGhFailure, runGh, CommitArtifactsResult, commitAndPushArtifacts, gitOriginOwnerRepo, parseGithubRemoteUrl, ghAuthOk, ghCreateLabel, ghCreateIssue, CreatedIssue, isIssueTypeRejection, parse, ghGetIssueBody, ghEditIssueBody, ghComment, ghCloseIssue, ghGetIssueState, ghFindIssueByLabels, ghFindIssueByLabelsStrict, ghEnsureMilestone, ghAttachMilestone, ghTokenScopes, ghListOrgIssueTypes, ghCreateOrgIssueType, ghCreateProject, ghFindProjectByTitle, ghAddProjectSingleSelectField, ghListRepoIssueUrls, ghAddProjectItem, TrackerTask, TaskQueryFilters, PageRequest, TaskPage, ghCurrentLogin, epicFilterLabel, storyFilterLabel, buildTaskSearchQuery, SearchNode, labelValue, toTrackerTask, queryTasks, listMyOpenTasks",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/port.ts",
+            "message": "Every supplied changed symbol in this file has empty testsReaching.",
+            "expectationRef": "src/workflow/tracker/port.ts (file), IssueRef, TrackerKind, Capability, PortFailureKind, PortResult, IssueSpec, CreatedIssue, SignoffRequestSpec, SignoffRequestRef, IssueOps, TrackerPort, LoadTracker, missingCapabilities",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/port.test.ts",
+            "message": "The promised aggregate validation is present but failing/unverified: BUILD task t10 is recorded as fail. All individually promised test cases have corresponding passing titles, including equivalent wording for missingCapabilities and default-target refusal, but the record does not establish a passing full workflow/MCP sweep with clean tsc --noEmit or identify which aggregate check failed.",
+            "expectationRef": "npx tsx --test over src/workflow/**/*.test.ts and src/mcp/**/*.test.ts passes, with tsc --noEmit clean",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 20,
+      "med": 0,
+      "low": 12
+    }
+  }
+}

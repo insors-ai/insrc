@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 56 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -363,16 +363,40 @@ Run at 2026-10-17T11:30:31.305Z on commit `7ecd6621`. Tests check: **passed**. 4
 
 ## t10
 
-Run at 2026-10-17T11:33:10.928Z on commit `fba82c15`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-17T11:34:50.846Z on commit `b14bd83a`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: npx tsx --test over src/workflow/**/*.test.ts and src/mcp/**/*.test.ts passes, with tsc --noEmit clean**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | only the expected functions still use the legacy exec path | `src/workflow/tracker/__tests__/legacy-exec.test.ts` |
+| pass | parseGithubRemoteUrl handles ssh + https + .git suffix | `src/workflow/tracker/__tests__/tracker.test.ts` |
+| pass | queryTasks: projects a GitHub issue into a TrackerTask (epic/story from labels) | `src/workflow/tracker/__tests__/tasks.test.ts` |
+| pass | all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0 | `src/workflow/tracker/__tests__/setup.test.ts` |
+| pass | missingCapabilities names every capability the tracker does not declare | `src/workflow/tracker/__tests__/port.test.ts` |
+| pass | runGh classifies ENOENT, authentication failure, timeout and other failures | `src/workflow/tracker/__tests__/github-adapter.test.ts` |
+| pass | HLD approve creates the Epic issue, links docs, and writes nested meta.tracker | `src/workflow/__tests__/tracker-auto.test.ts` |
+| pass | task push is opt-out by default (pushTasks unset) → skipped, no issues | `src/workflow/__tests__/tracker-tasks.test.ts` |
+| pass | createBugfixTrackerIssue: configured + parent resolves -> created+linked, k4 body verbatim, ref recorded | `src/workflow/__tests__/bugfix-tracker.test.ts` |
+| pass | questionId: parses a leading [id / verdict] tag; falls back to a stable sha | `src/workflow/__tests__/questions.test.ts` |
+| pass | lenient resolver behaviour is unchanged | `src/workflow/config/__tests__/github.test.ts` |
+| pass | handleInsrcGuide({workflow}) forwards to guide.get and wraps Ok (ac1) | `src/mcp/__tests__/guide-handler.test.ts` |
+| pass | insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list | `src/mcp/__tests__/present-dispatch.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/tracker/__tests__/legacy-exec.test.ts` | 0 | 1 | 1.2 s |  |
+| `src/mcp/__tests__/guide-handler.test.ts` | 0 | 5 | 1.3 s |  |
+| `src/mcp/__tests__/present-dispatch.test.ts` | 0 | 5 | 1.8 s |  |
+| `src/workflow/__tests__/bugfix-tracker.test.ts` | 0 | 28 | 1.4 s |  |
+| `src/workflow/__tests__/questions.test.ts` | 0 | 7 | 1.6 s |  |
+| `src/workflow/__tests__/tracker-auto.test.ts` | 0 | 10 | 1.7 s |  |
+| `src/workflow/__tests__/tracker-tasks.test.ts` | 0 | 5 | 1.7 s |  |
+| `src/workflow/config/__tests__/github.test.ts` | 0 | 19 | 1.2 s |  |
+| `src/workflow/tracker/__tests__/github-adapter.test.ts` | 0 | 17 | 1.4 s |  |
+| `src/workflow/tracker/__tests__/legacy-exec.test.ts` | 0 | 1 | 1.1 s |  |
+| `src/workflow/tracker/__tests__/port.test.ts` | 0 | 10 | 5.1 s |  |
+| `src/workflow/tracker/__tests__/setup.test.ts` | 0 | 5 | 0.6 s |  |
+| `src/workflow/tracker/__tests__/tasks.test.ts` | 0 | 12 | 0.4 s |  |
+| `src/workflow/tracker/__tests__/tracker.test.ts` | 0 | 20 | 0.4 s |  |

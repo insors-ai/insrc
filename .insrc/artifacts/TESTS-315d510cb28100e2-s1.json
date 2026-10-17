@@ -1,0 +1,2340 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s1",
+    "createdAt": "2026-10-17T10:31:31.023Z",
+    "updatedAt": "2026-10-17T11:34:50.846Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "ee753c8f",
+        "ranAt": "2026-10-17T10:33:09.798Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: runGh classifies ENOENT, authentication failure, timeout and other failures",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: runGh passes the 10 s timeout option to the exec seam",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "runGh passes the 10 s timeout option to the exec seam",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/tracker.test.ts: out and silent keep their current options",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/tracker.test.ts",
+                "title": "out and silent keep their current options",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 403,
+            "titles": [
+              {
+                "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
+                "result": "pass"
+              },
+              {
+                "title": "runGh passes the 10 s timeout option to the exec seam",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 410,
+            "titles": [
+              {
+                "title": "parseGithubRemoteUrl handles ssh + https + .git suffix",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl keeps dots in repo names",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl rejects non-github urls",
+                "result": "pass"
+              },
+              {
+                "title": "ref parse/build/url/line",
+                "result": "pass"
+              },
+              {
+                "title": "mapIssueStatus follows the convention (closed overrides)",
+                "result": "pass"
+              },
+              {
+                "title": "renderEpicBody links slug-based docs (not hash)",
+                "result": "pass"
+              },
+              {
+                "title": "render*Body emit clickable blob links with a repo ref, bare paths without",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts stages, commits, and pushes present files",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts reports committed-not-pushed on push failure",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts is a no-op when nothing is staged",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts no-ops when no file is present",
+                "result": "pass"
+              },
+              {
+                "title": "renderStoryBody back-refs the Epic + links the slug LLD",
+                "result": "pass"
+              },
+              {
+                "title": "updateEpicTaskList splices the link + is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash + 8-char prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: a multi-epic dir where only ONE epic holds the label resolves it unscoped (S001/t5)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: epicHash matching zero epics → null; a prefix matching >1 → null",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: issue# and hierarchical-id forms resolve identically with or without opts.epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "out and silent keep their current options",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "89fc979d",
+        "ranAt": "2026-10-17T10:42:56.056Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/tasks.test.ts: ghCurrentLogin still throws the returned-no-login Error for empty output",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/tasks.test.ts",
+                "title": "ghCurrentLogin still throws the returned-no-login Error for empty output",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/tracker.test.ts: migrated wrappers run the same argv and keep their failure results",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/tracker.test.ts",
+                "title": "migrated wrappers run the same argv and keep their failure results",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 801,
+            "titles": [
+              {
+                "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
+                "result": "pass"
+              },
+              {
+                "title": "runGh passes the 10 s timeout option to the exec seam",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 735,
+            "titles": [
+              {
+                "title": "queryTasks: projects a GitHub issue into a TrackerTask (epic/story from labels)",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: surfaces hasNextPage/endCursor + total (no silent truncation)",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: first page omits `after`; a cursor page passes it",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: default state is open; repo + is:issue always scoped",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: state:all emits no state qualifier",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: owner → assignee:, epic/story → label qualifiers",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: bare story id is normalised to a story: label",
+                "result": "pass"
+              },
+              {
+                "title": "ghCurrentLogin: reads gh api user .login",
+                "result": "pass"
+              },
+              {
+                "title": "ghCurrentLogin still throws the returned-no-login Error for empty output",
+                "result": "pass"
+              },
+              {
+                "title": "listMyOpenTasks: resolves the current login → assignee:<me> is:open",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 731,
+            "titles": [
+              {
+                "title": "parseGithubRemoteUrl handles ssh + https + .git suffix",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl keeps dots in repo names",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl rejects non-github urls",
+                "result": "pass"
+              },
+              {
+                "title": "ref parse/build/url/line",
+                "result": "pass"
+              },
+              {
+                "title": "mapIssueStatus follows the convention (closed overrides)",
+                "result": "pass"
+              },
+              {
+                "title": "renderEpicBody links slug-based docs (not hash)",
+                "result": "pass"
+              },
+              {
+                "title": "render*Body emit clickable blob links with a repo ref, bare paths without",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts stages, commits, and pushes present files",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts reports committed-not-pushed on push failure",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts is a no-op when nothing is staged",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts no-ops when no file is present",
+                "result": "pass"
+              },
+              {
+                "title": "renderStoryBody back-refs the Epic + links the slug LLD",
+                "result": "pass"
+              },
+              {
+                "title": "updateEpicTaskList splices the link + is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash + 8-char prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: a multi-epic dir where only ONE epic holds the label resolves it unscoped (S001/t5)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: epicHash matching zero epics → null; a prefix matching >1 → null",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: issue# and hierarchical-id forms resolve identically with or without opts.epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "out and silent keep their current options",
+                "result": "pass"
+              },
+              {
+                "title": "migrated wrappers run the same argv and keep their failure results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "704c7a5f",
+        "ranAt": "2026-10-17T10:55:00.748Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: missingCapabilities names every missing capability",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "missingCapabilities names every capability the tracker does not declare",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: strict resolver refuses malformed or unsupported configuration",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "strict resolver refuses malformed or unsupported configuration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: strict resolver accepts an own entry without a type and falls back to the origin remote for type github",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "strict resolver accepts an own entry without a type and falls back to the origin remote for type github",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: strict resolver never takes a target from the default entry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "strict resolver never takes a target from the default entry's owner and repo",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: TrackerPort type exposes issueOps with the AMD-8 signatures",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "TrackerPort type exposes issueOps with the AMD-8 signatures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/config/__tests__/github.test.ts: lenient resolver behaviour is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "lenient resolver behaviour is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/config/__tests__/github.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 640,
+            "titles": [
+              {
+                "title": "parseGithubRemoteUrl handles SSH remotes",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl handles HTTPS remotes",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl rejects other hosts",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns null on a repo with no origin",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns null on a non-git dir",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig honors per-repo \"type\": \"none\"",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig honors default \"type\": \"none\" when no per-repo entry",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig prefers per-repo \"none\" over default owner/repo",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig returns type=github with owner/repo when configured",
+                "result": "pass"
+              },
+              {
+                "title": "a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo",
+                "result": "pass"
+              },
+              {
+                "title": "a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when no matching entry AND no config file",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when file exists but has no matching entry",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when default entry is empty {}",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" but no owner/repo throws when git remote is absent",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" resolves via git remote when owner/repo omitted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig without a config file does NOT auto-detect from git remote",
+                "result": "pass"
+              },
+              {
+                "title": "lenient resolver behaviour is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4170,
+            "titles": [
+              {
+                "title": "missingCapabilities names every capability the tracker does not declare",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver refuses malformed or unsupported configuration",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver accepts an own entry without a type and falls back to the origin remote for type github",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver never takes a target from the default entry's owner and repo",
+                "result": "pass"
+              },
+              {
+                "title": "TrackerPort type exposes issueOps with the AMD-8 signatures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "8771898f",
+        "ranAt": "2026-10-17T11:00:14.334Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker succeeds when every needed capability is declared",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "loadTracker succeeds when every needed capability is declared",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker with an empty needed set validates configuration and sign-in",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "loadTracker with an empty needed set validates configuration and sign-in",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker refuses a needed signoff-request capability naming it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "loadTracker refuses a needed signoff-request capability naming it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker names gh as the missing tool",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "loadTracker names gh as the missing tool",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: loadTracker names the missing sign-in",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "loadTracker names the missing sign-in",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: findIssue returns the first of several matches and separates failure from not found",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "findIssue returns the first of several matches and separates failure from not found",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: signoff methods return rejected without running gh",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "signoff methods return rejected without running gh",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 984,
+            "titles": [
+              {
+                "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
+                "result": "pass"
+              },
+              {
+                "title": "runGh passes the 10 s timeout option to the exec seam",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "findIssue returns the first of several matches and separates failure from not found",
+                "result": "pass"
+              },
+              {
+                "title": "signoff methods return rejected without running gh",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4149,
+            "titles": [
+              {
+                "title": "missingCapabilities names every capability the tracker does not declare",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver refuses malformed or unsupported configuration",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver accepts an own entry without a type and falls back to the origin remote for type github",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver never takes a target from the default entry's owner and repo",
+                "result": "pass"
+              },
+              {
+                "title": "TrackerPort type exposes issueOps with the AMD-8 signatures",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker succeeds when every needed capability is declared",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker with an empty needed set validates configuration and sign-in",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker refuses a needed signoff-request capability naming it",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker names gh as the missing tool",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker names the missing sign-in",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b46a655a",
+        "ranAt": "2026-10-17T11:05:58.635Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee from zero, one and several assignees ends with exactly the requested user",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "setAssignee from zero, one and several assignees ends with exactly the requested user",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee makes no change call when already right and clears for null",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "setAssignee makes no change call when already right and clears for null",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1395,
+            "titles": [
+              {
+                "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
+                "result": "pass"
+              },
+              {
+                "title": "runGh passes the 10 s timeout option to the exec seam",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "findIssue returns the first of several matches and separates failure from not found",
+                "result": "pass"
+              },
+              {
+                "title": "signoff methods return rejected without running gh",
+                "result": "pass"
+              },
+              {
+                "title": "readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee from zero, one and several assignees ends with exactly the requested user",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee makes no change call when already right and clears for null",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "01cf3b27",
+        "ranAt": "2026-10-17T11:08:23.877Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: Epic create parity with ghCreateIssueTyped",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "Epic create parity with ghCreateIssueTyped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: Story create and Epic parent link parity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "Story create and Epic parent link parity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: Task create and Story parent link parity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "Task create and Story parent link parity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1198,
+            "titles": [
+              {
+                "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
+                "result": "pass"
+              },
+              {
+                "title": "runGh passes the 10 s timeout option to the exec seam",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "findIssue returns the first of several matches and separates failure from not found",
+                "result": "pass"
+              },
+              {
+                "title": "signoff methods return rejected without running gh",
+                "result": "pass"
+              },
+              {
+                "title": "readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee from zero, one and several assignees ends with exactly the requested user",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee makes no change call when already right and clears for null",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out",
+                "result": "pass"
+              },
+              {
+                "title": "Epic create parity with ghCreateIssueTyped",
+                "result": "pass"
+              },
+              {
+                "title": "Story create and Epic parent link parity",
+                "result": "pass"
+              },
+              {
+                "title": "Task create and Story parent link parity",
+                "result": "pass"
+              },
+              {
+                "title": "each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "75edd222",
+        "ranAt": "2026-10-17T11:22:57.740Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/tracker-auto.test.ts: the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/tracker-auto.test.ts: a failing adoption lookup still leads to a create and does not throw",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "a failing adoption lookup still leads to a create and does not throw",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/tracker-auto.test.ts: a failing create is reported as a failed result, not thrown",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "a failing create is reported as a failed result, not thrown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/tracker-auto.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 718,
+            "titles": [
+              {
+                "title": "HLD approve creates the Epic issue, links docs, and writes nested meta.tracker",
+                "result": "pass"
+              },
+              {
+                "title": "LLD approve creates the Story issue + aggregates into the Define; links the LLD doc",
+                "result": "pass"
+              },
+              {
+                "title": "re-approving the HLD is idempotent (no second issue)",
+                "result": "pass"
+              },
+              {
+                "title": "duplicate guard adopts an existing Epic issue instead of creating one",
+                "result": "pass"
+              },
+              {
+                "title": "tracker disabled (no config) skips cleanly",
+                "result": "pass"
+              },
+              {
+                "title": "missing required meta fields skip",
+                "result": "pass"
+              },
+              {
+                "title": "R4: posts the review report as an issue comment when the artifact carries meta.review",
+                "result": "pass"
+              },
+              {
+                "title": "the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter",
+                "result": "pass"
+              },
+              {
+                "title": "a failing adoption lookup still leads to a create and does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "a failing create is reported as a failed result, not thrown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "e4d1e7fa",
+        "ranAt": "2026-10-17T11:26:46.140Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/bugfix-tracker.test.ts: bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-tracker.test.ts",
+                "title": "bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/bugfix-tracker.test.ts: a failed link makes linkToParent return false and a failed close propagates instead of reporting closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-tracker.test.ts",
+                "title": "a failed link makes linkToParent return false and a failed close propagates instead of reporting closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/bugfix-tracker.test.ts: relink-by-label match is recorded, closed and returned as closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-tracker.test.ts",
+                "title": "relink-by-label match is recorded, closed and returned as closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/bugfix-tracker.test.ts: relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-tracker.test.ts",
+                "title": "relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/bugfix-tracker.test.ts: both default deps factories keep their optional opts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/bugfix-tracker.test.ts",
+                "title": "both default deps factories keep their optional opts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/bugfix-tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 998,
+            "titles": [
+              {
+                "title": "createBugfixTrackerIssue: configured + parent resolves -> created+linked, k4 body verbatim, ref recorded",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: standalone (parentRef null) -> created UNLINKED",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: parentRef present but resolveParentIssueRef null -> created unlinked, no link attempt",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: resolveConfig type:none -> skipped, NO createIssue (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: resolveConfig throws GithubConfigError -> skipped, NO createIssue (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: authOk false -> skipped, NO createIssue",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: meta.tracker already carries the ref -> reused, NO createIssue (idempotent)",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: linkSubIssue throws (sub-issues disabled) -> still created + recorded, linked:false",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: createIssue throws (post-config) -> propagates, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "closeBugfixTrackerIssue: recorded ref + configured -> closed",
+                "result": "pass"
+              },
+              {
+                "title": "closeBugfixTrackerIssue: no recorded ref -> skipped, closeIssue NOT called (ac2 symmetry)",
+                "result": "pass"
+              },
+              {
+                "title": "closeBugfixTrackerIssue: resolveConfig none/GithubConfigError -> skipped, closeIssue NOT called",
+                "result": "pass"
+              },
+              {
+                "title": "closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates",
+                "result": "pass"
+              },
+              {
+                "title": "ghCloseIssue: shells `gh issue close <N> --repo owner/repo` via the injectable _exec",
+                "result": "pass"
+              },
+              {
+                "title": "prompt-on-lost-ref (create): recordRef throws -> promptOnLostRef gets the created ref; retry-record re-writes",
+                "result": "pass"
+              },
+              {
+                "title": "prompt-on-lost-ref (create): 'skip' -> created with reason ref-unrecorded, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "prompt-on-lost-ref (close): no recorded ref + 'relink-by-label' -> re-discover via labels, re-record, close",
+                "result": "pass"
+              },
+              {
+                "title": "prompt-on-lost-ref (close): 'relink-by-label' with no labels -> skipped (a2 dedup stays deferred)",
+                "result": "pass"
+              },
+              {
+                "title": "close default (no prompter): skip never re-discovers by label",
+                "result": "pass"
+              },
+              {
+                "title": "normal create path: promptOnLostRef is never consulted (a1 no-per-create-round-trip)",
+                "result": "pass"
+              },
+              {
+                "title": "parentRefIdentifiers: slug first, then storyId; a bare epicHash is not a resolvable candidate (MED-1)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: configured repo -> create records the ref, close reads it back and closes (fake gh)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: unconfigured repo -> no create/close commands, local issue unchanged (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter",
+                "result": "pass"
+              },
+              {
+                "title": "a failed link makes linkToParent return false and a failed close propagates instead of reporting closed",
+                "result": "pass"
+              },
+              {
+                "title": "relink-by-label match is recorded, closed and returned as closed",
+                "result": "pass"
+              },
+              {
+                "title": "relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue",
+                "result": "pass"
+              },
+              {
+                "title": "both default deps factories keep their optional opts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "7ecd6621",
+        "ranAt": "2026-10-17T11:30:31.305Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/questions.test.ts: the comment goes through the adapter with the same argv and a failure is logged in the existing catch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/questions.test.ts",
+                "title": "the comment goes through the adapter with the same argv and a failure is logged in the existing catch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/setup.test.ts: ensureLabels with a timing-out label create records the label as failed and continues",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/setup.test.ts",
+                "title": "ensureLabels with a timing-out label create records the label as failed and continues",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/tasks.test.ts: listMyOpenTasks propagates a classified or empty login failure before any search call",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/tasks.test.ts",
+                "title": "listMyOpenTasks propagates a classified or empty login failure before any search call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/tasks.test.ts: queryTasks keeps its current execution path and results",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/tasks.test.ts",
+                "title": "queryTasks keeps its current execution path and results",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/questions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1096,
+            "titles": [
+              {
+                "title": "questionId: parses a leading [id / verdict] tag; falls back to a stable sha",
+                "result": "pass"
+              },
+              {
+                "title": "openQuestions / unresolvedOpen reflect recorded resolutions",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution persists a resolved choice to HLD meta + renders section",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution ignore + defer persist the right status to DEF meta",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution throws on an unknown questionId",
+                "result": "pass"
+              },
+              {
+                "title": "listDeferred enumerates deferred questions across DEF + HLD + LLDs",
+                "result": "pass"
+              },
+              {
+                "title": "the comment goes through the adapter with the same argv and a failure is logged in the existing catch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/setup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 991,
+            "titles": [
+              {
+                "title": "all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0",
+                "result": "pass"
+              },
+              {
+                "title": "missing scopes: issue-types + project are manual carrying the refresh command",
+                "result": "pass"
+              },
+              {
+                "title": "missing config: the config step writes github.json and reports done",
+                "result": "pass"
+              },
+              {
+                "title": "project views step is always manual with the UI click-list",
+                "result": "pass"
+              },
+              {
+                "title": "ensureLabels with a timing-out label create records the label as failed and continues",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 669,
+            "titles": [
+              {
+                "title": "queryTasks: projects a GitHub issue into a TrackerTask (epic/story from labels)",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: surfaces hasNextPage/endCursor + total (no silent truncation)",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: first page omits `after`; a cursor page passes it",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: default state is open; repo + is:issue always scoped",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: state:all emits no state qualifier",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: owner → assignee:, epic/story → label qualifiers",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: bare story id is normalised to a story: label",
+                "result": "pass"
+              },
+              {
+                "title": "ghCurrentLogin: reads gh api user .login",
+                "result": "pass"
+              },
+              {
+                "title": "ghCurrentLogin still throws the returned-no-login Error for empty output",
+                "result": "pass"
+              },
+              {
+                "title": "listMyOpenTasks: resolves the current login → assignee:<me> is:open",
+                "result": "pass"
+              },
+              {
+                "title": "listMyOpenTasks propagates a classified or empty login failure before any search call",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks keeps its current execution path and results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "b14bd83a",
+        "ranAt": "2026-10-17T11:34:50.846Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "npx tsx --test over src/workflow/**/*.test.ts and src/mcp/**/*.test.ts passes, with tsc --noEmit clean",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/legacy-exec.test.ts",
+                "title": "only the expected functions still use the legacy exec path",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/tracker.test.ts",
+                "title": "parseGithubRemoteUrl handles ssh + https + .git suffix",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/tasks.test.ts",
+                "title": "queryTasks: projects a GitHub issue into a TrackerTask (epic/story from labels)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/setup.test.ts",
+                "title": "all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "missingCapabilities names every capability the tracker does not declare",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "HLD approve creates the Epic issue, links docs, and writes nested meta.tracker",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-tasks.test.ts",
+                "title": "task push is opt-out by default (pushTasks unset) → skipped, no issues",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-tracker.test.ts",
+                "title": "createBugfixTrackerIssue: configured + parent resolves -> created+linked, k4 body verbatim, ref recorded",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/questions.test.ts",
+                "title": "questionId: parses a leading [id / verdict] tag; falls back to a stable sha",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "lenient resolver behaviour is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/guide-handler.test.ts",
+                "title": "handleInsrcGuide({workflow}) forwards to guide.get and wraps Ok (ac1)",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/present-dispatch.test.ts",
+                "title": "insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/guide-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1312,
+            "titles": [
+              {
+                "title": "handleInsrcGuide({workflow}) forwards to guide.get and wraps Ok (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "handleInsrcGuide({}) forwards to guide.list and returns a structured Error (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "handleInsrcGuide passes through an unknown-workflow error from guide.get",
+                "result": "pass"
+              },
+              {
+                "title": "handleInsrcGuide surfaces a daemon-unreachable transport failure as an isError envelope (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "handleInsrcGuide treats a whitespace-only workflow as omitted (ac2)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/present-dispatch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1783,
+            "titles": [
+              {
+                "title": "insrc_present answers presented and notPending against the daemon's pending list and rejects an empty or oversized list",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_present with a resolver that finds no repo answers an error and presents nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a pending record with no document file is reported as not pending by the tool and by the chat",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_present: a daemon error or an unreachable daemon is answered as an error, never as presented",
+                "result": "pass"
+              },
+              {
+                "title": "a name that matches more than one pending document is not presented, and a full repo-relative path or an id is",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/bugfix-tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1415,
+            "titles": [
+              {
+                "title": "createBugfixTrackerIssue: configured + parent resolves -> created+linked, k4 body verbatim, ref recorded",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: standalone (parentRef null) -> created UNLINKED",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: parentRef present but resolveParentIssueRef null -> created unlinked, no link attempt",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: resolveConfig type:none -> skipped, NO createIssue (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: resolveConfig throws GithubConfigError -> skipped, NO createIssue (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: authOk false -> skipped, NO createIssue",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: meta.tracker already carries the ref -> reused, NO createIssue (idempotent)",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: linkSubIssue throws (sub-issues disabled) -> still created + recorded, linked:false",
+                "result": "pass"
+              },
+              {
+                "title": "createBugfixTrackerIssue: createIssue throws (post-config) -> propagates, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "closeBugfixTrackerIssue: recorded ref + configured -> closed",
+                "result": "pass"
+              },
+              {
+                "title": "closeBugfixTrackerIssue: no recorded ref -> skipped, closeIssue NOT called (ac2 symmetry)",
+                "result": "pass"
+              },
+              {
+                "title": "closeBugfixTrackerIssue: resolveConfig none/GithubConfigError -> skipped, closeIssue NOT called",
+                "result": "pass"
+              },
+              {
+                "title": "closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates",
+                "result": "pass"
+              },
+              {
+                "title": "ghCloseIssue: shells `gh issue close <N> --repo owner/repo` via the injectable _exec",
+                "result": "pass"
+              },
+              {
+                "title": "prompt-on-lost-ref (create): recordRef throws -> promptOnLostRef gets the created ref; retry-record re-writes",
+                "result": "pass"
+              },
+              {
+                "title": "prompt-on-lost-ref (create): 'skip' -> created with reason ref-unrecorded, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "prompt-on-lost-ref (close): no recorded ref + 'relink-by-label' -> re-discover via labels, re-record, close",
+                "result": "pass"
+              },
+              {
+                "title": "prompt-on-lost-ref (close): 'relink-by-label' with no labels -> skipped (a2 dedup stays deferred)",
+                "result": "pass"
+              },
+              {
+                "title": "close default (no prompter): skip never re-discovers by label",
+                "result": "pass"
+              },
+              {
+                "title": "normal create path: promptOnLostRef is never consulted (a1 no-per-create-round-trip)",
+                "result": "pass"
+              },
+              {
+                "title": "parentRefIdentifiers: slug first, then storyId; a bare epicHash is not a resolvable candidate (MED-1)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: configured repo -> create records the ref, close reads it back and closes (fake gh)",
+                "result": "pass"
+              },
+              {
+                "title": "integration: unconfigured repo -> no create/close commands, local issue unchanged (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter",
+                "result": "pass"
+              },
+              {
+                "title": "a failed link makes linkToParent return false and a failed close propagates instead of reporting closed",
+                "result": "pass"
+              },
+              {
+                "title": "relink-by-label match is recorded, closed and returned as closed",
+                "result": "pass"
+              },
+              {
+                "title": "relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue",
+                "result": "pass"
+              },
+              {
+                "title": "both default deps factories keep their optional opts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/questions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1630,
+            "titles": [
+              {
+                "title": "questionId: parses a leading [id / verdict] tag; falls back to a stable sha",
+                "result": "pass"
+              },
+              {
+                "title": "openQuestions / unresolvedOpen reflect recorded resolutions",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution persists a resolved choice to HLD meta + renders section",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution ignore + defer persist the right status to DEF meta",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution throws on an unknown questionId",
+                "result": "pass"
+              },
+              {
+                "title": "listDeferred enumerates deferred questions across DEF + HLD + LLDs",
+                "result": "pass"
+              },
+              {
+                "title": "the comment goes through the adapter with the same argv and a failure is logged in the existing catch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/tracker-auto.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1710,
+            "titles": [
+              {
+                "title": "HLD approve creates the Epic issue, links docs, and writes nested meta.tracker",
+                "result": "pass"
+              },
+              {
+                "title": "LLD approve creates the Story issue + aggregates into the Define; links the LLD doc",
+                "result": "pass"
+              },
+              {
+                "title": "re-approving the HLD is idempotent (no second issue)",
+                "result": "pass"
+              },
+              {
+                "title": "duplicate guard adopts an existing Epic issue instead of creating one",
+                "result": "pass"
+              },
+              {
+                "title": "tracker disabled (no config) skips cleanly",
+                "result": "pass"
+              },
+              {
+                "title": "missing required meta fields skip",
+                "result": "pass"
+              },
+              {
+                "title": "R4: posts the review report as an issue comment when the artifact carries meta.review",
+                "result": "pass"
+              },
+              {
+                "title": "the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter",
+                "result": "pass"
+              },
+              {
+                "title": "a failing adoption lookup still leads to a create and does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "a failing create is reported as a failed result, not thrown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/tracker-tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1690,
+            "titles": [
+              {
+                "title": "task push is opt-out by default (pushTasks unset) → skipped, no issues",
+                "result": "pass"
+              },
+              {
+                "title": "pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue",
+                "result": "pass"
+              },
+              {
+                "title": "pushTasks: falls back to an untyped issue when the org lacks the issue type",
+                "result": "pass"
+              },
+              {
+                "title": "pushTasks: re-push is idempotent (adopts taskRefs, no new issues)",
+                "result": "pass"
+              },
+              {
+                "title": "pushTasks: skips when the Story issue does not exist yet",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/config/__tests__/github.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1186,
+            "titles": [
+              {
+                "title": "parseGithubRemoteUrl handles SSH remotes",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl handles HTTPS remotes",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl rejects other hosts",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns null on a repo with no origin",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns null on a non-git dir",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig honors per-repo \"type\": \"none\"",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig honors default \"type\": \"none\" when no per-repo entry",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig prefers per-repo \"none\" over default owner/repo",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig returns type=github with owner/repo when configured",
+                "result": "pass"
+              },
+              {
+                "title": "a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo",
+                "result": "pass"
+              },
+              {
+                "title": "a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when no matching entry AND no config file",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when file exists but has no matching entry",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when default entry is empty {}",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" but no owner/repo throws when git remote is absent",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" resolves via git remote when owner/repo omitted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig without a config file does NOT auto-detect from git remote",
+                "result": "pass"
+              },
+              {
+                "title": "lenient resolver behaviour is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1421,
+            "titles": [
+              {
+                "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
+                "result": "pass"
+              },
+              {
+                "title": "runGh passes the 10 s timeout option to the exec seam",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+                "result": "pass"
+              },
+              {
+                "title": "compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "findIssue returns the first of several matches and separates failure from not found",
+                "result": "pass"
+              },
+              {
+                "title": "signoff methods return rejected without running gh",
+                "result": "pass"
+              },
+              {
+                "title": "readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee from zero, one and several assignees ends with exactly the requested user",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee makes no change call when already right and clears for null",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out",
+                "result": "pass"
+              },
+              {
+                "title": "Epic create parity with ghCreateIssueTyped",
+                "result": "pass"
+              },
+              {
+                "title": "Story create and Epic parent link parity",
+                "result": "pass"
+              },
+              {
+                "title": "Task create and Story parent link parity",
+                "result": "pass"
+              },
+              {
+                "title": "each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper",
+                "result": "pass"
+              },
+              {
+                "title": "ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/legacy-exec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1055,
+            "titles": [
+              {
+                "title": "only the expected functions still use the legacy exec path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5089,
+            "titles": [
+              {
+                "title": "missingCapabilities names every capability the tracker does not declare",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver refuses malformed or unsupported configuration",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver accepts an own entry without a type and falls back to the origin remote for type github",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver never takes a target from the default entry's owner and repo",
+                "result": "pass"
+              },
+              {
+                "title": "TrackerPort type exposes issueOps with the AMD-8 signatures",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker succeeds when every needed capability is declared",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker with an empty needed set validates configuration and sign-in",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker refuses a needed signoff-request capability naming it",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker names gh as the missing tool",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker names the missing sign-in",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/setup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 618,
+            "titles": [
+              {
+                "title": "all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0",
+                "result": "pass"
+              },
+              {
+                "title": "missing scopes: issue-types + project are manual carrying the refresh command",
+                "result": "pass"
+              },
+              {
+                "title": "missing config: the config step writes github.json and reports done",
+                "result": "pass"
+              },
+              {
+                "title": "project views step is always manual with the UI click-list",
+                "result": "pass"
+              },
+              {
+                "title": "ensureLabels with a timing-out label create records the label as failed and continues",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tasks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 356,
+            "titles": [
+              {
+                "title": "queryTasks: projects a GitHub issue into a TrackerTask (epic/story from labels)",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: surfaces hasNextPage/endCursor + total (no silent truncation)",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: first page omits `after`; a cursor page passes it",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: default state is open; repo + is:issue always scoped",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: state:all emits no state qualifier",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: owner → assignee:, epic/story → label qualifiers",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks: bare story id is normalised to a story: label",
+                "result": "pass"
+              },
+              {
+                "title": "ghCurrentLogin: reads gh api user .login",
+                "result": "pass"
+              },
+              {
+                "title": "ghCurrentLogin still throws the returned-no-login Error for empty output",
+                "result": "pass"
+              },
+              {
+                "title": "listMyOpenTasks: resolves the current login → assignee:<me> is:open",
+                "result": "pass"
+              },
+              {
+                "title": "listMyOpenTasks propagates a classified or empty login failure before any search call",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks keeps its current execution path and results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 363,
+            "titles": [
+              {
+                "title": "parseGithubRemoteUrl handles ssh + https + .git suffix",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl keeps dots in repo names",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl rejects non-github urls",
+                "result": "pass"
+              },
+              {
+                "title": "ref parse/build/url/line",
+                "result": "pass"
+              },
+              {
+                "title": "mapIssueStatus follows the convention (closed overrides)",
+                "result": "pass"
+              },
+              {
+                "title": "renderEpicBody links slug-based docs (not hash)",
+                "result": "pass"
+              },
+              {
+                "title": "render*Body emit clickable blob links with a repo ref, bare paths without",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts stages, commits, and pushes present files",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts reports committed-not-pushed on push failure",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts is a no-op when nothing is staged",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts no-ops when no file is present",
+                "result": "pass"
+              },
+              {
+                "title": "renderStoryBody back-refs the Epic + links the slug LLD",
+                "result": "pass"
+              },
+              {
+                "title": "updateEpicTaskList splices the link + is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash + 8-char prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: a multi-epic dir where only ONE epic holds the label resolves it unscoped (S001/t5)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: epicHash matching zero epics → null; a prefix matching >1 → null",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: issue# and hierarchical-id forms resolve identically with or without opts.epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "out and silent keep their current options",
+                "result": "pass"
+              },
+              {
+                "title": "migrated wrappers run the same argv and keep their failure results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

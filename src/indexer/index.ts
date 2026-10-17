@@ -950,6 +950,7 @@ export class IndexerService {
         takeEdit:   () => this.queue.takeDocSummaryEdit(),
         runEdit:    entityId => this.docSummariseEntity(entityId),
         shouldStop: () => this.queue.isStopping,
+        waitForCodeIdle: () => this.queue.waitForIndexIdle(),
         onProgress: (done, total) => { this.sweepProgress = { repoPath, done, total }; },
       });
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);

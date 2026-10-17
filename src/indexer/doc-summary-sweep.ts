@@ -7,12 +7,15 @@
  * Story b94cf2c9 S001/t3 — the whole-repo document-summary sweep.
  *
  * A sweep can take hours (about 30 s per document whose summary must be
- * rewritten), and it runs in the summary lane alongside code indexing. So,
+ * rewritten), and it runs in the summary lane beside code indexing. So,
  * before each document it:
  *
+ *   - waits while code work runs, so it does not compete with it for the local
+ *     model (Story 0f0e4f45);
  *   - stops if the daemon is shutting down, after the summary in progress;
  *   - runs every queued single-document job first, so an edited document is
- *     summarised within about one summary of the edit;
+ *     summarised within about one summary of the edit, including an edit queued
+ *     while the sweep was waiting;
  *   - re-reads the document, since code indexing may have deleted it after
  *     the sweep listed it.
  */
@@ -31,6 +34,8 @@ export interface DocSummarySweepDeps {
 	runEdit(entityId: string): Promise<void>;
 	shouldStop(): boolean;
 	onProgress(done: number, total: number): void;
+	/** Resolves once code work is done (or the daemon is stopping). */
+	waitForCodeIdle(): Promise<void>;
 }
 
 export interface DocSummarySweepCounts {
@@ -57,10 +62,13 @@ export async function runDocSummarySweep(entityIds: readonly string[], deps: Doc
 	const counts = { summarised: 0, skipped: 0, failed: 0, gone: 0 };
 	let done = 0;
 	for (const id of entityIds) {
-		if (deps.shouldStop()) return { ...counts, stopped: true };
-		for (let edit = deps.takeEdit(); edit !== undefined; edit = deps.takeEdit()) {
-			await deps.runEdit(edit.entityId);
+		// After every wait: check shutdown, then run an edit queued meanwhile, until none is left.
+		for (;;) {
+			await deps.waitForCodeIdle();
 			if (deps.shouldStop()) return { ...counts, stopped: true };
+			const edit = deps.takeEdit();
+			if (edit === undefined) break;
+			await deps.runEdit(edit.entityId);
 		}
 		try {
 			const entity = await deps.getEntity(id);

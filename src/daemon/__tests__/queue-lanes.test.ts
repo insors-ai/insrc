@@ -63,7 +63,7 @@ test('an index job enqueued while a summary job is running completes before that
 	await running;
 });
 
-test('each lane runs its jobs one at a time in order, at the same time as the other lane, and every kind goes to its lane', async () => {
+test('each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it', async () => {
 	const q = new IndexQueue();
 	const jobs: IndexJob[] = [
 		{ kind: 'full', repoPath: A },
@@ -83,14 +83,17 @@ test('each lane runs its jobs one at a time in order, at the same time as the ot
 	const active = { index: 0, summary: 0 };
 	let maxActive = { index: 0, summary: 0 };
 	let overlapped = false;
+	let lastIndexEnd = -1, firstSummaryStart = -1, clock = 0;
 	const running = q.start(async job => {
 		const lane = job.kind.startsWith('doc-summarise') ? 'summary' : 'index';
 		active[lane]++;
 		maxActive = { index: Math.max(maxActive.index, active.index), summary: Math.max(maxActive.summary, active.summary) };
 		if (active.index > 0 && active.summary > 0) overlapped = true;
+		if (lane === 'summary' && firstSummaryStart < 0) firstSummaryStart = clock++;
 		order[lane].push(label(job));
 		await tick(); await tick();
 		active[lane]--;
+		if (lane === 'index') lastIndexEnd = clock++;
 	});
 	await until(() => order.index.length + order.summary.length === jobs.length && q.depth === 0 && !q.isProcessing, 'every job to run');
 	q.stop();
@@ -99,7 +102,8 @@ test('each lane runs its jobs one at a time in order, at the same time as the ot
 	assert.deepEqual(order.index, jobs.filter(j => !j.kind.startsWith('doc-summarise')).map(label), 'the index lane runs in enqueue order');
 	assert.deepEqual(order.summary, [`doc-summarise-repo:${A}`, 'doc-summarise-repo:/repos/b']);
 	assert.deepEqual(maxActive, { index: 1, summary: 1 }, 'one job at a time in each lane');
-	assert.ok(overlapped, 'the two lanes ran at the same time');
+	assert.equal(overlapped, false, 'the summary lane yields to queued code work (Story 0f0e4f45)');
+	assert.ok(firstSummaryStart > lastIndexEnd, 'the first summary started after the last index job ended');
 });
 
 test('a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it', async () => {
@@ -145,13 +149,17 @@ test('depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor rea
 		if (job.kind === 'doc-summarise-repo') await sweep.wait;
 		if (job.kind === 'file') await file.wait;
 	});
-	// The summary lane runs e1 (ahead of the sweep), then holds on the sweep; the index lane holds on the file.
-	await until(() => q.depth === 0 && q.laneStatus().summary.running && q.laneStatus().index.running, 'both lanes to hold a job');
+	// The index lane holds on the file; the summary lane waits for it with both summary jobs queued.
+	await until(() => q.laneStatus().index.running, 'the file job to start');
+	await tick(); await tick();
+	assert.deepEqual(q.laneStatus(), { index: { depth: 0, running: true }, summary: { depth: 2, running: false } }, 'summaries wait behind code work');
+	assert.equal(q.depth, 2);
 	assert.equal(q.isProcessing, true);
 	assert.deepEqual(q.codeIndexWorkFor(A), { inFlight: true, pending: 0 });
 	file.open();
-	await until(() => !q.laneStatus().index.running, 'the file job to finish');
-	assert.equal(q.isProcessing, true, 'the summary lane still runs a job');
+	// Code work done: the summary lane runs e1 (ahead of the sweep), then holds on the sweep.
+	await until(() => q.depth === 0 && q.laneStatus().summary.running && !q.laneStatus().index.running, 'the sweep to start');
+	assert.equal(q.isProcessing, true, 'the summary lane runs a job');
 	assert.deepEqual(q.codeIndexWorkFor(A), { inFlight: false, pending: 0 }, 'a running sweep is not code-index work');
 	assert.deepEqual(q.laneStatus(), { index: { depth: 0, running: false }, summary: { depth: 0, running: true } });
 	sweep.open();
@@ -181,4 +189,46 @@ test('stop ends both lanes after their current jobs, and start resolves only the
 	assert.equal(q.depth, 1, 'the second sweep is still queued');
 	q.enqueue({ kind: 'file', filePath: join(A, 'x.ts'), event: 'update' });
 	assert.equal(q.depth, 1, 'a stopped queue accepts nothing new');
+});
+
+test('waitForIndexIdle resolves at once when the index lane is idle, after its code work otherwise, and on stop(); a summary lane waiting for code work ends on stop()', async () => {
+	const q = new IndexQueue();
+	await q.waitForIndexIdle();   // idle: resolves at once
+
+	const file = gate();
+	let summaries = 0;
+	const running = q.start(async job => {
+		if (job.kind === 'file') await file.wait;
+		if (job.kind === 'doc-summarise-entity') summaries++;
+	});
+	q.enqueue({ kind: 'file', filePath: join(A, 'x.ts'), event: 'update' });
+	await until(() => q.laneStatus().index.running, 'the file job to start');
+	let released = false;
+	const waiting = q.waitForIndexIdle().then(() => { released = true; });
+	q.enqueue({ kind: 'doc-summarise-entity', entityId: 'e1' });
+	await tick(); await tick();
+	assert.equal(released, false, 'not while code work runs');
+	assert.equal(summaries, 0, 'no summary starts while code work runs');
+	file.open();
+	await waiting;
+	await until(() => summaries === 1, 'the summary to run once code work is done');
+
+	const file2 = gate();
+	const q2 = new IndexQueue();
+	let ran2 = 0;
+	const running2 = q2.start(async job => { if (job.kind === 'file') await file2.wait; else ran2++; });
+	q2.enqueue({ kind: 'file', filePath: join(A, 'y.ts'), event: 'update' });
+	await until(() => q2.laneStatus().index.running, 'the second file job to start');
+	q2.enqueue({ kind: 'doc-summarise-entity', entityId: 'e2' });
+	await tick(); await tick();   // the summary lane is now waiting for code work
+	assert.equal(q2.laneStatus().summary.depth, 1, 'its job is still queued');
+	const waiter = q2.waitForIndexIdle();
+	q2.stop();
+	await waiter;   // released by stop()
+	file2.open();
+	await running2;
+	assert.equal(ran2, 0, 'the waiting summary lane ended on stop() without starting its job');
+
+	q.stop();
+	await running;
 });

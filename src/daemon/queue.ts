@@ -29,9 +29,10 @@ const isSummaryJob = (job: IndexJob): boolean =>
  * summary sweep. Each lane runs its jobs one at a time, in order; in the
  * summary lane a single-document job goes ahead of a queued sweep.
  *
- * Running both lanes means a summary and code embeddings can call the local
- * model at the same time: an exception to serial model calls the stakeholder
- * accepted on 2026-10-17, to revisit if memory or GPU becomes a problem.
+ * The summary lane yields to code work (Story 0f0e4f45, after measured model
+ * contention): it starts a summary only while the index lane is idle, so the
+ * two lanes reach the local model together only for the one summary already
+ * in progress when code work arrives.
  *
  * Deduplication (within a lane): `full` jobs dedup by repo, `file` and
  * `config-file` jobs dedup by path (latest event wins), `config-full`/
@@ -43,6 +44,8 @@ export class IndexQueue {
     summary: { jobs: [], inFlight: null, resolve: null },
   };
   private stopped = false;
+  /** Waiters of waitForIndexIdle, released when the index lane goes idle or on stop(). */
+  private indexIdleWaiters: (() => void)[] = [];
 
   private laneFor(job: IndexJob): Lane { return this.lanes[isSummaryJob(job) ? 'summary' : 'index']; }
 
@@ -256,6 +259,12 @@ export class IndexQueue {
 
   private async drain(lane: Lane, processor: JobProcessor): Promise<void> {
     while (!this.stopped) {
+      // The summary lane yields to code work: it starts a summary only while the
+      // index lane is idle (Story 0f0e4f45). A summary already running is not stopped.
+      if (lane === this.lanes.summary && lane.jobs.length > 0) {
+        await this.waitForIndexIdle();
+        if (this.stopped) break;
+      }
       const job = lane.jobs.shift();
 
       if (!job) {
@@ -281,8 +290,28 @@ export class IndexQueue {
         }
       } finally {
         lane.inFlight = null;
+        if (lane === this.lanes.index && lane.jobs.length === 0) this.releaseIndexIdleWaiters();
       }
     }
+  }
+
+  /** True when the index lane has no job running and none queued. */
+  private get indexIdle(): boolean { return this.lanes.index.inFlight === null && this.lanes.index.jobs.length === 0; }
+
+  private releaseIndexIdleWaiters(): void {
+    const waiters = this.indexIdleWaiters;
+    this.indexIdleWaiters = [];
+    for (const w of waiters) w();
+  }
+
+  /**
+   * Resolves once the index lane has no job running and none queued, or once stop()
+   * has been called (at once when either already holds). The summary lane and a
+   * running summary sweep await it, so they yield the local model to code work.
+   */
+  waitForIndexIdle(): Promise<void> {
+    if (this.stopped || this.indexIdle) return Promise.resolve();
+    return new Promise<void>(resolve => { this.indexIdleWaiters.push(resolve); });
   }
 
   /** Signal both drain loops to stop after their current jobs finish. */
@@ -291,6 +320,7 @@ export class IndexQueue {
     // unblock both if waiting
     this.lanes.index.resolve?.();
     this.lanes.summary.resolve?.();
+    this.releaseIndexIdleWaiters();
   }
 
   /** True once `stop()` has been called; a running summary sweep reads it between documents. */

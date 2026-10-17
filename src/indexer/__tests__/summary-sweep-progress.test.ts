@@ -115,3 +115,31 @@ test('a single-document job queued for the summary lane is taken by the running 
 	assert.deepEqual(svc.order, ['two', 'one', 'two'], 'the edit ran first, then the sweep in order');
 	assert.equal(queue.depth, 0, 'the sweep took the job off the queue');
 });
+
+test("the indexer's sweep pauses while the queue's index lane has work and continues when it is idle", async () => {
+	const queue = new IndexQueue();
+	const file = gate();
+	const running = queue.start(async job => { if (job.kind === 'file') await file.wait; });
+	queue.enqueue({ kind: 'file', filePath: join(repo, 'src', 'x.ts'), event: 'update' });
+	await until(() => queue.laneStatus().index.running, 'the file job to start');
+	const svc = new Probe(queue);
+	const swept = sweep(svc);
+	await tick(); await tick();
+	assert.deepEqual(svc.order, [], 'no document is summarised while code work runs');
+	file.open();
+	await swept;
+	assert.deepEqual(svc.order, ['one', 'two'], 'the sweep continued once code work was done');
+	queue.stop();
+	await running;
+});
+
+function gate(): { wait: Promise<void>; open: () => void } {
+	let open!: () => void;
+	const wait = new Promise<void>(r => { open = r; });
+	return { wait, open };
+}
+const tick = (): Promise<void> => new Promise(r => setImmediate(r));
+async function until(cond: () => boolean, what: string): Promise<void> {
+	for (let i = 0; i < 1000; i++) { if (cond()) return; await tick(); }
+	assert.fail(`timed out waiting for: ${what}`);
+}

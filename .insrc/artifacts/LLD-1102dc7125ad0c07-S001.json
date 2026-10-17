@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792218502976-b98dqj",
+    "runId": "wf-1792218606156-o00ehz",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T06:28:23.960Z",
+    "createdAt": "2026-10-17T06:30:07.160Z",
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 983,
+    "elapsedMs": 1002,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1102dc7125ad0c07",
     "epicSlug": "ground-code-review-coverage-story-s",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792218502976-b98dqj",
-    "hldEffectiveHash": "cc1a7b73f952b25b7c2b0417042a29dab2fc9a379cfe32b4237c7cd190b43b3e",
+    "hldBaseRunId": "wf-1792218606156-o00ehz",
+    "hldEffectiveHash": "c451faf13cfb8eeeccc5cd75995f64af837d4de50494d49f24c1527db1e08ec4",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
@@ -126,7 +126,7 @@
             "When testRecord is non-null, the prompt carries a trailing section built per test FILE, not per title: for each file, the latest run is the file entry of the task whose ranAt is latest among the tasks that ran it (a valid ISO ranAt beats a missing one; on a tie or with no valid ranAt the run with a failing outcome wins). That run alone decides the file's current state: its exit code, whether it timed out, and its titles with results. A latest run that timed out, exited non-zero or reported no titles marks every test of the file present-but-failing or unverified, whatever older runs said. A title that appears only in an older run of the file is listed as not in the latest run and is unverified, never passing. The task id and ranAt of the deciding run are shown, plus the BUILD verdict when buildRecord is non-null.",
             "The system text says: a test the record shows passing is passing; a test is unverified only when no record covers its file or title; a failing or skipped title is present-but-failing.",
             "When testRecord is null, the prompt keeps today's rule that every pass-state is unverified.",
-            "The section is built from a defensive normalisation of the test record: a task without a files array, a file without a titles array, or a title whose result is not pass/fail/skipped is skipped with a note in the section rather than iterated, because readTestRecord validates only the record's top level and each task's taskId and tests (src/workflow/runners/build/test-record.ts)."
+            "Normalisation runs AFTER the latest run of each file is chosen and never removes a run from that choice: any file entry with a string file name takes part in choosing the latest run, and if the chosen latest entry is malformed (titles not an array, a title without a pass/fail/skipped result, or exitCode/timedOut of the wrong type) it stays as an unverified barrier: the file's tests are shown unverified and no older run's result is shown as current. Only a file entry with no string file name is dropped, with a note, since it cannot be matched to a file; a task without a files array contributes no file runs. readTestRecord validates only the record's top level and each task's taskId and tests (src/workflow/runners/build/test-record.ts)."
           ]
         },
         {
@@ -385,8 +385,8 @@
         {
           "scenario": "A TESTS record passes readTestRecord's shape check but a task lacks files, a file lacks titles, or a title has an unknown result.",
           "detection": "The coverage normaliser checks Array.isArray(task.files), Array.isArray(file.titles) and the result value for each item it reads.",
-          "response": "Skip the malformed item, note it in the test-record section, and treat what it would have covered as unverified.",
-          "userImpact": "The review runs; only the malformed part of the record is not used.",
+          "response": "Choose each file's latest run first, including malformed entries that name a file; a malformed latest entry stays as an unverified barrier, so no older result becomes current. Drop only entries with no file name, with a note.",
+          "userImpact": "The review runs; a malformed latest run makes that file's tests unverified rather than letting an older pass show.",
           "recoverable": true
         }
       ],
@@ -434,6 +434,10 @@
         {
           "input": "A newer successful run of a file no longer reports a title an older run passed.",
           "expected": "That title is listed as not in the latest run and is unverified."
+        },
+        {
+          "input": "An older task passed a file's title; a newer task's entry for the same file is malformed (titles missing or not an array).",
+          "expected": "The malformed newer entry is the latest run: the file is shown unverified, and the older pass is not shown as current."
         }
       ],
       "invariantsToPreserve": [
@@ -470,7 +474,7 @@
           "purpose": "The subject carries the Story's records, and coverage renders them.",
           "subjects": [
             "src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
-            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays"
+            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown"
           ],
           "fixturesNeeded": [
             "A temp repo with .insrc/artifacts/BUILD-<hash>-S001.json and TESTS-<hash>-S001.json, one valid and one misshapen variant."
@@ -508,7 +512,7 @@
           "criterionId": "ac1",
           "provingTests": [
             "src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
-            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays"
+            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown"
           ]
         },
         {

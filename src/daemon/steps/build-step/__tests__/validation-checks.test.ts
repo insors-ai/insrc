@@ -144,6 +144,11 @@ test('a trivial build with a range base runs the test files touched across base.
 		// No base: the HEAD commit only, here a records commit with no test file.
 		assert.deepEqual(trivialCheckPlan(repo).testFiles, []);
 		assert.deepEqual(trivialCheckPlan(repo, undefined).noTests, { ok: true, note: 'no tests named for a trivial build' });
+		// A listing git refuses is a failed check, not "no tests" (code review CR-91640defac1b5816-S001).
+		const failed = trivialCheckPlan(repo, 'f'.repeat(40));
+		assert.deepEqual(failed.testFiles, []);
+		assert.equal(failed.noTests?.ok, false);
+		assert.match(failed.noTests?.note ?? '', /^could not list the build's files: /);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

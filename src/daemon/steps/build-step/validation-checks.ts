@@ -327,6 +327,8 @@ export function smallStandaloneCheckPlan(
  */
 export function trivialCheckPlan(repoPath: string, base?: string | undefined): ValidationCheckPlan {
 	let touched: string[] = [];
+	// A listing that failed is not "no tests": it fails the tests check rather than passing it.
+	let listError: string | undefined;
 	try {
 		// --diff-filter=d leaves out files the build deleted: they no longer exist to run.
 		const args = base !== undefined
@@ -335,13 +337,17 @@ export function trivialCheckPlan(repoPath: string, base?: string | undefined): V
 		touched = execFileSync('git', args, { cwd: repoPath, encoding: 'utf8' })
 			.split('\n').filter(f => f.endsWith('.test.ts') && f.split('/').includes('__tests__'));
 	} catch (err) {
-		log.warn({ repoPath, base, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the build\'s files');
+		listError = err instanceof Error ? err.message : String(err);
+		log.warn({ repoPath, base, err: listError }, 'validate: could not list the build\'s files');
 	}
 	const testFiles = [...new Set(touched)].sort();
+	const noTests = listError !== undefined
+		? { ok: false, note: `could not list the build's files: ${listError.split('\n')[0]}` }
+		: { ok: true, note: 'no tests named for a trivial build' };
 	return {
 		...basePlan(), testFiles, unresolvedTests: [],
 		namedTests: testFiles.map(file => ({ name: file, source: 'touched' as const, cases: [], files: [file] })),
-		...(testFiles.length === 0 ? { noTests: { ok: true, note: 'no tests named for a trivial build' } } : {}),
+		...(testFiles.length === 0 ? { noTests } : {}),
 	};
 }
 

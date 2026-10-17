@@ -1,0 +1,200 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792216598427-xfrkfg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T05:56:38.428Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 60771,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e48e33ae6af03720",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T17:38:08.183Z",
+    "epicSlug": "send-codex-structured-output-schemas-openai",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "e48e33ae6af03720",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+        "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+        "src/daemon/steps/build-step/__tests__/render.test.ts",
+        "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+        "src/daemon/steps/build-step/phases/validate.ts",
+        "src/daemon/steps/build-step/render.ts",
+        "src/daemon/steps/build-step/validation-checks.ts",
+        "src/prompts/build/validate-task.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/build-step/__tests__/build-step.test.ts:unknown",
+            "message": "The turn signature declares optional result, judge, and runner properties without explicit `| undefined`. Add it to each property type. Line numbers were not supplied.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/build-step/__tests__/build-step.test.ts:unknown",
+            "message": "The readTests return type declares `commit?: string` without the required explicit `| undefined`. Line numbers were not supplied.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/build-step/phases/validate.ts:unknown",
+            "message": "The runValidateSession signature declares nested optional sizeClass and triageRationale properties as `?: string` without explicit `| undefined`. Add it to both property types. Line numbers were not supplied.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts:1",
+            "message": "These changed entities have empty testsReaching edges and are not exercised under the supplied coverage contract.",
+            "expectationRef": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts (file), judgeLikeSchema, fakeCodex",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "All supplied changed entities in this file have empty testsReaching edges. Their coverage is absent under the supplied contract, including structured-schema conversion and both completion and review paths.",
+            "expectationRef": "src/agent/providers/cli-provider.ts (file), CliKind, EditSessionOpts, ReviewSessionOpts, ReviewSessionTimeoutError, claudeReviewSessionArgs, codexSchemaJson, codexReviewSessionArgs, CliProviderOpts, CliProvider, complete, withTransientRetry, completeStructured, completeStructuredOnce, runEditSession, runReviewSession, reviewSessionOnce, stream, embed, modelArgs, execIn, runClaude, runCodex, serialiseMessages, SubprocessResult, ExecOverride, delay, isTransientCliError, CliExitError, transienceText, cliExitError, cliFailureMessage, writeCliFailureFile, resolveBin, runSubprocess, spawnOnce, ClaudeEnvelope, CodexEvent",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/__tests__/build-start.test.ts:1",
+            "message": "These changed entities have empty testsReaching edges and are not exercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/__tests__/build-start.test.ts (file), Fx, mkGit, seedEpic, approvePlansInOneSweep, implement, validate, changeLog, work, commitRecords, stampFile, stampedBase, seedStandaloneLld, block, unblock",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/__tests__/build-start.test.ts:1",
+            "message": "Reaching tests are present but failing/unverified: their pass-state is UNVERIFIED because no build record is available. Nonempty edges establish reachability, but passing execution cannot be confirmed.",
+            "expectationRef": "judgeVerdict, git, artifact, writeArtifact, out, buildRecord",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/__tests__/build-step.test.ts:1",
+            "message": "These changed entities have empty testsReaching edges and are not exercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/__tests__/build-step.test.ts (file), seedSecondEpic, mkGitRepoWithChange, mkCleanGitRepo, gitAvailable, gitOut, runImplementThenValidate, mkDirtyGitRepo, mkStampedRepo, validateOnce, changeFiles, validateWithSummary, seedStandaloneIssue, seedStandaloneLldOnly, readBuildRecord, validateWith, planRepo, buildRecordExists, record, mappedRepo, Turn, readTests, call, failingWriter, folderOf, recordDocs, standaloneTurn, failJudge, standalone, seedStandaloneLldPlan",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/__tests__/build-step.test.ts:1",
+            "message": "Reaching tests are present but failing/unverified: their pass-state is UNVERIFIED because no build record is available. Passing execution cannot be confirmed.",
+            "expectationRef": "judgeVerdict, artifactsDir, seedDef, seedLld, seedPlan, mkRepo, git, outputOf, findBuildMd, walk, withChecks, resultsFor, turn, testsJson, runner",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/__tests__/render.test.ts:1",
+            "message": "These changed entities have empty testsReaching edges and are not exercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/__tests__/render.test.ts (file), validatePrompts, implementPrompts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts:1",
+            "message": "These changed entities have empty testsReaching edges and are not exercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts (file), gitRepo, isAlive, commit, head, plan, before, runnerDir, dest, run, live, notTap, byFile",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts:1",
+            "message": "Reaching tests are present but failing/unverified: their pass-state is UNVERIFIED because no build record is available. Passing execution cannot be confirmed.",
+            "expectationRef": "git, nodePlan, mapped",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/phases/validate.ts:1",
+            "message": "These changed entities have empty testsReaching edges. The supplied graph establishes no test coverage for the validation entry points, mapping resolution, evidence rendering, or validation session.",
+            "expectationRef": "src/daemon/steps/build-step/phases/validate.ts (file), ValidateProvider, CheckRunner, _setBuildValidateTestRecordWriterForTests, JudgeVerdict, judgeShapeError, describeCheck, describeNamedTests, fileResult, renderCheckEvidence, resolveValidateProvider, handleValidate, resolveMapping, toTestRecordTask, resolveRouteFlag, _setBuildValidateRouteReaderForTests, handleStandaloneValidate, prompt, runValidateSession, testRecordMd, err",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/phases/validate.ts:1",
+            "message": "Reaching tests are present but failing/unverified: their pass-state is UNVERIFIED because no build record is available. Passing execution of these test hooks cannot be confirmed.",
+            "expectationRef": "_setBuildValidateProviderForTests, _setBuildValidateCheckRunnerForTests, _setBuildValidateClockForTests",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/render.ts:1",
+            "message": "All supplied changed entities in this file have empty testsReaching edges, leaving task resolution and prompt rendering unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/render.ts (file), ResolvedTask, TaskResolution, resolveTaskRef, fill, baseVars, mergeInProgressError, renderImplementPrompt, renderValidatePrompt, StandaloneBuildSpec, renderStandaloneImplementPrompt, StandaloneValidateSpec, renderStandaloneValidatePrompt, loadTemplate, resolveRelativeToInsrcRoot",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/validation-checks.ts:1",
+            "message": "All supplied changed entities in this file have empty testsReaching edges. No reaching tests exercise check planning, typecheck execution, test-file execution, or result aggregation under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/validation-checks.ts (file), reportWithPrinted, NamedTestPlan, TestFileRun, ValidationCheckPlan, CheckResult, ValidationCheckResults, CheckRunnerDeps, trackedFiles, resolveTaskTestFiles, basePlan, changedFiles, owningTypecheckProjects, withTypecheckProjects, filesOfCases, planNamedTest, sortedUnion, planTaskCheckPlan, smallStandaloneCheckPlan, trivialCheckPlan, tail, runOne, runTypechecks, writeOutputFile, unresolvedNote, testRunEnv, runTestFile, namedResults, runValidationChecks",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/prompts/build/validate-task.md:1",
+            "message": "The changed prompt file and each supplied section have empty testsReaching edges and are unexercised under the supplied coverage contract.",
+            "expectationRef": "validate-task.md (file), Build validation gate — Task `{{taskId}}` ({{issueRef}}), The Task that was to be implemented, Check results (run by the daemon), What to judge, Verdict — return this JSON exactly",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 10,
+      "med": 4,
+      "low": 3
+    }
+  }
+}

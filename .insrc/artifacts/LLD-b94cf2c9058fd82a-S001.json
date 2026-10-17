@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792243000411-hpxmgv",
+    "runId": "wf-1792243185733-6y6pq6",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T13:16:41.529Z",
+    "createdAt": "2026-10-17T13:19:46.791Z",
     "epicCreatedAt": "2026-10-17T13:11:51.789Z",
     "attribution": {
       "outputs": [
@@ -15,19 +15,25 @@
         }
       ]
     },
-    "elapsedMs": 1114,
+    "elapsedMs": 1054,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "b94cf2c9058fd82a",
     "epicSlug": "run-document-summarisation-its-own-queue",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792243000411-hpxmgv",
-    "hldEffectiveHash": "54a3b92af197b2982e8cb0af7e4b4bb72ada47e0e165f2736ae3a29dc0180e95",
+    "hldBaseRunId": "wf-1792243185733-6y6pq6",
+    "hldEffectiveHash": "a9af1d02148509b80a6d81538165a1512a0b8f93b046a9e222150275b3ea77a6",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "feature",
     "triageRationale": "One cohesive story with a real design choice and several build tasks. The queue (src/daemon/queue.ts IndexQueue) is shared by code jobs and LLM-backed summary jobs with one worker, and a whole-repo summary sweep is a single job, so splitting needs a decision on the concurrency model (two concurrent workers vs one worker that serves the code lane first and lets a sweep yield between entities), on which job kinds go to which lane (config and reembed jobs), and on how status is reported. It touches the queue, the daemon wiring that starts/stops it and reports depth (src/daemon/index.ts: start :289, freshness :821, status :1060, compaction guard :1635, stop :2039), repo.stats (src/daemon/repo-stats.ts:163), the indexer's enqueuers and dispatcher (src/indexer/index.ts :402-403, :759, :818) and the code-review freshness reader (src/workflow/code-review/freshness.ts). Two modules (daemon, indexer), no storage schema change. Grounding is from direct search of every queue user (the request's sizing question is which call sites use the queue, which a grep answers completely), not from an analyze bundle.",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-17T13:19:50.220Z",
+    "rangeBase": "e89d309d2ceb0dc9a05f2efbc62d9eef58a729b4",
+    "reviewOverride": {
+      "reason": "Stakeholder approved 2026-10-17 after 3 daemon review rounds (1H/3M, 1H/3M, 0H/1M; all real, rounds 1-2 fixed). The round-3 MED (the 'no orphan or stale summary' promise overstated the conditional write) was fixed by narrowing the wording only, with no design change; that fix was not re-reviewed.",
+      "at": "2026-10-17T13:19:50.220Z"
+    }
   },
   "body": {
     "summary": {
@@ -292,7 +298,7 @@
           "scenario": "A code job deletes or rewrites a document while the summary lane is summarising it.",
           "detection": "writeDocSummaryIfCurrent reads the entity row inside its write transaction and compares the body hash.",
           "response": "Nothing is written ('entity-gone' or 'body-changed'). Re-summarising a rewritten document is best-effort: the file event queues its single-document jobs, but an enqueue failure is only logged (src/indexer/index.ts:812-825); otherwise the next full index's sweep picks it up. A rewrite made by a full index is picked up by that index's own sweep.",
-          "userImpact": "No orphan or stale summary.",
+          "userImpact": "No summary is written for a deleted document or from text that has since changed. A summary already stored still lags its document until that document is summarised again, as today (docs/plans/docs-module.md).",
           "recoverable": true
         },
         {

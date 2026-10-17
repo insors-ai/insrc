@@ -5,8 +5,8 @@
 ## Summary
 
 **Epic:** `run-document-summarisation-its-own-queue`
-**HLD base run:** `wf-1792243000411-hpxmgv`
-**HLD effective hash:** `54a3b92af197...`
+**HLD base run:** `wf-1792243185733-6y6pq6`
+**HLD effective hash:** `a9af1d021485...`
 
 The daemon's index queue gets two lanes that run at the same time: an index lane for code and file work, and a summary lane for document summaries. Code indexing no longer waits behind a summary sweep that can take hours. In the summary lane, a document that was just edited is summarised before the rest of a sweep, and a running sweep stops between documents to do it. A summary is stored only if its document still exists with the text that was summarised. Status shows each lane's depth and whether it is running.
 
@@ -209,7 +209,7 @@ A summary row written by the summariser is written only for an entity that exist
 - **A code job deletes or rewrites a document while the summary lane is summarising it.** (recoverable)
   - Detection: writeDocSummaryIfCurrent reads the entity row inside its write transaction and compares the body hash.
   - Response: Nothing is written ('entity-gone' or 'body-changed'). Re-summarising a rewritten document is best-effort: the file event queues its single-document jobs, but an enqueue failure is only logged (src/indexer/index.ts:812-825); otherwise the next full index's sweep picks it up. A rewrite made by a full index is picked up by that index's own sweep.
-  - User impact: No orphan or stale summary.
+  - User impact: No summary is written for a deleted document or from text that has since changed. A summary already stored still lags its document until that document is summarised again, as today (docs/plans/docs-module.md).
 - **A job throws in either lane.** (recoverable)
   - Detection: The lane loop catches it, as today.
   - Response: Logged (store-lock case named as today); that lane continues; the other lane is unaffected.

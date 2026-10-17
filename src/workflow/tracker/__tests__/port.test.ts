@@ -15,7 +15,9 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 import { missingCapabilities, type Capability, type CreatedIssue, type IssueOps, type IssueRef, type PortResult, type TrackerPort } from '../port.js';
 import { resolveStrictTrackerTarget } from '../../config/github.js';
@@ -114,25 +116,21 @@ test("strict resolver never takes a target from the default entry's owner and re
 	}
 });
 
+/** tsc excludes __tests__, so the signature fixture is typechecked here, with the project's compiler options. */
+function typeErrors(file: string): string[] {
+	const cfgPath = join(process.cwd(), 'tsconfig.json');
+	const cfg = ts.readConfigFile(cfgPath, ts.sys.readFile);
+	const parsed = ts.parseJsonConfigFileContent(cfg.config, ts.sys, process.cwd());
+	const program = ts.createProgram([file], { ...parsed.options, noEmit: true });
+	return ts.getPreEmitDiagnostics(program)
+		.filter(d => d.file?.fileName === file)
+		.map(d => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+}
+
 test('TrackerPort type exposes issueOps with the AMD-8 signatures', () => {
-	// Compile-time pin: this only typechecks if the signatures match AMD-8.
-	const ref: IssueRef = 'o/r#1';
-	const created: CreatedIssue = { ref, id: 1, typed: true };
-	const ok = <T>(value: T): PortResult<T> => ({ ok: true, value });
-	const ops: IssueOps = {
-		create: spec => { const labels: readonly string[] = spec.labels; void labels; return ok(created); },
-		linkSubIssue: (parent: IssueRef, childId: number) => { void parent; void childId; return ok(undefined); },
-		close: () => ok(undefined),
-		comment: (_i, body: string) => { void body; return ok(undefined); },
-		readBody: () => ok(''),
-		writeBody: (_i, body: string) => { void body; return ok(undefined); },
-		ensureLabel: (name: string): boolean => name.length > 0,
-		ensureMilestone: (title: string): void => { void title; },
-		attachMilestone: (_i, title: string) => { void title; return ok(undefined); },
-	};
-	const port: Pick<TrackerPort, 'issueOps'> = { issueOps: ops };
-	const r = port.issueOps.linkSubIssue(ref, 42);
-	assert.equal(r.ok, true);
-	assert.equal(port.issueOps.ensureLabel('x'), true);
-	assert.equal(port.issueOps.create({ title: 't', body: 'b', labels: ['a'] }).ok, true);
+	const fixture = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'issue-ops-signatures.ts');
+	assert.deepEqual(typeErrors(fixture), []);
+	// A fixture that breaks a signature (string child id) must be reported, so the check bites.
+	const broken = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'issue-ops-signatures-broken.ts');
+	assert.ok(typeErrors(broken).length > 0, 'the broken fixture should fail to typecheck');
 });

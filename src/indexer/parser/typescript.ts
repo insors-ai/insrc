@@ -11,6 +11,8 @@
  *  - Type alias declarations
  *  - Method definitions inside class bodies
  *  - Import statements → unresolved IMPORTS relations
+ *  - Calls outside any function (program-level statements, non-function
+ *    initializers, export default) → CALLS from the file entity
  *  - Export modifier → isExported: true
  */
 
@@ -111,6 +113,7 @@ class TypeScriptParser implements CodeParser {
     const tree = (parser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
     const lang: Language = isJS ? 'javascript' : 'typescript';
     currentClassHttpFields = new Set();  // S001 (t3): reset per file; set per class
+    fileCallsSeen = new Set();           // ISSUE-bd1c6c90: one CALLS per callee from the file
     // S004 (t2): messaging detection is import-gated for every language — a file
     // is scanned for pub/sub call-sites only when it imports a messaging library.
     messagingEnabled = fileImportsMessagingLibrary(lang, collectTsImportSpecifiers(source));
@@ -184,6 +187,17 @@ function walkNode(
     case 'lexical_declaration':
     case 'variable_declaration':
       extractArrowFunction(node, source, repo, repoId, filePath, lang, fileId, now, entities, relations);
+      // A program-level or exported declaration's non-function values run with
+      // no enclosing entity, so their calls belong to the file.
+      if (node.parent?.type === 'program' || node.parent?.type === 'export_statement') {
+        for (const declarator of node.namedChildren) {
+          if (declarator.type !== 'variable_declarator') continue;
+          const value = declarator.childForFieldName('value');
+          if (value && !FUNCTION_VALUE_TYPES.has(value.type)) {
+            extractCalls(value, fileId, repo, filePath, relations, fileCallsSeen);
+          }
+        }
+      }
       break;
 
     case 'export_statement': {
@@ -192,14 +206,40 @@ function walkNode(
       if (decl) {
         walkNode(decl, source, repo, repoId, filePath, lang, fileId, now, entities, relations);
       }
+      // `export default <expr>`: the value runs at module load.
+      const value = node.childForFieldName('value');
+      if (value) {
+        extractCalls(value, fileId, repo, filePath, relations, fileCallsSeen);
+      }
       return;
     }
+  }
+
+  // A program-level statement that is not a declaration (every test('...', ...)
+  // call, a top-level if/for/try) runs at module load: its calls belong to the
+  // file. The walk below still extracts the declarations nested in it.
+  if (node.parent?.type === 'program' && PROGRAM_STATEMENT_TYPES.has(node.type)) {
+    extractCalls(node, fileId, repo, filePath, relations, fileCallsSeen);
   }
 
   for (const child of node.namedChildren) {
     walkNode(child, source, repo, repoId, filePath, lang, fileId, now, entities, relations);
   }
 }
+
+/** Declarator values that become a function entity of their own (extractArrowFunction). */
+const FUNCTION_VALUE_TYPES = new Set(['arrow_function', 'function_expression', 'generator_function_expression']);
+
+/** Program-level statements whose calls are credited to the file entity. */
+const PROGRAM_STATEMENT_TYPES = new Set([
+  'expression_statement', 'if_statement', 'for_statement', 'for_in_statement',
+  'while_statement', 'do_statement', 'try_statement', 'switch_statement',
+  'statement_block', 'labeled_statement', 'throw_statement', 'with_statement',
+]);
+
+/** Callees already credited to the file entity in the file being parsed; reset
+ *  per file in parse() (same idiom as currentClassHttpFields). */
+let fileCallsSeen: Set<string> = new Set();
 
 // ---------------------------------------------------------------------------
 // Entity extractors
@@ -515,8 +555,7 @@ function extractArrowFunction(
     const nameNode = declarator.childForFieldName('name');
     const valueNode = declarator.childForFieldName('value');
     if (!nameNode || !valueNode) continue;
-    if (valueNode.type !== 'arrow_function' && valueNode.type !== 'function_expression' &&
-        valueNode.type !== 'generator_function_expression') continue;
+    if (!FUNCTION_VALUE_TYPES.has(valueNode.type)) continue;
 
     const name    = nameNode.text;
     const isAsync = valueNode.children.some(c => c.type === 'async');
@@ -634,8 +673,8 @@ function extractCalls(
   repo:       string,
   filePath:   string,
   relations:  Relation[],
+  seen:       Set<string> = new Set<string>(),  // shared when one caller has several bodies
 ): void {
-  const seen = new Set<string>();
   // S001 (t3 + scope-hardening): local `const x = axios.create()` receivers,
   // resolved to their NEAREST lexical scope. axiosScopes is a stack of per-scope
   // frames (innermost last); it is seeded with THIS body's frame and grows/shrinks

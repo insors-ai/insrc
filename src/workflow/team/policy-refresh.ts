@@ -126,9 +126,9 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 		return { ok: true, value: { kind: 'absent', branch, warnings } };
 	}
 
+	// The file exists. Whatever happens next, remember this repo as a team repo: even a file that cannot be read is evidence.
 	const shown = localGit(repo, ['show', `${commit}:${POLICY_PATH}`], deadline);
-	if (!shown.ok) return fail(`the policy file on ${ref} could not be read (${shown.stderr}); nothing was changed`);
-	const parsed = parsePolicyFile(shown.stdout);
+	const parsed = shown.ok ? parsePolicyFile(shown.stdout) : undefined;
 	const anchor = mergeAnchor(sighting?.anchor, (opts.anchor ?? findAnchor)(repo, commit, () => deadline.remainingMs()));
 	// An anchor lookup that ran out of time reads as 'unknown'; never record a result the deadline cut short.
 	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before the policy could be recorded; nothing was recorded');
@@ -137,6 +137,9 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 	} catch (err) {
 		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record the fetched policy');
 		return fail(`the fetched policy could not be recorded (${err instanceof Error ? err.message : String(err)}); ${ref} has already moved, and the next refresh repairs the record`);
+	}
+	if (!shown.ok || parsed === undefined) {
+		return fail(`the policy file on ${ref} exists but could not be read (${shown.ok ? 'unreadable' : shown.stderr}); the repository was recorded as carrying a policy, so team actions are refused until it can be read`);
 	}
 
 	const head = setRemoteHead(localGit, repo, remote, branch, deadline);
@@ -153,11 +156,11 @@ function setRemoteHead(localGit: LocalGit, repo: string, remote: string, branch:
 }
 
 /**
- * True unless the remote HEAD is known to be absent or to name `branch`. A HEAD that cannot be inspected
- * (a failing git, a spent deadline) counts as possibly stale, so the caller fails closed.
+ * True unless the remote HEAD is known to name `branch`. An unset HEAD counts too: the reader then searches every fetched
+ * ref for a policy, so a retained branch with an old one would make a removed policy look present. A HEAD that cannot be
+ * inspected is of course unknown.
  */
 function remoteHeadMayBeStale(localGit: LocalGit, repo: string, remote: string, branch: string, deadline: Deadline): boolean {
 	const head = localGit(repo, ['symbolic-ref', '-q', `refs/remotes/${remote}/HEAD`], deadline);
-	if (!head.ok) return head.quiet !== true; // `-q` exits 1 with no message when the ref is simply not a symbolic ref
-	return head.stdout.trim() !== `refs/remotes/${remote}/${branch}`;
+	return !head.ok || head.stdout.trim() !== `refs/remotes/${remote}/${branch}`;
 }

@@ -377,3 +377,45 @@ test('a default branch whose name has a plus sign refreshes', async () => {
 		assert.ok(result.ok && result.value.branch === 'release+team');
 	} finally { f.cleanup(); }
 });
+
+test('a policy file that exists but cannot be read is still recorded, and the refresh reports it', async () => {
+	const f = makeFixture();
+	try {
+		const { bare, work } = makeOrigin(f);
+		const huge = JSON.stringify({ teamMode: true, signoffStages: ['DEF'], claimsEnforced: true, administrators: [] }) + ' '.repeat(9 * 1024 * 1024);
+		commitFile(work, POLICY_PATH, huge, 'adopt a huge policy');
+		git(work, 'push', '-q', 'origin', 'main');
+		const clone = cloneOf(f, bare, 'clone');
+		const result = await refreshPolicy(clone, { teamDir: f.teamDir });
+		assert.equal(result.ok, false);
+		if (!result.ok) assert.match(result.reason, /could not be read/);
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the repo is remembered as carrying a policy');
+	} finally { f.cleanup(); }
+});
+
+test('removal with the remote HEAD unset and a retained branch that has a policy fixes the HEAD first or fails closed', async () => {
+	const f = makeFixture();
+	try {
+		const { bare, work } = teamOrigin(f);
+		git(work, 'branch', 'old-policy'); // a branch that keeps the policy
+		git(work, 'push', '-q', 'origin', 'old-policy');
+		const clone = cloneOf(f, bare, 'clone');
+		assert.ok((await refreshPolicy(clone, { teamDir: f.teamDir })).ok);
+
+		removeAndCommit(work, POLICY_PATH, 'drop policy');
+		git(work, 'push', '-q', 'origin', 'main');
+		git(clone, 'remote', 'set-head', 'origin', '-d'); // HEAD unset
+		mkdirSync(join(clone, '.git', 'refs', 'remotes', 'origin'), { recursive: true });
+		const headLock = join(clone, '.git', 'refs', 'remotes', 'origin', 'HEAD.lock');
+		writeFileSync(headLock, '');
+
+		const blocked = await refreshPolicy(clone, { teamDir: f.teamDir });
+		assert.equal(blocked.ok, false, 'an unset HEAD that cannot be set is not safe to remove the record behind');
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid');
+		rmSync(headLock);
+
+		const done = await refreshPolicy(clone, { teamDir: f.teamDir });
+		assert.ok(done.ok && done.value.kind === 'absent');
+		assert.deepEqual(readPolicy(clone, { teamDir: f.teamDir }), { ok: true, value: 'none' }, 'solo again: the HEAD names main, which has no policy');
+	} finally { f.cleanup(); }
+});

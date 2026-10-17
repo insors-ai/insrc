@@ -22,8 +22,8 @@
  *     orchestrator resolved (k10);
  *   - distinguishes a present-but-failing/unverified test (confidence:'observation')
  *     from a wholly-missing one (confidence:'breach') (ac3), and NEVER asserts a
- *     pass-state the buildRecord does not support — where the record is absent the
- *     pass-state is framed 'unverified' (the judge runs even with a null buildRecord);
+ *     pass-state the test record does not support — where the record is absent the
+ *     pass-state is framed 'unverified' (the judge runs even with a null testRecord);
  *   - excludes pre-existing gaps in touched-but-unchanged neighbours (ac4/c105):
  *     the grounding is already scoped to the Story's own symbols, plus the shared
  *     changedFiles scope-drop; and
@@ -33,6 +33,7 @@
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import { validateAgainstSchema, type StructuredCall, type StructuredValidator } from '../../../agent/providers/structured-output.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, ReviewDimension } from '../types.js';
+import { testRecordView } from './test-record-view.js';
 
 const DIMENSION: ReviewDimension = 'coverage';
 const MAX_ATTEMPTS = 3;
@@ -94,12 +95,18 @@ function promisedTestsOf(subject: CodeReviewSubject): { level?: string; name: st
 	return out;
 }
 
-/** A short pass-state summary of the build record for ac3. A null buildRecord
- *  degrades to 'unverified' rather than blocking the judge or asserting a green. */
-function buildRecordSummary(subject: CodeReviewSubject): string {
-	return subject.buildRecord === null
-		? 'No build record is available — treat every test\'s pass-state as UNVERIFIED (never assert a green).'
-		: 'A build record is present — use it as the only source of pass/fail; where it does not confirm a green, treat the pass-state as UNVERIFIED.';
+/** The pass-state evidence for ac3: the Story's test record, per file from its
+ *  latest run (ISSUE-1102dc71). With no test record every pass-state is
+ *  unverified, rather than blocking the judge or asserting a green. */
+function testRecordSection(subject: CodeReviewSubject): string {
+	const view = testRecordView(subject);
+	if (view === null) {
+		return '## Test-record results (from the build gate)\nNo test record is available — treat every test\'s pass-state as UNVERIFIED (never assert a green).';
+	}
+	return [
+		'## Test-record results (from the build gate): each test file from its latest run, and each BUILD task\'s result',
+		'```json', JSON.stringify(view, null, 2), '```',
+	].join('\n');
 }
 
 /** Build the coverage prompt (t1). Structural reference (the changed symbols with
@@ -121,16 +128,17 @@ export function buildCoveragePrompt(
 		hasPlan
 			? 'For each test the approved plan PROMISED (listed below), report whether it is present or missing. A promised test with no corresponding test in the grounding is a HIGH missing-promised-test finding naming the test in `expectationRef`, confidence:"breach".'
 			: 'No plan was approved, so there is no promised-tests list — judge the testsReaching coverage of the changed symbols ONLY; do NOT report any missing-promised-test finding.',
-		'DISTINGUISH a test that is present but does NOT pass (or whose pass-state cannot be confirmed) from a wholly-missing test: the former is a distinct finding with confidence:"observation" and a message saying "present but failing/unverified" — NOT reported as "no test". Never assert a pass-state the build record does not support.',
+		'DISTINGUISH a test that is present but does NOT pass (or whose pass-state cannot be confirmed) from a wholly-missing test: the former is a distinct finding with confidence:"observation" and a message saying "present but failing/unverified" — NOT reported as "no test". Never assert a pass-state the test record does not support.',
+		'Take each test\'s pass-state from the test-record results below: a title the record shows passing in its file\'s latest run is passing; a file whose state is failing, or a title that failed or was skipped, is present-but-failing; a title listed under notInLatestRun, a file whose state is unverified, or a test whose file and title the record does not cover is unverified. With no test record, every pass-state is unverified.',
 		hasPlan
 			? 'Do NOT report pre-existing gaps in touched-but-unchanged neighbours — coverage is scoped to THIS Story\'s changed behaviour only. If every changed symbol is exercised and every promised test is present and passing, return an EMPTY findings array. Never manufacture findings.'
 			: 'Do NOT report pre-existing gaps in touched-but-unchanged neighbours — coverage is scoped to THIS Story\'s changed behaviour only. If every changed symbol is exercised, return an EMPTY findings array. Never manufacture findings.',
-		'Reason only over the structured symbol summaries + testsReaching edges and the promised-tests list provided — you are not given raw file contents and you cannot run any test.',
+		'Reason only over the structured symbol summaries + testsReaching edges, the promised-tests list and the test-record results provided — you are not given raw file contents and you cannot run any test.',
 		extraNote ? `\nCorrection from a previous attempt:\n${extraNote}` : '',
 	].filter(s => s.length > 0).join('\n');
 
 	// Structural payload trailing: the changed symbols (with testsReaching), then
-	// the promised tests + build-record signal, then the output-shape reminder — last.
+	// the promised tests + test-record results, then the output-shape reminder — last.
 	const user = [
 		'## The Story\'s changed symbols (structured summaries with their test-reaching edges)',
 		'```json', JSON.stringify(grounding.symbols, null, 2), '```',
@@ -138,7 +146,7 @@ export function buildCoveragePrompt(
 			? '## The approved plan\'s promised tests (each should be present and passing)'
 			: '## The approved plan\'s promised tests (none — no plan was approved)',
 		'```json', JSON.stringify(promisedTestsOf(subject), null, 2), '```',
-		`## Build-record signal\n${buildRecordSummary(subject)}`,
+		testRecordSection(subject),
 		'## Output',
 		'Return { "findings": [ { "severity": "HIGH|MED|LOW", "location": "file:line", "message": "...", "expectationRef": "the uncovered symbol or missing promised test", "confidence": "breach|observation" } ] }.',
 		'Each finding.location MUST be a file within the Story\'s changed set. Return an empty findings array if the changed behaviour is fully covered.',

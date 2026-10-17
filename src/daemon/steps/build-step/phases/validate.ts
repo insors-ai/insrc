@@ -344,8 +344,8 @@ async function handleStandaloneValidate(
 		mappingNote = mapping.note;
 	} else {
 		// A trivial build names no tests: `tests` is ignored, and the test files
-		// the commit touched are run.
-		checks = trivialCheckPlan(repoPath);
+		// the build's range touched are run.
+		checks = trivialCheckPlan(repoPath, resolveStoryRangeBase(repoPath, epicHash, storyId));
 	}
 	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence });
 	// Carry the route the caller declared into the persist. This branch KNOWS it is

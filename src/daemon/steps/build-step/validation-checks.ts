@@ -319,15 +319,23 @@ export function smallStandaloneCheckPlan(
 	};
 }
 
-/** Trivial standalone build (no LLD): the test files the build commit touched, possibly none. */
-export function trivialCheckPlan(repoPath: string): ValidationCheckPlan {
+/**
+ * Trivial standalone build (no LLD): the test files the build touched, possibly
+ * none. With the Story's range base, that is every file changed in `base..HEAD`,
+ * the same range the change log and the typecheck use; with none, the HEAD
+ * commit's files (ISSUE-91640defac1b5816).
+ */
+export function trivialCheckPlan(repoPath: string, base?: string | undefined): ValidationCheckPlan {
 	let touched: string[] = [];
 	try {
-		// --diff-filter=d leaves out files the commit deleted: they no longer exist to run.
-		touched = execFileSync('git', ['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD'], { cwd: repoPath, encoding: 'utf8' })
+		// --diff-filter=d leaves out files the build deleted: they no longer exist to run.
+		const args = base !== undefined
+			? ['diff', '--name-only', '--diff-filter=d', base, 'HEAD']
+			: ['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD'];
+		touched = execFileSync('git', args, { cwd: repoPath, encoding: 'utf8' })
 			.split('\n').filter(f => f.endsWith('.test.ts') && f.split('/').includes('__tests__'));
 	} catch (err) {
-		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the HEAD commit\'s files');
+		log.warn({ repoPath, base, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the build\'s files');
 	}
 	const testFiles = [...new Set(touched)].sort();
 	return {

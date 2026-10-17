@@ -151,7 +151,7 @@ test('ghCurrentLogin: reads gh api user .login', () => {
 	assert.equal(ghCurrentLogin(), 'subhagho');
 });
 
-test('ghCurrentLogin: throws when no login is returned', () => {
+test('ghCurrentLogin still throws the returned-no-login Error for empty output', () => {
 	_setTrackerExecForTests(((cmd: string, args: readonly string[]) => (args.join(' ').startsWith('api user') ? '' : '')) as Parameters<typeof _setTrackerExecForTests>[0]);
 	assert.throws(() => ghCurrentLogin(), /no login/);
 });

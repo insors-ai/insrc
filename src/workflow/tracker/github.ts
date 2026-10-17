@@ -176,7 +176,7 @@ export function ghAuthOk(): { readonly ok: true } | { readonly ok: false; readon
  *  (logged by the caller); label creation is best-effort. */
 export function ghCreateLabel(owner: string, repo: string, name: string): boolean {
 	try {
-		silent('gh', ['label', 'create', name, '--repo', `${owner}/${repo}`, '--force']);
+		runGh(['label', 'create', name, '--repo', `${owner}/${repo}`, '--force'], { discardOutput: true });
 		return true;
 	} catch {
 		return false;
@@ -199,10 +199,21 @@ export interface CreatedIssue {
 	readonly typed: boolean;   // whether the native issue type was applied
 }
 
+/** True only for a gh rejection that names the issue type (an org without
+ *  issue types enabled answers 422 about the type). */
+function isIssueTypeRejection(err: unknown): boolean {
+	return err instanceof GhCommandError
+		&& err.kind === 'rejected'
+		&& /\btypes?\b/i.test(err.reason)
+		&& /422|unprocessable|validation failed|not enabled|not supported|unsupported|unknown|invalid/i.test(err.reason);
+}
+
 /** Create an issue via the REST API (so the numeric database `id` comes
  *  back for sub-issue linking) with an optional native issue TYPE. When
- *  a type is given but rejected (org without issue types enabled), retries
- *  once WITHOUT the type so the issue is still created — fail-open. */
+ *  a type is given and the type is rejected (org without issue types
+ *  enabled), retries once WITHOUT the type so the issue is still created.
+ *  Any other failure of the typed POST (timeout, missing tool or sign-in,
+ *  a non-type rejection) is rethrown and never followed by a second POST. */
 export function ghCreateIssueTyped(
 	owner: string, repo: string, title: string, body: string,
 	labels: readonly string[], issueType?: string,
@@ -218,11 +229,16 @@ export function ghCreateIssueTyped(
 	};
 	if (typeof issueType === 'string' && issueType.length > 0) {
 		try {
-			const r = parse(out('gh', [...base, '-f', `type=${issueType}`]));
+			const r = parse(runGh([...base, '-f', `type=${issueType}`]));
 			return { ref: buildRef(owner, repo, r.number), id: r.id, typed: true };
-		} catch { /* org may not have issue types — fall through untyped */ }
+		} catch (err) {
+			// Fall through untyped ONLY when the type itself was rejected (org without
+			// issue types). A timeout or any other failure may have committed the issue,
+			// so a second POST could duplicate it: rethrow instead.
+			if (!isIssueTypeRejection(err)) throw err;
+		}
 	}
-	const r = parse(out('gh', base));
+	const r = parse(runGh(base));
 	return { ref: buildRef(owner, repo, r.number), id: r.id, typed: false };
 }
 
@@ -230,20 +246,20 @@ export function ghCreateIssueTyped(
  *  sub-issue of `parentRef`. Throws on API error (the caller wraps this
  *  in a best-effort guard since sub-issues may be disabled). */
 export function ghLinkSubIssue(owner: string, repo: string, parentRef: string, childId: number): void {
-	silent('gh', ['api', '-X', 'POST', `repos/${owner}/${repo}/issues/${parseIssueRef(parentRef).number}/sub_issues`, '-F', `sub_issue_id=${childId}`]);
+	runGh(['api', '-X', 'POST', `repos/${owner}/${repo}/issues/${parseIssueRef(parentRef).number}/sub_issues`, '-F', `sub_issue_id=${childId}`], { discardOutput: true });
 }
 
 export function ghGetIssueBody(owner: string, repo: string, ref: string): string {
-	return out('gh', ['issue', 'view', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--json', 'body', '-q', '.body']);
+	return runGh(['issue', 'view', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--json', 'body', '-q', '.body']);
 }
 
 export function ghEditIssueBody(owner: string, repo: string, ref: string, body: string): void {
-	silent('gh', ['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body]);
+	runGh(['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body], { discardOutput: true });
 }
 
 /** Post a comment on an issue. */
 export function ghComment(owner: string, repo: string, ref: string, body: string): void {
-	silent('gh', ['issue', 'comment', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body]);
+	runGh(['issue', 'comment', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body], { discardOutput: true });
 }
 
 /** Close an issue (`gh issue close`). The thin sibling of ghEditIssueBody /
@@ -252,7 +268,7 @@ export function ghComment(owner: string, repo: string, ref: string, body: string
  *  no shell, no REST). Closing an already-closed issue is a no-op success; a
  *  missing/deleted issue exits non-zero and the error propagates. */
 export function ghCloseIssue(owner: string, repo: string, ref: string): void {
-	silent('gh', ['issue', 'close', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`]);
+	runGh(['issue', 'close', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`], { discardOutput: true });
 }
 
 /** Current issue state + status labels — for sync. */
@@ -279,14 +295,14 @@ export function ghFindIssueByLabels(owner: string, repo: string, labels: readonl
  *  Best-effort: milestone plumbing failures don't block issue creation. */
 export function ghEnsureMilestone(owner: string, repo: string, title: string): void {
 	try {
-		silent('gh', ['api', '-X', 'POST', `repos/${owner}/${repo}/milestones`, '-f', `title=${title}`]);
+		runGh(['api', '-X', 'POST', `repos/${owner}/${repo}/milestones`, '-f', `title=${title}`], { discardOutput: true });
 	} catch {
 		// 422 = already exists; anything else is surfaced by the attach step.
 	}
 }
 
 export function ghAttachMilestone(owner: string, repo: string, ref: string, title: string): void {
-	silent('gh', ['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--milestone', title]);
+	runGh(['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--milestone', title], { discardOutput: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -461,7 +477,7 @@ const SEARCH_GQL =
 /** Login of the currently-authenticated `gh` user, from `gh api user`.
  *  This is the authoritative current-user source (not any config value). */
 export function ghCurrentLogin(): string {
-	const login = out('gh', ['api', 'user', '-q', '.login']);
+	const login = runGh(['api', 'user', '-q', '.login']);
 	if (login.length === 0) throw new Error('gh api user returned no login (is `gh` authenticated?)');
 	return login;
 }

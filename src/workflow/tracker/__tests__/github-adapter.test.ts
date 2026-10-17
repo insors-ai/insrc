@@ -13,7 +13,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { GH_TIMEOUT_MS, GhCommandError, runGh, _setTrackerExecForTests } from '../github.js';
+import { GH_TIMEOUT_MS, GhCommandError, ghCreateIssueTyped, ghGetIssueBody, runGh, _setTrackerExecForTests } from '../github.js';
 
 afterEach(() => _setTrackerExecForTests());
 
@@ -88,4 +88,45 @@ test('runGh passes the 10 s timeout option to the exec seam', () => {
 	assert.equal(seen[0]?.opts?.['encoding'], 'utf8');
 	assert.equal(seen[1]?.opts?.['timeout'], 10_000);
 	assert.deepEqual(seen[1]?.opts?.['stdio'], ['ignore', 'ignore', 'pipe']);
+});
+
+// ---------------------------------------------------------------------------
+// Migrated wrappers (compatibility exceptions 1 and 2)
+// ---------------------------------------------------------------------------
+
+const hasType = (args: readonly string[]): boolean => args.some(a => a.startsWith('type='));
+
+test('compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected', () => {
+	const failures: Array<[string, Error]> = [
+		['timeout', execError({ code: 'ETIMEDOUT' })],
+		['missing tool', execError({ code: 'ENOENT' })],
+		['missing sign-in', execError({ stderr: 'gh auth login required' })],
+		['non-type rejection', execError({ stderr: 'HTTP 403: Resource not accessible' })],
+	];
+	for (const [label, err] of failures) {
+		let posts = 0;
+		_setTrackerExecForTests((_cmd, args) => { if (args.includes('POST')) posts += 1; throw err; });
+		assert.throws(() => ghCreateIssueTyped('o', 'r', 't', 'b', ['x'], 'Task'), GhCommandError, label);
+		assert.equal(posts, 1, `${label}: exactly one POST`);
+	}
+});
+
+test('a typed create rejected as an unknown issue type is retried once untyped and reports typed false', () => {
+	const seen: boolean[] = [];
+	_setTrackerExecForTests((_cmd, args) => {
+		seen.push(hasType(args));
+		if (hasType(args)) throw execError({ stderr: 'HTTP 422: Validation Failed: issue type not enabled' });
+		return JSON.stringify({ number: 7, id: 700 });
+	});
+	const r = ghCreateIssueTyped('o', 'r', 't', 'b', ['x'], 'Task');
+	assert.deepEqual(seen, [true, false]);
+	assert.equal(r.typed, false);
+	assert.equal(r.id, 700);
+});
+
+test('compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable', () => {
+	let opts: Record<string, unknown> | undefined;
+	_setTrackerExecForTests((_cmd, _args, o) => { opts = o as Record<string, unknown> | undefined; throw execError({ code: 'ETIMEDOUT' }); });
+	assert.equal(kindOf(() => ghGetIssueBody('o', 'r', 'o/r#1')).kind, 'unreachable');
+	assert.equal(opts?.['timeout'], GH_TIMEOUT_MS);
 });

@@ -4,7 +4,7 @@
     "epicHash": "bd1c6c9005ff6390",
     "storyId": "S001",
     "createdAt": "2026-10-17T09:39:24.421Z",
-    "updatedAt": "2026-10-17T09:51:00.367Z",
+    "updatedAt": "2026-10-17T10:04:43.184Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T08:20:53.100Z",
     "epicSlug": "record-calls-made-module-level-statements"
@@ -162,6 +162,67 @@
               },
               {
                 "title": "TypeScript/JavaScript calls outside any function",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "78c8493a",
+        "ranAt": "2026-10-17T10:04:43.184Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/grounding.test.ts",
+                "title": "isTestFile accepts the Python, Go and JVM test conventions and every path it accepted before, and rejects ordinary source files",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/grounding.test.ts",
+                "title": "isTestFile recognises __tests__ dirs and .test/.spec suffixes only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/grounding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 907,
+            "titles": [
+              {
+                "title": "assembleCodeReviewGrounding: emits ChangedSymbolSummary rows with callers/callees/testsReaching and no file text",
+                "result": "pass"
+              },
+              {
+                "title": "assembleCodeReviewGrounding: a changed file with no indexed entities yields no rows (omitted, not error)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleCodeReviewGrounding: one row per entity, multiple entities in a file share the file path",
+                "result": "pass"
+              },
+              {
+                "title": "assembleCodeReviewGrounding: empty changed set yields empty grounding",
+                "result": "pass"
+              },
+              {
+                "title": "isTestFile recognises __tests__ dirs and .test/.spec suffixes only",
+                "result": "pass"
+              },
+              {
+                "title": "isTestFile accepts the Python, Go and JVM test conventions and every path it accepted before, and rejects ordinary source files",
                 "result": "pass"
               }
             ],

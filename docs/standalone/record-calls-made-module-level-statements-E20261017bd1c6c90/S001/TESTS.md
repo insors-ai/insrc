@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -43,3 +43,20 @@ Run at 2026-10-17T09:51:00.367Z on commit `553b3204`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts` | 0 | 9 | 0.4 s |  |
+
+## t3
+
+Run at 2026-10-17T10:04:43.184Z on commit `78c8493a`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | isTestFile accepts the Python, Go and JVM test conventions and every path it accepted before, and rejects ordinary source files | `src/workflow/code-review/__tests__/grounding.test.ts` |
+| pass | isTestFile recognises __tests__ dirs and .test/.spec suffixes only | `src/workflow/code-review/__tests__/grounding.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/__tests__/grounding.test.ts` | 0 | 6 | 0.9 s |  |

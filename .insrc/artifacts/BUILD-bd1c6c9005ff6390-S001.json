@@ -4,7 +4,7 @@
     "epicHash": "bd1c6c9005ff6390",
     "storyId": "S001",
     "createdAt": "2026-10-17T09:39:24.421Z",
-    "updatedAt": "2026-10-17T09:51:00.367Z",
+    "updatedAt": "2026-10-17T10:04:43.184Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T08:20:53.100Z",
@@ -19,9 +19,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "extractClass credits calls in non-function field initializers (public_field_definition in TypeScript, field_definition in JavaScript) and in the constructor body to the class entity, one CALLS per callee per class; a function-valued field credits no caller. generator_function is a function value, so a generator-valued declarator gets its own function entity. Six mutations each fail the new tests. Left out: class static blocks.",
+    "summary": "isTestFile also accepts test_*.py, *_test.py, *_test.go, any src/test/ directory, *Test.java/.kt/.scala and *Spec.scala, keeping the __tests__/ directory and TS/JS .test./.spec. branches. Eleven mutations each fail the new test.",
     "testRecord": {
       "md": "docs/standalone/record-calls-made-module-level-statements-E20261017bd1c6c90/S001/TESTS.md"
     },
@@ -31,9 +35,51 @@
           "file": ".insrc/artifacts/DEF-670419c4ad8bea8e.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T09:51:00.367Z"
+        "timestamp": "2026-10-17T10:04:43.184Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-bd1c6c9005ff6390-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:04:43.184Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:04:43.184Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:04:43.184Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/typescript.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:04:43.184Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/grounding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:04:43.184Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/grounding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:04:43.184Z"
       }
     ],
-    "commit": "553b3204"
+    "commit": "78c8493a"
   }
 }

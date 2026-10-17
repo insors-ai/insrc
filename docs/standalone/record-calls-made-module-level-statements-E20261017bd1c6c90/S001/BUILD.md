@@ -2,21 +2,28 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-17T09:39:24.421Z  ·  **Updated:** 2026-10-17T09:51:00.367Z
+**Standalone:** yes  ·  **Created:** 2026-10-17T09:39:24.421Z  ·  **Updated:** 2026-10-17T10:04:43.184Z
 
-**Commit:** 553b3204
+**Commit:** 78c8493a
 
 ## Summary
 
-extractClass credits calls in non-function field initializers (public_field_definition in TypeScript, field_definition in JavaScript) and in the constructor body to the class entity, one CALLS per callee per class; a function-valued field credits no caller. generator_function is a function value, so a generator-valued declarator gets its own function entity. Six mutations each fail the new tests. Left out: class static blocks.
+isTestFile also accepts test_*.py, *_test.py, *_test.go, any src/test/ directory, *Test.java/.kt/.scala and *Spec.scala, keeping the __tests__/ directory and TS/JS .test./.spec. branches. Eleven mutations each fail the new test.
 
 ## Tasks validated
 
 - ✓ `t1`
 - ✓ `t2`
+- ✓ `t3`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/DEF-670419c4ad8bea8e.json` — **insrc-build** (2026-10-17T09:51:00.367Z)
+- `.insrc/artifacts/DEF-670419c4ad8bea8e.json` — **insrc-build** (2026-10-17T10:04:43.184Z)
+- `.insrc/artifacts/PLAN-bd1c6c9005ff6390-S001.json` — **insrc-build** (2026-10-17T10:04:43.184Z)
+- `docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md` — **insrc-build** (2026-10-17T10:04:43.184Z)
+- `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts` — **insrc-build** (2026-10-17T10:04:43.184Z)
+- `src/indexer/parser/typescript.ts` — **insrc-build** (2026-10-17T10:04:43.184Z)
+- `src/workflow/code-review/__tests__/grounding.test.ts` — **insrc-build** (2026-10-17T10:04:43.184Z)
+- `src/workflow/code-review/grounding.ts` — **insrc-build** (2026-10-17T10:04:43.184Z)

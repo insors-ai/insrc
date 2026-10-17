@@ -24,7 +24,6 @@
     "lldRunId": "wf-1792216010054-u5nrq5",
     "lldEffectiveHash": "381fe69e77e409d505db564a5981d474ae65c6197d503bfb89d3619f99f11854",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-17T06:20:59.715Z",
     "rangeBase": "bcd270b5f98581859b6b2c1c914f771c2dc6bfe6"
   },
   "body": {
@@ -273,8 +272,8 @@
           "Only the default branch tracking ref changes; no tag, other tracking ref, FETCH_HEAD or prune effect.",
           "A refresh brings a changed policy into the tracking ref and the reader then applies it.",
           "An unreachable remote reports failure and leaves the last fetched policy in use.",
-          "A sighting write failure reports failure, a cosmetic HEAD failure is only a warning, and a second refresh is refused while the lock is held.",
-          "The policy file removed from the default branch removes the sighting and the repo reads as none."
+          "A sighting write failure reports failure, a cosmetic HEAD failure is only a warning (except where the HEAD still points at another retained branch, see the removal check), and a second refresh is refused while the lock is held.",
+          "The policy file removed from the default branch removes the sighting and the repo reads as none; the one exception is a remote HEAD that still points at another retained branch and cannot be updated, where the previous record is put back and the refresh fails closed so the old branch's policy cannot be resurrected."
         ],
         "derivedFrom": [
           "c2",

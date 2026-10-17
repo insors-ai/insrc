@@ -87,8 +87,8 @@ Implement the guarded refresh sequence under the per-repository lock and one 10 
 - Only the default branch tracking ref changes; no tag, other tracking ref, FETCH_HEAD or prune effect.
 - A refresh brings a changed policy into the tracking ref and the reader then applies it.
 - An unreachable remote reports failure and leaves the last fetched policy in use.
-- A sighting write failure reports failure, a cosmetic HEAD failure is only a warning, and a second refresh is refused while the lock is held.
-- The policy file removed from the default branch removes the sighting and the repo reads as none.
+- A sighting write failure reports failure, a cosmetic HEAD failure is only a warning (except where the HEAD still points at another retained branch, see the removal check), and a second refresh is refused while the lock is held.
+- The policy file removed from the default branch removes the sighting and the repo reads as none; the one exception is a remote HEAD that still points at another retained branch and cannot be updated, where the previous record is put back and the refresh fails closed so the old branch's policy cannot be resurrected.
 
 ### 1.7 E20261017315d510c:S002:T007 — StarterPolicyWriter
 

@@ -6,6 +6,10 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { connect } from 'node:net';
 import type { Socket } from 'node:net';
+import { EventEmitter } from 'node:events';
+import { createShutdown } from '../shutdown.js';
+import { assertUnderstandingRoles, understandingRoles } from '../../understanding/roles.js';
+import { roleDescriptor } from '../../config/role-taxonomy.js';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { IpcServer } from '../server.js';
@@ -116,4 +120,56 @@ test('Real watch snapshots handle races, reconnect, deletion and abort with exac
   const missing = await client('understanding.watch', { assessmentId: id }, true);
   assert.deepEqual(missing.frames.map(f => f.stream), ['error']);
   assert.equal(missing.frames[0]!.data.protocolVersion, 1);
+});
+
+
+test('All five understanding roles require critical core descriptors', () => {
+  assert.equal(understandingRoles.length, 5);
+  assertUnderstandingRoles();
+  for (const id of understandingRoles) {
+    assert.deepEqual(roleDescriptor(id), { id, criticality: 'critical', defaultTier: 'core' });
+    assert.throws(() => assertUnderstandingRoles(key => key === id ? undefined : roleDescriptor(key)), /unavailable/);
+  }
+});
+
+test('Healthy shutdown flushes final frames before storage close and stops only once', async () => {
+  const id = (await service.prepare(owner, scope, randomUUID())).view.id;
+  const watch = await client('understanding.watch', { assessmentId: id }, true);
+  const order: string[] = [];
+  let finished!: () => void;
+  const done = new Promise<void>(resolve => { finished = resolve; });
+  const shutdown = createShutdown({
+    log: { info() {}, warn() {} }, queueDone: Promise.resolve(),
+    stopBackgroundWork: () => { order.push('stop'); service.stop(); routes.stop(); void server.close(); },
+    closeStores: async () => {
+      assert.equal(await server.flushPendingWrites(1000), true);
+      order.push('flush');
+      server.disconnectClients();
+      order.push('stores');
+    },
+    end: { clearPid() {}, exit: () => { order.push('exit'); finished(); }, killSelf: () => assert.fail('unexpected kill'),
+      lastLinePath: join(dir, 'last.log'), storeHealth: () => ({ state: 'ok' }) },
+  });
+  shutdown('SIGTERM');
+  shutdown('SIGINT');
+  await done;
+  await until(() => watch.frames.some(f => f.stream === 'done'));
+  assert.deepEqual(order, ['stop', 'flush', 'stores', 'exit']);
+  assert.deepEqual(watch.frames.map(f => f.stream), ['progress', 'progress', 'done']);
+  assert.equal(watch.frames[1]!.data.type, 'unavailable');
+  await assert.rejects(service.resume(owner, id), /unavailable/);
+  assert.equal(routes.watchCount(), 0);
+});
+
+test('Socket write flushing is bounded and settles disconnected writes', async () => {
+  class BlockedSocket extends EventEmitter { write(): boolean { return false; } }
+  const socket = new BlockedSocket();
+  const internal = server as unknown as { writeLine(socket: BlockedSocket, line: string): void };
+  internal.writeLine(socket, 'pending');
+  const before = Date.now();
+  assert.equal(await server.flushPendingWrites(20), false);
+  assert.ok(Date.now() - before < 500);
+  socket.emit('close');
+  assert.equal(await server.flushPendingWrites(1000), false);
+  assert.equal(socket.listenerCount('close'), 0);
 });

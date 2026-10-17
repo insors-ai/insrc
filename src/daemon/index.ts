@@ -1987,6 +1987,10 @@ async function main(): Promise<void> {
 	initChatHandlers();
 
 	await server.listen();
+	try {
+		understandingService = await UnderstandingService.open(PATHS.sockFile);
+		understandingHostId = understandingService.hostId;
+	} catch { log.warn('understanding service unavailable: initialization checks failed'); }
 	log.info('ready');
 
 	// Phase 1 cleanup: orphan-handoff worktree scan stripped along with
@@ -2049,6 +2053,8 @@ async function main(): Promise<void> {
 	const shutdown = createShutdown({
 		log,
 		stopBackgroundWork: () => {
+			understandingService?.stop();
+			understandingRoutes.stop();
 			clearInterval(pruneTimer);
 			clearInterval(readerCheckTimer);
 			stopTodosRetention();
@@ -2059,6 +2065,8 @@ async function main(): Promise<void> {
 		},
 		queueDone,
 		closeStores: async () => {
+			await server.flushPendingWrites(1000);
+			server.disconnectClients();
 			// closeDb() is a no-op post-LMDB migration (kept for
 			// caller back-compat). The in-memory DuckDB pool +
 			// per-source analyzer pools still hold connections that

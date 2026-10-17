@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -120,3 +120,25 @@ Run at 2026-10-17T13:29:01.179Z on commit `909b4bc2`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/understanding/__tests__/service.test.ts` | 0 | 6 | 3.7 s |  |
+
+## t6
+
+Run at 2026-10-17T13:34:07.366Z on commit `8d3f6bc1`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: RPC forged-input rejection and typed revision-conflict result**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | RPC rejects forged authority and returns typed revision conflicts | `src/daemon/__tests__/understanding-rpc.test.ts` |
+
+**integration: Real watch framing, snapshot race, reconnect, terminal and abort fixtures**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames | `src/daemon/__tests__/understanding-rpc.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/understanding-rpc.test.ts` | 0 | 2 | 0.9 s |  |

@@ -9,6 +9,7 @@ import { AssessmentError, AttemptSchema, AuditSchema, CommandSchema, DeleteSchem
 import type { AssessmentRecord, AssessmentView, AssessmentScope, AnswerAttempt, CommandEnvelope } from '../shared/understanding.js';
 import type { ResolvedLearner } from './identity.js';
 import { readAssessment, writeAssessment, tupleKey } from './storage.js';
+import { assertUnderstandingRoles } from './roles.js';
 import { enforcePrivatePaths } from './privacy.js';
 import { initializeAssessmentStorage, listAssessments } from './storage.js';
 import { assertAssessmentSchema } from './storage.js';
@@ -54,22 +55,36 @@ function audit(store: GraphStore, r: AssessmentRecord, kind: string): void {
 export class UnderstandingService {
   private readonly schemas = new DomainSchemas();
   private readonly transitions = new Map<string, TransitionHandler>();
-  private constructor() {}
+  private stopping = false;
+  private constructor(readonly hostId: string) {}
+  stop(): void { this.stopping = true; this.listeners.clear(); }
+  private assertActive(): void { if (this.stopping) throw new AssessmentError('unavailable'); }
   static async open(socketPath: string): Promise<UnderstandingService> {
+    assertUnderstandingRoles();
     await getGraphStore();
     enforcePrivatePaths(getGraphStorePath(), socketPath);
     await initializeAssessmentStorage();
-    const service = new UnderstandingService();
+    const hostId = await withWriteTxn(store => {
+      const key = tupleKey('installationHostId');
+      const value: unknown = store.understandingMeta.get(key);
+      if (value !== undefined) return parse(Type.String({ pattern: '^[0-9a-f-]{36}$' }), value);
+      const id = randomUUID();
+      store.understandingMeta.putSync(key, id);
+      return id;
+    });
+    const service = new UnderstandingService(hostId);
     await service.recover();
     return service;
   }
   async list(owner: Owner, repoId: string, limit = 50, after?: string): Promise<AssessmentView[]> {
+    this.assertActive();
     return (await listAssessments(owner.ownerPrincipal, owner.learner.key, repoId, limit, after))
       .filter(r => r.learner.key === owner.learner.key).map(publicView);
   }
   private readonly listeners = new Map<string, Set<(deleted: boolean) => void>>();
 
   async subscribe(owner: Owner, id: string, listener: (deleted: boolean) => void): Promise<() => void> {
+    this.assertActive();
     owned(await getGraphStore(), id, owner);
     const listeners = this.listeners.get(id) ?? new Set();
     listeners.add(listener);
@@ -86,6 +101,7 @@ export class UnderstandingService {
 
   async recover(): Promise<void> {
     await withWriteTxn(store => {
+      this.assertActive();
       assertAssessmentSchema(store);
       for (const { value } of store.understandingCurrent.getRange()) {
         const r = parseRecord(value);
@@ -110,6 +126,7 @@ export class UnderstandingService {
   async delete(owner: Owner, input: CommandEnvelope & { confirmed: true }): Promise<void> {
     const command = parse(DeleteSchema, input);
     await withWriteTxn(store => {
+      this.assertActive();
       const r = owned(store, command.assessmentId, owner);
       if (r.scopeFingerprint !== scopeFingerprint(command.scope)) throw new AssessmentError('scope-mismatch');
       if (r.view.revision !== command.expectedRevision) throw new AssessmentError('revision-conflict', publicView(r));
@@ -139,6 +156,7 @@ export class UnderstandingService {
     const command = parse(CommandSchema, { requestId, assessmentId: requestId, expectedRevision: 1, scope });
     const hash = requestHash('prepare', { scope, learner });
     const result = await withWriteTxn(store => {
+      this.assertActive();
       const prepareKey = tupleKey('prepare', owner.ownerPrincipal, learner.key, requestId);
       const previousId: unknown = store.understandingRequest.get(prepareKey);
       if (previousId !== undefined && typeof previousId !== 'string') throw new AssessmentError('schema-unsupported');
@@ -166,6 +184,7 @@ export class UnderstandingService {
   }
 
   async resume(owner: Owner, id: string): Promise<AssessmentView> {
+    this.assertActive();
     return publicView(owned(await getGraphStore(), id, owner));
   }
 
@@ -179,6 +198,7 @@ export class UnderstandingService {
     const payload = kind === 'cancel' ? parse(Type.Null(), rawPayload) : this.schemas.validate(kind, rawPayload);
     const hash = requestHash(kind, { command, payload });
     const result = await withWriteTxn(store => {
+      this.assertActive();
       const current = owned(store, command.assessmentId, owner);
       if (expectedJob && (!current.job || current.job.status !== 'running' || current.job.id !== expectedJob.id
         || current.lifecycleGeneration !== expectedJob.generation || current.job.generation !== expectedJob.generation
@@ -229,6 +249,7 @@ export class UnderstandingService {
 
   async history(owner: Owner, id: string, limit = 50, after = 0): Promise<AnswerAttempt[]> {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100 || !Number.isSafeInteger(after) || after < 0) throw new AssessmentError('invalid-input');
+    this.assertActive();
     const store = await getGraphStore();
     owned(store, id, owner);
     const prefix = tupleKey(id);

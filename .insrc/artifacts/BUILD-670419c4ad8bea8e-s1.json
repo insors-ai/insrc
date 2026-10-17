@@ -4,7 +4,7 @@
     "epicHash": "670419c4ad8bea8e",
     "storyId": "s1",
     "createdAt": "2026-10-17T13:09:28.300Z",
-    "updatedAt": "2026-10-17T13:29:01.179Z",
+    "updatedAt": "2026-10-17T13:34:07.366Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
     "epicSlug": "understand-changes-before-committing"
@@ -30,35 +30,39 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "Mandatory service open secures the actual active GraphStore path, supports file and directory LMDB layouts, checks the lock file, and recovers before access. Six service tests plus 20 graph-store regressions pass; baseline failures remain recorded.",
+    "summary": "Reconciled revision-before-replay with approved LLD §3.4: compute current revision match before replay; exact retry additionally proves stored appliedRevision equals expectedRevision+1 and does not exceed current revision. It returns current view plus original appliedRevision without mutation, as explicitly required by LLD and t4. Fresh stale commands still conflict. Added real-RPC replay evidence; eight tests and typecheck pass.",
     "testRecord": {
       "md": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-b94cf2c9058fd82a-S001.json"
+          "file": "src/analyze/summariser/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:29:01.179Z"
+        "timestamp": "2026-10-17T13:34:07.366Z"
       },
       {
         "target": {
-          "file": "src/daemon/__tests__/queue-code-index-work.test.ts"
+          "file": "src/db/__tests__/doc-summaries-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:29:01.179Z"
+        "timestamp": "2026-10-17T13:34:07.366Z"
       },
       {
         "target": {
-          "file": "src/daemon/queue.ts"
+          "file": "src/db/doc-summaries.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:29:01.179Z"
+        "timestamp": "2026-10-17T13:34:07.366Z"
       }
     ],
-    "commit": "909b4bc2"
+    "commit": "8d3f6bc1"
   }
 }

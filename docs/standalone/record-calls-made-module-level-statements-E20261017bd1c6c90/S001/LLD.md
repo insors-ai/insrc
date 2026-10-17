@@ -5,8 +5,8 @@
 ## Summary
 
 **Epic:** `record-calls-made-module-level-statements`
-**HLD base run:** `wf-1792227389674-fz2kqk`
-**HLD effective hash:** `e527a7d68139...`
+**HLD base run:** `wf-1792227561056-oiy7od`
+**HLD effective hash:** `4e87fce7206d...`
 
 In TypeScript and JavaScript, every call is now recorded with the nearest entity, even when it sits in no function: calls at the top of a file, in exported initializers and in export default go to the file, and calls in class field initializers and constructors go to the class. Every test('…', () => { … }) body is such a call, so test files reach the code they call. The code review also recognises Python, Go and JVM test files.
 
@@ -44,9 +44,10 @@ walkNode(node: SyntaxNode, source: string, repo: string, repoId: number, filePat
 
 **Postconditions:**
 - A program-level statement that is not an import, function, class, interface, type alias or lexical/variable declaration (expression_statement, if/for/while/try/block/labeled) has extractCalls run over it with fileId as caller; the walk into its children continues as today.
-- For a lexical/variable declaration at program level or as an export_statement's declaration, each declarator whose value is not an arrow_function, function_expression or generator_function_expression has extractCalls run over its value with fileId as caller; function-valued declarators keep today's entity and caller.
+- For a lexical/variable declaration at program level or as an export_statement's declaration, each declarator whose value is not an arrow_function, function_expression or generator_function has extractCalls run over its value with fileId as caller; function-valued declarators (including generator_function) keep or gain their own function entity and caller.
 - An export_statement with a `value` (export default <expr>) has extractCalls run over the value with fileId as caller; an exported function or class declaration is walked as today and never scanned with the file as caller.
 - Calls inside function declarations, class methods and function-valued declarators are not also credited to the file unless they are nested inside a statement the file is credited for.
+- extractArrowFunction treats a generator_function value as a function: the declarator gets a function entity and its body's calls are CALLS from that entity, in TypeScript and JavaScript.
 
 ### 2.2 `extractClass`
 
@@ -60,7 +61,7 @@ extractClass(node: SyntaxNode, source: string, repo: string, repoId: number, fil
 **Returns:** `void` — Unchanged.
 
 **Postconditions:**
-- Each class-body field (public_field_definition) whose value is not a function has extractCalls run over the value with the class entity as caller.
+- Each class-body field (public_field_definition in TypeScript, field_definition in JavaScript) whose value is not a function has extractCalls run over the value with the class entity as caller.
 - The constructor's body has extractCalls run over it with the class entity as caller; the constructor still creates no entity of its own (the class covers it, as today).
 - Other methods keep their own entities and callers.
 
@@ -82,7 +83,7 @@ isTestFile(file: string): boolean
 
 ### 3.1 `CALLS relation` — invariant-change
 
-A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the file entity (calls outside any function) or a class entity (field initializers, constructor bodies) as its source. No new entity kind, no new field, no store schema change.
+A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the file entity (calls outside any function) or a class entity (field initializers, constructor bodies) as its source. No new entity kind, no new field, no store schema change. A generator-valued declarator now gets a function entity, as other function-valued declarators do.
 
 **Call sites:**
 - `src/indexer/parser/typescript.ts:150-200`
@@ -116,6 +117,8 @@ A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the fil
 | A module-level console.log | Skipped as a built-in, as inside functions. |
 | A module-level axios.get(url) | A CALLS_HTTP from the file entity. |
 | isTestFile on src/x.ts, pkg/a.go, app/models.py, src/main/java/Foo.java | false. |
+| JavaScript: class C { x = make(); } | CALLS make from C (field_definition). |
+| const g = function* () { foo(); }; (TS and JS) | An entity g with CALLS foo from g; foo is not credited to the file. |
 
 **Invariants to preserve**
 
@@ -130,7 +133,7 @@ A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the fil
 **Test levels**
 
 - **unit** — TS calls outside an extracted function are credited to the nearest entity; isTestFile knows every language.
-  - Subjects: `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity`, `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not credited to the class; other methods keep their own caller`, `src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files`
+  - Subjects: `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default, in both TypeScript (.ts) and JavaScript (.js) sources, are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity`, `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: in both TypeScript and JavaScript sources, calls in class field initializers (public_field_definition, field_definition) and the constructor body are CALLS from the class entity, a function-valued field is not credited to the class, and a generator-valued declarator gets its own function entity whose calls are not credited to the file`, `src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files`
 - **integration** — A TS test file's calls reach the code-review grounding through the real parser, resolver and grounding.
   - Subjects: `src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test file whose test('...', () => { ... }) callback calls a function imported from another file, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's entity in the function's testsReaching`
 
@@ -138,7 +141,7 @@ A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the fil
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity`, `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not credited to the class; other methods keep their own caller` |
+| `ac1` | `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default, in both TypeScript (.ts) and JavaScript (.js) sources, are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity`, `src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: in both TypeScript and JavaScript sources, calls in class field initializers (public_field_definition, field_definition) and the constructor body are CALLS from the class entity, a function-valued field is not credited to the class, and a generator-valued declarator gets its own function entity whose calls are not credited to the file` |
 | `ac2` | `src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test file whose test('...', () => { ... }) callback calls a function imported from another file, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's entity in the function's testsReaching` |
 | `ac3` | `src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files` |
 
@@ -153,7 +156,7 @@ A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the fil
 **Steps**
 
 1. Add the program-level and export handling to walkNode. — ↩ rollbackable
-2. Extract field-initializer and constructor-body calls in extractClass. — ↩ rollbackable
+2. Extract field-initializer (public_field_definition and field_definition) and constructor-body calls in extractClass, and treat a generator_function value as a function in extractArrowFunction. — ↩ rollbackable
 3. Extend isTestFile with the Python, Go and JVM test conventions. — ↩ rollbackable
 4. Update and restart the installed daemon, then reindex the registered repositories so every TS file gains its new CALLS. — ↩ rollbackable
 
@@ -190,7 +193,7 @@ The expression_statement part of a1 only.
 - **[[c3]]** `step-output` `s1 context.assemble bundle 3: how the code review recognises a test caller (src/workflow/code-review/grounding.ts:60-62, src/workflow/code-review/grounding.ts:81-92)`
 - **[[c4]]** `step-output` `s1 context.assemble bundle 4: parser and grounding tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/workflow/code-review/__tests__/grounding.test.ts, src/indexer/__tests__/cross-file-resolver-lmdb.test.ts)`
 - **[[c5]]** `prior-artifact` `ISSUE-bd1c6c9005ff6390 fix intent, narrowed by the stakeholder (ISSUE feedback de8a2c97, 2026-10-17)`
-- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`
+- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`
 
 ## 9. Open questions
 

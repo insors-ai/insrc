@@ -200,22 +200,16 @@ The expression_statement part of a1 only.
 
 - ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the narrowed issue's fix intent (ac1 TS calls outside an extracted function are credited to the nearest entity, ac2 a TS test file's calls reach the code-review grounding, ac3 the review recognises test files of every supported language) [c5].
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qce9baba4` — ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the narrowed issue's fix intent (ac1 TS calls outside an extracted function are credited to the nearest entity, ac2 a TS test file's calls reach the code-review grounding, ac3 the review recognises test files of every supported language) [c5].
+  - **resolved**: Adopt all three criteria — Same decision as the user's for ISSUE-5437d6e5 and ISSUE-1102dc71 (2026-10-16/17): keep the criteria derived from the approved issue's fix intent, recorded with that provenance. _(2026-10-17T09:24:03.891Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 1 could not be verified · 5 hold** · template `design-issue` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-17T09:02:37.523Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| fix-targets-defect | The narrowed scope leaves out none of the approved ISSUE fix intent. | The repository ISSUE still says: 'The same is checked, and fixed where it applies, for the other language parsers.' The supplied design cites stakeholder feedback de8a2c97 narrowing that scope, but the inspected repository artifacts do not contain that feedback or a corresponding scope transfer. Analyzer access also failed with invalid_json_schema. [files: docs/standalone/record-calls-made-module-level-statements-E20261017bd1c6c90/ISSUE.md, docs/standalone/record-calls-made-module-level-statements-E20261017bd1c6c90/S001/LLD.md] | Attach the narrowing decision or update the ISSUE and identify the destination Story for deferred parser work. |
+- **[[c1]]** `step-output` `s1 context.assemble bundle 1: where the TypeScript parser extracts calls (src/indexer/parser/typescript.ts:150-200, src/indexer/parser/typescript.ts:259, src/indexer/parser/typescript.ts:419)`
+- **[[c2]]** `step-output` `s1 context.assemble bundle 2: the file and class entities and clean-up (src/indexer/parser/typescript.ts:123, src/indexer/index.ts:1041, src/indexer/index.ts:785)`
+- **[[c3]]** `step-output` `s1 context.assemble bundle 3: how the code review recognises a test caller (src/workflow/code-review/grounding.ts:60-62, src/workflow/code-review/grounding.ts:81-92)`
+- **[[c4]]** `step-output` `s1 context.assemble bundle 4: parser and grounding tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/workflow/code-review/__tests__/grounding.test.ts, src/indexer/__tests__/cross-file-resolver-lmdb.test.ts)`
+- **[[c5]]** `prior-artifact` `ISSUE-bd1c6c9005ff6390 fix intent, narrowed by the stakeholder (ISSUE feedback de8a2c97, 2026-10-17)`
+- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); the isTestFile current behaviour described exactly (cycle 2 round 2); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`

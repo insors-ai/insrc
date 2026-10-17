@@ -117,7 +117,16 @@
       "reviewedBy": "daemon"
     },
     "approvedAt": "2026-10-17T09:14:27.069Z",
-    "rangeBase": "3fd11e2e5860d89e06a50491260103c5394e46e7"
+    "rangeBase": "3fd11e2e5860d89e06a50491260103c5394e46e7",
+    "questionResolutions": {
+      "qce9baba4": {
+        "question": "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the narrowed issue's fix intent (ac1 TS calls outside an extracted function are credited to the nearest entity, ac2 a TS test file's calls reach the code-review grounding, ac3 the review recognises test files of every supported language) [c5].",
+        "status": "resolved",
+        "choice": "Adopt all three criteria",
+        "rationale": "Same decision as the user's for ISSUE-5437d6e5 and ISSUE-1102dc71 (2026-10-16/17): keep the criteria derived from the approved issue's fix intent, recorded with that provenance.",
+        "resolvedAt": "2026-10-17T09:24:03.891Z"
+      }
+    }
   },
   "body": {
     "summary": {

@@ -568,6 +568,8 @@ Preserve both legacy behaviours exactly so no compatibility exception is needed.
   - **resolved**: Accept both exceptions — Accepted by the owner when approving the s1 LLD on 2026-10-17; recorded in docs/plans/team-workflow.md. _(2026-10-17T10:20:04.310Z)_
 - `qcf440188` — s1 now edits the tracker-auto call sites that s4 later refactors (shared issue-creation code, find-by-label dedupe). The split is: s1 switches the calls mechanically with no change to labels, order or persisted TrackerMeta; s4 refactors the orchestration afterwards on top of the port (it depends on sc1). s4's LLD should cite this.
   - **resolved**: Keep the staged split — This is the split in the approved LLD; s4's LLD will cite it. _(2026-10-17T10:21:05.794Z)_
+- `q3bd77fe4` — GitHub declares neither signoff-request nor completion; a policy needing them is refused at load until a later story adds those capabilities.
+  - **resolved**: Reject at load — Follows k8 and the approved LLD. _(2026-10-17T10:22:03.547Z)_
 
 ## Citations
 

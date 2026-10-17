@@ -180,6 +180,13 @@
         "choice": "Keep the staged split",
         "rationale": "This is the split in the approved LLD; s4's LLD will cite it.",
         "resolvedAt": "2026-10-17T10:21:05.794Z"
+      },
+      "q3bd77fe4": {
+        "question": "GitHub declares neither signoff-request nor completion; a policy needing them is refused at load until a later story adds those capabilities.",
+        "status": "resolved",
+        "choice": "Reject at load",
+        "rationale": "Follows k8 and the approved LLD.",
+        "resolvedAt": "2026-10-17T10:22:03.547Z"
       }
     }
   },

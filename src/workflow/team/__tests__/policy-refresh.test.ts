@@ -349,3 +349,31 @@ test('a team directory that cannot be created fails the refresh cleanly instead 
 		if (!result.ok) assert.match(result.reason, /lock could not be taken/);
 	} finally { f.cleanup(); }
 });
+
+test('refreshPolicy takes the branch as a plain second argument, as the LLD specifies', async () => {
+	const f = makeFixture();
+	try {
+		const { bare } = teamOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		git(bare, 'symbolic-ref', 'HEAD', 'refs/heads/gone');
+		git(clone, 'remote', 'set-head', 'origin', '-d');
+		const refused = await refreshPolicy(clone);
+		assert.equal(refused.ok, false);
+		const pinned = await refreshPolicy(clone, 'main');
+		assert.equal(pinned.ok, true, pinned.ok ? '' : pinned.reason);
+	} finally { f.cleanup(); }
+});
+
+test('a default branch whose name has a plus sign refreshes', async () => {
+	const f = makeFixture();
+	try {
+		const { bare, work } = teamOrigin(f);
+		git(work, 'checkout', '-q', '-b', 'release+team');
+		git(work, 'push', '-q', 'origin', 'release+team');
+		git(bare, 'symbolic-ref', 'HEAD', 'refs/heads/release+team');
+		const clone = cloneOf(f, bare, 'clone');
+		const result = await refreshPolicy(clone, { teamDir: f.teamDir });
+		assert.equal(result.ok, true, result.ok ? '' : result.reason);
+		assert.ok(result.ok && result.value.branch === 'release+team');
+	} finally { f.cleanup(); }
+});

@@ -22,7 +22,7 @@ import { getLogger } from '../../shared/logger.js';
 import { findAnchor } from './anchor-finder.js';
 import { POLICY_PATH, runGit } from './git.js';
 import { parsePolicyFile, buildTeamPolicy } from './policy-parser.js';
-import { isSafeRefName, mergeAnchor, publishSightingIfAbsent, readSighting } from './sighting-store.js';
+import { isSafeRefName, mergeAnchor, publishSightingIfAbsent, readSighting, refreshInProgress } from './sighting-store.js';
 import type { Sighting } from './sighting-store.js';
 import type { PolicyAnchor, PolicyResult, TeamPolicy } from './types.js';
 
@@ -66,9 +66,21 @@ export function remoteHeadBranch(repo: string, remote: string): string | undefin
 	return isSafeRefName(branch) ? branch : undefined;
 }
 
-function resolveSha(repo: string, rev: string): string | undefined {
+type Rev = { readonly kind: 'found'; readonly sha: string } | { readonly kind: 'missing' } | { readonly kind: 'error'; readonly reason: string };
+
+/**
+ * Resolve a revision to a commit. `rev-parse --verify -q` exits quietly (no message) when the revision does not
+ * exist; any message means git itself failed (a timeout, a damaged repository), which is not the same as absence.
+ */
+function resolveRev(repo: string, rev: string): Rev {
 	const out = runGit(repo, ['rev-parse', '--verify', '-q', `${rev}^{commit}`]);
-	return out.ok ? out.stdout.trim() : undefined;
+	if (out.ok) return { kind: 'found', sha: out.stdout.trim() };
+	return out.quiet === true ? { kind: 'missing' } : { kind: 'error', reason: `${rev} could not be resolved: ${out.stderr}` };
+}
+
+function resolveSha(repo: string, rev: string): string | undefined {
+	const r = resolveRev(repo, rev);
+	return r.kind === 'found' ? r.sha : undefined;
 }
 
 /**
@@ -78,8 +90,10 @@ function resolveSha(repo: string, rev: string): string | undefined {
  */
 function readAt(repo: string, rev: string, label: string, fetchedAt: string, anchor: PolicyAnchor): Found {
 	// Pin the revision to one commit so the lookup and the read cannot see a ref that moves in between.
-	const sha = resolveSha(repo, rev);
-	if (sha === undefined) return { kind: 'missing' };
+	const resolved = resolveRev(repo, rev);
+	if (resolved.kind === 'missing') return { kind: 'missing' };
+	if (resolved.kind === 'error') return { kind: 'error', reason: resolved.reason, exists: false };
+	const sha = resolved.sha;
 	const tree = runGit(repo, ['ls-tree', '--name-only', sha, '--', POLICY_PATH]);
 	if (!tree.ok) return { kind: 'error', reason: `the policy file on ${label} could not be looked up: ${tree.stderr}`, exists: false };
 	if (tree.stdout.trim().length === 0) return { kind: 'missing' };
@@ -131,7 +145,7 @@ function readKnownRepo(repo: string, s: Sighting): PolicyResult<TeamPolicy | 'no
 	const anchor = s.anchor.known ? s.anchor : mergeAnchor(s.anchor, findAnchor(repo, pinned));
 	let found = readAt(repo, pinned, ref, s.refreshedAt, anchor);
 	let from = ref;
-	if (found.kind === 'missing' && resolveSha(repo, ref) === undefined) {
+	if (found.kind === 'missing' && resolveRev(repo, ref).kind === 'missing') {
 		// The tracking ref is gone (remote removed, ref pruned): the commit the last refresh recorded still holds the policy.
 		found = readAt(repo, s.sha, ref, s.refreshedAt, anchor);
 		from = `commit ${s.sha}`;
@@ -173,14 +187,21 @@ function readUnseen(repo: string, now: string, teamDir: string | undefined, publ
 	}
 
 	const ref = trackingRef(remote, branch);
-	const sha = resolveSha(repo, ref);
-	if (sha === undefined) return { ok: true, value: 'none' };
+	const resolved = resolveRev(repo, ref);
+	if (resolved.kind === 'missing') return { ok: true, value: 'none' };
+	if (resolved.kind === 'error') return { ok: false, reason: resolved.reason };
+	const sha = resolved.sha;
 	const anchor = findAnchor(repo, sha);
 	const found = readAt(repo, sha, ref, now, anchor);
 	if (found.kind === 'missing') return { ok: true, value: 'none' };
 	if (found.kind === 'error' && !found.exists) return { ok: false, reason: found.reason };
 
 	// First observation of a policy file (valid, invalid or unreadable): remember this repo as a team repo, create-only.
+	// While a refresh is running it records the repo itself, and a record made from a revision read before that refresh
+	// could be stale, so the reader leaves the recording to it.
+	if (refreshInProgress(repo, teamDir)) {
+		return found.kind === 'policy' ? { ok: true, value: found.policy } : { ok: false, reason: found.reason };
+	}
 	try {
 		publish(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
 	} catch (err) {

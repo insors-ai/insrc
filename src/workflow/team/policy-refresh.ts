@@ -58,7 +58,9 @@ function fail(reason: string): { ok: false; reason: string } {
 	return { ok: false, reason };
 }
 
-export async function refreshPolicy(repo: string, opts: RefreshOptions = {}): Promise<PolicyResult<PolicyRefreshOutcome>> {
+/** The LLD's `PolicyRefresh`: `(repo, branch?)`. The second argument may also be a full options object. */
+export async function refreshPolicy(repo: string, optsOrBranch: RefreshOptions | string = {}): Promise<PolicyResult<PolicyRefreshOutcome>> {
+	const opts: RefreshOptions = typeof optsOrBranch === 'string' ? { branch: optsOrBranch } : optsOrBranch;
 	// One deadline for the whole refresh, started before the first git call.
 	const deadline = createDeadline(opts.deadlineMs ?? REFRESH_DEADLINE_MS);
 	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before it started');
@@ -156,6 +158,6 @@ function setRemoteHead(localGit: LocalGit, repo: string, remote: string, branch:
  */
 function remoteHeadMayBeStale(localGit: LocalGit, repo: string, remote: string, branch: string, deadline: Deadline): boolean {
 	const head = localGit(repo, ['symbolic-ref', '-q', `refs/remotes/${remote}/HEAD`], deadline);
-	if (!head.ok) return head.stderr !== ''; // `-q` exits 1 with no message when the ref is simply not a symbolic ref
+	if (!head.ok) return head.quiet !== true; // `-q` exits 1 with no message when the ref is simply not a symbolic ref
 	return head.stdout.trim() !== `refs/remotes/${remote}/${branch}`;
 }

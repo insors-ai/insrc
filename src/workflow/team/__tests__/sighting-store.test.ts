@@ -150,7 +150,7 @@ test('the lock refuses a second holder and takes over a lock older than 30 secon
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test('safe ref names allow letters and digits in any script, and still refuse option-like or traversing names', () => {
-	for (const ok of ['main', 'release/1.2', 'équipe', '分支', 'feature_x-1']) assert.equal(isSafeRefName(ok), true, ok);
-	for (const bad of ['', '-x', '--upload-pack=x', 'a..b', 'a/', 'a.lock', 'a b', 'a;b', '$(x)']) assert.equal(isSafeRefName(bad), false, bad);
+test('safe ref names accept what git accepts and refuse what could be read as an option or break a ref', () => {
+	for (const ok of ['main', 'release/1.2', 'équipe', '分支', 'feature_x-1', 'release+team', 'fix#12', 'a;b']) assert.equal(isSafeRefName(ok), true, ok);
+	for (const bad of ['', '-x', '--upload-pack=x', 'a..b', 'a/', 'a.', 'a.lock', 'a b', 'a\tb', 'a@{b', 'a~1', 'a^', 'a:b', 'a?', 'a*', 'a[b', 'a\\b', 'a//b', '/a', '@']) assert.equal(isSafeRefName(bad), false, JSON.stringify(bad));
 });

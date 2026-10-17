@@ -15,7 +15,8 @@ import { execFileSync } from 'node:child_process';
 
 export type GitRun =
 	| { readonly ok: true;  readonly stdout: string }
-	| { readonly ok: false; readonly stderr: string };
+	/** `quiet`: git ran and exited non-zero without a message (e.g. `rev-parse --verify -q` on a missing revision). */
+	| { readonly ok: false; readonly stderr: string; readonly quiet?: boolean | undefined };
 
 export const POLICY_PATH = '.insrc/policy.json';
 
@@ -26,7 +27,8 @@ export function runGit(cwd: string, args: readonly string[], timeoutMs: number =
 		const stdout = execFileSync('git', [...args], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024 });
 		return { ok: true, stdout };
 	} catch (err) {
-		const e = err as { stderr?: Buffer | string | undefined; message?: string | undefined };
-		return { ok: false, stderr: (e.stderr ? String(e.stderr) : e.message ?? 'git failed').trim() };
+		const e = err as { stderr?: Buffer | string | undefined; message?: string | undefined; status?: number | null | undefined };
+		const said = e.stderr ? String(e.stderr).trim() : '';
+		return { ok: false, stderr: said || (e.message ?? 'git failed').trim(), quiet: typeof e.status === 'number' && said === '' };
 	}
 }

@@ -51,9 +51,16 @@ export const REFRESH_DEADLINE_MS = 10_000;
  */
 export const LOCK_STALE_MS = 30_000;
 
-/** Remote and branch names go into git argv: keep them to a safe, boring alphabet. */
+/**
+ * Remote and branch names go into git argv. Accept what git accepts (any script, '+', '#', ...) but refuse what could be
+ * read as an option or a revision expression or break a ref: a leading '-', whitespace and control characters,
+ * ~ ^ : ? * [ \\, '..', '@{', '//', and a trailing '/', '.' or '.lock'.
+ */
 export function isSafeRefName(name: string): boolean {
-	return /^[\p{L}\p{N}][\p{L}\p{N}._\/-]*$/u.test(name) && !name.includes('..') && !name.endsWith('/') && !name.endsWith('.lock');
+	if (name.length === 0 || name.startsWith('-') || name.startsWith('/')) return false;
+	if (/[\s\u0000-\u001f\u007f~^:?*[\\]/u.test(name)) return false;
+	if (name.includes('..') || name.includes('@{') || name.includes('//') || name === '@') return false;
+	return !(name.endsWith('/') || name.endsWith('.') || name.endsWith('.lock'));
 }
 
 /** 16 hex characters of the sha256 of the repository's real path. */
@@ -248,5 +255,14 @@ export function acquireLock(repo: string, teamDir: string = PATHS.team, now: () 
 	} finally {
 		closeSync(guardFd);
 		try { unlinkSync(guardPath); } catch { /* best effort */ }
+	}
+}
+
+/** True while a live refresh lock exists for this repository (a stale one does not count). */
+export function refreshInProgress(repo: string, teamDir: string = PATHS.team, now: () => number = Date.now): boolean {
+	try {
+		return now() - statSync(lockPath(repo, teamDir)).mtimeMs <= LOCK_STALE_MS;
+	} catch {
+		return false;
 	}
 }

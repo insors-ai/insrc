@@ -17,7 +17,7 @@ import { join } from 'node:path';
 
 import { POLICY_PATH } from '../git.js';
 import { readPolicy } from '../policy-reader.js';
-import { readSighting, sightingPath, writeSighting } from '../sighting-store.js';
+import { acquireLock, readSighting, sightingPath, writeSighting } from '../sighting-store.js';
 import { VALID_POLICY, cloneOf, commitFile, git, makeFixture, makeOrigin } from './git-fixture.js';
 import type { Fixture } from './git-fixture.js';
 import type { TeamPolicy } from '../types.js';
@@ -285,5 +285,31 @@ test('a ref listing that fails is refused, not taken for no policy', () => {
 		writeFileSync(join(clone, '.git', 'packed-refs'), 'this is not a valid packed-refs file\n');
 		const result = readPolicy(clone, { teamDir: f.teamDir });
 		assert.equal(result.ok, false);
+	} finally { f.cleanup(); }
+});
+
+test('a git failure while resolving the default branch ref is refused, not taken for no policy', () => {
+	const f = makeFixture();
+	try {
+		const { bare } = makeOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		// The remote HEAD is intact, but the packed refs are corrupt, so resolving origin/main fails with a message.
+		writeFileSync(join(clone, '.git', 'packed-refs'), 'this is not a valid packed-refs file\n');
+		const result = readPolicy(clone, { teamDir: f.teamDir });
+		assert.equal(result.ok, false);
+	} finally { f.cleanup(); }
+});
+
+test('the reader leaves the first sighting to a refresh that is running', () => {
+	const f = makeFixture();
+	try {
+		const { clone } = teamRepo(f);
+		const held = acquireLock(clone, f.teamDir);
+		assert.ok(held.ok);
+		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir })).teamMode, true, 'the policy is still returned');
+		assert.equal(readSighting(clone, f.teamDir).kind, 'absent', 'but nothing is recorded while a refresh holds the lock');
+		if (held.ok) held.release();
+		policyOf(readPolicy(clone, { teamDir: f.teamDir }));
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'recorded once the refresh is over');
 	} finally { f.cleanup(); }
 });

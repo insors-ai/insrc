@@ -4,7 +4,7 @@
     "epicHash": "1102dc7125ad0c07",
     "storyId": "S001",
     "createdAt": "2026-10-17T06:56:06.405Z",
-    "updatedAt": "2026-10-17T07:30:22.039Z",
+    "updatedAt": "2026-10-17T07:51:29.634Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
     "epicSlug": "ground-code-review-coverage-story-s"
@@ -125,8 +125,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "2142a074",
-        "ranAt": "2026-10-17T07:02:30.802Z",
+        "commit": "222cc3f0",
+        "ranAt": "2026-10-17T07:51:29.634Z",
         "testsPassed": true,
         "tests": [
           {
@@ -143,6 +143,16 @@
                 "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
                 "title": "buildCoveragePrompt: a null test record degrades the pass-state to unverified in the prompt",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "buildCoveragePrompt: a testsReaching entry is joined to its test FILE in the test record, never to a title by its caller name (ISSUE-1102dc71)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/grounding.test.ts",
+                "title": "assembleCodeReviewGrounding: emits ChangedSymbolSummary rows with callers/callees/testsReaching and no file text",
+                "result": "pass"
               }
             ],
             "files": []
@@ -150,10 +160,39 @@
         ],
         "files": [
           {
+            "file": "src/workflow/code-review/__tests__/grounding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 550,
+            "titles": [
+              {
+                "title": "assembleCodeReviewGrounding: emits ChangedSymbolSummary rows with callers/callees/testsReaching and no file text",
+                "result": "pass"
+              },
+              {
+                "title": "assembleCodeReviewGrounding: a changed file with no indexed entities yields no rows (omitted, not error)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleCodeReviewGrounding: one row per entity, multiple entities in a file share the file path",
+                "result": "pass"
+              },
+              {
+                "title": "assembleCodeReviewGrounding: empty changed set yields empty grounding",
+                "result": "pass"
+              },
+              {
+                "title": "isTestFile recognises __tests__ dirs and .test/.spec suffixes only",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 933,
+            "durationMs": 603,
             "titles": [
               {
                 "title": "judgeCoverage: a promised test absent from the grounding is a HIGH missing-promised-test finding (ac1)",
@@ -229,6 +268,10 @@
               },
               {
                 "title": "the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: a testsReaching entry is joined to its test FILE in the test record, never to a title by its caller name (ISSUE-1102dc71)",
                 "result": "pass"
               }
             ],

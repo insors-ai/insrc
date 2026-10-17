@@ -54,11 +54,6 @@ const RANK_OF: Readonly<Record<TierName, number>> = { cheap: 0, mid: 1, core: 2 
  * classification, narrow probes, summarisation).
  */
 const ROLES: readonly RoleDescriptor[] = [
-	{ id: 'understanding.classify', criticality: 'critical', defaultTier: 'core' },
-	{ id: 'understanding.generate', criticality: 'critical', defaultTier: 'core' },
-	{ id: 'understanding.grade', criticality: 'critical', defaultTier: 'core' },
-	{ id: 'understanding.verify', criticality: 'critical', defaultTier: 'core' },
-	{ id: 'understanding.guide', criticality: 'critical', defaultTier: 'core' },
 
 	// (B) Workflow design reasoning — CRITICAL → core (the actual decisions).
 	{ id: 'design.alternatives.enumerate', criticality: 'critical',   defaultTier: 'core' },
@@ -98,6 +93,11 @@ const ROLES: readonly RoleDescriptor[] = [
 
 	// (C) Indexing — PERIPHERAL → cheap (the cheapest CLI model by default).
 	{ id: 'indexer.summarise',             criticality: 'peripheral', defaultTier: 'cheap' }, // summariser
+	{ id: 'understanding.classify', criticality: 'critical', defaultTier: 'core' },
+	{ id: 'understanding.generate', criticality: 'critical', defaultTier: 'core' },
+	{ id: 'understanding.grade', criticality: 'critical', defaultTier: 'core' },
+	{ id: 'understanding.verify', criticality: 'critical', defaultTier: 'core' },
+	{ id: 'understanding.guide', criticality: 'critical', defaultTier: 'core' },
 ];
 
 const ROLE_TAXONOMY: RoleTaxonomy = { roles: ROLES, rankOf: RANK_OF };

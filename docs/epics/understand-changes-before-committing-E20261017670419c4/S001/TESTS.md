@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -142,3 +142,34 @@ Run at 2026-10-17T13:34:07.366Z on commit `8d3f6bc1`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/understanding-rpc.test.ts` | 0 | 2 | 0.9 s |  |
+
+## t7
+
+Run at 2026-10-17T13:37:24.133Z on commit `d95a0c5a`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: Five understanding roles critical/core and missing-role failure**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | All five understanding roles require critical core descriptors | `src/daemon/__tests__/understanding-rpc.test.ts` |
+
+**integration: Healthy shutdown frame flush and bounded failure paths**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Healthy shutdown flushes final frames before storage close and stops only once | `src/daemon/__tests__/understanding-rpc.test.ts` |
+| pass | Socket write flushing is bounded and settles disconnected writes | `src/daemon/__tests__/understanding-rpc.test.ts` |
+
+**integration: Preserve locks-lost exit and existing daemon shutdown regressions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+| pass | healthy shutdown is unchanged: queue drained, connections closed in order, normal exit | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/shutdown-store-failure.test.ts` | 0 | 5 | 8.9 s |  |
+| `src/daemon/__tests__/understanding-rpc.test.ts` | 0 | 5 | 3.2 s |  |

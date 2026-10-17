@@ -2,7 +2,7 @@
   "name": "insrc-vscode",
   "displayName": "insrc",
   "description": "insrc for VS Code \u2014 local-first, Ollama-backed code-knowledge and the tracked workflow, wired into your AI assistant.",
-  "version": "0.5.15",
+  "version": "0.5.16",
   "publisher": "insors",
   "license": "MIT",
   "repository": {
@@ -773,6 +773,61 @@
             ],
             "default": "cheap",
             "markdownDescription": "Model tier for the `indexer.summarise` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.understanding.classify": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `understanding.classify` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.understanding.generate": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `understanding.generate` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.understanding.grade": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `understanding.grade` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.understanding.verify": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `understanding.verify` role (critical). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
+          "insrc.models.tasks.understanding.guide": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "core",
+            "markdownDescription": "Model tier for the `understanding.guide` role (critical). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           }
         }

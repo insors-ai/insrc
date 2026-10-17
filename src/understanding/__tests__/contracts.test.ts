@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID, createHash } from 'node:crypto';
@@ -48,4 +49,16 @@ test('Nested scopes and transport versions fail closed on every envelope', () =>
     assert.throws(() => parse(EventSchema, { ...event, protocolVersion }));
     assert.throws(() => parse(resultSchema(ViewSchema), { protocolVersion, ok: true, value: r.view }));
   }
+});
+
+
+test('Published version one consumer fixtures match runtime contracts', () => {
+  const fixture = JSON.parse(readFileSync(new URL('../../../docs/epics/understand-changes-before-committing-E20261017670419c4/S001/consumer-fixtures-v1.json', import.meta.url), 'utf8'));
+  parse(resultSchema(ViewSchema), fixture.success);
+  parse(resultSchema(ViewSchema), fixture.conflict);
+  parseEvent(fixture.snapshot.data);
+  parseEvent(fixture.deleted.data);
+  for (const name of ['snapshot', 'deleted', 'done', 'error']) assert.equal(fixture[name].id, 73);
+  assert.equal(fixture.done.stream, 'done');
+  assert.equal(fixture.error.stream, 'error');
 });

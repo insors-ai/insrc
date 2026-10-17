@@ -222,7 +222,7 @@ function walkNode(
 }
 
 /** Declarator values that become a function entity of their own (extractArrowFunction). */
-const FUNCTION_VALUE_TYPES = new Set(['arrow_function', 'function_expression', 'generator_function_expression']);
+const FUNCTION_VALUE_TYPES = new Set(['arrow_function', 'function_expression', 'generator_function', 'generator_function_expression']);
 
 /** Program-level statements whose calls are credited to the file entity. */
 const PROGRAM_STATEMENT_TYPES = new Set([
@@ -354,12 +354,19 @@ function extractClass(
   const prevClassHttpFields = currentClassHttpFields;
   currentClassHttpFields = collectClassHttpFields(node);
 
-  // Walk class_body for method definitions
+  // Walk class_body for method definitions. Field initializers and the
+  // constructor have no entity of their own: their calls are the class's.
   const body = node.childForFieldName('body');
   if (body) {
+    const classCallsSeen = new Set<string>();
     for (const member of body.namedChildren) {
       if (member.type === 'method_definition' || member.type === 'method_signature') {
         extractMethod(member, source, repo, repoId, filePath, lang, fileId, id, name, now, entities, relations);
+        const ctorBody = member.childForFieldName('name')?.text === 'constructor' ? member.childForFieldName('body') : null;
+        if (ctorBody) extractCalls(ctorBody, id, repo, filePath, relations, classCallsSeen);
+      } else if (member.type === 'public_field_definition' || member.type === 'field_definition') {
+        const value = member.childForFieldName('value');
+        if (value && !FUNCTION_VALUE_TYPES.has(value.type)) extractCalls(value, id, repo, filePath, relations, classCallsSeen);
       }
     }
   }

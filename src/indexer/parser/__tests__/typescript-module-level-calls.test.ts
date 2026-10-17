@@ -85,6 +85,19 @@ items.map(i => i);
 axios.get('https://api.example.com/health');
 `;
 
+const CLASS_BODY = `
+class Service {
+  config = loadConfig();
+  static shared = makeShared();
+  handler = () => inHandler();
+  constructor() {
+    this.client = createClient();
+  }
+  method() { inMethod(); }
+}
+const gen = function* () { yield inGenerator(); };
+`;
+
 describe('TypeScript/JavaScript calls outside any function', () => {
 	for (const file of FILES) {
 		it(`program-level statements, non-function and exported initializers and export default are CALLS from the file entity (${file.slice(-3)})`, () => {
@@ -118,6 +131,15 @@ describe('TypeScript/JavaScript calls outside any function', () => {
 			const http = r.relations.filter(x => x.kind === 'CALLS_HTTP');
 			assert.equal(http.length, 1);
 			assert.equal(http[0]!.from, fileId);
+		});
+
+		it(`class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (${file.slice(-3)})`, () => {
+			const r = parse(file, CLASS_BODY);
+			assert.deepEqual(callees(r, idOf(r, 'class', 'Service')), ['createClient', 'loadConfig', 'makeShared']);
+			assert.deepEqual(callees(r, idOf(r, 'method', 'method')), ['inMethod']);
+			assert.deepEqual(callees(r, idOf(r, 'function', 'gen')), ['inGenerator']);
+			assert.deepEqual(callees(r, idOf(r, 'file', file)), [], 'no class-body or generator call is the file\'s');
+			assert.ok(!r.relations.some(x => x.kind === 'CALLS' && x.to === 'inHandler'), 'a function-valued field credits no caller');
 		});
 	}
 });

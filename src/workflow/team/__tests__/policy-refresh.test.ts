@@ -12,10 +12,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { POLICY_PATH } from '../git.js';
+import { POLICY_PATH, runGit } from '../git.js';
 import { readPolicy } from '../policy-reader.js';
 import { refreshPolicy } from '../policy-refresh.js';
 import { LOCK_STALE_MS, acquireLock, readSighting, sightingKey } from '../sighting-store.js';
@@ -243,5 +243,50 @@ test('removing the policy while the remote HEAD cannot be updated still removes 
 		assert.ok(removed.ok && removed.value.kind === 'absent' && removed.value.warnings.length === 1);
 		assert.equal(readSighting(clone, f.teamDir).kind, 'absent');
 		assert.deepEqual(readPolicy(clone, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+	} finally { f.cleanup(); }
+});
+
+test('removal with a stale remote HEAD on a retained old branch keeps the record and fails closed', async () => {
+	const f = makeFixture();
+	try {
+		const { bare, work } = teamOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		assert.ok((await refreshPolicy(clone, { teamDir: f.teamDir })).ok);
+
+		// The default branch is renamed to trunk and the policy is removed there; the old main (with the policy) is retained locally.
+		git(work, 'branch', '-m', 'main', 'trunk');
+		removeAndCommit(work, POLICY_PATH, 'drop policy');
+		git(work, 'push', '-q', 'origin', 'trunk');
+		git(bare, 'symbolic-ref', 'HEAD', 'refs/heads/trunk');
+		git(work, 'push', '-q', 'origin', '--delete', 'main');
+		const headLock = join(clone, '.git', 'refs', 'remotes', 'origin', 'HEAD.lock');
+		writeFileSync(headLock, '');
+
+		const blocked = await refreshPolicy(clone, { teamDir: f.teamDir });
+		assert.equal(blocked.ok, false);
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the previous record was put back');
+		assert.equal(readPolicy(clone, { teamDir: f.teamDir }).ok, true, 'the repo still reads the policy it was known to carry (recorded branch is main)');
+		rmSync(headLock);
+
+		const done = await refreshPolicy(clone, { teamDir: f.teamDir });
+		assert.ok(done.ok && done.value.kind === 'absent');
+		assert.deepEqual(readPolicy(clone, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+	} finally { f.cleanup(); }
+});
+
+test('a git failure while looking for the policy file is not mistaken for a removal', async () => {
+	const f = makeFixture();
+	try {
+		const { bare } = teamOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		assert.ok((await refreshPolicy(clone, { teamDir: f.teamDir })).ok);
+
+		// Every local lookup of the policy file fails (as on a timeout or a damaged repository): the record must survive.
+		const broken = (repo: string, args: readonly string[]): { ok: false; stderr: string } | { ok: true; stdout: string } =>
+			args[0] === 'ls-tree' ? { ok: false, stderr: 'fatal: unable to read tree' } : runGit(repo, args);
+		const result = await refreshPolicy(clone, { teamDir: f.teamDir, local: broken });
+		assert.equal(result.ok, false);
+		if (!result.ok) assert.match(result.reason, /could not look for the policy file/);
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the record is untouched');
 	} finally { f.cleanup(); }
 });

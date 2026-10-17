@@ -41,14 +41,17 @@ export interface RefreshOptions {
 	/** Test seams. */
 	readonly git?: GitAsync | undefined;
 	readonly write?: typeof writeSighting | undefined;
+	readonly local?: LocalGit | undefined;
 }
 
+type LocalGit = (repo: string, args: readonly string[], deadline: Deadline) => GitRun;
+
 /** A local git call that shares the refresh's single deadline instead of carrying its own timeout. */
-function localGit(repo: string, args: readonly string[], deadline: Deadline): GitRun {
+const defaultLocalGit: LocalGit = (repo, args, deadline) => {
 	const left = deadline.remainingMs();
 	if (left <= 0) return { ok: false, stderr: 'the refresh deadline passed' };
 	return runGit(repo, args, left);
-}
+};
 
 function fail(reason: string): { ok: false; reason: string } {
 	return { ok: false, reason };
@@ -69,6 +72,7 @@ export async function refreshPolicy(repo: string, opts: RefreshOptions = {}): Pr
 async function refreshLocked(repo: string, opts: RefreshOptions): Promise<PolicyResult<PolicyRefreshOutcome>> {
 	const git = opts.git ?? runGitAsync;
 	const write = opts.write ?? writeSighting;
+	const localGit = opts.local ?? defaultLocalGit;
 	const now = (opts.now ?? ((): Date => new Date()))().toISOString();
 	const deadline = createDeadline(opts.deadlineMs ?? REFRESH_DEADLINE_MS);
 
@@ -90,21 +94,33 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 	const commit = sha.stdout.trim();
 	const warnings: string[] = [];
 
-	const shown = localGit(repo, ['show', `${ref}:${POLICY_PATH}`], deadline);
-	if (!shown.ok) {
+	// Tell "the file is not on the branch" (ls-tree succeeds and lists nothing) from any other git failure,
+	// which must never be mistaken for a removal.
+	const tree = localGit(repo, ['ls-tree', '--name-only', ref, '--', POLICY_PATH], deadline);
+	if (!tree.ok) return fail(`could not look for the policy file on ${ref} (${tree.stderr}); nothing was changed`);
+
+	if (tree.stdout.trim().length === 0) {
 		// The policy file is not on the default branch: a deliberate removal reads as solo again.
-		// Known limitation: if the default branch was renamed in the same step AND the remote HEAD cannot be updated,
-		// a stale HEAD on a retained old branch can still lead the reader to that branch's old policy.
 		try {
 			removeSighting(repo, opts.teamDir);
 		} catch (err) {
 			return fail(`the policy file is absent on '${branch}' but the stored record could not be removed (${err instanceof Error ? err.message : String(err)}); the next refresh retries`);
 		}
-		const head = setRemoteHead(repo, remote, branch, deadline);
-		if (!head.ok) warnings.push(head.warning);
+		const head = setRemoteHead(localGit, repo, remote, branch, deadline);
+		if (!head.ok) {
+			// A remote HEAD that still points at another retained branch would let the reader find that branch's old policy
+			// now that the record is gone: put the record back and fail closed rather than resurrect it.
+			if (remoteHeadPointsElsewhere(localGit, repo, remote, branch, deadline)) {
+				if (sighting !== undefined) { try { write(repo, sighting, opts.teamDir); } catch { /* the reader refuses a repo it cannot clear */ } }
+				return fail(`the policy file is absent on '${branch}', but refs/remotes/${remote}/HEAD still points at another branch and could not be updated (${head.warning}); the record was kept, so run the refresh again`);
+			}
+			warnings.push(head.warning);
+		}
 		return { ok: true, value: { kind: 'absent', branch, warnings } };
 	}
 
+	const shown = localGit(repo, ['show', `${ref}:${POLICY_PATH}`], deadline);
+	if (!shown.ok) return fail(`the policy file on ${ref} could not be read (${shown.stderr}); nothing was changed`);
 	const parsed = parsePolicyFile(shown.stdout);
 	const anchor = mergeAnchor(sighting?.anchor, findAnchor(repo, ref, () => deadline.remainingMs()));
 	try {
@@ -114,7 +130,7 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 		return fail(`the fetched policy could not be recorded (${err instanceof Error ? err.message : String(err)}); ${ref} has already moved, and the next refresh repairs the record`);
 	}
 
-	const head = setRemoteHead(repo, remote, branch, deadline);
+	const head = setRemoteHead(localGit, repo, remote, branch, deadline);
 	if (!head.ok) warnings.push(head.warning);
 	return parsed.ok
 		? { ok: true, value: { kind: 'fetched', branch, sha: commit, warnings } }
@@ -122,7 +138,13 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 }
 
 /** Keep a clone-style remote HEAD pointing at the default branch. A failure is reported to the caller to decide. */
-function setRemoteHead(repo: string, remote: string, branch: string, deadline: Deadline): { ok: true } | { ok: false; warning: string } {
+function setRemoteHead(localGit: LocalGit, repo: string, remote: string, branch: string, deadline: Deadline): { ok: true } | { ok: false; warning: string } {
 	const head = localGit(repo, ['symbolic-ref', `refs/remotes/${remote}/HEAD`, `refs/remotes/${remote}/${branch}`], deadline);
 	return head.ok ? { ok: true } : { ok: false, warning: `could not update refs/remotes/${remote}/HEAD (${head.stderr}); the recorded branch is used instead` };
+}
+
+/** True when the remote HEAD is set and names a branch other than `branch`. */
+function remoteHeadPointsElsewhere(localGit: LocalGit, repo: string, remote: string, branch: string, deadline: Deadline): boolean {
+	const head = localGit(repo, ['symbolic-ref', '-q', `refs/remotes/${remote}/HEAD`], deadline);
+	return head.ok && head.stdout.trim() !== `refs/remotes/${remote}/${branch}`;
 }

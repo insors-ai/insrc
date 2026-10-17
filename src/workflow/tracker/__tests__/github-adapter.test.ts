@@ -166,9 +166,17 @@ test('whoAmI success, empty login converted to missing-signin, missing tool, mis
 test('findIssue returns the first of several matches and separates failure from not found', () => {
 	const port = createGithubTracker('o', 'r');
 	const argv: string[][] = [];
-	_setTrackerExecForTests((_c, args) => { argv.push([...args]); return '17\n'; });
-	// gh's -q '.[0].number' yields only the first result: that is the one returned.
-	assert.deepEqual(port.findIssue(['epic:x', 'insrc:story']), { ok: true, value: 'o/r#17' });
+	// Several matches, in the order gh lists them. The fake applies the -q filter from
+	// argv the way gh would, so the selection is whatever the adapter asked for.
+	const matches = [{ number: 31 }, { number: 17 }, { number: 5 }];
+	_setTrackerExecForTests((_c, args) => {
+		argv.push([...args]);
+		const filter = args[args.indexOf('-q') + 1];
+		if (filter === '.[0].number') return `${matches[0]!.number}\n`;
+		if (filter === 'min_by(.number).number') return `${Math.min(...matches.map(m => m.number))}\n`;
+		throw new Error(`unexpected filter ${String(filter)}`);
+	});
+	assert.deepEqual(port.findIssue(['epic:x', 'insrc:story']), { ok: true, value: 'o/r#31' });
 	assert.deepEqual(argv[0], ['issue', 'list', '--repo', 'o/r', '--state', 'all', '--json', 'number', '-q', '.[0].number', '--label', 'epic:x', '--label', 'insrc:story']);
 
 	_setTrackerExecForTests(() => '');

@@ -1,0 +1,639 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792224577764-38isjy",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-17T08:09:38.257Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 131831,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s2",
+    "groundingMode": "degraded",
+    "subject": {
+      "changedFiles": [
+        "src/cli/__tests__/command.test.ts",
+        "src/cli/__tests__/team-service.test.ts",
+        "src/cli/__tests__/tui.test.ts",
+        "src/cli/command.ts",
+        "src/cli/services/index.ts",
+        "src/cli/services/team.ts",
+        "src/shared/paths.ts",
+        "src/workflow/team/__tests__/anchor-finder.test.ts",
+        "src/workflow/team/__tests__/branch-resolution.test.ts",
+        "src/workflow/team/__tests__/git-fixture.ts",
+        "src/workflow/team/__tests__/policy-parser.test.ts",
+        "src/workflow/team/__tests__/policy-reader.test.ts",
+        "src/workflow/team/__tests__/policy-refresh.test.ts",
+        "src/workflow/team/__tests__/sighting-store.test.ts",
+        "src/workflow/team/__tests__/starter-policy.test.ts",
+        "src/workflow/team/anchor-finder.ts",
+        "src/workflow/team/branch-resolution.ts",
+        "src/workflow/team/create-only.ts",
+        "src/workflow/team/git-async.ts",
+        "src/workflow/team/git.ts",
+        "src/workflow/team/policy-parser.ts",
+        "src/workflow/team/policy-reader.ts",
+        "src/workflow/team/policy-refresh.ts",
+        "src/workflow/team/sighting-store.ts",
+        "src/workflow/team/starter-policy.ts",
+        "src/workflow/team/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/team/sighting-store.ts:73",
+            "message": "Repository identity resolution runs git with its independent 5-second timeout. Refresh invokes this through lock acquisition, sighting reads, and sighting writes without passing the shared deadline. These calls can push a refresh beyond 10 seconds, including while recording after the final deadline check. Resolve the identity once within the refresh budget and reuse it, or propagate the remaining deadline through the store.",
+            "expectationRef": "PLAN t6 and LLD PolicyRefresh preconditions: the whole refresh runs under one 10-second deadline."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/command.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/__tests__/command.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/team-service.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/__tests__/team-service.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/tui.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/__tests__/tui.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/command.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract. Present test definitions do not substitute for reaching edges.",
+            "expectationRef": "src/cli/command.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/index.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/services/index.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/team.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/services/team.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/shared/paths.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/shared/paths.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/anchor-finder.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/__tests__/anchor-finder.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/branch-resolution.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/__tests__/branch-resolution.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/git-fixture.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/__tests__/git-fixture.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/policy-parser.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/__tests__/policy-parser.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/policy-refresh.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/__tests__/policy-refresh.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/sighting-store.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/__tests__/sighting-store.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/starter-policy.test.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/__tests__/starter-policy.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/anchor-finder.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/anchor-finder.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/branch-resolution.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/branch-resolution.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/create-only.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/create-only.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/git-async.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/git-async.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/git.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/git.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/policy-parser.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/policy-parser.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/policy-reader.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/policy-reader.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/policy-refresh.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/policy-refresh.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/sighting-store.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/sighting-store.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/starter-policy.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/starter-policy.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/types.ts:1",
+            "message": "Changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/types.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-parser.test.ts:1",
+            "message": "Promised test is present but failing/unverified: UNVERIFIED because no build record is available; failure is not established.",
+            "expectationRef": "src/workflow/team/__tests__/policy-parser.test.ts: a valid policy file parses with the fixed claimUnits and forceTaskIssues true",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-parser.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-parser.test.ts: bad JSON, an unknown field, a wrong type and a file carrying claimUnits, forceTaskIssues or source are rejected with a reason",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/sighting-store.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/sighting-store.test.ts: the sighting key comes from the real path so repositories and symlinks are distinct",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/sighting-store.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/sighting-store.test.ts: a damaged sighting reads as damaged evidence, branchSource remote or user is validated",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/sighting-store.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/sighting-store.test.ts: create-only publish never overwrites an existing or damaged sighting",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/sighting-store.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/sighting-store.test.ts: a known anchor is never replaced by an unknown one and an unknown one is replaced by a known one",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/sighting-store.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/sighting-store.test.ts: the lock refuses a second holder and takes over a lock older than 30 seconds",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/anchor-finder.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/anchor-finder.test.ts: parsing git log output picks the oldest add even after a later delete and re-add",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/anchor-finder.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/anchor-finder.test.ts: adoption, approval, deletion and reintroduction keeps the adoption commit on real history",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/anchor-finder.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/anchor-finder.test.ts: a depth-1 shallow clone gives known false and deepening gives a known anchor",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/anchor-finder.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/anchor-finder.test.ts: a failing git log gives known false without throwing",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: reads the policy from the remote default branch's tracking ref",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: a working-tree edit has no effect",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: a feature-branch edit has no effect",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: a policy on an unlabelled tracking ref is never applied",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: an unknown default branch with a fetched policy is refused with the --branch instruction",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: a remote without a remote HEAD and with no policy on any fetched ref reads as none",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: a repo with no policy and no sighting reads as none and writes nothing",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: non-git, no-commit and no-remote directories without a sighting read as none",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: a never-fetched repo with no sighting reads as none",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: a known team repo with no fetched policy is refused with the reason",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: a known team repo whose remote was removed is refused or read from the recorded commit, never none",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-reader.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-reader.test.ts: first observation creates the sighting create-only and a failed write does not change the result",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/branch-resolution.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/branch-resolution.test.ts: the remote's answer wins over a supplied branch, then the sighting's branch, then the supplied branch after verification",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/branch-resolution.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/branch-resolution.test.ts: a dangling remote HEAD is refused without --branch and a real branch is recorded with source user",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/branch-resolution.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/branch-resolution.test.ts: a missing branch name or an unreachable remote records nothing",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-refresh.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-refresh.test.ts: refresh brings a changed policy into the tracking ref and the reader applies it",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-refresh.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-refresh.test.ts: only the default branch's tracking ref changes with no tag, other branch, FETCH_HEAD or prune effect",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-refresh.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-refresh.test.ts: unreachable remote reports failure and the last fetched policy stays in use",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-refresh.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-refresh.test.ts: a supplied branch is refused when the remote is unreachable and nothing is recorded",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-refresh.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-refresh.test.ts: sighting write failure reports failure and cosmetic HEAD failure is a warning only",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-refresh.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-refresh.test.ts: a second refresh is refused while the lock is held and a stale lock is taken over",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/policy-refresh.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/policy-refresh.test.ts: default-branch rename and policy file removal",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/starter-policy.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/starter-policy.test.ts: writes a starter with signoff for DEF, HLD, LLD and BUILD and claims enforced",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/team/__tests__/starter-policy.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/workflow/team/__tests__/starter-policy.test.ts: refuses to overwrite an existing file",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/cli/__tests__/command.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/cli/__tests__/command.test.ts: team init writes the starter and reports its path",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/cli/__tests__/command.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/cli/__tests__/command.test.ts: team refresh runs the refresh and reports the outcome",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/cli/__tests__/command.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/cli/__tests__/command.test.ts: team refresh --branch passes the name through and renders the refusal that asks for it",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/cli/__tests__/command.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/cli/__tests__/command.test.ts: a thrown error from either team command renders as a cross-prefixed line",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/cli/__tests__/tui.test.ts:1",
+            "message": "Promised test is present but failing/unverified: no build record confirms a pass.",
+            "expectationRef": "src/cli/__tests__/tui.test.ts: the TUI tests run with fakeServices carrying the team entry",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "HIGH",
+            "location": "src/workflow/team/policy-reader.ts:137",
+            "message": "Correctness: Git interprets this ls-tree path relative to its working directory. When repo is a repository subdirectory, the lookup searches beneath that directory instead of the repository root and can return 'none' despite an active root policy. The equivalent refresh lookup can remove the sighting. Normalize the working directory to the repository root before policy lookups.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/team/policy-refresh.ts:100",
+            "message": "Duplication: refreshLocked repeats readAt's policy inspection sequence: ls-tree, absence detection, git show, and parsePolicyFile. Maintaining separate implementations risks inconsistent treatment of missing, unreadable, and invalid policies. Extract a shared inspection helper accepting the Git runner so refresh can retain its deadline and recording behavior.",
+            "counterpartRef": "src/workflow/team/policy-reader.ts:readAt",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 27,
+      "med": 43,
+      "low": 0
+    }
+  }
+}

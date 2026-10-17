@@ -112,8 +112,9 @@ export function resolveRelations(
     // count as awaiting a target that could ever be stored.
     if (!absPath) return { ...rel, meta: { ...rel.meta, class: 'no-candidate', reason: 'target-file-missing' } };
 
+    // The target's path rides along: a row kept awaiting the file id is classed by it (s1/t8).
     const targetId = makeEntityId(repo, absPath, 'file', absPath);
-    return withRepo({ ...rel, to: targetId, resolved: true });
+    return withRepo({ ...rel, to: targetId, resolved: true, meta: { ...rel.meta, targetFile: absPath } });
   });
 }
 

@@ -537,7 +537,7 @@ export class IndexerService {
    */
   protected async resolveAfterReconcile(repoPath: string): Promise<void> {
     const sourceRoots = detectSourceRoots(repoPath);
-    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots });
+    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'repository' });
     log.info({ repo: repoPath, ...cf }, 'cross-file pass after index clean-up');
     try {
       await resolveExternalEndpoints({ db: this.db, repo: repoPath });
@@ -824,15 +824,10 @@ export class IndexerService {
     if (scope === undefined || scope.size === 0) return;
 
     const sourceRoots = detectSourceRoots(repoPath);
-    let totalResolved = 0, totalAmbiguous = 0, totalRewired = 0;
-    for (const file of scope) {
-      const result = await runCrossFileResolver({
-        db: this.db, repoRoot: repoPath, sourceRoots, scopeFile: file,
-      });
-      totalResolved  += result.resolved;
-      totalAmbiguous += result.ambiguous;
-      totalRewired   += result.importsRewired;
-    }
+    const result = await runCrossFileResolver({
+      db: this.db, repoRoot: repoPath, sourceRoots, mode: 'settle', committedFiles: [...scope],
+    });
+    const totalResolved = result.resolved, totalAmbiguous = result.ambiguous, totalRewired = result.importsRewired;
 
     // S003: resolve any CALLS_HTTP relations the just-edited files emitted into
     // externalEndpoint nodes + edges — once per repo, after the per-file loop.

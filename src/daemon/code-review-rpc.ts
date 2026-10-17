@@ -22,6 +22,7 @@ import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
 import { SamePartyReviewError } from '../workflow/review/party.js';
 import { buildAuthorParty } from '../workflow/code-review/author.js';
+import type { CodeReviewFallbackReason } from '../workflow/code-review/types.js';
 import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../workflow/code-review/grounding.js';
 import type { CodeReviewProgress, runCodeReview as RunCodeReview } from '../workflow/code-review/runner.js';
 import { LEDGER_EXCLUDE_GLOBS } from '../workflow/runners/build/changed-files.js';
@@ -55,6 +56,9 @@ interface CodeReviewRunParams {
 	 *  record `degraded` and caps the verdict at warn; omitted or `full` grounds
 	 *  on the graph, as this request always has. */
 	readonly groundingMode?: 'full' | 'degraded' | undefined;
+	/** Why the caller fell back to a degraded review (ISSUE-1102dc71); stamped on
+	 *  the record. Accepted only with groundingMode 'degraded'. */
+	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 }
 
 /** The collaborators of {@link codeReviewRunStart}. Every one defaults to the
@@ -150,7 +154,7 @@ export async function codeReviewRunStart(
 			}
 			outcome = await runCodeReview(
 				{ ...resolved.subject, changedFiles: diff.changedFiles }, provider,
-				{ ...base, groundingMode: 'degraded', capVerdictAtWarn: true },
+				{ ...base, groundingMode: 'degraded', capVerdictAtWarn: true, ...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}) },
 				{ ...runner.DEFAULT_DEPS, ...(deps.write !== undefined ? { write: deps.write } : {}), assembleGrounding: async () => diff.grounding },
 			);
 		} else if (deps.write !== undefined) {
@@ -200,13 +204,42 @@ function parseParams(raw: unknown): CodeReviewRunParams {
 	if (mode !== undefined && mode !== 'full' && mode !== 'degraded') {
 		throw new Error(`codeReview.run: \`groundingMode\` must be 'full' or 'degraded', got ${JSON.stringify(mode)}`);
 	}
+	const fallbackReason = o['fallbackReason'] === undefined ? undefined : parseFallbackReason(o['fallbackReason']);
+	if (fallbackReason !== undefined && mode !== 'degraded') {
+		throw new Error('codeReview.run: `fallbackReason` is only accepted with groundingMode \'degraded\'');
+	}
 	return {
 		epicHash,
 		storyId,
 		...(typeof o['repo'] === 'string' ? { repo: o['repo'] } : {}),
 		...(client === 'claude' || client === 'codex' ? { client } : {}),
 		...(mode === 'full' || mode === 'degraded' ? { groundingMode: mode } : {}),
+		...(fallbackReason !== undefined ? { fallbackReason } : {}),
 	};
+}
+
+/** A caller's fallback reason, checked field by field; a malformed one is
+ *  refused rather than stamped on the record (ISSUE-1102dc71). */
+function parseFallbackReason(raw: unknown): CodeReviewFallbackReason {
+	const bad = (): never => { throw new Error(`codeReview.run: \`fallbackReason\` is malformed: ${JSON.stringify(raw)}`); };
+	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return bad();
+	const r = raw as Record<string, unknown>;
+	switch (r['kind']) {
+		case 'declined':
+		case 'hollow-grounding':
+			return Object.keys(r).length === 1 ? { kind: r['kind'] } : bad();
+		case 'freshness-timeout': {
+			const { waitedMs, inFlight, pendingCodeIndexJobs, staleFiles } = r;
+			const ok = Object.keys(r).length === 5
+				&& typeof waitedMs === 'number' && Number.isFinite(waitedMs) && waitedMs >= 0
+				&& typeof inFlight === 'boolean'
+				&& typeof pendingCodeIndexJobs === 'number' && Number.isInteger(pendingCodeIndexJobs) && pendingCodeIndexJobs >= 0
+				&& Array.isArray(staleFiles) && staleFiles.every(f => typeof f === 'string');
+			return ok ? { kind: 'freshness-timeout', waitedMs, inFlight, pendingCodeIndexJobs, staleFiles: [...staleFiles] } : bad();
+		}
+		default:
+			return bad();
+	}
 }
 
 /** The `meta.model` label matching what `buildShaperProvider` resolves — the

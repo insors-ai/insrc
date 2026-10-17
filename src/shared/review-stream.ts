@@ -126,6 +126,7 @@ export function codeReviewRequestParams(params: CodeReviewStreamParams): Record<
 		...(params.repo          !== undefined ? { repo:          params.repo }          : {}),
 		...(params.client        !== undefined ? { client:        params.client }        : {}),
 		...(params.groundingMode !== undefined ? { groundingMode: params.groundingMode } : {}),
+		...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}),
 	};
 }
 

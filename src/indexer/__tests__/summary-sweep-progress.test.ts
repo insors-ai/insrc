@@ -188,3 +188,21 @@ test("an edited document queued while the indexer's sweep is paused for code wor
 	queue.stop();
 	await running;
 });
+
+test('a single-document summary waits out code work that arrives while its document is read, and is not started on shutdown', async () => {
+	const queue = new IndexQueue();
+	const file = gate();
+	const running = queue.start(async job => { if (job.kind === 'file') await file.wait; });
+	queue.enqueue({ kind: 'file', filePath: join(repo, 'src', 'x.ts'), event: 'update' });
+	await until(() => queue.laneStatus().index.running, 'the file job to start');
+	const svc = new Probe(queue);
+	const id = makeEntityId(repo, join(repo, 'docs', 'a.md'), 'section', 'one');
+	const edit = svc.processJob({ kind: 'doc-summarise-entity', entityId: id });
+	for (let i = 0; i < 20; i++) await tick();
+	assert.deepEqual(svc.order, [], 'not while code work runs');
+	queue.stop();
+	await edit;
+	assert.deepEqual(svc.order, [], 'not started on shutdown');
+	file.open();
+	await running;
+});

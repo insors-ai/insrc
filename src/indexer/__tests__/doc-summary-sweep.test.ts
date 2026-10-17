@@ -48,6 +48,7 @@ function world(opts: {
 		shouldStop: () => opts.stopAfterSummaries !== undefined && summaries >= opts.stopAfterSummaries,
 		onProgress: (done, total) => { progress.push([done, total]); },
 		waitForCodeIdle: async () => { events.push('wait'); },
+		isCodeIdle: () => true,
 	};
 	return { deps, events, progress, edits };
 }
@@ -129,4 +130,22 @@ test('the sweep waits for code work before each single-document job and each doc
 	const counts = await runDocSummarySweep(['a'], w3.deps);
 	assert.deepEqual(counts, { summarised: 0, skipped: 0, failed: 0, gone: 0, stopped: true });
 	assert.deepEqual(w3.events, []);
+});
+
+test('code work arriving while a document is read pauses the sweep again: an edit queued in that pause runs first, and shutdown in it ends the sweep without summarising', async () => {
+	// Code arrives during the read of 'a' once: the sweep pauses, takes the edit queued meanwhile, then summarises 'a'.
+	const w = world({});
+	let busyOnce = true;
+	w.deps.isCodeIdle = () => { if (busyOnce) { busyOnce = false; w.edits.push('late'); return false; } return true; };
+	await runDocSummarySweep(['a'], w.deps);
+	assert.deepEqual(w.events, ['wait', 'wait', 'edit:late', 'wait', 'summarise:a']);
+
+	// Shutdown during that second pause: 'a' is not summarised.
+	const w2 = world({});
+	let stop = false;
+	w2.deps.shouldStop = () => stop;
+	w2.deps.isCodeIdle = () => { stop = true; return false; };
+	const counts = await runDocSummarySweep(['a'], w2.deps);
+	assert.equal(counts.stopped, true);
+	assert.deepEqual(w2.events.filter(e => e !== 'wait'), []);
 });

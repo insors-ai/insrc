@@ -36,6 +36,8 @@ export interface DocSummarySweepDeps {
 	onProgress(done: number, total: number): void;
 	/** Resolves once code work is done (or the daemon is stopping). */
 	waitForCodeIdle(): Promise<void>;
+	/** Whether code work is done right now (no index job running or queued). */
+	isCodeIdle(): boolean;
 }
 
 export interface DocSummarySweepCounts {
@@ -57,28 +59,44 @@ function classify(res: SummariseDocResult): Outcome {
 	return 'failed';
 }
 
+/** A document whose read or summary threw: summariseDoc does not throw for model or
+ *  schema failures, but a bug or an OOM still could, and one bad document does not stop the sweep. */
+function failed(id: string, err: unknown): Outcome {
+	log.warn({ entityId: id, err: err instanceof Error ? err.message : String(err) }, 'doc summariser: entity threw (continuing sweep)');
+	return 'failed';
+}
+
 /** Summarise each listed document in order. Never throws for one document. */
 export async function runDocSummarySweep(entityIds: readonly string[], deps: DocSummarySweepDeps): Promise<DocSummarySweepCounts> {
 	const counts = { summarised: 0, skipped: 0, failed: 0, gone: 0 };
 	let done = 0;
 	for (const id of entityIds) {
-		// After every wait: check shutdown, then run an edit queued meanwhile, until none is left.
+		let outcome: Outcome;
 		for (;;) {
+			// After every wait: check shutdown, then run an edit queued meanwhile.
 			await deps.waitForCodeIdle();
 			if (deps.shouldStop()) return { ...counts, stopped: true };
 			const edit = deps.takeEdit();
-			if (edit === undefined) break;
-			await deps.runEdit(edit.entityId);
+			if (edit !== undefined) { await deps.runEdit(edit.entityId); continue; }
+			let entity: Entity | null;
+			try {
+				entity = await deps.getEntity(id);
+			} catch (err) {
+				outcome = failed(id, err);
+				break;
+			}
+			if (entity === null) { outcome = 'gone'; break; }
+			// Code work that arrived while the document was read goes first: pause again.
+			// No await between this check and the summary starting.
+			if (!deps.isCodeIdle()) continue;
+			try {
+				outcome = classify(await deps.summarise(entity));
+			} catch (err) {
+				outcome = failed(id, err);
+			}
+			break;
 		}
-		try {
-			const entity = await deps.getEntity(id);
-			counts[entity === null ? 'gone' : classify(await deps.summarise(entity))] += 1;
-		} catch (err) {
-			// summariseDoc does not throw for model or schema failures, but a bug
-			// or an OOM still could: one bad document does not stop the sweep.
-			counts.failed += 1;
-			log.warn({ entityId: id, err: err instanceof Error ? err.message : String(err) }, 'doc summariser: entity threw (continuing sweep)');
-		}
+		counts[outcome] += 1;
 		done += 1;
 		deps.onProgress(done, entityIds.length);
 	}

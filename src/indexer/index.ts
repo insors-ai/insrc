@@ -923,16 +923,6 @@ export class IndexerService {
     return this.sweepProgress === undefined ? undefined : { ...this.sweepProgress };
   }
 
-  /**
-   * Every summary starts here (Story 0f0e4f45): it waits while the index lane has
-   * code work and calls the summariser with no await after the last check, so a
-   * summary never starts after a code job was queued. Not a test seam.
-   */
-  private async summariseWhenCodeIdle(entity: Entity): Promise<SummariseDocResult> {
-    while (!this.queue.isStopping && !this.queue.isIndexIdle) await this.queue.waitForIndexIdle();
-    return this.summariseEntity(entity);
-  }
-
   /** Summarise one document; a seam so tests run the sweep without a model. */
   protected async summariseEntity(entity: Entity): Promise<SummariseDocResult> {
     const { summariseDoc } = await import('../analyze/summariser/index.js');
@@ -956,11 +946,12 @@ export class IndexerService {
       // single-document jobs first, and stops between documents on shutdown.
       const counts = await runDocSummarySweep(docs.map(e => e.id), {
         getEntity:  id => getEntity(this.db, id),
-        summarise:  entity => this.summariseWhenCodeIdle(entity),
+        summarise:  entity => this.summariseEntity(entity),
         takeEdit:   () => this.queue.takeDocSummaryEdit(),
         runEdit:    entityId => this.docSummariseEntity(entityId),
         shouldStop: () => this.queue.isStopping,
         waitForCodeIdle: () => this.queue.waitForIndexIdle(),
+        isCodeIdle: () => this.queue.isIndexIdle,
         onProgress: (done, total) => { this.sweepProgress = { repoPath, done, total }; },
       });
       const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
@@ -985,8 +976,12 @@ export class IndexerService {
       log.debug({ entityId }, 'doc summariser: entity gone (deleted between enqueue and run)');
       return;
     }
+    // Code work that arrived while the document was read goes first (Story 0f0e4f45);
+    // on shutdown the summary is not started. No await between the last check and the call.
+    while (!this.queue.isStopping && !this.queue.isIndexIdle) await this.queue.waitForIndexIdle();
+    if (this.queue.isStopping) return;
     try {
-      await this.summariseWhenCodeIdle(entity);
+      await this.summariseEntity(entity);
     } catch (err) {
       log.warn(
         { entityId, err: err instanceof Error ? err.message : String(err) },

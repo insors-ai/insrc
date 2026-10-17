@@ -1,0 +1,2270 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "createdAt": "2026-10-17T16:53:11.562Z",
+    "updatedAt": "2026-10-17T18:36:28.181Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "766d98c3",
+        "ranAt": "2026-10-17T16:54:20.088Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/config/__tests__/github-split.test.ts: resolveGithubConfig returns none for a missing, unreadable, invalid-JSON and non-object file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github-split.test.ts",
+                "title": "resolveGithubConfig returns none for a missing, unreadable, invalid-JSON and non-object file",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig honors per-repo \"type\": \"none\"",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig honors default \"type\": \"none\" when no per-repo entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig prefers per-repo \"none\" over default owner/repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig returns type=github with owner/repo when configured",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig defaults to type=none when no matching entry AND no config file",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig defaults to type=none when file exists but has no matching entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig defaults to type=none when default entry is empty {}",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" but no owner/repo throws when git remote is absent",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" resolves via git remote when owner/repo omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "resolveGithubConfig without a config file does NOT auto-detect from git remote",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github.test.ts",
+                "title": "lenient resolver behaviour is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/config/__tests__/github-split.test.ts: characterization of a null own entry and a null default is unchanged by the split",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github-split.test.ts",
+                "title": "characterization of a null own entry and a null default is unchanged by the split",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/config/__tests__/github-split.test.ts",
+                "title": "resolveGithubConfigFromFile gives the same result as resolveGithubConfig for a well-formed file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/config/__tests__/github-split.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 347,
+            "titles": [
+              {
+                "title": "resolveGithubConfig returns none for a missing, unreadable, invalid-JSON and non-object file",
+                "result": "pass"
+              },
+              {
+                "title": "characterization of a null own entry and a null default is unchanged by the split",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfigFromFile gives the same result as resolveGithubConfig for a well-formed file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/config/__tests__/github.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 352,
+            "titles": [
+              {
+                "title": "parseGithubRemoteUrl handles SSH remotes",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl handles HTTPS remotes",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl rejects other hosts",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns owner/repo for a repo with a GitHub origin",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns null on a repo with no origin",
+                "result": "pass"
+              },
+              {
+                "title": "parseGitRemoteOwnerRepo returns null on a non-git dir",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig honors per-repo \"type\": \"none\"",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig honors default \"type\": \"none\" when no per-repo entry",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig prefers per-repo \"none\" over default owner/repo",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig returns type=github with owner/repo when configured",
+                "result": "pass"
+              },
+              {
+                "title": "a global default NEVER targets a repo — an unlisted repo resolves to its OWN git remote, not the default owner/repo",
+                "result": "pass"
+              },
+              {
+                "title": "a default enabling github targets the repo remote even when the repo has an unrelated per-repo entry absence",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when no matching entry AND no config file",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when file exists but has no matching entry",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig defaults to type=none when default entry is empty {}",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" but no owner/repo throws when git remote is absent",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig with explicit \"type\": \"github\" resolves via git remote when owner/repo omitted",
+                "result": "pass"
+              },
+              {
+                "title": "resolveGithubConfig without a config file does NOT auto-detect from git remote",
+                "result": "pass"
+              },
+              {
+                "title": "lenient resolver behaviour is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "03cbacff",
+        "ranAt": "2026-10-17T16:59:36.085Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/config/__tests__/github-store.test.ts: readRepoEntry rejects each malformed level and accepts missing parts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github-store.test.ts",
+                "title": "readRepoEntry rejects each malformed level and accepts missing parts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/config/__tests__/github-store.test.ts: mergeRepoEntryKeys changes only the named keys",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github-store.test.ts",
+                "title": "mergeRepoEntryKeys changes only the named keys",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/config/__tests__/github-store.test.ts: concurrent writes all land one at a time and a failure does not stall the queue",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github-store.test.ts",
+                "title": "concurrent writes all land one at a time and a failure does not stall the queue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/config/__tests__/github-store.test.ts: write-failed leaves the file and temp file as they were",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github-store.test.ts",
+                "title": "write-failed leaves the file and temp file as they were",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/config/__tests__/github-store.test.ts: verify step re-merges after an outside change and returns file-changed after the bounded attempts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github-store.test.ts",
+                "title": "verify step re-merges after an outside change and returns file-changed after the bounded attempts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/config/__tests__/github-store.test.ts: an unwritable directory returns write-failed with the operating-system message",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/config/__tests__/github-store.test.ts",
+                "title": "an unwritable directory returns write-failed with the operating-system message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/config/__tests__/github-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 937,
+            "titles": [
+              {
+                "title": "readRepoEntry rejects each malformed level and accepts missing parts",
+                "result": "pass"
+              },
+              {
+                "title": "mergeRepoEntryKeys changes only the named keys",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent writes all land one at a time and a failure does not stall the queue",
+                "result": "pass"
+              },
+              {
+                "title": "write-failed leaves the file and temp file as they were",
+                "result": "pass"
+              },
+              {
+                "title": "verify step re-merges after an outside change and returns file-changed after the bounded attempts",
+                "result": "pass"
+              },
+              {
+                "title": "an unwritable directory returns write-failed with the operating-system message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "79953536",
+        "ranAt": "2026-10-17T17:03:59.440Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/config/__tests__/repo-fields.test.ts: table keys, kinds, GithubEntry fields and one policy row per TeamPolicy rule",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/repo-fields.test.ts",
+                "title": "table keys, kinds, GithubEntry fields and one policy row per TeamPolicy rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/config/__tests__/repo-fields.test.ts: branchPattern validator accepts and rejects every listed form with the failing rule",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/repo-fields.test.ts",
+                "title": "branchPattern validator accepts and rejects every listed form with the failing rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/config/__tests__/repo-fields.test.ts: a table copy with another placeholder changes what the validator accepts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/repo-fields.test.ts",
+                "title": "a table copy with another placeholder changes what the validator accepts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/config/__tests__/repo-fields.test.ts: buildSettingsCatalog keeps existing fields, adds repoFields and never throws",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/repo-fields.test.ts",
+                "title": "buildSettingsCatalog keeps existing fields, adds repoFields and never throws",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/settings-catalog.test.ts",
+                "title": "buildSettingsCatalog({}) returns all options + groups + roles + tierNames with values = {}",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/settings-catalog.test.ts",
+                "title": "buildSettingsCatalog resolves current values from a config: set paths present, unset/absent omitted, non-catalog keys excluded",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/settings-catalog.test.ts",
+                "title": "buildSettingsCatalog is total: a garbage/array-shaped rawConfig never throws",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/config/__tests__/repo-fields.test.ts: validateRepoSetting per row for type, owner, repo, ghPath and ghHost",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/repo-fields.test.ts",
+                "title": "validateRepoSetting per row for type, owner, repo, ghPath and ghHost",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/repo-fields.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 374,
+            "titles": [
+              {
+                "title": "table keys, kinds, GithubEntry fields and one policy row per TeamPolicy rule",
+                "result": "pass"
+              },
+              {
+                "title": "branchPattern validator accepts and rejects every listed form with the failing rule",
+                "result": "pass"
+              },
+              {
+                "title": "a table copy with another placeholder changes what the validator accepts",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog keeps existing fields, adds repoFields and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "validateRepoSetting per row for type, owner, repo, ghPath and ghHost",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/settings-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 499,
+            "titles": [
+              {
+                "title": "buildSettingsCatalog({}) returns all options + groups + roles + tierNames with values = {}",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog resolves current values from a config: set paths present, unset/absent omitted, non-catalog keys excluded",
+                "result": "pass"
+              },
+              {
+                "title": "buildSettingsCatalog is total: a garbage/array-shaped rawConfig never throws",
+                "result": "pass"
+              },
+              {
+                "title": "config.catalog handler is read-only wiring: calls buildSettingsCatalog, never writes config or reloads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "e29f09c5",
+        "ranAt": "2026-10-17T17:05:47.013Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/shared/__tests__/ipc-client-timeout.test.ts: rpc without opts is unchanged for a reply, an error and a split reply",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/ipc-client-timeout.test.ts",
+                "title": "rpc without opts is unchanged for a reply, an error and a split reply",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-client.test.ts",
+                "title": "rpc resolves the daemon result and writes the { label, pid } identity envelope on connect",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-client.test.ts",
+                "title": "rpc rejects with \"daemon is not running\" on ENOENT / ECONNREFUSED",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-client.test.ts",
+                "title": "rpc surfaces a daemon-side error and an unparseable line distinctly",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/shared/__tests__/ipc-client-timeout.test.ts: rpc with timeoutMs rejects on silence and on early close and cleans up",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/ipc-client-timeout.test.ts",
+                "title": "rpc with timeoutMs rejects on silence and on early close and cleans up",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/ipc-client-timeout.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 731,
+            "titles": [
+              {
+                "title": "rpc without opts is unchanged for a reply, an error and a split reply",
+                "result": "pass"
+              },
+              {
+                "title": "rpc with timeoutMs rejects on silence and on early close and cleans up",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/ipc-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 596,
+            "titles": [
+              {
+                "title": "rpc resolves the daemon result and writes the { label, pid } identity envelope on connect",
+                "result": "pass"
+              },
+              {
+                "title": "rpc rejects with \"daemon is not running\" on ENOENT / ECONNREFUSED",
+                "result": "pass"
+              },
+              {
+                "title": "rpc surfaces a daemon-side error and an unparseable line distinctly",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.status returns the wire DaemonStatus via daemon.status",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.reachability derives running / stopped / errored and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "sockFilePath resolves to the daemon socket",
+                "result": "pass"
+              },
+              {
+                "title": "src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)",
+                "result": "pass"
+              },
+              {
+                "title": "src/shared/ipc-client imports only node:net + shared types/paths (no daemon internals/indexer/storage)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "9502161c",
+        "ranAt": "2026-10-17T17:14:21.374Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: buildRepoSettings values, resolved target and policy rows",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "buildRepoSettings values, resolved target and policy rows",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: sign-in mapping for every whoAmI outcome",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "sign-in mapping for every whoAmI outcome",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: repo identity uses the exact registered path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "repo identity uses the exact registered path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: get returns what set wrote and shows an outside write",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "get returns what set wrote and shows an outside write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: set refuses read-only, unknown, invalid and unregistered inputs and writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "set refuses read-only, unknown, invalid and unregistered inputs and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: only the signed-in-user read runs through s1's adapter",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "only the signed-in-user read runs through s1's adapter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: malformed files return github-json-unreadable and keep their bytes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "malformed files return github-json-unreadable and keep their bytes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: get reads once, never writes, and resolves from the git remote when there is no own target",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "get reads once, never writes, and resolves from the git remote when there is no own target",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: ensure writes the five keys once and concurrent sets both land",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "ensure writes the five keys once and concurrent sets both land",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/repo-settings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1261,
+            "titles": [
+              {
+                "title": "buildRepoSettings values, resolved target and policy rows",
+                "result": "pass"
+              },
+              {
+                "title": "sign-in mapping for every whoAmI outcome",
+                "result": "pass"
+              },
+              {
+                "title": "repo identity uses the exact registered path",
+                "result": "pass"
+              },
+              {
+                "title": "get returns what set wrote and shows an outside write",
+                "result": "pass"
+              },
+              {
+                "title": "set refuses read-only, unknown, invalid and unregistered inputs and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "only the signed-in-user read runs through s1's adapter",
+                "result": "pass"
+              },
+              {
+                "title": "malformed files return github-json-unreadable and keep their bytes",
+                "result": "pass"
+              },
+              {
+                "title": "get reads once, never writes, and resolves from the git remote when there is no own target",
+                "result": "pass"
+              },
+              {
+                "title": "ensure writes the five keys once and concurrent sets both land",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "9681d524",
+        "ranAt": "2026-10-17T17:21:22.993Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/setup-plan.test.ts: planTrackerConfig already, needs-write and no-origin cases",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/setup-plan.test.ts",
+                "title": "planTrackerConfig already, needs-write and no-origin cases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/setup-plan.test.ts: planTrackerConfig fails on malformed files without throwing, calling the daemon or writing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/setup-plan.test.ts",
+                "title": "planTrackerConfig fails on malformed files without throwing, calling the daemon or writing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/setup-plan.test.ts: runTrackerSetup reports a configOutcome verbatim and touches no file; existing behaviour without it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/setup-plan.test.ts",
+                "title": "runTrackerSetup reports a configOutcome verbatim and touches no file; existing behaviour without it",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/setup.test.ts",
+                "title": "all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/setup.test.ts",
+                "title": "missing scopes: issue-types + project are manual carrying the refresh command",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/setup.test.ts",
+                "title": "missing config: the config step writes github.json and reports done",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/setup.test.ts",
+                "title": "project views step is always manual with the UI click-list",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/setup.test.ts",
+                "title": "ensureLabels with a timing-out label create records the label as failed and continues",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/tracker-setup-service.test.ts: config step done, already and failed through the terminal service",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tracker-setup-service.test.ts",
+                "title": "config step done, already and failed through the terminal service",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/tracker-setup-service.test.ts: silent and early-closing daemon fail the config step within the deadline",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tracker-setup-service.test.ts",
+                "title": "silent and early-closing daemon fail the config step within the deadline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/tracker-setup-service.test.ts: the remaining setup steps still run after a failed config step",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tracker-setup-service.test.ts",
+                "title": "the remaining setup steps still run after a failed config step",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/tracker-setup-service.test.ts: malformed github.json fails the config step with no daemon call",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tracker-setup-service.test.ts",
+                "title": "malformed github.json fails the config step with no daemon call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/tracker-setup-service.test.ts: makeServices always injects the config seam",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tracker-setup-service.test.ts",
+                "title": "makeServices always injects the config seam",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/tracker-setup-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1280,
+            "titles": [
+              {
+                "title": "config step done, already and failed through the terminal service",
+                "result": "pass"
+              },
+              {
+                "title": "silent and early-closing daemon fail the config step within the deadline",
+                "result": "pass"
+              },
+              {
+                "title": "the remaining setup steps still run after a failed config step",
+                "result": "pass"
+              },
+              {
+                "title": "malformed github.json fails the config step with no daemon call",
+                "result": "pass"
+              },
+              {
+                "title": "makeServices always injects the config seam",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/setup-plan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 770,
+            "titles": [
+              {
+                "title": "planTrackerConfig already, needs-write and no-origin cases",
+                "result": "pass"
+              },
+              {
+                "title": "planTrackerConfig fails on malformed files without throwing, calling the daemon or writing",
+                "result": "pass"
+              },
+              {
+                "title": "runTrackerSetup reports a configOutcome verbatim and touches no file; existing behaviour without it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/setup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1008,
+            "titles": [
+              {
+                "title": "all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0",
+                "result": "pass"
+              },
+              {
+                "title": "missing scopes: issue-types + project are manual carrying the refresh command",
+                "result": "pass"
+              },
+              {
+                "title": "missing config: the config step writes github.json and reports done",
+                "result": "pass"
+              },
+              {
+                "title": "project views step is always manual with the UI click-list",
+                "result": "pass"
+              },
+              {
+                "title": "ensureLabels with a timing-out label create records the label as failed and continues",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "9390ec42",
+        "ranAt": "2026-10-17T17:32:21.674Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/cli/__tests__/settings-modal.test.ts: makeServices exposes catalog, repoSettings and setRepoSetting and the fixtures satisfy Services",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/settings-modal.test.ts",
+                "title": "makeServices exposes catalog, repoSettings and setRepoSetting and the fixtures satisfy Services",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/services.test.ts",
+                "title": "makeServices() still returns every pre-existing facade (additive-only)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/settings-modal.test.ts: the modal lists payload rows, edits local rows only and shows an error message",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/settings-modal.test.ts",
+                "title": "the modal lists payload rows, edits local rows only and shows an error message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/services.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1086,
+            "titles": [
+              {
+                "title": "listEpics returns [] when there is no artifacts dir",
+                "result": "pass"
+              },
+              {
+                "title": "listEpics scans DEF-<hash>.json and reads the display slug",
+                "result": "pass"
+              },
+              {
+                "title": "formatBytes scales units",
+                "result": "pass"
+              },
+              {
+                "title": "formatUptime is h/m/s aware",
+                "result": "pass"
+              },
+              {
+                "title": "formatWhen handles empty + invalid",
+                "result": "pass"
+              },
+              {
+                "title": "makeServices().debug.sections lists the three sections in DebugSectionId order",
+                "result": "pass"
+              },
+              {
+                "title": "makeServices() still returns every pre-existing facade (additive-only)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/settings-modal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9234,
+            "titles": [
+              {
+                "title": "makeServices exposes catalog, repoSettings and setRepoSetting and the fixtures satisfy Services",
+                "result": "pass"
+              },
+              {
+                "title": "the modal lists payload rows, edits local rows only and shows an error message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "04dd34f3",
+        "ranAt": "2026-10-17T17:49:39.577Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/config/__tests__/gateway.test.ts: catalog keeps repoFields and the gateway calls repo.settings.get and repo.settings.set",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+                "title": "catalog keeps repoFields from the daemon payload and is empty when an older daemon omits them",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+                "title": "the gateway calls repo.settings.get and repo.settings.set with the repo path, key and value",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+                "title": "a daemon refusal becomes a reason-carrying result and a socket rejection propagates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts: FakeGateway returns repoFields and the test passes unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+                "title": "applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+                "title": "pullFromDaemon reads the current per-role override from rawConfig at the dotted key (defaultTier when absent)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+                "title": "pullFromDaemon writes each catalog value, and the ConfigOption.default for an omitted path",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+                "title": "applyChanges on an INVALID value reports the reason AND reverts the setting to the last-synced value",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts: the stub catalog returns repoFields and the test passes unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "happy path: default core provider -> lists cli-claude models, picking one writes models.tiers.core.model once",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "provider switch: runner write OK then model write REFUSES -> the partial state is surfaced (MED)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "a runner-write refusal on a provider switch aborts before the model write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/panels/__tests__/repo-config.test.ts: tracker section, routing through the consent gate, refusal and error message",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "renderRepoConfig: the Tracker section lists local rows as inputs (including ghHost) and status and policy rows read-only",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "renderRepoConfig: an ok:false result shows its message; no repoFields renders no Tracker section; a transport rejection propagates; values are escaped",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "createRepoConfigWriteHandler: a tracker edit goes through consent to writeRepoSetting and never to the models.byRepo route",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "createRepoConfigWriteHandler: declined consent, an unregistered repo and a malformed tracker write write nothing; a refusal shows the daemon message",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath].tiers (NOT raw JSON); missing entry -> all-defaults",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/workspace/__tests__/activation.test.ts: extension wiring patterns still match with the added dependencies",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/workspace/__tests__/activation.test.ts",
+                "title": "S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts: closed message set includes repoTrackerWrite and the ghHost edit posts it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+                "title": "source-scan: the webview bootstraps post only the sanctioned message shapes (closed set)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+                "title": "editing the ghHost row of the rendered tracker section posts repoTrackerWrite with repoPath, key and value",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/config/__tests__/seam.test.ts: exactly the five daemon calls are allowed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/seam.test.ts",
+                "title": "the ConfigGateway references only config.catalog + config.show + config.write + repo.settings.get + repo.settings.set (no cloud/HTTP)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/panels/__tests__/webview-host.test.ts: repoTrackerWrite is accepted and routed, errors become refusals, models.byRepo is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "Story s3: a {repoTrackerWrite} is forwarded as a validated RepoTrackerWrite; the models.byRepo route and malformed tracker messages are unaffected",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "Story s3: a throwing tracker write sink is caught and logged; errors never reach the webview",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+                "title": "S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/panels/__tests__/repo-config.test.ts: the sign-in row is rendered read-only with status and reason",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "renderRepoConfig: the sign-in row is rendered read-only with status and reason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1604,
+            "titles": [
+              {
+                "title": "catalog keeps repoFields from the daemon payload and is empty when an older daemon omits them",
+                "result": "pass"
+              },
+              {
+                "title": "the gateway calls repo.settings.get and repo.settings.set with the repo path, key and value",
+                "result": "pass"
+              },
+              {
+                "title": "a daemon refusal becomes a reason-carrying result and a socket rejection propagates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1516,
+            "titles": [
+              {
+                "title": "applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects an invalid per-role tier without calling writeKeyPath, and reports a reason",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a per-role {ok:false}/reject reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon reads the current per-role override from rawConfig at the dotted key (defaultTier when absent)",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon on a rawConfig() rejection writes no per-role keys and notifies without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "per-role idempotent no-op: re-applying the pulled value calls no writeKeyPath",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon gateway sends writeKeyPath as the config.write ARRAY form and rawConfig as config.show",
+                "result": "pass"
+              },
+              {
+                "title": "the per-role key-map + engine + gateway modules import no 'vscode'",
+                "result": "pass"
+              },
+              {
+                "title": "the gateway references only config.catalog + config.show + config.write + repo.settings.get + repo.settings.set (no cloud/HTTP)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/seam.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1903,
+            "titles": [
+              {
+                "title": "no sc8 config core module imports 'vscode' (only extension.ts may)",
+                "result": "pass"
+              },
+              {
+                "title": "the ConfigGateway references only config.catalog + config.show + config.write + repo.settings.get + repo.settings.set (no cloud/HTTP)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts wires the activation pull + the onDidChangeConfiguration('insrc') listener to applyChanges",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2171,
+            "titles": [
+              {
+                "title": "pullFromDaemon writes each catalog value, and the ConfigOption.default for an omitted path",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon on a catalog() rejection writes nothing and notifies without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon captures the last-synced snapshot so a re-apply of the same value is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "pull publishes the snapshot for EVERY key so an echoed re-apply of the pulled values writes nothing (MED-1: activation echo suppression)",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a valid change maps native key -> path and writes exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects an invalid enum value without calling writeKey and reports a reason",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects a wrong-typed number without writing",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a daemon {ok:false} reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a writeKey rejection reports a rejected write without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges ignores an unknown native key (drift-safe) — no write, no notify",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges advances the snapshot on a successful write so an immediate re-apply is a no-op",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1954,
+            "titles": [
+              {
+                "title": "applyChanges on an INVALID value reports the reason AND reverts the setting to the last-synced value",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a daemon {ok:false} reports the reason AND reverts, without advancing the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a daemon-unreachable write (rpc reject) reverts and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "the revert is a loop-suppressed idempotent no-op: re-applying the reverted value writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a rejected key with NO last-synced value reverts to option.default and pre-sets the snapshot (no unintended write)",
+                "result": "pass"
+              },
+              {
+                "title": "the revert's own settings.write failure is swallowed (applyChanges never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon reconciles: it republishes the daemon value over a stale local value + re-captures the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "a Refresh (pullFromDaemon) while the daemon is unreachable notifies, changes nothing, and does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands",
+                "result": "pass"
+              },
+              {
+                "title": "the InsrcCommandId union includes insrc.settings.refresh and extension.ts wires it to pullFromDaemon",
+                "result": "pass"
+              },
+              {
+                "title": "insrc.advanced is NOT declared in S003 (escape-hatch deferred to a later story)",
+                "result": "pass"
+              },
+              {
+                "title": "the config engine still imports no vscode and calls only config.catalog/config.write/config.show/repo.settings.get/repo.settings.set",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1505,
+            "titles": [
+              {
+                "title": "happy path: default core provider -> lists cli-claude models, picking one writes models.tiers.core.model once",
+                "result": "pass"
+              },
+              {
+                "title": "dropdown-only (k4): the model items are exactly the daemon list (+ Refresh), no free-text entry",
+                "result": "pass"
+              },
+              {
+                "title": "available:false -> no-models + Refresh, NO write (saved model untouched)",
+                "result": "pass"
+              },
+              {
+                "title": "Refresh re-invokes listModels then a model can be picked + written",
+                "result": "pass"
+              },
+              {
+                "title": "available:true + models:[] -> same no-models + Refresh, no write",
+                "result": "pass"
+              },
+              {
+                "title": "saved model PRESENT in the list -> marked (current), not duplicated; re-picking it is an idempotent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "saved model ABSENT from the list -> a non-selectable (current, not in catalog) entry; picking a real model writes the new id",
+                "result": "pass"
+              },
+              {
+                "title": "picking the (current, not in catalog) entry is a no-op (non-selectable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "provider changed mid-flow -> model cleared, listModels re-queried for the NEW provider, runner + model both written",
+                "result": "pass"
+              },
+              {
+                "title": "a tier runner outside the enum -> unrecognised notify + provider-selection offered; the bad value never reaches listModels",
+                "result": "pass"
+              },
+              {
+                "title": "listModels rejection (daemon unreachable) -> notify, treated as empty, no write, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "catalog() rejection -> notify + clean abort (no list, no write, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "writeKeyPath refusal ({ok:false, reason}) -> the reason is surfaced, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "writeKeyPath REJECTION (daemon down at write time) -> notify, no throw (never-throw guard, HIGH)",
+                "result": "pass"
+              },
+              {
+                "title": "provider switch: runner write OK then model write REFUSES -> the partial state is surfaced (MED)",
+                "result": "pass"
+              },
+              {
+                "title": "an unconfigured default model (no override) that is not in the list is NOT flagged current-not-in-catalog (LOW)",
+                "result": "pass"
+              },
+              {
+                "title": "a runner-write refusal on a provider switch aborts before the model write",
+                "result": "pass"
+              },
+              {
+                "title": "cancel at the tier step -> clean no-op (no catalog read, no list, no write)",
+                "result": "pass"
+              },
+              {
+                "title": "cancel at the provider step -> no list, no write",
+                "result": "pass"
+              },
+              {
+                "title": "cancel at the model step -> no write",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: model-tier-picker.ts imports no vscode and no cloud/HTTP client",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 800,
+            "titles": [
+              {
+                "title": "renderDaemonTab renders state + detail (ac1); a missing detail renders just the state",
+                "result": "pass"
+              },
+              {
+                "title": "renderWorkflowsTab groups rows by slug with stage+status lines (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)",
+                "result": "pass"
+              },
+              {
+                "title": "both renderers HTML-escape every daemon-derived value (no <script> break-out)",
+                "result": "pass"
+              },
+              {
+                "title": "both renderers include a Refresh control that posts {type:'refresh'}",
+                "result": "pass"
+              },
+              {
+                "title": "a renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: detail-renderers.ts imports no vscode and uses no cloud/HTTP (only the injected gateway) — ac4/k2",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: the webview bootstraps post only the sanctioned message shapes (closed set)",
+                "result": "pass"
+              },
+              {
+                "title": "editing the ghHost row of the rendered tracker section posts repoTrackerWrite with repoPath, key and value",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 794,
+            "titles": [
+              {
+                "title": "renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath].tiers (NOT raw JSON); missing entry -> all-defaults",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: an unregistered selected repo falls back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: the Tracker section lists local rows as inputs (including ghHost) and status and policy rows read-only",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: the sign-in row is rendered read-only with status and reason",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: an ok:false result shows its message; no repoFields renders no Tracker section; a transport rejection propagates; values are escaped",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: a tracker edit goes through consent to writeRepoSetting and never to the models.byRepo route",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: declined consent, an unregistered repo and a malformed tracker write write nothing; a refusal shows the daemon message",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 843,
+            "titles": [
+              {
+                "title": "showStatusMenu offers EXACTLY two items and routes each choice to the matching panel (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "Cancel path: a dismissed menu (undefined) opens no panel (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "openDetailedStatus creates ONE panel with the daemon/workflows/debug tabs, defaults to daemon, renders gateway.status() (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "Degraded render: a rejected gateway.status() still opens the panel + tabs with an error body and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "a setHtml throw (e.g. panel disposed mid-render) degrades to a logged no-op — never an unhandled rejection or a sync throw",
+                "result": "pass"
+              },
+              {
+                "title": "single-instance: a second open reveals the same panel + switches tab, and after user-close a later open creates fresh",
+                "result": "pass"
+              },
+              {
+                "title": "openRepoConfiguration creates/reveals the separate Repo Configuration shell (single-instance)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: openDetailedStatus renders the daemon tab from detailRenderers.daemon (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a {switchTab:'workflows'} message re-invokes the workflows renderer exactly once and re-sets the html (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a {refresh} message re-invokes the ACTIVE tab renderer exactly once (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: NO timer/interval is armed — with no message the renderer call-count stays flat (no background poll, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S005: an unknown message type, or switchTab with an invalid tab, is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S005: a late switchTab/refresh after the panel was disposed is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "S005: the rendered Detailed Status shell carries a strict CSP + a per-render nonce on the only inline script",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the controller is armed ONLY after the webview {ready} handshake — never before (MED-1 fix: the initial batch is not posted into a not-yet-loaded document)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: activating the debug tab calls onActivate; switch-away / re-activate / panel-close dispose it EXACTLY once (one live)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: refresh stops then re-arms the ticker on the fresh document (re-seeds the log; LOW-1 fix)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a controller ctx.postMessage lands on the panel, and the shell wires the appendLog listener via textContent",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a {type:'action',action} message is forwarded to onDetailAction; a malformed action is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "S006: a host built with no tabControllers/onDetailAction behaves exactly as the S005 shell (no throw, no ticker)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: never-throw — an onActivate throw, a dispose throw, and an onDetailAction throw are all caught + logged",
+                "result": "pass"
+              },
+              {
+                "title": "S007: openRepoConfiguration renders the wired repoRenderer body; with no repoRenderer it renders the S004 placeholder unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no forward, no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "Story s3: a {repoTrackerWrite} is forwarded as a validated RepoTrackerWrite; the models.byRepo route and malformed tracker messages are unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "Story s3: a throwing tracker write sink is caught and logged; errors never reach the webview",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the empty selectRepo option clears the selection back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "S007: a repoRenderer throw (config read reject) degrades to an error body; an onRepoConfigWrite throw is caught",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/workspace/__tests__/activation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 761,
+            "titles": [
+              {
+                "title": "extension.ts constructs the WorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and wires registerWorkspaceCommands with the s1 surfaces",
+                "result": "pass"
+              },
+              {
+                "title": "the activation-time workspace register runs through the guarded runOnboarding sequence (S005 coalescing; S001 never-throws)",
+                "result": "pass"
+              },
+              {
+                "title": "contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 sc9: extension.ts wires the status-bar click + both panels as first-class commands (ac1/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "S004 sc9: both panel commands are palette-reachable (k6) and the menu command is not",
+                "result": "pass"
+              },
+              {
+                "title": "S005 sc9: extension.ts wires detailRenderers + enableScripts:true + the onMessage/postMessage bridge",
+                "result": "pass"
+              },
+              {
+                "title": "S006 sc9: extension.ts wires the debug renderer + tabController + onDetailAction over ONE shared managedPid (PATHS.pidFile)",
+                "result": "pass"
+              },
+              {
+                "title": "S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "3faa3eda",
+        "ranAt": "2026-10-17T18:29:17.325Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "jetbrains-plugin InsrcSettingsTrackerTest: parseCatalog keeps repoFields, the page loads them on a pooled thread and edits route to writeRepoSetting",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "InsrcSettingsTrackerTest: parseCatalog keeps repoFields and an older daemon without them gives an empty list",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "InsrcSettingsTrackerTest: readRepoSettings maps loaded, a daemon refusal and a transport fault",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "InsrcSettingsTrackerTest: writeRepoSetting calls repo_settings_set and maps saved, a refusal and a transport fault",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "InsrcSettingsTrackerTest: repo_settings_set keeps a null value on the wire as an explicit null while config_write still drops it",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "InsrcSettingsTrackerTest: the page reads each repo's settings on the pooled thread and hands them with repoFields to PerRepoSection",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "InsrcSettingsTrackerTest: a ghHost edit goes to writeRepoSetting, a model-tier edit still goes to writeSetting",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "InsrcSettingsTrackerTest: a refused tracker edit is reported with the daemon's message and stays pending",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin SettingsCatalogDtoDefaultTest: the DTO defaults repoFields and the five settings tests pass unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "SettingsCatalogDtoDefaultTest: the DTO built without repoFields defaults to an empty list",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "SettingsCatalogDtoDefaultTest: the five settings tests build the DTO without repoFields and are unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "SettingsTreeModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "SettingsTableModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "ModelTiersModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "SettingsEditModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "SettingsViewTest: every test passes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin DaemonGatewayServiceTest: forwards readRepoSettings and writeRepoSetting and the four doubles compile",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "DaemonGatewayServiceTest: the service forwards readRepoSettings and writeRepoSetting to its delegate",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "DaemonGatewayServiceTest: the gateway declares both methods and calls repo_settings_get and repo_settings_set, not config_write",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "DaemonGatewayServiceTest: the four DaemonGateway test doubles implement both new methods",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin PerRepoSectionTest: one repo's failure shows its reason and the others still render",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "PerRepoSectionTest: one repo's failure shows its reason and the others still render",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin PerRepoSectionTest: the sign-in row is read-only for signed-in and every failure state",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "PerRepoSectionTest: the sign-in row is read-only for signed-in and every failure state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9015,
+            "titles": [
+              {
+                "title": "InsrcSettingsTrackerTest: parseCatalog keeps repoFields and an older daemon without them gives an empty list",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: readRepoSettings maps loaded, a daemon refusal and a transport fault",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: writeRepoSetting calls repo_settings_set and maps saved, a refusal and a transport fault",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: repo_settings_set keeps a null value on the wire as an explicit null while config_write still drops it",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: the page reads each repo's settings on the pooled thread and hands them with repoFields to PerRepoSection",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: a ghHost edit goes to writeRepoSetting, a model-tier edit still goes to writeSetting",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: a refused tracker edit is reported with the daemon's message and stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsCatalogDtoDefaultTest: the DTO built without repoFields defaults to an empty list",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsCatalogDtoDefaultTest: the five settings tests build the DTO without repoFields and are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsTreeModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsTableModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsEditModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsViewTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "DaemonGatewayServiceTest: the service forwards readRepoSettings and writeRepoSetting to its delegate",
+                "result": "pass"
+              },
+              {
+                "title": "DaemonGatewayServiceTest: the gateway declares both methods and calls repo_settings_get and repo_settings_set, not config_write",
+                "result": "pass"
+              },
+              {
+                "title": "DaemonGatewayServiceTest: the four DaemonGateway test doubles implement both new methods",
+                "result": "pass"
+              },
+              {
+                "title": "PerRepoSectionTest: one repo's failure shows its reason and the others still render",
+                "result": "pass"
+              },
+              {
+                "title": "PerRepoSectionTest: the sign-in row is read-only for signed-in and every failure state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "59f4c7ef",
+        "ranAt": "2026-10-17T18:36:28.181Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/cli/__tests__/repo-fields-contract.test.ts: terminal rows equal the shared catalog fixture",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/repo-fields-contract.test.ts",
+                "title": "the shared fixture equals the daemon table and the config.catalog payload",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/repo-fields-contract.test.ts",
+                "title": "terminal rows equal the shared catalog fixture",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/repo-fields-contract.test.ts",
+                "title": "a row added to a copy of the table appears in the terminal rows with no client change",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts: VS Code rows equal the shared catalog fixture and a new row appears",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts",
+                "title": "VS Code rows equal the shared catalog fixture and a new row appears",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "jetbrains-plugin RepoFieldsContractTest: JetBrains rows equal the shared catalog fixture and a new row appears",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "RepoFieldsContractTest: JetBrains rows equal the shared catalog fixture and a new row appears",
+                "result": "pass"
+              },
+              {
+                "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+                "title": "RepoFieldsContractTest: the rendered Tracker block shows each fixture row's label and note, and only local rows have a text field",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5577,
+            "titles": [
+              {
+                "title": "InsrcSettingsTrackerTest: parseCatalog keeps repoFields and an older daemon without them gives an empty list",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: readRepoSettings maps loaded, a daemon refusal and a transport fault",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: writeRepoSetting calls repo_settings_set and maps saved, a refusal and a transport fault",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: repo_settings_set keeps a null value on the wire as an explicit null while config_write still drops it",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: the page reads each repo's settings on the pooled thread and hands them with repoFields to PerRepoSection",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: a ghHost edit goes to writeRepoSetting, a model-tier edit still goes to writeSetting",
+                "result": "pass"
+              },
+              {
+                "title": "InsrcSettingsTrackerTest: a refused tracker edit is reported with the daemon's message and stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsCatalogDtoDefaultTest: the DTO built without repoFields defaults to an empty list",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsCatalogDtoDefaultTest: the five settings tests build the DTO without repoFields and are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsTreeModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsTableModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "ModelTiersModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsEditModelTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "SettingsViewTest: every test passes",
+                "result": "pass"
+              },
+              {
+                "title": "DaemonGatewayServiceTest: the service forwards readRepoSettings and writeRepoSetting to its delegate",
+                "result": "pass"
+              },
+              {
+                "title": "DaemonGatewayServiceTest: the gateway declares both methods and calls repo_settings_get and repo_settings_set, not config_write",
+                "result": "pass"
+              },
+              {
+                "title": "DaemonGatewayServiceTest: the four DaemonGateway test doubles implement both new methods",
+                "result": "pass"
+              },
+              {
+                "title": "RepoFieldsContractTest: JetBrains rows equal the shared catalog fixture and a new row appears",
+                "result": "pass"
+              },
+              {
+                "title": "RepoFieldsContractTest: the rendered Tracker block shows each fixture row's label and note, and only local rows have a text field",
+                "result": "pass"
+              },
+              {
+                "title": "PerRepoSectionTest: one repo's failure shows its reason and the others still render",
+                "result": "pass"
+              },
+              {
+                "title": "PerRepoSectionTest: the sign-in row is read-only for signed-in and every failure state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/repo-fields-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 702,
+            "titles": [
+              {
+                "title": "the shared fixture equals the daemon table and the config.catalog payload",
+                "result": "pass"
+              },
+              {
+                "title": "terminal rows equal the shared catalog fixture",
+                "result": "pass"
+              },
+              {
+                "title": "a row added to a copy of the table appears in the terminal rows with no client change",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 665,
+            "titles": [
+              {
+                "title": "VS Code rows equal the shared catalog fixture and a new row appears",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

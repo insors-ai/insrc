@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792262943829-errz3b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-17T18:49:03.829Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 215356,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s3",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/RepoTrackerModel.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/SettingsCatalogDtoDefaultTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsTrackerTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSectionTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/RepoFieldsContractTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/TrackerFixtures.kt",
+        "jetbrains-plugin/test-bridge/kotlin-suite.test.ts",
+        "src/cli/__tests__/command.test.ts",
+        "src/cli/__tests__/repo-fields-contract.test.ts",
+        "src/cli/__tests__/settings-modal.test.ts",
+        "src/cli/__tests__/tracker-setup-service.test.ts",
+        "src/cli/__tests__/tsconfig.fixtures.2390875.json",
+        "src/cli/__tests__/tui.test.ts",
+        "src/cli/__tests__/zz-config-probe.2390875.ts",
+        "src/cli/command.ts",
+        "src/cli/panes/RepoSettingsModal.tsx",
+        "src/cli/panes/ReposPane.tsx",
+        "src/cli/panes/repo-settings-model.ts",
+        "src/cli/services/config.ts",
+        "src/cli/services/index.ts",
+        "src/cli/services/workflow.ts",
+        "src/config/__tests__/fixtures/repo-fields-catalog.json",
+        "src/config/__tests__/repo-fields.test.ts",
+        "src/config/repo-fields.ts",
+        "src/config/settings-catalog.ts",
+        "src/daemon/__tests__/repo-settings.test.ts",
+        "src/daemon/index.ts",
+        "src/daemon/repo-settings.ts",
+        "src/shared/__tests__/ipc-client-timeout.test.ts",
+        "src/shared/ipc-client.ts",
+        "src/workflow/config/__tests__/github-split.test.ts",
+        "src/workflow/config/__tests__/github-store.test.ts",
+        "src/workflow/config/github-store.ts",
+        "src/workflow/config/github.ts",
+        "src/workflow/tracker/__tests__/setup-plan.test.ts",
+        "src/workflow/tracker/setup.ts",
+        "vscode-plugin/src/config/__tests__/gateway.test.ts",
+        "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+        "vscode-plugin/src/config/__tests__/seam.test.ts",
+        "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+        "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+        "vscode-plugin/src/config/gateway.ts",
+        "vscode-plugin/src/config/types.ts",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+        "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+        "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+        "vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts",
+        "vscode-plugin/src/panels/__tests__/webview-host.test.ts",
+        "vscode-plugin/src/panels/repo-config.ts",
+        "vscode-plugin/src/panels/types.ts",
+        "vscode-plugin/src/panels/webview-host.ts",
+        "vscode-plugin/src/workspace/__tests__/activation.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/config/github.ts:1",
+            "message": "The resolver split has empty testsReaching edges for these symbols. The promised characterization tests are present and passing, but do not establish symbol coverage under the supplied ground truth.",
+            "expectationRef": "resolveGithubConfig; resolveGithubConfigFromFile; resolveEntry",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/config/github-store.ts:1",
+            "message": "The new storage read, merge and write paths and their helpers have empty testsReaching edges. All promised storage tests are present and passing, but these symbols remain unexercised according to the supplied edges.",
+            "expectationRef": "isPlainObject; unreadable; isMissing; describe; validateSnapshot; readRepoEntry; mergeRepoEntryKeys; fingerprint; sameFingerprint; failed; writeOnce; writeRepoEntryKeys",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/config/repo-fields.ts:1",
+            "message": "The field-validation symbols have empty testsReaching edges, despite the corresponding promised tests being present and passing.",
+            "expectationRef": "isAllowedLiteral; rowOf; fail; validateBranchPattern; hasControlChar; validateRepoSetting; bad",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/shared/ipc-client.ts:1",
+            "message": "The settlement and early-close helpers have empty testsReaching edges. The promised timeout tests pass and rpc has a passing reaching file, but coverage cannot be transferred to helpers whose own edges are empty.",
+            "expectationRef": "settle; resolve; reject; closed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/repo-settings.ts:1",
+            "message": "The new settings handlers and payload/error helpers have empty testsReaching edges. All nine promised daemon tests are present and passing; the supplied graph nevertheless records no tests reaching these symbols.",
+            "expectationRef": "mapSignin; mapPolicy; ownValues; resolveTarget; createRepoSettingsHandlers; configPath; fail; registered; payloadFor; asData",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/setup.ts:1",
+            "message": "The setup planning and config-outcome behavior has empty testsReaching edges. The three promised setup-plan tests are present and passing, but no reaching tests are recorded for these symbols.",
+            "expectationRef": "planTrackerConfig; runTrackerSetup; configAlreadyDetail",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/workflow.ts:1",
+            "message": "The daemon-backed tracker setup path has empty testsReaching edges, despite all five promised terminal setup-service tests being present and passing.",
+            "expectationRef": "ensureThroughDaemon; trackerSetup",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/config.ts:1",
+            "message": "The catalog and repository-settings service functions have empty testsReaching edges. Passing facade/modal tests do not supply the missing symbol-reaching evidence.",
+            "expectationRef": "getCatalog; getRepoSettings; setRepoSetting",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/index.ts:1",
+            "message": "makeServices has an empty testsReaching list for the changed service wiring. The promised facade and config-seam tests are present and passing, but no reaching edge is recorded.",
+            "expectationRef": "makeServices",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/panes/RepoSettingsModal.tsx:1",
+            "message": "The new modal and save behavior have empty testsReaching edges. The promised modal integration test is present and passing, but neither symbol has recorded test reachability.",
+            "expectationRef": "RepoSettingsModal; save",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/panes/repo-settings-model.ts:1",
+            "message": "The status, target and policy formatting helpers have empty testsReaching edges. buildSettingsRows is reached by a passing contract test, but its coverage cannot substitute for the helpers' empty edges.",
+            "expectationRef": "signinText; targetText; policyValueText; policyText",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "vscode-plugin/src/panels/repo-config.ts:1",
+            "message": "The tracker renderer and write-routing symbols have empty testsReaching edges. The promised tracker, consent, refusal and sign-in tests are present and passing; only renderRepoConfig has a recorded passing reaching file.",
+            "expectationRef": "renderTrackerSection; createRepoConfigWriteHandler; handleTrackerWrite",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "vscode-plugin/src/panels/webview-host.ts:1",
+            "message": "handleRepoMessage has no reaching tests recorded for the added repoTrackerWrite handling. The promised routing/error tests are present and passing, but the symbol's testsReaching list is empty.",
+            "expectationRef": "handleRepoMessage",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1",
+            "message": "The repository-settings gateway methods and parsers have empty testsReaching edges. The Kotlin bridge explicitly records the promised catalog/read/write tests as passing, but supplies no reaching edges to these symbols.",
+            "expectationRef": "DaemonGateway.readRepoSettings; DaemonGateway.writeRepoSetting; DaemonGatewayImpl.readRepoSettings; DaemonGatewayImpl.writeRepoSetting; DaemonGatewayImpl.Companion.repoSettingsErrorMessage; DaemonGatewayImpl.Companion.parseRepoSettings; DaemonGatewayImpl.Companion.parseCatalog",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt:1",
+            "message": "Both added service forwarding methods have empty testsReaching edges. The promised forwarding test is present and passing in the Kotlin bridge, but neither method has recorded test reachability.",
+            "expectationRef": "DaemonGatewayService.readRepoSettings; DaemonGatewayService.writeRepoSetting",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt:1",
+            "message": "The explicit-null serialization and error parsing symbols have empty testsReaching edges. The bridge records the null-on-wire test as passing, but no symbol-reaching evidence is supplied.",
+            "expectationRef": "UnixSocketDaemonRpc.nullKeepingGson; UnixSocketDaemonRpc.requestLine; UnixSocketDaemonRpc.parse; UnixSocketDaemonRpc.topLevelErrorMessage",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt:1",
+            "message": "The settings-page loading and integration symbols have empty testsReaching edges. The promised pooled-thread/page-routing tests are present and passing in the bridge, but do not establish reachability for these symbols.",
+            "expectationRef": "InsrcSettingsConfigurable.createComponent; InsrcSettingsConfigurable.renderBody",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt:1",
+            "message": "The tracker section's rendering and edit lifecycle have empty testsReaching edges. The promised failure-isolation and read-only sign-in tests are present and passing, but these symbols have no recorded reaching tests.",
+            "expectationRef": "PerRepoSection.tracker; PerRepoSection.isModified; PerRepoSection.reset; PerRepoSection.apply; PerRepoSection.rebuild; PerRepoSection.repoPanel; PerRepoSection.trackerPanel",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/RepoTrackerModel.kt:1",
+            "message": "The new tracker model's state, rendering, edit and save behavior has empty testsReaching edges throughout. Passing Kotlin test titles do not fill these symbol-level gaps.",
+            "expectationRef": "TrackerRow; TrackerWrite; RepoTrackerModel; RepoTrackerModel.repos; RepoTrackerModel.failure; RepoTrackerModel.policySource; RepoTrackerModel.rows; RepoTrackerModel.setEdit; RepoTrackerModel.isModified; RepoTrackerModel.revert; RepoTrackerModel.collectWrites; RepoTrackerModel.onSaved; RepoTrackerModel.replace; RepoTrackerModel.Companion.signinText; RepoTrackerModel.Companion.targetText; RepoTrackerModel.Companion.policyText; RepoTrackerModel.Companion.valueText",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 19,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

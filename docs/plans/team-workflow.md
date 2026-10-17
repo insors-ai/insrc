@@ -134,6 +134,15 @@ Repos without the policy file behave exactly as today (solo mode).
   finding was wording: the 15 s deadline bounds only the config call, not the
   whole tracker setup. The plan and build correct that wording and scope the
   timeout tests to the config call.
+- **s3 BUILD approval (2026-10-17):** approved with a code-review override. The review
+  blocked on 19 HIGH coverage findings that are empty-grounding gaps (the graph has no
+  test-to-symbol edges for the new files, even after a reindex), not defects; every promised
+  test exists and passes. The one real MED (the JetBrains policy DTO dropped the policy
+  source) was fixed in round 2. `codeReview.enforce` is off, so the block was advisory.
+  Follow-ups: why the index records no test edges for new files; the s1 gh-runner follow-up
+  so `ghPath` and `ghHost` take effect; s6 consumes `branchPattern`. The JetBrains tests run
+  under JDK 21 (`jetbrains-plugin/test-bridge/kotlin-suite.test.ts`; `INSRC_JDK21` or
+  `~/.local/jdk21`).
 
 ## Open items for design
 

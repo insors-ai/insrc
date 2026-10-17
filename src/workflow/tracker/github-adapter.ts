@@ -29,7 +29,9 @@ import {
 	ghFindIssueByLabelsStrict,
 	ghGetIssueBody,
 	ghLinkSubIssue,
+	runGh,
 } from './github.js';
+import { parseIssueRef } from './refs.js';
 import {
 	missingCapabilities,
 	type Capability,
@@ -60,6 +62,50 @@ function attempt<T>(fn: () => T): PortResult<T> {
 
 function unsupported<T>(what: string): PortResult<T> {
 	return { ok: false, kind: 'rejected', reason: `the github tracker does not support ${what}` };
+}
+
+/** The assignee logins of an issue, read live. Throws a classified GhCommandError. */
+function readAssignees(issue: IssueRef): { readonly owner: string; readonly repo: string; readonly number: string; readonly logins: string[] } {
+	const { owner, repo, number } = parseIssueRef(issue);
+	const raw = runGh(['issue', 'view', number, '--repo', `${owner}/${repo}`, '--json', 'assignees']);
+	let parsed: { assignees?: Array<{ login?: string }> };
+	try {
+		parsed = JSON.parse(raw) as typeof parsed;
+	} catch {
+		throw new GhCommandError('rejected', `gh returned unexpected assignee JSON for ${issue}: '${raw.slice(0, 120)}'`);
+	}
+	const logins = (parsed.assignees ?? []).map(a => a.login ?? '').filter(l => l.length > 0);
+	return { owner, repo, number, logins };
+}
+
+const sameLogin = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
+
+function readAssignee(issue: IssueRef): PortResult<string | null> {
+	return attempt(() => {
+		const { logins } = readAssignees(issue);
+		if (logins.length > 1) throw new GhCommandError('rejected', `${issue} has more than one assignee (${logins.join(', ')})`);
+		return logins[0] ?? null;
+	});
+}
+
+/** Read, remove every other assignee, add the requested one (or clear all for
+ *  null), re-read and compare. No step is retried: a failed or timed-out step is
+ *  reported as it is (the resulting state is unknown) and the re-read is skipped. */
+function setAssignee(issue: IssueRef, who: string | null): PortResult<void> {
+	return attempt(() => {
+		const current = readAssignees(issue);
+		const repoArg = `${current.owner}/${current.repo}`;
+		const others = current.logins.filter(l => who === null || !sameLogin(l, who));
+		const hasWho = who !== null && current.logins.some(l => sameLogin(l, who));
+		if (others.length > 0) runGh(['issue', 'edit', current.number, '--repo', repoArg, '--remove-assignee', others.join(',')], { discardOutput: true });
+		if (who !== null && !hasWho) runGh(['issue', 'edit', current.number, '--repo', repoArg, '--add-assignee', who], { discardOutput: true });
+		if (others.length === 0 && (who === null || hasWho)) return;   // already right: no change call, no re-read
+		const after = readAssignees(issue).logins;
+		const ok = who === null ? after.length === 0 : after.length === 1 && sameLogin(after[0]!, who);
+		if (!ok) {
+			throw new GhCommandError('rejected', `${issue} assignees are [${after.join(', ')}] after the update, expected ${who === null ? 'none' : who}`);
+		}
+	});
 }
 
 function createIssueOps(owner: string, repo: string): IssueOps {
@@ -96,9 +142,8 @@ export function createGithubTracker(owner: string, repo: string): TrackerPort {
 			}
 		},
 
-		// Replaced by the real reads and writes in s1/t5.
-		readAssignee: () => unsupported('reading assignees yet'),
-		setAssignee: () => unsupported('setting assignees yet'),
+		readAssignee,
+		setAssignee,
 
 		createIssue: (spec: IssueSpec) => {
 			const created = issueOps.create(spec);

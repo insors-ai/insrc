@@ -200,3 +200,99 @@ test('signoff methods return rejected without running gh', () => {
 	}
 	assert.equal(ran, 0);
 });
+
+// ---------------------------------------------------------------------------
+// readAssignee / setAssignee
+// ---------------------------------------------------------------------------
+
+/** A fake gh holding a mutable assignee list for one issue. `stickyAdd` makes an add a no-op (partial state). */
+function fakeAssigneeGh(initial: string[], opts: { stickyAdd?: boolean; failOn?: (args: readonly string[]) => Error | undefined } = {}) {
+	let assignees = [...initial];
+	const calls: string[][] = [];
+	_setTrackerExecForTests((_cmd, args) => {
+		calls.push([...args]);
+		const err = opts.failOn?.(args);
+		if (err !== undefined) throw err;
+		if (args[0] === 'issue' && args[1] === 'view') return JSON.stringify({ assignees: assignees.map(login => ({ login })) });
+		if (args[0] === 'issue' && args[1] === 'edit') {
+			const rm = args.indexOf('--remove-assignee');
+			if (rm >= 0) { const drop = args[rm + 1]!.split(','); assignees = assignees.filter(a => !drop.includes(a)); }
+			const add = args.indexOf('--add-assignee');
+			if (add >= 0 && opts.stickyAdd !== true) assignees.push(args[add + 1]!);
+			return '';
+		}
+		throw new Error(`unexpected gh call ${args.join(' ')}`);
+	});
+	return { calls, now: () => [...assignees] };
+}
+
+const isEdit = (c: string[]): boolean => c[0] === 'issue' && c[1] === 'edit';
+
+test('readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference', () => {
+	const port = createGithubTracker('o', 'r');
+	fakeAssigneeGh(['alice']);
+	assert.deepEqual(port.readAssignee('o/r#5'), { ok: true, value: 'alice' });
+	fakeAssigneeGh([]);
+	assert.deepEqual(port.readAssignee('o/r#5'), { ok: true, value: null });
+
+	fakeAssigneeGh(['alice', 'bob']);
+	const several = port.readAssignee('o/r#5');
+	assert.equal(several.ok, false);
+	if (!several.ok) { assert.equal(several.kind, 'rejected'); assert.match(several.reason, /alice, bob/); }
+
+	const { calls } = fakeAssigneeGh(['alice']);
+	for (const bad of ['not-a-ref', 'o/r', '#5']) {
+		const r = port.readAssignee(bad);
+		assert.equal(r.ok, false, bad);
+		if (!r.ok) assert.equal(r.kind, 'rejected');
+	}
+	assert.equal(calls.length, 0, 'a malformed reference never reaches gh');
+});
+
+test('setAssignee from zero, one and several assignees ends with exactly the requested user', () => {
+	const port = createGithubTracker('o', 'r');
+	for (const initial of [[], ['bob'], ['alice'], ['bob', 'carol'], ['alice', 'bob']]) {
+		const gh = fakeAssigneeGh(initial);
+		assert.deepEqual(port.setAssignee('o/r#5', 'alice'), { ok: true, value: undefined }, JSON.stringify(initial));
+		assert.deepEqual(gh.now(), ['alice'], JSON.stringify(initial));
+	}
+});
+
+test('setAssignee makes no change call when already right and clears for null', () => {
+	const port = createGithubTracker('o', 'r');
+	const same = fakeAssigneeGh(['Alice']);
+	assert.equal(port.setAssignee('o/r#5', 'alice').ok, true);   // logins compare case-insensitively
+	assert.equal(same.calls.filter(isEdit).length, 0);
+
+	const none = fakeAssigneeGh([]);
+	assert.equal(port.setAssignee('o/r#5', null).ok, true);
+	assert.equal(none.calls.filter(isEdit).length, 0);
+
+	const clear = fakeAssigneeGh(['alice', 'bob']);
+	assert.equal(port.setAssignee('o/r#5', null).ok, true);
+	assert.deepEqual(clear.now(), []);
+	assert.equal(clear.calls.filter(isEdit).length, 1);
+});
+
+test('setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out', () => {
+	const port = createGithubTracker('o', 'r');
+	// The add did not take: the re-read differs, reported as rejected naming the state.
+	const partial = fakeAssigneeGh(['bob'], { stickyAdd: true });
+	const differs = port.setAssignee('o/r#5', 'alice');
+	assert.equal(differs.ok, false);
+	if (!differs.ok) { assert.equal(differs.kind, 'rejected'); assert.match(differs.reason, /expected alice/); }
+	assert.equal(partial.calls.filter(c => c.includes('--add-assignee')).length, 1, 'the add is not retried');
+
+	// A step that times out: unreachable, the state is unknown, nothing after it runs.
+	const timeout = fakeAssigneeGh(['bob'], { failOn: a => (a.includes('--add-assignee') ? execError({ code: 'ETIMEDOUT' }) : undefined) });
+	const timedOut = port.setAssignee('o/r#5', 'alice');
+	assert.equal(timedOut.ok, false);
+	if (!timedOut.ok) assert.equal(timedOut.kind, 'unreachable');
+	assert.equal(timeout.calls.filter(c => c.includes('--add-assignee')).length, 1);
+	assert.equal(timeout.calls.filter(c => c[1] === 'view').length, 1, 'no re-read after a failed step');
+
+	// The first read timing out stops everything.
+	const readFails = fakeAssigneeGh([], { failOn: () => execError({ code: 'ETIMEDOUT' }) });
+	assert.equal(port.setAssignee('o/r#5', 'alice').ok, false);
+	assert.equal(readFails.calls.length, 1);
+});

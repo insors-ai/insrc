@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792227561056-oiy7od",
+    "runId": "wf-1792227721731-1vwusb",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T08:59:22.043Z",
+    "createdAt": "2026-10-17T09:02:02.722Z",
     "epicCreatedAt": "2026-10-17T08:20:53.100Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 985,
+    "elapsedMs": 989,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "bd1c6c9005ff6390",
     "epicSlug": "record-calls-made-module-level-statements",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792227561056-oiy7od",
-    "hldEffectiveHash": "4e87fce7206da01dd67db050a308af68d8f1f029acc707f2fe2887a0c65ad95e",
+    "hldBaseRunId": "wf-1792227721731-1vwusb",
+    "hldEffectiveHash": "bf2048f4fa400e92e98ec8b1e1936c0a45174c973a5277a4179b8fc3370f14a5",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
@@ -116,7 +116,8 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "Every path the current predicate accepts is still accepted; ordinary source files are rejected."
+            "Both existing branches are kept: any file under a __tests__/ directory, whatever its language, and a TS/JS .test./.spec. suffix.",
+            "Ordinary source files are rejected."
           ]
         }
       ]
@@ -214,7 +215,7 @@
           "source": "c2"
         },
         {
-          "text": "Every path isTestFile accepts today is still accepted.",
+          "text": "Every path isTestFile accepts today is still accepted, including any file under a __tests__/ directory regardless of language.",
           "source": "c3"
         }
       ]
@@ -262,7 +263,7 @@
       "testFramework": "node:test via npx tsx --test (assert/strict), run under Node 22"
     },
     "migration": {
-      "stateBefore": "Per s1: the TS parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); program-level statements, exported initializers, export default, class field initializers and constructors are never scanned (src/indexer/parser/typescript.ts:150-200, :313-320, :385-388); isTestFile recognises only TS/JS test files (src/workflow/code-review/grounding.ts:60-62).",
+      "stateBefore": "Per s1: the TS parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); program-level statements, exported initializers, export default, class field initializers and constructors are never scanned (src/indexer/parser/typescript.ts:150-200, :313-320, :385-388); isTestFile recognises a __tests__/ directory of any language and TS/JS .test./.spec. suffixes only (src/workflow/code-review/grounding.ts:60-62).",
       "stateAfter": "TS calls outside any extracted function are CALLS from the file or class entity; isTestFile recognises Python, Go and JVM test files.",
       "migrationSteps": [
         {
@@ -369,7 +370,7 @@
     {
       "id": "c6",
       "kind": "prior-artifact",
-      "ref": "Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story"
+      "ref": "Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); the isTestFile current behaviour described exactly (cycle 2 round 2); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story"
     }
   ]
 }

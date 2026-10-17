@@ -1,0 +1,533 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1792227396639-otghs2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T08:59:42.630Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 185982,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "epicSlug": "understand-changes-before-committing",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Understand changes before committing",
+    "flavor": "new-capability",
+    "problem": "Developers can commit completed designs and implementations without knowing whether they understand the behavior, decisions, and failure modes they are accepting. Existing delivery approvals and reviews describe the work, not a particular person's understanding, so uncertainty and confident misconceptions are invisible. There is no contextual assessment of the proposed commit's impact, no proportional understanding requirement, and no durable record connecting a person's demonstrated knowledge or explicit exception to the exact changes committed.",
+    "summary": {
+      "audience": "product",
+      "prose": "Before a commit, developers receive an understanding check proportionate to its contextual impact. They can learn through guided explanations, demonstrate understanding, and retain a personal record without changing the work item's completion status. High-impact exceptions are explicit and visible in the commit message."
+    },
+    "nonGoals": [
+      {
+        "text": "Changing work-item approvals or completion status",
+        "rationale": "Individual understanding and delivery status are separate."
+      },
+      {
+        "text": "Standalone Grokcheck runtime, Python service, or external browser product",
+        "rationale": "The daemon owns the lifecycle; VS Code is the initial surface."
+      },
+      {
+        "text": "New agent adapters, additional IDEs, video courses, or spaced repetition",
+        "rationale": "Defer expansion until the core pre-commit flow works."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "The current specification and mocks express the desired product behavior; unresolved implementation choices require explicit decisions before implementation.",
+        "confidence": "high",
+        "source": "c1"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "Daemon owns canonical state, keys, grading, guidance, and authorization; clients use IPC only.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "text": "Impact classification is contextual daemon reasoning, never line-count or filename rules.",
+        "type": "stakeholder",
+        "source": "c1"
+      },
+      {
+        "id": "k3",
+        "text": "Trivial skips; Low optional; strict Medium requires completion regardless of result; configured High requires pass or explicit commit-recorded override.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k4",
+        "text": "Assessment and authorization bind to the intended staged snapshot and base; changed content cannot reuse authorization silently.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k5",
+        "text": "Unsure immediately starts guidance; incorrect submitted answers also start guidance; reading guidance alone is not a pass.",
+        "type": "contract",
+        "source": "c1"
+      },
+      {
+        "id": "k6",
+        "text": "Preserve personal original answers, confidence and assisted attempts separately from work-item delivery state.",
+        "type": "invariant",
+        "source": "c1"
+      },
+      {
+        "id": "k7",
+        "text": "Use existing CLI-backed providers with sequential LLM calls and daemon-served structured context, never direct cloud REST.",
+        "type": "convention",
+        "source": "c2"
+      },
+      {
+        "id": "k8",
+        "text": "Copy/adapt relevant pinned Grokcheck modules with attribution; no separate Grokcheck process or Python runtime.",
+        "type": "stakeholder",
+        "source": "c1"
+      },
+      {
+        "id": "k9",
+        "text": "Assessments appear in a resumable VS Code editor pane; UI scores cannot authorize commits.",
+        "type": "contract",
+        "source": "c3"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Keep a personal, resumable understanding record",
+        "userValue": "I can resume my check and distinguish my understanding from delivery progress.",
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a developer begins a check for a staged change",
+            "when": "the session is saved and later resumed",
+            "then": "the same person's answers, confidence, assisted attempts and progress remain associated with the original change and linked work items",
+            "operationalizes": [
+              "k1",
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a linked epic, story, task or issue is completed",
+            "when": "a check is failed, skipped or resumed",
+            "then": "its delivery status and approvals remain unchanged",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the editor closes or the daemon restarts during a check",
+            "when": "the developer returns",
+            "then": "persisted progress is recoverable and missing or uncertain state cannot masquerade as a pass",
+            "operationalizes": [
+              "k1",
+              "k9"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Retain personal understanding history and resumable progress independently of delivery state."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Explain change impact and the applicable project requirement",
+        "userValue": "I understand why this commit needs a check and what the project requires.",
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an exact staged change and its base are available",
+            "when": "impact is assessed",
+            "then": "the daemon provides High, Medium, Low or Trivial with contextual reasons and relevant evidence rather than a filename or line-count rule",
+            "operationalizes": [
+              "k2",
+              "k4",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a classification and current project settings exist",
+            "when": "requirements are shown",
+            "then": "Trivial bypasses assessment, Low offers a voluntary check, strict Medium requires completion without score blocking, and enabled High requires a pass or explicit override",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "context or classification is unavailable or uncertain",
+            "when": "a commit check is requested",
+            "then": "the user sees the uncertainty and recovery options without silently treating it as Trivial or a pass",
+            "operationalizes": [
+              "k1",
+              "k2"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Classify staged change impact contextually and explain the resulting project requirement."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Demonstrate understanding with grounded questions",
+        "userValue": "I can demonstrate understanding of the actual requirements, design and behavior I am committing.",
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "linked requirements, design, implementation, tests and review evidence are available",
+            "when": "a check is prepared",
+            "then": "questions address the exact change and cite supporting evidence; unavailable evidence is disclosed rather than invented",
+            "operationalizes": [
+              "k4",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a developer submits an answer and confidence",
+            "when": "the answer is evaluated",
+            "then": "the daemon records the first response and determines the outcome using validated criteria; the editor cannot declare itself passed",
+            "operationalizes": [
+              "k1",
+              "k6",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an assessment is run with any supported authoring assistant",
+            "when": "questions and results are produced",
+            "then": "the same daemon-managed experience works without requiring Claude-specific hooks or a separate Grokcheck service",
+            "operationalizes": [
+              "k1",
+              "k7",
+              "k8"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Provide evidence-grounded questions and authoritative evaluation for the staged change."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Learn through guidance after uncertainty or an incorrect answer",
+        "userValue": "I can understand the concept I missed and demonstrate what I learned.",
+        "dependsOn": [
+          "s3"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a question is visible with no answer submitted",
+            "when": "the user selects Unsure",
+            "then": "guided understanding opens immediately with explanation and relevant evidence",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an answer has been submitted",
+            "when": "it is evaluated as incorrect",
+            "then": "the user receives a guided walkthrough of the concept and supporting evidence",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the user has read guidance",
+            "when": "the user continues",
+            "then": "a fresh grounded question assesses understanding; reading guidance alone never yields a pass and the original attempt remains visible separately from assisted outcomes",
+            "operationalizes": [
+              "k5",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Provide immediate contextual guidance and fresh reassessment while preserving original and assisted outcomes."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Complete and resume checks in a VS Code editor pane",
+        "userValue": "I can manage the whole check alongside my code without leaving VS Code.",
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a commit needs or offers a check",
+            "when": "the user opens it",
+            "then": "an editor pane shows impact, rationale, requirement, linked scope and progress with questions, confidence, guidance and results",
+            "operationalizes": [
+              "k3",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the pane is closed or reloaded",
+            "when": "the user reopens it",
+            "then": "the daemon's current session and eligibility are shown without losing saved answers or granting permission from stale UI state",
+            "operationalizes": [
+              "k1",
+              "k9"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a check is offered voluntarily or requires an override",
+            "when": "the user chooses skip or override",
+            "then": "the pane clearly distinguishes voluntary decline from a recorded exception and explains the commit consequence",
+            "operationalizes": [
+              "k3",
+              "k9"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Expose the full check and recovery experience in a resumable VS Code editor pane."
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Apply proportional checks to the exact commit",
+        "userValue": "I can commit once the applicable requirement is satisfied, knowing the decision covers what is actually committed.",
+        "dependsOn": [
+          "s2",
+          "s3",
+          "s5"
+        ],
+        "sizeEstimate": "XL",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a commit is attempted under enabled policy",
+            "when": "the pre-commit check evaluates current evidence",
+            "then": "Trivial proceeds without a test, Low may decline, strict Medium proceeds after completion regardless of outcome, and enabled High passes automatically only after a successful test",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a previously checked snapshot or base changes",
+            "when": "commit eligibility is requested",
+            "then": "old passes and overrides no longer authorize the new commit while historical results are retained",
+            "operationalizes": [
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the daemon is unavailable or concurrent attempts occur",
+            "when": "a required check cannot be confirmed",
+            "then": "the user receives actionable recovery and the commit is not silently authorized with an unknown result",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Authorize only the intended staged commit according to the current project requirement and valid evidence."
+          }
+        ]
+      },
+      {
+        "id": "s7",
+        "title": "Explicitly override a High requirement with a durable commit record",
+        "userValue": "I can make an accountable exception when I cannot pass or choose to skip a High check.",
+        "dependsOn": [
+          "s6"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an enabled High check is failed or skipped",
+            "when": "the developer does not explicitly override",
+            "then": "the commit remains blocked",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an enabled High check is failed or skipped",
+            "when": "the developer explicitly confirms an override for the current snapshot",
+            "then": "the exception and reason are recorded in the actual resulting commit message and understanding history",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the required override record is missing from the final message or the staged content changes",
+            "when": "the commit is finalized",
+            "then": "the exception cannot authorize that commit",
+            "operationalizes": [
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a valid High assessment succeeds",
+            "when": "the matching commit is retried",
+            "then": "it proceeds automatically without requiring an override",
+            "operationalizes": [
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Require explicit, snapshot-specific exceptions for failed or skipped High checks and preserve the exception in the final commit message."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261017670419c4:FR001",
+          "statement": "Commit requirements vary with contextually classified impact and project policy.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261017670419c4:FR002",
+          "statement": "The person receives evidence-backed assessments and guided help when unsure or incorrect.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261017670419c4:FR003",
+          "statement": "Understanding history is attributable to a person and exact work version without altering delivery status.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261017670419c4:FR004",
+          "statement": "Only matching current evidence and explicit user decisions can authorize the intended commit.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261017670419c4:S001:FR001",
+          "statement": "Retain personal understanding history and resumable progress independently of delivery state.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E20261017670419c4:S002:FR001",
+          "statement": "Classify staged change impact contextually and explain the resulting project requirement.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E20261017670419c4:S003:FR001",
+          "statement": "Provide evidence-grounded questions and authoritative evaluation for the staged change.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E20261017670419c4:S004:FR001",
+          "statement": "Provide immediate contextual guidance and fresh reassessment while preserving original and assisted outcomes.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E20261017670419c4:S005:FR001",
+          "statement": "Expose the full check and recovery experience in a resumable VS Code editor pane.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E20261017670419c4:S006:FR001",
+          "statement": "Authorize only the intended staged commit according to the current project requirement and valid evidence.",
+          "scope": "item",
+          "itemRef": "s6"
+        },
+        {
+          "id": "E20261017670419c4:S007:FR001",
+          "statement": "Require explicit, snapshot-specific exceptions for failed or skipped High checks and preserve the exception in the final commit message.",
+          "scope": "item",
+          "itemRef": "s7"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md"
+    },
+    {
+      "id": "c2",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "mocks/commit-understanding.md"
+    }
+  ]
+}

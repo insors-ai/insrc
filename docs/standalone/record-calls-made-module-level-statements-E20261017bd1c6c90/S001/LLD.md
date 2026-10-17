@@ -5,8 +5,8 @@
 ## Summary
 
 **Epic:** `record-calls-made-module-level-statements`
-**HLD base run:** `wf-1792227561056-oiy7od`
-**HLD effective hash:** `4e87fce7206d...`
+**HLD base run:** `wf-1792227721731-1vwusb`
+**HLD effective hash:** `bf2048f4fa40...`
 
 In TypeScript and JavaScript, every call is now recorded with the nearest entity, even when it sits in no function: calls at the top of a file, in exported initializers and in export default go to the file, and calls in class field initializers and constructors go to the class. Every test('…', () => { … }) body is such a call, so test files reach the code they call. The code review also recognises Python, Go and JVM test files.
 
@@ -77,7 +77,8 @@ isTestFile(file: string): boolean
 **Returns:** `boolean` — True for the existing TS/JS conventions and also test_*.py, *_test.py, *_test.go, any src/test/ directory, *Test.java/.kt/.scala and *Spec.scala.
 
 **Postconditions:**
-- Every path the current predicate accepts is still accepted; ordinary source files are rejected.
+- Both existing branches are kept: any file under a __tests__/ directory, whatever its language, and a TS/JS .test./.spec. suffix.
+- Ordinary source files are rejected.
 
 ## 3. Data model changes
 
@@ -124,7 +125,7 @@ A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the fil
 
 - Calls inside function declarations, class methods and function-valued declarators keep their current caller and are not duplicated onto the file. [[c1]]
 - A file's edges and pending rows are removed with its entities on re-index or delete. [[c2]]
-- Every path isTestFile accepts today is still accepted. [[c3]]
+- Every path isTestFile accepts today is still accepted, including any file under a __tests__/ directory regardless of language. [[c3]]
 
 ## 5. Test strategy
 
@@ -147,7 +148,7 @@ A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the fil
 
 ## 6. Migration
 
-**State before:** Per s1: the TS parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); program-level statements, exported initializers, export default, class field initializers and constructors are never scanned (src/indexer/parser/typescript.ts:150-200, :313-320, :385-388); isTestFile recognises only TS/JS test files (src/workflow/code-review/grounding.ts:60-62).
+**State before:** Per s1: the TS parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); program-level statements, exported initializers, export default, class field initializers and constructors are never scanned (src/indexer/parser/typescript.ts:150-200, :313-320, :385-388); isTestFile recognises a __tests__/ directory of any language and TS/JS .test./.spec. suffixes only (src/workflow/code-review/grounding.ts:60-62).
 
 **State after:** TS calls outside any extracted function are CALLS from the file or class entity; isTestFile recognises Python, Go and JVM test files.
 
@@ -193,7 +194,7 @@ The expression_statement part of a1 only.
 - **[[c3]]** `step-output` `s1 context.assemble bundle 3: how the code review recognises a test caller (src/workflow/code-review/grounding.ts:60-62, src/workflow/code-review/grounding.ts:81-92)`
 - **[[c4]]** `step-output` `s1 context.assemble bundle 4: parser and grounding tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/workflow/code-review/__tests__/grounding.test.ts, src/indexer/__tests__/cross-file-resolver-lmdb.test.ts)`
 - **[[c5]]** `prior-artifact` `ISSUE-bd1c6c9005ff6390 fix intent, narrowed by the stakeholder (ISSUE feedback de8a2c97, 2026-10-17)`
-- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`
+- **[[c6]]** `prior-artifact` `Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); the isTestFile current behaviour described exactly (cycle 2 round 2); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story`
 
 ## 9. Open questions
 

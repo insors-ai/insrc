@@ -194,6 +194,9 @@ test('set refuses read-only, unknown, invalid and unregistered inputs and writes
 			[{ repo: REPO, key: 5, value: 'x' }, 'unknown-key'],
 			[{ repo: REPO, key: 'type', value: 'gitlab' }, 'invalid-value'],
 			[{ repo: REPO, key: 'owner', value: 'bad owner' }, 'invalid-value'],
+			[{ repo: REPO, key: 'owner', value: 'acme\n' }, 'invalid-value'],
+			[{ repo: REPO, key: 'owner', value: 'acme\r' }, 'invalid-value'],
+			[{ repo: REPO, key: 'repo', value: 'widgets\n' }, 'invalid-value'],
 			[{ repo: REPO, key: 'repo', value: '..' }, 'invalid-value'],
 			[{ repo: REPO, key: 'ghHost', value: 'a\nb' }, 'invalid-value'],
 			[{ repo: REPO, key: 'ghPath', value: true }, 'invalid-value'],
@@ -216,6 +219,8 @@ test('set refuses read-only, unknown, invalid and unregistered inputs and writes
 			{ repo: REPO, owner: 'bad owner', name: 'r' },
 			{ repo: REPO, owner: 'o', name: 'a/b' },
 			{ repo: REPO, owner: 5, name: 'r' },
+			{ repo: REPO, owner: 'acme\n', name: 'r' },
+			{ repo: REPO, owner: 'acme', name: 'widgets\n' },
 		]) {
 			const r = await f.call('repo.trackerConfig.ensure', params);
 			assert.equal(r.ok, false);

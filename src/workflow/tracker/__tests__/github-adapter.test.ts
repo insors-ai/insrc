@@ -13,6 +13,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { createGithubTracker } from '../github-adapter.js';
 import { GH_TIMEOUT_MS, GhCommandError, ghCreateIssueTyped, ghGetIssueBody, runGh, _setTrackerExecForTests } from '../github.js';
 
 afterEach(() => _setTrackerExecForTests());
@@ -133,4 +134,61 @@ test('compatibility exception 2, a migrated operation passes the 10 s timeout an
 	_setTrackerExecForTests((_cmd, _args, o) => { opts = o as Record<string, unknown> | undefined; throw execError({ code: 'ETIMEDOUT' }); });
 	assert.equal(kindOf(() => ghGetIssueBody('o', 'r', 'o/r#1')).kind, 'unreachable');
 	assert.equal(opts?.['timeout'], GH_TIMEOUT_MS);
+});
+
+// ---------------------------------------------------------------------------
+// Adapter core
+// ---------------------------------------------------------------------------
+
+test('whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable', () => {
+	const port = createGithubTracker('o', 'r');
+	_setTrackerExecForTests(() => 'subhagho\n');
+	assert.deepEqual(port.whoAmI(), { ok: true, value: 'subhagho' });
+
+	_setTrackerExecForTests(() => '');
+	const empty = port.whoAmI();
+	assert.equal(empty.ok, false);
+	if (!empty.ok) assert.equal(empty.kind, 'missing-signin');
+
+	const cases: Array<[string, Error]> = [
+		['missing-tool', execError({ code: 'ENOENT' })],
+		['missing-signin', execError({ stderr: 'gh auth login required' })],
+		['unreachable', execError({ code: 'ETIMEDOUT' })],
+	];
+	for (const [kind, err] of cases) {
+		failWith(err);
+		const r = port.whoAmI();
+		assert.equal(r.ok, false);
+		if (!r.ok) assert.equal(r.kind, kind);
+	}
+});
+
+test('findIssue returns the first of several matches and separates failure from not found', () => {
+	const port = createGithubTracker('o', 'r');
+	const argv: string[][] = [];
+	_setTrackerExecForTests((_c, args) => { argv.push([...args]); return '17\n'; });
+	// gh's -q '.[0].number' yields only the first result: that is the one returned.
+	assert.deepEqual(port.findIssue(['epic:x', 'insrc:story']), { ok: true, value: 'o/r#17' });
+	assert.deepEqual(argv[0], ['issue', 'list', '--repo', 'o/r', '--state', 'all', '--json', 'number', '-q', '.[0].number', '--label', 'epic:x', '--label', 'insrc:story']);
+
+	_setTrackerExecForTests(() => '');
+	assert.deepEqual(port.findIssue(['a']), { ok: true, value: null });
+
+	failWith(execError({ code: 'ETIMEDOUT' }));
+	const failed = port.findIssue(['a']);
+	assert.equal(failed.ok, false);
+	if (!failed.ok) assert.equal(failed.kind, 'unreachable');
+});
+
+test('signoff methods return rejected without running gh', () => {
+	const port = createGithubTracker('o', 'r');
+	let ran = 0;
+	_setTrackerExecForTests(() => { ran += 1; return ''; });
+	assert.equal(port.capabilities.has('signoff-request'), false);
+	assert.equal(port.capabilities.has('completion'), false);
+	for (const r of [port.openSignoffRequest({ title: 't', body: 'b' }), port.readSignoffState({ ref: 'x' })]) {
+		assert.equal(r.ok, false);
+		if (!r.ok) assert.equal(r.kind, 'rejected');
+	}
+	assert.equal(ran, 0);
 });

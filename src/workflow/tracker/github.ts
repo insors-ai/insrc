@@ -291,6 +291,16 @@ export function ghFindIssueByLabels(owner: string, repo: string, labels: readonl
 	return /^\d+$/.test(num) ? buildRef(owner, repo, num) : undefined;
 }
 
+/** Strict counterpart of {@link ghFindIssueByLabels} for the tracker port: same
+ *  argv and first-result selection, but a failed or timed-out lookup throws a
+ *  classified {@link GhCommandError} instead of reading as "not found". */
+export function ghFindIssueByLabelsStrict(owner: string, repo: string, labels: readonly string[]): string | undefined {
+	const args = ['issue', 'list', '--repo', `${owner}/${repo}`, '--state', 'all', '--json', 'number', '-q', '.[0].number'];
+	for (const l of labels) args.push('--label', l);
+	const num = runGh(args);
+	return /^\d+$/.test(num) ? buildRef(owner, repo, num) : undefined;
+}
+
 /** Ensure a milestone exists (idempotent) then attach an issue to it.
  *  Best-effort: milestone plumbing failures don't block issue creation. */
 export function ghEnsureMilestone(owner: string, repo: string, title: string): void {

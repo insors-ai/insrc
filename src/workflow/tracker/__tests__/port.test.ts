@@ -10,7 +10,7 @@
  * Run: npx tsx --test src/workflow/tracker/__tests__/port.test.ts
  */
 
-import { test } from 'node:test';
+import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -21,6 +21,10 @@ import ts from 'typescript';
 
 import { missingCapabilities, type Capability, type CreatedIssue, type IssueOps, type IssueRef, type PortResult, type TrackerPort } from '../port.js';
 import { resolveStrictTrackerTarget } from '../../config/github.js';
+import { loadTracker } from '../github-adapter.js';
+import { _setTrackerExecForTests } from '../github.js';
+
+afterEach(() => { _setTrackerExecForTests(); delete process.env['INSRC_GITHUB_CONFIG']; });
 
 const set = (...c: Capability[]): ReadonlySet<Capability> => new Set(c);
 
@@ -133,4 +137,75 @@ test('TrackerPort type exposes issueOps with the AMD-8 signatures', () => {
 	// A fixture that breaks a signature (string child id) must be reported, so the check bites.
 	const broken = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'issue-ops-signatures-broken.ts');
 	assert.ok(typeErrors(broken).length > 0, 'the broken fixture should fail to typecheck');
+});
+
+// ---------------------------------------------------------------------------
+// loadTracker
+// ---------------------------------------------------------------------------
+
+/** Run `fn` with a github.json that targets acme/demo for repo '/r' and a fake gh. */
+function withLoader<T>(exec: (args: readonly string[]) => string, fn: (calls: string[][]) => T): T {
+	return withConfig({ repos: { '/r': { owner: 'acme', repo: 'demo' } } }, configPath => {
+		process.env['INSRC_GITHUB_CONFIG'] = configPath;
+		const calls: string[][] = [];
+		_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return exec(args); });
+		return fn(calls);
+	});
+}
+
+function execError(props: Record<string, unknown>): Error {
+	return Object.assign(new Error('Command failed'), props);
+}
+
+test('loadTracker succeeds when every needed capability is declared', () => {
+	withLoader(() => 'subhagho\n', calls => {
+		const r = loadTracker('/r', set('claim', 'issue-create'));
+		assert.equal(r.ok, true);
+		if (r.ok) {
+			assert.equal(r.value.kind, 'github');
+			assert.deepEqual([...r.value.capabilities].sort(), ['claim', 'issue-create']);
+		}
+		assert.deepEqual(calls[0], ['api', 'user', '-q', '.login']);
+	});
+});
+
+test('loadTracker with an empty needed set validates configuration and sign-in', () => {
+	process.env['INSRC_GITHUB_CONFIG'] = '/does/not/exist.json';   // never read the real ~/.insrc/github.json
+	assert.match(refusal(loadTracker('/r', set())), /does not exist/);
+	withLoader(() => { throw execError({ stderr: 'To get started with GitHub CLI, please run:  gh auth login' }); }, () => {
+		const r = loadTracker('/r', set());
+		assert.equal(r.ok, false);
+		if (!r.ok) assert.equal(r.kind, 'missing-signin');
+	});
+	withLoader(() => 'subhagho', () => assert.equal(loadTracker('/r', set()).ok, true));
+});
+
+test('loadTracker refuses a needed signoff-request capability naming it', () => {
+	withLoader(() => 'subhagho', calls => {
+		const reason = refusal(loadTracker('/r', set('claim', 'signoff-request', 'completion')));
+		assert.match(reason, /signoff-request, completion/);
+		assert.equal(calls.length, 0, 'no gh command runs for a capability refusal');
+	});
+});
+
+test('loadTracker names gh as the missing tool', () => {
+	withLoader(() => { throw execError({ code: 'ENOENT' }); }, () => {
+		const r = loadTracker('/r', set('claim'));
+		assert.equal(r.ok, false);
+		if (!r.ok) {
+			assert.equal(r.kind, 'missing-tool');
+			assert.match(r.reason, /gh CLI is not installed/);
+		}
+	});
+});
+
+test('loadTracker names the missing sign-in', () => {
+	withLoader(() => { throw execError({ stderr: 'You are not logged in to any GitHub hosts. Run gh auth login' }); }, () => {
+		const r = loadTracker('/r', set('claim'));
+		assert.equal(r.ok, false);
+		if (!r.ok) {
+			assert.equal(r.kind, 'missing-signin');
+			assert.match(r.reason, /gh auth login/);
+		}
+	});
 });

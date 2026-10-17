@@ -2,30 +2,22 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-10-17T13:09:28.300Z  ·  **Updated:** 2026-10-17T13:09:28.300Z
+**Standalone:** no  ·  **Created:** 2026-10-17T13:09:28.300Z  ·  **Updated:** 2026-10-17T13:15:42.605Z
 
-**Commit:** cefc8ef4
+**Commit:** 68612a86
 
 ## Summary
 
-Implemented learner identity precedence, stable GitHub subjects via existing CLI transport, explicit missing GitLab/Jira integration diagnostics and Git/OS fallback. User authorized continuing with the three reproducible unrelated full-suite failures recorded in T001-build-evidence.md; no claim of full-suite pass.
+Validated exact scopes at every nested boundary and added runtime versioned result/event schemas. Baseline unrelated failures remain recorded in T001-build-evidence.md.
 
 ## Tasks validated
 
 - ✓ `t1`
+- ✓ `t2`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/LLD-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `.insrc/artifacts/PLAN-670419c4ad8bea8e-s1.json` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/LLD.md` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/PLAN.md` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/T001-build-evidence.md` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/identity-sources.md` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/review-round-1.json` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/review-round-2.json` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `docs/epics/understand-changes-before-committing-E20261017670419c4/S001/sequence-diagram.html` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `src/understanding/__tests__/identity.test.ts` — **insrc-build** (2026-10-17T13:09:28.300Z)
-- `src/understanding/identity.ts` — **insrc-build** (2026-10-17T13:09:28.300Z)
+- `.insrc/artifacts/LLD-b94cf2c9058fd82a-S001.json` — **insrc-build** (2026-10-17T13:15:42.605Z)
+- `docs/standalone/run-document-summarisation-its-own-queue-E20261017b94cf2c9/S001/LLD.md` — **insrc-build** (2026-10-17T13:15:42.605Z)

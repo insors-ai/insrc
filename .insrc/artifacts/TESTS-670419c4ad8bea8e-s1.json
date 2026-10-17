@@ -4,7 +4,7 @@
     "epicHash": "670419c4ad8bea8e",
     "storyId": "s1",
     "createdAt": "2026-10-17T13:09:28.300Z",
-    "updatedAt": "2026-10-17T13:09:28.300Z",
+    "updatedAt": "2026-10-17T13:15:42.605Z",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
     "epicSlug": "understand-changes-before-committing"
   },
@@ -74,6 +74,68 @@
               },
               {
                 "title": "Local adapter reads effective repository Git email and falls back to OS without author substitution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "68612a86",
+        "ranAt": "2026-10-17T13:15:42.605Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Scope fingerprint full-field vectors and strict schemas",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/contracts.test.ts",
+                "title": "Scope fingerprint covers every exact field and strict validation rejects forged input",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/contracts.test.ts",
+                "title": "Nested scopes and transport versions fail closed on every envelope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sc4 confidence fidelity and public projection key exclusion",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/contracts.test.ts",
+                "title": "Submitted confidence is preserved and public projections exclude private fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 531,
+            "titles": [
+              {
+                "title": "Scope fingerprint covers every exact field and strict validation rejects forged input",
+                "result": "pass"
+              },
+              {
+                "title": "Submitted confidence is preserved and public projections exclude private fields",
+                "result": "pass"
+              },
+              {
+                "title": "Nested scopes and transport versions fail closed on every envelope",
                 "result": "pass"
               }
             ],

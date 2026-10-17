@@ -4,7 +4,7 @@
     "epicHash": "670419c4ad8bea8e",
     "storyId": "s1",
     "createdAt": "2026-10-17T13:09:28.300Z",
-    "updatedAt": "2026-10-17T13:09:28.300Z",
+    "updatedAt": "2026-10-17T13:15:42.605Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
     "epicSlug": "understand-changes-before-committing"
@@ -14,91 +14,32 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Implemented learner identity precedence, stable GitHub subjects via existing CLI transport, explicit missing GitLab/Jira integration diagnostics and Git/OS fallback. User authorized continuing with the three reproducible unrelated full-suite failures recorded in T001-build-evidence.md; no claim of full-suite pass.",
+    "summary": "Validated exact scopes at every nested boundary and added runtime versioned result/event schemas. Baseline unrelated failures remain recorded in T001-build-evidence.md.",
     "testRecord": {
       "md": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-670419c4ad8bea8e-s1.json"
+          "file": ".insrc/artifacts/LLD-b94cf2c9058fd82a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
+        "timestamp": "2026-10-17T13:15:42.605Z"
       },
       {
         "target": {
-          "file": ".insrc/artifacts/PLAN-670419c4ad8bea8e-s1.json"
+          "file": "docs/standalone/run-document-summarisation-its-own-queue-E20261017b94cf2c9/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/LLD.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/PLAN.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/T001-build-evidence.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/identity-sources.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/review-round-1.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/review-round-2.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/sequence-diagram.html"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/__tests__/identity.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/identity.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:09:28.300Z"
+        "timestamp": "2026-10-17T13:15:42.605Z"
       }
     ],
-    "commit": "cefc8ef4"
+    "commit": "68612a86"
   }
 }

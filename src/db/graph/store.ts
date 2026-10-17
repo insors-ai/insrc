@@ -76,11 +76,9 @@ const log = getLogger('graph-store');
 const DEFAULT_MAPSIZE_GIB = 1024;
 
 /**
- * Number of named sub-DBs the env can hold. We have 21 in
- * schema_version 2 (added entity_string_by_u64); pad to 32 for
- * future additions without an env-level migration.
+ * Capacity for the 35 named databases, with room for additive namespaces.
  */
-const MAX_DBS = 32;
+export const MAX_DBS = 64;
 
 // LMDB key size: lmdb-js builds the underlying LMDB C library with
 // `MDB_MAXKEYSIZE=0` (compile-time unlimited). Keys can run up to
@@ -249,6 +247,15 @@ export class LmdbStoreSchemaVersionMismatch extends LmdbStoreError {
 type AnyDb = Database;
 
 export interface GraphStore {
+	understandingCurrent: AnyDb;
+	understandingAttempt: AnyDb;
+	understandingAudit: AnyDb;
+	understandingRequest: AnyDb;
+	understandingOwnerIndex: AnyDb;
+	understandingScopeIndex: AnyDb;
+	understandingReceipt: AnyDb;
+	understandingMeta: AnyDb;
+
 	root: RootDatabase;
 
 	// Graph
@@ -553,6 +560,15 @@ export async function getGraphStore(): Promise<GraphStore> {
 
 		const store: GraphStore = {
 			root,
+			understandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),
+			understandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),
+			understandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),
+			understandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),
+			understandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),
+			understandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),
+			understandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),
+			understandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),
+
 
 			// Graph -- meta uses ordered-binary keys so callers can write
 			// short utf8 strings directly (lmdb-js encodes string→buffer

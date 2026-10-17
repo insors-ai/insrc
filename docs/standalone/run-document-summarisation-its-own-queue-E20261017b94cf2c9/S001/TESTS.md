@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -61,3 +61,33 @@ Run at 2026-10-17T13:43:11.087Z on commit `b9d84623`. Tests check: **passed**. 8
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` | 0 | 3 | 1.4 s |  |
 | `src/db/__tests__/doc-summaries-lmdb.test.ts` | 0 | 15 | 3.4 s |  |
+
+## t3
+
+Run at 2026-10-17T13:53:06.888Z on commit `fb2c43f6`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep runs every queued single-document job before each entity, skips and counts an entity deleted after the sweep began, counts a throwing entity as failed and continues, classifies every result kind as summarised, skipped, gone or failed, reports progress after each entity, and returns stopped after the summary in progress once shouldStop is true**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | every queued single-document job runs before each document, including jobs queued while the sweep runs | `src/indexer/__tests__/doc-summary-sweep.test.ts` |
+| pass | a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues | `src/indexer/__tests__/doc-summary-sweep.test.ts` |
+| pass | every result kind is classified as summarised, skipped, gone or failed | `src/indexer/__tests__/doc-summary-sweep.test.ts` |
+| pass | progress is reported after each document, with the total | `src/indexer/__tests__/doc-summary-sweep.test.ts` |
+| pass | once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs | `src/indexer/__tests__/doc-summary-sweep.test.ts` |
+
+**unit: src/indexer/__tests__/summary-sweep-progress.test.ts: IndexerService.summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes, stops or throws**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes | `src/indexer/__tests__/summary-sweep-progress.test.ts` |
+| pass | summarySweepProgress is cleared when the sweep stops on shutdown | `src/indexer/__tests__/summary-sweep-progress.test.ts` |
+| pass | summarySweepProgress is cleared when the sweep throws | `src/indexer/__tests__/summary-sweep-progress.test.ts` |
+| pass | a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document | `src/indexer/__tests__/summary-sweep-progress.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/doc-summary-sweep.test.ts` | 0 | 5 | 0.7 s |  |
+| `src/indexer/__tests__/summary-sweep-progress.test.ts` | 0 | 4 | 1.1 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "b94cf2c9058fd82a",
     "storyId": "S001",
     "createdAt": "2026-10-17T13:31:05.601Z",
-    "updatedAt": "2026-10-17T13:43:11.087Z",
+    "updatedAt": "2026-10-17T13:53:06.888Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T13:11:51.789Z",
@@ -19,28 +19,277 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "writeDocSummaryIfCurrent looks up the entity id, reads its row and compares sha256 of the stored body with summary.contentHash inside one write transaction (atomic with the entity delete, which removes the id mapping, row and summary together), then writes the same two rows writeDocSummary writes through its own helper. writeDocSummary is byte-for-byte unchanged (b9d84623 restored it after the gate's first verdict). summariseDoc routes both writes through the new function: entity-gone / body-changed become { ok: false, skipped }, a thrown summary write stays persistence-failed, a thrown placeholder write keeps the model error. Five of six mutations fail the tests; the sixth (writing when the row is absent but the id mapping is present) is equivalent, since that state cannot occur.",
+    "summary": "runDocSummarySweep checks shouldStop before each document, after each single-document job and at the end (so a stop during the last document is reported as stopped, fixed after the gate's first verdict), runs queued single-document jobs first, re-reads each document, classifies results and reports progress. docSummariseRepo owns summarySweepProgress (cleared in finally); the sweep and single-document summaries go through the protected summariseEntity step. Fourteen mutations each fail the tests.",
     "testRecord": {
       "md": "docs/standalone/run-document-summarisation-its-own-queue-E20261017b94cf2c9/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/BUILD-670419c4ad8bea8e-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-b94cf2c9058fd82a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/TESTS-670419c4ad8bea8e-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:43:11.087Z"
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/T008-build-evidence.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
       },
       {
         "target": {
           "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:43:11.087Z"
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/consumer-contract.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/consumer-fixtures-v1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/summariser/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/config/role-taxonomy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-code-index-work.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-lanes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/understanding-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/queue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/understanding-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/doc-summaries-lmdb.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/db/doc-summaries.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/doc-summary-sweep.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/summary-sweep-progress.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/doc-summary-sweep.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/understanding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/acceptance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/contracts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/fixtures/crash-writer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/privacy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/roles.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:53:06.888Z"
       }
     ],
-    "commit": "099f6dcc"
+    "commit": "fb2c43f6"
   }
 }

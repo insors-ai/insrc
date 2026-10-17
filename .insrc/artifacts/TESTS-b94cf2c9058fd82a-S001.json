@@ -4,7 +4,7 @@
     "epicHash": "b94cf2c9058fd82a",
     "storyId": "S001",
     "createdAt": "2026-10-17T13:31:05.601Z",
-    "updatedAt": "2026-10-17T13:43:11.087Z",
+    "updatedAt": "2026-10-17T13:53:06.888Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T13:11:51.789Z",
     "epicSlug": "run-document-summarisation-its-own-queue"
@@ -262,6 +262,131 @@
               },
               {
                 "title": "placeholder rows persist the errorCode field",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "fb2c43f6",
+        "ranAt": "2026-10-17T13:53:06.888Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep runs every queued single-document job before each entity, skips and counts an entity deleted after the sweep began, counts a throwing entity as failed and continues, classifies every result kind as summarised, skipped, gone or failed, reports progress after each entity, and returns stopped after the summary in progress once shouldStop is true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "every result kind is classified as summarised, skipped, gone or failed",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "progress is reported after each document, with the total",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/indexer/__tests__/summary-sweep-progress.test.ts: IndexerService.summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes, stops or throws",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "summarySweepProgress is cleared when the sweep stops on shutdown",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "summarySweepProgress is cleared when the sweep throws",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 652,
+            "titles": [
+              {
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "title": "a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues",
+                "result": "pass"
+              },
+              {
+                "title": "every result kind is classified as summarised, skipped, gone or failed",
+                "result": "pass"
+              },
+              {
+                "title": "progress is reported after each document, with the total",
+                "result": "pass"
+              },
+              {
+                "title": "once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1108,
+            "titles": [
+              {
+                "title": "summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes",
+                "result": "pass"
+              },
+              {
+                "title": "summarySweepProgress is cleared when the sweep stops on shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "summarySweepProgress is cleared when the sweep throws",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
                 "result": "pass"
               }
             ],

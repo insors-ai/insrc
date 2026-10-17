@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792226429266-7k4jb8",
+    "runId": "wf-1792227070384-yic1bf",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T08:40:30.249Z",
+    "createdAt": "2026-10-17T08:51:11.407Z",
     "epicCreatedAt": "2026-10-17T08:20:53.100Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 977,
+    "elapsedMs": 1022,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "bd1c6c9005ff6390",
     "epicSlug": "record-calls-made-module-level-statements",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792226429266-7k4jb8",
-    "hldEffectiveHash": "45798b2f948ea603c63fe631a507534c7ed5ec37553fe7113322b685c227609a",
+    "hldBaseRunId": "wf-1792227070384-yic1bf",
+    "hldEffectiveHash": "ffb92ea69222c47865a242fdca73e608a28e5804cf6711f4add31e6afbd85b3b",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
@@ -30,7 +30,7 @@
   },
   "body": {
     "summary": {
-      "prose": "Every supported language records the calls its code makes, and a call that sits in no function is credited to its file. In TypeScript that is every test('…', () => { … }) body; Python and Go, which recorded no calls at all, now record them the way TypeScript does. The code review also recognises Python, Go and JVM test files, so tests in those languages reach the code they exercise.",
+      "prose": "Every supported language records the calls its code makes, wherever they sit: in a function, a class body, an initializer or at the top of a file (credited to the nearest entity, or the file itself). Python and Go, which recorded no calls at all, now record them, and a call to code in the same package resolves without an import. The code review recognises test files in every supported language, so tests reach the code they exercise.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -140,6 +140,75 @@
           "postconditions": [
             "Every path the current predicate accepts is still accepted."
           ]
+        },
+        {
+          "name": "walkTopLevel",
+          "signature": "walkTopLevel(node: SyntaxNode, ctx: WalkCtx, parent: ContainerCtx): void",
+          "parameters": [
+            {
+              "name": "parent",
+              "type": "ContainerCtx",
+              "purpose": "The enclosing class (classId) or the top level (classId null).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A Scala template-body or program-level statement that is not a declaration it handles has extractCalls run over it with parent.classId (or ctx.fileId at top level) as caller.",
+            "handleValVar runs extractCalls over a val/var initializer with the variable entity as caller.",
+            "Calls inside methods and functions keep their caller."
+          ]
+        },
+        {
+          "name": "walkNode (Kotlin)",
+          "signature": "walkNode(node: SyntaxNode, ctx: WalkCtx, parent: ContainerCtx): void",
+          "parameters": [
+            {
+              "name": "parent",
+              "type": "ContainerCtx",
+              "purpose": "The enclosing class, or the top level.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A Kotlin anonymous_initializer (init block) and any other class-body statement that is not a declaration have their calls extracted with the class as caller.",
+            "The lambda arguments of a superclass constructor invocation (class X : FunSpec({ ... })) have their calls extracted with the class as caller.",
+            "handleProperty extracts a property initializer's calls with the property entity as caller.",
+            "A .kts script's top-level statements have their calls extracted with the file entity as caller."
+          ]
+        },
+        {
+          "name": "resolveCall",
+          "signature": "resolveCall(opts: CrossFileResolveOpts, row: UnresolvedRelation, index: EntityIndex, importsByFile: Map<string, Set<string>>): ResolveIntent",
+          "parameters": [
+            {
+              "name": "row",
+              "type": "UnresolvedRelation",
+              "purpose": "A CALLS row.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ResolveIntent",
+            "meaning": "Resolved, ambiguous or unresolved, as today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "After the same-file step and before the imported-files step, a same-package step looks for candidates of the caller's language, a call-target kind and the callee name in other files of the caller's package: for Java and Scala by isExportedFromSamePackage; for Go and Kotlin by the caller's directory, where a Go caller in a <p>_test package file sees only exported names of package <p> files.",
+            "One same-package candidate resolves; several are ambiguous with their candidate ids; none falls through to the imported-files step unchanged, which no longer returns early when the caller imports nothing if a same-package step applies."
+          ]
         }
       ]
     },
@@ -147,14 +216,19 @@
       {
         "entity": "CALLS relation",
         "change": "invariant-change",
-        "details": "A CALLS (or CALLS_HTTP) relation may now have a file entity as its source (calls with no enclosing entity), and the Python and Go parsers now emit CALLS {meta:{file, repo}} with bare callee names, as the TS and JVM parsers do. No new entity kind, no new field, no store schema change.",
+        "details": "A CALLS (or CALLS_HTTP) relation may now have a file entity as its source (calls with no enclosing entity), and the Python and Go parsers now emit CALLS {meta:{file, repo}} with bare callee names, as the TS and JVM parsers do. No new entity kind, no new field, no store schema change. Scala and Kotlin now also emit CALLS from classes (class-body statements, init blocks, superclass-constructor lambdas), variables and properties (initializers) and the file entity (script statements). CALLS rows between files of one package now resolve.",
         "callSites": [
           "src/indexer/parser/typescript.ts:150-200",
           "src/indexer/parser/typescript.ts:631",
           "src/indexer/parser/python.ts:124-126",
           "src/indexer/parser/go.ts:114-116",
           "src/indexer/cross-file-resolver.ts:474-510",
-          "src/workflow/code-review/grounding.ts:81-92"
+          "src/workflow/code-review/grounding.ts:81-92",
+          "src/indexer/parser/scala.ts:258-295",
+          "src/indexer/parser/scala.ts:554-597",
+          "src/indexer/parser/kotlin.ts:187-215",
+          "src/indexer/parser/kotlin.ts:437-475",
+          "src/indexer/cross-file-resolver.ts:474-510"
         ]
       }
     ],
@@ -173,6 +247,13 @@
           "detection": "resolveCall returns unresolved, ambiguous or no-candidate as for TS and JVM rows today.",
           "response": "The row is kept as pending, classed by the existing rules (Epic c2ba6fa6 s1); it does not block completeness unless it awaits a target.",
           "userImpact": "Those calls are not graph edges yet; Go same-package calls are the named open question.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A same-package lookup finds the callee name in several files of the package (overloads, two types with the same method name).",
+          "detection": "The same-package step collects more than one candidate.",
+          "response": "The row is ambiguous with every candidate id, as the imported-files step does today; nothing is guessed.",
+          "userImpact": "An ambiguous row, visible in the index state, rather than a wrong edge.",
           "recoverable": true
         }
       ],
@@ -228,6 +309,34 @@
         {
           "input": "isTestFile on src/x.ts, pkg/a.go, app/models.py",
           "expected": "false, as today."
+        },
+        {
+          "input": "Scala: class FooSpec extends AnyFunSuite { test(\"parses\") { Parser.parse(s) } }",
+          "expected": "CALLS parse (and test) from FooSpec; FooSpec.scala is a test file."
+        },
+        {
+          "input": "Scala: val p = Parser.default() in a class",
+          "expected": "CALLS default from the variable entity."
+        },
+        {
+          "input": "Kotlin: class FooTest : FunSpec({ test(\"x\") { parse(s) } })",
+          "expected": "CALLS parse from FooTest."
+        },
+        {
+          "input": "Kotlin: init { register(this) } in a class",
+          "expected": "CALLS register from the class."
+        },
+        {
+          "input": "Go: TestX in x_test.go (package p) calls parse in x.go (package p)",
+          "expected": "Resolved to parse by the same-package step, although unexported and not imported."
+        },
+        {
+          "input": "Go: TestX in x_test.go (package p_test) calls Parse and parse of package p",
+          "expected": "Parse resolves; parse (unexported) does not."
+        },
+        {
+          "input": "Java: FooTest in src/test/java/com/x calls Foo.bar in src/main/java/com/x",
+          "expected": "Resolved by the same-package step (isExportedFromSamePackage); FooTest.java is a test file."
         }
       ],
       "invariantsToPreserve": [
@@ -250,6 +359,10 @@
         {
           "text": "Every path isTestFile accepts today is still accepted.",
           "source": "c5"
+        },
+        {
+          "text": "resolveCall still resolves a same-file match first and an imported-file match as today; the same-package step only adds candidates where it applies.",
+          "source": "c3"
         }
       ]
     },
@@ -262,14 +375,17 @@
             "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity",
             "src/indexer/parser/__tests__/python-go-calls.test.ts: a Python function or method emits CALLS per distinct callee (identifier, or an attribute's last name), skips built-ins, credits nested defs and lambdas to the enclosing entity, credits program-level calls to the file entity, and keeps its HTTP detection",
             "src/indexer/parser/__tests__/python-go-calls.test.ts: a Go function or method emits CALLS per distinct callee (identifier, or a selector's field name), skips Go built-ins, credits function literals to the enclosing entity, credits package-level initializer calls to the file entity, and keeps its HTTP detection",
+            "src/indexer/parser/__tests__/scala-kotlin-calls.test.ts: Scala class-body and program-level statements are CALLS from the class or the file, val/var initializers from the variable; Kotlin init blocks, class-body statements and superclass-constructor lambdas are CALLS from the class, property initializers from the property and .kts top-level statements from the file; calls in methods and functions keep their caller",
+            "src/indexer/__tests__/cross-file-resolver-same-package.test.ts: a CALLS row resolves to a same-package callee with no import for Go (same directory; a <p>_test caller sees only exported names), Kotlin (same directory) and Java and Scala (isExportedFromSamePackage); several candidates are ambiguous; same-file and imported-file resolution are unchanged",
             "src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files"
           ]
         },
         {
           "level": "integration",
-          "purpose": "A test file's calls reach the code-review grounding.",
+          "purpose": "Test files in every supported language reach the code-review grounding through the real parser, resolver and grounding.",
           "subjects": [
-            "src/workflow/code-review/__tests__/grounding.test.ts: with the real TypeScript parser output for a test file that calls a function from inside test('...', () => { ... }), assembleCodeReviewGrounding lists that test file's entity in the function's testsReaching"
+            "src/workflow/code-review/__tests__/grounding.test.ts: with the real TypeScript parser output for a test file that calls a function from inside test('...', () => { ... }), assembleCodeReviewGrounding lists that test file's entity in the function's testsReaching",
+            "src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test(...) callback, a Python test function calling an imported function, a Go TestX calling a same-package function, a JUnit test calling a same-package class, a ScalaTest class-body test and a Kotest FunSpec lambda, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's caller in the called symbol's testsReaching"
           ]
         }
       ],
@@ -277,29 +393,32 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity"
+            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity",
+            "src/indexer/parser/__tests__/scala-kotlin-calls.test.ts: Scala class-body and program-level statements are CALLS from the class or the file, val/var initializers from the variable; Kotlin init blocks, class-body statements and superclass-constructor lambdas are CALLS from the class, property initializers from the property and .kts top-level statements from the file; calls in methods and functions keep their caller"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
             "src/indexer/parser/__tests__/python-go-calls.test.ts: a Python function or method emits CALLS per distinct callee (identifier, or an attribute's last name), skips built-ins, credits nested defs and lambdas to the enclosing entity, credits program-level calls to the file entity, and keeps its HTTP detection",
-            "src/indexer/parser/__tests__/python-go-calls.test.ts: a Go function or method emits CALLS per distinct callee (identifier, or a selector's field name), skips Go built-ins, credits function literals to the enclosing entity, credits package-level initializer calls to the file entity, and keeps its HTTP detection"
+            "src/indexer/parser/__tests__/python-go-calls.test.ts: a Go function or method emits CALLS per distinct callee (identifier, or a selector's field name), skips Go built-ins, credits function literals to the enclosing entity, credits package-level initializer calls to the file entity, and keeps its HTTP detection",
+            "src/indexer/__tests__/cross-file-resolver-same-package.test.ts: a CALLS row resolves to a same-package callee with no import for Go (same directory; a <p>_test caller sees only exported names), Kotlin (same directory) and Java and Scala (isExportedFromSamePackage); several candidates are ambiguous; same-file and imported-file resolution are unchanged"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
             "src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files",
-            "src/workflow/code-review/__tests__/grounding.test.ts: with the real TypeScript parser output for a test file that calls a function from inside test('...', () => { ... }), assembleCodeReviewGrounding lists that test file's entity in the function's testsReaching"
+            "src/workflow/code-review/__tests__/grounding.test.ts: with the real TypeScript parser output for a test file that calls a function from inside test('...', () => { ... }), assembleCodeReviewGrounding lists that test file's entity in the function's testsReaching",
+            "src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test(...) callback, a Python test function calling an imported function, a Go TestX calling a same-package function, a JUnit test calling a same-package class, a ScalaTest class-body test and a Kotest FunSpec lambda, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's caller in the called symbol's testsReaching"
           ]
         }
       ],
       "testFramework": "node:test via npx tsx --test (assert/strict), run under Node 22"
     },
     "migration": {
-      "stateBefore": "Per s1: the TS parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); the Python and Go parsers emit no CALLS (src/indexer/parser/python.ts:124-126, src/indexer/parser/go.ts:114-116); isTestFile recognises only TS/JS test files (src/workflow/code-review/grounding.ts:60-62).",
-      "stateAfter": "Calls with no enclosing entity are CALLS from the file entity (TS, Python, Go); Python and Go emit CALLS from functions and methods; isTestFile recognises Python, Go and JVM test files.",
+      "stateBefore": "Per s1: the TS parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); the Python and Go parsers emit no CALLS (src/indexer/parser/python.ts:124-126, src/indexer/parser/go.ts:114-116); isTestFile recognises only TS/JS test files (src/workflow/code-review/grounding.ts:60-62). Scala and Kotlin record no calls outside methods and functions (src/indexer/parser/scala.ts:258-295, src/indexer/parser/kotlin.ts:187-215), and resolveCall has no same-package step (src/indexer/cross-file-resolver.ts:499-508).",
+      "stateAfter": "Calls are recorded with their nearest entity in every parser (the file entity where there is none); Python and Go emit CALLS; calls between files of one package resolve; isTestFile recognises Python, Go and JVM test files.",
       "migrationSteps": [
         {
           "order": 1,
@@ -318,12 +437,22 @@
         },
         {
           "order": 4,
-          "action": "Extend isTestFile with the Python, Go and JVM test conventions.",
+          "action": "Extract Scala class-body, program-level and initializer calls, and Kotlin init-block, class-body, superclass-constructor-lambda, property-initializer and script calls.",
           "rollbackable": true
         },
         {
           "order": 5,
-          "action": "Update and restart the installed daemon, then reindex the registered repositories so every file gains its new CALLS.",
+          "action": "Add the same-package step to resolveCall (Java/Scala by the existing helper, Go/Kotlin by directory).",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Extend isTestFile with the Python, Go and JVM test conventions.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Update and restart the installed daemon, then reindex the registered repositories so every file gains its new CALLS and resolutions.",
           "rollbackable": true
         }
       ],
@@ -334,16 +463,16 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Calls with no enclosing entity go to the file entity; Python and Go get a general CALLS walk; isTestFile learns the other languages",
-        "oneLineSummary": "TS module-level and exported-initializer calls become CALLS from the file entity; Python and Go emit CALLS like TS does; the review recognises Python, Go and JVM test files.",
-        "approach": "TypeScript: walkNode extracts calls with the file entity as caller for a program-level statement that is not a declaration it handles, for each non-function declarator value of a program-level or exported lexical/variable declaration, and for an export_statement's `value` (export default <expr>); export unwrapping passes the module-level context into the declaration and never scans an exported function or class wholesale. Python: a walk over each function/method body emits CALLS {file, repo} per distinct callee (bare name: identifier, or the attribute's last name), skipping a small built-in set, beside the existing HTTP walk; program-level statements that are not definitions or imports are walked with the file entity as caller. Go: the same walk over each function and method body (callee = identifier, or the selector's field name), and program-level var/const initializers with the file entity. isTestFile also matches test_*.py, *_test.py, *_test.go, a src/test/ directory, and *Test.java/.kt/.scala and *Spec.scala.",
+        "name": "Every call is recorded with its nearest entity; same-package calls resolve; the review knows every test convention",
+        "oneLineSummary": "TS, Python and Go record calls with no enclosing function (file entity); Python and Go emit CALLS; Scala and Kotlin record class-body, initializer and script calls; calls resolve within a package; isTestFile learns every language.",
+        "approach": "TypeScript: walkNode extracts calls with the file entity as caller for a program-level statement that is not a declaration it handles, for each non-function declarator value of a program-level or exported lexical/variable declaration, and for an export_statement's `value` (export default <expr>); export unwrapping passes the module-level context into the declaration and never scans an exported function or class wholesale. Python: a walk over each function/method body emits CALLS {file, repo} per distinct callee (bare name: identifier, or the attribute's last name), skipping a small built-in set, beside the existing HTTP walk; program-level statements that are not definitions or imports are walked with the file entity as caller. Go: the same walk over each function and method body (callee = identifier, or the selector's field name), and program-level var/const initializers with the file entity. isTestFile also matches test_*.py, *_test.py, *_test.go, a src/test/ directory, and *Test.java/.kt/.scala and *Spec.scala. Scala: a template-body or program-level statement that is not a declaration has its calls extracted with the enclosing class (or the file entity at top level) as caller, and a val/var initializer has its calls extracted with the variable entity as caller. Kotlin: init blocks, the lambda arguments of a superclass constructor invocation and statements in a class body are extracted with the class as caller; property initializers with the property entity; .kts top-level statements with the file entity. Resolution: resolveCall gains a same-package step after the same-file step: for Java and Scala, the existing isExportedFromSamePackage rule; for Go and Kotlin, files in the caller's directory (for Go, a caller in a package <p>_test file sees only exported names of the package <p> files). A same-package candidate set is resolved, ambiguous or none exactly as the imported-files candidates are.",
         "pros": [
           "No new entity kind and no store schema change.",
           "Python and Go repos get a call graph at all; tests in every supported language can reach code."
         ],
         "cons": [
-          "More CALLS rows (Python, Go) for the cross-file pass to resolve.",
-          "Go calls between files of one package stay unresolved until the resolver treats a package as one scope (open question)."
+          "More CALLS rows for the cross-file pass to resolve.",
+          "The same-package step adds a directory lookup per unresolved call."
         ],
         "costEstimate": "L"
       },
@@ -379,9 +508,7 @@
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the approved issue's fix intent (ac1 TS calls with no enclosing entity are CALLS from the file, ac2 Python and Go emit CALLS, ac3 the review recognises test files in every supported language and their callers reach the grounding) [c7].",
-      "Go calls between files of one package have no import to resolve through (src/indexer/cross-file-resolver.ts:474-510), so Go tests in the same package will not reach the code until the resolver treats a Go package as one scope. That resolver is being changed by Epic c2ba6fa6 Story s1; decide whether it joins this Story, s1, or a separate issue [c3].",
-      "Kotlin and Scala DSL-style tests written in a class body (test(\"x\") { ... }) were not checked [c2]."
+      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the approved issue's fix intent (ac1 calls are recorded with their nearest entity in every parser, ac2 Python and Go emit CALLS and same-package calls resolve, ac3 test callers in every supported language reach the code-review grounding) [c7]."
     ]
   },
   "citations": [
@@ -398,7 +525,7 @@
     {
       "id": "c3",
       "kind": "step-output",
-      "ref": "s1 context.assemble bundle 3: how CALLS rows are resolved (src/indexer/cross-file-resolver.ts:474-510)"
+      "ref": "s1 context.assemble bundle 3: how CALLS rows are resolved (src/indexer/cross-file-resolver.ts:474-510, src/indexer/cross-file-resolver.ts:499, src/indexer/cross-file-resolver.ts:500-508)"
     },
     {
       "id": "c4",
@@ -423,7 +550,7 @@
     {
       "id": "c8",
       "kind": "prior-artifact",
-      "ref": "Review round 1 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers not fixed, export unwrapping, the narrowed current-behaviour claim; scope widened to Python and Go by the user (option B)"
+      "ref": "Review rounds 1-2 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2; taken into scope by the user)"
     }
   ]
 }

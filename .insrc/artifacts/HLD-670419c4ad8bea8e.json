@@ -204,6 +204,13 @@
         "choice": "Require explicit feature enablement per project. Within an enabled project, Medium completion and High pass-or-explicit-recorded-override are required by default. If either requirement is individually disabled, its assessment remains available voluntarily without blocking the commit.",
         "rationale": "User explicitly accepted project opt-in, strict Medium/High defaults within enabled projects, and voluntary tests for disabled requirements.",
         "resolvedAt": "2026-10-17T12:31:40.687Z"
+      },
+      "qed3cc567": {
+        "question": "Before s6 enforcement ships, specify supported Git commands and hook ordering, temporary indexes, amend/merge handling and the exact race/bypass boundary.",
+        "status": "resolved",
+        "choice": "Reuse and extend the framework's existing git_commit, git_amend, git_merge, git_diff, git_status, git_stage and runShell infrastructure. Add one shared daemon assessment eligibility check, invoked by insrc Git operations and hooks for commits initiated outside insrc; do not create a separate commit gateway. Support ordinary commits, amend and merge completion with the effective index (including partial staging and temporary indexes). Implement missing exact candidate snapshot/base binding, eligibility, and explicit commit-recorded overrides. Existing executor auto-approval and verifyHooks:false are not assessment overrides. Existing working-tree Git baseline may supply patterns but must not substitute unstaged content for the intended commit. Story s6 must specify/test hook ordering, actual message verification, cancellation and mismatch recovery; external hook bypass, plumbing and mutation after validation remain outside cooperative local enforcement.",
+        "rationale": "User approved the revised approach after inspecting available framework tools and their gaps. Preserve existing Git capabilities and build only missing assessment coordination.",
+        "resolvedAt": "2026-10-17T12:36:42.369Z"
       }
     }
   },

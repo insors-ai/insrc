@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s1",
+    "createdAt": "2026-10-17T13:09:28.300Z",
+    "updatedAt": "2026-10-17T13:09:28.300Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "epicSlug": "understand-changes-before-committing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented learner identity precedence, stable GitHub subjects via existing CLI transport, explicit missing GitLab/Jira integration diagnostics and Git/OS fallback. User authorized continuing with the three reproducible unrelated full-suite failures recorded in T001-build-evidence.md; no claim of full-suite pass.",
+    "testRecord": {
+      "md": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-670419c4ad8bea8e-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-670419c4ad8bea8e-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/T001-build-evidence.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/identity-sources.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/review-round-1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/review-round-2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/sequence-diagram.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/identity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/identity.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:09:28.300Z"
+      }
+    ],
+    "commit": "cefc8ef4"
+  }
+}

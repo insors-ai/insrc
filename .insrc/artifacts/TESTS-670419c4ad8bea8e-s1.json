@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s1",
+    "createdAt": "2026-10-17T13:09:28.300Z",
+    "updatedAt": "2026-10-17T13:09:28.300Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "epicSlug": "understand-changes-before-committing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "cefc8ef4",
+        "ranAt": "2026-10-17T13:09:28.300Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Identity source precedence, authority separation and no automatic merge",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/identity.test.ts",
+                "title": "Identity precedence preserves authority, case and distinct accounts",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/identity.test.ts",
+                "title": "Incomplete provider discovery never selects an apparently unique account",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Provider source matrix and available/disconnected/missing/failed adapters; Git/OS fallback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/identity.test.ts",
+                "title": "Provider adapters distinguish available, disconnected, missing and failed sources",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/identity.test.ts",
+                "title": "Local adapter reads effective repository Git email and falls back to OS without author substitution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 505,
+            "titles": [
+              {
+                "title": "Identity precedence preserves authority, case and distinct accounts",
+                "result": "pass"
+              },
+              {
+                "title": "Incomplete provider discovery never selects an apparently unique account",
+                "result": "pass"
+              },
+              {
+                "title": "Provider adapters distinguish available, disconnected, missing and failed sources",
+                "result": "pass"
+              },
+              {
+                "title": "Local adapter reads effective repository Git email and falls back to OS without author substitution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -2,7 +2,7 @@
  * Bridge from the TypeScript test runner to the Kotlin suite (Story E20261016315d510c:S003 / t9).
  *
  * The JetBrains plugin's tests are JUnit tests run by Gradle, which the build gate cannot run directly.
- * This file runs `./gradlew cleanTest test` once with a JDK 21 (the project's toolchain), then reports
+ * This file runs `./gradlew cleanTest test --no-build-cache --rerun-tasks` once (so results are never replayed from Gradle's cache) with a JDK 21 (the project's toolchain), then reports
  * each named Kotlin test as a test of its own by reading Gradle's JUnit XML. A Kotlin test that is
  * missing, failed, errored or skipped fails its case here; a missing JDK fails every case with the reason.
  *
@@ -38,7 +38,7 @@ before(() => {
     return;
   }
   try {
-    execFileSync('./gradlew', ['cleanTest', 'test', '--console=plain', `-Dorg.gradle.java.home=${jdk}`], {
+    execFileSync('./gradlew', ['cleanTest', 'test', '--no-build-cache', '--rerun-tasks', '--console=plain', `-Dorg.gradle.java.home=${jdk}`], {
       cwd: PLUGIN,
       env: { ...process.env, JAVA_HOME: jdk, PATH: `${join(jdk, 'bin')}:${process.env['PATH'] ?? ''}` },
       encoding: 'utf8',
@@ -91,6 +91,7 @@ const CASES: readonly Case[] = [
   { cls: 'ai.insors.insrc.jetbrains.settings.RepoFieldsContractTest', name: 'JetBrains rows equal the shared catalog fixture and a new row appears' },
   { cls: 'ai.insors.insrc.jetbrains.settings.RepoFieldsContractTest', name: "the rendered Tracker block shows each fixture row's label and note, and only local rows have a text field" },
   { cls: 'ai.insors.insrc.jetbrains.settings.PerRepoSectionTest', name: "one repo's failure shows its reason and the others still render" },
+  { cls: 'ai.insors.insrc.jetbrains.settings.PerRepoSectionTest', name: 'the policy source is exposed for a team policy and absent otherwise' },
   { cls: 'ai.insors.insrc.jetbrains.settings.PerRepoSectionTest', name: 'the sign-in row is read-only for signed-in and every failure state' },
 ];
 

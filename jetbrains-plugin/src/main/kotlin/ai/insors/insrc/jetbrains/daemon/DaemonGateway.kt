@@ -247,6 +247,9 @@ data class PolicyRowsDto(
     val mode: String?,
     val values: Map<String, Any?>,
     val reason: String?,
+    /** Where the team policy was read from (mode `team` only): the tracking ref and when it was fetched. */
+    val sourceRef: String? = null,
+    val sourceFetchedAt: String? = null,
 )
 
 /** One repo's tracker settings payload (Story s3), mirroring the daemon's `repo.settings.get` reply. */
@@ -1626,6 +1629,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             val policy = payload["policy"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
             val policyValues = (policy["values"] as? Map<*, *>)?.entries
                 ?.associate { (k, v) -> k.toString() to v } ?: emptyMap()
+            val policySource = policy["source"] as? Map<*, *>
             return RepoSettingsDto(
                 repo = str(payload["repo"]),
                 values = values,
@@ -1646,6 +1650,8 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                     mode = policy["mode"] as? String,
                     values = policyValues,
                     reason = (policy["reason"] as? String)?.takeIf { it.isNotEmpty() },
+                    sourceRef = (policySource?.get("ref") as? String)?.takeIf { it.isNotEmpty() },
+                    sourceFetchedAt = (policySource?.get("fetchedAt") as? String)?.takeIf { it.isNotEmpty() },
                 ),
             )
         }

@@ -135,4 +135,17 @@ class PerRepoSectionTest {
         assertEquals("unavailable: no default branch known", bad.rows(a).first { it.key == "signoffStages" }.value)
         assertEquals("true", RepoTrackerModel(TrackerFixtures.fields, mapOf(a to TrackerFixtures.loaded(a))).rows(a).first { it.key == "teamMode" }.value)
     }
+
+    @Test
+    fun `the policy source is exposed for a team policy and absent otherwise`() {
+        val team = TrackerFixtures.loaded(
+            a, policy = PolicyRowsDto(true, "team", mapOf("teamMode" to true), null, "origin/main", "2026-10-17T00:00:00.000Z"),
+        )
+        val model = RepoTrackerModel(TrackerFixtures.fields, mapOf(a to team, b to RepoSettingsResult.Unavailable("down")))
+        assertEquals("origin/main, fetched 2026-10-17T00:00:00.000Z", model.policySource(a))
+        assertNull(model.policySource(b), "a repo that did not load has no source")
+        val none = RepoTrackerModel(TrackerFixtures.fields, mapOf(a to TrackerFixtures.loaded(a, policy = PolicyRowsDto(true, "none", emptyMap(), null))))
+        assertNull(none.policySource(a), "no policy, no source")
+        assertEquals("origin/main", RepoTrackerModel(TrackerFixtures.fields, mapOf(a to TrackerFixtures.loaded(a, policy = PolicyRowsDto(true, "team", emptyMap(), null, "origin/main", null)))).policySource(a))
+    }
 }

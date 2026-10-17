@@ -50,6 +50,14 @@ class RepoTrackerModel(
         else -> null
     }
 
+    /** Where the repo's team policy came from ("origin/main, fetched <time>"), or null when it has none or did not load. */
+    fun policySource(repoPath: String): String? {
+        val policy = (results[repoPath] as? RepoSettingsResult.Loaded)?.settings?.policy ?: return null
+        val ref = policy.sourceRef ?: return null
+        val at = policy.sourceFetchedAt
+        return if (at != null) "$ref, fetched $at" else ref
+    }
+
     /** The rows of a repo in `repoFields` order; empty when its settings did not load. */
     fun rows(repoPath: String): List<TrackerRow> {
         val loaded = (results[repoPath] as? RepoSettingsResult.Loaded)?.settings ?: return emptyList()

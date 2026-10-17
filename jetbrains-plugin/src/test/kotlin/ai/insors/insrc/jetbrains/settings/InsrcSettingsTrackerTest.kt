@@ -79,7 +79,10 @@ class InsrcSettingsTrackerTest {
         "values" to mapOf("ghHost" to "ghe.example.com"),
         "resolved" to mapOf("type" to "github", "owner" to "acme", "repo" to "widgets", "source" to "per-repo-config"),
         "signin" to mapOf("state" to "missing-signin", "reason" to "gh is not signed in"),
-        "policy" to mapOf("ok" to true, "mode" to "team", "values" to mapOf("teamMode" to true)),
+        "policy" to mapOf(
+            "ok" to true, "mode" to "team", "values" to mapOf("teamMode" to true),
+            "source" to mapOf("ref" to "origin/main", "fetchedAt" to "2026-10-17T00:00:00.000Z"),
+        ),
     )
 
     @Test
@@ -97,6 +100,8 @@ class InsrcSettingsTrackerTest {
         assertEquals("gh is not signed in", s.signin.reason)
         assertEquals("team", s.policy.mode)
         assertEquals(true, s.policy.values["teamMode"])
+        assertEquals("origin/main", s.policy.sourceRef, "the policy source is kept, not dropped")
+        assertEquals("2026-10-17T00:00:00.000Z", s.policy.sourceFetchedAt)
 
         val refused = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
             DaemonResult(ok = true, data = mapOf("ok" to false, "error" to mapOf("code" to "github-json-unreadable", "message" to "github.json: is not valid JSON")))

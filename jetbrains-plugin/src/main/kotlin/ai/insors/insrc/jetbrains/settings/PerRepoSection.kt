@@ -243,6 +243,12 @@ class PerRepoSection(
             rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
             panel.add(rowPanel)
         }
+        tracker.policySource(repoPath)?.let { source ->
+            val label = JLabel("Team policy read from $source")
+            label.foreground = java.awt.Color.GRAY
+            label.alignmentX = Component.LEFT_ALIGNMENT
+            panel.add(label)
+        }
         panel.maximumSize = Dimension(Int.MAX_VALUE, panel.preferredSize.height)
         return panel
     }

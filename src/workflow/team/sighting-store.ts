@@ -164,28 +164,58 @@ export type LockResult =
 	| { readonly ok: true; readonly release: () => void }
 	| { readonly ok: false; readonly reason: string };
 
-/** Exclusive per-repository lock; a lock older than {@link LOCK_STALE_MS} is taken over. */
+const LOCK_BUSY = 'a refresh is already running for this repository';
+
+function lockHolder(path: string, token: string): LockResult {
+	return {
+		ok: true,
+		// Release only our own lock: after a stale takeover the old holder must not delete the new holder's file.
+		release: () => {
+			try {
+				if (readFileSync(path, 'utf8') === token) unlinkSync(path);
+			} catch { /* already gone */ }
+		},
+	};
+}
+
+/**
+ * Exclusive per-repository lock; a lock older than {@link LOCK_STALE_MS} is taken over.
+ *
+ * Takeover renames the stale file away (atomic, so one reclaimer wins) and then
+ * checks that what it grabbed really was stale; if it grabbed a fresh lock that
+ * another process had just taken, it puts that lock back and refuses.
+ */
 export function acquireLock(repo: string, teamDir: string = PATHS.team, now: () => number = Date.now): LockResult {
 	mkdirSync(seenDir(teamDir), { recursive: true });
 	const path = lockPath(repo, teamDir);
-	for (let attempt = 0; attempt < 2; attempt++) {
+	const token = `${process.pid} ${randomBytes(8).toString('hex')}\n`;
+	for (let attempt = 0; attempt < 3; attempt++) {
 		try {
 			const fd = openSync(path, 'wx');
-			try { writeSync(fd, `${process.pid} ${now()}\n`); } finally { closeSync(fd); }
-			return { ok: true, release: () => { try { unlinkSync(path); } catch { /* already gone */ } } };
+			try { writeSync(fd, token); } finally { closeSync(fd); }
+			return lockHolder(path, token);
 		} catch (err) {
 			if ((err as NodeJS.ErrnoException).code !== 'EEXIST') {
 				return { ok: false, reason: `lock could not be taken: ${err instanceof Error ? err.message : String(err)}` };
 			}
 		}
-		let ageMs: number;
+		const grave = `${path}.stale.${randomBytes(6).toString('hex')}`;
 		try {
-			ageMs = now() - statSync(path).mtimeMs;
+			renameSync(path, grave);
 		} catch {
-			continue; // released between the open and the stat: retry
+			continue; // released or taken over by someone else first: retry
 		}
-		if (ageMs <= LOCK_STALE_MS) return { ok: false, reason: 'a refresh is already running for this repository' };
-		try { unlinkSync(path); } catch { /* another process took it over first */ }
+		let stale = false;
+		try {
+			stale = now() - statSync(grave).mtimeMs > LOCK_STALE_MS;
+		} catch { /* treat as not stale */ }
+		if (stale) {
+			try { unlinkSync(grave); } catch { /* best effort */ }
+			continue;
+		}
+		try { linkSync(grave, path); } catch { /* a third process already holds a new lock */ }
+		try { unlinkSync(grave); } catch { /* best effort */ }
+		return { ok: false, reason: LOCK_BUSY };
 	}
-	return { ok: false, reason: 'a refresh is already running for this repository' };
+	return { ok: false, reason: LOCK_BUSY };
 }

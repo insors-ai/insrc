@@ -130,10 +130,16 @@ test('the lock refuses a second holder and takes over a lock older than 30 secon
 		const taken = acquireLock(repoA, teamDir);
 		assert.equal(taken.ok, true);
 
-		// Releasing frees it for the next holder.
+		// The original holder releasing after the takeover must not delete the new holder's lock.
+		if (first.ok) first.release();
+		const blocked = acquireLock(repoA, teamDir);
+		assert.equal(blocked.ok, false, 'the new holder still holds the lock');
+
+		// Releasing the real holder frees it for the next holder, and takeover leaves no stray files.
 		if (taken.ok) taken.release();
 		const again = acquireLock(repoA, teamDir);
 		assert.equal(again.ok, true);
 		if (again.ok) again.release();
+		assert.deepEqual(readdirSync(join(teamDir, 'seen')).filter(f => f.includes('.stale.')), []);
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });

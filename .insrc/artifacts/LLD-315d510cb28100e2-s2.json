@@ -202,6 +202,13 @@
         "choice": "Verify test locations before planning",
         "rationale": "Tests live in src/**/__tests__/*.test.ts run by tsx --test; confirm existing suites while planning.",
         "resolvedAt": "2026-10-17T06:12:45.609Z"
+      },
+      "q042661a7": {
+        "question": "alt2 (partial): the Epic constraints k4 and k5 are covered through the acceptance criteria but not scored separately.",
+        "status": "resolved",
+        "choice": "Keep acceptance-criteria scoring",
+        "rationale": "Design-time scoring only; k4 and k5 are already proved by ac5-ac9 tests in the build.",
+        "resolvedAt": "2026-10-17T06:13:19.963Z"
       }
     }
   },

@@ -1,0 +1,1 @@
+{"extends":"../../../tsconfig.json","compilerOptions":{"noEmit":true,"rootDir":"../../..","declaration":false,"declarationMap":false,"sourceMap":false},"include":[],"exclude":[],"files":["./command.test.ts","./tui.test.ts","./zz-config-probe.2390875.ts"]}

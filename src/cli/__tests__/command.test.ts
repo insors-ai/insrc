@@ -19,7 +19,7 @@ import type { Services } from '../services/index.js';
 interface Spies {
 	repoAdd: string[];
 	repoAddSteering: Array<unknown>;
-	configWrite: Array<{ path: string; value: unknown }>;
+	configWrite: Array<{ path: string | string[]; value: unknown }>;
 	teamInit: string[];
 	teamRefresh: Array<{ path: string; branch: string | undefined }>;
 	panes: number[];
@@ -56,6 +56,14 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			approveAmendment: () => ({} as never),
 			rejectAmendment: () => ({} as never),
 			staleness: () => [],
+			reviewArtifact: async () => ({} as never),
+			reviewFindings: () => ({} as never),
+			resolveFinding: () => ({} as never),
+			runWorkflowStreaming: async () => ({} as never),
+			sync: () => ({} as never),
+			deferredQuestions: () => [],
+			resolveEpicHashArg: h => h,
+			trackerSetup: async () => ({ steps: [], manualRemaining: 0 }),
 		},
 		setup: {
 			detect: () => ({} as never),

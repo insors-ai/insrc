@@ -84,7 +84,7 @@ const CONFIG_MEMBERS = /catalog|repoSettings|setRepoSetting|Services\['config'\]
 /**
  * Type-checks `files` with the project's compiler options and returns the diagnostic lines. The project tsconfig
  * excludes __tests__, so the test fixtures are not covered by the normal typecheck; this runs tsc over them
- * explicitly. (The fixtures also carry older, unrelated drift, so the caller filters to the config members.)
+ * explicitly.
  */
 function typecheck(files: readonly string[]): string[] {
 	const cfg = `${HERE}tsconfig.fixtures.${process.pid}.json`;
@@ -117,17 +117,16 @@ test('makeServices exposes catalog, repoSettings and setRepoSetting and the fixt
 	assert.match(source, /rpc<SettingsResult>\('repo\.settings\.get', \{ repo \}\)/);
 	assert.match(source, /rpc<SettingsResult>\('repo\.settings\.set', \{ repo, key, value \}\)/);
 
-	// One tsc run over the two literal fixtures (command, tui) and a probe that lacks the members. No diagnostic
-	// may concern the config members in the fixtures (services and team-service build their Services from
-	// makeServices, covered above); the probe proves the check does flag a missing member.
+	// One tsc run over the two literal fixtures (command, tui) and a probe that lacks the members. The fixtures
+	// must type-check against the whole Services interface with no diagnostic at all (services and team-service
+	// build their Services from makeServices, covered above); the probe proves the check flags a missing member.
 	const probeName = `zz-config-probe.${process.pid}.ts`;
 	const probe = `${HERE}${probeName}`;
 	writeFileSync(probe, "import type { Services } from '../services/index.js';\nexport const config: Services['config'] = { show: async () => ({}), write: async () => ({ ok: true }), reload: async () => ({ ok: true }) };\n");
 	let diagnostics: string[];
 	try { diagnostics = typecheck(['./command.test.ts', './tui.test.ts', `./${probeName}`]); } finally { rmSync(probe, { force: true }); }
-	const concerning = diagnostics.filter(d => CONFIG_MEMBERS.test(d));
-	assert.deepEqual(concerning.filter(d => !d.startsWith(probeName)), [], 'a fixture does not satisfy Services[config]');
-	const flagged = concerning.filter(d => d.startsWith(probeName));
+	assert.deepEqual(diagnostics.filter(d => !d.startsWith(probeName)), [], 'a fixture does not satisfy Services');
+	const flagged = diagnostics.filter(d => d.startsWith(probeName) && CONFIG_MEMBERS.test(d));
 	assert.ok(flagged.length > 0, 'a fixture missing the three members is reported');
 	assert.match(flagged.join('\n'), /catalog, repoSettings, setRepoSetting/);
 });

@@ -76,6 +76,13 @@ function fakeServices(): Services {
 			approveAmendment: () => ({} as AmendmentRecord),
 			rejectAmendment:  () => ({} as AmendmentRecord),
 			staleness:        () => [],
+			reviewArtifact: async () => ({} as never),
+			reviewFindings: () => ({} as never),
+			resolveFinding: () => ({} as never),
+			runWorkflowStreaming: async () => ({} as never),
+			sync: () => ({} as never),
+			deferredQuestions: () => [],
+			resolveEpicHashArg: h => h,
 			trackerSetup:     async () => ({ steps: [], manualRemaining: 0 }),
 		},
 		setup: {

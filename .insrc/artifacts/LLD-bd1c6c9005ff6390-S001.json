@@ -115,7 +115,9 @@
       "reviewedAt": "2026-10-17T09:02:37.523Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
-    }
+    },
+    "approvedAt": "2026-10-17T09:14:27.069Z",
+    "rangeBase": "3fd11e2e5860d89e06a50491260103c5394e46e7"
   },
   "body": {
     "summary": {

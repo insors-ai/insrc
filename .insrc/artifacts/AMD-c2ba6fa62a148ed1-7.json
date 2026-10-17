@@ -1,0 +1,46 @@
+{
+  "id": "AMD-c2ba6fa62a148ed1-7",
+  "epicHash": "c2ba6fa62a148ed1",
+  "epicSlug": "complete-consistent-richer-code-index-one",
+  "hldBaseRunId": "wf-1791697214822-7bombm",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s12",
+    "internal": "Private implementation of s12: Every supported parser records the calls its code makes, and calls resolve within a package"
+  },
+  "rationale": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa6): adds a Story for complete call extraction and resolution in every parser, building on DEF-c2ba6fa6, Story s1's pending-row classes and code in src/indexer/parser/*.ts and src/indexer/cross-file-resolver.ts.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": ".insrc/artifacts/ISSUE-bd1c6c9005ff6390.json",
+      "quotedText": "Scope narrowed on the stakeholder's decision (2026-10-17, after LLD review rounds 1-3)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/parser/python.ts:124-126",
+      "quotedText": "Python emits no general CALLS today"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/indexer/parser/go.ts:114-116",
+      "quotedText": "Go emits no general CALLS today"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:499",
+      "quotedText": "if (importedFiles.size === 0) return UNRESOLVED;"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1792228584569-jqfk3l",
+    "storyId": "s12",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-10-17T09:16:43.957Z",
+  "status": "pending"
+}

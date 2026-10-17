@@ -96,6 +96,8 @@ test('S007 sc9: extension.ts wires the repo renderer + the consent-gated per-rep
   // The sc8 ConfigGateway is constructed once and reused by the panel (no new capability).
   assert.match(entry, /const configGateway = createDaemonConfigGateway\(client\)/, 'the sc8 gateway is constructed once + reused');
   assert.match(entry, /repoRenderer:\s*renderRepoConfig\(\{[\s\S]*registeredRepos:[\s\S]*rawConfig:\s*\(\)\s*=>\s*configGateway\.rawConfig\(\)/, 'the repo renderer reads registeredRepos + the sc8 rawConfig');
+  assert.match(entry, /repoRenderer:\s*renderRepoConfig\(\{[\s\S]*repoFields:[\s\S]*repoSettings:\s*\(repoPath\)\s*=>\s*configGateway\.repoSettings\(repoPath\)/, 'the repo renderer also reads the tracker rows through the gateway (Story s3)');
+  assert.match(entry, /writeRepoSetting:\s*\(repoPath, key, value\)\s*=>\s*configGateway\.writeRepoSetting\(repoPath, key, value\)/, 'the write sink reaches repo.settings.set through the gateway behind the same consent');
   assert.match(entry, /onRepoConfigWrite:\s*createRepoConfigWriteHandler\(\{[\s\S]*writeKeyPath:[\s\S]*configGateway\.writeKeyPath[\s\S]*consent[\s\S]*status/, 'the write sink goes through the sc8 writeKeyPath + sc4 consent + sc2 status');
   // No new command (S007 adds no palette entry).
   const pkg = JSON.parse(readFileSync(join(PKG, 'package.json'), 'utf8'));

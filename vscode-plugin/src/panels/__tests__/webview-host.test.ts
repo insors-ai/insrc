@@ -571,6 +571,49 @@ test('S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no
   assert.equal(warns.length, 0, 'a malformed message is a silent no-op, not an error');
 });
 
+test('Story s3: a {repoTrackerWrite} is forwarded as a validated RepoTrackerWrite; the models.byRepo route and malformed tracker messages are unaffected', async () => {
+  const writes: unknown[] = [];
+  const { host, created, warns } = makeHost({
+    repoRenderer: async () => `<div>body</div>`,
+    onRepoConfigWrite: (w) => writes.push(w),
+  });
+  host.openRepoConfiguration();
+  await tick();
+
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'ghHost', value: 'ghe.example.com' });
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'ghPath', value: null });
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'pushTasks', value: true });
+  created[0]!.injectMessage({ type: 'repoWrite', repoPath: '/repo/a', segments: ['tiers', 'core', 'runner'], value: 'ollama' });
+  assert.deepEqual(writes, [
+    { repoPath: '/repo/a', key: 'ghHost', value: 'ghe.example.com' },
+    { repoPath: '/repo/a', key: 'ghPath', value: null },
+    { repoPath: '/repo/a', key: 'pushTasks', value: true },
+    { repoPath: '/repo/a', segments: ['tiers', 'core', 'runner'], value: 'ollama' },
+  ], 'tracker writes carry key and value; the models.byRepo write keeps its segments shape');
+
+  // Malformed tracker messages are silent no-ops.
+  const before = writes.length;
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', key: 'ghHost', value: 'x' });                       // no repoPath
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', value: 'x' });                      // no key
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: '', value: 'x' });             // empty key
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: 5 });         // bad value
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: ['a'] });     // bad value
+  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost' });                   // missing value
+  assert.equal(writes.length, before, 'no forward on a malformed repoTrackerWrite');
+  assert.equal(warns.length, 0, 'a malformed message is a silent no-op');
+});
+
+test('Story s3: a throwing tracker write sink is caught and logged; errors never reach the webview', async () => {
+  const { host, created, warns } = makeHost({
+    repoRenderer: async () => `<div>ok</div>`,
+    onRepoConfigWrite: () => { throw new Error('sink boom'); },
+  });
+  host.openRepoConfiguration();
+  await tick();
+  assert.doesNotThrow(() => created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: 'x' }));
+  assert.ok(warns.some((w) => /repo tracker write handler failed/.test(w)));
+});
+
 test('S007: the empty selectRepo option clears the selection back to picker-only', async () => {
   const seen: (string | undefined)[] = [];
   const { host, created } = makeHost({

@@ -20,6 +20,7 @@ import type {
   Notifier,
   SettingsStore,
 } from '../types.js';
+import type { SettingsResult } from '../../../../src/daemon/repo-settings.js';
 import type { ConfigOption } from '../../../../src/config/config-catalog.js';
 
 // ── fixtures ──────────────────────────────────────────────────────────────────
@@ -64,7 +65,7 @@ class FakeGateway implements ConfigGateway {
   constructor(private readonly o: GwOpts = {}) {}
   async catalog(): Promise<ConfigCatalogSnapshot> {
     if (this.o.catalogReject) throw this.o.catalogReject;
-    return { values: new Map(Object.entries(this.o.catalogValues ?? {})) };
+    return { values: new Map(Object.entries(this.o.catalogValues ?? {})), repoFields: [] };
   }
   async writeKey(key: string, value: unknown): Promise<ConfigWriteResult> {
     this.writeCalls.push({ key, value });
@@ -76,6 +77,8 @@ class FakeGateway implements ConfigGateway {
     return { ok: true };
   }
   async rawConfig(): Promise<Record<string, unknown>> { return {}; }
+  async repoSettings(): Promise<SettingsResult> { return { ok: false, error: { code: 'repo-not-registered', message: 'not available in this fake' } }; }
+  async writeRepoSetting(): Promise<ConfigWriteResult> { return { ok: true }; }
 }
 
 /** Pull once so lastSyncedSnapshot holds the daemon value, then return the engine + fakes. */
@@ -221,10 +224,10 @@ test('insrc.advanced is NOT declared in S003 (escape-hatch deferred to a later s
   }
 });
 
-test('the config engine still imports no vscode and calls only config.catalog/config.write/config.show', () => {
+test('the config engine still imports no vscode and calls only config.catalog/config.write/config.show/repo.settings.get/repo.settings.set', () => {
   const engine = readSrc('config/sync-engine.ts');
   assert.doesNotMatch(engine, /from ['"]vscode['"]/);
   const gateway = readSrc('config/gateway.ts');
   const methods = [...new Set([...gateway.matchAll(/rpc<[^>]*>+\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1]))].sort();
-  assert.deepEqual(methods, ['config.catalog', 'config.show', 'config.write']);
+  assert.deepEqual(methods, ['config.catalog', 'config.show', 'config.write', 'repo.settings.get', 'repo.settings.set']);
 });

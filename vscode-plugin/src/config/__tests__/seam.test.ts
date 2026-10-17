@@ -28,13 +28,13 @@ test("no sc8 config core module imports 'vscode' (only extension.ts may)", () =>
   }
 });
 
-test('the ConfigGateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)', () => {
+test('the ConfigGateway references only config.catalog + config.show + config.write + repo.settings.get + repo.settings.set (no cloud/HTTP)', () => {
   const src = read('gateway.ts');
   // The ONLY daemon IPC methods the config seam is allowed to call: config.catalog
-  // + config.write (S001) and config.show (S002's additive per-role read) — all
-  // existing read/write IPC, no new daemon capability (k3).
+  // + config.write (S001), config.show (S002's additive per-role read) and, for the
+  // repo-scoped tracker settings (Story s3), repo.settings.get + repo.settings.set.
   const methods = [...new Set([...src.matchAll(/rpc<[^>]*>+\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1]))].sort();
-  assert.deepEqual(methods, ['config.catalog', 'config.show', 'config.write']);
+  assert.deepEqual(methods, ['config.catalog', 'config.show', 'config.write', 'repo.settings.get', 'repo.settings.set']);
   // No cloud/HTTP escape hatch in the config seam (k2).
   for (const mod of CORE_MODULES) {
     assert.doesNotMatch(read(mod), /https?:\/\/|fetch\(|undici|node:http/, `${mod} must open no network path`);

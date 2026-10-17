@@ -23,8 +23,9 @@
  * vscode, no cloud (k2/k5).
  */
 
+import { buildSettingsRows } from '../../../src/config/repo-settings-rows.js';
 import { escapeHtml } from './html.js';
-import type { RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoRef } from './types.js';
+import type { RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoRef, RepoTrackerWrite } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
@@ -38,6 +39,8 @@ const TIER_FIELDS = ['runner', 'model'] as const;
 export interface RepoConfigWriteDeps {
   readonly consent: ConsentGate;
   readonly writeKeyPath: (segments: readonly string[], value: unknown) => Promise<ConfigWriteResult>;
+  /** The consent-gated tracker-row write (repo.settings.set); a daemon refusal comes back as a reason. */
+  readonly writeRepoSetting: (repoPath: string, key: string, value: string | boolean | null) => Promise<ConfigWriteResult>;
   readonly registeredRepos: () => Promise<readonly RepoRef[]>;
   readonly status: StatusSurface;
   readonly logger: { warn(message: string): void };
@@ -53,6 +56,33 @@ function readStringAt(root: Record<string, unknown>, path: readonly string[]): s
     cur = (cur as Record<string, unknown>)[key];
   }
   return typeof cur === 'string' ? cur : undefined;
+}
+
+/**
+ * The Tracker section (Story s3): the rows the daemon defines (`repoFields`) with this
+ * repo's values (`repo.settings.get`). Local rows are inputs that post `repoTrackerWrite`;
+ * sign-in, target and policy rows are read-only text. A refusal from the daemon is shown
+ * as its message. A transport rejection propagates so the host degrades the panel.
+ */
+async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: string): Promise<string> {
+  const fields = await deps.repoFields();
+  if (fields.length === 0) return '';
+  const result = await deps.repoSettings(repoPath);
+  if (!result.ok) {
+    return `<section id="insrc-tracker"><h3>Tracker</h3><p class="error">${escapeHtml(result.error.message)}</p></section>`;
+  }
+  const rows = buildSettingsRows(fields, result.payload)
+    .map((row) => {
+      const note = row.note !== undefined ? ` <span class="note">${escapeHtml(row.note)}</span>` : '';
+      const control = row.editable
+        ? `<input type="text" data-tracker-key="${escapeHtml(row.key)}" value="${escapeHtml(row.current)}" ` +
+          `placeholder="${escapeHtml(row.value)}" />`
+        : `<span class="value readonly" data-readonly-key="${escapeHtml(row.key)}">${escapeHtml(row.value)}</span> ` +
+          `<span class="note">(read-only)</span>`;
+      return `<label class="field tracker-row" data-kind="${escapeHtml(row.kind)}">${escapeHtml(row.label)} ${control}${note}</label>`;
+    })
+    .join('');
+  return `<section id="insrc-tracker"><h3>Tracker</h3><p class="hint">Blank clears a row.</p>${rows}</section>`;
 }
 
 /**
@@ -108,10 +138,12 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
       return `<fieldset class="tier"><legend>${escapeHtml(tier)}</legend>${fields}</fieldset>`;
     }).join('');
 
+    const tracker = await renderTrackerSection(deps, active);
     return (
       `${picker}` +
       `<section id="insrc-repo-form" data-repo="${escapeHtml(active)}">` +
       `<p class="hint">Per-repo model tiers for this repo. Leave a field blank to use the global default.</p>${rows}` +
+      `${tracker}` +
       `</section>`
     );
   };
@@ -125,12 +157,13 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
  */
 export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write: RepoConfigWrite) => void {
   return (write: RepoConfigWrite): void => {
+    if (typeof write !== 'object' || write === null || typeof write.repoPath !== 'string' || write.repoPath.length === 0) return;
+    if ('key' in write) {
+      handleTrackerWrite(deps, write);
+      return;
+    }
     // Shape guard (defence-in-depth; the host already validates before forwarding).
     if (
-      typeof write !== 'object' ||
-      write === null ||
-      typeof write.repoPath !== 'string' ||
-      write.repoPath.length === 0 ||
       !Array.isArray(write.segments) ||
       !write.segments.every((s) => typeof s === 'string') ||
       write.segments.length === 0
@@ -164,4 +197,39 @@ export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write:
       }
     })();
   };
+}
+
+/** The tracker-row edit: registered-repo check, consent (k4), then repo.settings.set; a refusal is shown with its message. */
+function handleTrackerWrite(deps: RepoConfigWriteDeps, write: RepoTrackerWrite): void {
+  if (
+    typeof write.key !== 'string' || write.key.length === 0 ||
+    !(write.value === null || typeof write.value === 'string' || typeof write.value === 'boolean')
+  ) {
+    return;
+  }
+  void (async () => {
+    try {
+      const repos = await deps.registeredRepos();
+      if (!repos.some((r) => r.path === write.repoPath)) {
+        deps.logger.warn(`insrc: ignoring a tracker write for an unregistered repo (${write.repoPath})`);
+        return;
+      }
+      const outcome = await deps.consent.ask({
+        title: 'Apply tracker setting change?',
+        detail: `${write.value === null ? 'Clear' : 'Set'} ${write.key} for the repo ${write.repoPath}?`,
+        acceptLabel: 'Apply',
+      });
+      if (outcome !== 'accepted') return; // declined / dismissed — write NOTHING (k4).
+      const result = await deps.writeRepoSetting(write.repoPath, write.key, write.value);
+      deps.status.set({
+        state: deps.status.current().state,
+        detail: result.ok
+          ? `updated ${write.key} for ${write.repoPath}`
+          : `tracker setting refused: ${result.reason}`,
+      });
+      deps.refresh();
+    } catch (err) {
+      deps.logger.warn(`insrc: the tracker setting write failed — ${err instanceof Error ? err.message : String(err)}`);
+    }
+  })();
 }

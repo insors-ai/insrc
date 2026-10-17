@@ -8,14 +8,21 @@
  * client-authored reason on refusal. No new daemon capability is introduced —
  * only these two existing IPC methods are called (k3), and there is no cloud
  * path (k2). Constructed in extension.ts from the shared client.
+ *
+ * Story s3 adds two more existing-style calls: `repo.settings.get` and
+ * `repo.settings.set` (the repo-scoped tracker settings the daemon owns).
  */
 
+import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
+import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 import type { IpcClient } from '../../../src/shared/ipc-client.js';
 import type { ConfigCatalogSnapshot, ConfigGateway, ConfigWriteResult } from './types.js';
 
 /** The subset of the `config.catalog` payload sc8's pull consumes (S001: values only). */
 interface CatalogPayload {
   readonly values?: Readonly<Record<string, unknown>>;
+  /** Static repo-scoped tracker rows; absent from an older daemon. */
+  readonly repoFields?: readonly RepoFieldDef[];
 }
 
 /**
@@ -30,7 +37,7 @@ export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
     async catalog(): Promise<ConfigCatalogSnapshot> {
       const payload = await client.rpc<CatalogPayload>('config.catalog');
       const values = new Map<string, unknown>(Object.entries(payload?.values ?? {}));
-      return { values };
+      return { values, repoFields: payload?.repoFields ?? [] };
     },
 
     async writeKey(key: string, value: unknown): Promise<ConfigWriteResult> {
@@ -52,6 +59,15 @@ export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
       // the source of dynamic per-role overrides the config.catalog snapshot omits.
       const raw = await client.rpc<Record<string, unknown>>('config.show');
       return raw ?? {};
+    },
+
+    async repoSettings(repoPath: string): Promise<SettingsResult> {
+      return await client.rpc<SettingsResult>('repo.settings.get', { repo: repoPath });
+    },
+
+    async writeRepoSetting(repoPath: string, key: string, value: string | boolean | null): Promise<ConfigWriteResult> {
+      const result = await client.rpc<SettingsResult>('repo.settings.set', { repo: repoPath, key, value });
+      return result.ok ? { ok: true } : { ok: false, reason: result.error.message };
     },
   };
 }

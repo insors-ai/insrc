@@ -15,6 +15,8 @@
  * (s5 daemon/workflows, s6 debug, s7 repo form).
  */
 
+import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
+import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 import type { DisposableLike } from '../surfaces/types.js';
 
 // ---------------------------------------------------------------------------
@@ -171,6 +173,10 @@ export interface RepoConfigRendererDeps {
   registeredRepos(): Promise<readonly RepoRef[]>;
   /** The raw ~/.insrc/config.json (config.show) — the source of per-repo overrides. */
   rawConfig(): Promise<Record<string, unknown>>;
+  /** The repo-scoped tracker rows the daemon defines (config.catalog `repoFields`). */
+  repoFields(): Promise<readonly RepoFieldDef[]>;
+  /** One repo's tracker settings payload (repo.settings.get); a rejection propagates so the host degrades the panel. */
+  repoSettings(repoPath: string): Promise<SettingsResult>;
 }
 
 /**
@@ -179,11 +185,20 @@ export interface RepoConfigRendererDeps {
  * the write handler prefixes ['models','byRepo',repoPath] before the config.write
  * ARRAY form. `value` is the field value, or null to clear an override.
  */
-export interface RepoConfigWrite {
+export interface RepoModelWrite {
   readonly repoPath: string;
   readonly segments: readonly string[];
   readonly value: unknown;
 }
+
+/** One edit of a local tracker row (Story s3); `value` null clears the row. Posted as `repoTrackerWrite`. */
+export interface RepoTrackerWrite {
+  readonly repoPath: string;
+  readonly key: string;
+  readonly value: string | boolean | null;
+}
+
+export type RepoConfigWrite = RepoModelWrite | RepoTrackerWrite;
 
 /** One choice offered in the status-bar menu (VS Code's `QuickPickItem` satisfies it). */
 export interface MenuItem {

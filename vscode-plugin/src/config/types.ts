@@ -12,6 +12,8 @@
  */
 
 import type { ConfigOption } from '../../../src/config/config-catalog.js';
+import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
+import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 
 /** One native settings key that changed since the last daemon sync. */
 export interface ChangedKey {
@@ -52,6 +54,8 @@ export type ConfigWriteResult = { ok: true } | { ok: false; reason: string };
  */
 export interface ConfigCatalogSnapshot {
   readonly values: ReadonlyMap<string, unknown>;
+  /** The repo-scoped tracker rows the daemon defines (Story s3); empty when an older daemon omits them. */
+  readonly repoFields: readonly RepoFieldDef[];
 }
 
 /**
@@ -78,6 +82,10 @@ export interface ConfigGateway {
    * daemon is unreachable.
    */
   rawConfig(): Promise<Record<string, unknown>>;
+  /** One repo's tracker settings, sign-in status and policy rows (`repo.settings.get`); rejects when the daemon is unreachable. */
+  repoSettings(repoPath: string): Promise<SettingsResult>;
+  /** Set (or, with null, clear) one local tracker row of a repo (`repo.settings.set`); a daemon refusal becomes a reason-carrying result. */
+  writeRepoSetting(repoPath: string, key: string, value: string | boolean | null): Promise<ConfigWriteResult>;
 }
 
 /** One row of the static native-key ↔ catalog-path ↔ ConfigOption table. */

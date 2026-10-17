@@ -60,7 +60,7 @@ function harness(opts: HarnessOpts) {
     },
     catalog: async () => {
       if (opts.catalogThrows) throw new Error('daemon unreachable');
-      return { values: opts.values ?? new Map<string, unknown>() };
+      return { values: opts.values ?? new Map<string, unknown>(), repoFields: [] };
     },
     writeKeyPath: async (segments, value) => {
       writes.push({ segments: [...segments], value });
@@ -273,9 +273,10 @@ test('writeKeyPath REJECTION (daemon down at write time) -> notify, no throw (ne
 
 test('provider switch: runner write OK then model write REFUSES -> the partial state is surfaced (MED)', async () => {
   const h = harness({
-    values: new Map(),
+    // The cheap tier is explicitly on ollama (its shipped default is now cli-claude), so picking cli-claude is a switch.
+    values: new Map([['models.tiers.cheap.runner', 'ollama']]),
     listModels: (p) => ({ provider: p, available: true, models: [{ id: 'llama3' }] }),
-    // cheap default runner is ollama; picking cli-claude is a switch. Runner ok, model refuses.
+    // Runner ok, model refuses.
     write: (segments) => (segments.includes('model') ? { ok: false, reason: 'bad model' } : { ok: true }),
     picks: [byValue('cheap'), byValue('cli-claude'), byValue('llama3')],
   });
@@ -302,7 +303,7 @@ test('an unconfigured default model (no override) that is not in the list is NOT
 
 test('a runner-write refusal on a provider switch aborts before the model write', async () => {
   const h = harness({
-    values: new Map(),
+    values: new Map([['models.tiers.cheap.runner', 'ollama']]),   // explicit: the shipped cheap default is now cli-claude
     listModels: (p) => ({ provider: p, available: true, models: [{ id: 'llama3' }] }),
     write: (segments) => (segments.includes('runner') ? { ok: false, reason: 'nope' } : { ok: true }),
     picks: [byValue('cheap'), byValue('cli-claude'), byValue('llama3')], // cheap default runner is ollama -> cli-claude is a switch

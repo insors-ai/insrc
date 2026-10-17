@@ -86,8 +86,8 @@ window.addEventListener('message', function (event) {
 vscode.postMessage({ type: 'ready' });`;
 
 /**
- * The Repo Configuration panel's inline bootstrap (nonce'd; posts ONLY the two
- * sanctioned repo message shapes). Static — it reads only host-rendered DOM data.
+ * The Repo Configuration panel's inline bootstrap (nonce'd; posts ONLY the three
+ * sanctioned repo message shapes: selectRepo, repoWrite and repoTrackerWrite). Static — it reads only host-rendered DOM data.
  * The repo <select> change posts {type:'selectRepo',repoPath}; each per-repo form
  * field change posts {type:'repoWrite',repoPath,segments,value} (value '' -> null to
  * clear the override). The form's data-repo carries the selected repoPath and each
@@ -98,6 +98,11 @@ const sel = document.getElementById('insrc-repo-select');
 if (sel) { sel.addEventListener('change', function () { vscode.postMessage({ type: 'selectRepo', repoPath: sel.value }); }); }
 const form = document.getElementById('insrc-repo-form');
 const repoPath = form ? form.getAttribute('data-repo') : '';
+for (const el of document.querySelectorAll('[data-tracker-key]')) {
+  el.addEventListener('change', function () {
+    vscode.postMessage({ type: 'repoTrackerWrite', repoPath: repoPath, key: el.getAttribute('data-tracker-key'), value: el.value === '' ? null : el.value });
+  });
+}
 for (const el of document.querySelectorAll('[data-segments]')) {
   el.addEventListener('change', function () {
     var segments;
@@ -311,7 +316,7 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   const handleRepoMessage = (panel: PanelHandle, message: unknown): void => {
     if (repoPanel !== panel) return; // stale panel (disposed/replaced) — no-op.
     if (typeof message !== 'object' || message === null) return;
-    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown };
+    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown; key?: unknown };
     if (msg.type === 'selectRepo' && typeof msg.repoPath === 'string') {
       // The empty option ('') clears the selection back to the picker-only view.
       repoSelectedRepo = msg.repoPath.length > 0 ? msg.repoPath : undefined;
@@ -335,6 +340,21 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
         });
       } catch (err) {
         logger.warn(`insrc: the repo-config write handler failed — ${errText(err)}`);
+      }
+      return;
+    }
+    if (
+      msg.type === 'repoTrackerWrite' &&
+      typeof msg.repoPath === 'string' &&
+      typeof msg.key === 'string' &&
+      msg.key.length > 0 &&
+      (msg.value === null || typeof msg.value === 'string' || typeof msg.value === 'boolean')
+    ) {
+      // Same discipline as repoWrite: the host forwards, the sink (extension.ts) runs the consent-gated write.
+      try {
+        deps.onRepoConfigWrite?.({ repoPath: msg.repoPath, key: msg.key, value: msg.value });
+      } catch (err) {
+        logger.warn(`insrc: the repo tracker write handler failed — ${errText(err)}`);
       }
       return;
     }

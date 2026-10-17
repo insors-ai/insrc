@@ -23,6 +23,7 @@ import type {
   Notifier,
   SettingsStore,
 } from '../types.js';
+import type { SettingsResult } from '../../../../src/daemon/repo-settings.js';
 import type { ConfigOption } from '../../../../src/config/config-catalog.js';
 import type { IpcClient, DaemonStatus } from '../../../../src/shared/ipc-client.js';
 
@@ -60,7 +61,7 @@ class FakeGateway implements ConfigGateway {
   writeKeyCalls: Array<{ key: string; value: unknown }> = [];
   writeKeyPathCalls: Array<{ segments: readonly string[]; value: unknown }> = [];
   constructor(private readonly o: GwOpts = {}) {}
-  async catalog(): Promise<ConfigCatalogSnapshot> { return { values: new Map() }; }
+  async catalog(): Promise<ConfigCatalogSnapshot> { return { values: new Map(), repoFields: [] }; }
   async writeKey(key: string, value: unknown): Promise<ConfigWriteResult> { this.writeKeyCalls.push({ key, value }); return { ok: true }; }
   async writeKeyPath(segments: readonly string[], value: unknown): Promise<ConfigWriteResult> {
     this.writeKeyPathCalls.push({ segments, value });
@@ -71,6 +72,8 @@ class FakeGateway implements ConfigGateway {
     if (this.o.rawReject) throw this.o.rawReject;
     return this.o.raw ?? {};
   }
+  async repoSettings(): Promise<SettingsResult> { return { ok: false, error: { code: 'repo-not-registered', message: 'not available in this fake' } }; }
+  async writeRepoSetting(): Promise<ConfigWriteResult> { return { ok: true }; }
 }
 
 // ── applyChanges (per-role) ────────────────────────────────────────────────────
@@ -172,10 +175,10 @@ test("the per-role key-map + engine + gateway modules import no 'vscode'", () =>
   }
 });
 
-test('the gateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)', () => {
+test('the gateway references only config.catalog + config.show + config.write + repo.settings.get + repo.settings.set (no cloud/HTTP)', () => {
   const src = read('gateway.ts');
   const methods = [...src.matchAll(/rpc<[^>]*>+\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1]).sort();
-  assert.deepEqual([...new Set(methods)], ['config.catalog', 'config.show', 'config.write']);
+  assert.deepEqual([...new Set(methods)], ['config.catalog', 'config.show', 'config.write', 'repo.settings.get', 'repo.settings.set']);
   for (const mod of ['key-map.ts', 'sync-engine.ts', 'gateway.ts']) {
     assert.doesNotMatch(read(mod), /https?:\/\/|fetch\(|undici|node:http/, `${mod} must open no network path`);
   }

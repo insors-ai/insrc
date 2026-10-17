@@ -21,6 +21,7 @@ import type {
   Notifier,
   SettingsStore,
 } from '../types.js';
+import type { SettingsResult } from '../../../../src/daemon/repo-settings.js';
 import type { ConfigOption } from '../../../../src/config/config-catalog.js';
 
 // ── fixtures ────────────────────────────────────────────────────────────────
@@ -72,13 +73,15 @@ class FakeGateway implements ConfigGateway {
   constructor(private readonly opts: FakeGatewayOpts = {}) {}
   async catalog(): Promise<ConfigCatalogSnapshot> {
     if (this.opts.catalogReject) throw this.opts.catalogReject;
-    return { values: new Map(Object.entries(this.opts.catalogValues ?? {})) };
+    return { values: new Map(Object.entries(this.opts.catalogValues ?? {})), repoFields: [] };
   }
   async writeKey(key: string, value: unknown): Promise<ConfigWriteResult> {
     this.writeCalls.push({ key, value });
     if (this.opts.write) return this.opts.write(key, value);
     return { ok: true };
   }
+  async repoSettings(): Promise<SettingsResult> { return { ok: false, error: { code: 'repo-not-registered', message: 'not available in this fake' } }; }
+  async writeRepoSetting(): Promise<ConfigWriteResult> { return { ok: true }; }
 }
 
 // ── pullFromDaemon ────────────────────────────────────────────────────────────

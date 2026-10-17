@@ -399,6 +399,8 @@ export function activate(context: vscode.ExtensionContext): void {
     repoRenderer: renderRepoConfig({
       registeredRepos: () => daemonData.registeredRepos(),
       rawConfig: () => configGateway.rawConfig(),
+      repoFields: async () => (await configGateway.catalog()).repoFields,
+      repoSettings: (repoPath) => configGateway.repoSettings(repoPath),
     }),
     // S007: the consent-gated per-repo write sink. Reuses the sc8 writeKeyPath ARRAY
     // form (config.write) — no new daemon capability (k3); gated by sc4 (k4); the
@@ -406,6 +408,7 @@ export function activate(context: vscode.ExtensionContext): void {
     onRepoConfigWrite: createRepoConfigWriteHandler({
       consent,
       writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
+      writeRepoSetting: (repoPath, key, value) => configGateway.writeRepoSetting(repoPath, key, value),
       registeredRepos: () => daemonData.registeredRepos(),
       status,
       logger: panelLog,

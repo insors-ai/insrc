@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { renderDaemonTab, renderWorkflowsTab } from '../detail-renderers.js';
+import { renderRepoConfig } from '../repo-config.js';
+import { REPO_TRACKER_FIELDS } from '../../../../src/config/repo-fields.js';
 import { GatewayReadError, type DaemonDataGateway } from '../types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -112,13 +114,58 @@ test('source-scan: the webview bootstraps post only the sanctioned message shape
   // load handshake that gates the log ticker); still a fixed, closed set.
   assert.deepEqual(detailPosts.sort(), ['action', 'ready', 'refresh', 'switchTab'], 'the detail bootstrap posts only switchTab + refresh + action + ready');
 
-  // S007 added a SEPARATE repo bootstrap posting only {selectRepo} + {repoWrite}.
+  // S007 added a SEPARATE repo bootstrap posting only {selectRepo} + {repoWrite}; Story s3 adds {repoTrackerWrite}.
   const repo = /const REPO_BOOTSTRAP = `([\s\S]*?)`;/.exec(src);
   assert.ok(repo, 'the REPO_BOOTSTRAP script constant is present');
   const repoPosts = [...repo![1]!.matchAll(/postMessage\(\{\s*type:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.deepEqual(repoPosts.sort(), ['repoWrite', 'selectRepo'], 'the repo bootstrap posts only selectRepo + repoWrite');
+  assert.deepEqual(repoPosts.sort(), ['repoTrackerWrite', 'repoWrite', 'selectRepo'], 'the repo bootstrap posts only selectRepo + repoWrite + repoTrackerWrite');
 
   // The union across both bootstraps is the full closed set — nothing else is posted.
   const union = [...new Set([...detailPosts, ...repoPosts])].sort();
-  assert.deepEqual(union, ['action', 'ready', 'refresh', 'repoWrite', 'selectRepo', 'switchTab'], 'the closed message set');
+  assert.deepEqual(union, ['action', 'ready', 'refresh', 'repoTrackerWrite', 'repoWrite', 'selectRepo', 'switchTab'], 'the closed message set');
+});
+
+test('editing the ghHost row of the rendered tracker section posts repoTrackerWrite with repoPath, key and value', async () => {
+  const repoPath = '/r/one';
+  const html = await renderRepoConfig({
+    registeredRepos: async () => [{ path: repoPath, name: 'one' }],
+    rawConfig: async () => ({}),
+    repoFields: async () => REPO_TRACKER_FIELDS,
+    repoSettings: async () => ({
+      ok: true,
+      payload: {
+        repo: repoPath, values: { ghHost: 'ghe.example.com' },
+        resolved: { type: 'none', source: 'default-config' }, signin: { state: 'disabled', reason: 'the tracker is off for this repo' },
+        policy: { ok: true, mode: 'none' },
+      },
+    }),
+  })(repoPath);
+
+  // Take the control the renderer emitted for ghHost, and run the real bootstrap over a fake DOM.
+  const input = /<input type="text" data-tracker-key="ghHost"[^>]*>/.exec(html)?.[0];
+  assert.ok(input, 'the ghHost row is rendered as an input');
+  const key = /data-tracker-key="([^"]+)"/.exec(input!)![1]!;
+  const src = readFileSync(join(HERE, '..', 'webview-host.ts'), 'utf8');
+  const bootstrap = /const REPO_BOOTSTRAP = `([\s\S]*?)`;/.exec(src)![1]!;
+
+  const posted: unknown[] = [];
+  const handlers: Array<() => void> = [];
+  const el = {
+    value: 'ghe.corp.example',
+    getAttribute: (name: string) => (name === 'data-tracker-key' ? key : null),
+    addEventListener: (_evt: string, fn: () => void) => { handlers.push(fn); },
+  };
+  const doc = {
+    getElementById: (id: string) => (id === 'insrc-repo-form' ? { getAttribute: () => repoPath } : null),
+    querySelectorAll: (sel: string) => (sel === '[data-tracker-key]' ? [el] : []),
+  };
+  new Function('acquireVsCodeApi', 'document', bootstrap)(() => ({ postMessage: (m: unknown) => posted.push(m) }), doc);
+  assert.equal(handlers.length, 1, 'only the tracker input is wired');
+  handlers[0]!();
+  assert.deepEqual(posted, [{ type: 'repoTrackerWrite', repoPath, key: 'ghHost', value: 'ghe.corp.example' }]);
+
+  // A blank input clears the row (null), like the model-tier fields.
+  el.value = '';
+  handlers[0]!();
+  assert.deepEqual(posted.at(-1), { type: 'repoTrackerWrite', repoPath, key: 'ghHost', value: null });
 });

@@ -50,6 +50,13 @@
         "choice": "Confirm repo.settings.get/set",
         "rationale": "Owner chose option A on 2026-10-17: the names say 'settings for one repo' without implying config.json.",
         "resolvedAt": "2026-10-17T12:41:05.039Z"
+      },
+      "sg4": {
+        "question": "[sg4 / ambiguous] The config step of tracker setup (src/workflow/tracker/setup.ts) writes github.json directly today. This LLD moves it onto the shared writer so the file has one write path; confirm that touching the setup step is acceptable here rather than a separate change.",
+        "status": "resolved",
+        "choice": "Include setup migration",
+        "rationale": "Owner chose option A on 2026-10-17: the config step of tracker setup moves onto the shared github.json writer in this story, with its existing tests passing unchanged, so the file has one write path.",
+        "resolvedAt": "2026-10-17T12:41:18.143Z"
       }
     }
   },

@@ -333,6 +333,8 @@ Add repo.githubEntry.get and repo.githubEntry.set that move the entry JSON as is
   - **resolved**: Split ownership: s1 follow-up + s6 — Owner chose option A on 2026-10-17: s3 stores and shows ghPath, ghHost and branchPattern only; the gh runner reading ghPath and ghHost is an s1 follow-up and branchPattern is consumed by s6 (handoff). The three rows carry a note 'saved; not used yet' until then. _(2026-10-17T12:40:42.103Z)_
 - `sg3` — [sg3 / partial] repo.settings.get and repo.settings.set are new IPC method names with no precedent in the analysis; confirm the names before they are mirrored in the VS Code and JetBrains clients.
   - **resolved**: Confirm repo.settings.get/set — Owner chose option A on 2026-10-17: the names say 'settings for one repo' without implying config.json. _(2026-10-17T12:41:05.039Z)_
+- `sg4` — [sg4 / ambiguous] The config step of tracker setup (src/workflow/tracker/setup.ts) writes github.json directly today. This LLD moves it onto the shared writer so the file has one write path; confirm that touching the setup step is acceptable here rather than a separate change.
+  - **resolved**: Include setup migration — Owner chose option A on 2026-10-17: the config step of tracker setup moves onto the shared github.json writer in this story, with its existing tests passing unchanged, so the file has one write path. _(2026-10-17T12:41:18.143Z)_
 
 ## Citations
 

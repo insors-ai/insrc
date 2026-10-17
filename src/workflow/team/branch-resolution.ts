@@ -8,10 +8,10 @@
  *
  * Order, first that applies wins:
  *   1. the branch the remote itself names (`ls-remote --symref <remote> HEAD`), which overrides any pin;
- *   2. a branch the user supplied with --branch, accepted only after `ls-remote --heads` lists it
- *      (explicit input outranks anything recorded, so a wrong pin can be corrected);
- *   3. the branch an earlier refresh recorded (from the remote, or a user pin);
+ *   2. the branch recorded in a valid sighting for this remote;
+ *   3. a branch the user supplied with --branch, accepted only after `ls-remote --heads` lists it;
  *   otherwise the refresh refuses and asks the user to name the branch.
+ * A remote that cannot be reached is refused at once: the refresh needs it for the fetch anyway.
  * Nothing here writes: a refusal or a failed verification records nothing.
  */
 
@@ -55,12 +55,10 @@ export async function resolveDefaultBranch(input: ResolveInput): Promise<BranchD
 		const named = parseSymrefHead(symref.stdout);
 		if (named !== undefined) return { ok: true, branch: named, source: 'remote' };
 	}
-	const why = symref.ok ? `remote '${remote}' names no default branch` : `remote '${remote}' could not be asked for its default branch (${symref.stderr})`;
+	if (!symref.ok) return { ok: false, reason: `remote '${remote}' could not be reached (${symref.stderr}); nothing was recorded` };
 
 	const recorded = input.sighting !== undefined && input.sighting.remote === remote ? input.sighting : undefined;
-	if (recorded !== undefined && recorded.branchSource === 'remote' && input.supplied === undefined) {
-		return { ok: true, branch: recorded.branch, source: 'remote' };
-	}
+	if (recorded !== undefined) return { ok: true, branch: recorded.branch, source: recorded.branchSource };
 
 	if (input.supplied !== undefined) {
 		const name = input.supplied;
@@ -72,6 +70,5 @@ export async function resolveDefaultBranch(input: ResolveInput): Promise<BranchD
 		return { ok: true, branch: name, source: 'user' };
 	}
 
-	if (recorded !== undefined) return { ok: true, branch: recorded.branch, source: recorded.branchSource };
-	return { ok: false, reason: `${why}, and no default branch is recorded; ${ASK(remote)}` };
+	return { ok: false, reason: `remote '${remote}' names no default branch and none is recorded; ${ASK(remote)}` };
 }

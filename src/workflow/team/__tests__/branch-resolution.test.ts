@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { createDeadline } from '../git-async.js';
 import type { GitAsync } from '../git-async.js';
 import { parseSymrefHead, resolveDefaultBranch } from '../branch-resolution.js';
+import { readSighting, writeSighting } from '../sighting-store.js';
 import type { Sighting } from '../sighting-store.js';
 import { cloneOf, git, makeFixture, makeOrigin } from './git-fixture.js';
 
@@ -45,17 +46,20 @@ test("the remote's answer wins over a supplied branch, then the sighting's branc
 	// The remote's answer wins over a supplied branch and over an earlier user pin.
 	assert.deepEqual(await resolveDefaultBranch({ ...base, git: named, supplied: 'dev', sighting: recorded('dev', 'user') }), { ok: true, branch: 'main', source: 'remote' });
 
-	// The remote cannot name one: a branch recorded from the remote is used.
+	// The remote cannot name one: the recorded branch (from the remote, or a user pin) is used before a supplied one.
 	const silent = fakeGit('', ['dev', 'main']);
 	assert.deepEqual(await resolveDefaultBranch({ ...base, git: silent, sighting: recorded('main', 'remote') }), { ok: true, branch: 'main', source: 'remote' });
+	assert.deepEqual(await resolveDefaultBranch({ ...base, git: silent, supplied: 'main', sighting: recorded('dev', 'user') }), { ok: true, branch: 'dev', source: 'user' });
 
-	// A supplied branch is used only after ls-remote --heads lists it, and it replaces an older user pin.
-	assert.deepEqual(await resolveDefaultBranch({ ...base, git: silent, supplied: 'main', sighting: recorded('dev', 'user') }), { ok: true, branch: 'main', source: 'user' });
-	const missing = await resolveDefaultBranch({ ...base, git: silent, supplied: 'nope' });
-	assert.equal(missing.ok, false);
+	// With nothing recorded, a supplied branch is used only after ls-remote --heads lists it.
+	assert.deepEqual(await resolveDefaultBranch({ ...base, git: silent, supplied: 'main' }), { ok: true, branch: 'main', source: 'user' });
+	assert.equal((await resolveDefaultBranch({ ...base, git: silent, supplied: 'nope' })).ok, false);
 
-	// An earlier user pin is kept when nothing better is available.
-	assert.deepEqual(await resolveDefaultBranch({ ...base, git: silent, sighting: recorded('dev', 'user') }), { ok: true, branch: 'dev', source: 'user' });
+	// A remote that cannot be reached is refused even when a branch is recorded.
+	const down = fakeGit(new Error('network is down'), []);
+	const refused = await resolveDefaultBranch({ ...base, git: down, sighting: recorded('main', 'remote') });
+	assert.equal(refused.ok, false);
+	if (!refused.ok) assert.match(refused.reason, /could not be reached/);
 
 	// A sighting for another remote is not used; unsafe names are refused.
 	const other = await resolveDefaultBranch({ ...base, git: silent, sighting: { ...recorded('main', 'remote'), remote: 'upstream' } });
@@ -77,6 +81,14 @@ test('a dangling remote HEAD is refused without --branch and a real branch is re
 
 		const pinned = await resolveDefaultBranch({ repo: clone, remote: 'origin', supplied: 'main', deadline: createDeadline() });
 		assert.deepEqual(pinned, { ok: true, branch: 'main', source: 'user' });
+
+		// The decision is what gets recorded: stored in the sighting it reads back as a user pin.
+		if (pinned.ok) {
+			writeSighting(clone, { remote: 'origin', branch: pinned.branch, branchSource: pinned.source, sha: git(clone, 'rev-parse', 'origin/main'), refreshedAt: 'now', anchor: NO_ANCHOR }, f.teamDir);
+			const back = readSighting(clone, f.teamDir);
+			assert.equal(back.kind === 'valid' ? back.sighting.branchSource : undefined, 'user');
+			assert.equal(back.kind === 'valid' ? back.sighting.branch : undefined, 'main');
+		}
 	} finally { f.cleanup(); }
 });
 
@@ -95,7 +107,7 @@ test('a missing branch name or an unreachable remote records nothing', async () 
 		git(clone, 'remote', 'set-url', 'origin', join(f.root, 'no-such-remote.git'));
 		const unreachable = await resolveDefaultBranch({ repo: clone, remote: 'origin', supplied: 'main', deadline: createDeadline() });
 		assert.equal(unreachable.ok, false);
-		if (!unreachable.ok) assert.match(unreachable.reason, /could not be verified/);
+		if (!unreachable.ok) assert.match(unreachable.reason, /could not be reached/);
 
 		// An exhausted deadline never starts git.
 		const spent = await resolveDefaultBranch({ repo: clone, remote: 'origin', supplied: 'main', deadline: createDeadline(0) });

@@ -40,6 +40,13 @@
         "choice": "Own it in the S001 LLD",
         "rationale": "User 2026-10-17: the S001 LLD owns IndexQueue.codeIndexWorkFor; its contract (full/reconcile/file jobs for the repository, in flight and pending) is already specified there.",
         "resolvedAt": "2026-10-17T06:37:25.610Z"
+      },
+      "q524875dc": {
+        "question": "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the approved issue's fix intent (ac1 coverage reads the Story's records, ac2 freshness counts only the repository's code-index work, ac3 a fallback records why, through every transport boundary to the record) [c8].",
+        "status": "resolved",
+        "choice": "Use issue-derived criteria in the plan",
+        "rationale": "User 2026-10-17: keep ac1-ac3 as derived from ISSUE-1102dc71's fix intent, recorded with that provenance in the plan and mapped to their tests (same choice as ISSUE-5437d6e5).",
+        "resolvedAt": "2026-10-17T06:38:24.185Z"
       }
     }
   },

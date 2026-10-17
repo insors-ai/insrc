@@ -376,6 +376,8 @@ Same subject and coverage change as a1. The freshness answer is unchanged; codeR
 
 - `qf4bcc07d` — cd1 (partial): IndexQueue.codeIndexWorkFor is a new method on the existing IndexQueue class (src/daemon/queue.ts); there is no HLD to own it [c4].
   - **resolved**: Own it in the S001 LLD — User 2026-10-17: the S001 LLD owns IndexQueue.codeIndexWorkFor; its contract (full/reconcile/file jobs for the repository, in flight and pending) is already specified there. _(2026-10-17T06:37:25.610Z)_
+- `q524875dc` — ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the approved issue's fix intent (ac1 coverage reads the Story's records, ac2 freshness counts only the repository's code-index work, ac3 a fallback records why, through every transport boundary to the record) [c8].
+  - **resolved**: Use issue-derived criteria in the plan — User 2026-10-17: keep ac1-ac3 as derived from ISSUE-1102dc71's fix intent, recorded with that provenance in the plan and mapped to their tests (same choice as ISSUE-5437d6e5). _(2026-10-17T06:38:24.185Z)_
 
 ## Citations
 

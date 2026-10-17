@@ -42,6 +42,7 @@ export interface RefreshOptions {
 	readonly git?: GitAsync | undefined;
 	readonly write?: typeof writeSighting | undefined;
 	readonly local?: LocalGit | undefined;
+	readonly anchor?: typeof findAnchor | undefined;
 }
 
 type LocalGit = (repo: string, args: readonly string[], deadline: Deadline) => GitRun;
@@ -58,27 +59,28 @@ function fail(reason: string): { ok: false; reason: string } {
 }
 
 export async function refreshPolicy(repo: string, opts: RefreshOptions = {}): Promise<PolicyResult<PolicyRefreshOutcome>> {
-	if (!isGitRepo(repo)) return fail('this directory is not a git repository');
+	// One deadline for the whole refresh, started before the first git call.
+	const deadline = createDeadline(opts.deadlineMs ?? REFRESH_DEADLINE_MS);
+	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before it started');
+	if (!isGitRepo(repo, deadline.remainingMs())) return fail('this directory is not a git repository');
 
 	const lock = acquireLock(repo, opts.teamDir);
 	if (!lock.ok) return fail(lock.reason);
 	try {
-		return await refreshLocked(repo, opts);
+		return await refreshLocked(repo, opts, deadline);
 	} finally {
 		lock.release();
 	}
 }
 
-async function refreshLocked(repo: string, opts: RefreshOptions): Promise<PolicyResult<PolicyRefreshOutcome>> {
+async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadline): Promise<PolicyResult<PolicyRefreshOutcome>> {
 	const git = opts.git ?? runGitAsync;
 	const write = opts.write ?? writeSighting;
 	const localGit = opts.local ?? defaultLocalGit;
 	const now = (opts.now ?? ((): Date => new Date()))().toISOString();
-	const deadline = createDeadline(opts.deadlineMs ?? REFRESH_DEADLINE_MS);
-
 	const seen = readSighting(repo, opts.teamDir);
 	const sighting = seen.kind === 'valid' ? seen.sighting : undefined;
-	const remote = sighting?.remote ?? pickRemote(repo);
+	const remote = sighting?.remote ?? pickRemote(repo, Math.max(1, deadline.remainingMs()));
 	if (remote === undefined) return fail('no single remote to refresh from: add a remote named origin');
 
 	const decision = await resolveDefaultBranch({ repo, remote, sighting, supplied: opts.branch, deadline, git });
@@ -123,7 +125,9 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 	const shown = localGit(repo, ['show', `${ref}:${POLICY_PATH}`], deadline);
 	if (!shown.ok) return fail(`the policy file on ${ref} could not be read (${shown.stderr}); nothing was changed`);
 	const parsed = parsePolicyFile(shown.stdout);
-	const anchor = mergeAnchor(sighting?.anchor, findAnchor(repo, ref, () => deadline.remainingMs()));
+	const anchor = mergeAnchor(sighting?.anchor, (opts.anchor ?? findAnchor)(repo, ref, () => deadline.remainingMs()));
+	// An anchor lookup that ran out of time reads as 'unknown'; never record a result the deadline cut short.
+	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before the policy could be recorded; nothing was recorded');
 	try {
 		write(repo, { remote, branch, branchSource: decision.source, sha: commit, refreshedAt: now, anchor }, opts.teamDir);
 	} catch (err) {

@@ -319,3 +319,20 @@ test('removal never deletes the record before a possibly stale remote HEAD is fi
 		assert.equal(readSighting(clone, f.teamDir).kind, 'absent');
 	} finally { f.cleanup(); }
 });
+
+test('a deadline that runs out during the anchor lookup records nothing', async () => {
+	const f = makeFixture();
+	try {
+		const { bare } = teamOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		// The anchor lookup uses up whatever time is left and then reports an unknown anchor, as a timed-out walk would.
+		const slowAnchor = (_repo: string, _ref: string, budget?: () => number): { known: false; firstCommit: ''; firstCommitTime: '' } => {
+			while (budget !== undefined && budget() > 0) { /* spend the deadline */ }
+			return { known: false, firstCommit: '', firstCommitTime: '' };
+		};
+		const result = await refreshPolicy(clone, { teamDir: f.teamDir, deadlineMs: 3000, anchor: slowAnchor });
+		assert.equal(result.ok, false);
+		if (!result.ok) assert.match(result.reason, /deadline passed/);
+		assert.equal(readSighting(clone, f.teamDir).kind, 'absent', 'nothing was recorded');
+	} finally { f.cleanup(); }
+});

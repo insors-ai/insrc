@@ -32,9 +32,11 @@ export function parseAnchorLog(output: string): PolicyAnchor {
  * below takes what is left at that moment, so the two calls together never exceed it.
  */
 export function findAnchor(repo: string, trackingRef: string, budget?: () => number): PolicyAnchor {
+	if (budget !== undefined && budget() <= 0) return UNKNOWN; // no time left: do not start another git call
 	const left = (): number | undefined => (budget === undefined ? undefined : Math.max(1, budget()));
 	const shallow = runGit(repo, ['rev-parse', '--is-shallow-repository'], left());
 	if (!shallow.ok || shallow.stdout.trim() !== 'false') return UNKNOWN;
+	if (budget !== undefined && budget() <= 0) return UNKNOWN;
 	const log = runGit(repo, ['log', '--first-parent', '--diff-filter=A', '--reverse', '--format=%H%x09%cI', trackingRef, '--', POLICY_PATH], left());
 	return log.ok ? parseAnchorLog(log.stdout) : UNKNOWN;
 }

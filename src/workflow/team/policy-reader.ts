@@ -41,13 +41,13 @@ type Found =
 	| { readonly kind: 'invalid'; readonly reason: string }
 	| { readonly kind: 'missing' };
 
-export function isGitRepo(repo: string): boolean {
-	return runGit(repo, ['rev-parse', '--git-dir']).ok;
+export function isGitRepo(repo: string, timeoutMs?: number): boolean {
+	return runGit(repo, ['rev-parse', '--git-dir'], timeoutMs).ok;
 }
 
 /** The policy remote: origin when present, else the sole remote, else none (never guessed). */
-export function pickRemote(repo: string): string | undefined {
-	const listed = runGit(repo, ['remote']);
+export function pickRemote(repo: string, timeoutMs?: number): string | undefined {
+	const listed = runGit(repo, ['remote'], timeoutMs);
 	if (!listed.ok) return undefined;
 	const remotes = listed.stdout.split('\n').map(r => r.trim()).filter(r => r.length > 0 && isSafeRefName(r));
 	if (remotes.includes('origin')) return 'origin';

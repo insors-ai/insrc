@@ -27,7 +27,132 @@
     "standalone": true,
     "sizeClass": "small",
     "triageRationale": "One minor change with one obvious approach in one module, on top of the just-shipped lanes: IndexQueue's summary-lane drain waits for an idle index lane before each job (src/daemon/queue.ts), and the sweep runner waits the same way before each document (src/indexer/doc-summary-sweep.ts, wired from src/indexer/index.ts docSummariseRepo), plus a sentence in CLAUDE.md and AGENTS.md. No new contract or storage change; the waiting must still end on shutdown. Grounding is from direct reads of these files written today (Story b94cf2c9), not from an analyze bundle.",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers the recorded triage scope: summary jobs and sweep documents yield to index work, with shutdown preserved.",
+          "evidence": "The artifact metadata's triageRationale explicitly names the queue drain, sweep runner, indexer wiring, documentation updates, and waiting ending on shutdown. Sections 2, 4, and 6 address these changes. [files: .insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json, src/daemon/queue.ts, src/indexer/doc-summary-sweep.ts, src/indexer/index.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three derived acceptance criteria exhaust the original stakeholder decision and its non-goals.",
+          "evidence": "Searched repository docs and .insrc artifacts for the epic hash, slug, and workflow run. Found the LLD and its triage metadata, but no independent record of stakeholder decision 2, option A or an upstream acceptance-criteria list. The analyzer also failed with shaper-llm-unavailable caused by an invalid response schema. [files: .insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json, docs/standalone/summary-lane-yields-code-work-E202610170f0e4f45/S001/LLD.md]",
+          "action": "Attach the original decision or explicitly confirm the three derived criteria as the authoritative scope.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The lanes currently execute independently, while single-document jobs receive priority over queued sweeps and between sweep documents.",
+          "evidence": "IndexQueue.start invokes both drain loops before awaiting either. enqueue inserts single-document jobs before the first sweep; takeDocSummaryEdit removes the first queued edit. runDocSummarySweep drains those edits before reading each document. The existing queue tests explicitly assert concurrent lane execution. [files: src/daemon/queue.ts, src/indexer/doc-summary-sweep.ts, src/daemon/__tests__/queue-lanes.test.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An awaitable index-idle gate is new, while the sweep's edit-taking and shutdown dependencies already exist with the required shapes.",
+          "evidence": "Read the complete IndexQueue and sweep implementations and searched src for both proposed wait-method names. Neither exists. Existing DocSummarySweepDeps provides takeEdit, runEdit and shouldStop; docSummariseRepo already wires them to takeDocSummaryEdit, docSummariseEntity and isStopping. [files: src/daemon/queue.ts, src/indexer/doc-summary-sweep.ts, src/indexer/index.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The identified implementation and test files cover the callers affected by adding the required waitForCodeIdle dependency.",
+          "evidence": "Searching all src references found one production runDocSummarySweep caller, in docSummariseRepo, and direct test callers in doc-summary-sweep.test.ts. Its world helper constructs typed DocSummarySweepDeps. The indexer integration tests exercise the production wiring through processJob. All are included in the proposed changes. [files: src/indexer/doc-summary-sweep.ts, src/indexer/index.ts, src/indexer/__tests__/doc-summary-sweep.test.ts, src/indexer/__tests__/summary-sweep-progress.test.ts]",
+          "action": "Update the typed test dependency factory along with the production wiring.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The scheduling change requires no stored-data migration or status-payload change.",
+          "evidence": "Queue state consists of in-memory job arrays, inFlight references and wake callbacks. laneStatus derives depth from jobs.length and running from inFlight. composeQueueLanes copies these fields and optional sweep progress into status. Waiting before shifting preserves queued-job counts; a paused running sweep remains in flight under the existing meaning. [files: src/daemon/queue.ts, src/daemon/status.ts, src/indexer/index.ts]",
+          "action": "Preserve these reader definitions and leave persistence formats unchanged.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This is a standalone scheduling adjustment without a parent HLD contract to redesign.",
+          "evidence": "Artifact metadata records standalone: true and sizeClass: small; its hldBaseRunId equals the design.story runId. The proposed changes stay within queue scheduling and existing sweep dependency wiring. The status composition and summary persistence interfaces need no changes. [files: .insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json, src/daemon/queue.ts, src/indexer/doc-summary-sweep.ts, src/daemon/status.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Releasing idle waiters on stop and checking shutdown immediately after waiting fits the existing daemon shutdown path.",
+          "evidence": "Daemon shutdown calls queue.stop() and passes queueDone to shutdown coordination. stop sets stopped and wakes lane sleepers; start waits for both drain loops. The sweep reads queue.isStopping through shouldStop, and docSummariseRepo clears progress in finally. The proposed waiter release and post-wait checks close the additional blocking path introduced by this design. [files: src/daemon/index.ts, src/daemon/queue.ts, src/indexer/doc-summary-sweep.ts, src/indexer/index.ts]",
+          "action": "Release idle waiters independently of lane wake callbacks, including when the index lane remains busy during shutdown.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of the three stated derived acceptance criteria has an appropriate proposed test location and usable existing test seams.",
+          "evidence": "queue-lanes.test.ts has controllable gates for scheduling, overlap and shutdown. doc-summary-sweep.test.ts exposes editable dependencies and records edit/document ordering. summary-sweep-progress.test.ts uses a real IndexQueue and overrides summariseEntity for integration checks. The proposed additions cover code-first scheduling, resumption with edits first, and shutdown while waiting. The two identified pre-queued-overlap assertions really exist and require revision. [files: src/daemon/__tests__/queue-lanes.test.ts, src/indexer/__tests__/doc-summary-sweep.test.ts, src/indexer/__tests__/summary-sweep-progress.test.ts]",
+          "action": "Implement the proposed tests; additionally exercise multiple idle waiters and an index processor rejection so notification bugs cannot strand summaries.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-17T17:25:53.096Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

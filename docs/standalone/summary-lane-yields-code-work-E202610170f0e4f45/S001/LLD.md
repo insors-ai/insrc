@@ -190,3 +190,23 @@ A timer-based check before each summary.
 ## 9. Open questions
 
 - ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the request (ac1 code work waits at most for the summary in progress, ac2 summaries resume afterwards with edits first, ac3 shutdown still ends both lanes) [c4].
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 8 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-17T17:25:53.096Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| coverage-of-intent | The three derived acceptance criteria exhaust the original stakeholder decision and its non-goals. | Searched repository docs and .insrc artifacts for the epic hash, slug, and workflow run. Found the LLD and its triage metadata, but no independent record of stakeholder decision 2, option A or an upstream acceptance-criteria list. The analyzer also failed with shaper-llm-unavailable caused by an invalid response schema. [files: .insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json, docs/standalone/summary-lane-yields-code-work-E202610170f0e4f45/S001/LLD.md] | Attach the original decision or explicitly confirm the three derived criteria as the authoritative scope. |

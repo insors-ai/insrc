@@ -40,7 +40,14 @@ export type SightingRead =
 	| { readonly kind: 'damaged'; readonly reason: string }
 	| { readonly kind: 'valid'; readonly sighting: Sighting };
 
-/** A lock older than this is stale and may be taken over. */
+/** Longest a holder may keep the lock: the refresh's single deadline kills its git children and ends the refresh. */
+export const REFRESH_DEADLINE_MS = 10_000;
+
+/**
+ * A lock older than this is stale and may be taken over. It is deliberately a multiple of
+ * {@link REFRESH_DEADLINE_MS}: a live holder always finishes (and releases) within the deadline,
+ * so a lock this old belongs to a dead or hung process and has no live releaser to race with.
+ */
 export const LOCK_STALE_MS = 30_000;
 
 /** Remote and branch names go into git argv: keep them to a safe, boring alphabet. */
@@ -183,7 +190,9 @@ function lockHolder(path: string, token: string): LockResult {
  *
  * A live lock is never moved or touched. Only a lock that looks stale is reclaimed,
  * and only by the one process holding a short-lived takeover guard, which re-checks
- * the lock's age and identity right before removing it. The create (`wx`) is the only
+ * the lock's age and identity right before removing it. Because a live holder releases
+ * within {@link REFRESH_DEADLINE_MS}, nobody can legitimately release a lock that is already
+ * {@link LOCK_STALE_MS} old, so the reclaimer never races a live release. The create (`wx`) is the only
  * way to become the holder, so a reclaimer that loses the race simply reports busy.
  * The lock serialises refreshes; correctness does not depend on it, because every
  * write a refresh makes is itself atomic (unique-temp rename, create-only link, and

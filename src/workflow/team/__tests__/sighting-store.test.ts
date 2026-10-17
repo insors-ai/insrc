@@ -18,6 +18,7 @@ import { join } from 'node:path';
 
 import {
 	LOCK_STALE_MS,
+	REFRESH_DEADLINE_MS,
 	acquireLock,
 	mergeAnchor,
 	publishSightingIfAbsent,
@@ -110,6 +111,7 @@ test('a known anchor is never replaced by an unknown one and an unknown one is r
 });
 
 test('the lock refuses a second holder and takes over a lock older than 30 seconds', () => {
+	assert.ok(LOCK_STALE_MS >= 3 * REFRESH_DEADLINE_MS, 'a live holder always releases well before its lock can look stale');
 	const { root, teamDir, repoA, repoB } = scratch();
 	try {
 		const first = acquireLock(repoA, teamDir);

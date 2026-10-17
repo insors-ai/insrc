@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-17T20:23:16.651Z",
+    "updatedAt": "2026-10-17T20:31:08.513Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -777,6 +777,94 @@
               },
               {
                 "title": "re-exports (JavaScript)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "6e9df751",
+        "ranAt": "2026-10-17T20:31:08.513Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/file-selection.test.ts: predicate classes .png, .min.js, lock file, >256 KB JSON as not-code, ignored .ts as excluded-by-ignore, .css/.json as selected",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/file-selection.test.ts",
+                "title": "the predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as not-code, a .ts under an ignored directory as excluded-by-ignore, and a .css and a .json under the limit as selected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "existing indexer full-index fixtures select the same files",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/file-selection.test.ts",
+                "title": "the full index selects the same files as before on the full-index fixture of index-run-record (five .ts files)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-selection.test.ts",
+                "title": "on a mixed fixture the full index selects the files it selected before, less only the lock file and the oversized JSON the artifact parser skipped",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/index-run-record.test.ts",
+                "title": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/file-selection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 884,
+            "titles": [
+              {
+                "title": "the predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as not-code, a .ts under an ignored directory as excluded-by-ignore, and a .css and a .json under the limit as selected",
+                "result": "pass"
+              },
+              {
+                "title": "the full index selects the same files as before on the full-index fixture of index-run-record (five .ts files)",
+                "result": "pass"
+              },
+              {
+                "title": "on a mixed fixture the full index selects the files it selected before, less only the lock file and the oversized JSON the artifact parser skipped",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/index-run-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 991,
+            "titles": [
+              {
+                "title": "full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted)",
+                "result": "pass"
+              },
+              {
+                "title": "reindex of a ready repository: status indexing and the running record carries the new run's figures",
+                "result": "pass"
+              },
+              {
+                "title": "start-up re-queue: repositories left indexing without lastIndexed are still re-queued, unchanged",
                 "result": "pass"
               }
             ],

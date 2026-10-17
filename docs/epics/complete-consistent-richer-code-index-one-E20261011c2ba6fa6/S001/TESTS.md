@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -141,3 +141,28 @@ Run at 2026-10-17T20:23:16.651Z on commit `fb413322`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/parser/__tests__/typescript-reexports.test.ts` | 0 | 8 | 0.4 s |  |
+
+## t7
+
+Run at 2026-10-17T20:31:08.513Z on commit `6e9df751`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/indexer/__tests__/file-selection.test.ts: predicate classes .png, .min.js, lock file, >256 KB JSON as not-code, ignored .ts as excluded-by-ignore, .css/.json as selected**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as not-code, a .ts under an ignored directory as excluded-by-ignore, and a .css and a .json under the limit as selected | `src/indexer/__tests__/file-selection.test.ts` |
+
+**integration: existing indexer full-index fixtures select the same files**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the full index selects the same files as before on the full-index fixture of index-run-record (five .ts files) | `src/indexer/__tests__/file-selection.test.ts` |
+| pass | on a mixed fixture the full index selects the files it selected before, less only the lock file and the oversized JSON the artifact parser skipped | `src/indexer/__tests__/file-selection.test.ts` |
+| pass | full index: during a run the in-process record shows began and files done of selected; at the end the registry row's lastRun is written once with outcome 'completed' or 'failed' (a forced failure mid-walk), and the record is closed; no write per file (counted) | `src/indexer/__tests__/index-run-record.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/file-selection.test.ts` | 0 | 3 | 0.9 s |  |
+| `src/indexer/__tests__/index-run-record.test.ts` | 0 | 3 | 1 s |  |

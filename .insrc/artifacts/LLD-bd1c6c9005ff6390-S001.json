@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792225824604-r1od88",
+    "runId": "wf-1792226429266-7k4jb8",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T08:30:25.582Z",
+    "createdAt": "2026-10-17T08:40:30.249Z",
     "epicCreatedAt": "2026-10-17T08:20:53.100Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 928,
+    "elapsedMs": 977,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "bd1c6c9005ff6390",
     "epicSlug": "record-calls-made-module-level-statements",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792225824604-r1od88",
-    "hldEffectiveHash": "efdb09f50850965b5afbbffe1942d47007326ed6bf11a7a779ed1406446b423d",
+    "hldBaseRunId": "wf-1792226429266-7k4jb8",
+    "hldEffectiveHash": "45798b2f948ea603c63fe631a507534c7ed5ec37553fe7113322b685c227609a",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
@@ -30,7 +30,7 @@
   },
   "body": {
     "summary": {
-      "prose": "Calls made in a file's top-level statements are recorded, credited to the file itself. Every test written as test('…', () => { … }) is such a statement, so after this change a test file's calls reach the functions they exercise, and the code review's test links reflect real tests.",
+      "prose": "Every supported language records the calls its code makes, and a call that sits in no function is credited to its file. In TypeScript that is every test('…', () => { … }) body; Python and Go, which recorded no calls at all, now record them the way TypeScript does. The code review also recognises Python, Go and JVM test files, so tests in those languages reach the code they exercise.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -55,15 +55,9 @@
           "signature": "walkNode(node: SyntaxNode, source: string, repo: string, repoId: number, filePath: string, lang: Language, fileId: string, now: string, entities: Entity[], relations: Relation[]): void",
           "parameters": [
             {
-              "name": "node",
-              "type": "SyntaxNode",
-              "purpose": "The node being walked; module-level handling applies when node.parent is the program node.",
-              "optional": false
-            },
-            {
               "name": "fileId",
               "type": "string",
-              "purpose": "The file entity id, now also the caller of module-level calls.",
+              "purpose": "The file entity id, now also the caller of calls with no enclosing entity.",
               "optional": false
             }
           ],
@@ -74,31 +68,77 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "For a program-level expression_statement, extractCalls runs over the statement with fileId as the caller, then the walk into its children continues as today.",
-            "For a program-level lexical_declaration or variable_declaration, each declarator whose value is not an arrow_function, function_expression or generator_function_expression has extractCalls run over its value with fileId as the caller; function-valued declarators are unchanged (extractArrowFunction).",
-            "For any other program-level statement that is not a declaration walkNode already handles (if/for/while/try/block/labeled statements), extractCalls runs over it with fileId as the caller.",
-            "Calls inside function declarations, class bodies and function-valued declarators are not also credited to the file, unless they are nested inside a module-level statement."
+            "A program-level statement that is not an import, function, class, interface, type alias or lexical/variable declaration (expression_statement, if/for/while/try/block/labeled) has extractCalls run over it with fileId as caller; the walk into its children continues as today.",
+            "For a lexical/variable declaration at program level or inside an export_statement, each declarator whose value is not an arrow_function, function_expression or generator_function_expression has extractCalls run over its value with fileId as caller; function-valued declarators keep today's entity and caller.",
+            "An export_statement with a `value` (export default <expr>) has extractCalls run over the value with fileId as caller; an exported function or class declaration is walked as today and is never scanned with the file as caller.",
+            "Calls inside function declarations, class bodies and function-valued declarators are not also credited to the file unless they are nested inside a statement the file is credited for."
           ]
         },
         {
-          "name": "extractCalls",
-          "signature": "extractCalls(bodyNode: SyntaxNode, callerId: string, repo: string, filePath: string, relations: Relation[]): void",
+          "name": "walkPythonNode",
+          "signature": "walkPythonNode(node: SyntaxNode, repo: string, repoId: number, filePath: string, fileId: string, now: string, entities: Entity[], relations: Relation[], allNames: Set<string> | null, hasAll: boolean, isTopLevel: boolean): void",
           "parameters": [
             {
-              "name": "callerId",
+              "name": "fileId",
               "type": "string",
-              "purpose": "Now also the file entity id for module-level calls.",
+              "purpose": "Caller of program-level calls.",
               "optional": false
             }
           ],
           "returns": {
             "type": "void",
-            "meaning": "Unchanged: CALLS (and CALLS_HTTP) relations from callerId."
+            "meaning": "Unchanged."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "Unchanged."
+            "Each function/method entity's body emits CALLS {file, repo} per distinct callee name: an identifier callee as written, an attribute callee as its last attribute name; a small built-in set (print, len, range, isinstance, super, str, int, dict, list, set, tuple, ...) is skipped; nested defs and lambdas inside the body credit the enclosing entity.",
+            "A program-level statement that is not a function/class definition, decorated definition or import has its calls emitted with fileId as caller.",
+            "The existing HTTP and messaging walks are unchanged."
+          ]
+        },
+        {
+          "name": "walkGoNode",
+          "signature": "walkGoNode(node: SyntaxNode, repo: string, repoId: number, filePath: string, fileId: string, now: string, entities: Entity[], relations: Relation[]): void",
+          "parameters": [
+            {
+              "name": "fileId",
+              "type": "string",
+              "purpose": "Caller of program-level initializer calls.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Each function and method entity's body emits CALLS {file, repo} per distinct callee name: an identifier as written, a selector expression as its field name; Go built-ins (make, len, cap, append, new, panic, recover, copy, delete, print, println, close) are skipped; function literals inside the body credit the enclosing entity.",
+            "Program-level var/const initializers have their calls emitted with fileId as caller.",
+            "The existing HTTP and messaging walks are unchanged."
+          ]
+        },
+        {
+          "name": "isTestFile",
+          "signature": "isTestFile(file: string): boolean",
+          "parameters": [
+            {
+              "name": "file",
+              "type": "string",
+              "purpose": "A repo-relative or absolute path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "True for the existing TS/JS conventions and also test_*.py, *_test.py, *_test.go, any src/test/ directory, *Test.java/.kt/.scala and *Spec.scala."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Every path the current predicate accepts is still accepted."
           ]
         }
       ]
@@ -107,10 +147,13 @@
       {
         "entity": "CALLS relation",
         "change": "invariant-change",
-        "details": "A CALLS (or CALLS_HTTP) relation may now have the file entity as its source, for calls in module-level statements. No new entity kind, no new field, no store schema change.",
+        "details": "A CALLS (or CALLS_HTTP) relation may now have a file entity as its source (calls with no enclosing entity), and the Python and Go parsers now emit CALLS {meta:{file, repo}} with bare callee names, as the TS and JVM parsers do. No new entity kind, no new field, no store schema change.",
         "callSites": [
           "src/indexer/parser/typescript.ts:150-200",
           "src/indexer/parser/typescript.ts:631",
+          "src/indexer/parser/python.ts:124-126",
+          "src/indexer/parser/go.ts:114-116",
+          "src/indexer/cross-file-resolver.ts:474-510",
           "src/workflow/code-review/grounding.ts:81-92"
         ]
       }
@@ -119,59 +162,94 @@
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "A file is re-indexed or deleted after module-level calls were recorded from its file entity.",
-          "detection": "indexFile and fileEvent delete the file's entities (src/indexer/index.ts:1041, :785); the entity cascade removes incident edges and deleteUnresolvedForFile removes the file's pending CALLS rows.",
-          "response": "Nothing new: the file entity is deleted with the file, so its CALLS go with it; the re-parse emits the current ones.",
+          "scenario": "A file is re-indexed or deleted after its calls were recorded.",
+          "detection": "indexFile and fileEvent delete the file's entities (src/indexer/index.ts:1041, :785); the cascade removes incident edges and deleteUnresolvedForFile removes pending CALLS rows.",
+          "response": "Nothing new: CALLS from the file entity and from Python/Go entities follow the same clean-up.",
           "userImpact": "No stale callers.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Python or Go callee cannot be resolved by the cross-file pass (a library call, a dynamic call, a Go same-package call in another file).",
+          "detection": "resolveCall returns unresolved, ambiguous or no-candidate as for TS and JVM rows today.",
+          "response": "The row is kept as pending, classed by the existing rules (Epic c2ba6fa6 s1); it does not block completeness unless it awaits a target.",
+          "userImpact": "Those calls are not graph edges yet; Go same-package calls are the named open question.",
           "recoverable": true
         }
       ],
       "edgeCases": [
         {
           "input": "describe('x', () => { test('y', () => { foo(); }); })",
-          "expected": "One CALLS foo from the file entity (nested callbacks are walked)."
+          "expected": "One CALLS foo from the TS file entity."
         },
         {
-          "input": "const deps = makeDeps(); at program level",
+          "input": "export const deps = makeDeps();",
           "expected": "CALLS makeDeps from the file entity."
         },
         {
-          "input": "const f = () => bar(); at program level",
-          "expected": "Unchanged: an entity f with CALLS bar from f; not also from the file."
+          "input": "export function f() { g(); }",
+          "expected": "Unchanged: CALLS g from f only, never from the file."
         },
         {
-          "input": "function g() { baz(); }",
-          "expected": "Unchanged: CALLS baz from g only."
-        },
-        {
-          "input": "test('t', () => { function helper() { qux(); } helper(); })",
-          "expected": "helper is an entity with CALLS qux (as today); the file entity also calls qux and helper, because both are inside the module-level statement."
-        },
-        {
-          "input": "A module-level call to console.log or another built-in",
-          "expected": "Skipped by the existing built-in filter, as inside functions."
+          "input": "export class C { m() { h(); } }",
+          "expected": "Unchanged: CALLS h from C.m only."
         },
         {
           "input": "export default foo();",
-          "expected": "An export_statement with a value is treated as a module-level statement: CALLS foo from the file entity."
+          "expected": "CALLS foo from the file entity."
         },
         {
-          "input": "A module-level axios.get(url) call",
-          "expected": "A CALLS_HTTP from the file entity, as the HTTP recognizer already does inside functions."
+          "input": "const f = () => bar(); at program level",
+          "expected": "Unchanged: entity f with CALLS bar from f only."
+        },
+        {
+          "input": "test('t', () => { function helper() { qux(); } helper(); })",
+          "expected": "As today helper is an entity with CALLS qux; the file entity also calls qux and helper (both inside the module-level statement)."
+        },
+        {
+          "input": "Python: def test_x(): assert parse(src) == 1",
+          "expected": "CALLS parse from test_x."
+        },
+        {
+          "input": "Python: obj.method(1) and len(x) inside a function",
+          "expected": "CALLS method; len skipped."
+        },
+        {
+          "input": "Python: if __name__ == '__main__': main()",
+          "expected": "CALLS main from the file entity."
+        },
+        {
+          "input": "Go: func TestX(t *testing.T) { got := Parse(s); t.Fatal(got) }",
+          "expected": "CALLS Parse and Fatal from TestX."
+        },
+        {
+          "input": "Go: var x = setup() at package level",
+          "expected": "CALLS setup from the file entity."
+        },
+        {
+          "input": "isTestFile on src/x.ts, pkg/a.go, app/models.py",
+          "expected": "false, as today."
         }
       ],
       "invariantsToPreserve": [
         {
-          "text": "Calls inside function declarations, class methods and function-valued declarators keep their current caller and are not duplicated onto the file.",
+          "text": "Calls inside TS function declarations, class methods and function-valued declarators keep their current caller and are not duplicated onto the file.",
           "source": "c1"
         },
         {
-          "text": "A file's edges are removed with its entities on re-index or delete; module-level CALLS from the file entity must follow the same clean-up.",
+          "text": "The Python and Go HTTP and messaging detection is unchanged.",
           "source": "c2"
         },
         {
-          "text": "The code review counts a caller as a test caller by its file (isTestFile).",
+          "text": "A CALLS row resolves by the caller's language and the callee's bare name (same file, then imported files).",
           "source": "c3"
+        },
+        {
+          "text": "A file's edges and pending rows are removed with its entities on re-index or delete.",
+          "source": "c4"
+        },
+        {
+          "text": "Every path isTestFile accepts today is still accepted.",
+          "source": "c5"
         }
       ]
     },
@@ -179,9 +257,12 @@
       "testLevels": [
         {
           "level": "unit",
-          "purpose": "Module-level calls are credited to the file entity; existing attribution is unchanged.",
+          "purpose": "Each parser records the calls it was missing; existing attribution is unchanged.",
           "subjects": [
-            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity"
+            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity",
+            "src/indexer/parser/__tests__/python-go-calls.test.ts: a Python function or method emits CALLS per distinct callee (identifier, or an attribute's last name), skips built-ins, credits nested defs and lambdas to the enclosing entity, credits program-level calls to the file entity, and keeps its HTTP detection",
+            "src/indexer/parser/__tests__/python-go-calls.test.ts: a Go function or method emits CALLS per distinct callee (identifier, or a selector's field name), skips Go built-ins, credits function literals to the enclosing entity, credits package-level initializer calls to the file entity, and keeps its HTTP detection",
+            "src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files"
           ]
         },
         {
@@ -196,12 +277,20 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity"
+            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
+            "src/indexer/parser/__tests__/python-go-calls.test.ts: a Python function or method emits CALLS per distinct callee (identifier, or an attribute's last name), skips built-ins, credits nested defs and lambdas to the enclosing entity, credits program-level calls to the file entity, and keeps its HTTP detection",
+            "src/indexer/parser/__tests__/python-go-calls.test.ts: a Go function or method emits CALLS per distinct callee (identifier, or a selector's field name), skips Go built-ins, credits function literals to the enclosing entity, credits package-level initializer calls to the file entity, and keeps its HTTP detection"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files",
             "src/workflow/code-review/__tests__/grounding.test.ts: with the real TypeScript parser output for a test file that calls a function from inside test('...', () => { ... }), assembleCodeReviewGrounding lists that test file's entity in the function's testsReaching"
           ]
         }
@@ -209,74 +298,90 @@
       "testFramework": "node:test via npx tsx --test (assert/strict), run under Node 22"
     },
     "migration": {
-      "stateBefore": "Per s1: the TypeScript parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); calls in program-level statements are never recorded, so no test file reaches any symbol.",
-      "stateAfter": "Calls in program-level statements are CALLS (or CALLS_HTTP) from the file entity; existing attribution is unchanged.",
+      "stateBefore": "Per s1: the TS parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); the Python and Go parsers emit no CALLS (src/indexer/parser/python.ts:124-126, src/indexer/parser/go.ts:114-116); isTestFile recognises only TS/JS test files (src/workflow/code-review/grounding.ts:60-62).",
+      "stateAfter": "Calls with no enclosing entity are CALLS from the file entity (TS, Python, Go); Python and Go emit CALLS from functions and methods; isTestFile recognises Python, Go and JVM test files.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add the module-level handling to walkNode.",
+          "action": "Add the TS module-level and export handling to walkNode.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Update and restart the installed daemon, then reindex the repositories (or let the watcher re-parse changed files) so existing files gain their module-level CALLS.",
+          "action": "Add the general CALLS walk to the Python parser, with program-level calls credited to the file.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the general CALLS walk to the Go parser, with package-level initializer calls credited to the file.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Extend isTestFile with the Python, Go and JVM test conventions.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Update and restart the installed daemon, then reindex the registered repositories so every file gains its new CALLS.",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No store schema change and no new entity kind. Until a file is re-parsed it keeps its old edges, so a full reindex is needed for complete test links.",
+      "backwardCompat": "No store schema change and no new entity kind. Until a file is re-parsed it keeps its old edges, so a full reindex is needed. Python and Go repositories gain many pending CALLS rows on the first reindex; they are classed by the existing rules.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Credit module-level calls to the file entity",
-        "oneLineSummary": "A call in a program-level statement that is not a declaration, or in a program-level non-function initializer, is emitted as CALLS from the file entity.",
-        "approach": "walkNode gains a case for a program-level expression_statement (and any other program-level statement that is not a declaration the walker already handles) and for a program-level const/let whose value is not a function: extractCalls runs over it with the file entity as the caller. The walk into its children continues as today, so nested named declarations still become entities with their own CALLS. No new entity kind and no store change; the file entity already exists, is a test file's entity for test files, and is deleted with the file.",
+        "name": "Calls with no enclosing entity go to the file entity; Python and Go get a general CALLS walk; isTestFile learns the other languages",
+        "oneLineSummary": "TS module-level and exported-initializer calls become CALLS from the file entity; Python and Go emit CALLS like TS does; the review recognises Python, Go and JVM test files.",
+        "approach": "TypeScript: walkNode extracts calls with the file entity as caller for a program-level statement that is not a declaration it handles, for each non-function declarator value of a program-level or exported lexical/variable declaration, and for an export_statement's `value` (export default <expr>); export unwrapping passes the module-level context into the declaration and never scans an exported function or class wholesale. Python: a walk over each function/method body emits CALLS {file, repo} per distinct callee (bare name: identifier, or the attribute's last name), skipping a small built-in set, beside the existing HTTP walk; program-level statements that are not definitions or imports are walked with the file entity as caller. Go: the same walk over each function and method body (callee = identifier, or the selector's field name), and program-level var/const initializers with the file entity. isTestFile also matches test_*.py, *_test.py, *_test.go, a src/test/ directory, and *Test.java/.kt/.scala and *Spec.scala.",
         "pros": [
-          "No schema or EntityKind change; reuses the file entity and the existing cascade clean-up.",
-          "Meets the fix intent: a test file's calls reach the symbols it exercises, and the review joins them to the record per file (ISSUE-1102dc71)."
+          "No new entity kind and no store schema change.",
+          "Python and Go repos get a call graph at all; tests in every supported language can reach code."
         ],
         "cons": [
-          "Test-level granularity is lost: the caller is the test file, not the test title.",
-          "Calls inside a nested named helper are credited both to the helper and to the file."
+          "More CALLS rows (Python, Go) for the cross-file pass to resolve.",
+          "Go calls between files of one package stay unresolved until the resolver treats a package as one scope (open question)."
         ],
-        "costEstimate": "S"
+        "costEstimate": "L"
       },
       {
         "id": "a2",
-        "name": "A synthetic entity per top-level test call",
-        "oneLineSummary": "Each test('title', ...) / it(...) at program level becomes an entity named by its title that owns the calls in its callback.",
-        "approach": "Recognise test-runner calls (test, it, describe and their variants) at program level, create an entity per call named by its title, and credit the callback's calls to it; other module-level calls go to the file entity.",
+        "name": "A synthetic entity per test call, plus Python/Go CALLS",
+        "oneLineSummary": "As a1 for Python and Go, but each TS test('title', ...) becomes its own entity.",
+        "approach": "As a1, except the TS module-level calls inside a recognised test-runner call get a new entity per call named by its title.",
         "pros": [
-          "Test-title granularity: a caller names the very test that reaches a symbol."
+          "Test-title granularity."
         ],
         "cons": [
-          "A new EntityKind needs its byte mapping in the graph keys and a store schema step (the live store is v5).",
-          "Runner recognition is heuristic and per framework; titles can be computed strings."
+          "A new EntityKind with its graph-key byte mapping and a store schema step on the live v5 store.",
+          "The review joins callers to the test record per file, so the granularity is unused."
         ],
         "costEstimate": "L",
         "reasonRejected": "Adds a new EntityKind and a store schema step on the live v5 store for test-title granularity the code review does not use (it joins callers to the test record per file)."
       },
       {
         "id": "a3",
-        "name": "File-entity credit for test files only",
-        "oneLineSummary": "As a1, but only in files isTestFile matches.",
-        "approach": "Same mechanism as a1, guarded by the test-file predicate.",
+        "name": "TypeScript only",
+        "oneLineSummary": "Fix module-level TS calls and leave Python and Go without CALLS.",
+        "approach": "The TS part of a1 only.",
         "pros": [
-          "Smallest change in graph size."
+          "Smallest."
         ],
         "cons": [
-          "Production module-level calls (top-level registration, setup) stay invisible to \"who calls this\"."
+          "Does not meet the ISSUE: Python and Go still record no calls."
         ],
         "costEstimate": "S",
-        "reasonRejected": "Partial on fixIntent-1: production module-level calls stay unrecorded."
+        "reasonRejected": "Violates fixIntent-3: Python and Go still record no calls."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps two derived from the approved issue's fix intent (ac1 module-level calls are CALLS from the file entity, ac2 a test file reaches the symbols it calls in the code-review grounding) [c6].",
-      "Kotlin and Scala DSL-style tests written in a class body (test(\"x\") { ... }) were not checked; out of scope here [c4]."
+      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the approved issue's fix intent (ac1 TS calls with no enclosing entity are CALLS from the file, ac2 Python and Go emit CALLS, ac3 the review recognises test files in every supported language and their callers reach the grounding) [c7].",
+      "Go calls between files of one package have no import to resolve through (src/indexer/cross-file-resolver.ts:474-510), so Go tests in the same package will not reach the code until the resolver treats a Go package as one scope. That resolver is being changed by Epic c2ba6fa6 Story s1; decide whether it joins this Story, s1, or a separate issue [c3].",
+      "Kotlin and Scala DSL-style tests written in a class body (test(\"x\") { ... }) were not checked [c2]."
     ]
   },
   "citations": [
@@ -288,27 +393,37 @@
     {
       "id": "c2",
       "kind": "step-output",
-      "ref": "s1 context.assemble bundle 2: the file entity and how its edges are cleaned up (src/indexer/parser/typescript.ts:123, src/indexer/index.ts:1041, src/indexer/index.ts:785)"
+      "ref": "s1 context.assemble bundle 2: the Python and Go parsers emit no CALLS (src/indexer/parser/python.ts:124-126, src/indexer/parser/python.ts:271-282, src/indexer/parser/go.ts:114-116)"
     },
     {
       "id": "c3",
       "kind": "step-output",
-      "ref": "s1 context.assemble bundle 3: how the code review reads test callers (src/workflow/code-review/grounding.ts:81-92)"
+      "ref": "s1 context.assemble bundle 3: how CALLS rows are resolved (src/indexer/cross-file-resolver.ts:474-510)"
     },
     {
       "id": "c4",
       "kind": "step-output",
-      "ref": "s1 context.assemble bundle 4: other parsers and test styles (src/indexer/parser/python.ts, src/indexer/parser/go.ts, src/indexer/parser/java.ts)"
+      "ref": "s1 context.assemble bundle 4: the file entity and clean-up (src/indexer/parser/typescript.ts:123, src/indexer/index.ts:1041, src/indexer/index.ts:785)"
     },
     {
       "id": "c5",
       "kind": "step-output",
-      "ref": "s1 context.assemble bundle 5: TypeScript parser tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/workflow/code-review/__tests__/grounding.test.ts)"
+      "ref": "s1 context.assemble bundle 5: how the code review recognises a test caller (src/workflow/code-review/grounding.ts:60-62, src/workflow/code-review/grounding.ts:81-92)"
     },
     {
       "id": "c6",
+      "kind": "step-output",
+      "ref": "s1 context.assemble bundle 6: parser and grounding tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/indexer/parser/__tests__/http-recognizer-py-go.test.ts, src/workflow/code-review/__tests__/grounding.test.ts)"
+    },
+    {
+      "id": "c7",
       "kind": "prior-artifact",
       "ref": "ISSUE-bd1c6c9005ff6390 fix intent"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "Review round 1 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers not fixed, export unwrapping, the narrowed current-behaviour claim; scope widened to Python and Go by the user (option B)"
     }
   ]
 }

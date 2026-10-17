@@ -378,6 +378,9 @@ export function codexStrictSchema(schema: StructuredSchema): StructuredSchema {
 /** Keywords whose value is data, not a schema. */
 const DATA_KEYWORDS: ReadonlySet<string> = new Set(['enum', 'const', 'default', 'examples']);
 
+/** Keywords whose value maps NAMES to schemas: a name there is never a keyword, whatever it reads. */
+const NAMED_SCHEMA_MAPS: ReadonlySet<string> = new Set(['properties', 'patternProperties', '$defs', 'definitions', 'dependentSchemas', 'dependencies']);
+
 /** The first `format` anywhere in the schema, kept branches or not, that the reply check does not know. */
 function uncheckedFormat(node: unknown): string | undefined {
 	if (Array.isArray(node)) {
@@ -391,7 +394,9 @@ function uncheckedFormat(node: unknown): string | undefined {
 			if (!CHECKED_FORMATS.has(value)) return value;
 			continue;
 		}
-		const f = uncheckedFormat(value);
+		const f = NAMED_SCHEMA_MAPS.has(key) && isObject(value)
+			? uncheckedFormat(Object.values(value))
+			: uncheckedFormat(value);
 		if (f !== undefined) return f;
 	}
 	return undefined;

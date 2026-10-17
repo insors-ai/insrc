@@ -257,6 +257,13 @@ test('a schema with a format the reply check cannot enforce, anywhere including 
 	assert.throws(() => codexStrictSchema(schema), /codex cannot be given format 'markdown'/);
 	const inDroppedBranch: StructuredSchema = { type: 'object', properties: { body: { allOf: [{ type: 'string', format: 'markdown' }] } } };
 	assert.throws(() => codexStrictSchema(inDroppedBranch), /codex cannot be given format 'markdown'/);
+	// Properties and dependent schemas NAMED like data keywords are still schemas.
+	for (const named of ['enum', 'const', 'default', 'examples', 'format']) {
+		const asProperty: StructuredSchema = { type: 'object', properties: { [named]: { type: 'string', format: 'markdown' } } };
+		assert.throws(() => codexStrictSchema(asProperty), /codex cannot be given format 'markdown'/, `property ${named}`);
+		const asDependent: StructuredSchema = { type: 'object', properties: { a: { type: 'string' } }, dependentSchemas: { [named]: { properties: { b: { type: 'string', format: 'markdown' } } } } };
+		assert.throws(() => codexStrictSchema(asDependent), /codex cannot be given format 'markdown'/, `dependent schema ${named}`);
+	}
 	const asData: StructuredSchema = { type: 'object', properties: {
 		format: { type: 'string', enum: ['markdown'] },
 		opts:   { type: 'object', properties: { f: { type: 'string' } }, default: { format: 'markdown' }, examples: [{ format: 'markdown' }] },

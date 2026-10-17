@@ -64,8 +64,12 @@ function unsupported<T>(what: string): PortResult<T> {
 	return { ok: false, kind: 'rejected', reason: `the github tracker does not support ${what}` };
 }
 
+/** A well-formed `owner/repo#N`; parseIssueRef alone only checks the separators. */
+const ISSUE_REF_RE = /^[^/#\s]+\/[^/#\s]+#\d+$/;
+
 /** The assignee logins of an issue, read live. Throws a classified GhCommandError. */
 function readAssignees(issue: IssueRef): { readonly owner: string; readonly repo: string; readonly number: string; readonly logins: string[] } {
+	if (!ISSUE_REF_RE.test(issue)) throw new GhCommandError('rejected', `malformed issue reference '${issue}' (expected owner/repo#N)`);
 	const { owner, repo, number } = parseIssueRef(issue);
 	const raw = runGh(['issue', 'view', number, '--repo', `${owner}/${repo}`, '--json', 'assignees']);
 	let parsed: { assignees?: Array<{ login?: string }> };
@@ -99,8 +103,10 @@ function setAssignee(issue: IssueRef, who: string | null): PortResult<void> {
 		const hasWho = who !== null && current.logins.some(l => sameLogin(l, who));
 		if (others.length > 0) runGh(['issue', 'edit', current.number, '--repo', repoArg, '--remove-assignee', others.join(',')], { discardOutput: true });
 		if (who !== null && !hasWho) runGh(['issue', 'edit', current.number, '--repo', repoArg, '--add-assignee', who], { discardOutput: true });
-		if (others.length === 0 && (who === null || hasWho)) return;   // already right: no change call, no re-read
-		const after = readAssignees(issue).logins;
+		// Verified by a read in every case: after a change that is a fresh re-read; when
+		// nothing needed changing, the read above already shows the final set.
+		const changed = others.length > 0 || (who !== null && !hasWho);
+		const after = changed ? readAssignees(issue).logins : current.logins;
 		const ok = who === null ? after.length === 0 : after.length === 1 && sameLogin(after[0]!, who);
 		if (!ok) {
 			throw new GhCommandError('rejected', `${issue} assignees are [${after.join(', ')}] after the update, expected ${who === null ? 'none' : who}`);

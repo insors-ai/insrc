@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-10-17T06:22:44.508Z  ·  **Updated:** 2026-10-17T07:07:34.262Z
+**Standalone:** no  ·  **Created:** 2026-10-17T06:22:44.508Z  ·  **Updated:** 2026-10-17T08:32:20.192Z
 
-**Commit:** 9fdc7452
+**Commit:** ff302377
 
 ## Summary
 
@@ -25,4 +25,34 @@ Added the team commands: src/cli/services/team.ts (teamInit and teamRefresh retu
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-315d510cb28100e2-s2.json` — **insrc-build** (2026-10-17T07:07:34.262Z)
+- `.insrc/artifacts/CR-315d510cb28100e2-s2.json` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `.insrc/artifacts/LLD-315d510cb28100e2-s2.json` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `.insrc/artifacts/PLAN-315d510cb28100e2-s2.json` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/CR.md` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/PLAN.md` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/cli/__tests__/command.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/cli/__tests__/team-service.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/cli/__tests__/tui.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/cli/command.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/cli/services/index.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/cli/services/team.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/shared/paths.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/__tests__/anchor-finder.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/__tests__/branch-resolution.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/__tests__/git-fixture.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/__tests__/policy-parser.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/__tests__/policy-reader.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/__tests__/policy-refresh.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/__tests__/sighting-store.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/__tests__/starter-policy.test.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/anchor-finder.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/branch-resolution.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/create-only.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/git-async.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/git.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/policy-parser.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/policy-reader.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/policy-refresh.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/sighting-store.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/starter-policy.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)
+- `src/workflow/team/types.ts` — **insrc-build** (2026-10-17T08:32:20.192Z)

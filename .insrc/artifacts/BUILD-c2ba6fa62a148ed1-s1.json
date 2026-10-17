@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-16T16:46:20.693Z",
+    "updatedAt": "2026-10-17T06:07:23.576Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -26,9 +26,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "deleteUnresolvedRowInTxn delegates to the counted removePendingRowInTxn (row, by-file and by-target entries, class and reason counts in one transaction), so deleteUnresolvedForFile / ForRepoFile / ForRepo decrement what they remove; the two promotions already use the counted helper directly, so no removal is counted twice. updateUnresolvedMeta / updateUnresolvedMetaBatch merge meta, clear a stale candidates list on a class other than 'ambiguous', and move the count on a class or reason change. listUnresolvedRelations gains opts.awaiting, read through unresolved_by_target across repositories. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t4-suites.md (db, indexer, daemon, analyze: 2261 tests, 2154 pass, 0 fail, 104 skipped; three falsifying mutations).",
+    "summary": "t5 (code 778d52dd, evidence ca2c1c2e): resolver.ts withRepo adds meta.repo to every resolved relation and classes a missing relative import as no-candidate/target-file-missing; index.ts indexManifest's DEPENDS_ON carries meta {repo, file: repoPath}; cross-file-resolver.ts rewireImportRelation (exported) adds meta {repo, file}. Test src/indexer/__tests__/resolver-file-target.test.ts (4 cases); three falsifying mutations each failed it. Wide suites: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t5-suites.md (2265 tests, 0 fail). The first gate run failed only because codex refused the judge schema (fixed by ISSUE-e48e33ae, judge prompt ISSUE-ae2d83c6).",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/TESTS.md"
     },
@@ -38,289 +42,618 @@
           "file": ".insrc/artifacts/BUILD-5437d6e54c9e7d48-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-91640defac1b5816-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-ae2d83c6ab06c595-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-e48e33ae6af03720-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/CR-5437d6e54c9e7d48-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-91640defac1b5816-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-ae2d83c6ab06c595-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-e48e33ae6af03720-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-1102dc7125ad0c07.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-5437d6e54c9e7d48.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-91640defac1b5816.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-ae2d83c6ab06c595.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-e48e33ae6af03720.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-5437d6e54c9e7d48-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-5437d6e54c9e7d48-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TESTS-5437d6e54c9e7d48-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-91640defac1b5816-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-ae2d83c6ab06c595-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-e48e33ae6af03720-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": ".insrc/build-start/5437d6e54c9e7d48-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/91640defac1b5816-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/ae2d83c6ab06c595-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/e48e33ae6af03720-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "AGENTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "CLAUDE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t1-suites.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t2-suites.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t3-suites.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t4-suites.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/evidence/t5-suites.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/BUILD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/TESTS.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/cr-fixes-suites.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t1-suites.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t2-suites.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "docs/standalone/graph-store-write-transaction-whose-callback-E202610165437d6e5/S001/evidence/t3-suites.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/ground-code-review-coverage-story-s-E202610171102dc71/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/let-build-gate-s-judge-read-E20261016ae2d83c6/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-codex-structured-output-schemas-openai-E20261016e48e33ae/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-codex-structured-output-schemas-openai-E20261016e48e33ae/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-codex-structured-output-schemas-openai-E20261016e48e33ae/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/send-codex-structured-output-schemas-openai-E20261016e48e33ae/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/render.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/render.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/validation-checks.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/index-state.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-awaiting-target.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-pending-upkeep.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/repos-lmdb.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/lmdb-txn-semantics.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migrations.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/operational.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/store-health.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/write-txn-atomic.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/index-state-rows.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/migrations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/pending-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/index-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/db/repos.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/resolver-file-target.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       },
       {
         "target": {
           "file": "src/indexer/cross-file-resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-16T16:46:20.693Z"
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/resolver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/build/validate-task.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/assets/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T06:07:23.576Z"
       }
     ],
-    "commit": "7225408a"
+    "commit": "56c0d3fd"
   }
 }

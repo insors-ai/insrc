@@ -29,6 +29,9 @@ export const PATHS = {
   // (dead pid / aged) is ignored, mirroring the daemon-ctl.sh pidfile
   // staleness idiom.
   updateLock:    join(INSRC_DIR, 'daemon.update.lock'),
+  // Team-policy sightings and refresh locks (Story s2): one file per repository
+  // under team/seen/, recording that the repo has been seen carrying a policy.
+  team:        join(INSRC_DIR, 'team'),
   agents:      join(INSRC_DIR, 'agents'),          // agent run storage
   agentIndex:  join(INSRC_DIR, 'agents', 'index.json'),
   // Backing-file directory for ephemeral workbench panes (notepad,

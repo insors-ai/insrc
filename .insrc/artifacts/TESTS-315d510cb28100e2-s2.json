@@ -1,0 +1,1108 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s2",
+    "createdAt": "2026-10-17T06:22:44.508Z",
+    "updatedAt": "2026-10-17T07:07:34.262Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e5e884c8",
+        "ranAt": "2026-10-17T06:22:44.508Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/policy-parser.test.ts: a valid policy file parses with the fixed claimUnits and forceTaskIssues true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-parser.test.ts",
+                "title": "a valid policy file parses with the fixed claimUnits and forceTaskIssues true",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-parser.test.ts: bad JSON, an unknown field, a wrong type and a file carrying claimUnits, forceTaskIssues or source are rejected with a reason",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-parser.test.ts",
+                "title": "bad JSON, an unknown field, a wrong type and a file carrying claimUnits, forceTaskIssues or source are rejected with a reason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/policy-parser.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 841,
+            "titles": [
+              {
+                "title": "a valid policy file parses with the fixed claimUnits and forceTaskIssues true",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown anchor yields empty commit and time with anchorKnown false",
+                "result": "pass"
+              },
+              {
+                "title": "bad JSON, an unknown field, a wrong type and a file carrying claimUnits, forceTaskIssues or source are rejected with a reason",
+                "result": "pass"
+              },
+              {
+                "title": "PATHS exposes the team directory used by the sighting store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e032608a",
+        "ranAt": "2026-10-17T06:29:45.369Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: the sighting key comes from the real path so repositories and symlinks are distinct",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/sighting-store.test.ts",
+                "title": "the sighting key comes from the real path so repositories and symlinks are distinct",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: a damaged sighting reads as damaged evidence, branchSource remote or user is validated",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/sighting-store.test.ts",
+                "title": "a damaged sighting reads as damaged evidence, branchSource remote or user is validated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: create-only publish never overwrites an existing or damaged sighting",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/sighting-store.test.ts",
+                "title": "create-only publish never overwrites an existing or damaged sighting",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: a known anchor is never replaced by an unknown one and an unknown one is replaced by a known one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/sighting-store.test.ts",
+                "title": "a known anchor is never replaced by an unknown one and an unknown one is replaced by a known one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: the lock refuses a second holder and takes over a lock older than 30 seconds",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/sighting-store.test.ts",
+                "title": "the lock refuses a second holder and takes over a lock older than 30 seconds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/sighting-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2527,
+            "titles": [
+              {
+                "title": "the sighting key comes from the real path so repositories and symlinks are distinct",
+                "result": "pass"
+              },
+              {
+                "title": "a damaged sighting reads as damaged evidence, branchSource remote or user is validated",
+                "result": "pass"
+              },
+              {
+                "title": "create-only publish never overwrites an existing or damaged sighting",
+                "result": "pass"
+              },
+              {
+                "title": "a known anchor is never replaced by an unknown one and an unknown one is replaced by a known one",
+                "result": "pass"
+              },
+              {
+                "title": "the lock refuses a second holder and takes over a lock older than 30 seconds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "7a1072bc",
+        "ranAt": "2026-10-17T06:31:41.880Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/anchor-finder.test.ts: parsing git log output picks the oldest add even after a later delete and re-add",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/anchor-finder.test.ts",
+                "title": "parsing git log output picks the oldest add even after a later delete and re-add",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/anchor-finder.test.ts: adoption, approval, deletion and reintroduction keeps the adoption commit on real history",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/anchor-finder.test.ts",
+                "title": "adoption, approval, deletion and reintroduction keeps the adoption commit on real history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/anchor-finder.test.ts: a depth-1 shallow clone gives known false and deepening gives a known anchor",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/anchor-finder.test.ts",
+                "title": "a depth-1 shallow clone gives known false and deepening gives a known anchor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/anchor-finder.test.ts: a failing git log gives known false without throwing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/anchor-finder.test.ts",
+                "title": "a failing git log gives known false without throwing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/anchor-finder.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2068,
+            "titles": [
+              {
+                "title": "parsing git log output picks the oldest add even after a later delete and re-add",
+                "result": "pass"
+              },
+              {
+                "title": "adoption, approval, deletion and reintroduction keeps the adoption commit on real history",
+                "result": "pass"
+              },
+              {
+                "title": "a depth-1 shallow clone gives known false and deepening gives a known anchor",
+                "result": "pass"
+              },
+              {
+                "title": "a failing git log gives known false without throwing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "4b7fbe34",
+        "ranAt": "2026-10-17T06:36:07.984Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: reads the policy from the remote default branch's tracking ref",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "reads the policy from the remote default branch's tracking ref",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a working-tree edit has no effect",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "a working-tree edit has no effect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a feature-branch edit has no effect",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "a feature-branch edit has no effect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a policy on an unlabelled tracking ref is never applied",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "a policy on an unlabelled tracking ref is never applied",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: an unknown default branch with a fetched policy is refused with the --branch instruction",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "an unknown default branch with a fetched policy is refused with the --branch instruction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a remote without a remote HEAD and with no policy on any fetched ref reads as none",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "a remote without a remote HEAD and with no policy on any fetched ref reads as none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a repo with no policy and no sighting reads as none and writes nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "a repo with no policy and no sighting reads as none and writes nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: non-git, no-commit and no-remote directories without a sighting read as none",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "non-git, no-commit and no-remote directories without a sighting read as none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a never-fetched repo with no sighting reads as none",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "a never-fetched repo with no sighting reads as none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a known team repo with no fetched policy is refused with the reason",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "a known team repo with no fetched policy is refused with the reason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a known team repo whose remote was removed is refused or read from the recorded commit, never none",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "a known team repo whose remote was removed is refused or read from the recorded commit, never none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: first observation creates the sighting create-only and a failed write does not change the result",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+                "title": "first observation creates the sighting create-only and a failed write does not change the result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/policy-reader.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1482,
+            "titles": [
+              {
+                "title": "reads the policy from the remote default branch's tracking ref",
+                "result": "pass"
+              },
+              {
+                "title": "a working-tree edit has no effect",
+                "result": "pass"
+              },
+              {
+                "title": "a feature-branch edit has no effect",
+                "result": "pass"
+              },
+              {
+                "title": "a policy on an unlabelled tracking ref is never applied",
+                "result": "pass"
+              },
+              {
+                "title": "an unknown default branch with a fetched policy is refused with the --branch instruction",
+                "result": "pass"
+              },
+              {
+                "title": "a remote without a remote HEAD and with no policy on any fetched ref reads as none",
+                "result": "pass"
+              },
+              {
+                "title": "a repo with no policy and no sighting reads as none and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "non-git, no-commit and no-remote directories without a sighting read as none",
+                "result": "pass"
+              },
+              {
+                "title": "a never-fetched repo with no sighting reads as none",
+                "result": "pass"
+              },
+              {
+                "title": "a known team repo with no fetched policy is refused with the reason",
+                "result": "pass"
+              },
+              {
+                "title": "a known team repo whose remote was removed is refused or read from the recorded commit, never none",
+                "result": "pass"
+              },
+              {
+                "title": "the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative",
+                "result": "pass"
+              },
+              {
+                "title": "first observation creates the sighting create-only and a failed write does not change the result",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "82fe6b38",
+        "ranAt": "2026-10-17T06:40:25.693Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/branch-resolution.test.ts: the remote's answer wins over a supplied branch, then the sighting's branch, then the supplied branch after verification",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/branch-resolution.test.ts",
+                "title": "the remote's answer wins over a supplied branch, then the sighting's branch, then the supplied branch after verification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/branch-resolution.test.ts: a dangling remote HEAD is refused without --branch and a real branch is recorded with source user",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/branch-resolution.test.ts",
+                "title": "a dangling remote HEAD is refused without --branch and a real branch is recorded with source user",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/branch-resolution.test.ts: a missing branch name or an unreachable remote records nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/branch-resolution.test.ts",
+                "title": "a missing branch name or an unreachable remote records nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/branch-resolution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 911,
+            "titles": [
+              {
+                "title": "the remote's answer wins over a supplied branch, then the sighting's branch, then the supplied branch after verification",
+                "result": "pass"
+              },
+              {
+                "title": "a dangling remote HEAD is refused without --branch and a real branch is recorded with source user",
+                "result": "pass"
+              },
+              {
+                "title": "a missing branch name or an unreachable remote records nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "df4249a1",
+        "ranAt": "2026-10-17T07:01:46.302Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: refresh brings a changed policy into the tracking ref and the reader applies it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-refresh.test.ts",
+                "title": "refresh brings a changed policy into the tracking ref and the reader applies it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: only the default branch's tracking ref changes with no tag, other branch, FETCH_HEAD or prune effect",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-refresh.test.ts",
+                "title": "only the default branch's tracking ref changes with no tag, other branch, FETCH_HEAD or prune effect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: unreachable remote reports failure and the last fetched policy stays in use",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-refresh.test.ts",
+                "title": "unreachable remote reports failure and the last fetched policy stays in use",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: a supplied branch is refused when the remote is unreachable and nothing is recorded",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-refresh.test.ts",
+                "title": "a supplied branch is refused when the remote is unreachable and nothing is recorded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: sighting write failure reports failure and cosmetic HEAD failure is a warning only",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-refresh.test.ts",
+                "title": "sighting write failure reports failure and cosmetic HEAD failure is a warning only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: a second refresh is refused while the lock is held and a stale lock is taken over",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-refresh.test.ts",
+                "title": "a second refresh is refused while the lock is held and a stale lock is taken over",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: default-branch rename and policy file removal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/policy-refresh.test.ts",
+                "title": "default-branch rename and policy file removal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/policy-refresh.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10648,
+            "titles": [
+              {
+                "title": "refresh brings a changed policy into the tracking ref and the reader applies it",
+                "result": "pass"
+              },
+              {
+                "title": "only the default branch's tracking ref changes with no tag, other branch, FETCH_HEAD or prune effect",
+                "result": "pass"
+              },
+              {
+                "title": "unreachable remote reports failure and the last fetched policy stays in use",
+                "result": "pass"
+              },
+              {
+                "title": "a supplied branch is refused when the remote is unreachable and nothing is recorded",
+                "result": "pass"
+              },
+              {
+                "title": "sighting write failure reports failure and cosmetic HEAD failure is a warning only",
+                "result": "pass"
+              },
+              {
+                "title": "a second refresh is refused while the lock is held and a stale lock is taken over",
+                "result": "pass"
+              },
+              {
+                "title": "default-branch rename and policy file removal",
+                "result": "pass"
+              },
+              {
+                "title": "refresh with --branch on a dangling remote HEAD fetches and records source user",
+                "result": "pass"
+              },
+              {
+                "title": "an exhausted deadline stops the refresh and records nothing",
+                "result": "pass"
+              },
+              {
+                "title": "removing the policy while the remote HEAD cannot be updated still removes the record and only warns",
+                "result": "pass"
+              },
+              {
+                "title": "removal with a stale remote HEAD on a retained old branch keeps the record and fails closed",
+                "result": "pass"
+              },
+              {
+                "title": "a git failure while looking for the policy file is not mistaken for a removal",
+                "result": "pass"
+              },
+              {
+                "title": "removal never deletes the record before a possibly stale remote HEAD is fixed",
+                "result": "pass"
+              },
+              {
+                "title": "a deadline that runs out during the anchor lookup records nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "2fbf6b9d",
+        "ranAt": "2026-10-17T07:03:52.521Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/starter-policy.test.ts: writes a starter with signoff for DEF, HLD, LLD and BUILD and claims enforced",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/starter-policy.test.ts",
+                "title": "writes a starter with signoff for DEF, HLD, LLD and BUILD and claims enforced",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/starter-policy.test.ts: refuses to overwrite an existing file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/starter-policy.test.ts",
+                "title": "refuses to overwrite an existing file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/starter-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 795,
+            "titles": [
+              {
+                "title": "writes a starter with signoff for DEF, HLD, LLD and BUILD and claims enforced",
+                "result": "pass"
+              },
+              {
+                "title": "refuses to overwrite an existing file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "9fdc7452",
+        "ranAt": "2026-10-17T07:07:34.262Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/cli/__tests__/command.test.ts: team init writes the starter and reports its path",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "team init writes the starter and reports its path",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/team-service.test.ts",
+                "title": "team init writes a starter that the reader accepts once it is on the default branch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/command.test.ts: team refresh runs the refresh and reports the outcome",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "team refresh runs the refresh and reports the outcome",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/team-service.test.ts",
+                "title": "team refresh followed by a reader call in a temp clone returns the policy end to end",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/command.test.ts: team refresh --branch passes the name through and renders the refusal that asks for it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "team refresh --branch passes the name through and renders the refusal that asks for it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/command.test.ts: a thrown error from either team command renders as a cross-prefixed line",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "a thrown error from either team command renders as a cross-prefixed line",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/cli/__tests__/tui.test.ts: the TUI tests run with fakeServices carrying the team entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 863,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              },
+              {
+                "title": "team init writes the starter and reports its path",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh runs the refresh and reports the outcome",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh --branch passes the name through and renders the refusal that asks for it",
+                "result": "pass"
+              },
+              {
+                "title": "a thrown error from either team command renders as a cross-prefixed line",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/team-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2031,
+            "titles": [
+              {
+                "title": "team refresh followed by a reader call in a temp clone returns the policy end to end",
+                "result": "pass"
+              },
+              {
+                "title": "team init writes a starter that the reader accepts once it is on the default branch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3178,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              },
+              {
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

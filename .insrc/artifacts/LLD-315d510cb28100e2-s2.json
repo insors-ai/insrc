@@ -180,7 +180,53 @@
     "reviewOverride": {
       "reason": "User decision (option a): accept the bootstrap limitation that a repo with no sighting and nothing fetched reads as solo until team refresh runs, consistent with k4; DEF ac9 and HLD to be amended to state it. Three review rounds this cycle (nine across cycles) ended blocked; remaining findings are text fixes (grandfathering edge-case wording, gates.ts cited as s5 consumer not s2 change site, never-fetched ac9 test, policy remote selection rule).",
       "at": "2026-10-17T06:02:58.378Z"
-    }
+    },
+    "questionResolutions": {
+      "q90c58cff": {
+        "question": "cd1 (partial): PolicyRefresh, AnchorFinder, StarterPolicyWriter, TeamInitCommand and TeamRefreshCommand are new functions inside s2's boundary that sc2 does not name; decide whether sc2 should list them or they stay internal to s2.",
+        "status": "resolved",
+        "choice": "Keep all five internal",
+        "rationale": "They are implementation details inside s2's boundary; sc2 stays the HLD envelope.",
+        "resolvedAt": "2026-10-17T06:11:05.997Z"
+      },
+      "q6f462bb4": {
+        "question": "dm1 (partial): the call sites for the new PolicyFile and PolicySighting entities are the nearest existing code the new code follows, since no existing code touches them.",
+        "status": "resolved",
+        "choice": "Follow call-site conventions",
+        "rationale": "Follow the nearest existing code (storage.ts atomic writes, paths.ts layout, daemon lock rule) as integration precedent.",
+        "resolvedAt": "2026-10-17T06:12:00.844Z"
+      },
+      "q6d9271ce": {
+        "question": "ts2 (partial): no test-location pass was run in s1; node:test through tsx is taken from the repo's CLAUDE.md and the existing suites.",
+        "status": "resolved",
+        "choice": "Verify test locations before planning",
+        "rationale": "Tests live in src/**/__tests__/*.test.ts run by tsx --test; confirm existing suites while planning.",
+        "resolvedAt": "2026-10-17T06:12:45.609Z"
+      },
+      "q042661a7": {
+        "question": "alt2 (partial): the Epic constraints k4 and k5 are covered through the acceptance criteria but not scored separately.",
+        "status": "resolved",
+        "choice": "Keep acceptance-criteria scoring",
+        "rationale": "Design-time scoring only; k4 and k5 are already proved by ac5-ac9 tests in the build.",
+        "resolvedAt": "2026-10-17T06:13:19.963Z"
+      },
+      "q6e2bbee3": {
+        "question": "sbdry3 (partial): the one change to the HLD contract, source.anchorKnown, is proposed as a non-breaking fieldAdd amendment.",
+        "status": "resolved",
+        "choice": "Optional field addition",
+        "rationale": "AMD-315d510cb28100e2-4 approved as additive and non-breaking; the reader always populates it and a consumer treats absence as unknown (grandfather nothing).",
+        "resolvedAt": "2026-10-17T06:13:45.109Z"
+      },
+      "qcfb3b56e": {
+        "question": "A repo that never fetched anything and has no sighting has no local evidence of a policy and reads as none until a refresh; this is the one remaining unenforced state and is accepted because nothing can be known locally without a network call.",
+        "status": "resolved",
+        "choice": "Accept until refresh",
+        "rationale": "User decision (option a), recorded in docs/plans/team-workflow.md.",
+        "resolvedAt": "2026-10-17T06:13:58.002Z"
+      }
+    },
+    "staleAckedAt": "2026-10-17T06:14:20.100Z",
+    "staleAckedReason": "HLD effective state changed only by approving AMD-315d510cb28100e2-4 (sc2 source.anchorKnown), the additive field this LLD itself proposes and already contains; no other HLD change since approval."
   },
   "body": {
     "summary": {

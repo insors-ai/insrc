@@ -373,27 +373,29 @@ The reader is synchronous and performs a git fetch of the remote default branch 
 - sbdry3 (partial): the one change to the HLD contract, source.anchorKnown, is proposed as a non-breaking fieldAdd amendment.
 - A repo that never fetched anything and has no sighting has no local evidence of a policy and reads as none until a refresh; this is the one remaining unenforced state and is accepted because nothing can be known locally without a network call.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q90c58cff` — cd1 (partial): PolicyRefresh, AnchorFinder, StarterPolicyWriter, TeamInitCommand and TeamRefreshCommand are new functions inside s2's boundary that sc2 does not name; decide whether sc2 should list them or they stay internal to s2.
+  - **resolved**: Keep all five internal — They are implementation details inside s2's boundary; sc2 stays the HLD envelope. _(2026-10-17T06:11:05.997Z)_
+- `q6f462bb4` — dm1 (partial): the call sites for the new PolicyFile and PolicySighting entities are the nearest existing code the new code follows, since no existing code touches them.
+  - **resolved**: Follow call-site conventions — Follow the nearest existing code (storage.ts atomic writes, paths.ts layout, daemon lock rule) as integration precedent. _(2026-10-17T06:12:00.844Z)_
+- `q6d9271ce` — ts2 (partial): no test-location pass was run in s1; node:test through tsx is taken from the repo's CLAUDE.md and the existing suites.
+  - **resolved**: Verify test locations before planning — Tests live in src/**/__tests__/*.test.ts run by tsx --test; confirm existing suites while planning. _(2026-10-17T06:12:45.609Z)_
+- `q042661a7` — alt2 (partial): the Epic constraints k4 and k5 are covered through the acceptance criteria but not scored separately.
+  - **resolved**: Keep acceptance-criteria scoring — Design-time scoring only; k4 and k5 are already proved by ac5-ac9 tests in the build. _(2026-10-17T06:13:19.963Z)_
+- `q6e2bbee3` — sbdry3 (partial): the one change to the HLD contract, source.anchorKnown, is proposed as a non-breaking fieldAdd amendment.
+  - **resolved**: Optional field addition — AMD-315d510cb28100e2-4 approved as additive and non-breaking; the reader always populates it and a consumer treats absence as unknown (grandfather nothing). _(2026-10-17T06:13:45.109Z)_
+- `qcfb3b56e` — A repo that never fetched anything and has no sighting has no local evidence of a policy and reads as none until a refresh; this is the one remaining unenforced state and is accepted because nothing can be known locally without a network call.
+  - **resolved**: Accept until refresh — User decision (option a), recorded in docs/plans/team-workflow.md. _(2026-10-17T06:13:58.002Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**4 do not hold · 1 could not be verified · 6 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-17T05:55:47.586Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| coverage-of-intent | HIGH | Returning 'none' before any policy has been fetched satisfies the upstream offline rule. | DEF ac9 requires that a previously fetched policy be used and 'otherwise the action is refused with the reason'. The LLD explicitly permits a repository with no sighting or fetched policy to return 'none', even when its remote actually carries a policy. Its final open question accepts this exception, but the checked upstream documents do not. This permits unguarded actions in the specified offline case. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/plans/team-workflow.md] | Obtain an upstream amendment explicitly accepting this bootstrap limitation, or design an initialization requirement that distinguishes verified absence from an unknown policy. |
-| data-compatibility | HIGH | An artifact approved between initial policy adoption and policy reintroduction is grandfathered under the HLD. | The HLD states: 'an artifact whose approvedAt is earlier than that time is treated as signed off', where that time belongs to the first default-branch commit carrying the policy. An approval between adoption and reintroduction is later than that anchor. The LLD edge-case table nevertheless says such an artifact 'is grandfathered exactly as the HLD states'. Implementing that expectation would bypass required signoff. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/LLD.md] | Correct the edge case and its test expectation: only approvals before the original adoption timestamp are grandfathered; approvals between adoption and reintroduction are not. |
-| change-sites | MED | The listed gates.ts locations are existing TeamPolicy field-add call sites. | The cited region implements headFullSha and approveArtifactByJsonPath; it contains `execFileSync('git', ['rev-parse', 'HEAD'], ...)` and approval metadata handling. There is no TeamPolicy declaration or consumer anywhere in the searched source. These locations cannot describe a source.anchorKnown field addition to an existing code type. [files: src/workflow/gates.ts, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md] | Distinguish the HLD contract amendment from the new TypeScript declaration, name its destination, and identify gates.ts as a future s5 consumer rather than an s2 field-add call site. |
-| tests | MED | The proposed ac9 tests cover the complete upstream acceptance criterion. | DEF ac9 requires refusal when the remote is unreachable and no previously fetched policy exists. The LLD maps this to a 'known team repo' test and an explicit refresh failure test, omitting a workflow action in a never-fetched repository with no sighting. Its open question instead specifies 'none' for that case. The proposed tests therefore cannot establish the full criterion. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/LLD.md] | Add the no-sighting/no-fetched-policy offline action case, with its expected result determined by the resolved upstream requirement. |
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| error-paths | The policy remote can be resolved unambiguously from the specified contract. | The LLD repeatedly uses 'the remote' and stores a remote in PolicySighting, but supplies no initial selection rule for multiple remotes or a repository without origin. Existing tracker target resolution explicitly uses gitOriginOwnerRepo and origin; that resolves a GitHub target, not a policy remote contract. No policy implementation exists to resolve the omission. Analyzer tools were unavailable, so this was checked through source searches and file reads. [files: src/workflow/config/github.ts, src/workflow/tracker/github.ts, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/LLD.md] | Specify initial remote selection, behavior when it is ambiguous or missing, and whether a sighting's remote remains authoritative after configuration changes. |
+- **[[c1]]** `doc` `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md` — "A repo without the policy file must behave exactly as it does today."
+- **[[c2]]** `doc` `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md` — "The policy (sc2) is read from the remote default branch and says which stages need signoff"
+- **[[c3]]** `code` `src/workflow/gates.ts:569-578`
+- **[[c4]]** `code` `src/workflow/tracker/github.ts:17-40`
+- **[[c5]]** `code` `src/shared/paths.ts`
+- **[[c6]]** `code` `src/workflow/storage.ts:77-88`
+- **[[c7]]** `code` `src/cli/command.ts:32-62`
+- **[[c8]]** `doc` `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md` — "Policy is read only from the remote default branch and cannot be overridden locally; configuration is local and per repository."
+- **[[c9]]** `code` `tsconfig.json:27-30`

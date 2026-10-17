@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s2",
+    "createdAt": "2026-10-17T06:22:44.508Z",
+    "updatedAt": "2026-10-17T08:32:20.192Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "approvedAt": "2026-10-17T08:32:20.821Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "Added the team commands: src/cli/services/team.ts (teamInit and teamRefresh return one result line and throw a plain Error on failure), the team entry in the Services interface and makeServices, two help lines, and the team dispatch case with runTeam in src/cli/command.ts (sub words init and refresh, optional path defaulting to the selected repo, --branch name flag with usage errors for a missing name, a stray argument or --branch on init). Both test facades gained the team entry; command.test.ts covers dispatch, help, --branch pass-through, the rendered refusal asking for it and cross-prefixed errors. An extra end-to-end file (team-service.test.ts, HOME pointed at a scratch dir so the real ~/.insrc is untouched) runs the real commands against real git: team refresh --branch fixes a dangling remote HEAD and the reader then returns the policy; team init writes a starter the reader accepts once on the default branch. Left out: nothing beyond the plan; gates.ts is untouched.",
+    "testRecord": {
+      "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-315d510cb28100e2-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-315d510cb28100e2-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S002/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/command.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/team-service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/command.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/team.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/paths.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/anchor-finder.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/branch-resolution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/git-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/policy-parser.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/policy-reader.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/policy-refresh.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/sighting-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/starter-policy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/anchor-finder.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/branch-resolution.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/create-only.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/git-async.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/git.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/policy-parser.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/policy-reader.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/policy-refresh.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/sighting-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/starter-policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:32:20.192Z"
+      }
+    ],
+    "commit": "ff302377"
+  }
+}

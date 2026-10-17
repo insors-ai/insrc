@@ -25,6 +25,7 @@ import * as workflow from './workflow.js';
 import * as setup from './setup.js';
 import * as config from './config.js';
 import * as maintenance from './maintenance.js';
+import * as team from './team.js';
 import * as debug from './debug.js';
 import { isRunning } from './lifecycle.js';
 import type { EpicSummary, ApproveOutcome } from './workflow.js';
@@ -80,6 +81,10 @@ export interface Services {
 		write(path: string | string[], value: unknown): Promise<{ ok: boolean }>;
 		reload(): Promise<{ ok: boolean; reloaded?: unknown }>;
 	};
+	readonly team: {
+		teamInit(repoPath: string): Promise<string>;
+		teamRefresh(repoPath: string, branch?: string): Promise<string>;
+	};
 	readonly debug: DebugService;
 }
 
@@ -132,6 +137,10 @@ export function makeServices(): Services {
 			show:   config.showConfig,
 			write:  config.writeConfig,
 			reload: config.reloadConfig,
+		},
+		team: {
+			teamInit:    team.teamInit,
+			teamRefresh: team.teamRefresh,
 		},
 		debug: {
 			sections:        debug.sections,

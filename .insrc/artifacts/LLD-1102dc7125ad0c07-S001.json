@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792218379933-78wvo6",
+    "runId": "wf-1792218502976-b98dqj",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T06:26:20.920Z",
+    "createdAt": "2026-10-17T06:28:23.960Z",
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 985,
+    "elapsedMs": 983,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1102dc7125ad0c07",
     "epicSlug": "ground-code-review-coverage-story-s",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792218379933-78wvo6",
-    "hldEffectiveHash": "48ce976a93a228bc846a8bd73efd8fbe107b3ee4cc67ae219eb092394fbe2e43",
+    "hldBaseRunId": "wf-1792218502976-b98dqj",
+    "hldEffectiveHash": "cc1a7b73f952b25b7c2b0417042a29dab2fc9a379cfe32b4237c7cd190b43b3e",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
@@ -123,7 +123,7 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "When testRecord is non-null, the prompt carries a trailing section with one line per (file, title): its result taken from the task whose ranAt is latest among the tasks that ran that file and title, with that task id and ranAt shown, plus each file's exit code from the same run and the BUILD verdict when buildRecord is non-null. Precedence: a task with a valid ISO ranAt beats one without; among tasks with no valid ranAt, or with equal ranAt, a fail beats a skipped beats a pass, so a tie never yields an unsupported green.",
+            "When testRecord is non-null, the prompt carries a trailing section built per test FILE, not per title: for each file, the latest run is the file entry of the task whose ranAt is latest among the tasks that ran it (a valid ISO ranAt beats a missing one; on a tie or with no valid ranAt the run with a failing outcome wins). That run alone decides the file's current state: its exit code, whether it timed out, and its titles with results. A latest run that timed out, exited non-zero or reported no titles marks every test of the file present-but-failing or unverified, whatever older runs said. A title that appears only in an older run of the file is listed as not in the latest run and is unverified, never passing. The task id and ranAt of the deciding run are shown, plus the BUILD verdict when buildRecord is non-null.",
             "The system text says: a test the record shows passing is passing; a test is unverified only when no record covers its file or title; a failing or skipped title is present-but-failing.",
             "When testRecord is null, the prompt keeps today's rule that every pass-state is unverified.",
             "The section is built from a defensive normalisation of the test record: a task without a files array, a file without a titles array, or a title whose result is not pass/fail/skipped is skipped with a note in the section rather than iterated, because readTestRecord validates only the record's top level and each task's taskId and tests (src/workflow/runners/build/test-record.ts)."
@@ -392,8 +392,8 @@
       ],
       "edgeCases": [
         {
-          "input": "Two tasks ran the same file and title; the task stored first in body.tasks was re-run later (ranAt newer) and now fails, the other task passes.",
-          "expected": "The section shows fail for that title, from the re-run task, because results are chosen by ranAt, not by position."
+          "input": "An older task passed a title of a file; a newer task's run of the same file timed out with no titles.",
+          "expected": "The file is shown from the newer run: timed out, no titles; the older pass is not shown as current, and the title is unverified."
         },
         {
           "input": "A TESTS record whose files list is empty (a trivial build with no touched test files).",
@@ -428,8 +428,12 @@
           "expected": "The first gives inFlight false, pendingCodeIndexJobs > 0; the second inFlight true, pendingCodeIndexJobs 0; a timeout records each exactly."
         },
         {
-          "input": "Two tasks ran the same title with equal ranAt, or neither has a valid ranAt, and one passed while the other failed.",
-          "expected": "The section shows fail: on a tie or missing time, fail beats skipped beats pass."
+          "input": "Two tasks ran the same file with equal ranAt, or neither has a valid ranAt, and one run failed.",
+          "expected": "The failing run decides the file: a tie never yields an unsupported green."
+        },
+        {
+          "input": "A newer successful run of a file no longer reports a title an older run passed.",
+          "expected": "That title is listed as not in the latest run and is unverified."
         }
       ],
       "invariantsToPreserve": [
@@ -466,7 +470,7 @@
           "purpose": "The subject carries the Story's records, and coverage renders them.",
           "subjects": [
             "src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
-            "src/workflow/code-review/__tests__/runner.test.ts: the coverage prompt lists each test file's titles and results from the test record in a trailing section and states the pass/unverified rule; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record it keeps the every-test-unverified rule; when two tasks ran the same file and title, the result shown is the one from the latest ranAt even if that task is stored first (an earlier-position task re-run from pass to fail shows fail), and a tie or missing ranAt resolves fail over skipped over pass"
+            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays"
           ],
           "fixturesNeeded": [
             "A temp repo with .insrc/artifacts/BUILD-<hash>-S001.json and TESTS-<hash>-S001.json, one valid and one misshapen variant."
@@ -504,7 +508,7 @@
           "criterionId": "ac1",
           "provingTests": [
             "src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
-            "src/workflow/code-review/__tests__/runner.test.ts: the coverage prompt lists each test file's titles and results from the test record in a trailing section and states the pass/unverified rule; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record it keeps the every-test-unverified rule; when two tasks ran the same file and title, the result shown is the one from the latest ranAt even if that task is stored first (an earlier-position task re-run from pass to fail shows fail), and a tie or missing ranAt resolves fail over skipped over pass"
+            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays"
           ]
         },
         {
@@ -656,6 +660,11 @@
       "id": "c8",
       "kind": "prior-artifact",
       "ref": "ISSUE-1102dc7125ad0c07 fix intent"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "Review cycle 1 round 3 and cycle 2 round 1 of LLD-1102dc7125ad0c07-S001 (2026-10-17): test results resolved per file by the latest run (ranAt), so a newer failed, timed-out or title-less run supersedes older passes; addressed in this version"
     },
     {
       "id": "c10",

@@ -190,13 +190,7 @@ function walkNode(
       // A program-level or exported declaration's non-function values run with
       // no enclosing entity, so their calls belong to the file.
       if (node.parent?.type === 'program' || node.parent?.type === 'export_statement') {
-        for (const declarator of node.namedChildren) {
-          if (declarator.type !== 'variable_declarator') continue;
-          const value = declarator.childForFieldName('value');
-          if (value && !FUNCTION_VALUE_TYPES.has(value.type)) {
-            extractCalls(value, fileId, repo, filePath, relations, fileCallsSeen);
-          }
-        }
+        extractCalls(node, fileId, repo, filePath, relations, fileCallsSeen, ownedElsewhere);
       }
       break;
 
@@ -209,7 +203,7 @@ function walkNode(
       // `export default <expr>`: the value runs at module load.
       const value = node.childForFieldName('value');
       if (value) {
-        extractCalls(value, fileId, repo, filePath, relations, fileCallsSeen);
+        extractCalls(value, fileId, repo, filePath, relations, fileCallsSeen, ownedElsewhere);
       }
       return;
     }
@@ -219,7 +213,7 @@ function walkNode(
   // call, a top-level if/for/try) runs at module load: its calls belong to the
   // file. The walk below still extracts the declarations nested in it.
   if (node.parent?.type === 'program' && PROGRAM_STATEMENT_TYPES.has(node.type)) {
-    extractCalls(node, fileId, repo, filePath, relations, fileCallsSeen);
+    extractCalls(node, fileId, repo, filePath, relations, fileCallsSeen, ownedElsewhere);
   }
 
   for (const child of node.namedChildren) {
@@ -236,6 +230,16 @@ const PROGRAM_STATEMENT_TYPES = new Set([
   'while_statement', 'do_statement', 'try_statement', 'switch_statement',
   'statement_block', 'labeled_statement', 'throw_statement', 'with_statement',
 ]);
+
+/** A node the walk gives an entity of its own (a function or class declaration,
+ *  a function-valued declarator), at any depth: its calls are that entity's, so
+ *  a scan crediting the file skips it. */
+function ownedElsewhere(n: SyntaxNode): boolean {
+  if (n.type === 'function_declaration' || n.type === 'generator_function_declaration' || n.type === 'class_declaration') return true;
+  return FUNCTION_VALUE_TYPES.has(n.type) && n.parent?.type === 'variable_declarator'
+    && n.parent.childForFieldName('value')?.id === n.id
+    && (n.parent.parent?.type === 'lexical_declaration' || n.parent.parent?.type === 'variable_declaration');
+}
 
 /** Callees already credited to the file entity in the file being parsed; reset
  *  per file in parse() (same idiom as currentClassHttpFields). */
@@ -674,13 +678,14 @@ function extractCalls(
   filePath:   string,
   relations:  Relation[],
   seen:       Set<string> = new Set<string>(),  // shared when one caller has several bodies
+  skip?:      (n: SyntaxNode) => boolean,      // subtrees whose calls belong to another caller
 ): void {
   // S001 (t3 + scope-hardening): local `const x = axios.create()` receivers,
   // resolved to their NEAREST lexical scope. axiosScopes is a stack of per-scope
   // frames (innermost last); it is seeded with THIS body's frame and grows/shrinks
   // as walkForCalls descends into / leaves nested function/arrow/method scopes.
   const axiosScopes: AxiosScope[] = [collectScopeFrame(bodyNode)];
-  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, axiosScopes);
+  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, axiosScopes, skip);
 }
 
 const BUILTIN_OBJECTS = new Set([
@@ -887,7 +892,10 @@ function walkForCalls(
   relations:   Relation[],
   seen:        Set<string>,
   axiosScopes: AxiosScope[],
+  skip?:       (n: SyntaxNode) => boolean,
 ): void {
+  if (skip?.(node)) return;
+
   // Push a fresh axios frame when entering a nested lexical scope; switch the
   // class `this.<field>` proof when entering ANY class node (including one
   // declared inside a method body — the MED2 case extractClass never reaches).
@@ -958,7 +966,7 @@ function walkForCalls(
   }
 
   for (const child of node.namedChildren) {
-    walkForCalls(child, callerId, repo, filePath, relations, seen, axiosScopes);
+    walkForCalls(child, callerId, repo, filePath, relations, seen, axiosScopes, skip);
   }
 
   // Leave the scope: pop the axios frame / restore the outer class proof.

@@ -68,6 +68,13 @@ export class Exported { method() { inExportedMethod(); } }
 const arrow = () => inArrow();
 export const fnExpr = function () { inFnExpr(); };
 topLevel();
+if (flag) { function nestedFn() { inNestedFn(); } }
+{ const nestedArrow = () => inNestedArrow(); }
+describe('suite', () => {
+  function helper() { inHelper(); }
+  class Inner { method() { inInnerMethod(); } }
+  const local = () => inLocalArrow();
+});
 `;
 
 const BUILTINS_AND_HTTP = `
@@ -90,13 +97,18 @@ describe('TypeScript/JavaScript calls outside any function', () => {
 
 		it(`calls in functions, methods, exported functions and classes and function-valued declarators keep their caller (${file.slice(-3)})`, () => {
 			const r = parse(file, KEEP_CALLERS);
-			assert.deepEqual(callees(r, idOf(r, 'file', file)), ['topLevel'], 'only the program-level call is the file\'s');
+			assert.deepEqual(callees(r, idOf(r, 'file', file)), ['describe', 'topLevel'], 'only the calls made at module load are the file\'s');
 			assert.deepEqual(callees(r, idOf(r, 'function', 'decl')), ['inDecl', 'inLocal']);
 			const methods = r.entities.filter(e => e.kind === 'method' && e.name === 'method').map(e => callees(r, e.id)).sort();
-			assert.deepEqual(methods, [['inExportedMethod'], ['inMethod']]);
+			assert.deepEqual(methods, [['inExportedMethod'], ['inInnerMethod'], ['inMethod']]);
 			assert.deepEqual(callees(r, idOf(r, 'function', 'exportedFn')), ['inExportedFn']);
 			assert.deepEqual(callees(r, idOf(r, 'function', 'arrow')), ['inArrow']);
 			assert.deepEqual(callees(r, idOf(r, 'function', 'fnExpr')), ['inFnExpr']);
+			// Declared inside a top-level block or a test callback: still their own caller.
+			assert.deepEqual(callees(r, idOf(r, 'function', 'nestedFn')), ['inNestedFn']);
+			assert.deepEqual(callees(r, idOf(r, 'function', 'nestedArrow')), ['inNestedArrow']);
+			assert.deepEqual(callees(r, idOf(r, 'function', 'helper')), ['inHelper']);
+			assert.deepEqual(callees(r, idOf(r, 'function', 'local')), ['inLocalArrow']);
 		});
 
 		it(`built-ins are skipped and a module-level HTTP call is a CALLS_HTTP from the file entity (${file.slice(-3)})`, () => {

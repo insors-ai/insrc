@@ -42,7 +42,7 @@ export const JobSchema = obj({ id: uuid, kind: str, inputRevision: revision, gen
   status: choices(['running', 'interrupted', 'canceled', 'completed']) });
 export const LearnerSchema = obj({ key: str, source: choices(['github', 'gitlab', 'jira', 'git', 'os']), authority: str, subject: str,
   assurance: choices(['provider-confirmed', 'local-config', 'os-local']), aliases: Type.Array(str, { maxItems: 0 }) });
-export const RecordSchema = obj({ assessmentSchemaVersion: Type.Literal(1), view: ViewSchema, ownerPrincipal: str, learner: LearnerSchema,
+export const RecordSchema = obj({ assessmentSchemaVersion: Type.Literal(1), view: ViewSchema, ownerPrincipal: str, learner: LearnerSchema, preparationRequestId: uuid,
   scopeFingerprint: str, lifecycleGeneration: revision, createdAt: str, updatedAt: str,
   job: Type.Optional(JobSchema), progressCursor: Type.Optional(str) });
 export type AssessmentRecord = Static<typeof RecordSchema>;

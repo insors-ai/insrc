@@ -9,6 +9,8 @@ import { AssessmentError, AttemptSchema, AuditSchema, CommandSchema, DeleteSchem
 import type { AssessmentRecord, AssessmentView, AssessmentScope, AnswerAttempt, CommandEnvelope } from '../shared/understanding.js';
 import type { ResolvedLearner } from './identity.js';
 import { readAssessment, writeAssessment, tupleKey } from './storage.js';
+import { enforcePrivatePaths } from './privacy.js';
+import { initializeAssessmentStorage, listAssessments } from './storage.js';
 import { assertAssessmentSchema } from './storage.js';
 
 export type Owner = Pick<ResolvedLearner, 'ownerPrincipal' | 'learner'>;
@@ -52,10 +54,22 @@ function audit(store: GraphStore, r: AssessmentRecord, kind: string): void {
 export class UnderstandingService {
   private readonly schemas = new DomainSchemas();
   private readonly transitions = new Map<string, TransitionHandler>();
-  private readonly deleted = new Set<string>();
+  private constructor() {}
+  static async open(storagePath: string, socketPath: string): Promise<UnderstandingService> {
+    enforcePrivatePaths(storagePath, socketPath);
+    await initializeAssessmentStorage();
+    const service = new UnderstandingService();
+    await service.recover();
+    return service;
+  }
+  async list(owner: Owner, limit = 50, after?: string): Promise<AssessmentView[]> {
+    return (await listAssessments(owner.ownerPrincipal, limit, after))
+      .filter(r => r.learner.key === owner.learner.key).map(publicView);
+  }
   private readonly listeners = new Map<string, Set<(deleted: boolean) => void>>();
 
-  subscribe(id: string, listener: (deleted: boolean) => void): () => void {
+  async subscribe(owner: Owner, id: string, listener: (deleted: boolean) => void): Promise<() => void> {
+    owned(await getGraphStore(), id, owner);
     const listeners = this.listeners.get(id) ?? new Set();
     listeners.add(listener);
     this.listeners.set(id, listeners);
@@ -104,9 +118,9 @@ export class UnderstandingService {
       }
       store.understandingOwnerIndex.removeSync(tupleKey(r.ownerPrincipal, r.view.id));
       store.understandingScopeIndex.removeSync(tupleKey(r.scopeFingerprint, r.view.id));
+      store.understandingRequest.removeSync(tupleKey('prepare', r.ownerPrincipal, r.learner.key, r.preparationRequestId));
       store.understandingCurrent.removeSync(prefix);
     });
-    this.deleted.add(command.assessmentId);
     this.publish(command.assessmentId, true);
   }
 
@@ -118,27 +132,31 @@ export class UnderstandingService {
 
   // Internal trusted preparation; the RPC layer must obtain authoritative scope from s2/s6.
   async prepare(owner: Owner, input: AssessmentScope, requestId: string): Promise<MutationResult> {
-    if (this.deleted.has(requestId)) throw new AssessmentError('not-found');
     const scope = parseScope(input);
     const learner = parse(LearnerSchema, owner.learner);
     if (scope.learnerKey !== learner.key) throw new AssessmentError('scope-mismatch');
     const command = parse(CommandSchema, { requestId, assessmentId: requestId, expectedRevision: 1, scope });
     const hash = requestHash('prepare', { scope, learner });
     const result = await withWriteTxn(store => {
-      const previous = readAssessment(store, requestId);
+      const prepareKey = tupleKey('prepare', owner.ownerPrincipal, learner.key, requestId);
+      const previousId: unknown = store.understandingRequest.get(prepareKey);
+      if (previousId !== undefined && typeof previousId !== 'string') throw new AssessmentError('schema-unsupported');
+      const previous = previousId === undefined ? undefined : readAssessment(store, previousId as string);
+      if (previousId !== undefined && !previous) throw new AssessmentError('schema-unsupported');
       if (previous) {
-        const r = owned(store, requestId, owner);
-        const cached = parse(DedupSchema, store.understandingRequest.get(tupleKey(requestId, command.requestId)));
+        const r = owned(store, previous!.view.id, owner);
+        const cached = parse(DedupSchema, store.understandingRequest.get(tupleKey(r.view.id, command.requestId)));
         if (cached.hash !== hash) throw new AssessmentError('request-conflict');
         return { view: publicView(r), appliedRevision: cached.appliedRevision };
       }
       const now = new Date().toISOString();
-      const r = parseRecord({ assessmentSchemaVersion: 1, ownerPrincipal: owner.ownerPrincipal, learner,
+      const r = parseRecord({ assessmentSchemaVersion: 1, ownerPrincipal: owner.ownerPrincipal, learner, preparationRequestId: requestId,
         scopeFingerprint: scopeFingerprint(scope), lifecycleGeneration: 1, createdAt: now, updatedAt: now,
-        view: { id: requestId, revision: 1, scope, state: 'preparing', associations: [], completion: 'incomplete',
+        view: { id: randomUUID(), revision: 1, scope, state: 'preparing', associations: [], completion: 'incomplete',
           outcome: 'unassessed', eligibility: 'unavailable' } });
       writeAssessment(store, r);
       audit(store, r, 'prepare');
+      store.understandingRequest.putSync(prepareKey, r.view.id);
       store.understandingRequest.putSync(tupleKey(r.view.id, command.requestId), { hash, appliedRevision: 1 });
       return { view: publicView(r), appliedRevision: 1 };
     });

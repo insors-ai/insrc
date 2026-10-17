@@ -16,7 +16,7 @@ afterEach(async () => { await closeGraphStore(); rmSync(dir, { recursive: true, 
 function record(owner = 'owner'): AssessmentRecord {
   const scope: AssessmentScope = { repoId: 'repo', worktreeId: 'worktree', baseOid: null, stagedTreeOid: 'a'.repeat(40),
     commitMode: 'normal', parentOids: [], learnerKey: 'learner', policyRevision: 'p', evidenceRevision: 'e' };
-  return { assessmentSchemaVersion: 1, learner: { key: 'learner', source: 'git', authority: 'git-email', subject: 'person', assurance: 'local-config', aliases: [] }, ownerPrincipal: owner, scopeFingerprint: scopeFingerprint(scope), lifecycleGeneration: 1,
+  return { assessmentSchemaVersion: 1, preparationRequestId: randomUUID(), learner: { key: 'learner', source: 'git', authority: 'git-email', subject: 'person', assurance: 'local-config', aliases: [] }, ownerPrincipal: owner, scopeFingerprint: scopeFingerprint(scope), lifecycleGeneration: 1,
     createdAt: 'now', updatedAt: 'now', view: { id: randomUUID(), revision: 1, scope, state: 'preparing', associations: [],
       completion: 'incomplete', outcome: 'unassessed', eligibility: 'unavailable' } };
 }

@@ -148,7 +148,7 @@ ACCEPTED exclusiveMaximum (5656 ms) {"x":0}
   - `oneOf`, which the strict form rewrites to the accepted `anyOf`.
 
   This is `CODEX_KEPT_KEYWORDS`. Every other keyword is left out: the refused ones (uniqueItems, contains, not, allOf, if/then/else, propertyNames, minProperties, maxProperties) and any never probed (for example prefixItems, dependentSchemas, unevaluatedItems).
-- **`format`:** only `date-time` is sent as is. Another format is left out when the reply check enforces it (an ajv-formats format name), because codex got no answer for `uri` and `email`. A format the reply check cannot enforce is kept in the copy, so nothing is lost.
+- **`format`:** only `date-time` is sent as is. Any other format the reply check enforces (an ajv-formats format name) is left out, because codex got no answer for `uri` and `email`. A format the reply check cannot enforce is REFUSED before codex is called: it was never probed, so it cannot be sent, and nothing would hold it if it were left out. No source schema uses `format`.
 - **Reply check:** every codex reply is checked against the caller's FULL schema by `validateCodexReply`. That is ajv's draft 2020-12 build with ajv-formats, so prefixItems, dependentSchemas, unevaluatedItems and formats all hold on the reply.
 - **Not changed:** a pure dictionary object (an `additionalProperties` schema with no `properties`) is refused ("properties is required for object schemas"). It has no lossless strict form.
 - **Shared code:** `processSchemaForOpenAIStrict` and `validateAgainstSchema` are unchanged.

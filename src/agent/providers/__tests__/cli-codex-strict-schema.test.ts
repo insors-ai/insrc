@@ -139,8 +139,6 @@ function mixedSchema(): StructuredSchema {
 			deps:     { type: 'object', properties: { a: { type: 'string' } }, dependentSchemas: { a: { properties: { b: { type: 'array', uniqueItems: true } } } } },
 			rest:     { type: 'array', items: { type: 'string' }, unevaluatedItems: { not: { const: 'x' } } },
 			choice:   { oneOf: [{ type: 'object', properties: { k: { type: 'string' } } }, { type: 'null' }] },
-			// A format the reply check cannot enforce stays in the copy.
-			body:     { type: 'string', format: 'markdown' },
 			// Property NAMES that match a refused keyword are data, not keywords.
 			not:         { type: 'string' },
 			uniqueItems: { type: 'boolean' },
@@ -149,7 +147,7 @@ function mixedSchema(): StructuredSchema {
 	};
 }
 
-test('the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out a format codex did not answer when the reply check enforces it, and leaves the caller\'s schema unchanged', () => {
+test('the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out every format but date-time, and leaves the caller\'s schema unchanged', () => {
 	const schema = mixedSchema();
 	const copy = codexStrictSchema(schema) as Record<string, any>;
 	const seen = keywordsIn(copy);
@@ -166,7 +164,6 @@ test('the codex copy of a schema keeps only the keywords codex was probed to acc
 	assert.deepEqual(p.deps, { type: 'object', properties: { a: { type: 'string' } }, required: ['a'], additionalProperties: false }, 'dependentSchemas is left out');
 	assert.deepEqual(p.rest, { type: 'array', items: { type: 'string' } }, 'unevaluatedItems is left out');
 	assert.deepEqual(p.choice, { anyOf: [{ type: 'object', properties: { k: { type: 'string' } }, required: ['k'], additionalProperties: false }, { type: 'null' }] }, 'oneOf is kept as the strict anyOf');
-	assert.deepEqual(p.body, { type: 'string', format: 'markdown' }, 'a format the reply check cannot enforce is kept');
 	assert.deepEqual(p.not, { type: 'string' }, 'a property named not is kept');
 	assert.deepEqual(p.uniqueItems, { type: 'boolean' }, 'a property named uniqueItems is kept');
 	assert.deepEqual(copy['required'], Object.keys(mixedSchema().properties as object));
@@ -252,5 +249,20 @@ test('a codex reviewer session rejects a reply that breaks a keyword (also insid
 		dupFirst.cleanup();
 		good.cleanup();
 		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test('a schema with a format the reply check cannot enforce is refused before codex is called', async () => {
+	const schema: StructuredSchema = { type: 'object', properties: { body: { type: 'string', format: 'markdown' } } };
+	assert.throws(() => codexStrictSchema(schema), /codex cannot be given format 'markdown'/);
+	const f = fakeCodex();
+	try {
+		await assert.rejects(
+			new CliProvider({ kind: 'codex', binPath: f.bin }).completeStructured([{ role: 'user', content: 'x' }], schema),
+			/codex cannot be given format 'markdown'/,
+		);
+		assert.throws(() => f.seen(), /ENOENT/, 'codex was not called');
+	} finally {
+		f.cleanup();
 	}
 });

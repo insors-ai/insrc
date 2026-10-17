@@ -361,10 +361,11 @@ const CHECKED_FORMATS: ReadonlySet<string> = new Set(formatNames);
 
 /**
  * The copy of `schema` that codex's strict mode accepts: only the kept
- * keywords, and no `format` codex was not seen to answer that the reply check
- * enforces (a format the reply check cannot enforce is kept, so nothing is
- * lost), then the strict form of `processSchemaForOpenAIStrict`. The caller's
- * schema is not modified (ISSUE-487ad7a67474d321).
+ * keywords and no `format` but `date-time`, then the strict form of
+ * `processSchemaForOpenAIStrict`. The caller's schema is not modified
+ * (ISSUE-487ad7a67474d321). Throws for a `format` the reply check cannot
+ * enforce: it can neither be sent (never probed) nor left out (nothing would
+ * hold it).
  */
 export function codexStrictSchema(schema: StructuredSchema): StructuredSchema {
 	return processSchemaForOpenAIStrict(keepCodexKeywords(schema) as StructuredSchema);
@@ -376,7 +377,12 @@ function keepCodexKeywords(node: unknown): unknown {
 	const out: Record<string, unknown> = {};
 	for (const [key, value] of Object.entries(node)) {
 		if (!CODEX_KEPT_KEYWORDS.has(key)) continue;
-		if (key === 'format' && typeof value === 'string' && !CODEX_FORMATS.has(value) && CHECKED_FORMATS.has(value)) continue;
+		if (key === 'format' && typeof value === 'string' && !CODEX_FORMATS.has(value)) {
+			if (!CHECKED_FORMATS.has(value)) {
+				throw new Error(`structured-output: codex cannot be given format '${value}': it was never probed against codex, and the reply check does not know it, so leaving it out would drop the constraint`);
+			}
+			continue;
+		}
 		if ((SCHEMA_MAPS as readonly string[]).includes(key) && isObject(value)) {
 			out[key] = Object.fromEntries(Object.entries(value).map(([name, sub]) => [name, keepCodexKeywords(sub)]));
 		} else if ((SCHEMA_VALUES as readonly string[]).includes(key)) {

@@ -13,7 +13,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { createElement } from 'react';
 import { render } from 'ink-testing-library';
 
@@ -76,7 +78,31 @@ async function openModal(f: Fixture) {
 	return r;
 }
 
-test('makeServices exposes catalog, repoSettings and setRepoSetting and the fixtures satisfy Services', () => {
+const HERE = fileURLToPath(new URL('.', import.meta.url));
+const CONFIG_MEMBERS = /catalog|repoSettings|setRepoSetting|Services\['config'\]/;
+
+/**
+ * Type-checks `files` with the project's compiler options and returns the diagnostic lines. The project tsconfig
+ * excludes __tests__, so the test fixtures are not covered by the normal typecheck; this runs tsc over them
+ * explicitly. (The fixtures also carry older, unrelated drift, so the caller filters to the config members.)
+ */
+function typecheck(files: readonly string[]): string[] {
+	const cfg = `${HERE}tsconfig.fixtures.${process.pid}.json`;
+	writeFileSync(cfg, JSON.stringify({
+		extends: '../../../tsconfig.json',
+		compilerOptions: { noEmit: true, rootDir: '../../..', declaration: false, declarationMap: false, sourceMap: false },
+		include: [], exclude: [], files,
+	}));
+	try {
+		execFileSync('npx', ['tsc', '-p', cfg], { cwd: HERE, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+		return [];
+	} catch (e) {
+		const out = (e as { stdout?: string }).stdout ?? '';
+		return out.split('\n').filter(l => /error TS\d+/.test(l));
+	} finally { rmSync(cfg, { force: true }); }
+}
+
+test('makeServices exposes catalog, repoSettings and setRepoSetting and the fixtures satisfy Services', { timeout: 120_000 }, () => {
 	const svc = makeServices();
 	for (const member of ['catalog', 'repoSettings', 'setRepoSetting'] as const) {
 		assert.equal(typeof svc.config[member], 'function', `config.${member}`);
@@ -91,11 +117,19 @@ test('makeServices exposes catalog, repoSettings and setRepoSetting and the fixt
 	assert.match(source, /rpc<SettingsResult>\('repo\.settings\.get', \{ repo \}\)/);
 	assert.match(source, /rpc<SettingsResult>\('repo\.settings\.set', \{ repo, key, value \}\)/);
 
-	// The four fixture files type-check against Services (tsc runs over them) and carry the three members.
-	for (const file of ['command.test.ts', 'tui.test.ts']) {
-		const text = readFileSync(new URL(`./${file}`, import.meta.url), 'utf8');
-		for (const member of ['catalog:', 'repoSettings:', 'setRepoSetting:']) assert.ok(text.includes(member), `${file} has ${member}`);
-	}
+	// One tsc run over the two literal fixtures (command, tui) and a probe that lacks the members. No diagnostic
+	// may concern the config members in the fixtures (services and team-service build their Services from
+	// makeServices, covered above); the probe proves the check does flag a missing member.
+	const probeName = `zz-config-probe.${process.pid}.ts`;
+	const probe = `${HERE}${probeName}`;
+	writeFileSync(probe, "import type { Services } from '../services/index.js';\nexport const config: Services['config'] = { show: async () => ({}), write: async () => ({ ok: true }), reload: async () => ({ ok: true }) };\n");
+	let diagnostics: string[];
+	try { diagnostics = typecheck(['./command.test.ts', './tui.test.ts', `./${probeName}`]); } finally { rmSync(probe, { force: true }); }
+	const concerning = diagnostics.filter(d => CONFIG_MEMBERS.test(d));
+	assert.deepEqual(concerning.filter(d => !d.startsWith(probeName)), [], 'a fixture does not satisfy Services[config]');
+	const flagged = concerning.filter(d => d.startsWith(probeName));
+	assert.ok(flagged.length > 0, 'a fixture missing the three members is reported');
+	assert.match(flagged.join('\n'), /catalog, repoSettings, setRepoSetting/);
 });
 
 test('the modal lists payload rows, edits local rows only and shows an error message', async () => {

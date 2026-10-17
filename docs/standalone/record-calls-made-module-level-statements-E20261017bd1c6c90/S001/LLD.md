@@ -199,3 +199,23 @@ The expression_statement part of a1 only.
 ## 9. Open questions
 
 - ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the narrowed issue's fix intent (ac1 TS calls outside an extracted function are credited to the nearest entity, ac2 a TS test file's calls reach the code-review grounding, ac3 the review recognises test files of every supported language) [c5].
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 5 hold** · template `design-issue` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-17T09:02:37.523Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| fix-targets-defect | The narrowed scope leaves out none of the approved ISSUE fix intent. | The repository ISSUE still says: 'The same is checked, and fixed where it applies, for the other language parsers.' The supplied design cites stakeholder feedback de8a2c97 narrowing that scope, but the inspected repository artifacts do not contain that feedback or a corresponding scope transfer. Analyzer access also failed with invalid_json_schema. [files: docs/standalone/record-calls-made-module-level-statements-E20261017bd1c6c90/ISSUE.md, docs/standalone/record-calls-made-module-level-statements-E20261017bd1c6c90/S001/LLD.md] | Attach the narrowing decision or update the ISSUE and identify the destination Story for deferred parser work. |

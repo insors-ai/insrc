@@ -101,28 +101,22 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 
 	if (tree.stdout.trim().length === 0) {
 		// The policy file is not on the default branch: a deliberate removal reads as solo again.
+		// If the remote HEAD may still name another retained branch (which could still hold an old policy), it is not
+		// cosmetic any more: fix it BEFORE touching the record, and if that fails leave everything as it was and fail.
+		if (remoteHeadMayBeStale(localGit, repo, remote, branch, deadline)) {
+			const fixed = setRemoteHead(localGit, repo, remote, branch, deadline);
+			if (!fixed.ok) {
+				return fail(`the policy file is absent on '${branch}', but refs/remotes/${remote}/HEAD may still point at another branch and could not be updated (${fixed.warning}); `
+					+ 'the record was kept, so run the refresh again');
+			}
+		}
 		try {
 			removeSighting(repo, opts.teamDir);
 		} catch (err) {
 			return fail(`the policy file is absent on '${branch}' but the stored record could not be removed (${err instanceof Error ? err.message : String(err)}); the next refresh retries`);
 		}
 		const head = setRemoteHead(localGit, repo, remote, branch, deadline);
-		if (!head.ok) {
-			// A remote HEAD that still points at another retained branch would let the reader find that branch's old policy
-			// now that the record is gone: put the record back and fail closed rather than resurrect it.
-			if (remoteHeadMayBeStale(localGit, repo, remote, branch, deadline)) {
-				let restored = true;
-				if (sighting !== undefined) {
-					try { write(repo, sighting, opts.teamDir); } catch (err) {
-						restored = false;
-						log.error({ err: err instanceof Error ? err.message : String(err) }, 'could not restore the policy record');
-					}
-				}
-				return fail(`the policy file is absent on '${branch}', but refs/remotes/${remote}/HEAD may still point at another branch and could not be updated (${head.warning}); `
-					+ (restored ? 'the record was kept, so run the refresh again' : 'the record could not be put back, so the old branch\'s policy may be read until you run the refresh again'));
-			}
-			warnings.push(head.warning);
-		}
+		if (!head.ok) warnings.push(head.warning);
 		return { ok: true, value: { kind: 'absent', branch, warnings } };
 	}
 

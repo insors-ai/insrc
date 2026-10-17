@@ -291,7 +291,7 @@ test('a git failure while looking for the policy file is not mistaken for a remo
 	} finally { f.cleanup(); }
 });
 
-test('removal fails closed when the remote HEAD cannot be inspected or the record cannot be put back', async () => {
+test('removal never deletes the record before a possibly stale remote HEAD is fixed', async () => {
 	const f = makeFixture();
 	try {
 		const { bare, work } = teamOrigin(f);
@@ -302,17 +302,20 @@ test('removal fails closed when the remote HEAD cannot be inspected or the recor
 		const headLock = join(clone, '.git', 'refs', 'remotes', 'origin', 'HEAD.lock');
 		writeFileSync(headLock, '');
 
-		// The HEAD update fails and the HEAD cannot be inspected either: unknown, so the record is kept.
+		// The HEAD cannot be inspected (unknown) and cannot be updated: nothing was deleted, so there is nothing to put back.
 		const noInspect = (repo: string, args: readonly string[]): { ok: false; stderr: string } | { ok: true; stdout: string } =>
 			args[0] === 'symbolic-ref' && args.includes('-q') ? { ok: false, stderr: 'the refresh deadline passed' } : runGit(repo, args);
-		const unknown = await refreshPolicy(clone, { teamDir: f.teamDir, local: noInspect });
+		let writes = 0;
+		const countingWrite = (): never => { writes++; throw new Error('must not be called'); };
+		const unknown = await refreshPolicy(clone, { teamDir: f.teamDir, local: noInspect, write: countingWrite });
 		assert.equal(unknown.ok, false);
-		assert.equal(readSighting(clone, f.teamDir).kind, 'valid');
+		assert.equal(writes, 0, 'no restore was needed');
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the record was never deleted');
 
-		// Putting the record back fails too: the refresh still fails, and says the record could not be put back.
-		const failingWrite = (): never => { throw new Error('disk full'); };
-		const lost = await refreshPolicy(clone, { teamDir: f.teamDir, local: noInspect, write: failingWrite });
-		assert.equal(lost.ok, false);
-		if (!lost.ok) assert.match(lost.reason, /could not be put back/);
+		// Once the HEAD can be updated, the removal completes.
+		rmSync(headLock);
+		const done = await refreshPolicy(clone, { teamDir: f.teamDir, local: noInspect });
+		assert.ok(done.ok && done.value.kind === 'absent');
+		assert.equal(readSighting(clone, f.teamDir).kind, 'absent');
 	} finally { f.cleanup(); }
 });

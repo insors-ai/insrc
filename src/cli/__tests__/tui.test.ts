@@ -89,6 +89,9 @@ function fakeServices(): Services {
 			show:   async () => ({}),
 			write:  async () => ({ ok: true }),
 			reload: async () => ({ ok: true }),
+			catalog:        async () => ({ options: [], groups: [], roles: [], tierNames: [], values: {}, repoFields: [] }),
+			repoSettings:   async () => ({ ok: false, error: { code: 'repo-not-registered', message: 'not available in this fixture' } }),
+			setRepoSetting: async () => ({ ok: false, error: { code: 'repo-not-registered', message: 'not available in this fixture' } }),
 		},
 		team: {
 			teamInit:    async () => '',

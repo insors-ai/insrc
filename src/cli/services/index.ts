@@ -80,6 +80,9 @@ export interface Services {
 		show(): Promise<Record<string, unknown>>;
 		write(path: string | string[], value: unknown): Promise<{ ok: boolean }>;
 		reload(): Promise<{ ok: boolean; reloaded?: unknown }>;
+		catalog(): Promise<import('../../config/settings-catalog.js').SettingsCatalogPayload>;
+		repoSettings(repo: string): Promise<import('../../daemon/repo-settings.js').SettingsResult>;
+		setRepoSetting(repo: string, key: string, value: string | boolean | null): Promise<import('../../daemon/repo-settings.js').SettingsResult>;
 	};
 	readonly team: {
 		teamInit(repoPath: string): Promise<string>;
@@ -137,6 +140,9 @@ export function makeServices(): Services {
 			show:   config.showConfig,
 			write:  config.writeConfig,
 			reload: config.reloadConfig,
+			catalog:        config.getCatalog,
+			repoSettings:   config.getRepoSettings,
+			setRepoSetting: config.setRepoSetting,
 		},
 		team: {
 			teamInit:    team.teamInit,

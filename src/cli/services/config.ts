@@ -9,6 +9,8 @@
  * object, `config.write` sets a dot-path, `config.reload` re-reads it.
  */
 
+import type { SettingsCatalogPayload } from '../../config/settings-catalog.js';
+import type { SettingsResult } from '../../daemon/repo-settings.js';
 import { rpc } from '../client.js';
 
 export function showConfig(): Promise<Record<string, unknown>> {
@@ -25,4 +27,19 @@ export function writeConfig(path: string | string[], value: unknown): Promise<{ 
 
 export function reloadConfig(): Promise<{ ok: boolean; reloaded?: unknown }> {
 	return rpc<{ ok: boolean; reloaded?: unknown }>('config.reload');
+}
+
+/** The self-describing catalog, including `repoFields` (the repo-scoped tracker rows). */
+export function getCatalog(): Promise<SettingsCatalogPayload> {
+	return rpc<SettingsCatalogPayload>('config.catalog');
+}
+
+/** A repo's tracker settings, sign-in status and policy rows. Business errors come back as data. */
+export function getRepoSettings(repo: string): Promise<SettingsResult> {
+	return rpc<SettingsResult>('repo.settings.get', { repo });
+}
+
+/** Set (or, with `null`, clear) one local tracker row of a repo. The daemon is the only writer of github.json. */
+export function setRepoSetting(repo: string, key: string, value: string | boolean | null): Promise<SettingsResult> {
+	return rpc<SettingsResult>('repo.settings.set', { repo, key, value });
 }

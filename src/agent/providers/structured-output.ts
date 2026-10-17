@@ -368,7 +368,33 @@ const CHECKED_FORMATS: ReadonlySet<string> = new Set(formatNames);
  * hold it).
  */
 export function codexStrictSchema(schema: StructuredSchema): StructuredSchema {
+	const unchecked = uncheckedFormat(schema);
+	if (unchecked !== undefined) {
+		throw new Error(`structured-output: codex cannot be given format '${unchecked}': it was never probed against codex, and the reply check does not know it, so leaving it out would drop the constraint`);
+	}
 	return processSchemaForOpenAIStrict(keepCodexKeywords(schema) as StructuredSchema);
+}
+
+/** Keywords whose value is data, not a schema. */
+const DATA_KEYWORDS: ReadonlySet<string> = new Set(['enum', 'const', 'default', 'examples']);
+
+/** The first `format` anywhere in the schema, kept branches or not, that the reply check does not know. */
+function uncheckedFormat(node: unknown): string | undefined {
+	if (Array.isArray(node)) {
+		for (const item of node) { const f = uncheckedFormat(item); if (f !== undefined) return f; }
+		return undefined;
+	}
+	if (!isObject(node)) return undefined;
+	for (const [key, value] of Object.entries(node)) {
+		if (DATA_KEYWORDS.has(key)) continue;
+		if (key === 'format' && typeof value === 'string') {
+			if (!CHECKED_FORMATS.has(value)) return value;
+			continue;
+		}
+		const f = uncheckedFormat(value);
+		if (f !== undefined) return f;
+	}
+	return undefined;
 }
 
 function keepCodexKeywords(node: unknown): unknown {
@@ -377,12 +403,7 @@ function keepCodexKeywords(node: unknown): unknown {
 	const out: Record<string, unknown> = {};
 	for (const [key, value] of Object.entries(node)) {
 		if (!CODEX_KEPT_KEYWORDS.has(key)) continue;
-		if (key === 'format' && typeof value === 'string' && !CODEX_FORMATS.has(value)) {
-			if (!CHECKED_FORMATS.has(value)) {
-				throw new Error(`structured-output: codex cannot be given format '${value}': it was never probed against codex, and the reply check does not know it, so leaving it out would drop the constraint`);
-			}
-			continue;
-		}
+		if (key === 'format' && typeof value === 'string' && !CODEX_FORMATS.has(value)) continue;   // checked on the reply
 		if ((SCHEMA_MAPS as readonly string[]).includes(key) && isObject(value)) {
 			out[key] = Object.fromEntries(Object.entries(value).map(([name, sub]) => [name, keepCodexKeywords(sub)]));
 		} else if ((SCHEMA_VALUES as readonly string[]).includes(key)) {

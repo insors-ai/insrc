@@ -252,9 +252,16 @@ test('a codex reviewer session rejects a reply that breaks a keyword (also insid
 	}
 });
 
-test('a schema with a format the reply check cannot enforce is refused before codex is called', async () => {
+test('a schema with a format the reply check cannot enforce, anywhere including a branch the copy leaves out, is refused before codex is called; the same word as data or as a property name is not', async () => {
 	const schema: StructuredSchema = { type: 'object', properties: { body: { type: 'string', format: 'markdown' } } };
 	assert.throws(() => codexStrictSchema(schema), /codex cannot be given format 'markdown'/);
+	const inDroppedBranch: StructuredSchema = { type: 'object', properties: { body: { allOf: [{ type: 'string', format: 'markdown' }] } } };
+	assert.throws(() => codexStrictSchema(inDroppedBranch), /codex cannot be given format 'markdown'/);
+	const asData: StructuredSchema = { type: 'object', properties: {
+		format: { type: 'string', enum: ['markdown'] },
+		opts:   { type: 'object', properties: { f: { type: 'string' } }, default: { format: 'markdown' }, examples: [{ format: 'markdown' }] },
+	} };
+	assert.doesNotThrow(() => codexStrictSchema(asData));
 	const f = fakeCodex();
 	try {
 		await assert.rejects(

@@ -151,7 +151,32 @@ export async function writeDocSummary(
 			'cannot summarise an unregistered entity',
 		);
 	}
-	await withWriteTxn(s => { putDocSummaryInTxn(s, u64, repo, summary); });
+	await withWriteTxn(s => {
+		const repoId = lookupRepoIdInTxn(s, repo);
+		if (repoId === undefined) {
+			throw new Error(
+				`writeDocSummary: repo '${repo}' is not registered -- ` +
+				'cannot summarise a doc in an unregistered repo',
+			);
+		}
+		const primaryKey = encodeEntityKey(u64);
+		// Best-effort: if the entity was previously summarised under a
+		// different repoId, drop the stale secondary index entry. Real
+		// re-repo (file moved to a different registered workspace) is
+		// rare but the daemon can't distinguish it from re-summarise
+		// without this check.
+		const existingBuf = s.docSummary.get(primaryKey) as Buffer | undefined;
+		if (existingBuf !== undefined) {
+			// The old row lived under SOME repoId; we don't record it
+			// in the value, so we can't know without scanning. But
+			// same-repo re-summarise is the common case and put() on
+			// an existing dupSort key is a no-op. Cross-repo moves
+			// would leak an index entry; deferred to a future
+			// consistency sweep. Not user-visible.
+		}
+		s.docSummary.put(primaryKey, encodeDocSummary(summary));
+		s.docSummaryByRepo.put(encodeByRepoKey(repoId, u64), Buffer.alloc(0));
+	});
 }
 
 /** What `writeDocSummaryIfCurrent` did. */
@@ -193,7 +218,7 @@ export async function writeDocSummaryIfCurrent(
 	});
 }
 
-/** The rows `writeDocSummary` writes, inside the caller's write transaction. */
+/** The rows `writeDocSummary` writes (primary + by-repo index), inside the caller's write transaction. */
 function putDocSummaryInTxn(s: GraphStore, u64: bigint, repo: string, summary: DocSummary): void {
 	const repoId = lookupRepoIdInTxn(s, repo);
 	if (repoId === undefined) {
@@ -202,22 +227,7 @@ function putDocSummaryInTxn(s: GraphStore, u64: bigint, repo: string, summary: D
 			'cannot summarise a doc in an unregistered repo',
 		);
 	}
-	const primaryKey = encodeEntityKey(u64);
-	// Best-effort: if the entity was previously summarised under a
-	// different repoId, drop the stale secondary index entry. Real
-	// re-repo (file moved to a different registered workspace) is
-	// rare but the daemon can't distinguish it from re-summarise
-	// without this check.
-	const existingBuf = s.docSummary.get(primaryKey) as Buffer | undefined;
-	if (existingBuf !== undefined) {
-		// The old row lived under SOME repoId; we don't record it
-		// in the value, so we can't know without scanning. But
-		// same-repo re-summarise is the common case and put() on
-		// an existing dupSort key is a no-op. Cross-repo moves
-		// would leak an index entry; deferred to a future
-		// consistency sweep. Not user-visible.
-	}
-	s.docSummary.put(primaryKey, encodeDocSummary(summary));
+	s.docSummary.put(encodeEntityKey(u64), encodeDocSummary(summary));
 	s.docSummaryByRepo.put(encodeByRepoKey(repoId, u64), Buffer.alloc(0));
 }
 

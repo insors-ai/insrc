@@ -103,10 +103,8 @@ function setAssignee(issue: IssueRef, who: string | null): PortResult<void> {
 		const hasWho = who !== null && current.logins.some(l => sameLogin(l, who));
 		if (others.length > 0) runGh(['issue', 'edit', current.number, '--repo', repoArg, '--remove-assignee', others.join(',')], { discardOutput: true });
 		if (who !== null && !hasWho) runGh(['issue', 'edit', current.number, '--repo', repoArg, '--add-assignee', who], { discardOutput: true });
-		// Verified by a read in every case: after a change that is a fresh re-read; when
-		// nothing needed changing, the read above already shows the final set.
-		const changed = others.length > 0 || (who !== null && !hasWho);
-		const after = changed ? readAssignees(issue).logins : current.logins;
+		// The outcome is always verified by a fresh re-read (a read is not a change call).
+		const after = readAssignees(issue).logins;
 		const ok = who === null ? after.length === 0 : after.length === 1 && sameLogin(after[0]!, who);
 		if (!ok) {
 			throw new GhCommandError('rejected', `${issue} assignees are [${after.join(', ')}] after the update, expected ${who === null ? 'none' : who}`);

@@ -241,7 +241,7 @@ test('readAssignee returns the single login, null when unassigned and rejected f
 	if (!several.ok) { assert.equal(several.kind, 'rejected'); assert.match(several.reason, /alice, bob/); }
 
 	const { calls } = fakeAssigneeGh(['alice']);
-	for (const bad of ['not-a-ref', 'o/r', '#5', 'o/r#', '/r#5', 'o/#5', 'o/r#abc', 'o/r#5 ']) {
+	for (const bad of ['not-a-ref', 'o/r', '#5', 'o/r#', '/r#5', 'o/#5', 'o/r#abc', 'o/r#5 ', 'o/r#5\n', '\no/r#5']) {
 		const r = port.readAssignee(bad);
 		assert.equal(r.ok, false, bad);
 		if (!r.ok) assert.equal(r.kind, 'rejected');
@@ -255,8 +255,7 @@ test('setAssignee from zero, one and several assignees ends with exactly the req
 		const gh = fakeAssigneeGh(initial);
 		assert.deepEqual(port.setAssignee('o/r#5', 'alice'), { ok: true, value: undefined }, JSON.stringify(initial));
 		assert.deepEqual(gh.now(), ['alice'], JSON.stringify(initial));
-		const needsChange = !(initial.length === 1 && initial[0] === 'alice');
-		assert.equal(gh.calls.filter(c => c[1] === 'view').length, needsChange ? 2 : 1, `read, then a re-read after a change: ${JSON.stringify(initial)}`);
+		assert.equal(gh.calls.filter(c => c[1] === 'view').length, 2, `read, then a re-read: ${JSON.stringify(initial)}`);
 	}
 });
 
@@ -265,11 +264,12 @@ test('setAssignee makes no change call when already right and clears for null', 
 	const same = fakeAssigneeGh(['Alice']);
 	assert.equal(port.setAssignee('o/r#5', 'alice').ok, true);   // logins compare case-insensitively
 	assert.equal(same.calls.filter(isEdit).length, 0);
-	assert.equal(same.calls.filter(c => c[1] === 'view').length, 1, 'the single read verifies the already-right set');
+	assert.equal(same.calls.filter(c => c[1] === 'view').length, 2, 'the outcome is re-read even when no change was needed');
 
 	const none = fakeAssigneeGh([]);
 	assert.equal(port.setAssignee('o/r#5', null).ok, true);
 	assert.equal(none.calls.filter(isEdit).length, 0);
+	assert.equal(none.calls.filter(c => c[1] === 'view').length, 2);
 
 	const clear = fakeAssigneeGh(['alice', 'bob']);
 	assert.equal(port.setAssignee('o/r#5', null).ok, true);

@@ -92,7 +92,19 @@
     "nextAction": {
       "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"c2ba6fa62a148ed1\",\"storyId\":\"s13\"}",
       "description": "Approve the HLD amendment (`AMD-c2ba6fa62a148ed1-8`) and the updated Epic, then run `design.story` for the new Story `s13` to produce its LLD."
-    }
+    },
+    "feedback": [
+      {
+        "id": "1a8d7fc2",
+        "author": "Subho Ghosh (stakeholder, chat 2026-10-17)",
+        "timestamp": "2026-10-17T15:03:32.462Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S013/EXT.md"
+        },
+        "comment": "Stakeholder decision, 2026-10-17 (chat): s13 is designed around a persistent unresolved-edge map, not dependency ordering.\n\nDesign: each file is parsed and stored as it arrives; every edge it cannot resolve is kept in a persistent map in the store keyed by what it awaits (repository, kind, name, or the awaited id). When a later file stores an entity, the map is looked up by that entity's name/id; each waiting edge is checked with the same visibility rule cross-file resolution uses (the caller imports the file, reaches it through a re-export, or for Go/JVM shares its package), resolved when exactly one visible candidate exists (ambiguous with candidates when several do), and removed from the map. Reverse direction: when a file is re-indexed or deleted, every resolved edge pointing into its entities goes back into the map instead of vanishing, and is re-resolved when the file's new entities are stored. No indexing order and no dependency discovery; applies to every supported language; language-specific gaps (Kotlin package mapping, JVM callee naming) stay with s12. Depth-first dependency ordering was considered and rejected: import cycles, import-less same-package dependencies and parse-only discoverable targets (Kotlin/Scala) make it unreliable.\n\nAdded acceptance criteria:\n\nac5 - Given file A calls a function that file B defines, and A is indexed before B; when B arrives through a file event; then A's call is an edge, as after a full index, with no repository scan.\n\nac6 - Given A's call to B's function is an edge; when B is edited (re-indexed) or deleted and re-created; then A's call is an edge again once B's new entities are stored, and while B's function does not exist the call is pending, never lost.\n\nEvidence (experiments 2026-10-17 against the real parser and resolver over a temporary store): indexing a.ts (calls foo) before b.ts (defines foo) leaves foo with no callers after both settles and after a whole-repository pass; after a first index where foo's callers were [a], editing and re-indexing b.ts leaves foo with no callers, also after a whole-repository pass.",
+        "kind": "feedback"
+      }
+    ]
   },
   "citations": [
     {

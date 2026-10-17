@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-10-17T13:09:28.300Z  ·  **Updated:** 2026-10-17T13:37:24.133Z
+**Standalone:** no  ·  **Created:** 2026-10-17T13:09:28.300Z  ·  **Updated:** 2026-10-17T13:46:11.657Z
 
-**Commit:** d95a0c5a
+**Commit:** 22bf2098
 
 ## Summary
 
-Activated service after mandatory privacy/recovery/role checks, persisted installation identity, and stopped watches before bounded write flush and store closure. Existing 20-second and locks-lost behavior unchanged. 37 focused/regression cases and typecheck pass; baseline failures remain recorded.
+Replaced standalone sentinel with canonical DEF/PLAN/BUILD artifacts in the assessment's actual repository, loaded through real workflow.delivery. Assert completed story/task presence and byte-identical artifacts plus identical delivery snapshots after crash/recovery/deletion. Acceptance and typecheck pass. Role ordering/extension declarations are required regression corrections for t7, within t8's explicit affected-suite pass requirement and instruction to finish broken callers/tests; no additional feature. Full sweep evidence records 3 accepted baseline failures plus 2 now-fixed role regressions.
 
 ## Tasks validated
 
@@ -19,11 +19,10 @@ Activated service after mandatory privacy/recovery/role checks, persisted instal
 - ✓ `t5`
 - ✓ `t6`
 - ✓ `t7`
+- ✓ `t8`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/analyze/summariser/driver.ts` — **insrc-build** (2026-10-17T13:37:24.133Z)
-- `src/db/__tests__/doc-summaries-lmdb.test.ts` — **insrc-build** (2026-10-17T13:37:24.133Z)
-- `src/db/doc-summaries.ts` — **insrc-build** (2026-10-17T13:37:24.133Z)
+- `src/indexer/index.ts` — **insrc-build** (2026-10-17T13:46:11.657Z)

@@ -4,7 +4,7 @@
     "epicHash": "670419c4ad8bea8e",
     "storyId": "s1",
     "createdAt": "2026-10-17T13:09:28.300Z",
-    "updatedAt": "2026-10-17T13:37:24.133Z",
+    "updatedAt": "2026-10-17T13:46:11.657Z",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
     "epicSlug": "understand-changes-before-committing"
   },
@@ -491,6 +491,83 @@
               },
               {
                 "title": "Socket write flushing is bounded and settles disconnected writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "22bf2098",
+        "ranAt": "2026-10-17T13:46:11.657Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "All three ACs: durability, unchanged delivery and no false pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/acceptance.test.ts",
+                "title": "Crash recovery preserves personal history, leaves delivery unchanged and never grants a pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/contracts.test.ts",
+                "title": "Published version one consumer fixtures match runtime contracts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Build and affected storage, server, shutdown and role regression suites",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/T008-build-evidence.md; /tmp/insrc-understanding-final-build.log; /tmp/insrc-understanding-final-affected.log; /tmp/insrc-understanding-final-integration-fixes.log"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1027,
+            "titles": [
+              {
+                "title": "Crash recovery preserves personal history, leaves delivery unchanged and never grants a pass",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/understanding/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 422,
+            "titles": [
+              {
+                "title": "Scope fingerprint covers every exact field and strict validation rejects forged input",
+                "result": "pass"
+              },
+              {
+                "title": "Submitted confidence is preserved and public projections exclude private fields",
+                "result": "pass"
+              },
+              {
+                "title": "Nested scopes and transport versions fail closed on every envelope",
+                "result": "pass"
+              },
+              {
+                "title": "Published version one consumer fixtures match runtime contracts",
                 "result": "pass"
               }
             ],

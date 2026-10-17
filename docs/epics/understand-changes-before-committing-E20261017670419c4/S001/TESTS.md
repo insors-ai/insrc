@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -173,3 +173,25 @@ Run at 2026-10-17T13:37:24.133Z on commit `d95a0c5a`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/shutdown-store-failure.test.ts` | 0 | 5 | 8.9 s |  |
 | `src/daemon/__tests__/understanding-rpc.test.ts` | 0 | 5 | 3.2 s |  |
+
+## t8
+
+Run at 2026-10-17T13:46:11.657Z on commit `22bf2098`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**integration: All three ACs: durability, unchanged delivery and no false pass**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Crash recovery preserves personal history, leaves delivery unchanged and never grants a pass | `src/understanding/__tests__/acceptance.test.ts` |
+| pass | Published version one consumer fixtures match runtime contracts | `src/understanding/__tests__/contracts.test.ts` |
+
+**smoke: Build and affected storage, server, shutdown and role regression suites**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/understand-changes-before-committing-E20261017670419c4/S001/T008-build-evidence.md; /tmp/insrc-understanding-final-build.log; /tmp/insrc-understanding-final-affected.log; /tmp/insrc-understanding-final-integration-fixes.log
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/understanding/__tests__/acceptance.test.ts` | 0 | 1 | 1 s |  |
+| `src/understanding/__tests__/contracts.test.ts` | 0 | 4 | 0.4 s |  |

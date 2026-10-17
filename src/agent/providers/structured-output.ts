@@ -29,6 +29,7 @@
  */
 
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
+import ajvFormats from 'ajv-formats';
 import { getLogger } from '../../shared/logger.js';
 import { ModelCallFailedError } from './model-call-error.js';
 import type { StructuredSchema } from '../../shared/types.js';
@@ -82,9 +83,27 @@ export function validateAgainstSchema<T>(
 	schema: StructuredSchema,
 	raw:    unknown,
 ): ValidationResult<T> {
+	return validateWith<T>(ajv, schema, raw);
+}
+
+/**
+ * The check for a codex reply. Unlike `validateAgainstSchema` it enforces
+ * `format`: the copy codex is given leaves formats out (`codexStrictSchema`),
+ * so this check is where they hold (ISSUE-487ad7a67474d321). A format name
+ * ajv-formats does not define is not enforced here or anywhere else.
+ */
+export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): ValidationResult<T> {
+	return validateWith<T>(codexReplyAjv, schema, raw);
+}
+
+const codexReplyAjv = new Ajv({ allErrors: true, useDefaults: false, removeAdditional: false, strict: false });
+// A CommonJS module: under NodeNext its default import is the whole module, whose `default` is the plugin.
+ajvFormats.default(codexReplyAjv);
+
+function validateWith<T>(instance: Ajv, schema: StructuredSchema, raw: unknown): ValidationResult<T> {
 	let validate: ValidateFunction;
 	try {
-		validate = ajv.compile(schema);
+		validate = instance.compile(schema);
 	} catch (err) {
 		return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] };
 	}

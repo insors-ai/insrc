@@ -175,39 +175,52 @@ test('the analyzer bundle schema reaches codex without uniqueItems or any other 
 	}
 });
 
-/** A schema whose only constraint codex is not given: the items must be distinct. */
+/** A schema with two constraints codex is not given: the items must be distinct, and `site` must be a URI. */
 const DISTINCT: StructuredSchema = {
-	type: 'object', required: ['tags'], additionalProperties: false,
-	properties: { tags: { type: 'array', items: { type: 'string' }, uniqueItems: true } },
+	type: 'object', required: ['tags', 'site'], additionalProperties: false,
+	properties: { tags: { type: 'array', items: { type: 'string' }, uniqueItems: true }, site: { type: 'string', format: 'uri' } },
 };
+const GOOD = { tags: ['a', 'b'], site: 'https://example.com/x' };
 
-test('a codex structured completion rejects a reply that breaks a constraint left out of the codex copy, and accepts one that meets it', async () => {
-	const bad = fakeCodex({ tags: ['a', 'a'] });
-	const good = fakeCodex({ tags: ['a', 'b'] });
+test('a codex structured completion rejects a reply that breaks a keyword or a format left out of the codex copy, and accepts one that meets them', async () => {
+	const dup = fakeCodex({ ...GOOD, tags: ['a', 'a'] });
+	const notUri = fakeCodex({ ...GOOD, site: 'not a uri' });
+	const good = fakeCodex(GOOD);
 	try {
 		await assert.rejects(
-			new CliProvider({ kind: 'codex', binPath: bad.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT),
+			new CliProvider({ kind: 'codex', binPath: dup.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT),
 			/codex answer does not satisfy the caller's schema: .*duplicate items/,
 		);
-		assert.deepEqual(await new CliProvider({ kind: 'codex', binPath: good.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT), { tags: ['a', 'b'] });
+		await assert.rejects(
+			new CliProvider({ kind: 'codex', binPath: notUri.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT),
+			/codex answer does not satisfy the caller's schema: \/site: must match format "uri"/,
+		);
+		assert.deepEqual(await new CliProvider({ kind: 'codex', binPath: good.bin }).completeStructured([{ role: 'user', content: 'x' }], DISTINCT), GOOD);
 	} finally {
-		bad.cleanup();
+		dup.cleanup();
+		notUri.cleanup();
 		good.cleanup();
 	}
 });
 
-test('a codex reviewer session rejects a reply that breaks a constraint left out of the codex copy, and accepts one that meets it', async () => {
-	const bad = fakeCodex({ tags: ['a', 'a'] });
-	const good = fakeCodex({ tags: ['a', 'b'] });
+test('a codex reviewer session rejects a reply that breaks a keyword or a format left out of the codex copy, and accepts one that meets them', async () => {
+	const dup = fakeCodex({ ...GOOD, tags: ['a', 'a'] });
+	const notUri = fakeCodex({ ...GOOD, site: 'not a uri' });
+	const good = fakeCodex(GOOD);
 	const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-codex-review-cwd-')));
 	try {
 		await assert.rejects(
-			new CliProvider({ kind: 'codex', binPath: bad.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
+			new CliProvider({ kind: 'codex', binPath: dup.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
 			/codex review session answer does not satisfy the caller's schema: .*duplicate items/,
 		);
-		assert.deepEqual(await new CliProvider({ kind: 'codex', binPath: good.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }), { tags: ['a', 'b'] });
+		await assert.rejects(
+			new CliProvider({ kind: 'codex', binPath: notUri.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }),
+			/codex review session answer does not satisfy the caller's schema: \/site: must match format "uri"/,
+		);
+		assert.deepEqual(await new CliProvider({ kind: 'codex', binPath: good.bin }).runReviewSession('review', DISTINCT, { cwd, deadlineMs: 30_000 }), GOOD);
 	} finally {
-		bad.cleanup();
+		dup.cleanup();
+		notUri.cleanup();
 		good.cleanup();
 		rmSync(cwd, { recursive: true, force: true });
 	}

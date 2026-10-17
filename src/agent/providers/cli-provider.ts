@@ -52,7 +52,7 @@ import type {
 } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
-import { codexStrictSchema, rootUnionKey, validateAgainstSchema } from './structured-output.js';
+import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 
 const log = getLogger('cli-provider');
 
@@ -125,7 +125,7 @@ function codexSchemaJson(schema: StructuredSchema): string {
 /** A parsed codex reply, held to the caller's FULL schema: the copy codex was
  *  given leaves out the keywords strict mode refuses (ISSUE-487ad7a67474d321). */
 function codexReply<T>(schema: StructuredSchema, parsed: unknown, what: string): T {
-	const checked = validateAgainstSchema<T>(schema, parsed);
+	const checked = validateCodexReply<T>(schema, parsed);
 	if (!checked.ok) {
 		throw new Error(`${what} does not satisfy the caller's schema: ${checked.errors.join('; ')}`);
 	}

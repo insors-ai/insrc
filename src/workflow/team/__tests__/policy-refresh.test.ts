@@ -12,7 +12,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { POLICY_PATH } from '../git.js';
@@ -185,21 +185,10 @@ test('default-branch rename and policy file removal', async () => {
 		const afterRename = readPolicy(clone, { teamDir: f.teamDir });
 		assert.ok(afterRename.ok && afterRename.value !== 'none' && afterRename.value.source.ref === 'refs/remotes/origin/trunk');
 
-		// The policy file is removed from the default branch while the remote HEAD cannot be updated (it still points at the
-		// retained old main, which has the old policy): the refresh fails and keeps the record, and the reader never falls
-		// back to the old branch's policy.
+		// The policy file is removed from the default branch: refresh removes the sighting first, then updates the remote
+		// HEAD; a HEAD that cannot be updated is only a warning.
 		removeAndCommit(work, POLICY_PATH, 'drop policy');
 		git(work, 'push', '-q', 'origin', 'trunk');
-		git(clone, 'symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/main');
-		const headLock = join(clone, '.git', 'refs', 'remotes', 'origin', 'HEAD.lock');
-		writeFileSync(headLock, '');
-		const blockedRemoval = await refreshPolicy(clone, { teamDir: f.teamDir });
-		assert.equal(blockedRemoval.ok, false);
-		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the record is kept');
-		assert.equal(readPolicy(clone, { teamDir: f.teamDir }).ok, false, 'the stale main policy is not resurrected');
-		rmSync(headLock);
-
-		// With the HEAD writable again the removal completes: the sighting goes and the repo reads as none.
 		const removed = await refreshPolicy(clone, { teamDir: f.teamDir });
 		assert.ok(removed.ok && removed.value.kind === 'absent');
 		assert.equal(readSighting(clone, f.teamDir).kind, 'absent');
@@ -237,5 +226,22 @@ test('an exhausted deadline stops the refresh and records nothing', async () => 
 		const result = await refreshPolicy(clone, { teamDir: f.teamDir, deadlineMs: 0 });
 		assert.equal(result.ok, false);
 		assert.equal(readSighting(clone, f.teamDir).kind, 'absent');
+	} finally { f.cleanup(); }
+});
+
+test('removing the policy while the remote HEAD cannot be updated still removes the record and only warns', async () => {
+	const f = makeFixture();
+	try {
+		const { bare, work } = teamOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		assert.ok((await refreshPolicy(clone, { teamDir: f.teamDir })).ok);
+		removeAndCommit(work, POLICY_PATH, 'drop policy');
+		git(work, 'push', '-q', 'origin', 'main');
+		writeFileSync(join(clone, '.git', 'refs', 'remotes', 'origin', 'HEAD.lock'), '');
+
+		const removed = await refreshPolicy(clone, { teamDir: f.teamDir });
+		assert.ok(removed.ok && removed.value.kind === 'absent' && removed.value.warnings.length === 1);
+		assert.equal(readSighting(clone, f.teamDir).kind, 'absent');
+		assert.deepEqual(readPolicy(clone, { teamDir: f.teamDir }), { ok: true, value: 'none' });
 	} finally { f.cleanup(); }
 });

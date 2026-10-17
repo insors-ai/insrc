@@ -92,21 +92,21 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 
 	const shown = localGit(repo, ['show', `${ref}:${POLICY_PATH}`], deadline);
 	if (!shown.ok) {
-		// The policy file is not on the default branch: a deliberate removal reads as solo again. Point the remote HEAD
-		// at the branch FIRST and treat a failure as a failure: a stale HEAD on a retained old branch would otherwise
-		// let the reader find an old policy once the record is gone. The record is kept until the HEAD is right.
-		const head = setRemoteHead(repo, remote, branch, deadline);
-		if (!head.ok) return fail(`the policy file is absent on '${branch}' but ${head.warning}; the stored record was kept, so run the refresh again`);
+		// The policy file is not on the default branch: a deliberate removal reads as solo again.
+		// Known limitation: if the default branch was renamed in the same step AND the remote HEAD cannot be updated,
+		// a stale HEAD on a retained old branch can still lead the reader to that branch's old policy.
 		try {
 			removeSighting(repo, opts.teamDir);
 		} catch (err) {
 			return fail(`the policy file is absent on '${branch}' but the stored record could not be removed (${err instanceof Error ? err.message : String(err)}); the next refresh retries`);
 		}
+		const head = setRemoteHead(repo, remote, branch, deadline);
+		if (!head.ok) warnings.push(head.warning);
 		return { ok: true, value: { kind: 'absent', branch, warnings } };
 	}
 
 	const parsed = parsePolicyFile(shown.stdout);
-	const anchor = mergeAnchor(sighting?.anchor, findAnchor(repo, ref, Math.max(1, deadline.remainingMs())));
+	const anchor = mergeAnchor(sighting?.anchor, findAnchor(repo, ref, () => deadline.remainingMs()));
 	try {
 		write(repo, { remote, branch, branchSource: decision.source, sha: commit, refreshedAt: now, anchor }, opts.teamDir);
 	} catch (err) {

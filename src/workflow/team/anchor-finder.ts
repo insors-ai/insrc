@@ -27,9 +27,14 @@ export function parseAnchorLog(output: string): PolicyAnchor {
 	return { known: true, firstCommit: sha, firstCommitTime: time };
 }
 
-export function findAnchor(repo: string, trackingRef: string, timeoutMs?: number): PolicyAnchor {
-	const shallow = runGit(repo, ['rev-parse', '--is-shallow-repository'], timeoutMs);
+/**
+ * `budget`, when given, returns the milliseconds left in a caller's deadline; each git call
+ * below takes what is left at that moment, so the two calls together never exceed it.
+ */
+export function findAnchor(repo: string, trackingRef: string, budget?: () => number): PolicyAnchor {
+	const left = (): number | undefined => (budget === undefined ? undefined : Math.max(1, budget()));
+	const shallow = runGit(repo, ['rev-parse', '--is-shallow-repository'], left());
 	if (!shallow.ok || shallow.stdout.trim() !== 'false') return UNKNOWN;
-	const log = runGit(repo, ['log', '--first-parent', '--diff-filter=A', '--reverse', '--format=%H%x09%cI', trackingRef, '--', POLICY_PATH], timeoutMs);
+	const log = runGit(repo, ['log', '--first-parent', '--diff-filter=A', '--reverse', '--format=%H%x09%cI', trackingRef, '--', POLICY_PATH], left());
 	return log.ok ? parseAnchorLog(log.stdout) : UNKNOWN;
 }

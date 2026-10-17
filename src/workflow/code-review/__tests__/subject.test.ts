@@ -315,18 +315,31 @@ test('the default deps read the Story\'s BUILD and TESTS records onto the subjec
 		assert.deepEqual(res.subject.buildRecord, build);
 		assert.deepEqual(res.subject.testRecord, tests);
 
-		// A misshapen BUILD json and an unreadable TESTS json are null; the subject is still built.
-		writeFileSync(join(artifacts, 'BUILD-x-S009.json'), JSON.stringify({ meta: { workflow: 'build' } }));
+		// Misshapen BUILD json, each way, is null; an unreadable TESTS json is null; the subject is still built.
 		writeFileSync(join(artifacts, 'TESTS-x-S009.json'), '{ not json');
-		const bad = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
-		assert.ok(bad.ok);
-		assert.equal(bad.subject.buildRecord, null);
-		assert.equal(bad.subject.testRecord, null);
+		const meta = build.meta;
+		for (const [label, rec] of [
+			['no epicHash/storyId', { meta: { workflow: 'build' }, body: {} }],
+			['an array body', { meta, body: [] }],
+			['another Story', { meta: { ...meta, storyId: 'S010' }, body: {} }],
+			['not a build record', { meta: { ...meta, workflow: 'tests' }, body: {} }],
+			['tasks not an array', { meta, body: { tasks: {} } }],
+			['a task without an id', { meta, body: { tasks: [{ passed: true }] } }],
+			['a non-boolean passed', { meta, body: { tasks: [{ id: 't1', passed: 'yes' }] } }],
+		] as const) {
+			writeFileSync(join(artifacts, 'BUILD-x-S009.json'), JSON.stringify(rec));
+			const bad = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+			assert.ok(bad.ok, label);
+			assert.equal(bad.subject.buildRecord, null, label);
+			assert.equal(bad.subject.testRecord, null, label);
+		}
 
-		// Absent records are null too.
+		// Absent records are null too, and the absent BUILD record is warned about.
 		rmSync(join(artifacts, 'BUILD-x-S009.json'));
 		rmSync(join(artifacts, 'TESTS-x-S009.json'));
-		const none = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+		let none!: Awaited<ReturnType<typeof resolveCodeReviewSubject>>;
+		const warned = await warningsDuring(async () => { none = await resolveCodeReviewSubject(fx.repo, 'x', 'S009'); });
+		assert.ok(warned.some(w => String(w[1] ?? w[0]).includes('no BUILD record')), 'an absent BUILD record is warned about');
 		assert.ok(none.ok);
 		assert.equal(none.subject.buildRecord, null);
 		assert.equal(none.subject.testRecord, null);

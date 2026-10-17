@@ -73,17 +73,32 @@ export interface SubjectDeps {
 	readonly readTestRecord?: (repoPath: string, epicHash: string, storyId: string) => TestRecord | null;
 }
 
-/** The Story's BUILD record from `.insrc/artifacts`, or null when it is absent
- *  or does not have a build record's shape (logged). Never throws. */
+const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Whether `v` has the BuildRecord shape the review reads: build meta naming the
+ *  Story, an object body, and (when present) tasks with a string id and an
+ *  optional boolean `passed`. */
+function isBuildRecord(v: unknown, epicHash: string, storyId: string): v is BuildRecord {
+	if (!isPlainObject(v) || !isPlainObject(v['meta']) || !isPlainObject(v['body'])) return false;
+	const meta = v['meta'];
+	const tasks = v['body']['tasks'];
+	return meta['workflow'] === 'build' && meta['epicHash'] === epicHash && meta['storyId'] === storyId
+		&& typeof meta['createdAt'] === 'string'
+		&& (tasks === undefined || (Array.isArray(tasks) && tasks.every(t =>
+			isPlainObject(t) && typeof t['id'] === 'string' && (t['passed'] === undefined || typeof t['passed'] === 'boolean'))));
+}
+
+/** The Story's BUILD record from `.insrc/artifacts`, or null (with a warning)
+ *  when it is absent, unreadable, or not a build record for this Story. Never throws. */
 export function readStoryBuildRecord(repoPath: string, epicHash: string, storyId: string): BuildRecord | null {
 	const jsonPath = artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId));
-	if (!existsSync(jsonPath)) return null;
+	if (!existsSync(jsonPath)) {
+		log.warn({ jsonPath }, 'resolveCodeReviewSubject: the Story has no BUILD record; coverage gets no per-task result');
+		return null;
+	}
 	try {
-		const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: { epicHash?: unknown; storyId?: unknown }; body?: unknown };
-		if (typeof parsed.meta?.epicHash === 'string' && typeof parsed.meta.storyId === 'string'
-			&& typeof parsed.body === 'object' && parsed.body !== null) {
-			return parsed as BuildRecord;
-		}
+		const parsed: unknown = JSON.parse(readFileSync(jsonPath, 'utf8'));
+		if (isBuildRecord(parsed, epicHash, storyId)) return parsed;
 		log.warn({ jsonPath }, 'resolveCodeReviewSubject: the BUILD record does not have a build record\'s shape; treating it as absent');
 	} catch (err) {
 		log.warn({ jsonPath, err: err instanceof Error ? err.message : String(err) }, 'resolveCodeReviewSubject: the BUILD record is unreadable; treating it as absent');

@@ -65,7 +65,7 @@ function unsupported<T>(what: string): PortResult<T> {
 }
 
 /** A well-formed `owner/repo#N`; parseIssueRef alone only checks the separators. */
-const ISSUE_REF_RE = /^[^/#\s]+\/[^/#\s]+#\d+$/;
+const ISSUE_REF_RE = /^[^/#\s]+\/[^/#\s]+#[0-9]+(?![\s\S])/;   // (?![\s\S]) = end of input, never before a trailing newline
 
 /** The assignee logins of an issue, read live. Throws a classified GhCommandError. */
 function readAssignees(issue: IssueRef): { readonly owner: string; readonly repo: string; readonly number: string; readonly logins: string[] } {

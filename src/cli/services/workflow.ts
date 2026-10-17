@@ -53,8 +53,11 @@ import {
 	workItemAnchorCreatedAt, workItemKindOf,
 } from '../../workflow/storage.js';
 import { commitAndPushArtifacts, type CommitArtifactsResult } from '../../workflow/tracker/github.js';
-import { runTrackerSetup, type TrackerSetupOptions, type TrackerSetupReport } from '../../workflow/tracker/setup.js';
-import { resolveGithubConfig } from '../../workflow/config/github.js';
+import {
+	configAlreadyDetail, configWrittenDetail, planTrackerConfig, runTrackerSetup,
+	type ConfigOutcome, type TrackerConfigPlan, type TrackerSetupOptions, type TrackerSetupReport,
+} from '../../workflow/tracker/setup.js';
+import { githubConfigPath, resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { getLogger } from '../../shared/logger.js';
 import { createRoleRouter } from '../../analyze/context/role-router.js';
@@ -62,6 +65,7 @@ import { runWithRoutingContext } from '../../analyze/context/shaper-provider.js'
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/review/index.js';
 import { rpc } from '../client.js';
+import type { Socket } from 'node:net';
 import type { Entity } from '../../shared/types.js';
 import { runWorkflowStream } from '../../mcp/daemon-stream.js';
 import type { ProgressEvent } from '../../shared/types.js';
@@ -328,9 +332,51 @@ export function sync(repoPath: string, epicHash: string): SyncResult {
 	return syncTracker(repoPath, epicHash);
 }
 
+/** The deadline on the daemon call that writes the tracker config. It bounds only that call. */
+export const TRACKER_CONFIG_TIMEOUT_MS = 15000;
+
+/** Seams for the tracker setup wrapper; tests replace them, production uses the defaults. */
+export interface TrackerSetupDeps {
+	readonly connect?: (() => Socket) | undefined;
+	readonly timeoutMs?: number | undefined;
+	readonly plan?: ((repoPath: string) => TrackerConfigPlan) | undefined;
+	readonly run?: ((repoPath: string, opts: TrackerSetupOptions) => TrackerSetupReport) | undefined;
+}
+
+type EnsureReply = { readonly ok: true; readonly changed: boolean } | { readonly ok: false; readonly error: { readonly code: string; readonly message: string } };
+
+/** Asks the daemon, the only writer of github.json, to apply the plan; every failure becomes a failed outcome. */
+async function ensureThroughDaemon(repoPath: string, plan: Extract<TrackerConfigPlan, { status: 'needs-write' }>, deps: TrackerSetupDeps): Promise<ConfigOutcome> {
+	const path = githubConfigPath();
+	try {
+		const connect = deps.connect;
+		const params = { repo: repoPath, owner: plan.owner, name: plan.name };
+		const opts = { timeoutMs: deps.timeoutMs ?? TRACKER_CONFIG_TIMEOUT_MS };
+		const reply = connect === undefined
+			? await rpc<EnsureReply>('repo.trackerConfig.ensure', params, undefined, opts)
+			: await rpc<EnsureReply>('repo.trackerConfig.ensure', params, connect, opts);
+		if (!reply.ok) return { status: 'failed', detail: reply.error.message };
+		return reply.changed
+			? { status: 'done', detail: configWrittenDetail(path, plan.owner, plan.name) }
+			: { status: 'already', detail: configAlreadyDetail(path, plan.owner, plan.name) };
+	} catch (err) {
+		const reason = err instanceof Error ? err.message : String(err);
+		return { status: 'failed', detail: `could not write ${path}: the daemon owns that file and must be running to change it (${reason})` };
+	}
+}
+
 /** Bootstrap the GitHub tracker for a repo — auth/scope preflight, config,
  *  labels, issue types, and (optionally) a Projects board. Returns a
- *  structured checklist; the command layer renders it. */
-export function trackerSetup(repoPath: string, opts: TrackerSetupOptions = {}): TrackerSetupReport {
-	return runTrackerSetup(repoPath, opts);
+ *  structured checklist; the command layer renders it.
+ *
+ *  The config step never writes github.json from this process: it is planned here
+ *  and, when a write is needed, requested from the daemon with a bounded call. The
+ *  deadline covers only that call; the remaining steps run afterwards whatever its
+ *  outcome, and are not bounded by it. */
+export async function trackerSetup(repoPath: string, opts: TrackerSetupOptions = {}, deps: TrackerSetupDeps = {}): Promise<TrackerSetupReport> {
+	const plan = (deps.plan ?? planTrackerConfig)(repoPath);
+	const configOutcome: ConfigOutcome = plan.status === 'needs-write'
+		? await ensureThroughDaemon(repoPath, plan, deps)
+		: { status: plan.status, detail: plan.detail };
+	return (deps.run ?? runTrackerSetup)(repoPath, { ...opts, configOutcome });
 }

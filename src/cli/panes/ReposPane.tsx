@@ -73,22 +73,24 @@ export function ReposPane(props: {
 	};
 
 	// Run tracker setup for the selected repo and show its full report in the
-	// 'tracker' modal. trackerSetup is SYNCHRONOUS and shells out to gh, so we
-	// paint the modal in its `running` state first and defer the blocking call a
-	// macrotask (setTimeout 0) so the UI shows feedback instead of freezing.
-	const runTrackerSetup = (repoPath: string): void => {
+	// 'tracker' modal. trackerSetup is async (the config step asks the daemon) and
+	// its gh steps block, so the modal is painted in its `running` state first and
+	// the call is deferred a macrotask (setTimeout 0) so the UI shows feedback.
+	const startTrackerSetup = (repoPath: string): void => {
 		setReport(null); setRunning(true); setModal('tracker'); ui.capture(true);
 		setTimeout(() => {
-			try {
-				setReport(svc.workflow.trackerSetup(repoPath));
-			} catch (e) {
-				setReport({
-					steps: [{ key: 'error', title: 'tracker setup', status: 'failed', detail: e instanceof Error ? e.message : String(e) }],
-					manualRemaining: 0,
-				});
-			} finally {
-				setRunning(false);
-			}
+			void (async () => {
+				try {
+					setReport(await svc.workflow.trackerSetup(repoPath));
+				} catch (e) {
+					setReport({
+						steps: [{ key: 'error', title: 'tracker setup', status: 'failed', detail: e instanceof Error ? e.message : String(e) }],
+						manualRemaining: 0,
+					});
+				} finally {
+					setRunning(false);
+				}
+			})();
 		}, 0);
 	};
 
@@ -98,7 +100,7 @@ export function ReposPane(props: {
 		else if (input === 'a') { setModal('add'); ui.capture(true); }
 		else if (input === 'i' && current !== undefined) act('reindex', async () => `reindexing ${await svc.repo.reindex(current.path)}`);
 		else if (input === 'd' && current !== undefined) { setModal('confirm-remove'); ui.capture(true); }
-		else if (input === 't' && current !== undefined) runTrackerSetup(current.path);
+		else if (input === 't' && current !== undefined) startTrackerSetup(current.path);
 	}, { isActive: modal === 'none' && !captured });
 
 	// The tracker report modal dismisses on any key.

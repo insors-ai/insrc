@@ -67,7 +67,7 @@ export interface Services {
 		sync(repoPath: string, epicHash: string): import('../../workflow/tracker/sync.js').SyncResult;
 		deferredQuestions(repoPath: string, epicHash: string): readonly import('../../workflow/questions.js').DeferredQuestion[];
 		resolveEpicHashArg(repoPath: string, hashOrSlug: string): string | undefined;
-		trackerSetup(repoPath: string, opts?: import('../../workflow/tracker/setup.js').TrackerSetupOptions): import('../../workflow/tracker/setup.js').TrackerSetupReport;
+		trackerSetup(repoPath: string, opts?: import('../../workflow/tracker/setup.js').TrackerSetupOptions): Promise<import('../../workflow/tracker/setup.js').TrackerSetupReport>;
 	};
 	readonly setup: {
 		detect(): SystemInfo;

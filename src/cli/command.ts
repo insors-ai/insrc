@@ -59,7 +59,7 @@ export async function runCommand(line: string, ctx: CommandCtx): Promise<string[
 			case 'daemon': case 'd':   return await runDaemon(sub, rest, svc, ctx);
 			case 'repo': case 'r':     return await runRepo(sub, rest, svc);
 			case 'workflow': case 'wf': return await runWorkflow(sub, rest, svc, ctx);
-			case 'tracker': case 'tr': return runTracker(sub, rest, svc, ctx);
+			case 'tracker': case 'tr': return await runTracker(sub, rest, svc, ctx);
 			case 'team':               return await runTeam(sub, rest, svc, ctx);
 			case 'config': case 'cfg': return await runConfig(sub, rest, svc);
 			case 'setup':              return await runSetup(sub, svc, ctx);
@@ -288,11 +288,11 @@ function renderReviewSummary(res: ReviewArtifactResult): string[] {
 	return lines;
 }
 
-function runTracker(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): string[] {
+async function runTracker(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): Promise<string[]> {
 	switch (sub) {
 		case 'setup': {
 			const includeProject = rest.includes('--project');
-			const report = svc.workflow.trackerSetup(ctx.repoPath, { includeProject });
+			const report = await svc.workflow.trackerSetup(ctx.repoPath, { includeProject });
 			const lines = report.steps.flatMap(renderTrackerStep);
 			lines.push('');
 			lines.push(report.manualRemaining === 0

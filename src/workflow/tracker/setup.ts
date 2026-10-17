@@ -30,6 +30,7 @@ import { dirname } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import { githubConfigPath, loadGithubConfigFile, type GithubConfigFile } from '../config/github.js';
+import { readRepoEntry } from '../config/github-store.js';
 import { STATUS_LABELS } from './conventions.js';
 import {
 	ghAddProjectItem,
@@ -67,10 +68,26 @@ export interface TrackerSetupReport {
 	readonly manualRemaining: number;
 }
 
+/** A precomputed result for the config step. */
+export interface ConfigOutcome {
+	readonly status: 'done' | 'already' | 'failed';
+	readonly detail: string;
+}
+
 export interface TrackerSetupOptions {
 	/** Also create a Projects v2 board (needs the `project` scope). */
 	readonly includeProject?: boolean | undefined;
+	/** The config step's result, computed by the caller (the terminal client asks the
+	 *  daemon, the only writer of github.json). When given, the config step reports it
+	 *  verbatim and does not read or write the file; without it the step runs in-process. */
+	readonly configOutcome?: ConfigOutcome | undefined;
 }
+
+/** What the config step needs to do, decided without writing anything. */
+export type TrackerConfigPlan =
+	| { readonly status: 'already'; readonly detail: string }
+	| { readonly status: 'needs-write'; readonly owner: string; readonly name: string }
+	| { readonly status: 'failed'; readonly detail: string };
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -136,8 +153,11 @@ export function runTrackerSetup(repoPath: string, opts: TrackerSetupOptions = {}
 	// owner/repo, needed by config + every gh target step.
 	const remote = gitOriginOwnerRepo(repoPath);
 
-	// 3. ~/.insrc/github.json config (no gh needed — always runs).
-	steps.push(ensureConfig(repoPath, remote));
+	// 3. ~/.insrc/github.json config (no gh needed — always runs). A caller-supplied
+	// outcome is reported as is and the file is not touched.
+	steps.push(opts.configOutcome !== undefined
+		? { key: CONFIG_KEY, title: CONFIG_TITLE, status: opts.configOutcome.status, detail: opts.configOutcome.detail }
+		: ensureConfig(repoPath, remote));
 
 	// 4. Labels.
 	steps.push(ensureLabels(auth.ok, remote));
@@ -162,12 +182,48 @@ export function runTrackerSetup(repoPath: string, opts: TrackerSetupOptions = {}
 const CONFIG_KEY = 'config';
 const CONFIG_TITLE = '~/.insrc/github.json config';
 
+const NO_ORIGIN_DETAIL = 'could not determine owner/repo from `git remote get-url origin` — add a GitHub origin remote';
+
+/** Detail text of a config step that wrote the entry (same text the in-process step uses). */
+export function configWrittenDetail(path: string, owner: string, name: string): string {
+	return `wrote ${path} for ${owner}/${name} (pushTasks + commitArtifacts on)`;
+}
+
+/** Detail text of a config step that found the entry complete. */
+export function configAlreadyDetail(path: string, owner: string, name: string): string {
+	return `${path} already targets ${owner}/${name}`;
+}
+
+/**
+ * Decide what the config step must do, without writing. The file is read with the
+ * strict reader first: a malformed file (unreadable, invalid JSON, or a null or
+ * non-object top level, default, repos or own entry) is a failed plan carrying the
+ * reader's message, so it is never reported as already set up and nothing is
+ * dereferenced while null. Only a structurally valid file reaches the completeness
+ * test the setup has always used. Never throws.
+ */
+export function planTrackerConfig(repoPath: string, path: string = githubConfigPath()): TrackerConfigPlan {
+	const read = readRepoEntry(repoPath, path);
+	if (!read.ok) return { status: 'failed', detail: read.error.message };
+	const remote = gitOriginOwnerRepo(repoPath);
+	if (remote === null) return { status: 'failed', detail: NO_ORIGIN_DETAIL };
+	const entry = read.entry ?? read.file.default;
+	const complete = entry !== undefined
+		&& entry.type === 'github'
+		&& typeof entry.owner === 'string' && entry.owner.length > 0
+		&& typeof entry.repo === 'string' && entry.repo.length > 0
+		&& entry.pushTasks === true
+		&& entry.commitArtifacts === true;
+	if (complete) return { status: 'already', detail: configAlreadyDetail(path, entry.owner!, entry.repo!) };
+	return { status: 'needs-write', owner: remote.owner, name: remote.repo };
+}
+
 /** Ensure the repo has a complete `type:'github'` entry (owner/repo +
  *  pushTasks + commitArtifacts). Writes/merges it when absent or
  *  incomplete. Automatable — no gh required. */
 function ensureConfig(repoPath: string, remote: OwnerRepo | null): TrackerSetupStep {
 	if (remote === null) {
-		return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'failed', detail: 'could not determine owner/repo from `git remote get-url origin` — add a GitHub origin remote' };
+		return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'failed', detail: NO_ORIGIN_DETAIL };
 	}
 	const path = githubConfigPath();
 	const file = loadGithubConfigFile(path);
@@ -179,7 +235,7 @@ function ensureConfig(repoPath: string, remote: OwnerRepo | null): TrackerSetupS
 		&& entry.pushTasks === true
 		&& entry.commitArtifacts === true;
 	if (complete) {
-		return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'already', detail: `${path} already targets ${entry!.owner}/${entry!.repo}` };
+		return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'already', detail: configAlreadyDetail(path, entry!.owner!, entry!.repo!) };
 	}
 	const next: GithubConfigFile = {
 		...file,
@@ -195,7 +251,7 @@ function ensureConfig(repoPath: string, remote: OwnerRepo | null): TrackerSetupS
 		return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'failed', detail: `could not write ${path}: ${(err as Error).message}` };
 	}
 	log.info({ path, owner: remote.owner, repo: remote.repo }, 'tracker setup: wrote github config');
-	return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'done', detail: `wrote ${path} for ${remote.owner}/${remote.repo} (pushTasks + commitArtifacts on)` };
+	return { key: CONFIG_KEY, title: CONFIG_TITLE, status: 'done', detail: configWrittenDetail(path, remote.owner, remote.repo) };
 }
 
 const LABELS_KEY = 'labels';

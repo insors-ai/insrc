@@ -134,7 +134,7 @@ function readAt(repo: string, rev: string, label: string, fetchedAt: string, anc
 	if (resolved.kind === 'missing') return { kind: 'missing' };
 	if (resolved.kind === 'error') return { kind: 'error', reason: resolved.reason, exists: false };
 	const sha = resolved.sha;
-	const tree = runGit(repo, ['ls-tree', '--name-only', sha, '--', POLICY_PATH]);
+	const tree = runGit(repo, ['ls-tree', '--full-tree', '--name-only', sha, '--', POLICY_PATH]);
 	if (!tree.ok) return { kind: 'error', reason: `the policy file on ${label} could not be looked up: ${tree.stderr}`, exists: false };
 	if (tree.stdout.trim().length === 0) return { kind: 'missing' };
 	const shown = runGit(repo, ['show', `${sha}:${POLICY_PATH}`]);
@@ -162,7 +162,7 @@ function scanForPolicy(repo: string, remote: string): Scan {
 	if (!listed.ok) return { kind: 'error', reason: `the fetched refs of remote '${remote}' could not be listed: ${listed.stderr}` };
 	const head = `refs/remotes/${remote}/HEAD`;
 	for (const ref of listed.stdout.split('\n').map(r => r.trim()).filter(r => r.length > 0 && r !== head)) {
-		const tree = runGit(repo, ['ls-tree', '--name-only', ref, '--', POLICY_PATH]);
+		const tree = runGit(repo, ['ls-tree', '--full-tree', '--name-only', ref, '--', POLICY_PATH]);
 		if (!tree.ok) return { kind: 'error', reason: `${ref} could not be searched for the policy file: ${tree.stderr}` };
 		if (tree.stdout.trim().length > 0) return { kind: 'found', ref };
 	}

@@ -419,3 +419,17 @@ test('removal with the remote HEAD unset and a retained branch that has a policy
 		assert.deepEqual(readPolicy(clone, { teamDir: f.teamDir }), { ok: true, value: 'none' }, 'solo again: the HEAD names main, which has no policy');
 	} finally { f.cleanup(); }
 });
+
+test('a refresh started from a subdirectory refreshes the repository and does not drop its record', async () => {
+	const f = makeFixture();
+	try {
+		const { bare } = teamOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		const sub = join(clone, 'docs');
+		mkdirSync(sub, { recursive: true });
+		const result = await refreshPolicy(sub, { teamDir: f.teamDir });
+		assert.equal(result.ok, true, result.ok ? '' : result.reason);
+		assert.ok(result.ok && result.value.kind === 'fetched', 'the policy file is found, not mistaken for absent');
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'one record for the repository, whichever directory was used');
+	} finally { f.cleanup(); }
+});

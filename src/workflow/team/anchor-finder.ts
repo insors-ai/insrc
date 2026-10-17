@@ -37,6 +37,6 @@ export function findAnchor(repo: string, trackingRef: string, budget?: () => num
 	const shallow = runGit(repo, ['rev-parse', '--is-shallow-repository'], left());
 	if (!shallow.ok || shallow.stdout.trim() !== 'false') return UNKNOWN;
 	if (budget !== undefined && budget() <= 0) return UNKNOWN;
-	const log = runGit(repo, ['log', '--first-parent', '--diff-filter=A', '--reverse', '--format=%H%x09%cI', trackingRef, '--', POLICY_PATH], left());
+	const log = runGit(repo, ['log', '--first-parent', '--diff-filter=A', '--reverse', '--format=%H%x09%cI', trackingRef, '--', `:(top)${POLICY_PATH}`], left());
 	return log.ok ? parseAnchorLog(log.stdout) : UNKNOWN;
 }

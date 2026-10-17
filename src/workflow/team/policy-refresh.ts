@@ -27,7 +27,7 @@ import { POLICY_PATH, runGit } from './git.js';
 import type { GitRun } from './git.js';
 import { parsePolicyFile } from './policy-parser.js';
 import { isGitRepo, pickRemote } from './policy-reader.js';
-import { REFRESH_DEADLINE_MS, acquireLock, mergeAnchor, readSighting, removeSighting, writeSighting } from './sighting-store.js';
+import { REFRESH_DEADLINE_MS, acquireLock, resolveRepoIdentity, mergeAnchor, readSighting, removeSighting, writeSighting } from './sighting-store.js';
 import type { PolicyRefreshOutcome, PolicyResult } from './types.js';
 
 const log = getLogger('team-policy-refresh');
@@ -66,6 +66,7 @@ export async function refreshPolicy(repo: string, optsOrBranch: RefreshOptions |
 	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before it started');
 	if (!isGitRepo(repo, deadline.remainingMs())) return fail('this directory is not a git repository');
 
+	resolveRepoIdentity(repo, Math.max(1, deadline.remainingMs())); // ask git once, inside the budget; the store reuses the answer
 	const lock = acquireLock(repo, opts.teamDir);
 	if (!lock.ok) return fail(lock.reason);
 	try {
@@ -100,7 +101,7 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 
 	// Tell "the file is not on the branch" (ls-tree succeeds and lists nothing) from any other git failure,
 	// which must never be mistaken for a removal.
-	const tree = localGit(repo, ['ls-tree', '--name-only', commit, '--', POLICY_PATH], deadline);
+	const tree = localGit(repo, ['ls-tree', '--full-tree', '--name-only', commit, '--', POLICY_PATH], deadline);
 	if (!tree.ok) return fail(`could not look for the policy file on ${ref} (${tree.stderr}); nothing was changed`);
 
 	if (tree.stdout.trim().length === 0) {

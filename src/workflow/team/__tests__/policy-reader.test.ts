@@ -355,3 +355,15 @@ test('the first sighting is not recorded from a revision that moved before it wa
 		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the next read records the current revision');
 	} finally { f.cleanup(); }
 });
+
+test('the policy is found when the reader is run from a subdirectory of the repository', () => {
+	const f = makeFixture();
+	try {
+		const { clone } = teamRepo(f);
+		const sub = join(clone, 'docs', 'deeper');
+		mkdirSync(sub, { recursive: true });
+		const fromSub = policyOf(readPolicy(sub, { teamDir: f.teamDir }));
+		assert.equal(fromSub.teamMode, true, 'not none just because the working directory is not the root');
+		assert.equal(fromSub.source.anchorKnown, true, 'the anchor walk also uses a root-relative path');
+	} finally { f.cleanup(); }
+});

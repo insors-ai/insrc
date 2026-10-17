@@ -64,25 +64,35 @@ export function isSafeRefName(name: string): boolean {
 	return !(name.endsWith('/') || name.endsWith('.') || name.endsWith('.lock'));
 }
 
+const IDENTITY_TTL_MS = 60_000;
+const identityCache = new Map<string, { readonly id: string; readonly at: number }>();
+
 /**
  * The repository's identity: the real path of its work-tree root, so a subdirectory and the root share one sighting and
- * one lock. A directory that is not inside a git work tree is identified by its own real path.
+ * one lock. A directory that is not inside a git work tree is identified by its own real path. The answer is remembered
+ * briefly so one operation asks git once; a caller with a deadline calls this first, under its own budget.
  */
-function repoIdentity(repo: string): string {
-	const top = runGit(repo, ['rev-parse', '--show-toplevel']);
+export function resolveRepoIdentity(repo: string, timeoutMs?: number): string {
+	const cached = identityCache.get(repo);
+	if (cached !== undefined && Date.now() - cached.at <= IDENTITY_TTL_MS) return cached.id;
+	const top = runGit(repo, ['rev-parse', '--show-toplevel'], timeoutMs);
 	const root = top.ok ? top.stdout.trim() : '';
+	let id = resolve(repo);
 	for (const candidate of [root, repo]) {
 		if (candidate === '') continue;
 		try {
-			return realpathSync(candidate);
+			id = realpathSync(candidate);
+			break;
 		} catch { /* try the next candidate */ }
 	}
-	return resolve(repo);
+	if (identityCache.size >= 256) identityCache.clear();
+	identityCache.set(repo, { id, at: Date.now() });
+	return id;
 }
 
 /** 16 hex characters of the sha256 of the repository's identity. */
 export function sightingKey(repo: string): string {
-	return createHash('sha256').update(repoIdentity(repo)).digest('hex').slice(0, 16);
+	return createHash('sha256').update(resolveRepoIdentity(repo)).digest('hex').slice(0, 16);
 }
 
 function seenDir(teamDir: string): string {

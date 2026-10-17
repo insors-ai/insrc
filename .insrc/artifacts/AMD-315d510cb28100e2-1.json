@@ -1,0 +1,51 @@
+{
+  "id": "AMD-315d510cb28100e2-1",
+  "epicHash": "315d510cb28100e2",
+  "epicSlug": "team-signoff-claim-based-workflow",
+  "hldBaseRunId": "wf-1792177279312-j27596",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s9",
+    "internal": "Private implementation of s9: Keep tracker issues and status in step with the work without a manual step"
+  },
+  "rationale": "Extends Epic `team-signoff-claim-based-workflow` (315d510cb28100e2), building on DEF-315d510cb28100e2 and HLD-315d510cb28100e2 and on code in src/workflow/tracker-auto.ts, src/workflow/tracker/ and src/cli/services/workflow.ts.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md",
+      "quotedText": "Have an issue ready for every piece of work (s4)"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md",
+      "quotedText": "Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/tracker-auto.ts:102-319"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/cli/services/workflow.ts:158-171"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/tracker/refs.ts:24-37"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1792177705390-akd7gf",
+    "storyId": "s9",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-10-16T19:08:59.864Z",
+  "status": "approved",
+  "approvedAt": "2026-10-17T04:34:12.450Z",
+  "approvedBy": "subhagho@gmail.com"
+}

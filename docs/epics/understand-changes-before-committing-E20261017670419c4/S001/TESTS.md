@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -96,3 +96,27 @@ Run at 2026-10-17T13:21:22.313Z on commit `27e694bc`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/understanding/__tests__/service.test.ts` | 0 | 2 | 0.9 s |  |
+
+## t5
+
+Run at 2026-10-17T13:29:01.179Z on commit `909b4bc2`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Interrupted job recovery and late completion rejected**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Recovery interrupts jobs and rejects late completion without losing answers | `src/understanding/__tests__/service.test.ts` |
+
+**integration: Deletion races, owner isolation, permission checks and log redaction**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Deletion isolates owners, rejects retries and late writes, and enforces private paths | `src/understanding/__tests__/service.test.ts` |
+| pass | Assessment lifecycle logs omit private identity and answer content | `src/understanding/__tests__/service.test.ts` |
+| pass | Privacy covers the active production file layout and its lock file | `src/understanding/__tests__/service.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/understanding/__tests__/service.test.ts` | 0 | 6 | 3.7 s |  |

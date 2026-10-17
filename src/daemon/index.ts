@@ -1,3 +1,7 @@
+import { createUnderstandingRoutes } from './understanding-rpc.js';
+import { UnderstandingService } from '../understanding/service.js';
+import { localIdentityDeps, resolveLearner } from '../understanding/identity.js';
+import { AssessmentError } from '../shared/understanding.js';
 /**
  * Daemon entry point.
  *
@@ -1964,6 +1968,18 @@ async function main(): Promise<void> {
 			log.info({ model }, 'ollama.pull complete');
 		},
 	};
+	let understandingService: UnderstandingService | undefined;
+	let understandingHostId: string | undefined;
+	const understandingRoutes = createUnderstandingRoutes({
+		service: () => { if (!understandingService) throw new AssessmentError('unavailable'); return understandingService; },
+		owner: async repo => {
+			if (!understandingHostId) throw new AssessmentError('unavailable');
+			if (!(await listRepos(db)).some(r => r.path === repo)) throw new AssessmentError('not-found');
+			return resolveLearner(repo, localIdentityDeps(understandingHostId));
+		},
+	});
+	Object.assign(rpcHandlers, understandingRoutes.rpc);
+	Object.assign(streamHandlers, understandingRoutes.streams);
 	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers));
 	const server = new IpcServer(rpcHandlers, streamHandlers);
 

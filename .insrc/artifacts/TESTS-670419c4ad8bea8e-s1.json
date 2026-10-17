@@ -4,7 +4,7 @@
     "epicHash": "670419c4ad8bea8e",
     "storyId": "s1",
     "createdAt": "2026-10-17T13:09:28.300Z",
-    "updatedAt": "2026-10-17T13:21:22.313Z",
+    "updatedAt": "2026-10-17T13:29:01.179Z",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
     "epicSlug": "understand-changes-before-committing"
   },
@@ -242,6 +242,85 @@
               },
               {
                 "title": "Original and assisted answers survive reopen and resume without granting authorization",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "909b4bc2",
+        "ranAt": "2026-10-17T13:29:01.179Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Interrupted job recovery and late completion rejected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Recovery interrupts jobs and rejects late completion without losing answers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Deletion races, owner isolation, permission checks and log redaction",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Deletion isolates owners, rejects retries and late writes, and enforces private paths",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Assessment lifecycle logs omit private identity and answer content",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Privacy covers the active production file layout and its lock file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3721,
+            "titles": [
+              {
+                "title": "Concurrent updates, exact replay and request conflicts preserve atomic history",
+                "result": "pass"
+              },
+              {
+                "title": "Original and assisted answers survive reopen and resume without granting authorization",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery interrupts jobs and rejects late completion without losing answers",
+                "result": "pass"
+              },
+              {
+                "title": "Deletion isolates owners, rejects retries and late writes, and enforces private paths",
+                "result": "pass"
+              },
+              {
+                "title": "Assessment lifecycle logs omit private identity and answer content",
+                "result": "pass"
+              },
+              {
+                "title": "Privacy covers the active production file layout and its lock file",
                 "result": "pass"
               }
             ],

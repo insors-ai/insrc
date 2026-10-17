@@ -54,23 +54,23 @@ export function writeAssessment(store: GraphStore, input: AssessmentRecord): voi
     throw new AssessmentError('scope-mismatch');
   }
   store.understandingCurrent.putSync(tupleKey(record.view.id), record);
-  store.understandingOwnerIndex.putSync(tupleKey(record.ownerPrincipal, record.view.id), record.view.id);
+  store.understandingOwnerIndex.putSync(tupleKey(record.ownerPrincipal, record.learner.key, record.view.scope.repoId, record.view.id), record.view.id);
   store.understandingScopeIndex.putSync(tupleKey(record.scopeFingerprint, record.view.id), record.view.id);
 }
 
-export async function listAssessments(owner: string, limit = 50, after?: string): Promise<AssessmentRecord[]> {
+export async function listAssessments(owner: string, learnerKey: string, repoId: string, limit = 50, after?: string): Promise<AssessmentRecord[]> {
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100
     || (after !== undefined && !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(after))) throw new AssessmentError('invalid-input');
   const store = await getGraphStore();
   assertAssessmentSchema(store);
-  const prefix = tupleKey(owner);
-  const start = after === undefined ? prefix : tupleKey(owner, after);
+  const prefix = tupleKey(owner, learnerKey, repoId);
+  const start = after === undefined ? prefix : tupleKey(owner, learnerKey, repoId, after);
   const rows: AssessmentRecord[] = [];
   for (const { key, value } of store.understandingOwnerIndex.getRange({ start, end: prefixSuccessor(prefix), limit: limit + 1 })) {
     if (after !== undefined && Buffer.from(key as Buffer).equals(start)) continue;
     if (typeof value !== 'string') throw new AssessmentError('schema-unsupported');
     const record = readAssessment(store, value);
-    if (!record || record.ownerPrincipal !== owner || !Buffer.from(key as Buffer).equals(tupleKey(owner, value))) {
+    if (!record || record.ownerPrincipal !== owner || record.learner.key !== learnerKey || record.view.scope.repoId !== repoId || !Buffer.from(key as Buffer).equals(tupleKey(owner, learnerKey, repoId, value))) {
       throw new AssessmentError('schema-unsupported');
     }
     rows.push(record);

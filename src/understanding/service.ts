@@ -63,8 +63,8 @@ export class UnderstandingService {
     await service.recover();
     return service;
   }
-  async list(owner: Owner, limit = 50, after?: string): Promise<AssessmentView[]> {
-    return (await listAssessments(owner.ownerPrincipal, limit, after))
+  async list(owner: Owner, repoId: string, limit = 50, after?: string): Promise<AssessmentView[]> {
+    return (await listAssessments(owner.ownerPrincipal, owner.learner.key, repoId, limit, after))
       .filter(r => r.learner.key === owner.learner.key).map(publicView);
   }
   private readonly listeners = new Map<string, Set<(deleted: boolean) => void>>();
@@ -117,7 +117,7 @@ export class UnderstandingService {
       for (const name of ['understandingAttempt', 'understandingAudit', 'understandingRequest', 'understandingReceipt'] as const) {
         for (const { key } of store[name].getRange({ start: prefix, end: prefixSuccessor(prefix) })) store[name].removeSync(key);
       }
-      store.understandingOwnerIndex.removeSync(tupleKey(r.ownerPrincipal, r.view.id));
+      store.understandingOwnerIndex.removeSync(tupleKey(r.ownerPrincipal, r.learner.key, r.view.scope.repoId, r.view.id));
       store.understandingScopeIndex.removeSync(tupleKey(r.scopeFingerprint, r.view.id));
       store.understandingRequest.removeSync(tupleKey('prepare', r.ownerPrincipal, r.learner.key, r.preparationRequestId));
       store.understandingCurrent.removeSync(prefix);

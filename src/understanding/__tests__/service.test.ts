@@ -122,14 +122,14 @@ test('Deletion isolates owners, rejects retries and late writes, and enforces pr
   await assert.rejects(s.resume(foreign, id), /not-found/);
   await assert.rejects(s.history(foreign, id), /not-found/);
   await assert.rejects(s.subscribe(foreign, id, () => assert.fail('foreign notification')), /not-found/);
-  assert.deepEqual(await s.list(foreign), []);
+  assert.deepEqual(await s.list(foreign, 'repo'), []);
   const race = await Promise.allSettled([s.delete(owner, removal), s.mutate(owner, command(id, 2), 'answer', answer(id, 2))]);
   assert.equal(race[0]?.status, 'fulfilled');
   assert.equal(race[1]?.status, 'rejected');
   await assert.rejects(s.delete(owner, removal), /not-found/);
   await assert.rejects(s.resume(owner, id), /not-found/);
 
-  assert.deepEqual(await listAssessments(owner.ownerPrincipal), []);
+  assert.deepEqual(await listAssessments(owner.ownerPrincipal, 'learner', 'repo'), []);
   const store = await getGraphStore();
   for (const name of ['understandingCurrent', 'understandingAttempt', 'understandingAudit', 'understandingRequest', 'understandingOwnerIndex', 'understandingScopeIndex', 'understandingReceipt'] as const) {
     assert.equal([...store[name].getRange()].length, 0);

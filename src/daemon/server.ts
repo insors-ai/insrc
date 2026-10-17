@@ -89,7 +89,7 @@ export class IpcServer {
   private connSeq = 0;
   private readonly now: () => number;
 
-  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now: () => number = Date.now) {
+  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile) {
     this.handlers = handlers;
     this.streamHandlers = streamHandlers;
     this.now = now;
@@ -111,7 +111,7 @@ export class IpcServer {
 
   async listen(): Promise<void> {
     // Remove stale socket file if present
-    try { rmSync(PATHS.sockFile); } catch { /* ignore */ }
+    try { rmSync(this.socketPath); } catch { /* ignore */ }
 
     return new Promise((resolve, reject) => {
       this.server = createServer((socket: Socket) => {
@@ -120,8 +120,8 @@ export class IpcServer {
 
       this.server.on('error', reject);
 
-      this.server.listen(PATHS.sockFile, () => {
-        log.info(`listening on ${PATHS.sockFile}`);
+      this.server.listen(this.socketPath, () => {
+        log.info(`listening on ${this.socketPath}`);
         resolve();
       });
     });
@@ -132,7 +132,7 @@ export class IpcServer {
       if (!this.server) { resolve(); return; }
       this.server.close(() => resolve());
     });
-    try { rmSync(PATHS.sockFile); } catch { /* ignore */ }
+    try { rmSync(this.socketPath); } catch { /* ignore */ }
   }
 
   private handleConnection(socket: Socket): void {

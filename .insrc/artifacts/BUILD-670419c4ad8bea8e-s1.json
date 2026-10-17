@@ -4,7 +4,7 @@
     "epicHash": "670419c4ad8bea8e",
     "storyId": "s1",
     "createdAt": "2026-10-17T13:09:28.300Z",
-    "updatedAt": "2026-10-17T13:21:22.313Z",
+    "updatedAt": "2026-10-17T13:29:01.179Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
     "epicSlug": "understand-changes-before-committing"
@@ -26,168 +26,39 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "Added atomic prepare, resume, cancel and schema-registered internal transitions with immutable answers, audits and request deduplication. Seven focused tests and typecheck pass; unrelated baseline failures remain recorded.",
+    "summary": "Mandatory service open secures the actual active GraphStore path, supports file and directory LMDB layouts, checks the lock file, and recovers before access. Six service tests plus 20 graph-store regressions pass; baseline failures remain recorded.",
     "testRecord": {
       "md": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
-          "file": ".insrc/artifacts/LLD-670419c4ad8bea8e-s1.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": ".insrc/artifacts/LLD-b94cf2c9058fd82a-S001.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": ".insrc/artifacts/PLAN-670419c4ad8bea8e-s1.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
           "file": ".insrc/artifacts/PLAN-b94cf2c9058fd82a-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
+        "timestamp": "2026-10-17T13:29:01.179Z"
       },
       {
         "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/LLD.md"
+          "file": "src/daemon/__tests__/queue-code-index-work.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
+        "timestamp": "2026-10-17T13:29:01.179Z"
       },
       {
         "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/PLAN.md"
+          "file": "src/daemon/queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/T001-build-evidence.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/identity-sources.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/review-round-1.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/review-round-2.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/sequence-diagram.html"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "docs/standalone/run-document-summarisation-its-own-queue-E20261017b94cf2c9/S001/LLD.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "docs/standalone/run-document-summarisation-its-own-queue-E20261017b94cf2c9/S001/PLAN.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/db/graph/store.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/shared/understanding.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/__tests__/contracts.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/__tests__/identity.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/__tests__/service.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/__tests__/storage.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/identity.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/service.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
-      },
-      {
-        "target": {
-          "file": "src/understanding/storage.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T13:21:22.313Z"
+        "timestamp": "2026-10-17T13:29:01.179Z"
       }
     ],
-    "commit": "27e694bc"
+    "commit": "909b4bc2"
   }
 }

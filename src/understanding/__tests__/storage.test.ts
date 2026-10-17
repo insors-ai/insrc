@@ -52,19 +52,19 @@ test('Schema corruption fails closed and owner pagination is isolated and bounde
   const rows = Array.from({ length: 5 }, () => record());
   const other = record('other');
   await withWriteTxn(s => { for (const r of [...rows, other]) writeAssessment(s, r); });
-  const first = await listAssessments('owner', 2);
-  const second = await listAssessments('owner', 2, first.at(-1)!.view.id);
-  const third = await listAssessments('owner', 2, second.at(-1)!.view.id);
+  const first = await listAssessments('owner', 'learner', 'repo', 2);
+  const second = await listAssessments('owner', 'learner', 'repo', 2, first.at(-1)!.view.id);
+  const third = await listAssessments('owner', 'learner', 'repo', 2, second.at(-1)!.view.id);
   assert.deepEqual([...first, ...second, ...third].map(r => r.view.id), rows.map(r => r.view.id).sort());
-  assert.deepEqual((await listAssessments('other')).map(r => r.view.id), [other.view.id]);
-  await assert.rejects(listAssessments('owner', 101), /invalid-input/);
+  assert.deepEqual((await listAssessments('other', 'learner', 'repo')).map(r => r.view.id), [other.view.id]);
+  await assert.rejects(listAssessments('owner', 'learner', 'repo', 101), /invalid-input/);
   assert.notDeepEqual(tupleKey('a', 'bc'), tupleKey('ab', 'c'));
   assert.notDeepEqual(tupleKey('a\0b', 'c'), tupleKey('a', 'b\0c'));
   const key = tupleKey('schemaVersion');
   for (const version of [undefined, null, '1', 2, {}]) {
     await withWriteTxn(s => { if (version === undefined) s.understandingMeta.removeSync(key); else s.understandingMeta.putSync(key, version); });
     await assert.rejects(initializeAssessmentStorage(), /schema-unsupported/);
-    await assert.rejects(listAssessments('owner'), /schema-unsupported/);
+    await assert.rejects(listAssessments('owner', 'learner', 'repo'), /schema-unsupported/);
     assert.equal(store.understandingCurrent.get(tupleKey(other.view.id)).view.id, other.view.id);
   }
   await withWriteTxn(s => { s.understandingMeta.putSync(key, 1); s.understandingCurrent.putSync(tupleKey(other.view.id), { corrupt: true }); });

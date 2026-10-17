@@ -18,11 +18,14 @@
  *      is not known as the default is refused with an instruction, never applied.
  */
 
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+
 import { getLogger } from '../../shared/logger.js';
 import { findAnchor } from './anchor-finder.js';
 import { POLICY_PATH, runGit } from './git.js';
 import { parsePolicyFile, buildTeamPolicy } from './policy-parser.js';
-import { isSafeRefName, mergeAnchor, publishSightingIfAbsent, readSighting, refreshInProgress } from './sighting-store.js';
+import { acquireLock, isSafeRefName, mergeAnchor, publishSightingIfAbsent, readSighting } from './sighting-store.js';
 import type { Sighting } from './sighting-store.js';
 import type { PolicyAnchor, PolicyResult, TeamPolicy } from './types.js';
 
@@ -34,6 +37,8 @@ export interface ReaderOptions {
 	readonly now?: (() => Date) | undefined;
 	/** Seam for the create-only first-observation write; tests inject a failing one. */
 	readonly publish?: typeof publishSightingIfAbsent | undefined;
+	/** Test seam: runs after the policy is read and before the first sighting is recorded. */
+	readonly beforeRecord?: (() => void) | undefined;
 }
 
 type Found =
@@ -42,28 +47,63 @@ type Found =
 	| { readonly kind: 'error'; readonly reason: string; /** true when the file is known to exist but could not be read */ readonly exists: boolean }
 	| { readonly kind: 'missing' };
 
+/** An inspection that either answered or failed. A failure is never the same as "nothing there". */
+export type Probe<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly reason: string };
+
+function hasGitEntry(dir: string): boolean {
+	let cur = resolve(dir);
+	for (;;) {
+		if (existsSync(join(cur, '.git'))) return true;
+		const up = dirname(cur);
+		if (up === cur) return false;
+		cur = up;
+	}
+}
+
+/**
+ * Is `repo` inside a git repository? A directory with no `.git` anywhere up its tree is confirmed non-git; a git failure
+ * where a `.git` entry does exist (a timeout, a damaged repository, a missing git program) is an error, not "not a repo".
+ */
+export function probeGitRepo(repo: string, timeoutMs?: number): Probe<boolean> {
+	const out = runGit(repo, ['rev-parse', '--git-dir'], timeoutMs);
+	if (out.ok) return { ok: true, value: true };
+	return hasGitEntry(repo) ? { ok: false, reason: `the repository could not be inspected: ${out.stderr}` } : { ok: true, value: false };
+}
+
 export function isGitRepo(repo: string, timeoutMs?: number): boolean {
-	return runGit(repo, ['rev-parse', '--git-dir'], timeoutMs).ok;
+	const probe = probeGitRepo(repo, timeoutMs);
+	return probe.ok && probe.value;
 }
 
 /** The policy remote: origin when present, else the sole remote, else none (never guessed). */
-export function pickRemote(repo: string, timeoutMs?: number): string | undefined {
+export function probeRemote(repo: string, timeoutMs?: number): Probe<string | undefined> {
 	const listed = runGit(repo, ['remote'], timeoutMs);
-	if (!listed.ok) return undefined;
+	if (!listed.ok) return { ok: false, reason: `the remotes could not be listed: ${listed.stderr}` };
 	const remotes = listed.stdout.split('\n').map(r => r.trim()).filter(r => r.length > 0 && isSafeRefName(r));
-	if (remotes.includes('origin')) return 'origin';
-	return remotes.length === 1 ? remotes[0] : undefined;
+	if (remotes.includes('origin')) return { ok: true, value: 'origin' };
+	return { ok: true, value: remotes.length === 1 ? remotes[0] : undefined };
 }
 
-/** The default branch git itself recorded for the remote (refs/remotes/<remote>/HEAD), if any. */
-export function remoteHeadBranch(repo: string, remote: string): string | undefined {
+export function pickRemote(repo: string, timeoutMs?: number): string | undefined {
+	const probe = probeRemote(repo, timeoutMs);
+	return probe.ok ? probe.value : undefined;
+}
+
+/** The default branch git itself recorded for the remote (refs/remotes/<remote>/HEAD); `quiet` failure means none is set. */
+function probeRemoteHead(repo: string, remote: string): Probe<string | undefined> {
 	const head = runGit(repo, ['symbolic-ref', '-q', `refs/remotes/${remote}/HEAD`]);
-	if (!head.ok) return undefined;
+	if (!head.ok) return head.quiet === true ? { ok: true, value: undefined } : { ok: false, reason: `refs/remotes/${remote}/HEAD could not be read: ${head.stderr}` };
 	const prefix = `refs/remotes/${remote}/`;
 	const ref = head.stdout.trim();
-	if (!ref.startsWith(prefix)) return undefined;
+	if (!ref.startsWith(prefix)) return { ok: true, value: undefined };
 	const branch = ref.slice(prefix.length);
-	return isSafeRefName(branch) ? branch : undefined;
+	return { ok: true, value: isSafeRefName(branch) ? branch : undefined };
+}
+
+/** Kept for callers that only want the answer: a failure reads as "not set". */
+export function remoteHeadBranch(repo: string, remote: string): string | undefined {
+	const probe = probeRemoteHead(repo, remote);
+	return probe.ok ? probe.value : undefined;
 }
 
 type Rev = { readonly kind: 'found'; readonly sha: string } | { readonly kind: 'missing' } | { readonly kind: 'error'; readonly reason: string };
@@ -135,7 +175,7 @@ export function readPolicy(repo: string, opts: ReaderOptions = {}): PolicyResult
 
 	if (seen.kind === 'valid') return readKnownRepo(repo, seen.sighting);
 	if (seen.kind === 'damaged') return readDamaged(repo, seen.reason, now);
-	return readUnseen(repo, now, opts.teamDir, opts.publish ?? publishSightingIfAbsent);
+	return readUnseen(repo, now, opts.teamDir, opts.publish ?? publishSightingIfAbsent, opts.beforeRecord);
 }
 
 /** A sighting exists: the repo is known to carry a policy, so it is never 'none'. */
@@ -169,11 +209,17 @@ function readDamaged(repo: string, why: string, now: string): PolicyResult<TeamP
 }
 
 /** No sighting: only local evidence of a policy on the default branch's tracking ref counts. */
-function readUnseen(repo: string, now: string, teamDir: string | undefined, publish: typeof publishSightingIfAbsent): PolicyResult<TeamPolicy | 'none'> {
-	if (!isGitRepo(repo)) return { ok: true, value: 'none' };
-	const remote = pickRemote(repo);
+function readUnseen(repo: string, now: string, teamDir: string | undefined, publish: typeof publishSightingIfAbsent, beforeRecord?: () => void): PolicyResult<TeamPolicy | 'none'> {
+	const inRepo = probeGitRepo(repo);
+	if (!inRepo.ok) return { ok: false, reason: inRepo.reason };
+	if (!inRepo.value) return { ok: true, value: 'none' };
+	const picked = probeRemote(repo);
+	if (!picked.ok) return { ok: false, reason: picked.reason };
+	const remote = picked.value;
 	if (remote === undefined) return { ok: true, value: 'none' };
-	const branch = remoteHeadBranch(repo, remote);
+	const head = probeRemoteHead(repo, remote);
+	if (!head.ok) return { ok: false, reason: head.reason };
+	const branch = head.value;
 
 	if (branch === undefined) {
 		const scan = scanForPolicy(repo, remote);
@@ -197,15 +243,21 @@ function readUnseen(repo: string, now: string, teamDir: string | undefined, publ
 	if (found.kind === 'error' && !found.exists) return { ok: false, reason: found.reason };
 
 	// First observation of a policy file (valid, invalid or unreadable): remember this repo as a team repo, create-only.
-	// While a refresh is running it records the repo itself, and a record made from a revision read before that refresh
-	// could be stale, so the reader leaves the recording to it.
-	if (refreshInProgress(repo, teamDir)) {
-		return found.kind === 'policy' ? { ok: true, value: found.policy } : { ok: false, reason: found.reason };
-	}
-	try {
-		publish(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
-	} catch (err) {
-		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record first sighting; the result is unchanged');
+	// Done under the same lock a refresh holds (taken without waiting): if a refresh is running it records the repo itself,
+	// and the revision read above is checked again so a record is never made from a ref that has moved since.
+	beforeRecord?.();
+	const lock = acquireLock(repo, teamDir);
+	if (lock.ok) {
+		try {
+			const again = resolveRev(repo, ref);
+			if (again.kind === 'found' && again.sha === sha) {
+				publish(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
+			}
+		} catch (err) {
+			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record first sighting; the result is unchanged');
+		} finally {
+			lock.release();
+		}
 	}
 	return found.kind === 'policy' ? { ok: true, value: found.policy } : { ok: false, reason: found.reason };
 }

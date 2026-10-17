@@ -257,12 +257,3 @@ export function acquireLock(repo: string, teamDir: string = PATHS.team, now: () 
 		try { unlinkSync(guardPath); } catch { /* best effort */ }
 	}
 }
-
-/** True while a live refresh lock exists for this repository (a stale one does not count). */
-export function refreshInProgress(repo: string, teamDir: string = PATHS.team, now: () => number = Date.now): boolean {
-	try {
-		return now() - statSync(lockPath(repo, teamDir)).mtimeMs <= LOCK_STALE_MS;
-	} catch {
-		return false;
-	}
-}

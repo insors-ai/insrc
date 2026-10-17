@@ -313,3 +313,45 @@ test('the reader leaves the first sighting to a refresh that is running', () => 
 		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'recorded once the refresh is over');
 	} finally { f.cleanup(); }
 });
+
+test('a git failure while inspecting a repository is refused; only a directory with no .git anywhere is confirmed non-git', () => {
+	const f = makeFixture();
+	try {
+		const { bare } = makeOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		const plain = join(f.root, 'plain');
+		mkdirSync(plain);
+
+		// git cannot run at all (not on the PATH): a repository is refused, a plain directory is still solo.
+		const path = process.env['PATH'];
+		process.env['PATH'] = join(f.root, 'no-such-bin');
+		try {
+			assert.equal(readPolicy(clone, { teamDir: f.teamDir }).ok, false, 'a repository that cannot be inspected is refused');
+			assert.deepEqual(readPolicy(plain, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+		} finally {
+			if (path === undefined) delete process.env['PATH']; else process.env['PATH'] = path;
+		}
+
+		// A damaged repository (git no longer recognises it, yet .git is there) is refused, not taken for a plain directory.
+		writeFileSync(join(clone, '.git', 'HEAD'), 'garbage\n');
+		assert.equal(readPolicy(clone, { teamDir: f.teamDir }).ok, false);
+	} finally { f.cleanup(); }
+});
+
+test('the first sighting is not recorded from a revision that moved before it was published', () => {
+	const f = makeFixture();
+	try {
+		const { clone, work } = teamRepo(f);
+		// After the policy is read and before it is recorded, a refresh moves the tracking ref (here: a new default-branch commit).
+		commitFile(work, 'docs/more.md', 'x\n', 'default branch moves on');
+		git(work, 'push', '-q', 'origin', 'main');
+		const result = readPolicy(clone, {
+			teamDir: f.teamDir,
+			beforeRecord: () => { git(clone, 'fetch', '-q', 'origin'); },
+		});
+		assert.equal(policyOf(result).teamMode, true, 'the policy that was read is still returned');
+		assert.equal(readSighting(clone, f.teamDir).kind, 'absent', 'no record is made from the stale revision');
+		policyOf(readPolicy(clone, { teamDir: f.teamDir }));
+		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the next read records the current revision');
+	} finally { f.cleanup(); }
+});

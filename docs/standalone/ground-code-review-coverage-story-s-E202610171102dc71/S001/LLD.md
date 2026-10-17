@@ -371,3 +371,22 @@ Same subject and coverage change as a1. The freshness answer is unchanged; codeR
 
 - cd1 (partial): IndexQueue.codeIndexWorkFor is a new method on the existing IndexQueue class (src/daemon/queue.ts); there is no HLD to own it [c4].
 - ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the approved issue's fix intent (ac1 coverage reads the Story's records, ac2 freshness counts only the repository's code-index work, ac3 a fallback records why, through every transport boundary to the record) [c8].
+
+## Resolved questions
+
+- `qf4bcc07d` — cd1 (partial): IndexQueue.codeIndexWorkFor is a new method on the existing IndexQueue class (src/daemon/queue.ts); there is no HLD to own it [c4].
+  - **resolved**: Own it in the S001 LLD — User 2026-10-17: the S001 LLD owns IndexQueue.codeIndexWorkFor; its contract (full/reconcile/file jobs for the repository, in flight and pending) is already specified there. _(2026-10-17T06:37:25.610Z)_
+
+## Citations
+
+- **[[c1]]** `step-output` `s1 context.assemble bundle 1: resolveCodeReviewSubject and its build-record seam (src/workflow/code-review/subject.ts:66, src/workflow/code-review/subject.ts:140)`
+- **[[c2]]** `step-output` `s1 context.assemble bundle 2: the TESTS record and readTestRecord (src/workflow/runners/build/test-record.ts:96, src/workflow/runners/build/test-record.ts:162)`
+- **[[c3]]** `step-output` `s1 context.assemble bundle 3: the coverage build-record signal (src/workflow/code-review/dimensions/coverage.ts:99-102)`
+- **[[c4]]** `step-output` `s1 context.assemble bundle 4: codeReview.freshness and IndexQueue (src/daemon/index.ts:808-830, src/daemon/queue.ts)`
+- **[[c5]]** `step-output` `s1 context.assemble bundle 5: the step handler wait and diff fallback (src/daemon/steps/code-review-step/handler.ts:285-345)`
+- **[[c6]]** `step-output` `s1 context.assemble bundle 6: existing tests for subject, freshness, runner and step handler`
+- **[[c7]]** `step-output` `s1 context.assemble bundle 7: freshnessFromReply, codeReview.run params, buildArtifact and the step state (src/shared/review-stream.ts:81, src/daemon/code-review-rpc.ts:189-208, src/workflow/code-review/runner.ts:275-292)`
+- **[[c8]]** `prior-artifact` `ISSUE-1102dc7125ad0c07 fix intent`
+- **[[c11]]** `prior-artifact` `Review cycle 1 round 3 and cycle 2 round 1 of LLD-1102dc7125ad0c07-S001 (2026-10-17): test results resolved per file by the latest run (ranAt), so a newer failed, timed-out or title-less run supersedes older passes; addressed in this version`
+- **[[c10]]** `prior-artifact` `Review round 2 of LLD-1102dc7125ad0c07-S001 (2026-10-17): the request serializer codeReviewRequestParams was missing from the change sites and tests; addressed in this version`
+- **[[c9]]** `prior-artifact` `Review round 1 of LLD-1102dc7125ad0c07-S001 (2026-10-17): inFlight not carried, transport sites missing, nested TESTS fields unvalidated, no transport-to-record tests; all four addressed in this version`

@@ -24,6 +24,7 @@ import { IpcServer } from '../../daemon/server.js';
 import { createRepoSettingsHandlers } from '../../daemon/repo-settings.js';
 import { _setTrackerExecForTests } from '../../workflow/tracker/github.js';
 import { githubConfigPath } from '../../workflow/config/github.js';
+import { runTrackerSetup } from '../../workflow/tracker/setup.js';
 import type { TrackerSetupReport } from '../../workflow/tracker/setup.js';
 
 const ALL_KEYS = ['gh-auth', 'oauth-scopes', 'config', 'labels', 'issue-types', 'project'];
@@ -95,6 +96,21 @@ async function fakeDaemon(env: Env, mode: 'silent' | 'early-close'): Promise<{ c
 
 const stepOf = (r: TrackerSetupReport, key: string) => r.steps.find(s => s.key === key);
 
+/**
+ * Runs trackerSetup and measures the config call alone: from the start of the call to the moment the
+ * remaining steps are about to run (the run seam), which is after the plan and the daemon call and before
+ * any other step.
+ */
+async function timedConfig(repo: string, deps: TrackerSetupDeps): Promise<{ report: TrackerSetupReport; configMs: number }> {
+	const started = Date.now();
+	let configMs = -1;
+	const report = await trackerSetup(repo, {}, {
+		...deps,
+		run: (r, o) => { configMs = Date.now() - started; return runTrackerSetup(r, o); },
+	});
+	return { report, configMs };
+}
+
 test('config step done, already and failed through the terminal service', async () => {
 	const env = setup();
 	const d = await daemon(env);
@@ -139,30 +155,37 @@ test('silent and early-closing daemon fail the config step within the deadline',
 	const DEADLINE = 300;
 	const env = setup();
 	try {
+		// Silent daemon: the config call ends at the deadline, not before and not long after.
 		const silent = await fakeDaemon(env, 'silent');
 		try {
-			const started = Date.now();
-			const report = await trackerSetup(env.repo, {}, { connect: silent.connect, timeoutMs: DEADLINE });
-			const elapsed = Date.now() - started;
+			const { report, configMs } = await timedConfig(env.repo, { connect: silent.connect, timeoutMs: DEADLINE });
 			const config = stepOf(report, 'config');
 			assert.equal(config?.status, 'failed');
 			assert.match(config?.detail ?? '', /daemon owns that file and must be running/);
 			assert.match(config?.detail ?? '', /timeout/);
-			// The timing claim is about the config call only, with generous slack for a loaded machine.
-			assert.ok(elapsed >= DEADLINE - 50 && elapsed < DEADLINE + 3000, `config call took ${elapsed} ms`);
+			assert.ok(configMs >= DEADLINE - 50 && configMs < DEADLINE + 3000, `config call took ${configMs} ms`);
 			await new Promise<void>(r => setTimeout(r, 50));
 			assert.equal(silent.closed(), 1, 'the socket was released');
 		} finally { await silent.close(); }
 
+		// Early-closing daemon: fails at the close, far inside a deadline that would otherwise allow 10 s.
 		const early = await fakeDaemon(env, 'early-close');
 		try {
-			const report = await trackerSetup(env.repo, {}, { connect: early.connect, timeoutMs: 10_000 });
+			const { report, configMs } = await timedConfig(env.repo, { connect: early.connect, timeoutMs: 10_000 });
 			const config = stepOf(report, 'config');
 			assert.equal(config?.status, 'failed');
 			assert.match(config?.detail ?? '', /closed/);
 			assert.match(config?.detail ?? '', /daemon owns that file/);
+			assert.ok(configMs < 3000, `config call took ${configMs} ms`);
 			assert.equal(early.closed(), 1);
 		} finally { await early.close(); }
+
+		// No daemon: fails at once, again far inside the deadline.
+		const { report, configMs } = await timedConfig(env.repo, { connect: () => createConnection(join(env.dir, 'absent.sock')), timeoutMs: 10_000 });
+		assert.equal(stepOf(report, 'config')?.status, 'failed');
+		assert.match(stepOf(report, 'config')?.detail ?? '', /daemon owns that file and must be running/);
+		assert.ok(configMs < 3000, `config call took ${configMs} ms`);
+
 		assert.equal(TRACKER_CONFIG_TIMEOUT_MS, 15000);
 	} finally { env.cleanup(); }
 });
@@ -189,6 +212,29 @@ test('the remaining setup steps still run after a failed config step', async () 
 			const malformed = await trackerSetup(env.repo, {});
 			assert.equal(stepOf(malformed, 'config')?.status, 'failed');
 			assert.deepEqual(malformed.steps.map(s => s.key), ALL_KEYS);
+			rmSync(env.cfg);
+
+			// A repo with no origin remote: the plan fails and the other steps still report.
+			const bare = join(env.dir, 'bare');
+			mkdirSync(bare);
+			execFileSync('git', ['init', '-q', bare]);
+			const noOrigin = await trackerSetup(bare, {});
+			assert.equal(stepOf(noOrigin, 'config')?.status, 'failed');
+			assert.match(stepOf(noOrigin, 'config')?.detail ?? '', /could not determine owner\/repo/);
+			assert.deepEqual(noOrigin.steps.map(s => s.key), ALL_KEYS);
+
+			// A daemon business error (the repo is not registered with it): failed, other steps still report.
+			const handlers = createRepoSettingsHandlers({ registeredRepos: async () => [], configPath: githubConfigPath });
+			const ipc = new IpcServer({ 'repo.trackerConfig.ensure': handlers['repo.trackerConfig.ensure']! });
+			const refusePath = join(env.dir, 'refuse.sock');
+			const refuseServer = createServer((c: Socket) => { (ipc as unknown as { handleConnection(s: Socket): void }).handleConnection(c); });
+			await new Promise<void>(r => refuseServer.listen(refusePath, () => r()));
+			try {
+				const refused = await trackerSetup(env.repo, {}, { connect: () => createConnection(refusePath) });
+				assert.equal(stepOf(refused, 'config')?.status, 'failed');
+				assert.match(stepOf(refused, 'config')?.detail ?? '', /not a registered repo path/);
+				assert.deepEqual(refused.steps.map(s => s.key), ALL_KEYS);
+			} finally { await new Promise<void>(r => refuseServer.close(() => r())); }
 		} finally { await silent.close(); await early.close(); }
 	} finally { env.cleanup(); }
 });
@@ -240,9 +286,10 @@ test('makeServices always injects the config seam', async () => {
 		for (const [i, opts] of seen.entries()) assert.ok(opts.configOutcome !== undefined, `branch ${i} passed no configOutcome`);
 	} finally { await d.close(); env.cleanup(); }
 
-	// Source search: outside the daemon, tests and the setup module itself, runTrackerSetup is called only
-	// from the terminal service, and that call passes configOutcome.
+	// Source search: outside the daemon, tests and the setup module itself, nothing may reference
+	// runTrackerSetup except the terminal service, and there exactly one call exists and it passes configOutcome.
 	const root = fileURLToPath(new URL('../../', import.meta.url));
+	const stripImports = (text: string): string => text.replace(/import\s[^;]*?from\s+['"][^'"]+['"];?/gs, '');
 	const offenders: string[] = [];
 	const walk = (dir: string): void => {
 		for (const name of readdirSync(dir, { withFileTypes: true })) {
@@ -250,16 +297,18 @@ test('makeServices always injects the config seam', async () => {
 			if (name.isDirectory()) { if (name.name !== '__tests__') walk(full); continue; }
 			if (!/\.(ts|tsx)$/.test(name.name)) continue;
 			const rel = relative(root, full);
-			if (rel.startsWith('daemon/') || rel === join('workflow', 'tracker', 'setup.ts')) continue;
-			const text = readFileSync(full, 'utf8');
-			for (const m of text.matchAll(/\brunTrackerSetup\s*\(([^)]*)\)/g)) {
-				if (!(m[1] ?? '').includes('configOutcome')) offenders.push(`${rel}: ${m[0]}`);
-			}
+			if (rel.startsWith('daemon/') || rel === join('workflow', 'tracker', 'setup.ts') || rel === join('cli', 'services', 'workflow.ts')) continue;
+			if (/\brunTrackerSetup\b/.test(stripImports(readFileSync(full, 'utf8')))) offenders.push(rel);
 		}
 	};
 	walk(root);
-	// The service passes the seam through a spread object, so its call is checked separately.
-	const service = readFileSync(join(root, 'cli', 'services', 'workflow.ts'), 'utf8');
-	assert.match(service, /\{ \.\.\.opts, configOutcome \}/);
-	assert.deepEqual(offenders.filter(o => !o.startsWith(join('cli', 'services', 'workflow.ts'))), []);
+	assert.deepEqual(offenders, [], 'production code outside the terminal service references runTrackerSetup');
+
+	const service = stripImports(readFileSync(join(root, 'cli', 'services', 'workflow.ts'), 'utf8'));
+	assert.equal(service.match(/\brunTrackerSetup\b/g)?.length, 1, 'the service references runTrackerSetup once (as the default run seam)');
+	assert.equal(service.match(/\brun\(/g)?.length, 1, 'the service has one call of the run seam');
+	assert.match(service, /return run\(repoPath, \{ \.\.\.opts, configOutcome \}\);/);
+
+	// The guard itself fails on a bare call.
+	assert.ok(/\brunTrackerSetup\b/.test(stripImports("import { runTrackerSetup } from './x.js';\nexport const y = () => runTrackerSetup('/r');")));
 });

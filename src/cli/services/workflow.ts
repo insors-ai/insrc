@@ -378,5 +378,6 @@ export async function trackerSetup(repoPath: string, opts: TrackerSetupOptions =
 	const configOutcome: ConfigOutcome = plan.status === 'needs-write'
 		? await ensureThroughDaemon(repoPath, plan, deps)
 		: { status: plan.status, detail: plan.detail };
-	return (deps.run ?? runTrackerSetup)(repoPath, { ...opts, configOutcome });
+	const run = deps.run ?? runTrackerSetup;
+	return run(repoPath, { ...opts, configOutcome });
 }

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-17T04:33:19.483Z  ·  **Updated:** 2026-10-17T04:55:25.960Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-17T04:33:19.483Z  ·  **Updated:** 2026-10-17T05:02:48.540Z
 
-**Commit:** 08c023de
+**Commit:** 8a0516f9
 
 ## Scope
 
@@ -16,7 +16,7 @@ bugfix/small: one function and its caller, reuses the existing range-base resolv
 
 ## Summary
 
-Commit 08c023de: trivialCheckPlan(repoPath, base?) lists __tests__/*.test.ts files changed in base..HEAD when a base resolves, else the HEAD commit's (unchanged fallback); handleStandaloneValidate passes resolveStoryRangeBase(repoPath, epicHash, storyId). Tests: validation-checks.test.ts (range across three commits vs the HEAD fallback) and build-start.test.ts (a real trivial validate under a later records commit plans the stamped range's test file). Two falsifying mutations (caller passes no base; base ignored) each fail a test. Full sweep: tsc clean; failures are the 2 pre-existing ones (sqlite-driver, review-decision) plus src/db/lance/__tests__/cleanup.test.ts, which hung under sweep load and passes 8/8 alone.
+08c023de: trivialCheckPlan(repoPath, base?) lists __tests__ files changed in base..HEAD when a base resolves, else the HEAD commit's; handleStandaloneValidate passes resolveStoryRangeBase. dcc39996 (code review round 1, MED): a listing git refuses now fails the tests check (noTests ok:false, "could not list the build's files: ...") instead of passing as "no tests"; build-step.test.ts's no-git trivial fixture assertion updated to expect that. 8a0516f9 is a --no-ff merge of upstream docs-only commits. Tests: validation-checks.test.ts, build-start.test.ts, build-step.test.ts; three falsifying mutations (caller passes no base, base ignored, error path ok:true) each fail a test. build-step + workflow + MCP suites: 2295 pass, the only other failure the pre-existing review-decision one.
 
 ## Tasks validated
 
@@ -26,9 +26,12 @@ Commit 08c023de: trivialCheckPlan(repoPath, base?) lists __tests__/*.test.ts fil
 
 ## Changes
 
-- `.insrc/artifacts/ISSUE-91640defac1b5816.json` — **insrc-build** (2026-10-17T04:55:25.960Z)
-- `docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/ISSUE.md` — **insrc-build** (2026-10-17T04:55:25.960Z)
-- `src/daemon/steps/build-step/__tests__/build-start.test.ts` — **insrc-build** (2026-10-17T04:55:25.960Z)
-- `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` — **insrc-build** (2026-10-17T04:55:25.960Z)
-- `src/daemon/steps/build-step/phases/validate.ts` — **insrc-build** (2026-10-17T04:55:25.960Z)
-- `src/daemon/steps/build-step/validation-checks.ts` — **insrc-build** (2026-10-17T04:55:25.960Z)
+- `.insrc/artifacts/CR-91640defac1b5816-S001.json` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `.insrc/artifacts/ISSUE-91640defac1b5816.json` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/ISSUE.md` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/CR.md` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `src/daemon/steps/build-step/__tests__/build-start.test.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `src/daemon/steps/build-step/__tests__/build-step.test.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `src/daemon/steps/build-step/phases/validate.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `src/daemon/steps/build-step/validation-checks.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)

@@ -262,7 +262,10 @@ export class IndexQueue {
       // The summary lane yields to code work: it starts a summary only while the
       // index lane is idle (Story 0f0e4f45). A summary already running is not stopped.
       if (lane === this.lanes.summary && lane.jobs.length > 0) {
-        await this.waitForIndexIdle();
+        // Re-checked after every wake: an index job enqueued after the wait resolved
+        // but before this continuation ran must still go first. No await follows the
+        // last check before the shift below.
+        while (!this.stopped && !this.indexIdle) await this.waitForIndexIdle();
         if (this.stopped) break;
       }
       const job = lane.jobs.shift();

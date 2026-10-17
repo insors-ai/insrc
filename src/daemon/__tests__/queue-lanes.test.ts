@@ -232,3 +232,25 @@ test('waitForIndexIdle resolves at once when the index lane is idle, after its c
 	q.stop();
 	await running;
 });
+
+test('a summary never starts after a code job was queued: with the index lane idle at start it starts at once, and a code job queued just after runs beside that one summary only', async () => {
+	const q = new IndexQueue();
+	const order: string[] = [];
+	const file = gate();
+	q.enqueue({ kind: 'doc-summarise-entity', entityId: 'e1' });
+	q.enqueue({ kind: 'doc-summarise-entity', entityId: 'e2' });
+	const running = q.start(async job => {
+		order.push(`start:${job.kind === 'file' ? 'file' : (job as { entityId: string }).entityId}`);
+		if (job.kind === 'file') await file.wait;
+	});
+	order.push('queued:file');
+	q.enqueue({ kind: 'file', filePath: join(A, 'x.ts'), event: 'update' });   // before either lane resumes
+	await until(() => order.includes('start:file'), 'the file job to start');
+	await tick(); await tick();
+	assert.deepEqual(order, ['start:e1', 'queued:file', 'start:file'], 'e1 was already in progress; e2 waits behind the code job');
+	file.open();
+	await until(() => order.includes('start:e2'), 'e2 to run');
+	assert.deepEqual(order, ['start:e1', 'queued:file', 'start:file', 'start:e2']);
+	q.stop();
+	await running;
+});

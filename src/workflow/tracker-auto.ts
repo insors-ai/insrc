@@ -36,11 +36,9 @@ import { renderLldMarkdown } from './artifacts/lld.js';
 import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
 import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactId, lldArtifactPaths, readEpicCreatedAt, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
-import {
-	ghAttachMilestone, ghAuthOk, ghComment, ghCreateIssueTyped, ghCreateLabel,
-	ghEditIssueBody, ghEnsureMilestone, ghFindIssueByLabels, ghGetIssueBody, ghLinkSubIssue,
-	type CreatedIssue,
-} from './tracker/github.js';
+import { GhCommandError, ghAuthOk } from './tracker/github.js';
+import { createGithubTracker } from './tracker/github-adapter.js';
+import type { CreatedIssue, IssueOps, PortResult } from './tracker/port.js';
 import {
 	allTrackerLabels, epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody,
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
@@ -112,6 +110,8 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 	const g = gate(repoPath);
 	if ('skip' in g) return g.skip;
 	const cfg = g.cfg;
+	const port = createGithubTracker(cfg.owner, cfg.repo);
+	const ops = port.issueOps;
 
 	let define: DefineArtifact;
 	try { define = readDefineArtifact(repoPath, epicHash); }
@@ -120,24 +120,28 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 	// Duplicate guard: adopt an existing Epic issue (unique by epic +
 	// epic-membership labels) rather than creating a second one.
 	const membership = epicMembershipLabel(epicSlug);
-	const adopted = ghFindIssueByLabels(cfg.owner, cfg.repo, [cfg.epicLabel, membership]);
+	// A failed lookup reads as "not found" (as before), so the Epic is created.
+	const found = port.findIssue([cfg.epicLabel, membership]);
+	const adopted = found.ok ? found.value ?? undefined : undefined;
 	let epicRef: string;
 	let created: string[] = [];
 	if (adopted !== undefined) {
 		epicRef = adopted;
 	} else {
 		for (const label of allTrackerLabels(cfg.epicLabel, cfg.storyLabel, epicSlug)) {
-			if (ghCreateLabel(cfg.owner, cfg.repo, label)) created.push(label);
+			if (ops.ensureLabel(label)) created.push(label);
 		}
 		try {
 			const epicWid = safeCanonical(() => epicWorkflowId(epicHash, define.meta.createdAt));
 			const title = epicWid !== undefined ? `${epicWid} — ${firstSentence(define.body.problem)}` : `Epic: ${firstSentence(define.body.problem)}`;
 			// ghCreateIssueTyped applies the native `Epic` issue type (fail-open to
 			// untyped if the org lacks it).
-			epicRef = ghCreateIssueTyped(cfg.owner, cfg.repo, title,
-				renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo }, epicWid), [cfg.epicLabel, membership], cfg.epicIssueType).ref;
+			epicRef = unwrap(ops.create({
+				title, body: renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo }, epicWid),
+				labels: [cfg.epicLabel, membership], issueType: cfg.epicIssueType,
+			})).ref;
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
-		if (cfg.useMilestones) bestEffort('milestone', () => { ghEnsureMilestone(cfg.owner, cfg.repo, epicSlug); ghAttachMilestone(cfg.owner, cfg.repo, epicRef, epicSlug); });
+		if (cfg.useMilestones) bestEffort('milestone', () => { ops.ensureMilestone(epicSlug); unwrap(ops.attachMilestone(epicRef, epicSlug)); });
 	}
 
 	// Persist the ref (firm): on the HLD (its own doc link) and on the
@@ -152,8 +156,8 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 	relink(hldArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug).md, () => { const a = readHldArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderHldMarkdown(a)); });
 	relink(definePaths.md, () => { const a = readDefineArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderDefineMarkdown(a)); });
 
-	if (adopted === undefined) bestEffort('comment', () => ghComment(cfg.owner, cfg.repo, epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))));
-	postReviewComment(cfg, epicRef, hldJsonPath);
+	if (adopted === undefined) bestEffort('comment', () => unwrap(ops.comment(epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash)))));
+	postReviewComment(ops, epicRef, hldJsonPath);
 
 	return adopted !== undefined ? { status: 'already-exists', epicRef } : { status: 'created', epicRef, labelsCreated: created };
 }
@@ -175,6 +179,8 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 	const g = gate(repoPath);
 	if ('skip' in g) return g.skip;
 	const cfg = g.cfg;
+	const port = createGithubTracker(cfg.owner, cfg.repo);
+	const ops = port.issueOps;
 
 	let define: DefineArtifact;
 	try { define = readDefineArtifact(repoPath, epicHash); }
@@ -202,16 +208,18 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 			const title = storyWid !== undefined ? `${storyWid} — ${story.title}` : `${storyId}: ${story.title}`;
 			// ghCreateIssueTyped (REST) returns the DB id needed to link a
 			// native sub-issue; stories stay untyped (no issueType passed).
-			created = ghCreateIssueTyped(cfg.owner, cfg.repo, title,
-				renderStoryBody(epicRef, story, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, storyWid), [cfg.storyLabel, epicMembershipLabel(epicSlug)], cfg.storyIssueType);
+			created = unwrap(ops.create({
+				title, body: renderStoryBody(epicRef, story, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, storyWid),
+				labels: [cfg.storyLabel, epicMembershipLabel(epicSlug)], issueType: cfg.storyIssueType,
+			}));
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		storyRef = created.ref;
 		// Link the Story as a NATIVE sub-issue of its Epic — mirrors the
 		// Task→Story link, so the full Epic→Story→Task hierarchy + progress
 		// rollups render in the issues UI and any Project (was previously only
 		// the markdown task-list in the Epic body).
-		bestEffort('epic sub-issue', () => ghLinkSubIssue(cfg.owner, cfg.repo, epicRef, created.id));
-		if (cfg.useMilestones) bestEffort('milestone', () => ghAttachMilestone(cfg.owner, cfg.repo, storyRef, epicSlug));
+		bestEffort('epic sub-issue', () => unwrap(ops.linkSubIssue(epicRef, created.id)));
+		if (cfg.useMilestones) bestEffort('milestone', () => unwrap(ops.attachMilestone(storyRef, epicSlug)));
 	}
 
 	// Persist: storyRef on the LLD (its doc link) + aggregate into the
@@ -223,12 +231,12 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 
 	if (adopted === undefined) {
 		bestEffort('tasklist', () => {
-			const current = ghGetIssueBody(cfg.owner, cfg.repo, epicRef);
+			const current = unwrap(ops.readBody(epicRef));
 			const updated = updateEpicTaskList(current, storyId, storyRef, story.title);
-			if (updated !== current) ghEditIssueBody(cfg.owner, cfg.repo, epicRef, updated);
+			if (updated !== current) unwrap(ops.writeBody(epicRef, updated));
 		});
-		bestEffort('comment', () => ghComment(cfg.owner, cfg.repo, storyRef, renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))));
-	postReviewComment(cfg, storyRef, lldJsonPath);
+		bestEffort('comment', () => unwrap(ops.comment(storyRef, renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId)))));
+	postReviewComment(ops, storyRef, lldJsonPath);
 	}
 
 	return adopted !== undefined ? { status: 'already-exists', storyRef } : { status: 'created', storyRef };
@@ -252,6 +260,8 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 	const g = gate(repoPath);
 	if ('skip' in g) return g.skip;
 	const cfg = g.cfg;
+	const port = createGithubTracker(cfg.owner, cfg.repo);
+	const ops = port.issueOps;
 	if (!cfg.pushTasks) {
 		return { status: 'skipped', reason: 'task push disabled (set "pushTasks": true in ~/.insrc/github.json to enable)' };
 	}
@@ -281,13 +291,13 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 	if (tasks.length === 0) return { status: 'skipped', reason: 'plan has no tasks' };
 
 	// R4: the plan's review lands on its parent Story issue.
-	postReviewComment(cfg, storyRef, planJsonPath);
+	postReviewComment(ops, storyRef, planJsonPath);
 
 	// Ensure the task + membership labels exist (idempotent, best-effort).
 	const membership = epicMembershipLabel(epicSlug);
 	const created: string[] = [];
 	for (const label of [cfg.taskLabel, membership]) {
-		if (ghCreateLabel(cfg.owner, cfg.repo, label)) created.push(label);
+		if (ops.ensureLabel(label)) created.push(label);
 	}
 
 	const taskRefs: Record<string, string> = { ...(meta.tracker?.taskRefs ?? {}) };
@@ -299,15 +309,15 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 		try {
 			const taskWid = safeCanonical(() => taskWorkflowId(epicHash, define.meta.createdAt, storyId, task.id));
 			const taskTitle = taskWid !== undefined ? `${taskWid} — ${task.title}` : `${storyId}/${task.id}: ${task.title}`;
-			issue = ghCreateIssueTyped(
-				cfg.owner, cfg.repo, taskTitle,
-				renderTaskBody(parentStoryRef, storyId, task, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, taskWid),
-				[cfg.taskLabel, membership], cfg.taskIssueType,
-			);
+			issue = unwrap(ops.create({
+				title: taskTitle,
+				body: renderTaskBody(parentStoryRef, storyId, task, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, taskWid),
+				labels: [cfg.taskLabel, membership], issueType: cfg.taskIssueType,
+			}));
 		} catch (err) { return { status: 'failed', reason: `gh issue create (task ${task.id}) failed: ${(err as Error).message}` }; }
 		taskRefs[task.id] = issue.ref;
 		createdCount += 1;
-		bestEffort(`sub-issue ${task.id}`, () => ghLinkSubIssue(cfg.owner, cfg.repo, parentStoryRef, issue.id));
+		bestEffort(`sub-issue ${task.id}`, () => unwrap(ops.linkSubIssue(parentStoryRef, issue.id)));
 		if (!issue.typed) log.info({ task: task.id, type: cfg.taskIssueType }, 'task issue created untyped (org may not have the issue type)');
 	}
 
@@ -341,6 +351,14 @@ function withResolvedTail(
 	return core + renderResolvedQuestionsSection(meta.questionResolutions ?? {}) + renderCitationBlock(citations);
 }
 
+/** The one unwrapping rule: an adapter result that failed is thrown again, so the
+ *  existing try/catch and bestEffort wrappers behave as they did when the gh
+ *  wrappers themselves threw. */
+function unwrap<T>(r: PortResult<T>): T {
+	if (!r.ok) throw new GhCommandError(r.kind, r.reason);
+	return r.value;
+}
+
 /** Run a non-critical side effect; log + swallow failures. */
 function bestEffort(what: string, fn: () => void): void {
 	try { fn(); } catch (err) { log.warn({ what, err: (err as Error).message }, 'tracker side-effect failed'); }
@@ -356,12 +374,10 @@ function readReview(jsonPath: string): ReviewReport | undefined {
 
 /** R4: post the finalize review report as an issue comment (best-effort). No
  *  comment when the artifact carries no review. */
-function postReviewComment(cfg: { owner: string; repo: string }, ref: string, jsonPath: string): void {
+function postReviewComment(ops: IssueOps, ref: string, jsonPath: string): void {
 	const review = readReview(jsonPath);
 	if (review === undefined) return;
-	bestEffort('review-comment', () => ghComment(
-		cfg.owner, cfg.repo, ref, `<!-- insrc:review -->\n${renderReviewReport(review)}`,
-	));
+	bestEffort('review-comment', () => unwrap(ops.comment(ref, `<!-- insrc:review -->\n${renderReviewReport(review)}`)));
 }
 
 function firstSentence(s: string): string {

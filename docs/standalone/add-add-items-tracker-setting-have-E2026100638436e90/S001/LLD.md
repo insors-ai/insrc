@@ -2,6 +2,8 @@
 
 # LLD: E2026100638436e90:S001
 
+> **Superseded (2026-10-17).** By the project owner's decision in chat, this unbuilt design is superseded by `LLD-315d510cb28100e2-s1` (Epic `team-signoff-claim-based-workflow`, Story s1), whose `TrackerPort` (sc1) is the one tracker abstraction. This LLD was never approved (`approvedAt` unset). Its other parts (the `tracker.addItems` setting, the daemon-side flow, reject and amendment moves, the pending list) are not carried forward and need their own story; its companion `LLD-9a7bbe63297457c2-S001` needs its own decision. Do not build from this document.
+
 ## Summary
 
 **Epic:** `add-add-items-tracker-setting-have`

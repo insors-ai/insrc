@@ -1,0 +1,178 @@
+<!-- insrc:artifact PLAN-315d510cb28100e2-s1 -->
+
+# Plan: E20261017315d510c:S001
+
+## Summary
+
+**Epic:** `team-signoff-claim-based-workflow`
+**LLD run:** `wf-1792230631252-uo0o81`
+**LLD effective hash:** `0774bc0461d3...`
+
+Building s1 starts at the bottom: a classified, timed gh runner and the move of the issue wrappers onto it, including the narrowed typed-create retry. On top of that go the port types with the approved issueOps field and a strict target resolver, then the GitHub adapter (identity, lookup, claim, issue operations) and loadTracker. Only then are the callers switched one group at a time (tracker-auto, the bugfix deps, the question comment), each held to its old gh sequence and failure result, and a final pass checks the whole suite and the list of operations left on the legacy path.
+
+## Contents
+
+1. [Tasks](#1-tasks)
+2. [Test-strategy coverage](#2-test-strategy-coverage)
+3. [References](#3-references)
+
+## 1. Tasks
+
+| # | Task | Size | Depends on | Tests | Derived from |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **`t1`** Add the classified, timed gh runner | M | — | unit: src/workflow/tracker/__tests__/github-adapter.test.ts: runGh classifies ENOENT, authentication failure, timeout and other failures; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: runGh passes the 10 s timeout option to the exec seam; unit: src/workflow/tracker/__tests__/tracker.test.ts: out and silent keep their current options | [[c3]] [[c6]] |
+| 2 | **`t2`** Move the issue wrappers, ghCreateLabel and ghCurrentLogin onto runGh and narrow the typed-create retry | M | `t1` | unit: src/workflow/tracker/__tests__/github-adapter.test.ts: compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: a typed create rejected as an unknown issue type is retried once untyped and reports typed false; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable; integration: src/workflow/tracker/__tests__/tasks.test.ts: ghCurrentLogin still throws the returned-no-login Error for empty output; integration: src/workflow/tracker/__tests__/tracker.test.ts: migrated wrappers run the same argv and keep their failure results | [[c2]] [[c3]] [[c6]] |
+| 3 | **`t3`** Add the port types, capability check and strict target resolver | M | — | unit: src/workflow/tracker/__tests__/port.test.ts: missingCapabilities names every missing capability; unit: src/workflow/tracker/__tests__/port.test.ts: strict resolver refuses malformed or unsupported configuration; unit: src/workflow/tracker/__tests__/port.test.ts: strict resolver accepts an own entry without a type and falls back to the origin remote for type github; unit: src/workflow/tracker/__tests__/port.test.ts: strict resolver never takes a target from the default entry; unit: src/workflow/tracker/__tests__/port.test.ts: TrackerPort type exposes issueOps with the AMD-8 signatures; unit: src/workflow/config/__tests__/github.test.ts: lenient resolver behaviour is unchanged | [[c1]] [[c2]] [[c7]] |
+| 4 | **`t4`** Build the GitHub adapter core and loadTracker | M | `t2`, `t3` | integration: src/workflow/tracker/__tests__/port.test.ts: loadTracker succeeds when every needed capability is declared; integration: src/workflow/tracker/__tests__/port.test.ts: loadTracker with an empty needed set validates configuration and sign-in; integration: src/workflow/tracker/__tests__/port.test.ts: loadTracker refuses a needed signoff-request capability naming it; integration: src/workflow/tracker/__tests__/port.test.ts: loadTracker names gh as the missing tool; integration: src/workflow/tracker/__tests__/port.test.ts: loadTracker names the missing sign-in; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: findIssue returns the first of several matches and separates failure from not found; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: signoff methods return rejected without running gh | [[c1]] [[c3]] [[c7]] |
+| 5 | **`t5`** Add readAssignee and setAssignee to the adapter | M | `t4` | unit: src/workflow/tracker/__tests__/github-adapter.test.ts: readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee from zero, one and several assignees ends with exactly the requested user; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee makes no change call when already right and clears for null; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out | [[c1]] [[c3]] [[c8]] |
+| 6 | **`t6`** Add the issueOps group to the adapter | M | `t4` | unit: src/workflow/tracker/__tests__/github-adapter.test.ts: Epic create parity with ghCreateIssueTyped; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: Story create and Epic parent link parity; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: Task create and Story parent link parity; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper; unit: src/workflow/tracker/__tests__/github-adapter.test.ts: ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds | [[c1]] [[c2]] [[c5]] |
+| 7 | **`t7`** Switch the tracker-auto call sites to the adapter | M | `t6` | integration: src/workflow/__tests__/tracker-auto.test.ts: the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter; integration: src/workflow/__tests__/tracker-auto.test.ts: a failing adoption lookup still leads to a create and does not throw; integration: src/workflow/__tests__/tracker-auto.test.ts: a failing create is reported as a failed result, not thrown | [[c5]] [[c6]] |
+| 8 | **`t8`** Wire the bugfix deps through the adapter | M | `t6` | integration: src/workflow/__tests__/bugfix-tracker.test.ts: bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter; integration: src/workflow/__tests__/bugfix-tracker.test.ts: a failed link makes linkToParent return false and a failed close propagates instead of reporting closed; integration: src/workflow/__tests__/bugfix-tracker.test.ts: relink-by-label match is recorded, closed and returned as closed; integration: src/workflow/__tests__/bugfix-tracker.test.ts: relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue; integration: src/workflow/__tests__/bugfix-tracker.test.ts: both default deps factories keep their optional opts | [[c1]] [[c5]] [[c6]] |
+| 9 | **`t9`** Switch the question comment and pin the other affected callers | S | `t6` | integration: src/workflow/__tests__/questions.test.ts: the comment goes through the adapter with the same argv and a failure is logged in the existing catch; integration: src/workflow/tracker/__tests__/setup.test.ts: ensureLabels with a timing-out label create records the label as failed and continues; integration: src/workflow/tracker/__tests__/tasks.test.ts: listMyOpenTasks propagates a classified or empty login failure before any search call; integration: src/workflow/tracker/__tests__/tasks.test.ts: queryTasks keeps its current execution path and results | [[c4]] [[c5]] [[c6]] |
+| 10 | **`t10`** Run the full regression and type check | S | `t5`, `t7`, `t8`, `t9` | integration: npx tsx --test over src/workflow/**/*.test.ts and src/mcp/**/*.test.ts passes, with tsc --noEmit clean | [[c4]] [[c6]] |
+
+### 1.1 E20261017315d510c:S001:T001 — Add the classified, timed gh runner
+
+Add runGh and GhCommandError in src/workflow/tracker/github.ts beside the existing exec seam: a 10 s timeout, classification of ENOENT as missing-tool, an authentication failure as missing-signin, a timeout as unreachable and anything else as rejected, all through the same _setTrackerExecForTests seam so tests can pass the timeout option.
+
+**Acceptance checks:**
+- runGh classifies ENOENT, an authentication failure, a timeout and any other failure into the four kinds
+- The fake exec seam receives the 10 s timeout option
+- out() and silent() used by the retained wrappers are unchanged
+
+### 1.2 E20261017315d510c:S001:T002 — Move the issue wrappers, ghCreateLabel and ghCurrentLogin onto runGh and narrow the typed-create retry
+
+Switch ghCreateIssueTyped, ghLinkSubIssue, ghGetIssueBody, ghEditIssueBody, ghComment, ghCloseIssue, ghEnsureMilestone, ghAttachMilestone, ghCreateLabel and ghCurrentLogin to runGh while keeping each wrapper's signature (labels stay readonly string[]) and its current failure result (throw, boolean or swallow). The typed create retries untyped only on a confirmed issue-type rejection. queryTasks, ghGetIssueState and the other setup functions stay as they are.
+
+**Acceptance checks:**
+- Each migrated wrapper runs the same gh argv as before and keeps its failure result
+- A typed create that fails with a timeout, missing tool, missing sign-in or a non-type rejection is not followed by a second POST
+- A typed create rejected as an unknown issue type is retried once untyped and reports typed false
+- ghCurrentLogin still throws the 'returned no login' Error for empty output
+- Existing tests that pinned the catch-everything retry are updated to the new policy
+
+### 1.3 E20261017315d510c:S001:T003 — Add the port types, capability check and strict target resolver
+
+Create src/workflow/tracker/port.ts with the sc1 types (TrackerPort, PortResult, Capability, IssueSpec, minimal SignoffRequestSpec and SignoffRequestRef, CreatedIssue) and the issueOps field with its IssueOps interface exactly as approved amendment AMD-8 names it, plus missingCapabilities, and add the strict target resolver used only by loadTracker, following the resolveGithubConfig precedence and leaving the lenient resolver untouched.
+
+**Acceptance checks:**
+- The exported TrackerPort has a readonly issueOps: IssueOps field and IssueOps has create, linkSubIssue(parent, childId: number), close, comment, readBody, writeBody, ensureLabel, ensureMilestone and attachMilestone with the signatures in AMD-8
+- missingCapabilities names every capability the tracker does not declare
+- The strict resolver refuses malformed JSON, a non-object file or entry, an unsupported type, a bad owner or repo and type none
+- The strict resolver accepts an own entry without a type, falls back to the origin remote for type github, and never takes a target from the default entry
+- resolveGithubConfig and loadGithubConfigFile are unchanged and no lenient caller (tracker-auto, the bugfix deps, questions.ts) imports the strict resolver
+
+### 1.4 E20261017315d510c:S001:T004 — Build the GitHub adapter core and loadTracker
+
+Implement the GitHub adapter factory bound to one owner and repo: kind, capabilities {claim, issue-create}, whoAmI (converting the thrown 'no login' error to missing-signin), findIssue with first-result selection and failure kept distinct from not found, createIssue wrapping the detailed create, and the signoff methods returning rejected without running gh. Add loadTracker that applies the strict resolver, the gh and sign-in checks and the capability check.
+
+**Acceptance checks:**
+- loadTracker succeeds when every needed capability is declared and names a missing capability, a missing gh tool and a missing sign-in distinctly when it refuses
+- whoAmI returns the login and converts the empty-login throw to missing-signin
+- findIssue returns the first of several matches, ok with null for none and ok:false for a failed lookup
+- signoff-request and completion are undeclared and the signoff methods run no gh command
+
+### 1.5 E20261017315d510c:S001:T005 — Add readAssignee and setAssignee to the adapter
+
+Implement readAssignee (single assignee, null when none, rejected for more than one or a malformed reference) and setAssignee (read the current assignees, remove every other assignee, add the requested one or clear all for null, re-read and compare, report a partial or unknown outcome as rejected or unreachable without retrying) using gh issue edit and gh issue view.
+
+**Acceptance checks:**
+- setAssignee from zero, one (same user), one (another user) and several assignees ends with exactly the requested set, verified by the re-read
+- setAssignee makes no change call when the set is already right and clears every assignee for null
+- A differing re-read or a step that times out is reported as rejected or unreachable and no step is retried
+- readAssignee returns rejected for more than one assignee or a malformed reference without calling gh
+
+### 1.6 E20261017315d510c:S001:T006 — Add the issueOps group to the adapter
+
+Implement IssueOps on the adapter: create returning the CreatedIssue shape, linkSubIssue taking the numeric child id, close, comment, readBody, writeBody, ensureLabel keeping its boolean, ensureMilestone keeping its swallow and attachMilestone, each running the same gh argv as its wrapper, with port.createIssue wrapping issueOps.create.
+
+**Acceptance checks:**
+- Each issueOps operation runs the same gh argv as its wrapper, compared with a recording fake gh
+- Epic, Story and Task specs produce the same labels, issue type and parent link as the current calls, and a failed parent link does not fail the create
+- ensureLabel returns false on failure, ensureMilestone swallows a failed create and closing a closed issue succeeds
+
+### 1.7 E20261017315d510c:S001:T007 — Switch the tracker-auto call sites to the adapter
+
+Change autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan to call the adapter built from the already-resolved lenient config, applying the one unwrapping rule: operations that threw are unwrapped by throwing, the adoption lookup maps a failed lookup to undefined, ensureLabel and ensureMilestone keep their legacy results. No change to labels, order, best-effort wrapping or persisted TrackerMeta.
+
+**Acceptance checks:**
+- The three push functions produce the same gh argv sequence, best-effort behaviour and TrackerMeta as before, including fail-open when gh is unavailable
+- A failing adoption lookup does not throw and still goes on to create the Epic issue
+- A failing create is reported as a failed result by the existing try/catch, not thrown
+
+### 1.8 E20261017315d510c:S001:T008 — Wire the bugfix deps through the adapter
+
+Change defaultTrackerCreateDeps and defaultTrackerCloseDeps, keeping their optional opts and the TrackerCreateDeps and TrackerCloseDeps interfaces, so createIssue keeps returning CreatedIssue, linkSubIssue keeps taking the numeric child id and throwing on failure, closeIssue throws on failure and findByLabels maps a failed lookup to undefined.
+
+**Acceptance checks:**
+- createBugfixTrackerIssue still passes created.id to linkSubIssue and a readonly string[] of labels type-checks
+- A failed link makes linkToParent return false and a failed close propagates instead of returning status closed
+- The relink-by-label recovery records, closes through issueOps.close and returns closed on a match, and returns skipped for no labels, no match and a failed lookup
+- Both factories accept the optional labels and promptOnLostRef as before
+
+### 1.9 E20261017315d510c:S001:T009 — Switch the question comment and pin the other affected callers
+
+Change the ghComment call in src/workflow/questions.ts to the adapter with its existing catch kept, and add tests for the other callers of migrated wrappers: setup label creation with a timing-out label create, and listMyOpenTasks with a classified or empty login failure before any search call, with queryTasks left untouched.
+
+**Acceptance checks:**
+- questions.ts posts its comment with the same argv and a failed comment is logged in the existing catch
+- setup ensureLabels records a timed-out label as failed and continues
+- listMyOpenTasks propagates a login failure as a thrown Error before any search call and the empty-login message still matches /no login/
+
+### 1.10 E20261017315d510c:S001:T010 — Run the full regression and type check
+
+Run the type check and the workflow, tracker, config and bugfix test suites, confirm the existing tracker, tasks, setup, tracker-auto, tracker-tasks and bugfix-tracker tests pass apart from the updated typed-create retry tests, and confirm by a listed search command that only the expected wrappers still use the legacy exec path.
+
+**Acceptance checks:**
+- tsc passes with strict settings
+- The workflow, tracker, config and bugfix test suites pass
+- A grep over src for out( and silent( call sites outside the runner lists exactly ghGetIssueState, queryTasks, the retained setup.ts functions and commitAndPushArtifacts, and that output is recorded in the build record
+
+## 2. Test-strategy coverage
+
+| LLD strategy item | Covered by |
+| :--- | :--- |
+| missingCapabilities names every capability the tracker does not declare | `t3` |
+| strict resolver refuses malformed JSON, a non-object file or entry, an unsupported type, a bad owner or repo, and type none | `t3` |
+| strict resolver accepts an own entry with owner and repo and no type, and an own entry with type github that falls back to the origin remote | `t3` |
+| strict resolver never takes a target from the default entry's owner and repo | `t3` |
+| runGh classifies ENOENT as missing-tool, an authentication failure as missing-signin, a timeout as unreachable and anything else as rejected | `t1` |
+| readAssignee returns the single login, null when unassigned, and rejected for more than one assignee or a malformed reference | `t5` |
+| setAssignee starting from zero, one (same user), one (another user) and several assignees ends with exactly the requested user, makes no change call when the set is already right, clears every assignee for null, and reports rejected or unreachable without a retry when the re-read differs or a step times out | `t5` |
+| createIssue and issueOps.create yield the same gh commands, labels, issue type and parent link as ghCreateIssueTyped and ghLinkSubIssue for an Epic, a Story (with Epic parent) and a Task (with Story parent) | `t6` |
+| compatibility exception 1: a typed create that fails with a timeout, a missing tool, a missing sign-in or a non-type rejection is not followed by a second create, whereas the old behaviour would have retried untyped; this test states the old and the new behaviour side by side | `t2` |
+| a typed create rejected as an unknown issue type is retried once untyped and reports typed false | `t2` |
+| findIssue returns the first result like ghFindIssueByLabels when several issues match, ok with null when nothing matches, and ok:false when the lookup fails | `t4` |
+| issueOps.linkSubIssue(parent, childId), close, comment, readBody, writeBody, ensureLabel, ensureMilestone and attachMilestone each run the same gh argv as ghLinkSubIssue, ghCloseIssue, ghComment, ghGetIssueBody, ghEditIssueBody, ghCreateLabel, ghEnsureMilestone and ghAttachMilestone, compared with a recording fake gh | `t6` |
+| ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds | `t6` |
+| compatibility exception 2: a migrated operation that exceeds 10 s is killed and reported as unreachable, and the fake exec receives the timeout option | `t1`, `t2` |
+| whoAmI returns the login on success, converts ghCurrentLogin's thrown 'no login' error to missing-signin, and fails with missing-tool for a missing gh, missing-signin for an unauthenticated gh, and unreachable for a timeout | `t4` |
+| signoff-request and completion are undeclared and the signoff methods return rejected without running gh | `t4` |
+| loadTracker succeeds when gh is present and signed in and every needed capability is declared (claim, issue-create) | `t4` |
+| loadTracker refuses a policy needing signoff-request, naming it, and runs no reduced mode | `t4` |
+| loadTracker names gh as the missing tool when gh is not found, and names the sign-in when gh is not signed in | `t4` |
+| autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan produce the same gh argv sequence, the same best-effort behaviour on a failing step and the same persisted TrackerMeta as before, with the adapter factory and lenient configuration, including fail-open when gh is unavailable | `t7` |
+| autoPushEpicOnHld with a failing adoption lookup does not throw and still goes on to create the Epic issue, as today | `t7` |
+| a failing tracker-auto create is reported as a failed result by the existing try/catch, not thrown | `t7` |
+| questions.ts posts its comment through the adapter with the same argv, and a failed comment is logged in its catch | `t9` |
+| setup ensureLabels with a label create that times out records that label as failed and continues with the others, as for any failure | `t9` |
+| listMyOpenTasks still resolves the current login and runs the same search; a login failure (missing tool, missing sign-in, timeout) and an empty login each propagate as a thrown Error out of listMyOpenTasks before any search call is made, and the empty-login message still matches /no login/ | `t2`, `t9` |
+| queryTasks keeps its current execution path and results | `t9` |
+| defaultTrackerCreateDeps still returns CreatedIssue with ref, id and typed, createBugfixTrackerIssue still passes created.id to linkSubIssue, and a readonly string[] of labels type-checks against TrackerCreateDeps.createIssue | `t8` |
+| a failed sub-issue link makes linkToParent return false and the create still reports created with linked false | `t8` |
+| a failed close makes closeBugfixTrackerIssue propagate the error instead of returning status closed | `t8` |
+| the relink-by-label recovery with a lookup match records the ref with recordRef, closes it through issueOps.close and returns status closed with that ref | `t8` |
+| the relink-by-label recovery with no labels, with no match, and with a failed lookup mapped to undefined each return a skipped status with the same reason text as today and never create an issue | `t8` |
+| both default deps factories accept the optional labels and promptOnLostRef as today, including the 'no labels' result of the recovery when none are given | `t8` |
+| existing tracker.test.ts, tasks.test.ts (including the empty-login throw), setup.test.ts, tracker-auto.test.ts, tracker-tasks.test.ts and bugfix-tracker.test.ts keep passing unchanged, except the existing tests that pin the old catch-everything typed-create retry, which are updated to the new retry policy | `t2`, `t10` |
+
+## 3. References
+
+- **[[c1]]** `prior-artifact` `LLD s1 contractDetails: the TrackerPort api, LoadTracker, whoAmI and the issueOps field of amendment AMD-315d510cb28100e2-8`
+- **[[c2]]** `prior-artifact` `LLD s1 dataModelChanges: port types, GitHub adapter factory, GhCommandError, StrictTrackerTarget, TrackerCreateDeps`
+- **[[c3]]** `prior-artifact` `LLD s1 errorPaths: runGh classification, timeout, typed-create retry, empty login, partial assignee state`
+- **[[c4]]** `prior-artifact` `LLD s1 testStrategy: unit, contract and integration subjects and the acceptance mapping`
+- **[[c5]]** `prior-artifact` `LLD s1 dataModelChanges: migrated call sites, affected callers and operations that stay outside the port`
+- **[[c6]]** `prior-artifact` `LLD s1 invariantsToPreserve and the two compatibility exceptions accepted on 2026-10-17`
+- **[[c7]]** `prior-artifact` `LLD s1 StrictTrackerTarget and the loadTracker contract`
+- **[[c8]]** `prior-artifact` `LLD s1 setAssignee and readAssignee contract and error cases`

@@ -151,7 +151,7 @@ test('ghCurrentLogin: reads gh api user .login', () => {
 	assert.equal(ghCurrentLogin(), 'subhagho');
 });
 
-test('ghCurrentLogin: throws when no login is returned', () => {
+test('ghCurrentLogin still throws the returned-no-login Error for empty output', () => {
 	_setTrackerExecForTests(((cmd: string, args: readonly string[]) => (args.join(' ').startsWith('api user') ? '' : '')) as Parameters<typeof _setTrackerExecForTests>[0]);
 	assert.throws(() => ghCurrentLogin(), /no login/);
 });
@@ -164,4 +164,43 @@ test('listMyOpenTasks: resolves the current login → assignee:<me> is:open', ()
 	const q = searchQueryArg(calls);
 	assert.ok(q.includes('assignee:subhagho'), q);
 	assert.ok(q.includes('is:open'), q);
+});
+
+// ---------------------------------------------------------------------------
+// listMyOpenTasks login failures and queryTasks (s1/t9)
+// ---------------------------------------------------------------------------
+
+test('listMyOpenTasks propagates a classified or empty login failure before any search call', () => {
+	const cases: Array<[string, () => string, RegExp]> = [
+		['missing tool', () => { throw Object.assign(new Error('spawnSync gh ENOENT'), { code: 'ENOENT' }); }, /gh CLI is not installed/],
+		['missing sign-in', () => { throw Object.assign(new Error('Command failed'), { stderr: 'To get started with GitHub CLI, please run:  gh auth login' }); }, /gh auth login/],
+		['timeout', () => { throw Object.assign(new Error('Command failed'), { code: 'ETIMEDOUT' }); }, /timed out/],
+		['empty login', () => '', /no login/],
+	];
+	for (const [name, login, message] of cases) {
+		const calls: string[][] = [];
+		_setTrackerExecForTests(((cmd: string, args: readonly string[]) => {
+			calls.push([cmd, ...args]);
+			if (args.join(' ').startsWith('api user')) return login();
+			return '';
+		}) as Parameters<typeof _setTrackerExecForTests>[0]);
+		assert.throws(() => listMyOpenTasks('acme', 'demo'), (e: unknown) => e instanceof Error && message.test(e.message), name);
+		assert.equal(calls.some(c => c.includes('graphql')), false, `${name}: no search call is made`);
+	}
+});
+
+test('queryTasks keeps its current execution path and results', () => {
+	const seen: Array<Record<string, unknown> | undefined> = [];
+	_setTrackerExecForTests(((cmd: string, args: readonly string[], opts?: Record<string, unknown>) => {
+		seen.push(opts);
+		if (args.join(' ').startsWith('api graphql')) return JSON.stringify({ data: { search: ONE_ISSUE } });
+		return '';
+	}) as Parameters<typeof _setTrackerExecForTests>[0]);
+	const page = queryTasks('acme', 'demo', {});
+	assert.equal(page.tasks.length, 1);
+	assert.equal(page.tasks[0]?.number, 42);
+	// Still the plain out() path: utf8 output, no timeout and no classification.
+	assert.deepEqual(seen[0], { encoding: 'utf8' });
+	_setTrackerExecForTests(() => { throw Object.assign(new Error('Command failed'), { code: 'ETIMEDOUT' }); });
+	assert.throws(() => queryTasks('acme', 'demo', {}), (e: unknown) => e instanceof Error && e.name !== 'GhCommandError');
 });

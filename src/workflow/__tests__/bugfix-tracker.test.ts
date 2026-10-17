@@ -411,3 +411,124 @@ test('integration: unconfigured repo -> no create/close commands, local issue un
 		rmSync(dir, { recursive: true, force: true });
 	}
 });
+
+// --- the default deps run through the GitHub adapter (s1/t8) ----------------
+
+/** A fake gh recording argv. REST creates answer { number: 42, id: 9001 }; `issue list` answers `listOut`. */
+function adapterGh(opts: { listOut?: string; failOn?: (args: readonly string[]) => boolean } = {}) {
+	const calls: string[][] = [];
+	_setTrackerExecForTests((_cmd, args) => {
+		calls.push([...args]);
+		if (opts.failOn?.(args) === true) throw new Error('boom');
+		if (args[0] === 'api' && args.includes('POST') && (args.find(a => a.startsWith('repos/')) ?? '').endsWith('/issues')) return JSON.stringify({ number: 42, id: 9001 });
+		if (args[0] === 'issue' && args[1] === 'list') return opts.listOut ?? '';
+		return '';
+	});
+	return calls;
+}
+
+const READONLY_LABELS: readonly string[] = Object.freeze(['issue:abcd1234abcd1234', 'bug']);
+
+test('bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter', async () => {
+	const calls = adapterGh();
+	try {
+		const deps = defaultTrackerCreateDeps({ labels: READONLY_LABELS });
+		// A readonly string[] type-checks against the dependency's createIssue.
+		const created: CreatedIssue = deps.createIssue('acme', 'widget', 'Fix the boom', 'body', READONLY_LABELS, 'Bug');
+		assert.deepEqual(created, { ref: 'acme/widget#42', id: 9001, typed: true });
+		const post = calls[0]!;
+		assert.ok(post.includes('labels[]=issue:abcd1234abcd1234') && post.includes('labels[]=bug') && post.includes('type=Bug'));
+
+		// createBugfixTrackerIssue passes created.id to linkSubIssue: the sub_issues POST carries it.
+		const dir = mkdtempSync(join(tmpdir(), 'bugfix-adapter-'));
+		try {
+			const recorded: string[] = [];
+			const cd: TrackerCreateDeps = {
+				...deps, resolveConfig: () => GH, authOk: () => ({ ok: true }), readIssue: () => issue({ parentRef: { slug: 'owner', storyId: 's1' } }),
+				readRecordedRef: () => null, resolveParentIssueRef: () => 'acme/widget#7', recordRef: (_p, _h, ref) => { recorded.push(ref); },
+			};
+			calls.length = 0;
+			const r = await createBugfixTrackerIssue(IN, cd);
+			assert.equal(r.status, 'created');
+			assert.equal(r.linked, true);
+			assert.deepEqual(recorded, ['acme/widget#42']);
+			assert.deepEqual(calls[1], ['api', '-X', 'POST', 'repos/acme/widget/issues/7/sub_issues', '-F', 'sub_issue_id=9001']);
+		} finally { rmSync(dir, { recursive: true, force: true }); }
+	} finally { _setTrackerExecForTests(); }
+});
+
+test('a failed link makes linkToParent return false and a failed close propagates instead of reporting closed', async () => {
+	try {
+		adapterGh({ failOn: a => a.some(x => x.includes('sub_issues')) });
+		const cd: TrackerCreateDeps = {
+			...defaultTrackerCreateDeps(), resolveConfig: () => GH, authOk: () => ({ ok: true }), readIssue: () => issue({ parentRef: { slug: 'owner', storyId: 's1' } }),
+			readRecordedRef: () => null, resolveParentIssueRef: () => 'acme/widget#7', recordRef: () => undefined,
+		};
+		const created = await createBugfixTrackerIssue(IN, cd);
+		assert.equal(created.status, 'created');
+		assert.equal(created.linked, false);
+
+		adapterGh({ failOn: a => a[0] === 'issue' && a[1] === 'close' });
+		const closeDeps: TrackerCloseDeps = { ...defaultTrackerCloseDeps(), resolveConfig: () => GH, authOk: () => ({ ok: true }), readRecordedRef: () => 'acme/widget#42' };
+		await assert.rejects(() => closeBugfixTrackerIssue(IN, closeDeps), /boom/);
+	} finally { _setTrackerExecForTests(); }
+});
+
+test('relink-by-label match is recorded, closed and returned as closed', async () => {
+	const calls = adapterGh({ listOut: '99\n' });
+	try {
+		const recorded: string[] = [];
+		const deps: TrackerCloseDeps = {
+			...defaultTrackerCloseDeps({ labels: ['issue:abcd1234abcd1234'], promptOnLostRef: () => ({ action: 'relink-by-label' }) }),
+			resolveConfig: () => GH, authOk: () => ({ ok: true }), readRecordedRef: () => null, recordRef: (_p, _h, ref) => { recorded.push(ref); },
+		};
+		const r = await closeBugfixTrackerIssue(IN, deps);
+		assert.deepEqual({ status: r.status, ref: r.ref }, { status: 'closed', ref: 'acme/widget#99' });
+		assert.deepEqual(recorded, ['acme/widget#99']);
+		assert.deepEqual(calls.map(c => c.slice(0, 3).join(' ')), ['issue list --repo', 'issue close 99']);
+	} finally { _setTrackerExecForTests(); }
+});
+
+test('relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue', async () => {
+	try {
+		const run = async (labels: readonly string[], gh: Parameters<typeof adapterGh>[0]) => {
+			const calls = adapterGh(gh);
+			const deps: TrackerCloseDeps = {
+				...defaultTrackerCloseDeps({ labels, promptOnLostRef: () => ({ action: 'relink-by-label' }) }),
+				resolveConfig: () => GH, authOk: () => ({ ok: true }), readRecordedRef: () => null, recordRef: () => undefined,
+			};
+			const r = await closeBugfixTrackerIssue(IN, deps);
+			assert.equal(calls.some(c => c[0] === 'api' && c.includes('POST')), false, 'never creates an issue');
+			assert.equal(calls.some(c => c[0] === 'issue' && c[1] === 'close'), false, 'nothing closed');
+			return { r, calls };
+		};
+		const none = await run([], {});
+		assert.equal(none.r.status, 'skipped');
+		assert.equal(none.r.reason, 'relink-by-label unavailable (no labels)');
+		assert.equal(none.calls.length, 0, 'no lookup without labels');
+
+		const noMatch = await run(['issue:x'], { listOut: '' });
+		assert.equal(noMatch.r.status, 'skipped');
+		assert.equal(noMatch.r.reason, 'relink-by-label found no matching issue');
+
+		const failed = await run(['issue:x'], { failOn: a => a[0] === 'issue' && a[1] === 'list' });
+		assert.equal(failed.r.status, 'skipped');
+		assert.equal(failed.r.reason, 'relink-by-label found no matching issue');
+	} finally { _setTrackerExecForTests(); }
+});
+
+test('both default deps factories keep their optional opts', () => {
+	const prompt: PromptOnLostRef = () => ({ action: 'skip' });
+	const withOpts = { labels: READONLY_LABELS, promptOnLostRef: prompt };
+	const c = defaultTrackerCreateDeps(withOpts);
+	const k = defaultTrackerCloseDeps(withOpts);
+	assert.deepEqual([...c.labels], [...READONLY_LABELS]);
+	assert.deepEqual([...k.labels], [...READONLY_LABELS]);
+	assert.equal(c.promptOnLostRef, prompt);
+	assert.equal(k.promptOnLostRef, prompt);
+	// Without opts: no labels and the no-op prompter.
+	for (const d of [defaultTrackerCreateDeps(), defaultTrackerCloseDeps(), defaultTrackerCreateDeps({}), defaultTrackerCloseDeps({})]) {
+		assert.deepEqual([...d.labels], []);
+		assert.equal(typeof d.promptOnLostRef, 'function');
+	}
+});

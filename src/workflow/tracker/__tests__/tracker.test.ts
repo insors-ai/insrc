@@ -16,7 +16,7 @@ import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { parseGithubRemoteUrl, commitAndPushArtifacts, _setTrackerExecForTests } from '../github.js';
+import { parseGithubRemoteUrl, commitAndPushArtifacts, ghAuthOk, ghGetIssueState, ghCloseIssue, ghComment, ghCreateLabel, ghEnsureMilestone, _setTrackerExecForTests } from '../github.js';
 import { parseIssueRef, buildRef, issueUrl, trackerRefLine } from '../refs.js';
 import { renderEpicBody, renderStoryBody, updateEpicTaskList, mapIssueStatus } from '../conventions.js';
 import { resolveWorkflowRef } from '../resolve.js';
@@ -363,4 +363,42 @@ test('resolveWorkflowRef: issue# and hierarchical-id forms resolve identically w
 		assert.deepEqual(viaHier, scoped);
 		assert.deepEqual(viaHierOpt, scoped);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// out() / silent() stay on their original options (no timeout) for the
+// retained wrappers — only the migrated operations use the timed runner.
+// ---------------------------------------------------------------------------
+
+test('out and silent keep their current options', () => {
+	const seen: Array<Record<string, unknown> | undefined> = [];
+	_setTrackerExecForTests((_cmd, _args, opts) => {
+		seen.push(opts as Record<string, unknown> | undefined);
+		return JSON.stringify({ state: 'OPEN', labels: [] });
+	});
+	try {
+		assert.deepEqual(ghAuthOk(), { ok: true });          // silent()
+		ghGetIssueState('o', 'r', 'o/r#1');                  // out()
+	} finally {
+		_setTrackerExecForTests();
+	}
+	assert.deepEqual(seen[0], { stdio: 'ignore' });
+	assert.deepEqual(seen[1], { encoding: 'utf8' });
+});
+
+test('migrated wrappers run the same argv and keep their failure results', () => {
+	const calls: string[][] = [];
+	_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return ''; });
+	try {
+		ghCloseIssue('o', 'r', 'o/r#4');
+		ghComment('o', 'r', 'o/r#4', 'hi');
+		assert.deepEqual(calls[0], ['issue', 'close', '4', '--repo', 'o/r']);
+		assert.deepEqual(calls[1], ['issue', 'comment', '4', '--repo', 'o/r', '--body', 'hi']);
+		_setTrackerExecForTests(() => { throw new Error('boom'); });
+		assert.equal(ghCreateLabel('o', 'r', 'x'), false);            // boolean, not a throw
+		assert.doesNotThrow(() => ghEnsureMilestone('o', 'r', 'm'));  // swallowed
+		assert.throws(() => ghCloseIssue('o', 'r', 'o/r#4'), /boom/); // throws
+	} finally {
+		_setTrackerExecForTests();
+	}
 });

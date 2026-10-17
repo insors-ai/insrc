@@ -40,6 +40,61 @@ function silent(cmd: string, args: readonly string[]): void {
 }
 
 // ---------------------------------------------------------------------------
+// Classified, timed gh runner
+// ---------------------------------------------------------------------------
+
+/** Every tracker command is bounded (HLD non-functional: 10 seconds). */
+export const GH_TIMEOUT_MS = 10_000;
+
+export type GhFailureKind = 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected';
+
+/** A failed `gh` command, classified. `reason` names the missing tool or
+ *  sign-in (or carries gh's own message); it is also the Error message. */
+export class GhCommandError extends Error {
+	readonly kind:   GhFailureKind;
+	readonly reason: string;
+	constructor(kind: GhFailureKind, reason: string) {
+		super(reason);
+		this.name   = 'GhCommandError';
+		this.kind   = kind;
+		this.reason = reason;
+	}
+}
+
+const SIGNIN_RE  = /not logged in|gh auth login|authentication|bad credentials|http 401|requires authentication/i;
+
+function classifyGhFailure(err: unknown): GhCommandError {
+	const e = err as NodeJS.ErrnoException & { stderr?: Buffer | string; killed?: boolean; signal?: string | null };
+	if (e.code === 'ENOENT') {
+		return new GhCommandError('missing-tool', 'gh CLI is not installed (install it from https://cli.github.com)');
+	}
+	const stderr = e.stderr === undefined ? '' : (typeof e.stderr === 'string' ? e.stderr : e.stderr.toString('utf8')).trim();
+	const detail = stderr.length > 0 ? stderr : (e.message ?? String(err));
+	if (e.code === 'ETIMEDOUT' || (e.killed === true && e.signal === 'SIGTERM')) {
+		return new GhCommandError('unreachable', `gh timed out after ${GH_TIMEOUT_MS / 1000} s`);
+	}
+	if (SIGNIN_RE.test(detail))  return new GhCommandError('missing-signin', 'gh is not signed in (run `gh auth login`)');
+	return new GhCommandError('rejected', detail);
+}
+
+/** Run `gh` with the 10 s timeout and return its trimmed stdout (empty when
+ *  `discardOutput`). Any failure is thrown as a classified GhCommandError.
+ *  Goes through the same swappable exec as out()/silent(), so tests see the
+ *  `timeout` option. */
+export function runGh(args: readonly string[], opts: { readonly discardOutput?: boolean } = {}): string {
+	try {
+		if (opts.discardOutput === true) {
+			_exec('gh', args, { stdio: ['ignore', 'ignore', 'pipe'], timeout: GH_TIMEOUT_MS });
+			return '';
+		}
+		const r = _exec('gh', args, { encoding: 'utf8', timeout: GH_TIMEOUT_MS });
+		return (typeof r === 'string' ? r : r.toString('utf8')).trim();
+	} catch (err) {
+		throw classifyGhFailure(err);
+	}
+}
+
+// ---------------------------------------------------------------------------
 // git
 // ---------------------------------------------------------------------------
 
@@ -121,7 +176,7 @@ export function ghAuthOk(): { readonly ok: true } | { readonly ok: false; readon
  *  (logged by the caller); label creation is best-effort. */
 export function ghCreateLabel(owner: string, repo: string, name: string): boolean {
 	try {
-		silent('gh', ['label', 'create', name, '--repo', `${owner}/${repo}`, '--force']);
+		runGh(['label', 'create', name, '--repo', `${owner}/${repo}`, '--force'], { discardOutput: true });
 		return true;
 	} catch {
 		return false;
@@ -144,10 +199,21 @@ export interface CreatedIssue {
 	readonly typed: boolean;   // whether the native issue type was applied
 }
 
+/** True only for a gh rejection that names the issue type (an org without
+ *  issue types enabled answers 422 about the type). */
+function isIssueTypeRejection(err: unknown): boolean {
+	return err instanceof GhCommandError
+		&& err.kind === 'rejected'
+		&& /\bissue[ _-]?types?\b/i.test(err.reason)
+		&& /422|unprocessable|validation failed|not enabled|not supported|unsupported|unknown|invalid/i.test(err.reason);
+}
+
 /** Create an issue via the REST API (so the numeric database `id` comes
  *  back for sub-issue linking) with an optional native issue TYPE. When
- *  a type is given but rejected (org without issue types enabled), retries
- *  once WITHOUT the type so the issue is still created — fail-open. */
+ *  a type is given and the type is rejected (org without issue types
+ *  enabled), retries once WITHOUT the type so the issue is still created.
+ *  Any other failure of the typed POST (timeout, missing tool or sign-in,
+ *  a non-type rejection) is rethrown and never followed by a second POST. */
 export function ghCreateIssueTyped(
 	owner: string, repo: string, title: string, body: string,
 	labels: readonly string[], issueType?: string,
@@ -163,11 +229,16 @@ export function ghCreateIssueTyped(
 	};
 	if (typeof issueType === 'string' && issueType.length > 0) {
 		try {
-			const r = parse(out('gh', [...base, '-f', `type=${issueType}`]));
+			const r = parse(runGh([...base, '-f', `type=${issueType}`]));
 			return { ref: buildRef(owner, repo, r.number), id: r.id, typed: true };
-		} catch { /* org may not have issue types — fall through untyped */ }
+		} catch (err) {
+			// Fall through untyped ONLY when the type itself was rejected (org without
+			// issue types). A timeout or any other failure may have committed the issue,
+			// so a second POST could duplicate it: rethrow instead.
+			if (!isIssueTypeRejection(err)) throw err;
+		}
 	}
-	const r = parse(out('gh', base));
+	const r = parse(runGh(base));
 	return { ref: buildRef(owner, repo, r.number), id: r.id, typed: false };
 }
 
@@ -175,20 +246,20 @@ export function ghCreateIssueTyped(
  *  sub-issue of `parentRef`. Throws on API error (the caller wraps this
  *  in a best-effort guard since sub-issues may be disabled). */
 export function ghLinkSubIssue(owner: string, repo: string, parentRef: string, childId: number): void {
-	silent('gh', ['api', '-X', 'POST', `repos/${owner}/${repo}/issues/${parseIssueRef(parentRef).number}/sub_issues`, '-F', `sub_issue_id=${childId}`]);
+	runGh(['api', '-X', 'POST', `repos/${owner}/${repo}/issues/${parseIssueRef(parentRef).number}/sub_issues`, '-F', `sub_issue_id=${childId}`], { discardOutput: true });
 }
 
 export function ghGetIssueBody(owner: string, repo: string, ref: string): string {
-	return out('gh', ['issue', 'view', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--json', 'body', '-q', '.body']);
+	return runGh(['issue', 'view', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--json', 'body', '-q', '.body']);
 }
 
 export function ghEditIssueBody(owner: string, repo: string, ref: string, body: string): void {
-	silent('gh', ['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body]);
+	runGh(['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body], { discardOutput: true });
 }
 
 /** Post a comment on an issue. */
 export function ghComment(owner: string, repo: string, ref: string, body: string): void {
-	silent('gh', ['issue', 'comment', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body]);
+	runGh(['issue', 'comment', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--body', body], { discardOutput: true });
 }
 
 /** Close an issue (`gh issue close`). The thin sibling of ghEditIssueBody /
@@ -197,7 +268,7 @@ export function ghComment(owner: string, repo: string, ref: string, body: string
  *  no shell, no REST). Closing an already-closed issue is a no-op success; a
  *  missing/deleted issue exits non-zero and the error propagates. */
 export function ghCloseIssue(owner: string, repo: string, ref: string): void {
-	silent('gh', ['issue', 'close', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`]);
+	runGh(['issue', 'close', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`], { discardOutput: true });
 }
 
 /** Current issue state + status labels — for sync. */
@@ -220,18 +291,28 @@ export function ghFindIssueByLabels(owner: string, repo: string, labels: readonl
 	return /^\d+$/.test(num) ? buildRef(owner, repo, num) : undefined;
 }
 
+/** Strict counterpart of {@link ghFindIssueByLabels} for the tracker port: same
+ *  argv and first-result selection, but a failed or timed-out lookup throws a
+ *  classified {@link GhCommandError} instead of reading as "not found". */
+export function ghFindIssueByLabelsStrict(owner: string, repo: string, labels: readonly string[]): string | undefined {
+	const args = ['issue', 'list', '--repo', `${owner}/${repo}`, '--state', 'all', '--json', 'number', '-q', '.[0].number'];
+	for (const l of labels) args.push('--label', l);
+	const num = runGh(args);
+	return /^\d+$/.test(num) ? buildRef(owner, repo, num) : undefined;
+}
+
 /** Ensure a milestone exists (idempotent) then attach an issue to it.
  *  Best-effort: milestone plumbing failures don't block issue creation. */
 export function ghEnsureMilestone(owner: string, repo: string, title: string): void {
 	try {
-		silent('gh', ['api', '-X', 'POST', `repos/${owner}/${repo}/milestones`, '-f', `title=${title}`]);
+		runGh(['api', '-X', 'POST', `repos/${owner}/${repo}/milestones`, '-f', `title=${title}`], { discardOutput: true });
 	} catch {
 		// 422 = already exists; anything else is surfaced by the attach step.
 	}
 }
 
 export function ghAttachMilestone(owner: string, repo: string, ref: string, title: string): void {
-	silent('gh', ['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--milestone', title]);
+	runGh(['issue', 'edit', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--milestone', title], { discardOutput: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -406,7 +487,7 @@ const SEARCH_GQL =
 /** Login of the currently-authenticated `gh` user, from `gh api user`.
  *  This is the authoritative current-user source (not any config value). */
 export function ghCurrentLogin(): string {
-	const login = out('gh', ['api', 'user', '-q', '.login']);
+	const login = runGh(['api', 'user', '-q', '.login']);
 	if (login.length === 0) throw new Error('gh api user returned no login (is `gh` authenticated?)');
 	return login;
 }

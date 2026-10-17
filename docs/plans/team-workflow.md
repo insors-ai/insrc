@@ -102,6 +102,14 @@ Repos without the policy file behave exactly as today (solo mode).
   carry a policy (a sighting exists, or a fetched tracking ref carries the file
   while the default branch is unknown, in which case the user is asked to run
   `team refresh --branch <name>`).
+- **s1 compatibility exceptions (accepted 2026-10-17, s1 LLD approval):** the
+  tracker port's results are the same as before (DEF ac3, k4) except (1) a typed
+  issue create is retried untyped only on a confirmed issue-type rejection, not
+  after any failure (removes a duplicate-issue hazard), and (2) migrated
+  operations, including setup label creation and the login read in
+  `listMyOpenTasks`, are bounded by the 10 s timeout. Both reach solo callers.
+  The unbuilt tracker-tool LLD-38436e90625a83a2-S001 is superseded by s1; its
+  companion LLD-9a7bbe63297457c2-S001 needs its own decision.
 
 ## Open items for design
 

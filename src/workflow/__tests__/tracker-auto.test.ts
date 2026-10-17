@@ -21,7 +21,8 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { autoPushEpicOnHld, autoPushStoryOnLld } from '../tracker-auto.js';
+import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
+import { planArtifactPaths } from '../storage.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
 
 const HASH = 'a1b2c3d4e5f60718';
@@ -231,4 +232,179 @@ test('R4: posts the review report as an issue comment when the artifact carries 
 			.find(c => c.some(a => typeof a === 'string' && a.includes('insrc:review')));
 		assert.ok(reviewComment, 'a review comment carrying the insrc:review marker was posted on the Epic issue');
 	} finally { s.cleanup(); _setTrackerExecForTests(); }
+});
+
+// ---------------------------------------------------------------------------
+// The adapter behind the three push functions (s1/t7): same gh sequence,
+// same best-effort behaviour, same persisted TrackerMeta as the direct gh calls.
+// ---------------------------------------------------------------------------
+
+/** A fake gh that can fail chosen commands. REST issue creates answer { number, id }. */
+function makeFailableGh(failOn: (args: readonly string[]) => boolean = () => false) {
+	let n = 0;
+	const calls: string[][] = [];
+	const fn: TrackerExec = (cmd, args) => {
+		calls.push([cmd, ...args]);
+		if (cmd === 'git') return 'git@github.com:acme/demo.git\n';
+		if (failOn(args)) throw new Error('boom');
+		if (args[0] === 'api' && args.includes('POST') && (args.find(a => a.startsWith('repos/')) ?? '').endsWith('/issues')) {
+			n += 1;
+			return JSON.stringify({ number: n, id: 1000 + n });
+		}
+		if (args[0] === 'issue' && args[1] === 'view') return args.includes('body') ? 'epic body' : '{}';
+		return '';
+	};
+	return { fn, calls };
+}
+
+/** setup() plus a plan with two tasks and task push (and optionally milestones) switched on. */
+function setupWithPlan(useMilestones = false): ReturnType<typeof setup> & { planJson: string } {
+	const s = setup();
+	writeFileSync(join(s.repo, 'github.json'), JSON.stringify({ default: { type: 'github', pushTasks: true, useMilestones } }));
+	const planJson = planArtifactPaths(s.repo, HASH, 's1', CREATED, 'epic', SLUG).json;
+	writeJson(planJson, {
+		meta: { workflow: 'plan', runId: 'p1', repoPath: s.repo, epicHash: HASH, epicSlug: SLUG, storyId: 's1', lldRunId: 'l1', lldEffectiveHash: 'deadbeefcafe', schemaVersion: 1 },
+		body: {
+			tasks: [
+				{ id: 't1', title: 'Add filter input', summary: 's', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['renders'], derivedFrom: [], tests: [] },
+				{ id: 't2', title: 'Filter the list', summary: 's', size: 'S', order: 2, dependsOn: ['t1'], acceptanceChecks: ['filters'], derivedFrom: [], tests: [] },
+			],
+			testStrategyCoverage: [],
+		},
+		citations: [],
+	});
+	return { ...s, planJson };
+}
+
+/** One call reduced to its shape: the repo path, titles and bodies are masked. */
+function shapeOf(call: readonly string[]): string {
+	const args = call.slice(1).map((a, i, all) => (all[i - 1] === '-C' ? '<repo>' : a));
+	return args.map(a => (a.startsWith('title=') || a.startsWith('body=') ? `${a.split('=')[0]}=…` : a)).join(' ');
+}
+
+function runAll(s: ReturnType<typeof setupWithPlan>) {
+	return [autoPushEpicOnHld(s.hldJson), autoPushStoryOnLld(s.lldJson), autoPushTasksOnPlan(s.planJson)];
+}
+
+const API_ISSUES = 'api -X POST repos/acme/demo/issues';
+const LABEL = (name: string): string => `label create ${name} --repo acme/demo --force`;
+const GATE = ['-C <repo> remote get-url origin', 'auth status'];
+const TYPED = (labels: string[], type: string): string => `${API_ISSUES} -f title=… -f body=… ${labels.map(l => `-f labels[]=${l}`).join(' ')} -f type=${type}`;
+
+test('the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter', () => {
+	// Plain run: the exact gh sequence, results and persisted meta.
+	const gh = makeFailableGh();
+	_setTrackerExecForTests(gh.fn);
+	const s = setupWithPlan();
+	try {
+		const [epic, story, tasks] = runAll(s);
+		assert.deepEqual([epic.status, story.status, tasks.status], ['created', 'created', 'created']);
+		assert.deepEqual(gh.calls.filter(c => c[0] === 'gh' || c[0] === 'git').map(shapeOf), [
+			...GATE,
+			'issue list --repo acme/demo --state all --json number -q .[0].number --label insrc:epic --label epic:demo-feature',
+			LABEL('insrc:epic'), LABEL('insrc:story'), LABEL('epic:demo-feature'), LABEL('insrc:in-progress'), LABEL('insrc:blocked'),
+			TYPED(['insrc:epic', 'epic:demo-feature'], 'Epic'),
+			...GATE,
+			TYPED(['insrc:story', 'epic:demo-feature'], 'Story'),
+			'api -X POST repos/acme/demo/issues/1/sub_issues -F sub_issue_id=1002',
+			'issue view 1 --repo acme/demo --json body -q .body',
+			...GATE,
+			LABEL('insrc:task'), LABEL('epic:demo-feature'),
+			TYPED(['insrc:task', 'epic:demo-feature'], 'Task'),
+			'api -X POST repos/acme/demo/issues/2/sub_issues -F sub_issue_id=1003',
+			TYPED(['insrc:task', 'epic:demo-feature'], 'Task'),
+			'api -X POST repos/acme/demo/issues/2/sub_issues -F sub_issue_id=1004',
+		].map(x => x.replace(/ +/g, ' ')));
+		const strip = (jsonPath: string): Record<string, unknown> => { const { pushedAt: _p, ...rest } = trackerOf(jsonPath) as Record<string, unknown>; return rest; };
+		assert.deepEqual(strip(s.hldJson), { adapter: 'github', epicRef: 'acme/demo#1', labelsCreated: ['insrc:epic', 'insrc:story', 'epic:demo-feature', 'insrc:in-progress', 'insrc:blocked'] });
+		assert.deepEqual(strip(s.lldJson), { adapter: 'github', storyRef: 'acme/demo#2' });
+		assert.deepEqual(strip(s.planJson), { adapter: 'github', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' }, labelsCreated: ['insrc:task', 'epic:demo-feature'] });
+	} finally { s.cleanup(); }
+
+	// Milestones switched on: the same sequence plus the milestone steps, in the same places.
+	const ms = makeFailableGh();
+	_setTrackerExecForTests(ms.fn);
+	const m = setupWithPlan(true);
+	try {
+		runAll(m);
+		const shapes = ms.calls.filter(c => c[0] === 'gh').map(shapeOf);
+		const at = shapes.indexOf('api -X POST repos/acme/demo/milestones -f title=…');
+		assert.ok(at > 0);
+		assert.equal(shapes[at - 1], TYPED(['insrc:epic', 'epic:demo-feature'], 'Epic'));
+		assert.equal(shapes[at + 1], 'issue edit 1 --repo acme/demo --milestone demo-feature');
+		assert.ok(shapes.includes('issue edit 2 --repo acme/demo --milestone demo-feature'));
+	} finally { m.cleanup(); }
+
+	// Best-effort side effects: links, milestones, comments and the body edit failing never fail a push.
+	for (const [name, failOn] of [
+		['links', (a: readonly string[]) => a.some(x => x.includes('sub_issues'))],
+		['comments', (a: readonly string[]) => a[0] === 'issue' && a[1] === 'comment'],
+		['body edit', (a: readonly string[]) => a[0] === 'issue' && (a[1] === 'view' || a[1] === 'edit')],
+		['labels', (a: readonly string[]) => a[0] === 'label'],
+	] as const) {
+		const f = makeFailableGh(failOn);
+		_setTrackerExecForTests(f.fn);
+		const x = setupWithPlan(true);
+		try {
+			assert.deepEqual(runAll(x).map(r => r.status), ['created', 'created', 'created'], name);
+		} finally { x.cleanup(); }
+	}
+
+	// Fail-open when gh is unavailable: every push is skipped and no tracker call is made.
+	const down = makeFailableGh(() => true);
+	_setTrackerExecForTests(down.fn);
+	const d = setupWithPlan();
+	try {
+		assert.deepEqual(runAll(d).map(r => r.status), ['skipped', 'skipped', 'skipped']);
+		assert.equal(down.calls.filter(c => c[0] === 'gh').every(c => c[1] === 'auth'), true);
+	} finally { d.cleanup(); }
+});
+
+test('a failing adoption lookup still leads to a create and does not throw', () => {
+	const gh = makeFailableGh(a => a[0] === 'issue' && a[1] === 'list');
+	_setTrackerExecForTests(gh.fn);
+	const s = setupWithPlan();
+	try {
+		const r = autoPushEpicOnHld(s.hldJson);
+		assert.equal(r.status, 'created');
+		assert.equal(r.status === 'created' ? r.epicRef : '', 'acme/demo#1');
+		const shapes = gh.calls.filter(c => c[0] === 'gh').map(shapeOf);
+		assert.ok(shapes.some(x => x.startsWith('issue list ')), 'the lookup ran');
+		assert.ok(shapes.includes(TYPED(['insrc:epic', 'epic:demo-feature'], 'Epic')), 'and the Epic was still created');
+	} finally { s.cleanup(); }
+});
+
+test('a failing create is reported as a failed result, not thrown', () => {
+	const failCreate = (label: string) => (a: readonly string[]) => a[0] === 'api' && a.some(x => x === `labels[]=${label}`);
+	const epic = makeFailableGh(failCreate('insrc:epic'));
+	_setTrackerExecForTests(epic.fn);
+	const s = setupWithPlan();
+	try {
+		const r = autoPushEpicOnHld(s.hldJson);
+		assert.equal(r.status, 'failed');
+		assert.match(r.status === 'failed' ? r.reason : '', /^gh issue create failed: boom/);
+		assert.deepEqual(trackerOf(s.hldJson), {}, 'nothing persisted for a failed create');
+	} finally { s.cleanup(); }
+
+	// Story and Task creates fail the same way, as a result and not a throw.
+	const story = makeFailableGh(failCreate('insrc:story'));
+	_setTrackerExecForTests(story.fn);
+	const t = setupWithPlan();
+	try {
+		autoPushEpicOnHld(t.hldJson);
+		const r = autoPushStoryOnLld(t.lldJson);
+		assert.equal(r.status, 'failed');
+		assert.match(r.status === 'failed' ? r.reason : '', /^gh issue create failed: boom/);
+	} finally { t.cleanup(); }
+
+	const task = makeFailableGh(failCreate('insrc:task'));
+	_setTrackerExecForTests(task.fn);
+	const u = setupWithPlan();
+	try {
+		autoPushEpicOnHld(u.hldJson);
+		autoPushStoryOnLld(u.lldJson);
+		const r = autoPushTasksOnPlan(u.planJson);
+		assert.equal(r.status, 'failed');
+		assert.match(r.status === 'failed' ? r.reason : '', /^gh issue create \(task t1\) failed: boom/);
+	} finally { u.cleanup(); }
 });

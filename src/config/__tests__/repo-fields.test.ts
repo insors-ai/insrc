@@ -65,9 +65,9 @@ test('branchPattern validator accepts and rejects every listed form with the fai
 		['/a', 'leading-slash'],
 		['a/', 'trailing-slash'],
 		['a//b', 'consecutive-slashes'],
-		['a..b', 'dot-dot'],
-		['a.lock', 'lock-suffix'],
-		['{id}.lock', 'lock-suffix'],
+		['a..b', 'forbidden-text'],
+		['a.lock', 'forbidden-suffix'],
+		['{id}.lock', 'forbidden-suffix'],
 	];
 	for (const [pattern, rule] of bad) {
 		const r = validateBranchPattern(pattern);
@@ -88,6 +88,14 @@ test('a table copy with another placeholder changes what the validator accepts',
 	assert.deepEqual(validateBranchPattern('{owner}/{id}', copy), { ok: true });
 	assert.deepEqual(validateRepoSetting('branchPattern', '{owner}/{id}', copy), { ok: true, value: '{owner}/{id}' });
 	assert.equal(validateRepoSetting('branchPattern', '{owner}/{id}').ok, false);
+	// The character and structure rules also come from the row: a copy that allows '~' and a trailing slash accepts them.
+	const loose: RepoFieldDef[] = REPO_TRACKER_FIELDS.map(r =>
+		r.key === 'branchPattern' && r.grammar !== undefined
+			? { ...r, grammar: { ...r.grammar, literalChars: { ...r.grammar.literalChars, extra: r.grammar.literalChars.extra + '~' }, slashes: { ...r.grammar.slashes, trailing: true }, forbiddenSuffixes: [] } }
+			: r);
+	assert.equal(validateBranchPattern('a~b/').ok, false);
+	assert.deepEqual(validateBranchPattern('a~b/', loose), { ok: true });
+	assert.deepEqual(validateBranchPattern('x.lock', loose), { ok: true });
 	// The shipped table is untouched.
 	assert.equal(REPO_TRACKER_FIELDS.find(r => r.key === 'branchPattern')?.grammar?.placeholders.length, 3);
 });

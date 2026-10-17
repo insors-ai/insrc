@@ -24,12 +24,19 @@ import type { TeamPolicy } from '../workflow/team/types.js';
 
 export type RepoFieldKind = 'local' | 'status' | 'policy';
 
-/** The shape of a branch-name pattern. Characters outside placeholders are limited to letters, digits and `/ - _ .`. */
+/** The complete shape of a branch-name pattern: the validator and, later, s6 read every rule from here. */
 export interface BranchPatternGrammar {
 	/** Names allowed between braces, e.g. `id` for `{id}`. Any other brace use is rejected; there is no escaping. */
 	readonly placeholders: readonly string[];
 	readonly minLength: number;
 	readonly maxLength: number;
+	/** What may appear outside placeholders: letters and digits when true, plus each character of `extra`. */
+	readonly literalChars: { readonly letters: boolean; readonly digits: boolean; readonly extra: string };
+	/** Whether the pattern may start or end with a slash or hold two slashes in a row. */
+	readonly slashes: { readonly leading: boolean; readonly trailing: boolean; readonly consecutive: boolean };
+	/** Text the pattern may not contain, and text it may not end with. */
+	readonly forbiddenSubstrings: readonly string[];
+	readonly forbiddenSuffixes: readonly string[];
 }
 
 export interface RepoFieldDef {
@@ -71,7 +78,12 @@ export const REPO_TRACKER_FIELDS: readonly RepoFieldDef[] = [
 		key: 'branchPattern', label: 'Branch pattern', type: 'string',
 		description: 'Branch name pattern with {id}, {slug} and {type}.',
 		group: 'Tracker', kind: 'local', note: NOT_USED_YET,
-		grammar: { placeholders: ['id', 'slug', 'type'], minLength: 1, maxLength: 200 },
+		grammar: {
+			placeholders: ['id', 'slug', 'type'], minLength: 1, maxLength: 200,
+			literalChars: { letters: true, digits: true, extra: '/-_.' },
+			slashes: { leading: false, trailing: false, consecutive: false },
+			forbiddenSubstrings: ['..'], forbiddenSuffixes: ['.lock'],
+		},
 	},
 	{ key: 'signin', label: 'Sign-in', type: 'string', description: 'Who gh is signed in as, read live.', group: 'Tracker', kind: 'status' },
 	{ key: 'target', label: 'Resolved target', type: 'string', description: 'The owner and repository the tracker calls go to, and where that came from.', group: 'Tracker', kind: 'status' },
@@ -88,11 +100,13 @@ void _localKeys;
 
 export type BranchPatternRule =
 	| 'length' | 'unmatched-brace' | 'placeholder' | 'characters'
-	| 'leading-slash' | 'trailing-slash' | 'consecutive-slashes' | 'dot-dot' | 'lock-suffix';
+	| 'leading-slash' | 'trailing-slash' | 'consecutive-slashes' | 'forbidden-text' | 'forbidden-suffix';
 
 export type PatternCheck = { readonly ok: true } | { readonly ok: false; readonly rule: BranchPatternRule; readonly message: string };
 
-const BRANCH_CHARS_RE = /^[A-Za-z0-9/_.-]*$/;
+function isAllowedLiteral(c: string, g: BranchPatternGrammar): boolean {
+	return (g.literalChars.letters && /[A-Za-z]/.test(c)) || (g.literalChars.digits && /[0-9]/.test(c)) || g.literalChars.extra.includes(c);
+}
 
 function rowOf(table: readonly RepoFieldDef[], key: string): RepoFieldDef | undefined {
 	return table.find(r => r.key === key);
@@ -123,13 +137,18 @@ export function validateBranchPattern(pattern: string, table: readonly RepoField
 		}
 		i = close;
 	}
-	if (!BRANCH_CHARS_RE.test(literal)) return fail('characters', 'outside placeholders only letters, digits, slash, hyphen, underscore and dot are allowed');
+	if (![...literal].every(c => isAllowedLiteral(c, grammar))) {
+		const allowed = [grammar.literalChars.letters ? 'letters' : '', grammar.literalChars.digits ? 'digits' : '', ...[...grammar.literalChars.extra].map(c => `'${c}'`)].filter(x => x !== '');
+		return fail('characters', `outside placeholders only ${allowed.join(', ')} are allowed`);
+	}
 
-	if (pattern.startsWith('/')) return fail('leading-slash', 'must not start with a slash');
-	if (pattern.endsWith('/')) return fail('trailing-slash', 'must not end with a slash');
-	if (pattern.includes('//')) return fail('consecutive-slashes', 'must not contain two consecutive slashes');
-	if (pattern.includes('..')) return fail('dot-dot', "must not contain '..'");
-	if (pattern.endsWith('.lock')) return fail('lock-suffix', "must not end with '.lock'");
+	if (!grammar.slashes.leading && pattern.startsWith('/')) return fail('leading-slash', 'must not start with a slash');
+	if (!grammar.slashes.trailing && pattern.endsWith('/')) return fail('trailing-slash', 'must not end with a slash');
+	if (!grammar.slashes.consecutive && pattern.includes('//')) return fail('consecutive-slashes', 'must not contain two consecutive slashes');
+	const sub = grammar.forbiddenSubstrings.find(f => pattern.includes(f));
+	if (sub !== undefined) return fail('forbidden-text', `must not contain '${sub}'`);
+	const suf = grammar.forbiddenSuffixes.find(f => pattern.endsWith(f));
+	if (suf !== undefined) return fail('forbidden-suffix', `must not end with '${suf}'`);
 	return { ok: true };
 }
 

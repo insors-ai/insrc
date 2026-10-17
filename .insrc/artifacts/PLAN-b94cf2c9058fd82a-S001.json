@@ -1,0 +1,211 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792243224845-wap7om",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T13:20:56.594Z",
+    "epicCreatedAt": "2026-10-17T13:11:51.789Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 31743,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b94cf2c9058fd82a",
+    "epicSlug": "run-document-summarisation-its-own-queue",
+    "storyId": "S001",
+    "lldRunId": "wf-1792243185733-6y6pq6",
+    "lldEffectiveHash": "a9af1d02148509b80a6d81538165a1512a0b8f93b046a9e222150275b3ea77a6",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this is four changes: give the index queue two lanes that run at the same time, store a summary only for a document that is still current, make the summary sweep yield to edits, stop on shutdown and report progress, and show both lanes in daemon.status.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "IndexQueue runs an index lane and a summary lane at the same time",
+        "summary": "IndexQueue routes doc-summarise-repo and doc-summarise-entity to a summary lane and every other kind to an index lane, with today's dedup per lane; start runs one drain loop per lane concurrently and resolves when both stop; a doc-summarise-entity job goes ahead of the first queued sweep; adds takeDocSummaryEdit, laneStatus and isStopping; depth, isProcessing and depthForRepo span both lanes and codeIndexWorkFor reads the index lane only. The existing code-index-work test asserts the index lane's order only.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An index job enqueued while a summary job runs completes before that summary job finishes.",
+          "Each lane runs its jobs one at a time in order; kinds route to the right lane.",
+          "A single-document job goes ahead of a queued sweep and takeDocSummaryEdit removes and returns it.",
+          "depth, isProcessing, depthForRepo, codeIndexWorkFor and laneStatus report as the LLD specifies; stop ends both lanes and start resolves.",
+          "The existing queue tests pass, with queue-code-index-work asserting index-lane order only."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/queue-lanes.test.ts: while a summary job is running and has not finished, an index job enqueued after it runs to completion; the two lanes run at the same time and each runs its jobs one at a time in order; summary kinds go to the summary lane and every other kind to the index lane; a single-document job is placed ahead of a queued sweep and takeDocSummaryEdit removes and returns it; depth, isProcessing and depthForRepo span both lanes (depthForRepo counts a queued sweep but not a single-document job), codeIndexWorkFor reads the index lane only, laneStatus reports each lane; stop ends both lanes and start resolves"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/queue-code-index-work.test.ts: the existing test asserts the order of the index lane's in-flight jobs only, independently of summary-lane interleaving, and stops once both lanes are empty"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Summaries are stored only for current documents",
+        "summary": "Adds writeDocSummaryIfCurrent (checks inside the write transaction that the entity exists with the summarised body; returns written, entity-gone or body-changed; throws as writeDocSummary does) and routes summariseDoc's two writes through it, with SummariseDocResult.skipped gaining entity-gone and body-changed and the placeholder precedence the LLD states; writeDocSummary is unchanged.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "writeDocSummaryIfCurrent writes for a current entity, returns entity-gone or body-changed otherwise and throws for an unregistered repo.",
+          "summariseDoc reports the skip reasons, a thrown summary write as persistence-failed and a thrown placeholder write with the model error.",
+          "writeDocSummary and its callers are unchanged."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/db/__tests__/doc-summaries-lmdb.test.ts: writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo; writeDocSummary is unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts: summariseDoc reports a summary the conditional write did not store as skipped entity-gone or body-changed, a thrown summary write as persistence-failed, a thrown placeholder write with the original model error, and a placeholder write that finds the entity gone or changed as skipped with that reason"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "The summary sweep yields to edits, stops on shutdown and reports progress",
+        "summary": "Adds runDocSummarySweep (shouldStop check, queued single-document jobs first, re-read each entity, result classification, onProgress) and makes docSummariseRepo call it with the queue's takeDocSummaryEdit and isStopping, owning summarySweepProgress (set, updated, cleared in finally).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Queued single-document jobs run before each entity.",
+          "A deleted entity is counted as gone; results are classified as the LLD states; a throw is failed and the sweep continues.",
+          "The sweep returns stopped after the summary in progress once shouldStop is true.",
+          "summarySweepProgress is set during a sweep and cleared when it completes, stops or throws."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep runs every queued single-document job before each entity, skips and counts an entity deleted after the sweep began, counts a throwing entity as failed and continues, classifies every result kind as summarised, skipped, gone or failed, reports progress after each entity, and returns stopped after the summary in progress once shouldStop is true"
+          },
+          {
+            "level": "unit",
+            "name": "src/indexer/__tests__/summary-sweep-progress.test.ts: IndexerService.summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes, stops or throws"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "daemon.status reports both lanes",
+        "summary": "DaemonStatus and DaemonStatusSources gain optional queueLanes built from queue.laneStatus() and the indexer's summarySweepProgress(); queueDepth stays the total. CLAUDE.md records the concurrent-lane exception to serial LLM calls.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane and the sweep progress; absent source, absent field.",
+          "CLAUDE.md states the exception and its condition for revisiting."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/daemon-status-lanes.test.ts: buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/daemon/__tests__/queue-lanes.test.ts: while a summary job is running and has not finished, an index job enqueued after it runs to completion; the two lanes run at the same time and each runs its jobs one at a time in order; summary kinds go to the summary lane and every other kind to the index lane; a single-document job is placed ahead of a queued sweep and takeDocSummaryEdit removes and returns it; depth, isProcessing and depthForRepo span both lanes (depthForRepo counts a queued sweep but not a single-document job), codeIndexWorkFor reads the index lane only, laneStatus reports each lane; stop ends both lanes and start resolves",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep runs every queued single-document job before each entity, skips and counts an entity deleted after the sweep began, counts a throwing entity as failed and continues, classifies every result kind as summarised, skipped, gone or failed, reports progress after each entity, and returns stopped after the summary in progress once shouldStop is true",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/db/__tests__/doc-summaries-lmdb.test.ts: writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo; writeDocSummary is unchanged",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/daemon-status-lanes.test.ts: buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts: summariseDoc reports a summary the conditional write did not store as skipped entity-gone or body-changed, a thrown summary write as persistence-failed, a thrown placeholder write with the original model error, and a placeholder write that finds the entity gone or changed as skipped with that reason",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/indexer/__tests__/summary-sweep-progress.test.ts: IndexerService.summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes, stops or throws",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/queue-code-index-work.test.ts: the existing test asserts the order of the index lane's in-flight jobs only, independently of summary-lane interleaving, and stops once both lanes are empty",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD b94cf2c9 S001 contractDetails.api IndexQueue (enqueue, start, takeDocSummaryEdit, laneStatus, state readers)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD b94cf2c9 S001 contractDetails.api writeDocSummaryIfCurrent and summariseDoc"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD b94cf2c9 S001 contractDetails.api runDocSummarySweep and IndexerService.summarySweepProgress"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD b94cf2c9 S001 contractDetails.api buildDaemonStatus / DaemonStatus and the stakeholder exception (c5)"
+    }
+  ]
+}

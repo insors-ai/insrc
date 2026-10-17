@@ -40,6 +40,63 @@ function silent(cmd: string, args: readonly string[]): void {
 }
 
 // ---------------------------------------------------------------------------
+// Classified, timed gh runner
+// ---------------------------------------------------------------------------
+
+/** Every tracker command is bounded (HLD non-functional: 10 seconds). */
+export const GH_TIMEOUT_MS = 10_000;
+
+export type GhFailureKind = 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected';
+
+/** A failed `gh` command, classified. `reason` names the missing tool or
+ *  sign-in (or carries gh's own message); it is also the Error message. */
+export class GhCommandError extends Error {
+	readonly kind:   GhFailureKind;
+	readonly reason: string;
+	constructor(kind: GhFailureKind, reason: string) {
+		super(reason);
+		this.name   = 'GhCommandError';
+		this.kind   = kind;
+		this.reason = reason;
+	}
+}
+
+const SIGNIN_RE  = /not logged in|gh auth login|authentication|bad credentials|http 401|requires authentication/i;
+const NETWORK_RE = /could not resolve host|connection (refused|reset|timed out)|network is unreachable|dial tcp|econnrefused|enotfound|econnreset|etimedout/i;
+
+function classifyGhFailure(err: unknown): GhCommandError {
+	const e = err as NodeJS.ErrnoException & { stderr?: Buffer | string; killed?: boolean; signal?: string | null };
+	if (e.code === 'ENOENT') {
+		return new GhCommandError('missing-tool', 'gh CLI is not installed (install it from https://cli.github.com)');
+	}
+	const stderr = e.stderr === undefined ? '' : (typeof e.stderr === 'string' ? e.stderr : e.stderr.toString('utf8')).trim();
+	const detail = stderr.length > 0 ? stderr : (e.message ?? String(err));
+	if (e.code === 'ETIMEDOUT' || (e.killed === true && e.signal === 'SIGTERM')) {
+		return new GhCommandError('unreachable', `gh timed out after ${GH_TIMEOUT_MS / 1000} s`);
+	}
+	if (SIGNIN_RE.test(detail))  return new GhCommandError('missing-signin', 'gh is not signed in (run `gh auth login`)');
+	if (NETWORK_RE.test(detail)) return new GhCommandError('unreachable', detail);
+	return new GhCommandError('rejected', detail);
+}
+
+/** Run `gh` with the 10 s timeout and return its trimmed stdout (empty when
+ *  `discardOutput`). Any failure is thrown as a classified GhCommandError.
+ *  Goes through the same swappable exec as out()/silent(), so tests see the
+ *  `timeout` option. */
+export function runGh(args: readonly string[], opts: { readonly discardOutput?: boolean } = {}): string {
+	try {
+		if (opts.discardOutput === true) {
+			_exec('gh', args, { stdio: ['ignore', 'ignore', 'pipe'], timeout: GH_TIMEOUT_MS });
+			return '';
+		}
+		const r = _exec('gh', args, { encoding: 'utf8', timeout: GH_TIMEOUT_MS });
+		return (typeof r === 'string' ? r : r.toString('utf8')).trim();
+	} catch (err) {
+		throw classifyGhFailure(err);
+	}
+}
+
+// ---------------------------------------------------------------------------
 // git
 // ---------------------------------------------------------------------------
 

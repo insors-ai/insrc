@@ -43,6 +43,13 @@
         "choice": "Split ownership: s1 follow-up + s6",
         "rationale": "Owner chose option A on 2026-10-17: s3 stores and shows ghPath, ghHost and branchPattern only; the gh runner reading ghPath and ghHost is an s1 follow-up and branchPattern is consumed by s6 (handoff). The three rows carry a note 'saved; not used yet' until then.",
         "resolvedAt": "2026-10-17T12:40:42.103Z"
+      },
+      "sg3": {
+        "question": "[sg3 / partial] repo.settings.get and repo.settings.set are new IPC method names with no precedent in the analysis; confirm the names before they are mirrored in the VS Code and JetBrains clients.",
+        "status": "resolved",
+        "choice": "Confirm repo.settings.get/set",
+        "rationale": "Owner chose option A on 2026-10-17: the names say 'settings for one repo' without implying config.json.",
+        "resolvedAt": "2026-10-17T12:41:05.039Z"
       }
     }
   },

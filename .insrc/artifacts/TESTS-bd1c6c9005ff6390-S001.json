@@ -4,7 +4,7 @@
     "epicHash": "bd1c6c9005ff6390",
     "storyId": "S001",
     "createdAt": "2026-10-17T09:39:24.421Z",
-    "updatedAt": "2026-10-17T09:45:26.410Z",
+    "updatedAt": "2026-10-17T09:51:00.367Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T08:20:53.100Z",
     "epicSlug": "record-calls-made-module-level-statements"
@@ -85,6 +85,79 @@
               },
               {
                 "title": "built-ins are skipped and a module-level HTTP call is a CALLS_HTTP from the file entity (.js)",
+                "result": "pass"
+              },
+              {
+                "title": "TypeScript/JavaScript calls outside any function",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "553b3204",
+        "ranAt": "2026-10-17T09:51:00.367Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: in both TypeScript and JavaScript sources, calls in class field initializers (public_field_definition, field_definition) and the constructor body are CALLS from the class entity, a function-valued field is not credited to the class, and a generator-valued declarator gets its own function entity whose calls are not credited to the file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts",
+                "title": "class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (.ts)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts",
+                "title": "class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (.js)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 429,
+            "titles": [
+              {
+                "title": "program-level statements, non-function and exported initializers and export default are CALLS from the file entity (.ts)",
+                "result": "pass"
+              },
+              {
+                "title": "calls in functions, methods, exported functions and classes and function-valued declarators keep their caller (.ts)",
+                "result": "pass"
+              },
+              {
+                "title": "built-ins are skipped and a module-level HTTP call is a CALLS_HTTP from the file entity (.ts)",
+                "result": "pass"
+              },
+              {
+                "title": "class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (.ts)",
+                "result": "pass"
+              },
+              {
+                "title": "program-level statements, non-function and exported initializers and export default are CALLS from the file entity (.js)",
+                "result": "pass"
+              },
+              {
+                "title": "calls in functions, methods, exported functions and classes and function-valued declarators keep their caller (.js)",
+                "result": "pass"
+              },
+              {
+                "title": "built-ins are skipped and a module-level HTTP call is a CALLS_HTTP from the file entity (.js)",
+                "result": "pass"
+              },
+              {
+                "title": "class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (.js)",
                 "result": "pass"
               },
               {

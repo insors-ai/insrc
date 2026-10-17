@@ -21,7 +21,7 @@
 
 import type { LLMMessage } from '../../../shared/types.js';
 import type { ReviewVerdict } from '../../../workflow/review/types.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../../workflow/code-review/types.js';
+import type { CodeReviewFallbackReason, CodeReviewGrounding, CodeReviewSubject, DimensionResult } from '../../../workflow/code-review/types.js';
 
 // ---------------------------------------------------------------------------
 // Phases
@@ -111,6 +111,8 @@ export interface CodeReviewStepDone {
 	readonly reviewedBy?:    'daemon' | undefined;
 	/** How a daemon review was grounded; `degraded` means on the diff. */
 	readonly groundingMode?: 'full' | 'degraded' | undefined;
+	/** Why the review fell back to the diff (ISSUE-1102dc71); absent on a full review. */
+	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 	/** The model the daemon reviewed with. */
 	readonly model?:         string | undefined;
 	/**
@@ -163,6 +165,9 @@ export interface CodeReviewStepStatePayload {
 	 *  reads this to drive `runCodeReview` with `groundingMode:'degraded'` +
 	 *  `capVerdictAtWarn:true`; the graph path omits it (⇒ `'full'`, uncapped). */
 	readonly groundingMode?: 'degraded' | undefined;
+	/** Why this degraded state fell back to the diff; carried to the judgements
+	 *  turn so the record it writes says why (ISSUE-1102dc71). */
+	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 }
 
 // ---------------------------------------------------------------------------

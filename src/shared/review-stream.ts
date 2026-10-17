@@ -11,7 +11,7 @@
  * c2ba6fa6, Story s11).
  */
 
-import type { CodeReviewArtifact, CodeReviewGrounding } from '../workflow/code-review/types.js';
+import type { CodeReviewArtifact, CodeReviewFallbackReason, CodeReviewGrounding } from '../workflow/code-review/types.js';
 
 /** Why a review request did not produce a review. */
 export type ReviewStreamFailure =
@@ -55,6 +55,8 @@ export interface CodeReviewStreamParams {
 	readonly client?:  'claude' | 'codex' | undefined;
 	/** How the daemon should ground the review. Omitted means `full`. */
 	readonly groundingMode?: 'full' | 'degraded' | undefined;
+	/** Why a degraded review fell back to the diff (ISSUE-1102dc71). */
+	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 }
 
 export interface CodeReviewStreamResult {

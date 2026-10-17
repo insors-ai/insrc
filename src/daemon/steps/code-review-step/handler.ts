@@ -52,6 +52,7 @@ import { buildDiagramPrompt } from '../../../workflow/code-review/dimensions/dia
 import { buildUxPrompt } from '../../../workflow/code-review/dimensions/ux/index.js';
 import { computeExpectedDimensions } from '../../../workflow/code-review/expected-dimensions.js';
 import type {
+	CodeReviewFallbackReason,
 	CodeReviewGrounding,
 	CodeReviewSubject,
 	DimensionFinding,
@@ -256,7 +257,7 @@ async function handleStart(
 		// graph review.
 		if (step.proceed !== true) {
 			releaseState(step.state!);
-			return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps);
+			return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, { kind: 'declined' });
 		}
 	} else {
 		if (typeof step.epicHash !== 'string' || step.epicHash.length === 0) {
@@ -291,7 +292,8 @@ async function handleStart(
 		// proceed:true → bounded block-and-poll until fresh or the timeout, then
 		// re-prompt. Reuses the SAME state token across re-prompts (still valid
 		// until fresh/aborted).
-		const deadline = deps.now() + deps.freshnessTimeoutMs();
+		const waitStart = deps.now();
+		const deadline = waitStart + deps.freshnessTimeoutMs();
 		for (;;) {
 			const f = await deps.fetchFreshness(freshParams);
 			if (!f.ok) {
@@ -305,7 +307,13 @@ async function handleStart(
 				// branch takes. Release the confirm_wait token first (mirrors the
 				// fresh-break path below) so the diff review saves a fresh state.
 				releaseState(step.state!);
-				return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps);
+				return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, {
+					kind:                 'freshness-timeout',
+					waitedMs:             deps.now() - waitStart,
+					inFlight:             f.inFlight,
+					pendingCodeIndexJobs: f.pendingCodeIndexJobs,
+					staleFiles:           [...f.staleFiles],
+				});
 			}
 			await deps.sleep(POLL_INTERVAL_MS);
 		}
@@ -339,7 +347,7 @@ async function handleStart(
 	// DIFF-ONLY (degraded) review over the changed-file diff instead. Runs only on
 	// a successful fetch (g.ok), so it never masks a real grounding failure.
 	if (g.grounding.symbols.length === 0) {
-		return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps);
+		return await beginDiffOnlyReview(repo, epicHash, storyId, subject, deps, { kind: 'hollow-grounding' });
 	}
 	const grounding = g.grounding;
 
@@ -374,13 +382,14 @@ async function beginDiffOnlyReview(
 	storyId:  string,
 	subject:  CodeReviewSubject,
 	deps:     CodeReviewStepDeps,
+	reason:   CodeReviewFallbackReason,
 ): Promise<CodeReviewStepOutput> {
 	// The author is read HERE, at the point a review is about to start, so it is
 	// read on every route into a diff review, including the resumed call. Code the
 	// daemon did not write is reviewed by the daemon, which grounds on the diff
 	// itself; the controller is not handed the judgements prompt.
 	if (authorOf(repo, epicHash, storyId, deps) !== 'daemon') {
-		return await reviewByDaemon(subject, 'degraded', deps);
+		return await reviewByDaemon(subject, 'degraded', deps, reason);
 	}
 
 	let grounding: CodeReviewGrounding;
@@ -411,6 +420,7 @@ async function beginDiffOnlyReview(
 		startedAtMs: Date.now(),
 		repo, epicHash, storyId, subject: diffSubject, grounding,
 		groundingMode: 'degraded',
+		fallbackReason: reason,
 	});
 
 	return emitJudgementsResult(diffSubject, grounding, token);
@@ -527,7 +537,7 @@ async function handleJudgements(
 	// passes neither (⇒ 'full', uncapped) — byte-identical to s9.
 	const degraded = payload.groundingMode === 'degraded';
 
-	return await driveRunner(step.state, payload.subject, injected, deps, degraded);
+	return await driveRunner(step.state, payload.subject, injected, deps, degraded, payload.fallbackReason);
 }
 
 async function driveRunner(
@@ -536,13 +546,14 @@ async function driveRunner(
 	injected: CodeReviewRunnerDeps,
 	deps:     CodeReviewStepDeps,
 	degraded: boolean,
+	fallbackReason?: CodeReviewFallbackReason | undefined,
 ): Promise<CodeReviewStepOutput> {
 	const runId = `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const outcome = await deps.runReview(
 		subject,
 		DUMMY_PROVIDER,
 		degraded
-			? { runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true }
+			? { runId, modelLabel: 'client', reviewedBy: 'controller', groundingMode: 'degraded', capVerdictAtWarn: true, ...(fallbackReason !== undefined ? { fallbackReason } : {}) }
 			: { runId, modelLabel: 'client', reviewedBy: 'controller' },
 		injected,
 	);
@@ -573,6 +584,7 @@ async function driveRunner(
 		counts:   outcome.artifact.body.counts,
 		path:     paths.md,
 		jsonPath: paths.json,
+		...(outcome.artifact.body.fallbackReason !== undefined ? { fallbackReason: outcome.artifact.body.fallbackReason } : {}),
 		...(count > 0 ? { scopeDropped: { count, changedFiles: subject.changedFiles.length, byDimension } } : {}),
 	};
 }
@@ -693,12 +705,13 @@ async function reviewByDaemon(
 	subject: CodeReviewSubject,
 	mode:    'full' | 'degraded',
 	deps:    CodeReviewStepDeps,
+	reason?: CodeReviewFallbackReason | undefined,
 ): Promise<CodeReviewStepOutput> {
 	const { repoPath: repo, epicHash, storyId } = subject;
 	log.info({ repo, epicHash, storyId, mode }, 'insrc_code_review_step: not daemon-authored; asking the daemon to review');
 	try {
 		const res = await (deps.reviewByDaemon ?? stepDaemonClient().codeReviewStream)(
-			{ repo, epicHash, storyId, groundingMode: mode, ...(deps.client !== undefined ? { client: deps.client } : {}) },
+			{ repo, epicHash, storyId, groundingMode: mode, ...(reason !== undefined ? { fallbackReason: reason } : {}), ...(deps.client !== undefined ? { client: deps.client } : {}) },
 			{ timeoutMs: DAEMON_CODE_REVIEW_WAIT_MS, ...(deps.signal !== undefined ? { signal: deps.signal } : {}) },
 		);
 		// `codeReview.run` is older than the grounding mode and the reviewer stamp, so
@@ -726,6 +739,7 @@ async function reviewByDaemon(
 			jsonPath:      paths.json,
 			reviewedBy:    'daemon',
 			groundingMode: res.artifact.body.groundingMode,
+			...(reason !== undefined ? { fallbackReason: reason } : {}),
 			...(typeof model === 'string' ? { model } : {}),
 		};
 	} catch (err) {

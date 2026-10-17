@@ -37,6 +37,7 @@ import { codeReviewSubjectPathArgs } from './subject-paths.js';
 import type {
 	CodeReviewArtifact,
 	CodeReviewBody,
+	CodeReviewFallbackReason,
 	CodeReviewGrounding,
 	CodeReviewMeta,
 	CodeReviewOutcome,
@@ -97,6 +98,9 @@ export interface RunCodeReviewOpts {
 	 *  Defaults to `'full'` (the graph-grounded path). The s10 diff-only fallback
 	 *  passes `'degraded'`. */
 	readonly groundingMode?: 'full' | 'degraded' | undefined;
+	/** Why a degraded run fell back to the diff; stamped onto `body.fallbackReason`
+	 *  when given (ISSUE-1102dc71). */
+	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 	/** When true, a folded `'pass'` is promoted to `'warn'` (block + warn are
 	 *  NEVER lowered). Defaults to false. The s10 diff-only path sets it so a
 	 *  degraded review can never register a `pass` — it reasons over diff hunks
@@ -284,6 +288,7 @@ function buildArtifact(
 		// s9: the graph-grounded path stamps 'full' (the default). s10's diff-only
 		// fallback passes opts.groundingMode:'degraded' to stamp its own path.
 		groundingMode: opts.groundingMode ?? 'full',
+		...(opts.fallbackReason !== undefined ? { fallbackReason: opts.fallbackReason } : {}),
 		subject:       { changedFiles: subject.changedFiles },
 		dimensions,
 		verdict,
@@ -333,6 +338,20 @@ function fail(error: string, emit: (f: CodeReviewProgress) => void): CodeReviewO
  *  `insrc:artifact` marker (so the slug-named `.md` resolves back to its
  *  hash-named `.json`), the verdict + counts, and each dimension's findings.
  *  The `.json` is load-bearing; this `.md` is for humans. */
+/** One line saying why a review fell back to the diff. */
+function describeFallback(r: CodeReviewFallbackReason): string {
+	switch (r.kind) {
+		case 'freshness-timeout':
+			return `the wait for a fresh index timed out after ${Math.round(r.waitedMs / 1000)} s `
+				+ `(code-index job in flight: ${r.inFlight ? 'yes' : 'no'}; queued: ${r.pendingCodeIndexJobs}; `
+				+ `stale files: ${r.staleFiles.length === 0 ? 'none' : r.staleFiles.join(', ')})`;
+		case 'declined':
+			return 'the wait for a fresh index was declined';
+		case 'hollow-grounding':
+			return 'the index was fresh but held no symbols for the changed files';
+	}
+}
+
 function renderCodeReviewMd(a: CodeReviewArtifact): string {
 	const { body, meta } = a;
 	const id   = codeReviewArtifactId(meta.epicHash, meta.storyId);
@@ -345,6 +364,7 @@ function renderCodeReviewMd(a: CodeReviewArtifact): string {
 		`${icon} **${body.verdict.toUpperCase()}** — HIGH ${body.counts.high} · MED ${body.counts.med} · LOW ${body.counts.low} · model \`${meta.model ?? 'unknown'}\``,
 		'',
 		`**Changed files:** ${body.subject.changedFiles.length}`,
+		...(body.fallbackReason !== undefined ? ['', `**Reviewed on the diff:** ${describeFallback(body.fallbackReason)}`] : []),
 		'',
 	];
 	// ISSUE-11e4fa88 — findings dropped on scope are SHOWN, never counted. Every

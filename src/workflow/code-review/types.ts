@@ -101,6 +101,14 @@ export interface CodeReviewGrounding {
 // sc1 — the fixed per-Story review subject + its resolution result
 // ---------------------------------------------------------------------------
 
+/** Why a code review fell back from the graph to the diff (ISSUE-1102dc71):
+ *  the wait for a fresh index ran out (with what it was still waiting on), the
+ *  caller declined the wait, or the fresh graph had no symbols for the Story. */
+export type CodeReviewFallbackReason =
+	| { readonly kind: 'freshness-timeout'; readonly waitedMs: number; readonly inFlight: boolean; readonly pendingCodeIndexJobs: number; readonly staleFiles: readonly string[] }
+	| { readonly kind: 'declined' }
+	| { readonly kind: 'hollow-grounding' };
+
 /** The fixed subject of a code review: exactly the files the Story's build
  *  changed (git-derived) plus its approved LLD + PLAN — BOTH optional. The
  *  build record is consumed for identity only — it is never re-derived or
@@ -161,6 +169,9 @@ export interface CodeReviewBody {
 	 *  downstream completion gate distinguishes a full graph-grounded review from a
 	 *  degraded one by this field. */
 	readonly groundingMode: 'full' | 'degraded';
+	/** Why a `degraded` review fell back to the diff (ISSUE-1102dc71). Absent on a
+	 *  full review and on records written before this field. */
+	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 	/** The exact review subject: the Story's changed files (git-derived). */
 	readonly subject:    { readonly changedFiles: readonly string[] };
 	/** All four dimension results (adherence / conventions / coverage / quality). */

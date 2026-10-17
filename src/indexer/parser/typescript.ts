@@ -361,7 +361,7 @@ function extractClass(
     const classCallsSeen = new Set<string>();
     for (const member of body.namedChildren) {
       if (member.type === 'method_definition' || member.type === 'method_signature') {
-        extractMethod(member, source, repo, repoId, filePath, lang, fileId, id, name, now, entities, relations);
+        extractMethod(member, source, repo, repoId, filePath, lang, fileId, id, name, exported, now, entities, relations);
         const ctorBody = member.childForFieldName('name')?.text === 'constructor' ? member.childForFieldName('body') : null;
         if (ctorBody) extractCalls(ctorBody, id, repo, filePath, relations, classCallsSeen);
       } else if (member.type === 'public_field_definition' || member.type === 'field_definition') {
@@ -425,6 +425,7 @@ function extractMethod(
   fileId:    string,
   classId:   string,
   className: string,
+  classExported: boolean,
   now:       string,
   entities:  Entity[],
   relations: Relation[],
@@ -433,6 +434,10 @@ function extractMethod(
   if (!nameNode) return;
 
   const methodName = nameNode.text;
+  // A method of an exported class is visible to the files that import it, unless it is
+  // private (`private` or `#name`): the cross-file pass only resolves exported candidates.
+  const isPrivate = nameNode.type === 'private_property_identifier'
+    || node.children.some(c => c.type === 'accessibility_modifier' && c.text === 'private');
   if (methodName === 'constructor') {
     // Skip constructor — covered by the class entity
     return;
@@ -457,6 +462,7 @@ function extractMethod(
     body:      node.text,
     embedding: [],
     indexedAt: now,
+    isExported: classExported && !isPrivate,
     isAsync,
     signature: sig,
   });

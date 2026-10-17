@@ -41,6 +41,7 @@ import {
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
 import { deleteUnresolvedForRepo } from '../db/relations.js';
 import { Watcher } from '../indexer/watcher.js';
+import { createRepoSettingsHandlers } from './repo-settings.js';
 import { IndexQueue } from './queue.js';
 import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
@@ -1483,6 +1484,10 @@ async function main(): Promise<void> {
 			} catch { /* missing/invalid config → full schema with empty values */ }
 			return buildSettingsCatalog(rawConfig) as unknown as Record<string, unknown>;
 		},
+
+		// Repo-scoped tracker settings (Story s3): the daemon is the only writer of
+		// ~/.insrc/github.json, so every client edits it through these methods.
+		...createRepoSettingsHandlers({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) }),
 
 		// docgen: generate a self-contained HTML document from the code graph
 		// (Epic 870ed3dd, s1 · t7). The IPC method + the docgen_generate tool +

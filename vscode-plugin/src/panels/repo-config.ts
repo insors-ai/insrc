@@ -23,7 +23,7 @@
  * vscode, no cloud (k2/k5).
  */
 
-import { buildSettingsRows } from '../../../src/config/repo-settings-rows.js';
+import { buildSettingsRows } from '../../../src/cli/panes/repo-settings-model.js';
 import { escapeHtml } from './html.js';
 import type { RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoRef, RepoTrackerWrite } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';

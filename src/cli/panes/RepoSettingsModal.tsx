@@ -19,8 +19,8 @@ import type { RepoFieldDef } from '../../config/repo-fields.js';
 import type { RepoSettingsPayload } from '../../daemon/repo-settings.js';
 import { useServices } from '../ui/context.js';
 import { Panel, KeyHints, TextPrompt } from '../ui/widgets.js';
-import { buildSettingsRows } from '../../config/repo-settings-rows.js';
-import type { SettingsRow } from '../../config/repo-settings-rows.js';
+import { buildSettingsRows } from './repo-settings-model.js';
+import type { SettingsRow } from './repo-settings-model.js';
 
 export function RepoSettingsModal(props: { repo: string; onClose: () => void }): ReactElement {
 	const svc = useServices();

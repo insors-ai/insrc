@@ -9,8 +9,8 @@
  * `repo.settings.get` payload. No IO and no ink, so it is testable on its own.
  */
 
-import type { RepoFieldDef, RepoFieldKind } from './repo-fields.js';
-import type { RepoSettingsPayload } from '../daemon/repo-settings.js';
+import type { RepoFieldDef, RepoFieldKind } from '../../config/repo-fields.js';
+import type { RepoSettingsPayload } from '../../daemon/repo-settings.js';
 
 export interface SettingsRow {
 	readonly key: string;

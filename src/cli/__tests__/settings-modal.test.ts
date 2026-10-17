@@ -22,7 +22,7 @@ import { render } from 'ink-testing-library';
 import { App } from '../app.js';
 import { makeServices } from '../services/index.js';
 import type { Services } from '../services/index.js';
-import { buildSettingsRows } from '../../config/repo-settings-rows.js';
+import { buildSettingsRows } from '../panes/repo-settings-model.js';
 import { REPO_TRACKER_FIELDS } from '../../config/repo-fields.js';
 import { buildSettingsCatalog } from '../../config/settings-catalog.js';
 import type { RepoSettingsPayload, SettingsResult } from '../../daemon/repo-settings.js';

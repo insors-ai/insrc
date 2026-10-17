@@ -102,6 +102,7 @@ test('compatibility exception 1, a failed typed create is not retried untyped un
 		['missing tool', execError({ code: 'ENOENT' })],
 		['missing sign-in', execError({ stderr: 'gh auth login required' })],
 		['non-type rejection', execError({ stderr: 'HTTP 403: Resource not accessible' })],
+		['422 about another field', execError({ stderr: 'HTTP 422: Validation Failed: title must be of type string' })],
 	];
 	for (const [label, err] of failures) {
 		let posts = 0;
@@ -112,16 +113,18 @@ test('compatibility exception 1, a failed typed create is not retried untyped un
 });
 
 test('a typed create rejected as an unknown issue type is retried once untyped and reports typed false', () => {
-	const seen: boolean[] = [];
-	_setTrackerExecForTests((_cmd, args) => {
-		seen.push(hasType(args));
-		if (hasType(args)) throw execError({ stderr: 'HTTP 422: Validation Failed: issue type not enabled' });
-		return JSON.stringify({ number: 7, id: 700 });
-	});
-	const r = ghCreateIssueTyped('o', 'r', 't', 'b', ['x'], 'Task');
-	assert.deepEqual(seen, [true, false]);
-	assert.equal(r.typed, false);
-	assert.equal(r.id, 700);
+	for (const stderr of ['HTTP 422: Validation Failed: issue type not enabled', 'HTTP 422: Unprocessable Entity: unknown issue type "Task"']) {
+		const seen: boolean[] = [];
+		_setTrackerExecForTests((_cmd, args) => {
+			seen.push(hasType(args));
+			if (hasType(args)) throw execError({ stderr });
+			return JSON.stringify({ number: 7, id: 700 });
+		});
+		const r = ghCreateIssueTyped('o', 'r', 't', 'b', ['x'], 'Task');
+		assert.deepEqual(seen, [true, false], stderr);
+		assert.equal(r.typed, false);
+		assert.equal(r.id, 700);
+	}
 });
 
 test('compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable', () => {

@@ -34,6 +34,8 @@ export const COMMAND_HELP: readonly string[] = [
 	'daemon   start | stop | restart | update | backup <dir> | compact | status',
 	'workflow run <workflow> <focus> | list | chain <hash> | review <path> | findings <path> | resolve <path> <id> <action> | approve <path> [--override <reason>] | reject <path> <reason> | ack-stale <path> <reason> | sync <hash> | deferred <epicSlug|hash>',
 	'tracker  setup [--project]   ·   bootstrap the GitHub tracker (config, labels, issue types, project)',
+	'team     init [path]   ·   write a starter .insrc/policy.json for the team lead to review and commit',
+	'team     refresh [path] [--branch <name>]   ·   fetch the remote default branch and apply its policy (name the branch when it cannot be detected)',
 	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
 	'pane daemon|repos|workflows|setup   ·   help   ·   quit',
@@ -58,6 +60,7 @@ export async function runCommand(line: string, ctx: CommandCtx): Promise<string[
 			case 'repo': case 'r':     return await runRepo(sub, rest, svc);
 			case 'workflow': case 'wf': return await runWorkflow(sub, rest, svc, ctx);
 			case 'tracker': case 'tr': return runTracker(sub, rest, svc, ctx);
+			case 'team':               return await runTeam(sub, rest, svc, ctx);
 			case 'config': case 'cfg': return await runConfig(sub, rest, svc);
 			case 'setup':              return await runSetup(sub, svc, ctx);
 			default:
@@ -298,6 +301,32 @@ function runTracker(sub: string | undefined, rest: readonly string[], svc: Servi
 			return lines;
 		}
 		default: return ['usage: tracker setup [--project]'];
+	}
+}
+
+/** `team init [path]` and `team refresh [path] [--branch <name>]`; the path defaults to the selected repo. */
+async function runTeam(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): Promise<string[]> {
+	const USAGE = 'usage: team init [path] | team refresh [path] [--branch <name>]';
+	let path: string | undefined;
+	let branch: string | undefined;
+	for (let i = 0; i < rest.length; i++) {
+		const tok = rest[i] ?? '';
+		if (tok === '--branch') {
+			branch = rest[++i];
+			if (branch === undefined || branch.startsWith('--')) return ['team refresh --branch needs a branch name', USAGE];
+		} else if (tok.startsWith('--') || path !== undefined) {
+			return [`unexpected '${tok}'`, USAGE];
+		} else {
+			path = tok;
+		}
+	}
+	switch (sub) {
+		case 'init':
+			if (branch !== undefined) return ["--branch applies to 'team refresh' only", USAGE];
+			return [await svc.team.teamInit(path ?? ctx.repoPath)];
+		case 'refresh':
+			return [await svc.team.teamRefresh(path ?? ctx.repoPath, branch)];
+		default: return [USAGE];
 	}
 }
 

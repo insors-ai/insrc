@@ -90,6 +90,10 @@ function fakeServices(): Services {
 			write:  async () => ({ ok: true }),
 			reload: async () => ({ ok: true }),
 		},
+		team: {
+			teamInit:    async () => '',
+			teamRefresh: async () => '',
+		},
 		debug: {
 			sections: [
 				{ id: 'daemon', title: 'Daemon' },
@@ -454,4 +458,10 @@ test('Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)
 	await settle();
 	assert.match(lastFrame() ?? '', /←\/→ section/); // DebugPane is now shown (its unique hint)
 	unmount();
+});
+
+test('the TUI tests run with fakeServices carrying the team entry', () => {
+	const svc = fakeServices();
+	assert.equal(typeof svc.team.teamInit, 'function');
+	assert.equal(typeof svc.team.teamRefresh, 'function');
 });

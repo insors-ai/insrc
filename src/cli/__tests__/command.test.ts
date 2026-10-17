@@ -20,12 +20,14 @@ interface Spies {
 	repoAdd: string[];
 	repoAddSteering: Array<unknown>;
 	configWrite: Array<{ path: string; value: unknown }>;
+	teamInit: string[];
+	teamRefresh: Array<{ path: string; branch: string | undefined }>;
 	panes: number[];
 	exited: boolean;
 }
 
 function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: Spies } {
-	const spies: Spies = { repoAdd: [], repoAddSteering: [], configWrite: [], panes: [], exited: false };
+	const spies: Spies = { repoAdd: [], repoAddSteering: [], configWrite: [], teamInit: [], teamRefresh: [], panes: [], exited: false };
 	const base: Services = {
 		daemon: {
 			isRunning: () => true,
@@ -66,6 +68,10 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			show: async () => ({ models: { local: { embeddingDim: 768 }, tiers: { core: { runner: 'cli-claude', model: '' } } } }),
 			write: async (path, value) => { spies.configWrite.push({ path, value }); return { ok: true }; },
 			reload: async () => ({ ok: true }),
+		},
+		team: {
+			teamInit: async p => { spies.teamInit.push(p); return `✓ wrote ${p}/.insrc/policy.json`; },
+			teamRefresh: async (p, branch) => { spies.teamRefresh.push({ path: p, branch }); return `✓ fetched main @ abc1234 — team policy applied`; },
 		},
 		debug: {
 			sections: [
@@ -299,4 +305,47 @@ test('workflow review says when the source roots could not be read from the inde
 
 	ctx.services.workflow.reviewArtifact = async () => ({ report, applied: [], skipped: [], pendingUser: [] }) as never;
 	assert.equal((await runCommand('workflow review docs/plans/PLAN-x.md', ctx)).some(l => /source roots/.test(l)), false);
+});
+
+test('team init writes the starter and reports its path', async () => {
+	const { ctx, spies } = ctxWith();
+	assert.deepEqual(await runCommand('team init', ctx), ['✓ wrote /repo/.insrc/policy.json'], 'the selected repo is the default');
+	assert.deepEqual(await runCommand('team init /work/other', ctx), ['✓ wrote /work/other/.insrc/policy.json']);
+	assert.deepEqual(spies.teamInit, ['/repo', '/work/other']);
+	assert.ok(COMMAND_HELP.some(l => l.startsWith('team     init')) && COMMAND_HELP.some(l => l.startsWith('team     refresh')), 'both commands are in the help');
+});
+
+test('team refresh runs the refresh and reports the outcome', async () => {
+	const { ctx, spies } = ctxWith();
+	assert.deepEqual(await runCommand('team refresh', ctx), ['✓ fetched main @ abc1234 — team policy applied']);
+	await runCommand('team refresh /work/other', ctx);
+	assert.deepEqual(spies.teamRefresh, [{ path: '/repo', branch: undefined }, { path: '/work/other', branch: undefined }]);
+});
+
+test('team refresh --branch passes the name through and renders the refusal that asks for it', async () => {
+	const { ctx, spies } = ctxWith();
+	await runCommand('team refresh --branch trunk', ctx);
+	await runCommand('team refresh /work/other --branch main', ctx);
+	assert.deepEqual(spies.teamRefresh, [{ path: '/repo', branch: 'trunk' }, { path: '/work/other', branch: 'main' }]);
+
+	const refused = ctxWith({ team: {
+		teamInit: async () => '',
+		teamRefresh: async () => { throw new Error("remote 'origin' names no default branch and none is recorded; run 'team refresh --branch <default-branch-name>' to name the default branch of remote 'origin'"); },
+	} });
+	const out = await runCommand('team refresh', refused.ctx);
+	assert.equal(out.length, 1);
+	assert.match(out[0] ?? '', /^✗ .*team refresh --branch <default-branch-name>/);
+
+	assert.match((await runCommand('team refresh --branch', ctx))[0] ?? '', /needs a branch name/);
+	assert.match((await runCommand('team init --branch x', ctx))[0] ?? '', /applies to 'team refresh' only/);
+	assert.match((await runCommand('team bogus', ctx))[0] ?? '', /^usage: team init/);
+});
+
+test('a thrown error from either team command renders as a cross-prefixed line', async () => {
+	const { ctx } = ctxWith({ team: {
+		teamInit: async () => { throw new Error('.insrc/policy.json already exists; it was left untouched'); },
+		teamRefresh: async () => { throw new Error('a refresh is already running for this repository'); },
+	} });
+	assert.deepEqual(await runCommand('team init', ctx), ['✗ .insrc/policy.json already exists; it was left untouched']);
+	assert.deepEqual(await runCommand('team refresh', ctx), ['✗ a refresh is already running for this repository']);
 });

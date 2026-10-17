@@ -21,7 +21,11 @@
     "epicSlug": "present-every-artifact-awaiting-decision-buttons",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-17T16:35:49.309Z",
+    "parentRef": {
+      "slug": "present-every-artifact-awaiting-decision-buttons"
+    }
   },
   "body": {
     "title": "Present every artifact awaiting a decision, with buttons that follow its state",

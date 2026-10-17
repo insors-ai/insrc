@@ -16,7 +16,7 @@
  * Run: npx tsx --test src/workflow/__tests__/questions.test.ts
  */
 
-import { test } from 'node:test';
+import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -32,6 +32,7 @@ import {
 } from '../questions.js';
 import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, lldArtifactId } from '../storage.js';
 import type { QuestionResolution } from '../types.js';
+import { _setTrackerExecForTests } from '../tracker/github.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-19T00:00:00.000Z';
@@ -173,5 +174,46 @@ test('listDeferred enumerates deferred questions across DEF + HLD + LLDs', () =>
 		const deferred = listDeferred(repo, HASH);
 		const keys = deferred.map(d => `${d.kind}:${d.storyId ?? '-'}:${d.questionId}`).sort();
 		assert.deepEqual(keys, ['define:-:d1', 'lld:s1:l1']);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// The tracker comment goes through the GitHub adapter (s1/t9)
+// ---------------------------------------------------------------------------
+
+afterEach(() => { _setTrackerExecForTests(); delete process.env['INSRC_GITHUB_CONFIG']; });
+
+/** A repo whose HLD carries an Epic ref and whose github.json targets acme/demo for it. */
+function seedTrackedHld(repo: string): void {
+	seedHld(repo, ['[sc1 / missed] Case-insensitive tags?']);
+	const path = join(artifactsDir(repo), `${hldArtifactId(HASH)}.json`);
+	const hld = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
+	hld.meta['tracker'] = { adapter: 'github', epicRef: 'acme/demo#5' };
+	writeFileSync(path, JSON.stringify(hld, null, 2));
+	const cfg = join(repo, 'github.json');
+	writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { owner: 'acme', repo: 'demo' } } }));
+	process.env['INSRC_GITHUB_CONFIG'] = cfg;
+}
+
+test('the comment goes through the adapter with the same argv and a failure is logged in the existing catch', () => {
+	const repo = mkRepo();
+	try {
+		seedTrackedHld(repo);
+		const calls: string[][] = [];
+		_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return ''; });
+		const res = recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-insensitive', 'matches expectation');
+		const comments = calls.filter(c => c[0] === 'issue' && c[1] === 'comment');
+		assert.equal(comments.length, 1);
+		assert.deepEqual(comments[0]!.slice(0, 5), ['issue', 'comment', '5', '--repo', 'acme/demo']);
+		assert.equal(comments[0]![5], '--body');
+		assert.match(comments[0]![6]!, /HLD open question `sc1`.*resolved: Case-insensitive/);
+
+		// A failing comment is swallowed by the existing catch: the resolution is still recorded.
+		const failing: string[][] = [];
+		_setTrackerExecForTests((_cmd, args) => { failing.push([...args]); if (args[0] === 'issue' && args[1] === 'comment') throw Object.assign(new Error('Command failed'), { stderr: 'HTTP 502' }); return ''; });
+		const again = recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-sensitive', 'changed my mind');
+		assert.equal(failing.filter(c => c[0] === 'issue' && c[1] === 'comment').length, 1, 'one attempt, no retry');
+		assert.equal(again.resolution.choice, 'Case-sensitive');
+		assert.equal(res.resolution.status, 'resolved');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

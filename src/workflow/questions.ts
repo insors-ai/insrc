@@ -56,7 +56,8 @@ import {
 	workItemKindOf,
 	writeAtomic,
 } from './storage.js';
-import { commitAndPushArtifacts, ghComment } from './tracker/github.js';
+import { GhCommandError, commitAndPushArtifacts } from './tracker/github.js';
+import { createGithubTracker } from './tracker/github-adapter.js';
 
 const log = getLogger('workflow:questions');
 
@@ -473,7 +474,8 @@ function commitAndComment(
 	try {
 		const cfg = resolveGithubConfig(repoPath);
 		if (cfg.type !== 'github') return;
-		ghComment(cfg.owner, cfg.repo, trackerRef, summary);
+		const posted = createGithubTracker(cfg.owner, cfg.repo).issueOps.comment(trackerRef, summary);
+		if (!posted.ok) throw new GhCommandError(posted.kind, posted.reason);   // the catch below logs it, as for a throwing gh
 	} catch (err) {
 		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'resolution: tracker comment failed (best-effort)');
 	}

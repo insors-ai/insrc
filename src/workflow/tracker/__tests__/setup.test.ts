@@ -173,3 +173,32 @@ test('project views step is always manual with the UI click-list', () => {
 		assert.equal(stepFor(report, 'project')?.status, 'done');
 	} finally { cleanup(dir); }
 });
+
+// ---------------------------------------------------------------------------
+// ensureLabels with a label create that times out (s1/t9)
+// ---------------------------------------------------------------------------
+
+test('ensureLabels with a timing-out label create records the label as failed and continues', () => {
+	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
+	const base = fakeGh();
+	const labelCalls: string[] = [];
+	let optsSeen: Record<string, unknown> | undefined;
+	_setTrackerExecForTests(((cmd: string, args: readonly string[], opts?: Record<string, unknown>) => {
+		if (cmd === 'gh' && args[0] === 'label' && args[1] === 'create') {
+			labelCalls.push(String(args[2]));
+			optsSeen = opts;
+			if (args[2] === 'insrc:story') throw Object.assign(new Error('spawnSync gh ETIMEDOUT'), { code: 'ETIMEDOUT' });
+		}
+		return (base.fn as unknown as (c: string, a: readonly string[]) => string)(cmd, args);
+	}) as unknown as Parameters<typeof _setTrackerExecForTests>[0]);
+	try {
+		const report = runTrackerSetup(REPO);
+		const labels = stepFor(report, 'labels') as { status: string; detail: string } | undefined;
+		assert.equal(labels?.status, 'failed');
+		assert.match(labels?.detail ?? '', /failed to create: insrc:story$/);
+		// Every label was still attempted after the one that timed out, each bounded by the 10 s timeout.
+		assert.ok(labelCalls.length >= 4, `expected all labels attempted, got ${labelCalls.join(', ')}`);
+		assert.ok(labelCalls.indexOf('insrc:task') > labelCalls.indexOf('insrc:story'), 'continued past the timed-out label');
+		assert.equal(optsSeen?.['timeout'], 10_000);
+	} finally { cleanup(dir); }
+});

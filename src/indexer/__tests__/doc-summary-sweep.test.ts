@@ -149,3 +149,14 @@ test('code work arriving while a document is read pauses the sweep again: an edi
 	assert.equal(counts.stopped, true);
 	assert.deepEqual(w2.events.filter(e => e !== 'wait'), []);
 });
+
+test('shutdown that comes while a document is read ends the sweep without summarising it', async () => {
+	const w = world({});
+	let stop = false;
+	w.deps.shouldStop = () => stop;
+	const read = w.deps.getEntity;
+	w.deps.getEntity = async id => { stop = true; return read(id); };
+	const counts = await runDocSummarySweep(['a'], w.deps);
+	assert.deepEqual(counts, { summarised: 0, skipped: 0, failed: 0, gone: 0, stopped: true });
+	assert.deepEqual(w.events.filter(e => e !== 'wait'), []);
+});

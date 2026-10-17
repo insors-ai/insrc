@@ -86,8 +86,9 @@ export async function runDocSummarySweep(entityIds: readonly string[], deps: Doc
 				break;
 			}
 			if (entity === null) { outcome = 'gone'; break; }
-			// Code work that arrived while the document was read goes first: pause again.
-			// No await between this check and the summary starting.
+			// Shutdown or code work that arrived while the document was read: stop, or pause
+			// again. No await between these checks and the summary starting.
+			if (deps.shouldStop()) return { ...counts, stopped: true };
 			if (!deps.isCodeIdle()) continue;
 			try {
 				outcome = classify(await deps.summarise(entity));

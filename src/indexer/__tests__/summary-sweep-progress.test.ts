@@ -189,20 +189,36 @@ test("an edited document queued while the indexer's sweep is paused for code wor
 	await running;
 });
 
-test('a single-document summary waits out code work that arrives while its document is read, and is not started on shutdown', async () => {
+test('a single-document summary waits while code work runs, runs once it is done, and is not started on shutdown', async () => {
+	const id = makeEntityId(repo, join(repo, 'docs', 'a.md'), 'section', 'one');
+	// Resumes once code work is done.
 	const queue = new IndexQueue();
 	const file = gate();
 	const running = queue.start(async job => { if (job.kind === 'file') await file.wait; });
 	queue.enqueue({ kind: 'file', filePath: join(repo, 'src', 'x.ts'), event: 'update' });
 	await until(() => queue.laneStatus().index.running, 'the file job to start');
 	const svc = new Probe(queue);
-	const id = makeEntityId(repo, join(repo, 'docs', 'a.md'), 'section', 'one');
 	const edit = svc.processJob({ kind: 'doc-summarise-entity', entityId: id });
 	for (let i = 0; i < 20; i++) await tick();
 	assert.deepEqual(svc.order, [], 'not while code work runs');
-	queue.stop();
-	await edit;
-	assert.deepEqual(svc.order, [], 'not started on shutdown');
 	file.open();
+	await edit;
+	assert.deepEqual(svc.order, ['one'], 'summarised once code work was done');
+	queue.stop();
 	await running;
+
+	// Not started on shutdown.
+	const queue2 = new IndexQueue();
+	const file2 = gate();
+	const running2 = queue2.start(async job => { if (job.kind === 'file') await file2.wait; });
+	queue2.enqueue({ kind: 'file', filePath: join(repo, 'src', 'y.ts'), event: 'update' });
+	await until(() => queue2.laneStatus().index.running, 'the second file job to start');
+	const svc2 = new Probe(queue2);
+	const edit2 = svc2.processJob({ kind: 'doc-summarise-entity', entityId: id });
+	for (let i = 0; i < 20; i++) await tick();
+	queue2.stop();
+	await edit2;
+	assert.deepEqual(svc2.order, [], 'not started on shutdown');
+	file2.open();
+	await running2;
 });

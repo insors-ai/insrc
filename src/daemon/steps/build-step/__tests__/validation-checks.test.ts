@@ -126,6 +126,27 @@ test('the plan-driven, small and trivial routes each build the expected check pl
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+test('a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit\'s (ISSUE-91640defac1b5816)', () => {
+	const repo = gitRepo({ 'README.md': 'base' });
+	const git = (...args: string[]): string => execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...args], { cwd: repo, encoding: 'utf8' });
+	const commit = (rel: string, body: string, msg: string): void => {
+		mkdirSync(dirname(join(repo, rel)), { recursive: true });
+		writeFileSync(join(repo, rel), body);
+		git('add', rel);
+		git('commit', '-qm', msg);
+	};
+	try {
+		const base = git('rev-parse', 'HEAD').trim();
+		commit('src/a/__tests__/fix.test.ts', 'x', 'the build\'s code and test');
+		commit('src/b/__tests__/other.test.ts', 'x', 'another Story');
+		commit('docs/BUILD.md', 'x', 'records');
+		assert.deepEqual(trivialCheckPlan(repo, base).testFiles, ['src/a/__tests__/fix.test.ts', 'src/b/__tests__/other.test.ts']);
+		// No base: the HEAD commit only, here a records commit with no test file.
+		assert.deepEqual(trivialCheckPlan(repo).testFiles, []);
+		assert.deepEqual(trivialCheckPlan(repo, undefined).noTests, { ok: true, note: 'no tests named for a trivial build' });
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 test('a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run', () => {
 	const repo = gitRepo(TREE);
 	try {

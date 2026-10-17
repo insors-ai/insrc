@@ -1,0 +1,228 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "91640defac1b5816",
+    "storyId": "S001",
+    "createdAt": "2026-10-17T04:55:25.960Z",
+    "updatedAt": "2026-10-17T04:55:25.960Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-16T19:09:31.298Z",
+    "epicSlug": "run-trivial-build-s-tests-from"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "08c023de",
+        "ranAt": "2026-10-17T04:55:25.960Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/steps/build-step/__tests__/build-start.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/steps/build-step/__tests__/validation-checks.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5662,
+            "titles": [
+              {
+                "title": "T30/T31: two Stories approved in ONE sweep, built in turn — each change log is EXACTLY its own files (build-start file committed with the work)",
+                "result": "pass"
+              },
+              {
+                "title": "T32: the build-start file left UNCOMMITTED (untracked) with nothing else dirty — the range is still derived, exact set",
+                "result": "pass"
+              },
+              {
+                "title": "T32 (tracked and modified): a build-start file that is the ONLY dirty tracked path does not stand in for the Story's work",
+                "result": "pass"
+              },
+              {
+                "title": "T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task 1) — the change log is EXACTLY both tasks' files",
+                "result": "pass"
+              },
+              {
+                "title": "T34: the same mid-build approval with the build-start file DELETED before task 2 — no file is written and the base is the pre-change one",
+                "result": "pass"
+              },
+              {
+                "title": "T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild's files",
+                "result": "pass"
+              },
+              {
+                "title": "T36 (plan-driven): implement writes NO BUILD record, and a batch approval then approves none for the Story",
+                "result": "pass"
+              },
+              {
+                "title": "T36 (Small route): implement stamps and writes NO BUILD record; a batch approval approves none",
+                "result": "pass"
+              },
+              {
+                "title": "Trivial route: the first implement stamps HEAD and writes its task-less record; a second implement keeps the stamp",
+                "result": "pass"
+              },
+              {
+                "title": "Trivial route: validate runs the test files touched since the build-start stamp, though a later commit is HEAD (ISSUE-91640defac1b5816)",
+                "result": "pass"
+              },
+              {
+                "title": "fail-open: a stamp that cannot be written leaves the implement result unchanged on every route",
+                "result": "pass"
+              },
+              {
+                "title": "a REFUSED implement stamps nothing",
+                "result": "pass"
+              },
+              {
+                "title": "T37: the completion writer excludes a COMMITTED build-start file — exact set",
+                "result": "pass"
+              },
+              {
+                "title": "T38: no resolvable base and a clean tree -> validate writes an EMPTY change log (no substituted range)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9374,
+            "titles": [
+              {
+                "title": "resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "a base name under two __tests__ directories resolves to both files",
+                "result": "pass"
+              },
+              {
+                "title": "the plan-driven, small and trivial routes each build the expected check plan",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)",
+                "result": "pass"
+              },
+              {
+                "title": "a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run",
+                "result": "pass"
+              },
+              {
+                "title": "a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none",
+                "result": "pass"
+              },
+              {
+                "title": "the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a passing and a failing command give ok true and ok false with their exit codes and output tails",
+                "result": "pass"
+              },
+              {
+                "title": "a command past its limit is reported timedOut and its whole process group, grandchild included, is gone",
+                "result": "pass"
+              },
+              {
+                "title": "a test file that keeps its process alive after its tests pass still finishes under --test-force-exit",
+                "result": "pass"
+              },
+              {
+                "title": "an unresolved test name makes tests fail with a note naming it",
+                "result": "pass"
+              },
+              {
+                "title": "a trivial build that deletes a test file does not ask to run it",
+                "result": "pass"
+              },
+              {
+                "title": "with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'",
+                "result": "pass"
+              },
+              {
+                "title": "with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)",
+                "result": "pass"
+              },
+              {
+                "title": "smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)",
+                "result": "pass"
+              },
+              {
+                "title": "a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles",
+                "result": "pass"
+              },
+              {
+                "title": "a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok",
+                "result": "pass"
+              },
+              {
+                "title": "a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note",
+                "result": "pass"
+              },
+              {
+                "title": "a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)",
+                "result": "pass"
+              },
+              {
+                "title": "trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it",
+                "result": "pass"
+              },
+              {
+                "title": "a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments",
+                "result": "pass"
+              },
+              {
+                "title": "the whole output is still written after the output directory has been removed, and files older than the retention are pruned",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: in its own process a failing test still fails the file",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

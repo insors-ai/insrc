@@ -31,7 +31,7 @@ import { tmpdir } from 'node:os';
 
 import { handleBuildStep } from '../handler.js';
 import { _setBuildValidateCheckRunnerForTests, _setBuildValidateProviderForTests } from '../phases/validate.js';
-import type { ValidationCheckResults } from '../validation-checks.js';
+import type { ValidationCheckPlan, ValidationCheckResults } from '../validation-checks.js';
 import { approveArtifactByJsonPath, approveWorkflowTarget } from '../../../../workflow/gates.js';
 import { ARTIFACTS_DIR, buildArtifactId, codeReviewArtifactId, lldArtifactId, planArtifactId } from '../../../../workflow/storage.js';
 import { ensureBuildRecordOnCompletion } from '../../../../workflow/runners/build/completion-record.js';
@@ -398,6 +398,26 @@ test('Trivial route: the first implement stamps HEAD and writes its task-less re
 		try { await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL }); } finally { _setBuildValidateProviderForTests(undefined); }
 		assert.deepEqual(changeLog(fx, 's1'), ['trivial-work.ts']);
 		assert.match(judgePrompt, /## Stated scope\n\nAdd a flag\.\n/, 'the judge sees the Trivial build\'s stated scope (ISSUE-ae2d83c6)');
+	} finally { fx.cleanup(); }
+});
+
+test('Trivial route: validate runs the test files touched since the build-start stamp, though a later commit is HEAD (ISSUE-91640defac1b5816)', async () => {
+	const fx = mkGit();
+	try {
+		assert.equal(out(await handleBuildStep({ phase: 'implement', target: 's1', repo: fx.repo, standalone: TRIVIAL }))['next'], 'implement');
+		mkdirSync(join(fx.repo, '__tests__'), { recursive: true });
+		work(fx, '__tests__/flag.test.ts', 'source-only');
+		commitRecords(fx, 'records');
+		let plan: ValidationCheckPlan | undefined;
+		_setBuildValidateCheckRunnerForTests(async (_repo, p) => { plan = p; return PASSING_CHECKS; });
+		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
+		try {
+			await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL });
+		} finally {
+			_setBuildValidateProviderForTests(undefined);
+			_setBuildValidateCheckRunnerForTests(async () => PASSING_CHECKS);
+		}
+		assert.deepEqual(plan?.testFiles, ['__tests__/flag.test.ts']);
 	} finally { fx.cleanup(); }
 });
 

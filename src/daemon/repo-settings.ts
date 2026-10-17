@@ -174,13 +174,11 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 		if (!read.ok) return { ok: false, error: read.error };
 		const resolved = resolveTarget(read.file, read.entry, repo);
 
-		let signin: SigninStatus;
-		if (resolved.type === 'github' && resolved.owner !== undefined && resolved.repo !== undefined) {
-			const tracker = makeTracker(resolved.owner, resolved.repo);
-			signin = mapSignin(() => tracker.whoAmI());
-		} else {
-			signin = { state: 'disabled', reason: resolved.error ?? 'the tracker is off for this repo' };
-		}
+		// Sign-in is the signed-in user (`gh api user`), which does not depend on the
+		// target, so it is read whenever the tracker is github, even if the target is unresolved.
+		const signin: SigninStatus = resolved.type === 'github'
+			? mapSignin(() => makeTracker(resolved.owner ?? '', resolved.repo ?? '').whoAmI())
+			: { state: 'disabled', reason: 'the tracker is off for this repo' };
 		return { ok: true, payload: { repo, values: ownValues(read.entry), resolved, signin, policy: mapPolicy(readPolicy, repo) } };
 	}
 

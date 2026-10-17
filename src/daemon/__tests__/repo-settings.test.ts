@@ -338,7 +338,7 @@ test('get reads once, never writes, and resolves from the git remote when there 
 			assert.deepEqual(h.whoCalls, ['acme/widgets']);
 		} finally { h.cleanup(); }
 
-		// Enabled but no target resolvable: the reason is shown and no sign-in check runs.
+		// Enabled but no target resolvable: the reason is shown and sign-in is still read once (it does not depend on the target).
 		const noRemote = mkdtempSync(join(tmpdir(), 'insrc-repo-noremote-'));
 		try {
 			execFileSync('git', ['init', '-q', noRemote]);
@@ -347,8 +347,8 @@ test('get reads once, never writes, and resolves from the git remote when there 
 				const p = payloadOf(await k.call('repo.settings.get', { repo: noRemote }));
 				assert.equal(p.resolved.type, 'github');
 				assert.ok((p.resolved.error ?? '').length > 0);
-				assert.equal(p.signin.state, 'disabled');
-				assert.equal(k.whoCalls.length, 0);
+				assert.deepEqual(p.signin, { state: 'signed-in', login: 'octocat' });
+				assert.equal(k.whoCalls.length, 1);
 			} finally { k.cleanup(); }
 		} finally { rmSync(noRemote, { recursive: true, force: true }); }
 	} finally { rmSync(repoDir, { recursive: true, force: true }); }

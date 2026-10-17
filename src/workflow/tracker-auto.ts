@@ -36,9 +36,9 @@ import { renderLldMarkdown } from './artifacts/lld.js';
 import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
 import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactId, lldArtifactPaths, readEpicCreatedAt, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
-import { ghAuthOk } from './tracker/github.js';
-import { createGithubTracker, unwrap } from './tracker/github-adapter.js';
-import type { CreatedIssue, IssueOps } from './tracker/port.js';
+import { GhCommandError, ghAuthOk } from './tracker/github.js';
+import { createGithubTracker } from './tracker/github-adapter.js';
+import type { CreatedIssue, IssueOps, PortResult } from './tracker/port.js';
 import {
 	allTrackerLabels, epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody,
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
@@ -349,6 +349,14 @@ function withResolvedTail(
 	core: string,
 ): string {
 	return core + renderResolvedQuestionsSection(meta.questionResolutions ?? {}) + renderCitationBlock(citations);
+}
+
+/** The one unwrapping rule: an adapter result that failed is thrown again, so the
+ *  existing try/catch and bestEffort wrappers behave as they did when the gh
+ *  wrappers themselves threw. */
+function unwrap<T>(r: PortResult<T>): T {
+	if (!r.ok) throw new GhCommandError(r.kind, r.reason);
+	return r.value;
 }
 
 /** Run a non-critical side effect; log + swallow failures. */

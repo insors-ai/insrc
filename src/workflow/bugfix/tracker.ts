@@ -39,8 +39,9 @@ import { renderIssueMarkdown } from '../artifacts/issue.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../config/github.js';
 import { GithubConfigError } from '../config/github.js';
 import { artifactJsonPath, issueArtifactId } from '../storage.js';
-import { ghAuthOk, type CreatedIssue } from '../tracker/github.js';
-import { createGithubTracker, unwrap } from '../tracker/github-adapter.js';
+import { GhCommandError, ghAuthOk, type CreatedIssue } from '../tracker/github.js';
+import { createGithubTracker } from '../tracker/github-adapter.js';
+import type { PortResult } from '../tracker/port.js';
 import { patchTrackerMeta, readTrackerMeta } from '../tracker/refs.js';
 import { issueForWorkflowId } from '../tracker/resolve.js';
 import type { WorkItemRef } from '../types.js';
@@ -405,6 +406,12 @@ function defaultResolveParentIssueRef(repoPath: string, parentRef: WorkItemRef):
 		if (ref !== null && ref.length > 0) return ref;
 	}
 	return null;
+}
+
+/** Adapter results are thrown again so the deps keep the throwing contract of the gh wrappers they replaced. */
+function unwrap<T>(r: PortResult<T>): T {
+	if (!r.ok) throw new GhCommandError(r.kind, r.reason);
+	return r.value;
 }
 
 /** Real create-side deps: config resolver + `gh` CLI wrappers + storage

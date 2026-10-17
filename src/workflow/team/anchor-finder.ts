@@ -27,9 +27,9 @@ export function parseAnchorLog(output: string): PolicyAnchor {
 	return { known: true, firstCommit: sha, firstCommitTime: time };
 }
 
-export function findAnchor(repo: string, trackingRef: string): PolicyAnchor {
-	const shallow = runGit(repo, ['rev-parse', '--is-shallow-repository']);
+export function findAnchor(repo: string, trackingRef: string, timeoutMs?: number): PolicyAnchor {
+	const shallow = runGit(repo, ['rev-parse', '--is-shallow-repository'], timeoutMs);
 	if (!shallow.ok || shallow.stdout.trim() !== 'false') return UNKNOWN;
-	const log = runGit(repo, ['log', '--first-parent', '--diff-filter=A', '--reverse', '--format=%H%x09%cI', trackingRef, '--', POLICY_PATH]);
+	const log = runGit(repo, ['log', '--first-parent', '--diff-filter=A', '--reverse', '--format=%H%x09%cI', trackingRef, '--', POLICY_PATH], timeoutMs);
 	return log.ok ? parseAnchorLog(log.stdout) : UNKNOWN;
 }

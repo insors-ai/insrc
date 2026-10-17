@@ -22,8 +22,9 @@ import { getLogger } from '../../shared/logger.js';
 import { findAnchor } from './anchor-finder.js';
 import { resolveDefaultBranch } from './branch-resolution.js';
 import { createDeadline, runGitAsync } from './git-async.js';
-import type { GitAsync } from './git-async.js';
+import type { Deadline, GitAsync } from './git-async.js';
 import { POLICY_PATH, runGit } from './git.js';
+import type { GitRun } from './git.js';
 import { parsePolicyFile } from './policy-parser.js';
 import { isGitRepo, pickRemote } from './policy-reader.js';
 import { REFRESH_DEADLINE_MS, acquireLock, mergeAnchor, readSighting, removeSighting, writeSighting } from './sighting-store.js';
@@ -40,6 +41,13 @@ export interface RefreshOptions {
 	/** Test seams. */
 	readonly git?: GitAsync | undefined;
 	readonly write?: typeof writeSighting | undefined;
+}
+
+/** A local git call that shares the refresh's single deadline instead of carrying its own timeout. */
+function localGit(repo: string, args: readonly string[], deadline: Deadline): GitRun {
+	const left = deadline.remainingMs();
+	if (left <= 0) return { ok: false, stderr: 'the refresh deadline passed' };
+	return runGit(repo, args, left);
 }
 
 function fail(reason: string): { ok: false; reason: string } {
@@ -77,25 +85,28 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 	const fetched = await git(repo, ['fetch', '--no-tags', '--no-write-fetch-head', '--no-recurse-submodules', '--no-prune', '--refmap=', remote, `+refs/heads/${branch}:${ref}`], deadline);
 	if (!fetched.ok) return fail(`fetching '${branch}' from '${remote}' failed: ${fetched.stderr}`);
 
-	const sha = runGit(repo, ['rev-parse', '--verify', '-q', `${ref}^{commit}`]);
+	const sha = localGit(repo, ['rev-parse', '--verify', '-q', `${ref}^{commit}`], deadline);
 	if (!sha.ok) return fail(`'${branch}' was fetched but ${ref} cannot be resolved`);
 	const commit = sha.stdout.trim();
 	const warnings: string[] = [];
 
-	const shown = runGit(repo, ['show', `${ref}:${POLICY_PATH}`]);
+	const shown = localGit(repo, ['show', `${ref}:${POLICY_PATH}`], deadline);
 	if (!shown.ok) {
-		// The policy file is not on the default branch: a deliberate removal reads as solo again.
+		// The policy file is not on the default branch: a deliberate removal reads as solo again. Point the remote HEAD
+		// at the branch FIRST and treat a failure as a failure: a stale HEAD on a retained old branch would otherwise
+		// let the reader find an old policy once the record is gone. The record is kept until the HEAD is right.
+		const head = setRemoteHead(repo, remote, branch, deadline);
+		if (!head.ok) return fail(`the policy file is absent on '${branch}' but ${head.warning}; the stored record was kept, so run the refresh again`);
 		try {
 			removeSighting(repo, opts.teamDir);
 		} catch (err) {
 			return fail(`the policy file is absent on '${branch}' but the stored record could not be removed (${err instanceof Error ? err.message : String(err)}); the next refresh retries`);
 		}
-		setRemoteHead(repo, remote, branch, warnings);
 		return { ok: true, value: { kind: 'absent', branch, warnings } };
 	}
 
 	const parsed = parsePolicyFile(shown.stdout);
-	const anchor = mergeAnchor(sighting?.anchor, findAnchor(repo, ref));
+	const anchor = mergeAnchor(sighting?.anchor, findAnchor(repo, ref, Math.max(1, deadline.remainingMs())));
 	try {
 		write(repo, { remote, branch, branchSource: decision.source, sha: commit, refreshedAt: now, anchor }, opts.teamDir);
 	} catch (err) {
@@ -103,14 +114,15 @@ async function refreshLocked(repo: string, opts: RefreshOptions): Promise<Policy
 		return fail(`the fetched policy could not be recorded (${err instanceof Error ? err.message : String(err)}); ${ref} has already moved, and the next refresh repairs the record`);
 	}
 
-	setRemoteHead(repo, remote, branch, warnings);
+	const head = setRemoteHead(repo, remote, branch, deadline);
+	if (!head.ok) warnings.push(head.warning);
 	return parsed.ok
 		? { ok: true, value: { kind: 'fetched', branch, sha: commit, warnings } }
 		: { ok: true, value: { kind: 'invalid', branch, reason: parsed.reason, warnings } };
 }
 
-/** Keep a clone-style remote HEAD consistent. Cosmetic: a failure is only a warning. */
-function setRemoteHead(repo: string, remote: string, branch: string, warnings: string[]): void {
-	const head = runGit(repo, ['symbolic-ref', `refs/remotes/${remote}/HEAD`, `refs/remotes/${remote}/${branch}`]);
-	if (!head.ok) warnings.push(`could not update refs/remotes/${remote}/HEAD (${head.stderr}); the recorded branch is used instead`);
+/** Keep a clone-style remote HEAD pointing at the default branch. A failure is reported to the caller to decide. */
+function setRemoteHead(repo: string, remote: string, branch: string, deadline: Deadline): { ok: true } | { ok: false; warning: string } {
+	const head = localGit(repo, ['symbolic-ref', `refs/remotes/${remote}/HEAD`, `refs/remotes/${remote}/${branch}`], deadline);
+	return head.ok ? { ok: true } : { ok: false, warning: `could not update refs/remotes/${remote}/HEAD (${head.stderr}); the recorded branch is used instead` };
 }

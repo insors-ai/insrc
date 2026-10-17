@@ -110,6 +110,14 @@ Repos without the policy file behave exactly as today (solo mode).
   `listMyOpenTasks`, are bounded by the 10 s timeout. Both reach solo callers.
   The unbuilt tracker-tool LLD-38436e90625a83a2-S001 is superseded by s1; its
   companion LLD-9a7bbe63297457c2-S001 needs its own decision.
+- **s3 sign-in reading (accepted 2026-10-17, s3 LLD):** DEF ac10 and ac11 say a
+  developer can "see and edit ... sign-in". insrc stores no secrets and sign-in
+  stays with the tracker's CLI (HLD security), so sign-in is shown as a live
+  read-only status (signed in as X, not signed in, gh not found, timed out) and
+  the editable part is `ghHost`, the host `gh` signs in to. No client changes
+  sign-in. `ghPath`, `ghHost` and `branchPattern` are stored and shown only;
+  their consumers are an s1 follow-up (gh runner) and s6 (branch naming), and the
+  rows say "saved; not used yet" until then.
 
 ## Open items for design
 

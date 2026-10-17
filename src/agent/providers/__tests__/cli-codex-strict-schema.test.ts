@@ -281,7 +281,7 @@ test('a schema with a format the reply check cannot enforce, anywhere including 
 	}
 });
 
-test('a schema whose $ref points into a part the codex copy leaves out is refused before codex is called; a $ref into a kept part is sent', async () => {
+test('a schema whose $ref points into a part the codex copy leaves out or renames (also under a property named like a data keyword) is refused before codex is called; a $ref into a kept part is sent', async () => {
 	const intoDropped: StructuredSchema = {
 		type: 'object', properties: { v: { $ref: '#/$defs/w/allOf/0' } },
 		$defs: { w: { allOf: [{ type: 'string' }] } },
@@ -293,6 +293,20 @@ test('a schema whose $ref points into a part the codex copy leaves out is refuse
 		assert.throws(() => f.seen(), /ENOENT/, 'codex was not called');
 	} finally {
 		f.cleanup();
+	}
+	// A ref into a oneOf branch dangles once the strict form renames oneOf to anyOf.
+	const intoOneOf: StructuredSchema = {
+		type: 'object', properties: { v: { $ref: '#/$defs/w/oneOf/0' } },
+		$defs: { w: { oneOf: [{ type: 'string' }, { type: 'null' }] } },
+	};
+	assert.throws(() => codexStrictSchema(intoOneOf), /its \$ref '#\/\$defs\/w\/oneOf\/0' points into a part the codex copy leaves out/);
+	// Properties named like data keywords are still schemas, and their refs are checked.
+	for (const named of ['enum', 'const', 'default', 'examples']) {
+		const underNamed: StructuredSchema = {
+			type: 'object', properties: { [named]: { $ref: '#/$defs/w/allOf/0' } },
+			$defs: { w: { allOf: [{ type: 'string' }] } },
+		};
+		assert.throws(() => codexStrictSchema(underNamed), /points into a part the codex copy leaves out/, `property ${named}`);
 	}
 	const intoKept: StructuredSchema = {
 		type: 'object', properties: { v: { $ref: '#/$defs/w' }, u: { $ref: '#/properties/v' } },

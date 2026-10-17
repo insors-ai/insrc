@@ -372,12 +372,13 @@ export function codexStrictSchema(schema: StructuredSchema): StructuredSchema {
 	if (unchecked !== undefined) {
 		throw new Error(`structured-output: codex cannot be given format '${unchecked}': it was never probed against codex, and the reply check does not know it, so leaving it out would drop the constraint`);
 	}
-	const copy = keepCodexKeywords(schema) as StructuredSchema;
+	// The ref check reads the FINAL copy: the strict form renames oneOf to anyOf, which moves a ref's target.
+	const copy = processSchemaForOpenAIStrict(keepCodexKeywords(schema) as StructuredSchema);
 	const dangling = danglingRef(copy, copy);
 	if (dangling !== undefined) {
 		throw new Error(`structured-output: codex cannot be given this schema: its $ref '${dangling}' points into a part the codex copy leaves out`);
 	}
-	return processSchemaForOpenAIStrict(copy);
+	return copy;
 }
 
 /** The first local `$ref` in `node` whose JSON pointer does not resolve in `root`. */
@@ -390,7 +391,9 @@ function danglingRef(node: unknown, root: unknown): string | undefined {
 	for (const [key, value] of Object.entries(node)) {
 		if (key === '$ref' && typeof value === 'string' && value.startsWith('#') && !resolvesIn(root, value)) return value;
 		if (DATA_KEYWORDS.has(key)) continue;
-		const d = danglingRef(value, root);
+		const d = NAMED_SCHEMA_MAPS.has(key) && isObject(value)
+			? danglingRef(Object.values(value), root)
+			: danglingRef(value, root);
 		if (d !== undefined) return d;
 	}
 	return undefined;

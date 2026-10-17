@@ -379,6 +379,8 @@ The reader is synchronous and performs a git fetch of the remote default branch 
   - **resolved**: Keep all five internal — They are implementation details inside s2's boundary; sc2 stays the HLD envelope. _(2026-10-17T06:11:05.997Z)_
 - `q6f462bb4` — dm1 (partial): the call sites for the new PolicyFile and PolicySighting entities are the nearest existing code the new code follows, since no existing code touches them.
   - **resolved**: Follow call-site conventions — Follow the nearest existing code (storage.ts atomic writes, paths.ts layout, daemon lock rule) as integration precedent. _(2026-10-17T06:12:00.844Z)_
+- `q6d9271ce` — ts2 (partial): no test-location pass was run in s1; node:test through tsx is taken from the repo's CLAUDE.md and the existing suites.
+  - **resolved**: Verify test locations before planning — Tests live in src/**/__tests__/*.test.ts run by tsx --test; confirm existing suites while planning. _(2026-10-17T06:12:45.609Z)_
 
 ## Citations
 

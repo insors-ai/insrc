@@ -195,6 +195,13 @@
         "choice": "Follow call-site conventions",
         "rationale": "Follow the nearest existing code (storage.ts atomic writes, paths.ts layout, daemon lock rule) as integration precedent.",
         "resolvedAt": "2026-10-17T06:12:00.844Z"
+      },
+      "q6d9271ce": {
+        "question": "ts2 (partial): no test-location pass was run in s1; node:test through tsx is taken from the repo's CLAUDE.md and the existing suites.",
+        "status": "resolved",
+        "choice": "Verify test locations before planning",
+        "rationale": "Tests live in src/**/__tests__/*.test.ts run by tsx --test; confirm existing suites while planning.",
+        "resolvedAt": "2026-10-17T06:12:45.609Z"
       }
     }
   },

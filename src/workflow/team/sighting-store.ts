@@ -181,15 +181,20 @@ function lockHolder(path: string, token: string): LockResult {
 /**
  * Exclusive per-repository lock; a lock older than {@link LOCK_STALE_MS} is taken over.
  *
- * Takeover renames the stale file away (atomic, so one reclaimer wins) and then
- * checks that what it grabbed really was stale; if it grabbed a fresh lock that
- * another process had just taken, it puts that lock back and refuses.
+ * A live lock is never moved or touched. Only a lock that looks stale is reclaimed,
+ * and only by the one process holding a short-lived takeover guard, which re-checks
+ * the lock's age and identity right before removing it. The create (`wx`) is the only
+ * way to become the holder, so a reclaimer that loses the race simply reports busy.
+ * The lock serialises refreshes; correctness does not depend on it, because every
+ * write a refresh makes is itself atomic (unique-temp rename, create-only link, and
+ * git's own atomic ref update), so an overlap in the rare reclaim window is harmless.
  */
 export function acquireLock(repo: string, teamDir: string = PATHS.team, now: () => number = Date.now): LockResult {
 	mkdirSync(seenDir(teamDir), { recursive: true });
 	const path = lockPath(repo, teamDir);
 	const token = `${process.pid} ${randomBytes(8).toString('hex')}\n`;
-	for (let attempt = 0; attempt < 3; attempt++) {
+
+	const create = (): LockResult | undefined => {
 		try {
 			const fd = openSync(path, 'wx');
 			try { writeSync(fd, token); } finally { closeSync(fd); }
@@ -198,24 +203,40 @@ export function acquireLock(repo: string, teamDir: string = PATHS.team, now: () 
 			if ((err as NodeJS.ErrnoException).code !== 'EEXIST') {
 				return { ok: false, reason: `lock could not be taken: ${err instanceof Error ? err.message : String(err)}` };
 			}
+			return undefined;
 		}
-		const grave = `${path}.stale.${randomBytes(6).toString('hex')}`;
-		try {
-			renameSync(path, grave);
-		} catch {
-			continue; // released or taken over by someone else first: retry
+	};
+
+	const first = create();
+	if (first !== undefined) return first;
+
+	let seen;
+	try { seen = statSync(path); } catch { return create() ?? { ok: false, reason: LOCK_BUSY }; }
+	if (now() - seen.mtimeMs <= LOCK_STALE_MS) return { ok: false, reason: LOCK_BUSY };
+
+	// Looks stale: reclaim it under the takeover guard (one reclaimer at a time).
+	const guardPath = `${path}.takeover`;
+	let guardFd: number;
+	try {
+		guardFd = openSync(guardPath, 'wx');
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
+			// A crashed reclaimer would leave the guard behind: a guard older than the stale limit is removed.
+			try { if (now() - statSync(guardPath).mtimeMs > LOCK_STALE_MS) unlinkSync(guardPath); } catch { /* best effort */ }
 		}
-		let stale = false;
-		try {
-			stale = now() - statSync(grave).mtimeMs > LOCK_STALE_MS;
-		} catch { /* treat as not stale */ }
-		if (stale) {
-			try { unlinkSync(grave); } catch { /* best effort */ }
-			continue;
-		}
-		try { linkSync(grave, path); } catch { /* a third process already holds a new lock */ }
-		try { unlinkSync(grave); } catch { /* best effort */ }
 		return { ok: false, reason: LOCK_BUSY };
 	}
-	return { ok: false, reason: LOCK_BUSY };
+	try {
+		let again;
+		try { again = statSync(path); } catch { return create() ?? { ok: false, reason: LOCK_BUSY }; }
+		// Remove only the very lock we judged stale: same file, still old.
+		if (again.ino === seen.ino && again.dev === seen.dev && now() - again.mtimeMs > LOCK_STALE_MS) {
+			try { unlinkSync(path); } catch { /* released meanwhile */ }
+			return create() ?? { ok: false, reason: LOCK_BUSY };
+		}
+		return { ok: false, reason: LOCK_BUSY };
+	} finally {
+		closeSync(guardFd);
+		try { unlinkSync(guardPath); } catch { /* best effort */ }
+	}
 }

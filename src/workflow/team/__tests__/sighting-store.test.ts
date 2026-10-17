@@ -130,6 +130,9 @@ test('the lock refuses a second holder and takes over a lock older than 30 secon
 		const taken = acquireLock(repoA, teamDir);
 		assert.equal(taken.ok, true);
 
+		// A fresh lock is never reclaimed, however many contenders look at it.
+		assert.equal(acquireLock(repoA, teamDir).ok, false);
+
 		// The original holder releasing after the takeover must not delete the new holder's lock.
 		if (first.ok) first.release();
 		const blocked = acquireLock(repoA, teamDir);
@@ -140,6 +143,6 @@ test('the lock refuses a second holder and takes over a lock older than 30 secon
 		const again = acquireLock(repoA, teamDir);
 		assert.equal(again.ok, true);
 		if (again.ok) again.release();
-		assert.deepEqual(readdirSync(join(teamDir, 'seen')).filter(f => f.includes('.stale.')), []);
+		assert.deepEqual(readdirSync(join(teamDir, 'seen')).filter(f => f.endsWith('.takeover')), [], 'the takeover guard is cleaned up');
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });

@@ -4,7 +4,7 @@
     "epicHash": "1102dc7125ad0c07",
     "storyId": "S001",
     "createdAt": "2026-10-17T06:56:06.405Z",
-    "updatedAt": "2026-10-17T06:57:58.056Z",
+    "updatedAt": "2026-10-17T07:02:30.802Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
     "epicSlug": "ground-code-review-coverage-story-s"
@@ -116,6 +116,119 @@
               },
               {
                 "title": "the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "2142a074",
+        "ranAt": "2026-10-17T07:02:30.802Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+                "title": "buildCoveragePrompt: a null test record degrades the pass-state to unverified in the prompt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 933,
+            "titles": [
+              {
+                "title": "judgeCoverage: a promised test absent from the grounding is a HIGH missing-promised-test finding (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: serializes the approvedPlan promised tests into the trailing payload (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: a changed symbol WITH testsReaching yields no not-exercised finding (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: a present-but-failing/unverified test (observation) is distinct from a wholly-missing test (breach) (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: charge distinguishes present-failing from no-test and forbids an unsupported pass-state (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: a finding whose location file is outside changedFiles is dropped (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: charge instructs excluding pre-existing gaps in touched-but-unchanged neighbours (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: issues exactly ONE completeStructured call, no other provider method (k3/k4)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: empty grounding + no promised tests yields a valid empty result (edge)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: all-covered => empty findings, no manufactured finding (edge)",
+                "result": "pass"
+              },
+              {
+                "title": "judgeCoverage: runs and returns a valid result with subject.buildRecord===null",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: a null test record degrades the pass-state to unverified in the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: plan present keeps the promised-tests section + the missing-promised-test HIGH rule",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: plan null emits an empty promised-tests list + softened testsReaching-only framing (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional",
+                "result": "pass"
+              },
+              {
+                "title": "buildCoveragePrompt: symbols, then promised tests, then the output-shape reminder are TRAILING (in order)",
+                "result": "pass"
+              },
+              {
+                "title": "the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'",
                 "result": "pass"
               }
             ],

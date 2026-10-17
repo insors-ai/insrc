@@ -2,57 +2,52 @@
 
 # Code review: 1102dc7125ad0c07:S001
 
-⛔ **BLOCK** — HIGH 22 · MED 6 · LOW 6 · model `codex:gpt-6-astra`
+⛔ **BLOCK** — HIGH 24 · MED 0 · LOW 5 · model `codex:gpt-6-astra`
 
-**Changed files:** 22
+**Changed files:** 24
 
 ## adherence — 0 finding(s)
 
 _No findings._
 
-## conventions — 6 finding(s)
+## conventions — 5 finding(s)
 
 | Severity | Location | Message |
 | --- | --- | --- |
-| LOW | src/mcp/daemon-stream.ts:0 | approveWorkflow declares optional properties artifactPath, epicHash, and overrideReview without explicit `\| undefined`. Line numbers were not supplied; 0 denotes an unavailable line. |
-| LOW | src/shared/review-stream.ts:0 | groundingFromReply declares optional properties ok, grounding, reason, and error without explicit `\| undefined`. Line numbers were not supplied; 0 denotes an unavailable line. |
-| LOW | src/shared/review-stream.ts:0 | freshnessFromReply declares optional properties isProcessing, inFlight, pendingCodeIndexJobs, staleFiles, and error without explicit `\| undefined`. Line numbers were not supplied; 0 denotes an unavailable line. |
-| LOW | src/workflow/code-review/__tests__/freshness.test.ts:0 | deps declares optional properties watermark, mtime, repo, processing, and onReindex without explicit `\| undefined`. Line numbers were not supplied; 0 denotes an unavailable line. |
-| LOW | src/workflow/code-review/dimensions/__tests__/coverage.test.ts:0 | viewOf declares the optional reason property without explicit `\| undefined`. Line numbers were not supplied; 0 denotes an unavailable line. |
-| LOW | src/workflow/code-review/dimensions/coverage.ts:0 | promisedTestsOf declares the optional level property without explicit `\| undefined`. Line numbers were not supplied; 0 denotes an unavailable line. |
+| LOW | src/mcp/daemon-stream.ts:unknown | approveWorkflow declares artifactPath?, epicHash?, and overrideReview? without explicit `\| undefined`. Add the union to each optional property. Line numbers were not supplied. |
+| LOW | src/shared/review-stream.ts:unknown | groundingFromReply declares optional properties ok, grounding, reason, and error without explicit `\| undefined`. Add the union to each. Line numbers were not supplied. |
+| LOW | src/workflow/code-review/__tests__/freshness.test.ts:unknown | deps declares optional properties watermark, mtime, repo, processing, and onReindex without explicit `\| undefined`. Add the union to each, parenthesizing the callback type. Line numbers were not supplied. |
+| LOW | src/workflow/code-review/dimensions/coverage.ts:unknown | promisedTestsOf returns objects declaring `level?: string` without the required explicit `\| undefined`. Line numbers were not supplied. |
+| LOW | src/workflow/code-review/grounding.ts:unknown | excludeInput returns an object declaring `exclude?: string[]` without the required explicit `\| undefined`. Line numbers were not supplied. |
 
-## coverage — 28 finding(s)
+## coverage — 24 finding(s)
 
 | Severity | Location | Message |
 | --- | --- | --- |
-| HIGH | src/daemon/__tests__/code-review-rpc-fallback.test.ts:1 | These changed symbols each have empty testsReaching and are not exercised according to the supplied grounding. Both promised tests are present and passing, but their results do not establish the missing reachability edges. |
-| HIGH | src/daemon/__tests__/queue-code-index-work.test.ts:1 | These changed symbols each have empty testsReaching. The promised test is present and passing, but the supplied grounding records no test reaching these symbols. |
-| HIGH | src/daemon/code-review-rpc.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/daemon/index.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/daemon/queue.ts:1 | Each listed changed symbol has empty testsReaching. Passing queue tests do not establish reachability absent from the supplied edges. |
-| HIGH | src/daemon/steps/__tests__/in-daemon-client.test.ts:1 | Each listed changed symbol has empty testsReaching, despite the recorded passing tests in this file. |
-| HIGH | src/daemon/steps/code-review-step/__tests__/handler.test.ts:1 | Each listed changed symbol has empty testsReaching. Both promised handler tests are present and passing, but the grounding records no test reaching these symbols. |
-| HIGH | src/daemon/steps/code-review-step/handler.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/daemon/steps/code-review-step/types.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/mcp/daemon-stream.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/shared/__tests__/review-stream-freshness.test.ts:1 | The changed file symbol has empty testsReaching. Its promised test is present and passing, but the grounding supplies no reaching edge. |
-| HIGH | src/shared/__tests__/review-stream.test.ts:1 | Each listed changed symbol has empty testsReaching. The promised serialization test is present and passing, but the grounding supplies no reaching edges for these symbols. |
-| HIGH | src/shared/review-stream.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/workflow/code-review/__tests__/freshness.test.ts:1 | These changed symbols have empty testsReaching. The promised freshness test is present and passing, but the supplied grounding records no reaching edges for these symbols. |
-| HIGH | src/workflow/code-review/__tests__/subject.test.ts:1 | Each listed changed symbol has empty testsReaching. The promised record-loading test is present and passing, but the supplied grounding records no reaching edges for these symbols. |
-| HIGH | src/workflow/code-review/dimensions/__tests__/coverage.test.ts:1 | Each listed changed symbol has empty testsReaching. The promised latest-run and malformed-record test is present and passing, but the supplied grounding records no reaching edges for these symbols. |
-| HIGH | src/workflow/code-review/dimensions/coverage.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/workflow/code-review/dimensions/test-record-view.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/workflow/code-review/freshness.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/workflow/code-review/runner.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/workflow/code-review/subject.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| HIGH | src/workflow/code-review/types.ts:1 | Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule. |
-| MED | src/daemon/__tests__/code-review-rpc-fallback.test.ts:1 | subjectFor has a reaching entry named rpcDeps, but that name is not covered as a test title in the record: present but failing/unverified, specifically unverified. The two promised test titles are independently confirmed passing. |
-| MED | src/daemon/steps/__tests__/in-daemon-client.test.ts:1 | These symbols have reaching entries, but their names are not covered as test titles in the record: present but failing/unverified, specifically unverified. A passing file does not confirm the pass-state of these unmatched entries. |
-| MED | src/daemon/steps/code-review-step/__tests__/handler.test.ts:1 | These symbols have reaching entries, but their names are not covered as test titles in the record: present but failing/unverified, specifically unverified. Both promised handler tests are separately present and passing. |
-| MED | src/workflow/code-review/__tests__/freshness.test.ts:1 | deps has a reaching entry named at, which is not covered as a test title in the record: present but failing/unverified, specifically unverified. |
-| MED | src/workflow/code-review/__tests__/subject.test.ts:1 | git and put have a reaching entry named mkStoryRepo, which is not covered as a test title in the record: present but failing/unverified, specifically unverified. |
-| MED | src/workflow/code-review/dimensions/__tests__/coverage.test.ts:1 | These symbols have reaching entries, but their names are not covered as test titles in the record: present but failing/unverified, specifically unverified. The promised coverage test is separately present and passing. |
+| HIGH | src/daemon/__tests__/code-review-rpc-fallback.test.ts:1 | These changed symbols have empty testsReaching edges and therefore are not exercised under the required coverage rule. The file's two promised tests are present and passing; that does not supply missing symbol-reaching edges. |
+| HIGH | src/daemon/__tests__/queue-code-index-work.test.ts:1 | These changed symbols have empty testsReaching edges. The promised test is present and passing, but the supplied grounding establishes no test reaching these symbols. |
+| HIGH | src/daemon/code-review-rpc.ts:1 | Every listed changed symbol in this file has empty testsReaching edges, leaving their coverage unestablished under the required rule. |
+| HIGH | src/daemon/index.ts:1 | These supplied changed symbols have empty testsReaching edges and are not exercised according to the grounding. |
+| HIGH | src/daemon/queue.ts:1 | These changed symbols have empty testsReaching edges. Passing queue tests do not establish symbol coverage without the required reaching edges. |
+| HIGH | src/daemon/steps/__tests__/in-daemon-client.test.ts:1 | These changed symbols have empty testsReaching edges despite this test file's passing state. Symbols with nonempty reaching edges in this file are covered and excluded from this finding. |
+| HIGH | src/daemon/steps/code-review-step/__tests__/handler.test.ts:1 | These changed symbols have empty testsReaching edges. Both promised tests are present and passing, but the grounding supplies no reaching edges for these symbols. |
+| HIGH | src/daemon/steps/code-review-step/handler.ts:1 | These changed symbols have empty testsReaching edges, including the fallback, judgement persistence and daemon-review paths. Passing test titles cannot replace the required symbol-reaching evidence. |
+| HIGH | src/daemon/steps/code-review-step/types.ts:1 | All supplied changed symbols in this file have empty testsReaching edges; the stipulated rule identifies them as not-exercised gaps. |
+| HIGH | src/mcp/daemon-stream.ts:1 | All supplied changed symbols in this file have empty testsReaching edges, so the grounding establishes no test coverage for them. |
+| HIGH | src/shared/__tests__/review-stream-freshness.test.ts:1 | The changed file symbol has empty testsReaching edges. Its promised test is present and passing, but no reaching edge is supplied for the file symbol. |
+| HIGH | src/shared/__tests__/review-stream.test.ts:1 | These changed symbols have empty testsReaching edges. The promised serialization test is present and passing; these symbol-level gaps remain under the stipulated rule. |
+| HIGH | src/shared/review-stream.ts:1 | All supplied changed symbols have empty testsReaching edges, including freshness reply mapping and fallbackReason serialization. Passing corresponding test records do not supply the missing edges. |
+| HIGH | src/workflow/code-review/__tests__/freshness.test.ts:1 | These changed symbols have empty testsReaching edges. The promised test is present and passing; deps has a reaching edge from this passing file and is excluded. |
+| HIGH | src/workflow/code-review/__tests__/grounding.test.ts:1 | These changed symbols have empty testsReaching edges despite the file's passing test record. |
+| HIGH | src/workflow/code-review/__tests__/subject.test.ts:1 | These changed symbols have empty testsReaching edges. The promised subject-record test is present and passing; git and put have reaching edges from the passing file and are excluded. |
+| HIGH | src/workflow/code-review/dimensions/__tests__/coverage.test.ts:1 | These changed symbols have empty testsReaching edges. The complete promised coverage-prompt test is present and passing; symbols with reaching edges from this passing file are excluded. |
+| HIGH | src/workflow/code-review/dimensions/coverage.ts:1 | These changed symbols have empty testsReaching edges, so the supplied grounding establishes no exercise of the coverage prompt or judgement implementation. |
+| HIGH | src/workflow/code-review/dimensions/test-record-view.ts:1 | These changed symbols have empty testsReaching edges, including latest-run selection, malformed-record handling and BUILD task rendering. |
+| HIGH | src/workflow/code-review/freshness.ts:1 | These changed symbols have empty testsReaching edges. The promised freshness test passes, but no supplied edge links a test to these symbols. |
+| HIGH | src/workflow/code-review/grounding.ts:1 | Every supplied changed symbol in this file has empty testsReaching edges, leaving graph and diff grounding behaviour without the required symbol-level coverage evidence. |
+| HIGH | src/workflow/code-review/runner.ts:1 | These supplied changed symbols have empty testsReaching edges, including review execution, fallback metadata persistence and markdown rendering. |
+| HIGH | src/workflow/code-review/subject.ts:1 | These changed symbols have empty testsReaching edges. The promised BUILD/TESTS record test is present and passing, but symbol-reaching evidence is absent. |
+| HIGH | src/workflow/code-review/types.ts:1 | All supplied changed symbols in this file have empty testsReaching edges; the stipulated rule identifies them as not-exercised gaps. |
 
 ## quality — 0 finding(s)
 

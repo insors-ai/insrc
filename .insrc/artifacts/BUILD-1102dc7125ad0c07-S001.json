@@ -4,11 +4,12 @@
     "epicHash": "1102dc7125ad0c07",
     "storyId": "S001",
     "createdAt": "2026-10-17T06:56:06.405Z",
-    "updatedAt": "2026-10-17T07:51:29.634Z",
+    "updatedAt": "2026-10-17T08:18:18.094Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
-    "epicSlug": "ground-code-review-coverage-story-s"
+    "epicSlug": "ground-code-review-coverage-story-s",
+    "approvedAt": "2026-10-17T08:18:18.148Z"
   },
   "body": {
     "tasks": [
@@ -44,173 +45,19 @@
     "changeLog": [
       {
         "target": {
-          "file": "src/daemon/__tests__/code-review-rpc-fallback.test.ts"
+          "file": ".insrc/artifacts/CR-1102dc7125ad0c07-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
+        "timestamp": "2026-10-17T08:18:18.094Z"
       },
       {
         "target": {
-          "file": "src/daemon/__tests__/queue-code-index-work.test.ts"
+          "file": "docs/standalone/ground-code-review-coverage-story-s-E202610171102dc71/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/code-review-rpc.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/index.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/queue.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/code-review-step/handler.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/code-review-step/types.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/mcp/daemon-stream.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/shared/__tests__/review-stream-freshness.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/shared/__tests__/review-stream.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/shared/review-stream.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/__tests__/freshness.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/__tests__/grounding.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/__tests__/subject.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/dimensions/coverage.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/dimensions/test-record-view.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/freshness.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/grounding.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/runner.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/subject.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/code-review/types.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T07:51:29.634Z"
+        "timestamp": "2026-10-17T08:18:18.094Z"
       }
     ],
-    "commit": "222cc3f0"
+    "commit": "7fc29ed3"
   }
 }

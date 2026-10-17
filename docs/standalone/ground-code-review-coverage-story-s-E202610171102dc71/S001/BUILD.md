@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-17T06:56:06.405Z  ·  **Updated:** 2026-10-17T07:51:29.634Z
+**Standalone:** yes  ·  **Created:** 2026-10-17T06:56:06.405Z  ·  **Updated:** 2026-10-17T08:18:18.094Z
 
-**Commit:** 222cc3f0
+**Commit:** 7fc29ed3
 
 ## Summary
 
@@ -23,27 +23,5 @@ Re-validate after code review round 1 (222cc3f0): testsReaching entries now carr
 
 ## Changes
 
-- `src/daemon/__tests__/code-review-rpc-fallback.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/daemon/__tests__/queue-code-index-work.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/daemon/code-review-rpc.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/daemon/index.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/daemon/queue.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/daemon/steps/__tests__/in-daemon-client.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/daemon/steps/code-review-step/__tests__/handler.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/daemon/steps/code-review-step/handler.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/daemon/steps/code-review-step/types.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/mcp/daemon-stream.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/shared/__tests__/review-stream-freshness.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/shared/__tests__/review-stream.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/shared/review-stream.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/__tests__/freshness.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/__tests__/grounding.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/__tests__/subject.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/dimensions/__tests__/coverage.test.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/dimensions/coverage.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/dimensions/test-record-view.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/freshness.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/grounding.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/runner.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/subject.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
-- `src/workflow/code-review/types.ts` — **insrc-build** (2026-10-17T07:51:29.634Z)
+- `.insrc/artifacts/CR-1102dc7125ad0c07-S001.json` — **insrc-build** (2026-10-17T08:18:18.094Z)
+- `docs/standalone/ground-code-review-coverage-story-s-E202610171102dc71/S001/CR.md` — **insrc-build** (2026-10-17T08:18:18.094Z)

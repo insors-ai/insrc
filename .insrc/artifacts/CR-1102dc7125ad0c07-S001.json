@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1792222419473-c1w43f",
+    "runId": "cr-1792223625949-xb400j",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T07:33:39.473Z",
+    "createdAt": "2026-10-17T07:53:45.949Z",
     "model": "codex:gpt-6-astra",
-    "elapsedMs": 101634,
+    "elapsedMs": 90732,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1102dc7125ad0c07",
@@ -36,11 +36,13 @@
         "src/shared/__tests__/review-stream.test.ts",
         "src/shared/review-stream.ts",
         "src/workflow/code-review/__tests__/freshness.test.ts",
+        "src/workflow/code-review/__tests__/grounding.test.ts",
         "src/workflow/code-review/__tests__/subject.test.ts",
         "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
         "src/workflow/code-review/dimensions/coverage.ts",
         "src/workflow/code-review/dimensions/test-record-view.ts",
         "src/workflow/code-review/freshness.ts",
+        "src/workflow/code-review/grounding.ts",
         "src/workflow/code-review/runner.ts",
         "src/workflow/code-review/subject.ts",
         "src/workflow/code-review/types.ts"
@@ -57,48 +59,40 @@
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/mcp/daemon-stream.ts:0",
-            "message": "approveWorkflow declares optional properties artifactPath, epicHash, and overrideReview without explicit `| undefined`. Line numbers were not supplied; 0 denotes an unavailable line.",
+            "location": "src/mcp/daemon-stream.ts:unknown",
+            "message": "approveWorkflow declares artifactPath?, epicHash?, and overrideReview? without explicit `| undefined`. Add the union to each optional property. Line numbers were not supplied.",
             "expectationRef": "strict-optional-indexed",
             "confidence": "breach"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/shared/review-stream.ts:0",
-            "message": "groundingFromReply declares optional properties ok, grounding, reason, and error without explicit `| undefined`. Line numbers were not supplied; 0 denotes an unavailable line.",
+            "location": "src/shared/review-stream.ts:unknown",
+            "message": "groundingFromReply declares optional properties ok, grounding, reason, and error without explicit `| undefined`. Add the union to each. Line numbers were not supplied.",
             "expectationRef": "strict-optional-indexed",
             "confidence": "breach"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/shared/review-stream.ts:0",
-            "message": "freshnessFromReply declares optional properties isProcessing, inFlight, pendingCodeIndexJobs, staleFiles, and error without explicit `| undefined`. Line numbers were not supplied; 0 denotes an unavailable line.",
+            "location": "src/workflow/code-review/__tests__/freshness.test.ts:unknown",
+            "message": "deps declares optional properties watermark, mtime, repo, processing, and onReindex without explicit `| undefined`. Add the union to each, parenthesizing the callback type. Line numbers were not supplied.",
             "expectationRef": "strict-optional-indexed",
             "confidence": "breach"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/workflow/code-review/__tests__/freshness.test.ts:0",
-            "message": "deps declares optional properties watermark, mtime, repo, processing, and onReindex without explicit `| undefined`. Line numbers were not supplied; 0 denotes an unavailable line.",
+            "location": "src/workflow/code-review/dimensions/coverage.ts:unknown",
+            "message": "promisedTestsOf returns objects declaring `level?: string` without the required explicit `| undefined`. Line numbers were not supplied.",
             "expectationRef": "strict-optional-indexed",
             "confidence": "breach"
           },
           {
             "dimension": "conventions",
             "severity": "LOW",
-            "location": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts:0",
-            "message": "viewOf declares the optional reason property without explicit `| undefined`. Line numbers were not supplied; 0 denotes an unavailable line.",
-            "expectationRef": "strict-optional-indexed",
-            "confidence": "breach"
-          },
-          {
-            "dimension": "conventions",
-            "severity": "LOW",
-            "location": "src/workflow/code-review/dimensions/coverage.ts:0",
-            "message": "promisedTestsOf declares the optional level property without explicit `| undefined`. Line numbers were not supplied; 0 denotes an unavailable line.",
+            "location": "src/workflow/code-review/grounding.ts:unknown",
+            "message": "excludeInput returns an object declaring `exclude?: string[]` without the required explicit `| undefined`. Line numbers were not supplied.",
             "expectationRef": "strict-optional-indexed",
             "confidence": "breach"
           }
@@ -111,87 +105,87 @@
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/__tests__/code-review-rpc-fallback.test.ts:1",
-            "message": "These changed symbols each have empty testsReaching and are not exercised according to the supplied grounding. Both promised tests are present and passing, but their results do not establish the missing reachability edges.",
-            "expectationRef": "src/daemon/__tests__/code-review-rpc-fallback.test.ts (file); controllerRepo; rpcDeps; body; runRpc; parse",
+            "message": "These changed symbols have empty testsReaching edges and therefore are not exercised under the required coverage rule. The file's two promised tests are present and passing; that does not supply missing symbol-reaching edges.",
+            "expectationRef": "code-review-rpc-fallback.test.ts (file), controllerRepo, rpcDeps, body, runRpc, parse",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/__tests__/queue-code-index-work.test.ts:1",
-            "message": "These changed symbols each have empty testsReaching. The promised test is present and passing, but the supplied grounding records no test reaching these symbols.",
-            "expectationRef": "src/daemon/__tests__/queue-code-index-work.test.ts (file); processor",
+            "message": "These changed symbols have empty testsReaching edges. The promised test is present and passing, but the supplied grounding establishes no test reaching these symbols.",
+            "expectationRef": "queue-code-index-work.test.ts (file), processor",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/code-review-rpc.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/daemon/code-review-rpc.ts (file); CodeReviewSubjectResolution; CodeReviewRunParams; CodeReviewRunDeps; codeReviewRunStart; defaultProvider; parseParams; parseFallbackReason; bad; modelLabelFor",
+            "message": "Every listed changed symbol in this file has empty testsReaching edges, leaving their coverage unestablished under the required rule.",
+            "expectationRef": "code-review-rpc.ts (file), CodeReviewSubjectResolution, CodeReviewRunParams, CodeReviewRunDeps, codeReviewRunStart, defaultProvider, parseParams, parseFallbackReason, bad, modelLabelFor",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/index.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/daemon/index.ts (file); getStepCallHandler; offlineRpc; offlineStream; main; purgeSession",
+            "message": "These supplied changed symbols have empty testsReaching edges and are not exercised according to the grounding.",
+            "expectationRef": "index.ts (file), getStepCallHandler, offlineRpc, offlineStream, main, purgeSession",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/queue.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching. Passing queue tests do not establish reachability absent from the supplied edges.",
-            "expectationRef": "src/daemon/queue.ts (file); JobProcessor; IndexQueue; depth; depthForRepo; codeIndexWorkFor; enqueue; start; stop; isProcessing",
+            "message": "These changed symbols have empty testsReaching edges. Passing queue tests do not establish symbol coverage without the required reaching edges.",
+            "expectationRef": "queue.ts (file), JobProcessor, IndexQueue, depth, depthForRepo, codeIndexWorkFor, enqueue, start, stop, isProcessing",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/steps/__tests__/in-daemon-client.test.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, despite the recorded passing tests in this file.",
-            "expectationRef": "src/daemon/steps/__tests__/in-daemon-client.test.ts (file); untilAborted; handler; maps; withClient; reviewFixture; parse; reviewStart; crDeps; crStart; diffFails",
+            "message": "These changed symbols have empty testsReaching edges despite this test file's passing state. Symbols with nonempty reaching edges in this file are covered and excluded from this finding.",
+            "expectationRef": "in-daemon-client.test.ts (file), untilAborted, handler, maps, withClient, reviewFixture, parse, reviewStart, crDeps, crStart, diffFails",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/steps/code-review-step/__tests__/handler.test.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching. Both promised handler tests are present and passing, but the grounding records no test reaching these symbols.",
-            "expectationRef": "src/daemon/steps/code-review-step/__tests__/handler.test.ts (file); parse; reviewSpy; runReview; declineTo; git; droppedFlow; dim; timedOutFallback; finish",
+            "message": "These changed symbols have empty testsReaching edges. Both promised tests are present and passing, but the grounding supplies no reaching edges for these symbols.",
+            "expectationRef": "handler.test.ts (file), parse, reviewSpy, runReview, declineTo, git, droppedFlow, dim, timedOutFallback, finish",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/steps/code-review-step/handler.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/daemon/steps/code-review-step/handler.ts (file); expectedDimensions; CodeReviewStepDeps; readFreshnessTimeoutMs; withStepClient; buildJudgementsSchema; handleCodeReviewStep; dispatch; handleStart; beginDiffOnlyReview; emitJudgementsResult; confirmWaitResult; handleJudgements; driveRunner; ValidateResult; validateJudgements; validateFinding; fileOf; authorOf; reviewByDaemon; errorResult",
+            "message": "These changed symbols have empty testsReaching edges, including the fallback, judgement persistence and daemon-review paths. Passing test titles cannot replace the required symbol-reaching evidence.",
+            "expectationRef": "handler.ts (file), expectedDimensions, CodeReviewStepDeps, readFreshnessTimeoutMs, withStepClient, buildJudgementsSchema, handleCodeReviewStep, dispatch, handleStart, beginDiffOnlyReview, emitJudgementsResult, confirmWaitResult, handleJudgements, driveRunner, ValidateResult, validateJudgements, validateFinding, fileOf, authorOf, reviewByDaemon, errorResult",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/steps/code-review-step/types.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/daemon/steps/code-review-step/types.ts (file); CodeReviewStepPhase; CodeReviewStepInputStart; CodeReviewStepInputJudgements; CodeReviewStepInput; CodeReviewStepCounts; CodeReviewStepEmitJudgements; CodeReviewStepConfirmWait; CodeReviewStepDone; CodeReviewStepError; CodeReviewStepOutput; CodeReviewStepStatePayload; CodeReviewStepMcpEnvelope",
+            "message": "All supplied changed symbols in this file have empty testsReaching edges; the stipulated rule identifies them as not-exercised gaps.",
+            "expectationRef": "types.ts (file), CodeReviewStepPhase, CodeReviewStepInputStart, CodeReviewStepInputJudgements, CodeReviewStepInput, CodeReviewStepCounts, CodeReviewStepEmitJudgements, CodeReviewStepConfirmWait, CodeReviewStepDone, CodeReviewStepError, CodeReviewStepOutput, CodeReviewStepStatePayload, CodeReviewStepMcpEnvelope",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/mcp/daemon-stream.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/mcp/daemon-stream.ts (file); RunWorkflowStreamParams; RunWorkflowStreamResult; RunWorkflowStreamOpts; RunWorkflowStreamDeps; DaemonFrame; runWorkflowStream; cleanup; finish; onAbort; onData; UnaryRpcDeps; unaryRpc; StartRunResult; PollRunResult; startRun; pollRun; resolveRepoForCwd; approveWorkflow; pendingWorkflow; abortRun; fetchCodeReviewGrounding; fetchCodeReviewFreshness; docgenGenerate; docgenList; guideGet; guideList; ReviewStreamDeps; reviewStreamRequest; reviewArtifactStream; codeReviewStream",
+            "message": "All supplied changed symbols in this file have empty testsReaching edges, so the grounding establishes no test coverage for them.",
+            "expectationRef": "daemon-stream.ts (file), RunWorkflowStreamParams, RunWorkflowStreamResult, RunWorkflowStreamOpts, RunWorkflowStreamDeps, DaemonFrame, runWorkflowStream, cleanup, finish, onAbort, onData, UnaryRpcDeps, unaryRpc, StartRunResult, PollRunResult, startRun, pollRun, resolveRepoForCwd, approveWorkflow, pendingWorkflow, abortRun, fetchCodeReviewGrounding, fetchCodeReviewFreshness, docgenGenerate, docgenList, guideGet, guideList, ReviewStreamDeps, reviewStreamRequest, reviewArtifactStream, codeReviewStream",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/shared/__tests__/review-stream-freshness.test.ts:1",
-            "message": "The changed file symbol has empty testsReaching. Its promised test is present and passing, but the grounding supplies no reaching edge.",
+            "message": "The changed file symbol has empty testsReaching edges. Its promised test is present and passing, but no reaching edge is supplied for the file symbol.",
             "expectationRef": "src/shared/__tests__/review-stream-freshness.test.ts (file)",
             "confidence": "breach"
           },
@@ -199,137 +193,105 @@
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/shared/__tests__/review-stream.test.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching. The promised serialization test is present and passing, but the grounding supplies no reaching edges for these symbols.",
-            "expectationRef": "src/shared/__tests__/review-stream.test.ts (file); fakeTransport; transport; isFailure; fire; throwsOnOpen; body",
+            "message": "These changed symbols have empty testsReaching edges. The promised serialization test is present and passing; these symbol-level gaps remain under the stipulated rule.",
+            "expectationRef": "review-stream.test.ts (file), fakeTransport, transport, isFailure, fire, throwsOnOpen, body",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/shared/review-stream.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/shared/review-stream.ts (file); ReviewStreamFailure; ReviewStreamError; ReviewStreamOpts; ReviewArtifactStreamParams; CodeReviewStreamParams; CodeReviewStreamResult; CodeReviewGroundingResult; CodeReviewFreshnessResult; groundingFromReply; freshnessFromReply; unavailableFromError; reviewArtifactRequestParams; codeReviewRequestParams; waitText; ReviewStreamFrame; ReviewStreamSink; ReviewStreamHandle; ReviewStreamTransport; ReviewStreamTimers; runReviewStream; release; finish; failWith; onAbort",
+            "message": "All supplied changed symbols have empty testsReaching edges, including freshness reply mapping and fallbackReason serialization. Passing corresponding test records do not supply the missing edges.",
+            "expectationRef": "review-stream.ts (file), ReviewStreamFailure, ReviewStreamError, ReviewStreamOpts, ReviewArtifactStreamParams, CodeReviewStreamParams, CodeReviewStreamResult, CodeReviewGroundingResult, CodeReviewFreshnessResult, groundingFromReply, freshnessFromReply, unavailableFromError, reviewArtifactRequestParams, codeReviewRequestParams, waitText, ReviewStreamFrame, ReviewStreamSink, ReviewStreamHandle, ReviewStreamTransport, ReviewStreamTimers, runReviewStream, release, finish, failWith, onAbort",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/__tests__/freshness.test.ts:1",
-            "message": "These changed symbols have empty testsReaching. The promised freshness test is present and passing, but the supplied grounding records no reaching edges for these symbols.",
-            "expectationRef": "src/workflow/code-review/__tests__/freshness.test.ts (file); at",
+            "message": "These changed symbols have empty testsReaching edges. The promised test is present and passing; deps has a reaching edge from this passing file and is excluded.",
+            "expectationRef": "freshness.test.ts (file), at",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/__tests__/grounding.test.ts:1",
+            "message": "These changed symbols have empty testsReaching edges despite the file's passing test record.",
+            "expectationRef": "grounding.test.ts (file), fixture",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/__tests__/subject.test.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching. The promised record-loading test is present and passing, but the supplied grounding records no reaching edges for these symbols.",
-            "expectationRef": "src/workflow/code-review/__tests__/subject.test.ts (file); deps; GitFx; mkStoryRepo; realDeps; warningsDuring",
+            "message": "These changed symbols have empty testsReaching edges. The promised subject-record test is present and passing; git and put have reaching edges from the passing file and are excluded.",
+            "expectationRef": "subject.test.ts (file), deps, GitFx, mkStoryRepo, realDeps, warningsDuring",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching. The promised latest-run and malformed-record test is present and passing, but the supplied grounding records no reaching edges for these symbols.",
-            "expectationRef": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts (file); PromisedTest; fakeProvider; subjectNoPlan; FileRun; run; task; one",
+            "message": "These changed symbols have empty testsReaching edges. The complete promised coverage-prompt test is present and passing; symbols with reaching edges from this passing file are excluded.",
+            "expectationRef": "coverage.test.ts (file), PromisedTest, fakeProvider, subjectNoPlan, FileRun, run, task, one",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/dimensions/coverage.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/workflow/code-review/dimensions/coverage.ts (file); CoverageOutput; promisedTestsOf; testRecordSection; buildCoveragePrompt; fileOf; judgeCoverage; call; validate",
+            "message": "These changed symbols have empty testsReaching edges, so the supplied grounding establishes no exercise of the coverage prompt or judgement implementation.",
+            "expectationRef": "coverage.ts (file), CoverageOutput, promisedTestsOf, testRecordSection, buildCoveragePrompt, fileOf, judgeCoverage, call, validate",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/dimensions/test-record-view.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/workflow/code-review/dimensions/test-record-view.ts (file); TitleResult; TestFileView; TestRecordView; isPlainObject; Run; wellFormed; failingOutcome; later; fileView; buildTasksOf; testRecordView",
+            "message": "These changed symbols have empty testsReaching edges, including latest-run selection, malformed-record handling and BUILD task rendering.",
+            "expectationRef": "test-record-view.ts (file), TitleResult, TestFileView, TestRecordView, isPlainObject, Run, wellFormed, failingOutcome, later, fileView, buildTasksOf, testRecordView",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/freshness.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/workflow/code-review/freshness.ts (file); FreshnessDeps; FreshnessResult; computeCodeReviewFreshness; realFreshnessGraphDeps",
+            "message": "These changed symbols have empty testsReaching edges. The promised freshness test passes, but no supplied edge links a test to these symbols.",
+            "expectationRef": "freshness.ts (file), FreshnessDeps, FreshnessResult, computeCodeReviewFreshness, realFreshnessGraphDeps",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts:1",
+            "message": "Every supplied changed symbol in this file has empty testsReaching edges, leaving graph and diff grounding behaviour without the required symbol-level coverage evidence.",
+            "expectationRef": "grounding.ts (file), GroundedEntity, GroundingDeps, isTestFile, assembleCodeReviewGrounding, realGroundingDeps, toGrounded, rowById, DiffResult, DiffUnavailableError, DiffGroundingDeps, DiffGroundingOptions, assembleDiffCodeReviewGrounding, sequence, buildDiffSymbols, splitDiffByFile, extractDiffBody, runDiff, excludeInput, storyRangeDiff, collect, realDiffGroundingDeps",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/runner.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/workflow/code-review/runner.ts (file); JudgeSlot; CodeReviewRunnerDeps; RunCodeReviewOpts; CodeReviewProgress; effectiveJudges; runCodeReview; emit; foldCounts; foldVerdict; buildArtifact; validateArtifact; fail; describeFallback; renderCodeReviewMd; table; escapeCell",
+            "message": "These supplied changed symbols have empty testsReaching edges, including review execution, fallback metadata persistence and markdown rendering.",
+            "expectationRef": "runner.ts (file), JudgeSlot, CodeReviewRunnerDeps, RunCodeReviewOpts, CodeReviewProgress, effectiveJudges, runCodeReview, emit, foldCounts, foldVerdict, buildArtifact, validateArtifact, fail, describeFallback, renderCodeReviewMd, table, escapeCell",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/subject.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/workflow/code-review/subject.ts (file); SubjectDeps; isPlainObject; isBuildRecord; readStoryBuildRecord; resolveCodeReviewSubject",
+            "message": "These changed symbols have empty testsReaching edges. The promised BUILD/TESTS record test is present and passing, but symbol-reaching evidence is absent.",
+            "expectationRef": "subject.ts (file), SubjectDeps, isPlainObject, isBuildRecord, readStoryBuildRecord, resolveCodeReviewSubject",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/workflow/code-review/types.ts:1",
-            "message": "Each listed changed symbol has empty testsReaching, constituting a not-exercised gap under the supplied coverage rule.",
-            "expectationRef": "src/workflow/code-review/types.ts (file); ReviewDimension; DimensionFinding; DimensionResult; ChangedSymbolSummary; CodeReviewGrounding; CodeReviewFallbackReason; CodeReviewSubject; CodeReviewSubjectResult; CodeReviewBody; CodeReviewMeta; CodeReviewArtifact; CodeReviewOutcome",
+            "message": "All supplied changed symbols in this file have empty testsReaching edges; the stipulated rule identifies them as not-exercised gaps.",
+            "expectationRef": "types.ts (file), ReviewDimension, DimensionFinding, DimensionResult, ChangedSymbolSummary, CodeReviewGrounding, CodeReviewFallbackReason, CodeReviewSubject, CodeReviewSubjectResult, CodeReviewBody, CodeReviewMeta, CodeReviewArtifact, CodeReviewOutcome",
             "confidence": "breach"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/daemon/__tests__/code-review-rpc-fallback.test.ts:1",
-            "message": "subjectFor has a reaching entry named rpcDeps, but that name is not covered as a test title in the record: present but failing/unverified, specifically unverified. The two promised test titles are independently confirmed passing.",
-            "expectationRef": "subjectFor: testsReaching rpcDeps",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/daemon/steps/__tests__/in-daemon-client.test.ts:1",
-            "message": "These symbols have reaching entries, but their names are not covered as test titles in the record: present but failing/unverified, specifically unverified. A passing file does not confirm the pass-state of these unmatched entries.",
-            "expectationRef": "doneWith and record: maps; markStarted: untilAborted, handler; crSubject: crDeps",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/daemon/steps/code-review-step/__tests__/handler.test.ts:1",
-            "message": "These symbols have reaching entries, but their names are not covered as test titles in the record: present but failing/unverified, specifically unverified. Both promised handler tests are separately present and passing.",
-            "expectationRef": "subject: makeDeps; judgements: droppedFlow, finish; makeDeps: runFullFlow, timedOutFallback; runFullFlow and reset: droppedFlow",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/workflow/code-review/__tests__/freshness.test.ts:1",
-            "message": "deps has a reaching entry named at, which is not covered as a test title in the record: present but failing/unverified, specifically unverified.",
-            "expectationRef": "deps: testsReaching at",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/workflow/code-review/__tests__/subject.test.ts:1",
-            "message": "git and put have a reaching entry named mkStoryRepo, which is not covered as a test title in the record: present but failing/unverified, specifically unverified.",
-            "expectationRef": "git and put: testsReaching mkStoryRepo",
-            "confidence": "observation"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts:1",
-            "message": "These symbols have reaching entries, but their names are not covered as test titles in the record: present but failing/unverified, specifically unverified. The promised coverage test is separately present and passing.",
-            "expectationRef": "subject: subjectNoPlan, withRecords; grounding: groundingTwoFiles; groundingTwoFiles: viewOf; withRecords and viewOf: one",
-            "confidence": "observation"
           }
         ]
       },
@@ -340,9 +302,9 @@
     ],
     "verdict": "block",
     "counts": {
-      "high": 22,
-      "med": 6,
-      "low": 6
+      "high": 24,
+      "med": 0,
+      "low": 5
     }
   }
 }

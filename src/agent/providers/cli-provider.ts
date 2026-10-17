@@ -52,7 +52,7 @@ import type {
 } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
-import { processSchemaForOpenAIStrict, rootUnionKey } from './structured-output.js';
+import { codexStrictSchema, rootUnionKey, validateAgainstSchema } from './structured-output.js';
 
 const log = getLogger('cli-provider');
 
@@ -113,12 +113,23 @@ export function claudeReviewSessionArgs(schema: StructuredSchema, modelArgs: rea
 /**
  * The schema as codex's `--output-schema` file must hold it. codex runs output
  * schemas in strict mode, which refuses any object without
- * `additionalProperties: false` and a complete `required` list. The strict form
- * is made on a copy, because callers reuse constant schemas and the helper
- * rewrites in place (ISSUE-e48e33ae6af03720).
+ * `additionalProperties: false` and a complete `required` list
+ * (ISSUE-e48e33ae6af03720), and refuses some keywords outright
+ * (ISSUE-487ad7a67474d321). The strict form is made on a copy, because callers
+ * reuse constant schemas.
  */
 function codexSchemaJson(schema: StructuredSchema): string {
-	return JSON.stringify(processSchemaForOpenAIStrict(structuredClone(schema)));
+	return JSON.stringify(codexStrictSchema(schema));
+}
+
+/** A parsed codex reply, held to the caller's FULL schema: the copy codex was
+ *  given leaves out the keywords strict mode refuses (ISSUE-487ad7a67474d321). */
+function codexReply<T>(schema: StructuredSchema, parsed: unknown, what: string): T {
+	const checked = validateAgainstSchema<T>(schema, parsed);
+	if (!checked.ok) {
+		throw new Error(`${what} does not satisfy the caller's schema: ${checked.errors.join('; ')}`);
+	}
+	return checked.value;
 }
 
 /** codex arguments for a reviewer session: a read-only sandbox, never `--full-auto`. */
@@ -291,11 +302,13 @@ export class CliProvider implements LLMProvider {
 			if (agentText === undefined) {
 				throw new Error('codex emitted no agent_message item');
 			}
+			let parsed: unknown;
 			try {
-				return JSON.parse(agentText) as T;
+				parsed = JSON.parse(agentText);
 			} catch (err) {
 				throw new Error(`codex agent_message.text was not parseable JSON: ${(err as Error).message}. text=${agentText.slice(0, 300)}`);
 			}
+			return codexReply<T>(schema, parsed, 'codex answer');
 		} finally {
 			rmSync(tmpDir, { recursive: true, force: true });
 		}
@@ -403,11 +416,13 @@ export class CliProvider implements LLMProvider {
 			const messages = events.filter(e => e.type === 'item.completed' && e.item?.type === 'agent_message');
 			const text = messages[messages.length - 1]?.item?.text;
 			if (text === undefined) throw new Error('codex review session emitted no agent_message item');
+			let parsed: unknown;
 			try {
-				return JSON.parse(text) as T;
+				parsed = JSON.parse(text);
 			} catch (err) {
 				throw new Error(`codex review session answer was not parseable JSON: ${(err as Error).message}. text=${text.slice(0, 300)}`);
 			}
+			return codexReply<T>(schema, parsed, 'codex review session answer');
 		} finally {
 			rmSync(tmpDir, { recursive: true, force: true });
 		}

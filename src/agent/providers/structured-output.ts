@@ -327,6 +327,57 @@ function processInPlace(node: unknown): void {
 	}
 }
 
+/**
+ * Keywords codex's strict `--output-schema` refuses below the root, each
+ * probed against the codex CLI on 2026-10-18 with a one-property schema
+ * (400 "... is not permitted when strict is true"). `then` and `else` go with
+ * `if`: without it they constrain nothing. Probed and ACCEPTED, so kept:
+ * minItems, maxItems, prefixItems, minLength, maxLength, pattern, minimum,
+ * maximum, exclusiveMinimum, multipleOf, const, enum, default, description,
+ * title, examples, anyOf, patternProperties, $defs/$ref, a type list.
+ */
+const CODEX_REFUSED_KEYWORDS = [
+	'uniqueItems', 'contains', 'not', 'allOf', 'if', 'then', 'else',
+	'propertyNames', 'minProperties', 'maxProperties',
+] as const;
+
+/** The only `format` codex answered in the probe. With `uri` or `email`, codex
+ *  never answered (twice each, up to 4 minutes), so other formats are dropped. */
+const CODEX_FORMATS: ReadonlySet<string> = new Set(['date-time']);
+
+/**
+ * The copy of `schema` that codex's strict mode accepts: every refused keyword
+ * (and every unprobed `format`) left out, then the strict form of
+ * `processSchemaForOpenAIStrict`. The copy constrains less than the caller's
+ * schema, so a codex reply must still be validated against the caller's schema
+ * (ISSUE-487ad7a67474d321). The caller's schema is not modified.
+ */
+export function codexStrictSchema(schema: StructuredSchema): StructuredSchema {
+	const copy = structuredClone(schema);
+	dropCodexRefused(copy);
+	return processSchemaForOpenAIStrict(copy);
+}
+
+function dropCodexRefused(node: unknown): void {
+	if (Array.isArray(node)) {
+		for (const item of node) { dropCodexRefused(item); }
+		return;
+	}
+	if (!isObject(node)) { return; }
+	for (const key of CODEX_REFUSED_KEYWORDS) { delete node[key]; }
+	if (typeof node['format'] === 'string' && !CODEX_FORMATS.has(node['format'])) { delete node['format']; }
+	// Recurse only where a value is a schema, so a PROPERTY named like a keyword is kept.
+	for (const mapKey of ['properties', 'patternProperties', 'definitions', '$defs'] as const) {
+		const m = node[mapKey];
+		if (isObject(m)) {
+			for (const k of Object.keys(m)) { dropCodexRefused(m[k]); }
+		}
+	}
+	for (const schemaKey of ['items', 'additionalProperties', 'prefixItems', 'anyOf', 'oneOf'] as const) {
+		if (node[schemaKey] !== undefined) { dropCodexRefused(node[schemaKey]); }
+	}
+}
+
 function isObject(x: unknown): x is Record<string, unknown> {
 	return typeof x === 'object' && x !== null && !Array.isArray(x);
 }

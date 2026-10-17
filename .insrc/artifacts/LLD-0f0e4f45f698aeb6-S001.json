@@ -1,9 +1,10 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792257834804-xf90ys",
+    "runId": "wf-1792257944235-ukxphq",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T17:23:55.789Z",
+    "createdAt": "2026-10-17T17:25:52.230Z",
+    "epicCreatedAt": "2026-10-17T17:23:55.789Z",
     "attribution": {
       "outputs": [
         {
@@ -14,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 979,
+    "elapsedMs": 7976,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "0f0e4f45f698aeb6",
     "epicSlug": "summary-lane-yields-code-work",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792257834804-xf90ys",
-    "hldEffectiveHash": "0f0e4f45f698aeb6229344098f8ef3114144aa9a862b75f6fc981d164b556657",
+    "hldBaseRunId": "wf-1792257944235-ukxphq",
+    "hldEffectiveHash": "2da4d7bb1c559a0ecdcd093de8a254dff21e4795992414aa066d6a02acb23e99",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "small",
@@ -99,8 +100,8 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "Before each queued single-document job and each document the sweep awaits waitForCodeIdle, then checks shouldStop.",
-            "Everything else as today: edits first, re-read, classification, progress, stopped."
+            "Before each document the sweep repeats, until no single-document job is queued: await waitForCodeIdle, check shouldStop (return stopped if true), take the next queued single-document job and run it. Only then does it read and summarise the document; so an edit queued while the sweep is paused runs before the next sweep document.",
+            "Everything else as today: re-read, classification, progress, stopped."
           ]
         },
         {
@@ -165,6 +166,10 @@
         {
           "input": "An edited document is queued during a paused sweep.",
           "expected": "It runs first once code work is done, as before."
+        },
+        {
+          "input": "An edit is queued while a sweep is paused waiting for code work.",
+          "expected": "When code work ends, the edit runs before the next sweep document."
         }
       ],
       "invariantsToPreserve": [
@@ -188,8 +193,8 @@
           "level": "unit",
           "purpose": "The summary lane and a running sweep yield to code work and still end on shutdown.",
           "subjects": [
-            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once; waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
-            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, and ends with stopped when shouldStop is true after the wait",
+            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once (the overlap case, replacing the pre-queued overlap assertion); the readers test is revised to the code-first order (a queued summary waits behind index work, laneStatus shows it queued); waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
+            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, an edit queued while it is paused runs before the next document, and it ends with stopped when shouldStop is true after the wait",
             "src/indexer/__tests__/summary-sweep-progress.test.ts: the indexer's sweep pauses while the queue's index lane has work and continues when it is idle"
           ]
         }
@@ -198,22 +203,22 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once; waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
+            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once (the overlap case, replacing the pre-queued overlap assertion); the readers test is revised to the code-first order (a queued summary waits behind index work, laneStatus shows it queued); waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
             "src/indexer/__tests__/summary-sweep-progress.test.ts: the indexer's sweep pauses while the queue's index lane has work and continues when it is idle"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
-            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once; waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
-            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, and ends with stopped when shouldStop is true after the wait"
+            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once (the overlap case, replacing the pre-queued overlap assertion); the readers test is revised to the code-first order (a queued summary waits behind index work, laneStatus shows it queued); waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
+            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, an edit queued while it is paused runs before the next document, and it ends with stopped when shouldStop is true after the wait"
           ]
         },
         {
           "criterionId": "ac3",
           "provingTests": [
-            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once; waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
-            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, and ends with stopped when shouldStop is true after the wait"
+            "src/daemon/__tests__/queue-lanes.test.ts: a summary-lane job queued while an index job runs does not start until the index lane is idle; a summary already running is not interrupted and an index job enqueued during it starts at once (the overlap case, replacing the pre-queued overlap assertion); the readers test is revised to the code-first order (a queued summary waits behind index work, laneStatus shows it queued); waitForIndexIdle resolves at once when the index lane is idle and on stop(), and a summary lane waiting for code work ends on stop()",
+            "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep awaits waitForCodeIdle before each single-document job and each document, an edit queued while it is paused runs before the next document, and it ends with stopped when shouldStop is true after the wait"
           ]
         }
       ],
@@ -225,7 +230,7 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add waitForIndexIdle and make the summary lane await it before each job.",
+          "action": "Add waitForIndexIdle, make the summary lane await it before each job, and revise the two queue-lane tests that assumed pre-queued overlap.",
           "rollbackable": true
         },
         {

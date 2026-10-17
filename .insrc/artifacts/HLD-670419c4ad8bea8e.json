@@ -197,6 +197,13 @@
         "choice": "Retain the learner's assessment history locally until that learner explicitly deletes it. History is private to the learner, sharing is disabled, and there is no automatic expiry.",
         "rationale": "User explicitly chose retention until learner deletion, private and local, with sharing disabled.",
         "resolvedAt": "2026-10-17T12:30:14.335Z"
+      },
+      "q2c98434d": {
+        "question": "Confirm proposed project enablement and optional assessment behavior for individually disabled requirements; strict Medium and High remain default requirements.",
+        "status": "resolved",
+        "choice": "Require explicit feature enablement per project. Within an enabled project, Medium completion and High pass-or-explicit-recorded-override are required by default. If either requirement is individually disabled, its assessment remains available voluntarily without blocking the commit.",
+        "rationale": "User explicitly accepted project opt-in, strict Medium/High defaults within enabled projects, and voluntary tests for disabled requirements.",
+        "resolvedAt": "2026-10-17T12:31:40.687Z"
       }
     }
   },

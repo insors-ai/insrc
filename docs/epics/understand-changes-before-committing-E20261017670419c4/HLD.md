@@ -428,6 +428,8 @@ The editor holds the commit orchestration context and inserts override metadata 
   - **resolved**: Use the active repository's configured Git email as Git ID. With one connected GitHub/GitLab/Jira identity, use that identity. With multiple connected identities, use the repository's Git email. If no usable identity is available, fall back to the OS user ID. Keep identities distinct unless explicitly linked. — User explicitly accepted this interpretation in chat. This preserves the approved provider/Git/OS precedence without automatically merging identities. _(2026-10-17T12:27:44.498Z)_
 - `q0a8f7ef6` — Before s1 persistence ships, decide retention duration, visibility, deletion and sharing; no 30-day default was accepted.
   - **resolved**: Retain the learner's assessment history locally until that learner explicitly deletes it. History is private to the learner, sharing is disabled, and there is no automatic expiry. — User explicitly chose retention until learner deletion, private and local, with sharing disabled. _(2026-10-17T12:30:14.335Z)_
+- `q2c98434d` — Confirm proposed project enablement and optional assessment behavior for individually disabled requirements; strict Medium and High remain default requirements.
+  - **resolved**: Require explicit feature enablement per project. Within an enabled project, Medium completion and High pass-or-explicit-recorded-override are required by default. If either requirement is individually disabled, its assessment remains available voluntarily without blocking the commit. — User explicitly accepted project opt-in, strict Medium/High defaults within enabled projects, and voluntary tests for disabled requirements. _(2026-10-17T12:31:40.687Z)_
 
 ## Citations
 

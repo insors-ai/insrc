@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -55,3 +55,28 @@ Run at 2026-10-17T07:07:48.129Z on commit `ebc27d78`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/queue-code-index-work.test.ts` | 0 | 2 | 0.7 s |  |
+
+## t4
+
+Run at 2026-10-17T07:15:16.317Z on commit `5d28d6c2`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/code-review/__tests__/freshness.test.ts: computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before | `src/workflow/code-review/__tests__/freshness.test.ts` |
+
+**unit: src/shared/__tests__/review-stream-freshness.test.ts: freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0 | `src/shared/__tests__/review-stream-freshness.test.ts` |
+| pass | in-daemon review client: the codeReview.freshness reply keeps inFlight and pendingCodeIndexJobs (ISSUE-1102dc71) | `src/daemon/steps/__tests__/in-daemon-client.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/in-daemon-client.test.ts` | 0 | 8 | 1 s |  |
+| `src/shared/__tests__/review-stream-freshness.test.ts` | 0 | 1 | 0.4 s |  |
+| `src/workflow/code-review/__tests__/freshness.test.ts` | 0 | 9 | 0.4 s |  |

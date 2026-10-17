@@ -4,7 +4,7 @@
     "epicHash": "1102dc7125ad0c07",
     "storyId": "S001",
     "createdAt": "2026-10-17T06:56:06.405Z",
-    "updatedAt": "2026-10-17T07:07:48.129Z",
+    "updatedAt": "2026-10-17T07:15:16.317Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
@@ -23,9 +23,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "ebc27d78: IndexQueue keeps the job in flight (set before processor(job), cleared in finally) and adds codeIndexWorkFor(repoPath) => { inFlight, pending } over full/reconcile jobs naming the repo and file jobs under repoPath or repoPath+sep; depthForRepo unchanged (asserted in the test, and queue-depth-for-repo.test.ts passes). Five falsifying mutations each fail the test. Daemon suites 282 pass, 0 fail; tsc clean.",
+    "summary": "5d28d6c2: computeCodeReviewFreshness takes codeIndexWork(repoPath) and returns { isProcessing = inFlight || pending > 0, inFlight, pendingCodeIndexJobs, staleFiles (unchanged) }. The codeReview.freshness handler (src/daemon/index.ts) supplies queue.codeIndexWorkFor and returns the FreshnessResult itself as the reply, so no field can be dropped there. CodeReviewFreshnessResult and freshnessFromReply (src/shared/review-stream.ts) carry inFlight and pendingCodeIndexJobs, mapping an older reply to inFlight = isProcessing and 0; both clients use it (daemon-client.ts unchanged; mcp/daemon-stream.ts types its reply from it). Four falsifying mutations each fail a test. tsc clean; workflow, daemon, daemon/steps, MCP and shared suites 2606 pass, only the pre-existing review-decision failure.",
     "testRecord": {
       "md": "docs/standalone/ground-code-review-coverage-story-s-E202610171102dc71/S001/TESTS.md"
     },
@@ -35,58 +39,107 @@
           "file": "src/daemon/__tests__/queue-code-index-work.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:07:48.129Z"
+        "timestamp": "2026-10-17T07:15:16.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T07:15:16.317Z"
       },
       {
         "target": {
           "file": "src/daemon/queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:07:48.129Z"
+        "timestamp": "2026-10-17T07:15:16.317Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T07:15:16.317Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/daemon-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T07:15:16.317Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/review-stream-freshness.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T07:15:16.317Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T07:15:16.317Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/freshness.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T07:15:16.317Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/subject.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:07:48.129Z"
+        "timestamp": "2026-10-17T07:15:16.317Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:07:48.129Z"
+        "timestamp": "2026-10-17T07:15:16.317Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:07:48.129Z"
+        "timestamp": "2026-10-17T07:15:16.317Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/test-record-view.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:07:48.129Z"
+        "timestamp": "2026-10-17T07:15:16.317Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/freshness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T07:15:16.317Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/subject.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:07:48.129Z"
+        "timestamp": "2026-10-17T07:15:16.317Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T07:07:48.129Z"
+        "timestamp": "2026-10-17T07:15:16.317Z"
       }
     ],
-    "commit": "ebc27d78"
+    "commit": "5d28d6c2"
   }
 }

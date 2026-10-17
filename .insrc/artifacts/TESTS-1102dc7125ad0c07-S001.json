@@ -4,7 +4,7 @@
     "epicHash": "1102dc7125ad0c07",
     "storyId": "S001",
     "createdAt": "2026-10-17T06:56:06.405Z",
-    "updatedAt": "2026-10-17T07:07:48.129Z",
+    "updatedAt": "2026-10-17T07:15:16.317Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
     "epicSlug": "ground-code-review-coverage-story-s"
@@ -274,6 +274,146 @@
               },
               {
                 "title": "codeIndexWorkFor clears the in-flight job when the processor throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "5d28d6c2",
+        "ranAt": "2026-10-17T07:15:16.317Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/__tests__/freshness.test.ts: computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/freshness.test.ts",
+                "title": "computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/shared/__tests__/review-stream-freshness.test.ts: freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/review-stream-freshness.test.ts",
+                "title": "freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+                "title": "in-daemon review client: the codeReview.freshness reply keeps inFlight and pendingCodeIndexJobs (ISSUE-1102dc71)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/in-daemon-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 972,
+            "titles": [
+              {
+                "title": "in-daemon client: a done frame resolves with its data and progress reaches onFrame; grounding, freshness and the cwd lookup are shaped as the socket client shapes them",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: a wait past its limit fails with 'timeout' (retryable) and aborts the review run",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: an aborted step signal fails with 'aborted' (code daemon-review-aborted, not retryable) and ends the inner review run",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: an error frame fails with 'daemon-error' and its reason, and a code review whose diff cannot be read comes back as a failed daemon review naming the cause",
+                "result": "pass"
+              },
+              {
+                "title": "no loopback: during a moved review or code-review call the daemon's request server sees no second connection from the daemon itself",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon client: a stream handler that throws synchronously settles the request as daemon-error and releases its wait",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon client: the wait limit is named in whole minutes when it is one, otherwise in seconds, never more than the limit",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon review client: the codeReview.freshness reply keeps inFlight and pendingCodeIndexJobs (ISSUE-1102dc71)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/review-stream-freshness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 380,
+            "titles": [
+              {
+                "title": "freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/freshness.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 370,
+            "titles": [
+              {
+                "title": "freshness: a changed file whose per-file indexedAt predates its mtime is stale",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a changed file whose watermark is >= its mtime is NOT stale",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a changed path with NO indexable entity (repo indexed AFTER the change) is excluded — does not block forever",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a never-indexed changed source file (no entities, repo behind the change) is stale",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a never-indexed repo (watermark 0) with a changed file is stale",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: isProcessing mirrors the injected queue flag and the compute triggers no reindex",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: a mixed changed set reports only the stale files",
+                "result": "pass"
+              },
+              {
+                "title": "freshness: an empty changed set is fresh (no stale files)",
+                "result": "pass"
+              },
+              {
+                "title": "computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before",
                 "result": "pass"
               }
             ],

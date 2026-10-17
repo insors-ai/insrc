@@ -11,10 +11,10 @@
  * overwritten, and nothing is committed or pushed.
  */
 
-import { randomBytes } from 'node:crypto';
-import { linkSync, mkdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { statSync } from 'node:fs';
+import { join } from 'node:path';
 
+import { publishCreateOnly } from './create-only.js';
 import { POLICY_PATH } from './git.js';
 import type { PolicyFile, PolicyResult } from './types.js';
 
@@ -34,18 +34,11 @@ export function writeStarterPolicy(repo: string): PolicyResult<{ path: string }>
 	}
 
 	const dest = join(repo, POLICY_PATH);
-	const tmp = join(dirname(dest), `.policy.${process.pid}.${randomBytes(6).toString('hex')}.tmp`);
 	try {
-		mkdirSync(dirname(dest), { recursive: true });
-		writeFileSync(tmp, JSON.stringify(STARTER_POLICY, null, 2) + '\n', { flag: 'wx' });
-		linkSync(tmp, dest);
-		return { ok: true, value: { path: dest } };
+		return publishCreateOnly(dest, JSON.stringify(STARTER_POLICY, null, 2) + '\n') === 'created'
+			? { ok: true, value: { path: dest } }
+			: { ok: false, reason: `${POLICY_PATH} already exists; it was left untouched` };
 	} catch (err) {
-		if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
-			return { ok: false, reason: `${POLICY_PATH} already exists; it was left untouched` };
-		}
 		return { ok: false, reason: `the starter policy could not be written: ${err instanceof Error ? err.message : String(err)}` };
-	} finally {
-		try { unlinkSync(tmp); } catch { /* never created, or already gone */ }
 	}
 }

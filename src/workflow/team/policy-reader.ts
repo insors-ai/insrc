@@ -39,6 +39,7 @@ export interface ReaderOptions {
 type Found =
 	| { readonly kind: 'policy'; readonly policy: TeamPolicy }
 	| { readonly kind: 'invalid'; readonly reason: string }
+	| { readonly kind: 'error'; readonly reason: string }
 	| { readonly kind: 'missing' };
 
 export function isGitRepo(repo: string, timeoutMs?: number): boolean {
@@ -70,10 +71,18 @@ function resolveSha(repo: string, rev: string): string | undefined {
 	return out.ok ? out.stdout.trim() : undefined;
 }
 
-/** Read and parse the policy file as it stands at `rev` (a ref or a commit). */
+/**
+ * Read and parse the policy file as it stands at `rev` (a ref or a commit).
+ * 'missing' means the revision does not exist or the file is confirmed absent from it; any other git failure
+ * (a timeout, a damaged object, output too large) is an 'error', never taken for absence.
+ */
 function readAt(repo: string, rev: string, label: string, fetchedAt: string, anchor: PolicyAnchor): Found {
+	if (resolveSha(repo, rev) === undefined) return { kind: 'missing' };
+	const tree = runGit(repo, ['ls-tree', '--name-only', rev, '--', POLICY_PATH]);
+	if (!tree.ok) return { kind: 'error', reason: `the policy file on ${label} could not be looked up: ${tree.stderr}` };
+	if (tree.stdout.trim().length === 0) return { kind: 'missing' };
 	const shown = runGit(repo, ['show', `${rev}:${POLICY_PATH}`]);
-	if (!shown.ok) return { kind: 'missing' };
+	if (!shown.ok) return { kind: 'error', reason: `the policy file on ${label} could not be read: ${shown.stderr}` };
 	const parsed = parsePolicyFile(shown.stdout);
 	if (!parsed.ok) return { kind: 'invalid', reason: `policy file on ${label} is invalid: ${parsed.reason}` };
 	return { kind: 'policy', policy: buildTeamPolicy(parsed.value, { ref: label, fetchedAt, anchor }) };
@@ -113,7 +122,7 @@ function readKnownRepo(repo: string, s: Sighting): PolicyResult<TeamPolicy | 'no
 		from = `commit ${s.sha}`;
 	}
 	if (found.kind === 'policy') return { ok: true, value: found.policy };
-	if (found.kind === 'invalid') return { ok: false, reason: found.reason };
+	if (found.kind === 'invalid' || found.kind === 'error') return { ok: false, reason: found.reason };
 	return { ok: false, reason: `this repository is known to carry a team policy but it cannot be read from ${from}; run 'team refresh' to fetch it` };
 }
 
@@ -125,7 +134,7 @@ function readDamaged(repo: string, why: string, now: string): PolicyResult<TeamP
 		const ref = trackingRef(remote, branch);
 		const found = readAt(repo, ref, ref, now, findAnchor(repo, ref));
 		if (found.kind === 'policy') return { ok: true, value: found.policy };
-		if (found.kind === 'invalid') return { ok: false, reason: found.reason };
+		if (found.kind === 'invalid' || found.kind === 'error') return { ok: false, reason: found.reason };
 	}
 	return { ok: false, reason: `this repository has a damaged team-policy record (${why}) and the policy cannot be read; run 'team refresh' to repair it` };
 }
@@ -151,6 +160,7 @@ function readUnseen(repo: string, now: string, teamDir: string | undefined, publ
 	const anchor = findAnchor(repo, ref);
 	const found = readAt(repo, ref, ref, now, anchor);
 	if (found.kind === 'missing') return { ok: true, value: 'none' };
+	if (found.kind === 'error') return { ok: false, reason: found.reason };
 
 	// First observation of a policy file (valid or invalid): remember this repo as a team repo, create-only.
 	const sha = resolveSha(repo, ref);

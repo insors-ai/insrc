@@ -105,10 +105,11 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 		// The policy file is not on the default branch: a deliberate removal reads as solo again.
 		// If the remote HEAD may still name another retained branch (which could still hold an old policy), it is not
 		// cosmetic any more: fix it BEFORE touching the record, and if that fails leave everything as it was and fail.
+		let head: { ok: true } | { ok: false; warning: string } | undefined;
 		if (remoteHeadMayBeStale(localGit, repo, remote, branch, deadline)) {
-			const fixed = setRemoteHead(localGit, repo, remote, branch, deadline);
-			if (!fixed.ok) {
-				return fail(`the policy file is absent on '${branch}', but refs/remotes/${remote}/HEAD may still point at another branch and could not be updated (${fixed.warning}); `
+			head = setRemoteHead(localGit, repo, remote, branch, deadline);
+			if (!head.ok) {
+				return fail(`the policy file is absent on '${branch}', but refs/remotes/${remote}/HEAD may still point at another branch and could not be updated (${head.warning}); `
 					+ 'the record was kept, so run the refresh again');
 			}
 		}
@@ -117,7 +118,8 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 		} catch (err) {
 			return fail(`the policy file is absent on '${branch}' but the stored record could not be removed (${err instanceof Error ? err.message : String(err)}); the next refresh retries`);
 		}
-		const head = setRemoteHead(localGit, repo, remote, branch, deadline);
+		// Update the remote HEAD once: reuse the result when it was already fixed above.
+		head ??= setRemoteHead(localGit, repo, remote, branch, deadline);
 		if (!head.ok) warnings.push(head.warning);
 		return { ok: true, value: { kind: 'absent', branch, warnings } };
 	}

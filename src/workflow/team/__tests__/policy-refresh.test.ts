@@ -336,3 +336,16 @@ test('a deadline that runs out during the anchor lookup records nothing', async 
 		assert.equal(readSighting(clone, f.teamDir).kind, 'absent', 'nothing was recorded');
 	} finally { f.cleanup(); }
 });
+
+test('a team directory that cannot be created fails the refresh cleanly instead of throwing', async () => {
+	const f = makeFixture();
+	try {
+		const { bare } = teamOrigin(f);
+		const clone = cloneOf(f, bare, 'clone');
+		const blocked = join(f.root, 'blocked');
+		writeFileSync(blocked, 'a file where the team directory should be');
+		const result = await refreshPolicy(clone, { teamDir: blocked });
+		assert.equal(result.ok, false);
+		if (!result.ok) assert.match(result.reason, /lock could not be taken/);
+	} finally { f.cleanup(); }
+});

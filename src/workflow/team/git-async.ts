@@ -42,7 +42,7 @@ export const runGitAsync: GitAsync = (cwd, args, deadline) => new Promise(resolv
 			resolve({ ok: true, stdout });
 			return;
 		}
-		const e = err as NodeJS.ErrnoException & { killed?: boolean };
+		const e = err as NodeJS.ErrnoException & { killed?: boolean | undefined };
 		const timedOut = e.killed === true;
 		resolve({ ok: false, stderr: timedOut ? 'git did not finish within the refresh deadline' : (stderr.trim() || e.message), timedOut });
 	});

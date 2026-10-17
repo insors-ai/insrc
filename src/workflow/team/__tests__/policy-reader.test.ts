@@ -240,3 +240,18 @@ test('first observation creates the sighting create-only and a failed write does
 		assert.equal(after.kind === 'valid' ? after.sighting.branchSource : undefined, 'user', 'the reader did not overwrite the existing sighting');
 	} finally { f.cleanup(); }
 });
+
+test('a policy file that exists but cannot be read is refused, never taken for absence', () => {
+	const f = makeFixture();
+	try {
+		const { bare, work } = makeOrigin(f);
+		// A policy file larger than the git output limit: ls-tree sees it, `git show` cannot return it.
+		const huge = JSON.stringify({ teamMode: true, signoffStages: ['DEF'], claimsEnforced: true, administrators: [] }) + ' '.repeat(9 * 1024 * 1024);
+		commitFile(work, POLICY_PATH, huge, 'adopt a huge policy');
+		git(work, 'push', '-q', 'origin', 'main');
+		const clone = cloneOf(f, bare, 'clone');
+		const result = readPolicy(clone, { teamDir: f.teamDir });
+		assert.equal(result.ok, false, 'an unreadable policy must not read as none');
+		if (!result.ok) assert.match(result.reason, /could not be read/);
+	} finally { f.cleanup(); }
+});

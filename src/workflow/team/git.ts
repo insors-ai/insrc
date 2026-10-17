@@ -26,7 +26,7 @@ export function runGit(cwd: string, args: readonly string[], timeoutMs: number =
 		const stdout = execFileSync('git', [...args], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024 });
 		return { ok: true, stdout };
 	} catch (err) {
-		const e = err as { stderr?: Buffer | string; message?: string };
+		const e = err as { stderr?: Buffer | string | undefined; message?: string | undefined };
 		return { ok: false, stderr: (e.stderr ? String(e.stderr) : e.message ?? 'git failed').trim() };
 	}
 }

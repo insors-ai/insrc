@@ -22,6 +22,7 @@ import { closeSync, linkSync, mkdirSync, openSync, readFileSync, realpathSync, r
 import { join, resolve } from 'node:path';
 
 import { PATHS } from '../../shared/paths.js';
+import { publishCreateOnly } from './create-only.js';
 import type { PolicyAnchor } from './types.js';
 
 export type BranchSource = 'remote' | 'user';
@@ -140,16 +141,7 @@ export function writeSighting(repo: string, sighting: Sighting, teamDir: string 
  * overwritten. Throws on any failure other than "already exists".
  */
 export function publishSightingIfAbsent(repo: string, sighting: Sighting, teamDir: string = PATHS.team): 'created' | 'exists' {
-	const tmp = writeUniqueTemp(repo, sighting, teamDir);
-	try {
-		linkSync(tmp, sightingPath(repo, teamDir));
-		return 'created';
-	} catch (err) {
-		if ((err as NodeJS.ErrnoException).code === 'EEXIST') return 'exists';
-		throw err;
-	} finally {
-		try { unlinkSync(tmp); } catch { /* best effort */ }
-	}
+	return publishCreateOnly(sightingPath(repo, teamDir), JSON.stringify(sighting, null, 2) + '\n');
 }
 
 export function removeSighting(repo: string, teamDir: string = PATHS.team): void {
@@ -199,7 +191,11 @@ function lockHolder(path: string, token: string): LockResult {
  * git's own atomic ref update), so an overlap in the rare reclaim window is harmless.
  */
 export function acquireLock(repo: string, teamDir: string = PATHS.team, now: () => number = Date.now): LockResult {
-	mkdirSync(seenDir(teamDir), { recursive: true });
+	try {
+		mkdirSync(seenDir(teamDir), { recursive: true });
+	} catch (err) {
+		return { ok: false, reason: `lock could not be taken: ${err instanceof Error ? err.message : String(err)}` };
+	}
 	const path = lockPath(repo, teamDir);
 	const token = `${process.pid} ${randomBytes(8).toString('hex')}\n`;
 

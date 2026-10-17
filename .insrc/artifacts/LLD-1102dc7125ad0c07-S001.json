@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792217871733-ixwhd4",
+    "runId": "wf-1792218012635-stjezd",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T06:18:22.252Z",
+    "createdAt": "2026-10-17T06:20:13.577Z",
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 30517,
+    "elapsedMs": 941,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1102dc7125ad0c07",
     "epicSlug": "ground-code-review-coverage-story-s",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792217871733-ixwhd4",
-    "hldEffectiveHash": "1ebdb5b7474b78f4bc08a909c4249b09e2214a6f021168208a593bc1947fd82a",
+    "hldBaseRunId": "wf-1792218012635-stjezd",
+    "hldEffectiveHash": "c6c671cdea71dde89399fae3e0cd876a86c417f5e954d525561149af1f65d120",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
@@ -230,7 +230,7 @@
             "Every caller passes a reason: 'freshness-timeout' from the proceed:true wait, 'declined' from proceed:false, 'hollow-grounding' from an empty symbol set."
           ],
           "postconditions": [
-            "The daemon-reviewed path forwards the reason as codeReview.run params.fallbackReason; parseParams accepts and validates it; the run passes it to runCodeReview, whose buildArtifact stamps body.fallbackReason.",
+            "The daemon-reviewed path passes the reason in CodeReviewStreamParams.fallbackReason; codeReviewRequestParams forwards it; codeReview.run's parseParams accepts and validates it; the run passes it to runCodeReview, whose buildArtifact stamps body.fallbackReason.",
             "The controller-reviewed path saves the reason in the step state (CodeReviewStepState.fallbackReason, src/daemon/steps/code-review-step/types.ts) so the separate judgements turn passes it to runCodeReview.",
             "The done frame (CodeReviewStepDone, src/daemon/steps/code-review-step/types.ts) carries fallbackReason on both paths."
           ]
@@ -276,6 +276,27 @@
           "postconditions": [
             "buildArtifact copies opts.fallbackReason onto CodeReviewBody.fallbackReason (src/workflow/code-review/types.ts) and omits the key when absent."
           ]
+        },
+        {
+          "name": "codeReviewRequestParams",
+          "signature": "codeReviewRequestParams(params: CodeReviewStreamParams): Record<string, unknown>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "CodeReviewStreamParams",
+              "purpose": "Adds optional fallbackReason?: CodeReviewFallbackReason | undefined beside groundingMode.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Record<string, unknown>",
+            "meaning": "The codeReview.run request params; carries fallbackReason when params has one and omits the key otherwise."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Both clients (src/daemon/steps/daemon-client.ts and src/mcp/daemon-stream.ts) send the reason to codeReview.run unchanged."
+          ]
         }
       ]
     },
@@ -316,7 +337,7 @@
       {
         "entity": "CodeReviewFallbackReason",
         "change": "new",
-        "details": "{ kind: 'freshness-timeout'; waitedMs: number; inFlight: boolean; pendingCodeIndexJobs: number; staleFiles: string[] } | { kind: 'declined' } | { kind: 'hollow-grounding' }. Carried on CodeReviewStepDone.fallbackReason, saved on CodeReviewStepState.fallbackReason across the judgements turn, passed as codeReview.run params.fallbackReason (CodeReviewRunParams, parseParams) and RunCodeReviewOpts.fallbackReason, and stored as the optional CodeReviewBody.fallbackReason.",
+        "details": "{ kind: 'freshness-timeout'; waitedMs: number; inFlight: boolean; pendingCodeIndexJobs: number; staleFiles: string[] } | { kind: 'declined' } | { kind: 'hollow-grounding' }. Carried on CodeReviewStepDone.fallbackReason, saved on CodeReviewStepState.fallbackReason across the judgements turn, passed as CodeReviewStreamParams.fallbackReason, serialized by codeReviewRequestParams, received as codeReview.run params.fallbackReason (CodeReviewRunParams, parseParams) and RunCodeReviewOpts.fallbackReason, and stored as the optional CodeReviewBody.fallbackReason.",
         "callSites": [
           "src/daemon/steps/code-review-step/handler.ts:285-345",
           "src/daemon/steps/code-review-step/types.ts",
@@ -324,7 +345,9 @@
           "src/daemon/code-review-rpc.ts:189-208",
           "src/workflow/code-review/runner.ts:90-102",
           "src/workflow/code-review/runner.ts:275-292",
-          "src/workflow/code-review/types.ts:150-162"
+          "src/workflow/code-review/types.ts:150-162",
+          "src/shared/review-stream.ts:51-58",
+          "src/shared/review-stream.ts:111-119"
         ]
       }
     ],
@@ -466,7 +489,9 @@
           "subjects": [
             "src/shared/__tests__/review-stream-freshness.test.ts: freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0",
             "src/daemon/__tests__/code-review-rpc-fallback.test.ts: codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason",
-            "src/daemon/steps/code-review-step/__tests__/handler.test.ts: on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work"
+            "src/daemon/steps/code-review-step/__tests__/handler.test.ts: on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
+            "src/shared/__tests__/review-stream.test.ts: codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)",
+            "src/daemon/__tests__/code-review-rpc-fallback.test.ts: a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason"
           ]
         }
       ],
@@ -491,7 +516,9 @@
             "src/daemon/steps/code-review-step/__tests__/handler.test.ts: a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason",
             "src/shared/__tests__/review-stream-freshness.test.ts: freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0",
             "src/daemon/__tests__/code-review-rpc-fallback.test.ts: codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason",
-            "src/daemon/steps/code-review-step/__tests__/handler.test.ts: on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work"
+            "src/daemon/steps/code-review-step/__tests__/handler.test.ts: on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
+            "src/shared/__tests__/review-stream.test.ts: codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)",
+            "src/daemon/__tests__/code-review-rpc-fallback.test.ts: a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason"
           ]
         }
       ],
@@ -518,7 +545,7 @@
         },
         {
           "order": 4,
-          "action": "Pass a fallback reason into the diff-only review from each of its three callers; carry it on the done frame and in the step state across the judgements turn; accept it in codeReview.run params and parseParams; pass it through RunCodeReviewOpts so buildArtifact stores it as the optional CodeReviewBody.fallbackReason.",
+          "action": "Pass a fallback reason into the diff-only review from each of its three callers; carry it on the done frame and in the step state across the judgements turn; add it to CodeReviewStreamParams and forward it in codeReviewRequestParams; accept it in codeReview.run params and parseParams; pass it through RunCodeReviewOpts so buildArtifact stores it as the optional CodeReviewBody.fallbackReason.",
           "rollbackable": true
         },
         {
@@ -625,6 +652,11 @@
       "id": "c8",
       "kind": "prior-artifact",
       "ref": "ISSUE-1102dc7125ad0c07 fix intent"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "Review round 2 of LLD-1102dc7125ad0c07-S001 (2026-10-17): the request serializer codeReviewRequestParams was missing from the change sites and tests; addressed in this version"
     },
     {
       "id": "c9",

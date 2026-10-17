@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792218606156-o00ehz",
+    "runId": "wf-1792218876375-d37wgw",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T06:30:07.160Z",
+    "createdAt": "2026-10-17T06:34:37.513Z",
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 1002,
+    "elapsedMs": 1124,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1102dc7125ad0c07",
     "epicSlug": "ground-code-review-coverage-story-s",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792218606156-o00ehz",
-    "hldEffectiveHash": "c451faf13cfb8eeeccc5cd75995f64af837d4de50494d49f24c1527db1e08ec4",
+    "hldBaseRunId": "wf-1792218876375-d37wgw",
+    "hldEffectiveHash": "a29e966a7a4ea31fd1d0def7747877014ee764f5c277f6ce0b7e737ae81c1b42",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
@@ -88,7 +88,7 @@
             "None beyond today's."
           ],
           "postconditions": [
-            "subject.buildRecord is non-null whenever .insrc/artifacts/BUILD-<epicHash>-<storyId>.json exists and parses as a build record.",
+            "subject.buildRecord is non-null whenever .insrc/artifacts/BUILD-<epicHash>-<storyId>.json exists and parses as a build record; it is read as the general BuildRecord (src/workflow/runners/build/standalone-record.ts), whose optional tasks carry per-task passed, rather than StandaloneBuildRecord, whose body has only focus and producesLld.",
             "subject.testRecord equals readTestRecord(repoPath, epicHash, storyId).",
             "An absent or unreadable record yields null for that field and never fails the subject."
           ]
@@ -123,7 +123,7 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "When testRecord is non-null, the prompt carries a trailing section built per test FILE, not per title: for each file, the latest run is the file entry of the task whose ranAt is latest among the tasks that ran it (a valid ISO ranAt beats a missing one; on a tie or with no valid ranAt the run with a failing outcome wins). That run alone decides the file's current state: its exit code, whether it timed out, and its titles with results. A latest run that timed out, exited non-zero or reported no titles marks every test of the file present-but-failing or unverified, whatever older runs said. A title that appears only in an older run of the file is listed as not in the latest run and is unverified, never passing. The task id and ranAt of the deciding run are shown, plus the BUILD verdict when buildRecord is non-null.",
+            "When testRecord is non-null, the prompt carries a trailing section built per test FILE, not per title: for each file, the latest run is the file entry of the task whose ranAt is latest among the tasks that ran it (a valid ISO ranAt beats a missing one; on a tie or with no valid ranAt the run with a failing outcome wins). That run alone decides the file's current state: its exit code, whether it timed out, and its titles with results. A latest run that timed out, exited non-zero or reported no titles marks every test of the file present-but-failing or unverified, whatever older runs said. A title that appears only in an older run of the file is listed as not in the latest run and is unverified, never passing. The task id and ranAt of the deciding run are shown, plus, from the BUILD record, each task's id and passed result; a task without a passed value, or a record without tasks, is shown as 'unavailable' (there is no aggregate verdict on the record).",
             "The system text says: a test the record shows passing is passing; a test is unverified only when no record covers its file or title; a failing or skipped title is present-but-failing.",
             "When testRecord is null, the prompt keeps today's rule that every pass-state is unverified.",
             "Normalisation runs AFTER the latest run of each file is chosen and never removes a run from that choice: any file entry with a string file name takes part in choosing the latest run, and if the chosen latest entry is malformed (titles not an array, a title without a pass/fail/skipped result, or exitCode/timedOut of the wrong type) it stays as an unverified barrier: the file's tests are shown unverified and no older run's result is shown as current. Only a file entry with no string file name is dropped, with a note, since it cannot be matched to a file; a task without a files array contributes no file runs. readTestRecord validates only the record's top level and each task's taskId and tests (src/workflow/runners/build/test-record.ts)."
@@ -304,8 +304,8 @@
       {
         "entity": "CodeReviewSubject",
         "change": "field-add",
-        "details": "Adds testRecord: TestRecord | null beside the existing buildRecord: StandaloneBuildRecord | null, which is now populated in production.",
-        "schemaDiff": "+ readonly testRecord: TestRecord | null;",
+        "details": "Adds testRecord: TestRecord | null; buildRecord changes type from StandaloneBuildRecord | null to the general BuildRecord | null (a superset carrying optional per-task passed) and is now populated in production. subject-paths.ts reads only buildRecord.meta, which both types share.",
+        "schemaDiff": "+ readonly testRecord: TestRecord | null;\n~ readonly buildRecord: BuildRecord | null;  (was StandaloneBuildRecord | null)",
         "callSites": [
           "src/workflow/code-review/types.ts:122",
           "src/workflow/code-review/subject.ts:140",
@@ -438,6 +438,10 @@
         {
           "input": "An older task passed a file's title; a newer task's entry for the same file is malformed (titles missing or not an array).",
           "expected": "The malformed newer entry is the latest run: the file is shown unverified, and the older pass is not shown as current."
+        },
+        {
+          "input": "A BUILD record with no tasks, or tasks without a passed value (a standalone record).",
+          "expected": "Coverage shows the BUILD result as 'unavailable' for those tasks; the test record still decides each test's state."
         }
       ],
       "invariantsToPreserve": [
@@ -474,7 +478,7 @@
           "purpose": "The subject carries the Story's records, and coverage renders them.",
           "subjects": [
             "src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
-            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown"
+            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'"
           ],
           "fixturesNeeded": [
             "A temp repo with .insrc/artifacts/BUILD-<hash>-S001.json and TESTS-<hash>-S001.json, one valid and one misshapen variant."
@@ -512,7 +516,7 @@
           "criterionId": "ac1",
           "provingTests": [
             "src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
-            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown"
+            "src/workflow/code-review/dimensions/__tests__/coverage.test.ts: the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'"
           ]
         },
         {

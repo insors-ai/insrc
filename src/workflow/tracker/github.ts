@@ -62,7 +62,6 @@ export class GhCommandError extends Error {
 }
 
 const SIGNIN_RE  = /not logged in|gh auth login|authentication|bad credentials|http 401|requires authentication/i;
-const NETWORK_RE = /could not resolve host|connection (refused|reset|timed out)|network is unreachable|dial tcp|econnrefused|enotfound|econnreset|etimedout/i;
 
 function classifyGhFailure(err: unknown): GhCommandError {
 	const e = err as NodeJS.ErrnoException & { stderr?: Buffer | string; killed?: boolean; signal?: string | null };
@@ -75,7 +74,6 @@ function classifyGhFailure(err: unknown): GhCommandError {
 		return new GhCommandError('unreachable', `gh timed out after ${GH_TIMEOUT_MS / 1000} s`);
 	}
 	if (SIGNIN_RE.test(detail))  return new GhCommandError('missing-signin', 'gh is not signed in (run `gh auth login`)');
-	if (NETWORK_RE.test(detail)) return new GhCommandError('unreachable', detail);
 	return new GhCommandError('rejected', detail);
 }
 

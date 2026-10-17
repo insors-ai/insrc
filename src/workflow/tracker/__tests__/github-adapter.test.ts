@@ -56,8 +56,12 @@ test('runGh classifies ENOENT, authentication failure, timeout and other failure
 	assert.equal(killed.kind, 'unreachable');
 	assert.match(killed.reason, /timed out after 10 s/);
 
+	// Only a timeout is 'unreachable'; any other failure (a network error included)
+	// is 'rejected' and carries gh's own message.
 	failWith(execError({ stderr: 'dial tcp: lookup api.github.com: could not resolve host' }));
-	assert.equal(kindOf(() => runGh(['api', 'user'])).kind, 'unreachable');
+	const network = kindOf(() => runGh(['api', 'user']));
+	assert.equal(network.kind, 'rejected');
+	assert.match(network.reason, /could not resolve host/);
 
 	failWith(execError({ stderr: 'HTTP 422: Validation Failed' }));
 	const other = kindOf(() => runGh(['api', 'user']));

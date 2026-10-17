@@ -18,12 +18,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
 	GithubConfigError,
+	loadGithubConfigFile,
 	parseGithubRemoteUrl,
 	parseGitRemoteOwnerRepo,
 	resolveGithubConfig,
@@ -262,5 +263,30 @@ test('resolveGithubConfig without a config file does NOT auto-detect from git re
 		assert.equal(cfg.type, 'none');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('lenient resolver behaviour is unchanged', () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-lenient-'));
+	try {
+		// A malformed file, a non-object file and an unsupported type all stay silent (no throw).
+		const bad = join(dir, 'bad.json');
+		writeFileSync(bad, '{ not json');
+		assert.deepEqual(loadGithubConfigFile(bad), {});
+		assert.equal(resolveGithubConfig('/r', bad).type, 'none');
+		const arr = join(dir, 'arr.json');
+		writeFileSync(arr, '"text"');
+		assert.deepEqual(loadGithubConfigFile(arr), {});
+		const own = join(dir, 'own.json');
+		writeFileSync(own, JSON.stringify({ repos: { '/r': { owner: 'acme', repo: 'demo' } }, default: { owner: 'x', repo: 'y' } }));
+		const cfg = resolveGithubConfig('/r', own);
+		assert.equal(cfg.type, 'github');
+		if (cfg.type === 'github') { assert.equal(cfg.owner, 'acme'); assert.equal(cfg.source, 'per-repo-config'); }
+		// No lenient caller imports the strict resolver.
+		for (const f of ['src/workflow/tracker-auto.ts', 'src/workflow/bugfix/tracker.ts', 'src/workflow/questions.ts']) {
+			assert.ok(!readFileSync(f, 'utf8').includes('resolveStrictTrackerTarget'), f);
+		}
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
 	}
 });

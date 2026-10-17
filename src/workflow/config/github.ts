@@ -41,6 +41,7 @@ import { join } from 'node:path';
 
 import { PATHS } from '../../shared/paths.js';
 import { gitOriginOwnerRepo, parseGithubRemoteUrl } from '../tracker/github.js';
+import type { PortResult } from '../tracker/port.js';
 
 // Re-exported for back-compat (tests + callers import these here).
 export { parseGithubRemoteUrl };
@@ -282,5 +283,78 @@ function resolveEntry(
 		};
 	}
 	// Empty entry with no `type`, no owner, no repo — nothing to do; let the caller fall through.
+	return null;
+}
+
+// ---------------------------------------------------------------------------
+// Strict resolution (team features: `loadTracker` only)
+// ---------------------------------------------------------------------------
+
+export interface StrictTrackerTarget {
+	readonly owner: string;
+	readonly repo: string;
+}
+
+const OWNER_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
+const REPO_NAME_RE = /^(?!\.{1,2}$)[A-Za-z0-9._-]+$/;
+
+function strictRefuse(reason: string): PortResult<StrictTrackerTarget> {
+	return { ok: false, kind: 'rejected', reason };
+}
+
+function strictTarget(owner: unknown, repo: unknown, where: string): PortResult<StrictTrackerTarget> {
+	if (typeof owner !== 'string' || !OWNER_NAME_RE.test(owner)) return strictRefuse(`${where}: invalid GitHub owner '${String(owner)}'`);
+	if (typeof repo !== 'string' || !REPO_NAME_RE.test(repo)) return strictRefuse(`${where}: invalid GitHub repo '${String(repo)}'`);
+	return { ok: true, value: { owner, repo } };
+}
+
+function strictOrigin(repoPath: string, where: string): PortResult<StrictTrackerTarget> {
+	const remote = gitOriginOwnerRepo(repoPath);
+	if (remote === null) return strictRefuse(`${where}: type 'github' names no owner/repo and the origin remote of '${repoPath}' could not be parsed`);
+	return strictTarget(remote.owner, remote.repo, `${where} (origin remote)`);
+}
+
+/** Strict counterpart of {@link resolveGithubConfig} for team features. Same
+ *  precedence (the repo's own entry; the default entry enables only and never
+ *  supplies a target), but every malformed or unsupported configuration is a
+ *  refusal instead of a silent fallback to "no tracker". `resolveGithubConfig`
+ *  stays lenient and untouched; only `loadTracker` calls this. */
+export function resolveStrictTrackerTarget(repoPath: string, configPath: string = githubConfigPath()): PortResult<StrictTrackerTarget> {
+	if (!existsSync(configPath)) return strictRefuse(`no tracker is configured: ${configPath} does not exist`);
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(readFileSync(configPath, 'utf8'));
+	} catch (err) {
+		return strictRefuse(`${configPath} is not valid JSON: ${err instanceof Error ? err.message : String(err)}`);
+	}
+	if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return strictRefuse(`${configPath} must contain a JSON object`);
+	const file = parsed as Record<string, unknown>;
+
+	const repos = file['repos'];
+	if (repos !== undefined && (typeof repos !== 'object' || repos === null || Array.isArray(repos))) return strictRefuse(`${configPath}: 'repos' must be an object`);
+	const own = (repos as Record<string, unknown> | undefined)?.[repoPath];
+	if (own !== undefined) {
+		const r = strictEntry(own, repoPath, 'the repo entry', true);
+		if (r !== null) return r;
+	}
+	const def = file['default'];
+	if (def !== undefined) {
+		const r = strictEntry(def, repoPath, "the 'default' entry", false);
+		if (r !== null) return r;
+	}
+	return strictRefuse(`no tracker is configured for '${repoPath}' (type none)`);
+}
+
+/** null = the entry says nothing (fall through to the next tier). */
+function strictEntry(raw: unknown, repoPath: string, where: string, allowEntryTarget: boolean): PortResult<StrictTrackerTarget> | null {
+	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return strictRefuse(`${where} must be a JSON object`);
+	const e = raw as Record<string, unknown>;
+	const type = e['type'];
+	if (type !== undefined && type !== 'github' && type !== 'none') return strictRefuse(`${where}: unsupported tracker type '${String(type)}'`);
+	if (type === 'none') return strictRefuse(`${where}: the tracker is disabled (type none)`);
+	const hasOwner = allowEntryTarget && e['owner'] !== undefined && e['owner'] !== '';
+	const hasRepo = allowEntryTarget && e['repo'] !== undefined && e['repo'] !== '';
+	if (hasOwner && hasRepo) return strictTarget(e['owner'], e['repo'], where);
+	if (type === 'github') return strictOrigin(repoPath, where);
 	return null;
 }

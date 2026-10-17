@@ -426,6 +426,8 @@ The editor holds the commit orchestration context and inserts override metadata 
 
 - `qf33e3f27` — Before s1 implementation, settle preferred Git identity semantics, normalization and multi-provider/no-Git ambiguity; preserve user-approved provider/Git/OS precedence.
   - **resolved**: Use the active repository's configured Git email as Git ID. With one connected GitHub/GitLab/Jira identity, use that identity. With multiple connected identities, use the repository's Git email. If no usable identity is available, fall back to the OS user ID. Keep identities distinct unless explicitly linked. — User explicitly accepted this interpretation in chat. This preserves the approved provider/Git/OS precedence without automatically merging identities. _(2026-10-17T12:27:44.498Z)_
+- `q0a8f7ef6` — Before s1 persistence ships, decide retention duration, visibility, deletion and sharing; no 30-day default was accepted.
+  - **resolved**: Retain the learner's assessment history locally until that learner explicitly deletes it. History is private to the learner, sharing is disabled, and there is no automatic expiry. — User explicitly chose retention until learner deletion, private and local, with sharing disabled. _(2026-10-17T12:30:14.335Z)_
 
 ## Citations
 

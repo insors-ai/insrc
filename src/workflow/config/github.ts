@@ -87,6 +87,12 @@ export interface GithubEntry {
 	 *  untyped when the org has no such type). Default 'Epic' / 'Story'. */
 	readonly epicIssueType?:  string;   // default 'Epic'
 	readonly storyIssueType?: string;   // default 'Story'
+	/** Where the `gh` program lives. Stored and shown only; the gh runner does not read it yet. */
+	readonly ghPath?:       string;
+	/** The host `gh` signs in to (default github.com). Stored and shown only; the gh runner does not read it yet. */
+	readonly ghHost?:       string;
+	/** Branch naming pattern. Stored and shown only; consumed later by the handoff story (s6). */
+	readonly branchPattern?: string;
 }
 
 export interface GithubConfigFile {
@@ -195,7 +201,15 @@ export class GithubConfigError extends Error {
  *  but no owner/repo could be resolved (per-repo entry named none, or
  *  the git remote could not be parsed). Callers gate on this. */
 export function resolveGithubConfig(repoPath: string, configPath: string = githubConfigPath()): ResolvedGithubConfig {
-	const file = loadGithubConfigFile(configPath);
+	return resolveGithubConfigFromFile(loadGithubConfigFile(configPath), repoPath);
+}
+
+/** {@link resolveGithubConfig} over an already loaded file, so a caller that has
+ *  read and validated the file once can resolve from that same snapshot instead
+ *  of reading it again. The selection and resolution logic is the same code, only
+ *  moved: it gives the same result for every file, including the structurally
+ *  malformed ones the lenient loader does not reject. */
+export function resolveGithubConfigFromFile(file: GithubConfigFile, repoPath: string): ResolvedGithubConfig {
 	const perRepo = file.repos?.[repoPath];
 	if (perRepo !== undefined) {
 		// The repo's OWN entry — an explicit owner/repo here is intentional.

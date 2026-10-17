@@ -59,6 +59,17 @@ test('strict resolver refuses malformed or unsupported configuration', () => {
 	assert.match(refusal(withConfig({ repos: { [repo]: { owner: 'bad owner', repo: 'b' } } }, p => resolveStrictTrackerTarget(repo, p))), /invalid GitHub owner/);
 	assert.match(refusal(withConfig({ repos: { [repo]: { owner: 'a', repo: 'b/c' } } }, p => resolveStrictTrackerTarget(repo, p))), /invalid GitHub repo/);
 	assert.match(refusal(withConfig({ repos: { [repo]: { owner: 5, repo: 'b' } } }, p => resolveStrictTrackerTarget(repo, p))), /invalid GitHub owner/);
+	// A malformed own target is refused even where the origin remote would resolve.
+	const withOrigin = mkdtempSync(join(tmpdir(), 'insrc-badown-'));
+	try {
+		execFileSync('git', ['init'], { cwd: withOrigin, stdio: 'ignore' });
+		execFileSync('git', ['remote', 'add', 'origin', 'git@github.com:acme/fine.git'], { cwd: withOrigin, stdio: 'ignore' });
+		for (const entry of [{ type: 'github', owner: 'bad owner' }, { type: 'github', owner: '', repo: 'b/c' }, { type: 'github', repo: 'only-repo' }, { type: 'github', owner: 'only-owner' }]) {
+			assert.match(refusal(withConfig({ repos: { [withOrigin]: entry } }, p => resolveStrictTrackerTarget(withOrigin, p))), /invalid GitHub (owner|repo)/, JSON.stringify(entry));
+		}
+	} finally {
+		rmSync(withOrigin, { recursive: true, force: true });
+	}
 	assert.match(refusal(withConfig({ default: { type: 'none' } }, p => resolveStrictTrackerTarget(repo, p))), /type none/);
 	assert.match(refusal(withConfig({}, p => resolveStrictTrackerTarget(repo, p))), /no tracker is configured/);
 	// type github with no target and no origin remote

@@ -21,7 +21,11 @@
     "epicSlug": "resolve-calls-methods-class-defined-another",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-17T16:44:16.451Z",
+    "parentRef": {
+      "slug": "resolve-calls-methods-class-defined-another"
+    }
   },
   "body": {
     "title": "Resolve calls to methods of a class defined in another file",

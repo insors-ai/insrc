@@ -187,6 +187,13 @@
         "choice": "Reject at load",
         "rationale": "Follows k8 and the approved LLD.",
         "resolvedAt": "2026-10-17T10:22:03.547Z"
+      },
+      "qfb7fb47f": {
+        "question": "The 10 s timeout applies to the migrated operations, to setup label creation through ghCreateLabel and to the login read in listMyOpenTasks; queryTasks, the sync.ts status read and the rest of setup.ts keep no timeout until their own migration.",
+        "status": "resolved",
+        "choice": "Keep the stated scope",
+        "rationale": "Matches the approved LLD's timeout scope.",
+        "resolvedAt": "2026-10-17T10:22:43.303Z"
       }
     }
   },

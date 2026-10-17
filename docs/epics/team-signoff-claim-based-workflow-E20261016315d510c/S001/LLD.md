@@ -570,6 +570,8 @@ Preserve both legacy behaviours exactly so no compatibility exception is needed.
   - **resolved**: Keep the staged split — This is the split in the approved LLD; s4's LLD will cite it. _(2026-10-17T10:21:05.794Z)_
 - `q3bd77fe4` — GitHub declares neither signoff-request nor completion; a policy needing them is refused at load until a later story adds those capabilities.
   - **resolved**: Reject at load — Follows k8 and the approved LLD. _(2026-10-17T10:22:03.547Z)_
+- `qfb7fb47f` — The 10 s timeout applies to the migrated operations, to setup label creation through ghCreateLabel and to the login read in listMyOpenTasks; queryTasks, the sync.ts status read and the rest of setup.ts keep no timeout until their own migration.
+  - **resolved**: Keep the stated scope — Matches the approved LLD's timeout scope. _(2026-10-17T10:22:43.303Z)_
 
 ## Citations
 

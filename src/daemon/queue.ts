@@ -265,7 +265,7 @@ export class IndexQueue {
         // Re-checked after every wake: an index job enqueued after the wait resolved
         // but before this continuation ran must still go first. No await follows the
         // last check before the shift below.
-        while (!this.stopped && !this.indexIdle) await this.waitForIndexIdle();
+        while (!this.stopped && !this.isIndexIdle) await this.waitForIndexIdle();
         if (this.stopped) break;
       }
       const job = lane.jobs.shift();
@@ -299,7 +299,7 @@ export class IndexQueue {
   }
 
   /** True when the index lane has no job running and none queued. */
-  private get indexIdle(): boolean { return this.lanes.index.inFlight === null && this.lanes.index.jobs.length === 0; }
+  get isIndexIdle(): boolean { return this.lanes.index.inFlight === null && this.lanes.index.jobs.length === 0; }
 
   private releaseIndexIdleWaiters(): void {
     const waiters = this.indexIdleWaiters;
@@ -313,7 +313,7 @@ export class IndexQueue {
    * running summary sweep await it, so they yield the local model to code work.
    */
   waitForIndexIdle(): Promise<void> {
-    if (this.stopped || this.indexIdle) return Promise.resolve();
+    if (this.stopped || this.isIndexIdle) return Promise.resolve();
     return new Promise<void>(resolve => { this.indexIdleWaiters.push(resolve); });
   }
 

@@ -923,6 +923,16 @@ export class IndexerService {
     return this.sweepProgress === undefined ? undefined : { ...this.sweepProgress };
   }
 
+  /**
+   * Every summary starts here (Story 0f0e4f45): it waits while the index lane has
+   * code work and calls the summariser with no await after the last check, so a
+   * summary never starts after a code job was queued. Not a test seam.
+   */
+  private async summariseWhenCodeIdle(entity: Entity): Promise<SummariseDocResult> {
+    while (!this.queue.isStopping && !this.queue.isIndexIdle) await this.queue.waitForIndexIdle();
+    return this.summariseEntity(entity);
+  }
+
   /** Summarise one document; a seam so tests run the sweep without a model. */
   protected async summariseEntity(entity: Entity): Promise<SummariseDocResult> {
     const { summariseDoc } = await import('../analyze/summariser/index.js');
@@ -946,7 +956,7 @@ export class IndexerService {
       // single-document jobs first, and stops between documents on shutdown.
       const counts = await runDocSummarySweep(docs.map(e => e.id), {
         getEntity:  id => getEntity(this.db, id),
-        summarise:  entity => this.summariseEntity(entity),
+        summarise:  entity => this.summariseWhenCodeIdle(entity),
         takeEdit:   () => this.queue.takeDocSummaryEdit(),
         runEdit:    entityId => this.docSummariseEntity(entityId),
         shouldStop: () => this.queue.isStopping,
@@ -976,7 +986,7 @@ export class IndexerService {
       return;
     }
     try {
-      await this.summariseEntity(entity);
+      await this.summariseWhenCodeIdle(entity);
     } catch (err) {
       log.warn(
         { entityId, err: err instanceof Error ? err.message : String(err) },

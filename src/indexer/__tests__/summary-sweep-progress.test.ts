@@ -143,3 +143,48 @@ async function until(cond: () => boolean, what: string): Promise<void> {
 	for (let i = 0; i < 1000; i++) { if (cond()) return; await tick(); }
 	assert.fail(`timed out waiting for: ${what}`);
 }
+
+test('a summary never starts while code work is queued, even when the sweep wakes from its wait just before a code job arrives', async () => {
+	// The raced state: the sweep's first wait resolves although a code job is running.
+	class RacedQueue extends IndexQueue {
+		raced = false;
+		override waitForIndexIdle(): Promise<void> {
+			if (!this.raced) { this.raced = true; return Promise.resolve(); }
+			return super.waitForIndexIdle();
+		}
+	}
+	const queue = new RacedQueue();
+	const file = gate();
+	const running = queue.start(async job => { if (job.kind === 'file') await file.wait; });
+	queue.enqueue({ kind: 'file', filePath: join(repo, 'src', 'x.ts'), event: 'update' });
+	await until(() => queue.laneStatus().index.running, 'the file job to start');
+	const svc = new Probe(queue);
+	const swept = sweep(svc);
+	for (let i = 0; i < 20; i++) await tick();
+	assert.equal(queue.raced, true, 'the sweep woke from the raced wait');
+	assert.deepEqual(svc.order, [], 'no summary started while the code job runs');
+	file.open();
+	await swept;
+	assert.deepEqual(svc.order, ['one', 'two']);
+	queue.stop();
+	await running;
+});
+
+test("an edited document queued while the indexer's sweep is paused for code work runs before the sweep's next document", async () => {
+	const queue = new IndexQueue();
+	const file = gate();
+	const running = queue.start(async job => { if (job.kind === 'file') await file.wait; });
+	queue.enqueue({ kind: 'file', filePath: join(repo, 'src', 'x.ts'), event: 'update' });
+	await until(() => queue.laneStatus().index.running, 'the file job to start');
+	const svc = new Probe(queue);
+	const swept = sweep(svc);
+	for (let i = 0; i < 20; i++) await tick();
+	// Queued directly in the lane the sweep takes edits from (the running queue's own
+	// summary lane is held behind the file job too, so the sweep takes it first).
+	queue.enqueue({ kind: 'doc-summarise-entity', entityId: makeEntityId(repo, join(repo, 'docs', 'a.md'), 'section', 'two') });
+	file.open();
+	await swept;
+	assert.deepEqual(svc.order, ['two', 'one', 'two'], 'the edit ran first once code work was done');
+	queue.stop();
+	await running;
+});

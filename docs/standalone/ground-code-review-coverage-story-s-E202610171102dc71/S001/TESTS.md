@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -102,3 +102,32 @@ Run at 2026-10-17T07:22:14.986Z on commit `cf468dc3`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/code-review-step/__tests__/handler.test.ts` | 0 | 30 | 0.7 s |  |
+
+## t6
+
+Run at 2026-10-17T07:30:22.039Z on commit `35a3a1ea`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/shared/__tests__/review-stream.test.ts: codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it) | `src/shared/__tests__/review-stream.test.ts` |
+
+**unit: src/daemon/__tests__/code-review-rpc-fallback.test.ts: codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason | `src/daemon/__tests__/code-review-rpc-fallback.test.ts` |
+
+**unit: src/daemon/__tests__/code-review-rpc-fallback.test.ts: a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason | `src/daemon/__tests__/code-review-rpc-fallback.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/code-review-rpc-fallback.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/shared/__tests__/review-stream.test.ts` | 0 | 7 | 0.5 s |  |

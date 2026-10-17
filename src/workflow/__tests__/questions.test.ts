@@ -33,6 +33,7 @@ import {
 import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, lldArtifactId } from '../storage.js';
 import type { QuestionResolution } from '../types.js';
 import { _setTrackerExecForTests } from '../tracker/github.js';
+import { getLogger } from '../../shared/logger.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-19T00:00:00.000Z';
@@ -209,9 +210,20 @@ test('the comment goes through the adapter with the same argv and a failure is l
 		assert.match(comments[0]![6]!, /HLD open question `sc1`.*resolved: Case-insensitive/);
 
 		// A failing comment is swallowed by the existing catch: the resolution is still recorded.
+		// getLogger caches one child per module, so wrapping warn here sees the module's own log calls.
+		const log = getLogger('workflow:questions');
+		const realWarn = log.warn;
+		const warned: Array<{ err?: string; msg: string }> = [];
+		(log as { warn: unknown }).warn = (obj: { err?: string }, msg: string) => { warned.push({ ...(obj.err !== undefined ? { err: obj.err } : {}), msg }); };
 		const failing: string[][] = [];
 		_setTrackerExecForTests((_cmd, args) => { failing.push([...args]); if (args[0] === 'issue' && args[1] === 'comment') throw Object.assign(new Error('Command failed'), { stderr: 'HTTP 502' }); return ''; });
-		const again = recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-sensitive', 'changed my mind');
+		let again: ReturnType<typeof recordResolution>;
+		try {
+			again = recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-sensitive', 'changed my mind');
+		} finally { (log as { warn: unknown }).warn = realWarn; }
+		const trackerWarn = warned.filter(w => w.msg === 'resolution: tracker comment failed (best-effort)');
+		assert.equal(trackerWarn.length, 1, 'the existing catch logs the failed comment');
+		assert.match(trackerWarn[0]!.err ?? '', /HTTP 502/);
 		assert.equal(failing.filter(c => c[0] === 'issue' && c[1] === 'comment').length, 1, 'one attempt, no retry');
 		assert.equal(again.resolution.choice, 'Case-sensitive');
 		assert.equal(res.resolution.status, 'resolved');

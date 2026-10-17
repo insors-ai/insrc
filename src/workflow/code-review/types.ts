@@ -24,7 +24,8 @@ import type { Severity, ReviewVerdict } from '../review/types.js';
 import type { ArtifactMetaBase } from '../types.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
-import type { StandaloneBuildRecord } from '../runners/build/standalone-record.js';
+import type { BuildRecord } from '../runners/build/standalone-record.js';
+import type { TestRecord } from '../runners/build/test-record.js';
 
 // ---------------------------------------------------------------------------
 // sc3 — the per-dimension finding vocabulary (owned here, emitted by s2-s5)
@@ -118,8 +119,12 @@ export interface CodeReviewSubject {
 	readonly changedFiles: readonly string[];
 	readonly approvedLld:  LldArtifact | null;
 	readonly approvedPlan: PlanArtifact | null;
-	/** Consumed for identity; the code-review stage never re-records this. */
-	readonly buildRecord:  StandaloneBuildRecord | null;
+	/** The Story's BUILD record: its meta gives identity, its tasks the per-task
+	 *  validate result. The code-review stage never re-records this. */
+	readonly buildRecord:  BuildRecord | null;
+	/** The Story's TESTS record: the gate's per-file, per-title results, which
+	 *  the coverage dimension judges pass-state from (ISSUE-1102dc71). */
+	readonly testRecord:   TestRecord | null;
 }
 
 /** Resolving a subject either yields the subject, or a REASON that is NOT a

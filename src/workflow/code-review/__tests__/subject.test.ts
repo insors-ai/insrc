@@ -293,3 +293,42 @@ test('T43: an error that is NOT a derivation failure propagates from the first a
 	);
 	assert.equal(n, 1, 'no retry on an unexpected error');
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-1102dc71 S001/t1 — the default deps read the Story's BUILD and TESTS
+// records onto the subject, so the coverage dimension can judge pass-state.
+// ---------------------------------------------------------------------------
+
+test('the default deps read the Story\'s BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built', async () => {
+	const fx = mkStoryRepo(['src/story.ts']);
+	try {
+		const artifacts = join(fx.repo, '.insrc', 'artifacts');
+		const build = { meta: { workflow: 'build', epicHash: 'x', storyId: 'S009', createdAt: '2026-10-17T00:00:00.000Z' }, body: { tasks: [{ id: 't1', passed: true }] } };
+		const tests = { meta: { workflow: 'tests', epicHash: 'x', storyId: 'S009', createdAt: '2026-10-17T00:00:00.000Z', updatedAt: '2026-10-17T00:00:00.000Z' },
+			body: { tasks: [{ taskId: 't1', ranAt: '2026-10-17T00:00:00.000Z', testsPassed: true, tests: [], files: [] }] } };
+		writeFileSync(join(artifacts, 'BUILD-x-S009.json'), JSON.stringify(build));
+		writeFileSync(join(artifacts, 'TESTS-x-S009.json'), JSON.stringify(tests));
+
+		// No deps argument: the production defaults (S009 has no LLD or PLAN, so both are null).
+		const res = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+		assert.ok(res.ok);
+		assert.deepEqual(res.subject.buildRecord, build);
+		assert.deepEqual(res.subject.testRecord, tests);
+
+		// A misshapen BUILD json and an unreadable TESTS json are null; the subject is still built.
+		writeFileSync(join(artifacts, 'BUILD-x-S009.json'), JSON.stringify({ meta: { workflow: 'build' } }));
+		writeFileSync(join(artifacts, 'TESTS-x-S009.json'), '{ not json');
+		const bad = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+		assert.ok(bad.ok);
+		assert.equal(bad.subject.buildRecord, null);
+		assert.equal(bad.subject.testRecord, null);
+
+		// Absent records are null too.
+		rmSync(join(artifacts, 'BUILD-x-S009.json'));
+		rmSync(join(artifacts, 'TESTS-x-S009.json'));
+		const none = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+		assert.ok(none.ok);
+		assert.equal(none.subject.buildRecord, null);
+		assert.equal(none.subject.testRecord, null);
+	} finally { fx.cleanup(); }
+});

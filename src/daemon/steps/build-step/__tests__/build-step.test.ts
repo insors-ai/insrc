@@ -1461,8 +1461,10 @@ test('plan-driven and standalone validate each hand the check runner the plan fo
 		assert.deepEqual(plans[0]?.unresolvedTests, ['unit: filter narrows results']);
 		// Small: an LLD with no test strategy names no test file.
 		assert.deepEqual(plans[1]?.noTests, { ok: false, note: 'the LLD names no test file' });
-		// Trivial: no git history in the fixture, so no tests, which a trivial build allows.
-		assert.equal(plans[2]?.noTests?.ok, true);
+		// Trivial: no git history in the fixture, so the build's files cannot be listed,
+		// which fails the tests check rather than passing as "no tests" (CR-91640defac1b5816-S001).
+		assert.equal(plans[2]?.noTests?.ok, false);
+		assert.match(plans[2]?.noTests?.note ?? '', /^could not list the build's files: /);
 		for (const plan of plans) assert.ok(plan.testCommand.includes('--test-force-exit'));
 	} finally {
 		_setBuildValidateProviderForTests(undefined);

@@ -194,6 +194,12 @@
         "choice": "Keep the stated scope",
         "rationale": "Matches the approved LLD's timeout scope.",
         "resolvedAt": "2026-10-17T10:22:43.303Z"
+      },
+      "qa4cb22d7": {
+        "question": "The adoption lookup in autoPushEpicOnHld creates the Epic issue when the lookup fails, which can duplicate an Epic after a transient lookup failure. This is a pre-existing behaviour kept unchanged for k4; s4's find-by-label dedupe work is the place to decide whether to change it.",
+        "status": "deferred",
+        "rationale": "Belongs to s4's find-by-label dedupe work; s1 keeps the existing behaviour for k4.",
+        "resolvedAt": "2026-10-17T10:23:09.273Z"
       }
     }
   },

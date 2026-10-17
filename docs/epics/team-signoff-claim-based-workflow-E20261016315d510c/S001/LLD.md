@@ -572,6 +572,8 @@ Preserve both legacy behaviours exactly so no compatibility exception is needed.
   - **resolved**: Reject at load — Follows k8 and the approved LLD. _(2026-10-17T10:22:03.547Z)_
 - `qfb7fb47f` — The 10 s timeout applies to the migrated operations, to setup label creation through ghCreateLabel and to the login read in listMyOpenTasks; queryTasks, the sync.ts status read and the rest of setup.ts keep no timeout until their own migration.
   - **resolved**: Keep the stated scope — Matches the approved LLD's timeout scope. _(2026-10-17T10:22:43.303Z)_
+- `qa4cb22d7` — The adoption lookup in autoPushEpicOnHld creates the Epic issue when the lookup fails, which can duplicate an Epic after a transient lookup failure. This is a pre-existing behaviour kept unchanged for k4; s4's find-by-label dedupe work is the place to decide whether to change it.
+  - **deferred**: deferred for review — Belongs to s4's find-by-label dedupe work; s1 keeps the existing behaviour for k4. _(2026-10-17T10:23:09.273Z)_
 
 ## Citations
 

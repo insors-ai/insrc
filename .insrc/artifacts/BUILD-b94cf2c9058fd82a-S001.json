@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "b94cf2c9058fd82a",
+    "storyId": "S001",
+    "createdAt": "2026-10-17T13:31:05.601Z",
+    "updatedAt": "2026-10-17T13:31:05.601Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-17T13:11:51.789Z",
+    "epicSlug": "run-document-summarisation-its-own-queue"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "IndexQueue now holds an index lane and a summary lane (doc-summarise-repo and doc-summarise-entity), each with its own FIFO, drain loop and in-flight job; start runs both loops at the same time (awaited in turn, not Promise.all) and resolves when both stop. A single-document job goes ahead of a queued sweep; takeDocSummaryEdit, laneStatus and isStopping are added; depth, isProcessing and depthForRepo span both lanes; codeIndexWorkFor reads the index lane only. The existing code-index-work test asserts index-lane order only. Ten mutations each fail the tests.",
+    "testRecord": {
+      "md": "docs/standalone/run-document-summarisation-its-own-queue-E20261017b94cf2c9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-670419c4ad8bea8e-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-670419c4ad8bea8e-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/storage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T13:31:05.601Z"
+      }
+    ],
+    "commit": "36a2bcaf"
+  }
+}

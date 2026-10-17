@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b94cf2c9058fd82a",
+    "storyId": "S001",
+    "createdAt": "2026-10-17T13:31:05.601Z",
+    "updatedAt": "2026-10-17T13:31:05.601Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-17T13:11:51.789Z",
+    "epicSlug": "run-document-summarisation-its-own-queue"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "36a2bcaf",
+        "ranAt": "2026-10-17T13:31:05.601Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/queue-lanes.test.ts: while a summary job is running and has not finished, an index job enqueued after it runs to completion; the two lanes run at the same time and each runs its jobs one at a time in order; summary kinds go to the summary lane and every other kind to the index lane; a single-document job is placed ahead of a queued sweep and takeDocSummaryEdit removes and returns it; depth, isProcessing and depthForRepo span both lanes (depthForRepo counts a queued sweep but not a single-document job), codeIndexWorkFor reads the index lane only, laneStatus reports each lane; stop ends both lanes and start resolves",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "each lane runs its jobs one at a time in order, at the same time as the other lane, and every kind goes to its lane",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/queue-code-index-work.test.ts: the existing test asserts the order of the index lane's in-flight jobs only, independently of summary-lane interleaving, and stops once both lanes are empty",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-code-index-work.test.ts",
+                "title": "codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-code-index-work.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 704,
+            "titles": [
+              {
+                "title": "codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor",
+                "result": "pass"
+              },
+              {
+                "title": "codeIndexWorkFor clears the in-flight job when the processor throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/queue-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 568,
+            "titles": [
+              {
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              },
+              {
+                "title": "each lane runs its jobs one at a time in order, at the same time as the other lane, and every kind goes to its lane",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it",
+                "result": "pass"
+              },
+              {
+                "title": "depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane",
+                "result": "pass"
+              },
+              {
+                "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

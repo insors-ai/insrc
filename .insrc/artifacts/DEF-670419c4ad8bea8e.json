@@ -736,6 +736,13 @@
         "choice": "Bind each assessment, pass and override to the exact staged content and base revision. Changed inputs require reevaluation; retries reuse results only for identical inputs. Partial commits and amendments are checked against their intended content. Cancellation clears pending authorization. An override cannot authorize different content.",
         "rationale": "User explicitly accepted this commit-consistency approach in chat.",
         "resolvedAt": "2026-10-17T10:18:18.286Z"
+      },
+      "q3b18d545": {
+        "question": "Design decision: define work-item association when multiple items or no item is linked. Evidence: docs/pre-commit-understanding-spec.md:14; docs/pre-commit-understanding-spec.md:221.",
+        "status": "resolved",
+        "choice": "Work-item association is inferred and many-to-many. Explicit code links do not currently exist; infer epic/story/task relationships from available IDs and supporting evidence without claiming a verified code-to-item mapping from an ID alone. A commit batch may cover multiple tasks; no primary item is required. Show inferred associations with their basis and uncertainty and allow corrections. For unassociated changes, the knowledge assessment asks why the changes were made and asks the learner to identify relevant work items or explain why none applies. Evaluate explanations against available staged-change and work evidence; an ID selection alone is not demonstrated understanding. Keep user-proposed associations separate from verified ones and preserve uncertainty when evidence is insufficient. Missing association evidence alone does not make an answer incorrect. Unsure or incorrect responses trigger grounded guidance and fresh reassessment. Do not require creating or selecting a work item before assessment, or change delivery status. This agreed approach is saved in docs/pre-commit-understanding-spec.md section 13.",
+        "rationale": "User explicitly added intent and association identification to the knowledge test for unassociated changes and confirmed that commits can span multiple tasks. Recording the previously agreed decision now that the daemon is available.",
+        "resolvedAt": "2026-10-17T12:10:06.295Z"
       }
     }
   },

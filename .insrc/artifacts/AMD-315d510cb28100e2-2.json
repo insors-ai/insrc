@@ -23,5 +23,7 @@
     "stepId": "s4"
   },
   "proposedAt": "2026-10-17T05:11:37.017Z",
-  "status": "pending"
+  "status": "rejected",
+  "rejectedAt": "2026-10-17T06:07:25.975Z",
+  "rejectedReason": "Superseded: PolicyOutcome.unavailable belonged to an earlier s2 design; the approved LLD keeps the HLD PolicyResult envelope unchanged."
 }

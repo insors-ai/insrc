@@ -23,5 +23,7 @@
     "stepId": "s4"
   },
   "proposedAt": "2026-10-17T05:16:42.066Z",
-  "status": "pending"
+  "status": "rejected",
+  "rejectedAt": "2026-10-17T06:07:25.976Z",
+  "rejectedReason": "Superseded by AMD-315d510cb28100e2-4 (same source.anchorKnown field, final wording)."
 }

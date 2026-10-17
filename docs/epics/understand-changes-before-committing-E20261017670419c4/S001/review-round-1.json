@@ -1,0 +1,137 @@
+{
+  "artifact": "design.story",
+  "stage": "design.story",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "coverage-of-intent.1",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "S001 covers durable personal progress, separation from delivery status, and recovery without accidental authorization.",
+      "evidence": "DEF S001 ac1 requires retained answers/confidence/assisted attempts and original associations; ac2 preserves delivery status and approvals; ac3 requires recoverable progress without false passes. The proposed records, immutable history, independent lifecycle and unavailable eligibility address these requirements. HLD resolved questions explicitly require retention until deletion and private local history. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+      "action": "Preserve these requirements during implementation.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.1",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The existing transaction helper supports synchronous, atomic multi-database mutations with rollback on callback failure.",
+      "evidence": "The complete withWriteTxn implementation invokes 'store.root.childTransaction(run)', rejects thenable callback results, and propagates transaction failures. Its callback receives the shared GraphStore containing the named database handles. This supports the proposed transaction boundary without network/provider awaits. [files: src/db/graph/store.ts]",
+      "action": "Use withWriteTxn and await its completion before acknowledging mutations.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "new-versus-reuse.1",
+      "ref": "new-versus-reuse",
+      "item": "new-versus-reuse",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Understanding role descriptors are new, and the existing taxonomy supports critical roles with a core default.",
+      "evidence": "The complete ROLES registry contains no understanding roles and already declares entries with 'criticality: critical' and 'defaultTier: core'. roleDescriptor returns undefined for missing identifiers; applyCoreFloor consumes RoleDescriptor and clamps critical roles against the configured floor. [files: src/config/role-taxonomy.ts, src/config/core-floor-guard.ts]",
+      "action": "Add the five descriptors and initialization checks as proposed. Do not equate defaultTier core with an unconditional core floor; the existing guard's built-in floor is mid.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.1",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "HIGH",
+      "premise": "The eight proposed assessment databases fit the existing GraphStore environment configuration.",
+      "evidence": "store.ts declares 'const MAX_DBS = 32' and passes 'maxDbs: MAX_DBS' to open(). Its actual initialization opens 27 named databases, including doc_summary, doc_summary_by_repo and exploration_cache. Adding the eight listed understanding databases requires 35. The installed LMDB wrapper reports 'MDB_DBS_FULL' with '(increase your maxDbs option)'. The design omits this required configuration change. [files: src/db/graph/store.ts, node_modules/lmdb/open.js]",
+      "action": "Explicitly raise MAX_DBS to accommodate all 35 databases with headroom, and test opening both fresh and existing stores with the complete inventory.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "change-sites.2",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "The watch specification completely defines its use of the existing IPC streaming contract.",
+      "evidence": "IpcStreamMessage requires '{ id, stream: IpcStreamKind, data }'; its closed stream-kind union has no snapshot/deleted/unavailable kinds. IpcServer forwards frames and replaces their id, but does not automatically emit a done frame when a handler resolves. The proposed domain event shape does not specify its enclosing stream kind or terminal frame. [files: src/shared/types.ts, src/daemon/server.ts]",
+      "action": "Specify the existing stream kind carrying events in data, or explicitly extend the shared union. Define terminal framing and abort cleanup so the s5 decoder fixtures describe the actual wire protocol.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "data-compatibility.1",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "HIGH",
+      "premise": "The specified fingerprint serialization preserves every field of the upstream immutable assessment scope.",
+      "evidence": "HLD sc1 declares 'stagedTreeOid: string' and 'commitMode: normal | amend | merge' as scope fields. Although the LLD says to preserve commitMode, its explicit fingerprint input list omits commitMode and calls stagedTreeOid 'treeOid' without defining an alias. Following that list gives identical fingerprints to otherwise identical scopes with different commit modes, undermining exact-scope deduplication. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+      "action": "Specify one canonical serialization using the exact sc1 field names, including commitMode and ordered parentOids. Add vectors proving that changing only commitMode changes the fingerprint.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "data-compatibility.2",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "An independent assessment schema version is compatible with the existing graph schema boundary.",
+      "evidence": "GraphStore uses graph SCHEMA_VERSION 5 and documents new databases as additive changes that do not require a graph-version bump. HLD explicitly requires assessmentSchemaVersion 1 independently of that graph version and rejects hypothetical legacy-assessment migrations. The proposed separate understanding_meta namespace follows that boundary. [files: src/db/graph/store.ts, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+      "action": "Keep assessment validation and version publication separate from graph migrations.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "boundaries.1",
+      "ref": "boundaries",
+      "item": "boundaries",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "S001 owns shared persistence and envelopes while deferring grading, guidance, editor integration and commit enforcement.",
+      "evidence": "HLD \u00a76 assigns sc1/sc2, schema versions and role registration to s1; grading to s3; guidance to s4; editor/readiness presentation to s5; capture and receipt lifecycle to s6; exceptions to s7. The LLD preserves these assignments and leaves authorization and overrides unavailable until their implementations arrive. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+      "action": "Keep downstream domain registrations internal and schema-validated as specified.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "error-paths.1",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Typed expected failures can travel through existing RPC without being reduced to thrown strings.",
+      "evidence": "IpcServer.handleMessage sends successful handler return values inside '{ id, result }', preserving arbitrary structured result envelopes. Only thrown failures pass through failureMessage and become string errors. Returning the proposed ok:false envelope therefore preserves conflict codes and owner-only current projections. [files: src/daemon/server.ts, src/shared/types.ts]",
+      "action": "Catch expected domain errors inside the understanding RPC adapter and return the typed envelope; reserve transport errors for unexpected failures.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "tests.1",
+      "ref": "tests",
+      "item": "tests",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Each upstream S001 acceptance criterion maps to proposed tests using an available persistence test foundation.",
+      "evidence": "Compared against DEF S001: ac1 maps to persisted attempts/confidence/associations and identity/scope tests; ac2 to unchanged delivery artifacts; ac3 to restart, rollback, deletion-race and reconnect tests. Existing store.test.ts uses node:test, assert/strict, temporary directories, setGraphStorePath, and close/reopen persistence checks. These are proposed tests, not verified implementation results. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, src/db/graph/__tests__/store.test.ts, package.json]",
+      "action": "Retain the mapping and add regression cases for database capacity and commitMode fingerprinting. No build or tests were executed during this design review.",
+      "fixability": "manual",
+      "outcome": "holds"
+    }
+  ],
+  "counts": {
+    "high": 2,
+    "med": 1,
+    "low": 7,
+    "unverified": 0
+  },
+  "template": "design-spec",
+  "reviewedAt": "2026-10-17T12:40:31.052Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

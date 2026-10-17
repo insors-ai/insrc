@@ -30,7 +30,7 @@ import { buildSummariserProvider } from '../context/shaper-provider.js';
 import type { DbClient } from '../../db/client.js';
 import {
 	getDocSummary,
-	writeDocSummary,
+	writeDocSummaryIfCurrent,
 } from '../../db/doc-summaries.js';
 import { entityU64ForId } from '../../db/entities.js';
 import { getLogger } from '../../shared/logger.js';
@@ -152,7 +152,9 @@ export interface SummariseDocArgs {
 
 export interface SummariseDocResult {
 	readonly ok:        boolean;
-	readonly skipped?:  'unchanged' | 'not-a-doc' | 'body-empty';
+	/** `entity-gone` / `body-changed`: the document was deleted or rewritten while it was
+	 *  being summarised, so nothing was stored (Story b94cf2c9 S001). */
+	readonly skipped?:  'unchanged' | 'not-a-doc' | 'body-empty' | 'entity-gone' | 'body-changed';
 	readonly summary?:  DocSummary;
 	readonly errorCode?: string;
 	readonly errorMessage?: string;
@@ -235,7 +237,9 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 		);
 		const placeholder = buildPlaceholder(family, entity, modelId, contentHash, errorCode);
 		try {
-			await writeDocSummary(db, entity.id, entity.repo, placeholder);
+			const outcome = await writeDocSummaryIfCurrent(db, entity.id, entity.repo, placeholder);
+			// The document is no longer current: that, not the model error, is the result.
+			if (outcome !== 'written') return { ok: false, skipped: outcome };
 		} catch (writeErr) {
 			log.warn(
 				{ entityId: entity.id, err: (writeErr as Error).message },
@@ -271,7 +275,11 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 	};
 
 	try {
-		await writeDocSummary(db, entity.id, entity.repo, summary);
+		const outcome = await writeDocSummaryIfCurrent(db, entity.id, entity.repo, summary);
+		if (outcome !== 'written') {
+			log.debug({ entityId: entity.id, file: entity.file, outcome }, 'summariseDoc: document changed while summarising; not stored');
+			return { ok: false, skipped: outcome };
+		}
 	} catch (writeErr) {
 		log.warn(
 			{ entityId: entity.id, err: (writeErr as Error).message },

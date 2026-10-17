@@ -377,6 +377,8 @@ The reader is synchronous and performs a git fetch of the remote default branch 
 
 - `q90c58cff` — cd1 (partial): PolicyRefresh, AnchorFinder, StarterPolicyWriter, TeamInitCommand and TeamRefreshCommand are new functions inside s2's boundary that sc2 does not name; decide whether sc2 should list them or they stay internal to s2.
   - **resolved**: Keep all five internal — They are implementation details inside s2's boundary; sc2 stays the HLD envelope. _(2026-10-17T06:11:05.997Z)_
+- `q6f462bb4` — dm1 (partial): the call sites for the new PolicyFile and PolicySighting entities are the nearest existing code the new code follows, since no existing code touches them.
+  - **resolved**: Follow call-site conventions — Follow the nearest existing code (storage.ts atomic writes, paths.ts layout, daemon lock rule) as integration precedent. _(2026-10-17T06:12:00.844Z)_
 
 ## Citations
 

@@ -26,7 +26,13 @@
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-17T06:34:55.292Z",
+    "rangeBase": "15df717b39c57a1085dcde114cce70e5d193552b",
+    "reviewOverride": {
+      "reason": "User-approved override (2026-10-17). Six daemon review rounds over two cycles (findings by round: 3H+1M, 1H+1M, 1H, 1H+1M, 1H, 1M); every finding was verified against the code and fixed in the LLD (inFlight carried; all transport sites incl. freshnessFromReply and codeReviewRequestParams; defensive nested TESTS reading; transport-to-record tests; results chosen per file from the latest run by ranAt; malformed latest runs kept as unverified barriers). The last finding (cycle 2 round 3, MED: StandaloneBuildRecord has no verdict) is fixed in 15df717b but not re-reviewed: the subject now reads the general BuildRecord and coverage shows per-task passed, or 'unavailable'. The post-build code review checks the change against real code.",
+      "at": "2026-10-17T06:34:55.292Z"
+    }
   },
   "body": {
     "summary": {

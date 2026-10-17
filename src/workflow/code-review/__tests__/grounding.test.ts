@@ -87,3 +87,19 @@ test('isTestFile recognises __tests__ dirs and .test/.spec suffixes only', () =>
 	assert.equal(isTestFile('src/foo.ts'), false);
 	assert.equal(isTestFile('src/testutil.ts'), false);
 });
+
+test('isTestFile accepts the Python, Go and JVM test conventions and every path it accepted before, and rejects ordinary source files', () => {
+	for (const file of [
+		'tests/test_parser.py', 'test_app.py', 'pkg/parser_test.py',
+		'internal/server/handler_test.go',
+		'src/test/java/com/acme/ServiceTest.java', 'src/test/resources/fixture.json',
+		'app/src/main/kotlin/ParserTest.kt', 'core/ParserTest.scala', 'core/ParserSpec.scala',
+		'src/__tests__/x.test.ts', 'src/__tests__/helpers.ts', 'pkg/__tests__/conftest.py',
+		'src/foo.test.ts', 'src/foo.spec.tsx', 'lib/foo.test.mjs', 'lib/foo.spec.cjs',
+	]) assert.equal(isTestFile(file), true, file);
+	for (const file of [
+		'src/foo.ts', 'src/testutil.ts', 'app/models.py', 'app/testing.py', 'app/contest_py.py',
+		'pkg/server.go', 'pkg/latest.go', 'src/main/java/com/acme/Service.java',
+		'src/main/kotlin/Contest.kt', 'src/main/scala/Specification.scala', 'src/testdata/x.go',
+	]) assert.equal(isTestFile(file), false, file);
+});

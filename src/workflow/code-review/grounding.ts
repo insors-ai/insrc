@@ -55,10 +55,16 @@ export interface GroundingDeps {
 	readonly calleesOf:      (repoPath: string, entityId: string) => Promise<readonly GroundedEntity[]>;
 }
 
-/** A defining file counts as a test file when it matches the repo's test
- *  convention (`__tests__/` dir or a `.test.` / `.spec.` suffix). */
+/** A defining file counts as a test file when it matches a supported
+ *  language's test convention: a `__tests__/` or `src/test/` dir, a TS/JS
+ *  `.test.` / `.spec.` suffix, Python `test_*.py` / `*_test.py`, Go `*_test.go`,
+ *  JVM `*Test.java` / `*Test.kt` / `*Test.scala` and Scala `*Spec.scala`. */
 export function isTestFile(file: string): boolean {
-	return /(^|\/)__tests__\//.test(file) || /\.(test|spec)\.[cm]?[jt]sx?$/.test(file);
+	return /(^|\/)(__tests__|src\/test)\//.test(file)
+		|| /\.(test|spec)\.[cm]?[jt]sx?$/.test(file)
+		|| /(^|\/)test_[^/]*\.py$/.test(file)
+		|| /_test\.(py|go)$/.test(file)
+		|| /Test\.(java|kt|scala)$|Spec\.scala$/.test(file);
 }
 
 /**

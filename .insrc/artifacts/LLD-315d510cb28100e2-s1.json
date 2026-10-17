@@ -207,7 +207,9 @@
         "rationale": "The companion LLD-9a7bbe63297457c2-S001 needs its own decision outside s1's plan.",
         "resolvedAt": "2026-10-17T10:23:24.719Z"
       }
-    }
+    },
+    "staleAckedAt": "2026-10-17T10:23:44.097Z",
+    "staleAckedReason": "The HLD change since approval is AMD-8 (sc1 issueOps), which this LLD itself proposed and already designs against; no redesign needed."
   },
   "body": {
     "summary": {

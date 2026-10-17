@@ -118,6 +118,22 @@ Repos without the policy file behave exactly as today (solo mode).
   sign-in. `ghPath`, `ghHost` and `branchPattern` are stored and shown only;
   their consumers are an s1 follow-up (gh runner) and s6 (branch naming), and the
   rows say "saved; not used yet" until then.
+- **s3 single writer of github.json (accepted 2026-10-17, s3 LLD revision 12):**
+  the daemon is the only process that writes `~/.insrc/github.json`, through one
+  in-process queue with a verify-before-rename check; there is no cross-process
+  lock. This supersedes the earlier answer to question sg4 (tracker setup stays
+  on a shared direct writer): the terminal `trackerSetup` becomes asynchronous
+  and asks the daemon (`repo.trackerConfig.ensure`) through an `rpc` with an
+  opt-in deadline, and the setup config step is reported failed if the daemon is
+  not running. Edits by processes outside the daemon are detected only on a
+  best-effort basis. s3 also consumes the tracker port (sc1) through s1's
+  adapter to read the signed-in login; the HLD boundary for s3 lists sc2 only
+  (no HLD amendment filed). The `branchPattern` grammar lives in the s3 field
+  table: placeholders `{id}`, `{slug}`, `{type}` only; s6 reads that definition.
+- **s3 LLD approval (2026-10-17):** approved with a review override. The one open
+  finding was wording: the 15 s deadline bounds only the config call, not the
+  whole tracker setup. The plan and build correct that wording and scope the
+  timeout tests to the config call.
 
 ## Open items for design
 

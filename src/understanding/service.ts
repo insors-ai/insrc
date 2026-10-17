@@ -4,11 +4,12 @@ import type { TSchema } from '@sinclair/typebox';
 import { getGraphStore, withWriteTxn } from '../db/graph/store.js';
 import type { GraphStore } from '../db/graph/store.js';
 import { prefixSuccessor } from '../db/graph/keys.js';
-import { AssessmentError, AttemptSchema, AuditSchema, CommandSchema, LearnerSchema, DomainSchemas,
+import { AssessmentError, AttemptSchema, AuditSchema, CommandSchema, DeleteSchema, LearnerSchema, DomainSchemas,
   parse, parseRecord, parseScope, publicView, scopeFingerprint } from '../shared/understanding.js';
 import type { AssessmentRecord, AssessmentView, AssessmentScope, AnswerAttempt, CommandEnvelope } from '../shared/understanding.js';
 import type { ResolvedLearner } from './identity.js';
 import { readAssessment, writeAssessment, tupleKey } from './storage.js';
+import { assertAssessmentSchema } from './storage.js';
 
 export type Owner = Pick<ResolvedLearner, 'ownerPrincipal' | 'learner'>;
 export interface MutationResult { view: AssessmentView; appliedRevision: number }
@@ -51,6 +52,63 @@ function audit(store: GraphStore, r: AssessmentRecord, kind: string): void {
 export class UnderstandingService {
   private readonly schemas = new DomainSchemas();
   private readonly transitions = new Map<string, TransitionHandler>();
+  private readonly deleted = new Set<string>();
+  private readonly listeners = new Map<string, Set<(deleted: boolean) => void>>();
+
+  subscribe(id: string, listener: (deleted: boolean) => void): () => void {
+    const listeners = this.listeners.get(id) ?? new Set();
+    listeners.add(listener);
+    this.listeners.set(id, listeners);
+    return () => { listeners.delete(listener); if (listeners.size === 0) this.listeners.delete(id); };
+  }
+
+  private publish(id: string, deleted = false): void {
+    for (const listener of this.listeners.get(id) ?? []) {
+      try { listener(deleted); } catch { /* Observation cannot undo a committed write. */ }
+    }
+    if (deleted) this.listeners.delete(id);
+  }
+
+  async recover(): Promise<void> {
+    await withWriteTxn(store => {
+      assertAssessmentSchema(store);
+      for (const { value } of store.understandingCurrent.getRange()) {
+        const r = parseRecord(value);
+        const prefix = tupleKey(r.view.id);
+        let changed = r.job?.status === 'running' || r.view.eligibility !== 'unavailable';
+        for (const { key } of store.understandingReceipt.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+          store.understandingReceipt.removeSync(key);
+          changed = true;
+        }
+        if (!changed) continue;
+        if (r.job?.status === 'running') { r.job.status = 'interrupted'; r.view.state = 'error'; }
+        r.lifecycleGeneration++;
+        r.view.revision++;
+        r.view.eligibility = 'unavailable';
+        r.updatedAt = new Date().toISOString();
+        writeAssessment(store, r);
+        audit(store, r, 'recovered');
+      }
+    });
+  }
+
+  async delete(owner: Owner, input: CommandEnvelope & { confirmed: true }): Promise<void> {
+    const command = parse(DeleteSchema, input);
+    await withWriteTxn(store => {
+      const r = owned(store, command.assessmentId, owner);
+      if (r.scopeFingerprint !== scopeFingerprint(command.scope)) throw new AssessmentError('scope-mismatch');
+      if (r.view.revision !== command.expectedRevision) throw new AssessmentError('revision-conflict', publicView(r));
+      const prefix = tupleKey(r.view.id);
+      for (const name of ['understandingAttempt', 'understandingAudit', 'understandingRequest', 'understandingReceipt'] as const) {
+        for (const { key } of store[name].getRange({ start: prefix, end: prefixSuccessor(prefix) })) store[name].removeSync(key);
+      }
+      store.understandingOwnerIndex.removeSync(tupleKey(r.ownerPrincipal, r.view.id));
+      store.understandingScopeIndex.removeSync(tupleKey(r.scopeFingerprint, r.view.id));
+      store.understandingCurrent.removeSync(prefix);
+    });
+    this.deleted.add(command.assessmentId);
+    this.publish(command.assessmentId, true);
+  }
 
   register(kind: string, schema: TSchema, handler: TransitionHandler): void {
     if (kind === 'cancel' || kind === 'prepare') throw new AssessmentError('invalid-input');
@@ -60,12 +118,13 @@ export class UnderstandingService {
 
   // Internal trusted preparation; the RPC layer must obtain authoritative scope from s2/s6.
   async prepare(owner: Owner, input: AssessmentScope, requestId: string): Promise<MutationResult> {
+    if (this.deleted.has(requestId)) throw new AssessmentError('not-found');
     const scope = parseScope(input);
     const learner = parse(LearnerSchema, owner.learner);
     if (scope.learnerKey !== learner.key) throw new AssessmentError('scope-mismatch');
     const command = parse(CommandSchema, { requestId, assessmentId: requestId, expectedRevision: 1, scope });
     const hash = requestHash('prepare', { scope, learner });
-    return withWriteTxn(store => {
+    const result = await withWriteTxn(store => {
       const previous = readAssessment(store, requestId);
       if (previous) {
         const r = owned(store, requestId, owner);
@@ -83,6 +142,8 @@ export class UnderstandingService {
       store.understandingRequest.putSync(tupleKey(r.view.id, command.requestId), { hash, appliedRevision: 1 });
       return { view: publicView(r), appliedRevision: 1 };
     });
+    this.publish(result.view.id);
+    return result;
   }
 
   async resume(owner: Owner, id: string): Promise<AssessmentView> {
@@ -93,12 +154,16 @@ export class UnderstandingService {
     return this.mutate(owner, command, 'cancel', null);
   }
 
-  async mutate(owner: Owner, input: CommandEnvelope, kind: string, rawPayload: unknown): Promise<MutationResult> {
+  async mutate(owner: Owner, input: CommandEnvelope, kind: string, rawPayload: unknown,
+    expectedJob?: { id: string; generation: number; inputRevision: number }): Promise<MutationResult> {
     const command = parse(CommandSchema, input);
     const payload = kind === 'cancel' ? parse(Type.Null(), rawPayload) : this.schemas.validate(kind, rawPayload);
     const hash = requestHash(kind, { command, payload });
-    return withWriteTxn(store => {
+    const result = await withWriteTxn(store => {
       const current = owned(store, command.assessmentId, owner);
+      if (expectedJob && (!current.job || current.job.status !== 'running' || current.job.id !== expectedJob.id
+        || current.lifecycleGeneration !== expectedJob.generation || current.job.generation !== expectedJob.generation
+        || current.job.inputRevision !== expectedJob.inputRevision)) throw new AssessmentError('unavailable');
       if (scopeFingerprint(command.scope) !== current.scopeFingerprint) throw new AssessmentError('scope-mismatch');
       const key = tupleKey(current.view.id, command.requestId);
       const cached: unknown = store.understandingRequest.get(key);
@@ -135,6 +200,8 @@ export class UnderstandingService {
       store.understandingRequest.putSync(key, { hash, appliedRevision: next.view.revision });
       return { view: publicView(next), appliedRevision: next.view.revision };
     });
+    this.publish(result.view.id);
+    return result;
   }
 
   async history(owner: Owner, id: string, limit = 50, after = 0): Promise<AnswerAttempt[]> {

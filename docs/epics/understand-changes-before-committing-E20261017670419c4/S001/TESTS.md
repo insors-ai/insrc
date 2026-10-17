@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -74,3 +74,25 @@ Run at 2026-10-17T13:18:35.728Z on commit `e89d309d`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/understanding/__tests__/storage.test.ts` | 0 | 2 | 1 s |  |
+
+## t4
+
+Run at 2026-10-17T13:21:22.313Z on commit `27e694bc`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Concurrent CAS, exact replay, request conflict and transaction rollback**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Concurrent updates, exact replay and request conflicts preserve atomic history | `src/understanding/__tests__/service.test.ts` |
+
+**integration: Immutable original and assisted attempts resume after reopen**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Original and assisted answers survive reopen and resume without granting authorization | `src/understanding/__tests__/service.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/understanding/__tests__/service.test.ts` | 0 | 2 | 0.9 s |  |

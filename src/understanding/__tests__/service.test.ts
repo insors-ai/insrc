@@ -1,14 +1,17 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, statSync, symlinkSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { createServer } from 'node:net';
+import { once } from 'node:events';
+import { enforcePrivatePaths } from '../privacy.js';
 import { Type } from '@sinclair/typebox';
-import { getGraphStore, closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
+import { getGraphStore, closeGraphStore, setGraphStorePath, withWriteTxn } from '../../db/graph/store.js';
 import { AttemptSchema, AssessmentError } from '../../shared/understanding.js';
 import type { AnswerAttempt, AssessmentScope, CommandEnvelope } from '../../shared/understanding.js';
-import { initializeAssessmentStorage, tupleKey } from '../storage.js';
+import { initializeAssessmentStorage, tupleKey, listAssessments } from '../storage.js';
 import { UnderstandingService } from '../service.js';
 import type { Owner } from '../service.js';
 
@@ -78,4 +81,67 @@ test('Original and assisted answers survive reopen and resume without granting a
   const store = await getGraphStore();
   assert.equal(store.understandingCurrent.get(tupleKey(id)).learner.subject, 'person');
   assert.equal([...store.understandingReceipt.getRange()].length, 0);
+});
+
+
+test('Recovery interrupts jobs and rejects late completion without losing answers', async () => {
+  let s = service();
+  const id = randomUUID();
+  await s.prepare(owner, scope, id);
+  const first = answer(id);
+  await s.mutate(owner, command(id, 1), 'answer', first);
+  const job = { id: randomUUID(), kind: 'grade', inputRevision: 2, generation: 1, status: 'running' as const };
+  s.register('start-job', Type.Null(), () => ({ job, state: 'evaluating' }));
+  await s.mutate(owner, command(id, 2), 'start-job', null);
+  await withWriteTxn(store => { store.understandingReceipt.putSync(tupleKey(id, 'receipt'), { pending: true }); });
+  await closeGraphStore();
+  s = service();
+  await initializeAssessmentStorage();
+  await s.recover();
+  const view = await s.resume(owner, id);
+  assert.equal(view.state, 'error');
+  assert.equal(view.eligibility, 'unavailable');
+  assert.deepEqual(await s.history(owner, id), [first]);
+  await assert.rejects(s.mutate(owner, command(id, view.revision), 'answer', answer(id, 2), job), /unavailable/);
+  const store = await getGraphStore();
+  assert.equal(store.understandingCurrent.get(tupleKey(id)).job.status, 'interrupted');
+  assert.equal([...store.understandingReceipt.getRange()].length, 0);
+});
+
+test('Deletion isolates owners, rejects retries and late writes, and enforces private paths', async () => {
+  const s = service();
+  const id = randomUUID();
+  await s.prepare(owner, scope, id);
+  await s.mutate(owner, command(id, 1), 'answer', answer(id));
+  const removal = { ...command(id, 2), confirmed: true as const };
+  await assert.rejects(s.delete({ ...owner, ownerPrincipal: 'other' }, removal), /not-found/);
+  const race = await Promise.allSettled([s.delete(owner, removal), s.mutate(owner, command(id, 2), 'answer', answer(id, 2))]);
+  assert.equal(race[0]?.status, 'fulfilled');
+  assert.equal(race[1]?.status, 'rejected');
+  await assert.rejects(s.delete(owner, removal), /not-found/);
+  await assert.rejects(s.resume(owner, id), /not-found/);
+  await assert.rejects(s.prepare(owner, scope, id), /not-found/);
+  assert.deepEqual(await listAssessments(owner.ownerPrincipal), []);
+  const store = await getGraphStore();
+  for (const name of ['understandingCurrent', 'understandingAttempt', 'understandingAudit', 'understandingRequest', 'understandingOwnerIndex', 'understandingScopeIndex', 'understandingReceipt'] as const) {
+    assert.equal([...store[name].getRange()].length, 0);
+  }
+  const path = join(dir, 'test.sock');
+  const server = createServer();
+  server.listen(path);
+  await once(server, 'listening');
+  try {
+    enforcePrivatePaths(join(dir, 'graph'), path);
+    assert.equal(statSync(dir).mode & 0o777, 0o700);
+    assert.equal(statSync(join(dir, 'graph')).mode & 0o777, 0o700);
+    assert.equal(statSync(path).mode & 0o777, 0o600);
+    assert.throws(() => enforcePrivatePaths(join(dir, 'graph'), path, process.getuid!() + 1), /^Error: unavailable$/);
+    mkdirSync(join(dir, 'target'));
+    symlinkSync(join(dir, 'target'), join(dir, 'link'));
+    assert.throws(() => enforcePrivatePaths(join(dir, 'link'), path), /^Error: unavailable$/);
+  } finally { await new Promise<void>(resolve => server.close(() => resolve())); }
+  await closeGraphStore();
+  const restarted = service();
+  await initializeAssessmentStorage();
+  await assert.rejects(restarted.mutate(owner, command(id, 2), 'answer', answer(id, 2)), /^Error: not-found$/);
 });

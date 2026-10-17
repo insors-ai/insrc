@@ -4,7 +4,7 @@
     "epicHash": "670419c4ad8bea8e",
     "storyId": "s1",
     "createdAt": "2026-10-17T13:09:28.300Z",
-    "updatedAt": "2026-10-17T13:18:35.728Z",
+    "updatedAt": "2026-10-17T13:21:22.313Z",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
     "epicSlug": "understand-changes-before-committing"
   },
@@ -189,6 +189,59 @@
               },
               {
                 "title": "Schema corruption fails closed and owner pagination is isolated and bounded",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "27e694bc",
+        "ranAt": "2026-10-17T13:21:22.313Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Concurrent CAS, exact replay, request conflict and transaction rollback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Concurrent updates, exact replay and request conflicts preserve atomic history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Immutable original and assisted attempts resume after reopen",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Original and assisted answers survive reopen and resume without granting authorization",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 879,
+            "titles": [
+              {
+                "title": "Concurrent updates, exact replay and request conflicts preserve atomic history",
+                "result": "pass"
+              },
+              {
+                "title": "Original and assisted answers survive reopen and resume without granting authorization",
                 "result": "pass"
               }
             ],

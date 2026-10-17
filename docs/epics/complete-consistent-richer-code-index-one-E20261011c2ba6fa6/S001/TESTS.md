@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -123,3 +123,21 @@ Run at 2026-10-17T06:07:23.576Z on commit `56c0d3fd`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/resolver-file-target.test.ts` | 0 | 4 | 1.1 s |  |
+
+## t6
+
+Run at 2026-10-17T20:23:16.651Z on commit `fb413322`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/indexer/parser/__tests__/typescript-reexports.test.ts: the three re-export forms produce pending EXPORTS rows; other files unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the three re-export forms produce pending EXPORTS rows from the file entity | `src/indexer/parser/__tests__/typescript-reexports.test.ts` |
+| pass | a namespace re-export and a local export list emit no EXPORTS row | `src/indexer/parser/__tests__/typescript-reexports.test.ts` |
+| pass | a file without re-exports has no EXPORTS row, and adding re-export lines leaves its other entities and relations unchanged | `src/indexer/parser/__tests__/typescript-reexports.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/parser/__tests__/typescript-reexports.test.ts` | 0 | 8 | 0.4 s |  |

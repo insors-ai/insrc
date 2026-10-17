@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-17T06:07:23.576Z",
+    "updatedAt": "2026-10-17T20:23:16.651Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -703,6 +703,80 @@
               },
               {
                 "title": "a Pass 1 rewire carries the repository and the importing file's absolute path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "fb413322",
+        "ranAt": "2026-10-17T20:23:16.651Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/parser/__tests__/typescript-reexports.test.ts: the three re-export forms produce pending EXPORTS rows; other files unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/typescript-reexports.test.ts",
+                "title": "the three re-export forms produce pending EXPORTS rows from the file entity",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/typescript-reexports.test.ts",
+                "title": "a namespace re-export and a local export list emit no EXPORTS row",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/typescript-reexports.test.ts",
+                "title": "a file without re-exports has no EXPORTS row, and adding re-export lines leaves its other entities and relations unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/typescript-reexports.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 401,
+            "titles": [
+              {
+                "title": "the three re-export forms produce pending EXPORTS rows from the file entity",
+                "result": "pass"
+              },
+              {
+                "title": "a namespace re-export and a local export list emit no EXPORTS row",
+                "result": "pass"
+              },
+              {
+                "title": "a file without re-exports has no EXPORTS row, and adding re-export lines leaves its other entities and relations unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "re-exports (TypeScript)",
+                "result": "pass"
+              },
+              {
+                "title": "the three re-export forms produce pending EXPORTS rows from the file entity",
+                "result": "pass"
+              },
+              {
+                "title": "a namespace re-export and a local export list emit no EXPORTS row",
+                "result": "pass"
+              },
+              {
+                "title": "a file without re-exports has no EXPORTS row, and adding re-export lines leaves its other entities and relations unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "re-exports (JavaScript)",
                 "result": "pass"
               }
             ],

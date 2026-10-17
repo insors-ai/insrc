@@ -19,15 +19,712 @@
     "schemaVersion": 1,
     "epicHash": "670419c4ad8bea8e",
     "epicSlug": "understand-changes-before-committing",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p01",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "docs/pre-commit-understanding-spec.md is the product specification cited by this definition.",
+          "evidence": "docs/pre-commit-understanding-spec.md:1 reads “# SPEC: Pre-commit understanding assessments”, confirming the cited product specification exists at the stated path.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The provided evidence confirms the citation."
+          }
+        },
+        {
+          "claimId": "p02",
+          "ref": "c2",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "AGENTS.md is the repository convention source cited by this definition.",
+          "evidence": "AGENTS.md:1 exists and reads “# CLAUDE.md — insrc backend”. This confirms the file exists, but does not establish that it contains repository conventions or that the definition cites it.",
+          "action": "Verify the convention-bearing contents of AGENTS.md and the definition’s citation.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence establishes file existence only; the premise remains unverifiable.",
+            "options": [
+              "Provide the convention-bearing lines and the definition’s citation to verify the premise.",
+              "Narrow the premise to the existence of AGENTS.md, which the supplied evidence confirms."
+            ]
+          }
+        },
+        {
+          "claimId": "p03",
+          "ref": "c3",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "mocks/commit-understanding.md is the UI specification cited by this definition.",
+          "evidence": "mocks/commit-understanding.md:1 exists and reads “# Pre-commit understanding check — VS Code mocks”, consistent with the cited UI specification.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied anchor resolves to the relevant UI mock document."
+          }
+        },
+        {
+          "claimId": "p04",
+          "ref": "4",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The product specification establishes the desired behavior and requires unresolved implementation choices to be decided explicitly before implementation.",
+          "evidence": "The only evidence is docs/pre-commit-understanding-spec.md:1, '# SPEC: Pre-commit understanding assessments'. This confirms the document's title but does not establish desired behavior or a requirement to resolve implementation choices before implementation.",
+          "action": "Provide specification passages supporting both claims, then reassess the premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied heading alone cannot verify the substantive cross-artifact claim.",
+            "options": [
+              "Supply passages establishing the desired behavior and requiring explicit resolution of implementation choices before implementation.",
+              "Narrow the premise to what supporting specification passages actually establish."
+            ]
+          }
+        },
+        {
+          "claimId": "p05",
+          "ref": "1",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Existing delivery approvals and reviews record information about delivered work rather than a particular developer's demonstrated understanding.",
+          "evidence": "The supplied probe `/(?i)approval|review|understanding|confidence/` returned 0 matches. No source reads were provided, so the distinction between delivered-work records and developer-understanding records is unverifiable.",
+          "action": "Gather source evidence showing what existing delivery approvals and reviews record before relying on this premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Empty evidence neither confirms nor contradicts the premise; no evidence-derived text correction is available.",
+            "options": [
+              "Provide source reads of approval and review record definitions and their producers, then reassess the premise.",
+              "Reword the premise as an unverified assumption pending inspection of approval and review records."
+            ]
+          }
+        },
+        {
+          "claimId": "p06",
+          "ref": "1",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The existing system lacks a contextual pre-commit impact assessment that determines a proportional understanding requirement.",
+          "evidence": "The supplied grep for /(?i)pre.?commit|staged|impact|understanding|assessment/ returned 0 matches. This does not establish the absence of equivalent behavior under other terminology, so the premise is unverifiable.",
+          "action": "Qualify the absence claim or gather evidence tracing the relevant commit workflow and its assessment behavior.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "No supplied source reads or matches establish whether the claimed capability exists.",
+            "options": [
+              "Qualify the premise: the supplied keyword probe found no evidence of this capability; its absence remains unverified.",
+              "Gather source evidence covering commit handling and any contextual assessment before retaining the categorical absence claim."
+            ]
+          }
+        },
+        {
+          "claimId": "p07",
+          "ref": "1",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The existing system lacks a durable record linking a person's demonstrated understanding or explicit exception to the exact committed changes.",
+          "evidence": "The supplied grep for understanding|assessment|override|exception|snapshot|commitHash|personId|userId returned 0 matches under src. No source reads were supplied. This empty evidence cannot establish that the system lacks the described durable record.",
+          "action": "Verify the relevant persistence models and commit-linking paths before asserting absence.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "No matches do not prove the capability is absent; it may use different terminology.",
+            "options": [
+              "Inspect persistence models and commit-linking paths to substantiate or revise the absence claim.",
+              "Reword the premise as an unverified assumption pending source inspection."
+            ]
+          }
+        },
+        {
+          "claimId": "p08",
+          "ref": "k1",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The product specification assigns canonical state, keys, grading, guidance and commit authorization to the daemon and requires clients to use IPC.",
+          "evidence": "The only supplied read, docs/pre-commit-understanding-spec.md:1, contains '# SPEC: Pre-commit understanding assessments'. This confirms the document's title but does not establish daemon ownership of state, keys, grading, guidance, commit authorization, or required IPC use.",
+          "action": "Gather the specification passages defining ownership and client IPC requirements, then re-evaluate the premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence does not address the claimed architectural requirements; no evidence-derived text correction is available.",
+            "options": [
+              "Provide specification passages supporting each claimed daemon responsibility and the IPC requirement.",
+              "Revise the premise to match the responsibilities established by additional source evidence."
+            ]
+          }
+        },
+        {
+          "claimId": "p09",
+          "ref": "k2",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The product specification requires contextual daemon reasoning for impact classification and excludes line-count and filename rules.",
+          "evidence": "docs/pre-commit-understanding-spec.md:1 contains only “# SPEC: Pre-commit understanding assessments”. This confirms the document title, but does not establish contextual daemon reasoning or the exclusion of line-count and filename rules. The premise is unverifiable from the supplied evidence.",
+          "action": "Supply specification passages supporting both requirements, or revise the premise to reflect verified requirements.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied title cannot support an evidence-derived correction to the claimed requirements.",
+            "options": [
+              "Provide specification lines confirming contextual daemon reasoning and both rule exclusions.",
+              "Mark the claimed requirements as unverified pending supporting specification evidence."
+            ]
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "k3",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The product specification defines Trivial as bypassing assessment, Low as optional, strict Medium as requiring completion regardless of result, and configured High as requiring a pass or an explicit commit-recorded override.",
+          "evidence": "The only supplied read, docs/pre-commit-understanding-spec.md:1, contains '# SPEC: Pre-commit understanding assessments'. It confirms the document title but provides no evidence for the Trivial, Low, strict Medium, or configured High rules. The premise is unverifiable.",
+          "action": "Gather the specification lines defining all four assessment policies and the commit-recorded override requirement, then reassess.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports no safe correction to the claimed policies.",
+            "options": [
+              "Provide specification excerpts covering all four policies and the override requirement.",
+              "If the specification omits these policies, resolve and document the intended requirements before relying on this premise."
+            ]
+          }
+        },
+        {
+          "claimId": "p11",
+          "ref": "s2/ac1",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The defined impact classification has exactly four outcomes: High, Medium, Low and Trivial.",
+          "evidence": "The probe returned 0 matches for the four labels or impact classification identifiers. The only supplied read, docs/pre-commit-understanding-spec.md:1, contains '# SPEC: Pre-commit understanding assessments'; it does not establish an exhaustive four-outcome classification. The premise is unverifiable.",
+          "action": "Provide the classification definition and evidence that its allowed outcomes are exactly High, Medium, Low and Trivial.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the claimed closed union.",
+            "options": [
+              "Supply the defining enum, union, or exhaustive specification passage and re-evaluate the premise.",
+              "Reword the four outcomes as a proposed requirement rather than an established definition, subject to approval."
+            ]
+          }
+        },
+        {
+          "claimId": "p12",
+          "ref": "k4",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The product specification binds assessment and authorization to both the intended staged snapshot and its base and forbids silently reusing authorization after either changes.",
+          "evidence": "docs/pre-commit-understanding-spec.md:1 contains only “# SPEC: Pre-commit understanding assessments”. This confirms the document’s title, but does not establish snapshot/base binding or authorization invalidation. No evidence for E20261017670419c4:S006:ac2 was supplied. The premise is unverifiable.",
+          "action": "Provide the specification clauses and acceptance criterion establishing both bindings and invalidation after either changes, then reassess k4.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied heading supports no safe substantive correction.",
+            "options": [
+              "Retain k4 pending evidence of the claimed specification requirements.",
+              "Revise k4 to match the actual requirements after reviewing the relevant specification clauses and acceptance criterion."
+            ]
+          }
+        },
+        {
+          "claimId": "p13",
+          "ref": "k5",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The product specification requires immediate guidance after Unsure or an incorrect submitted answer and excludes reading guidance alone as evidence of a pass.",
+          "evidence": "The only supplied read, docs/pre-commit-understanding-spec.md:1, contains '# SPEC: Pre-commit understanding assessments'. This confirms the document's title but does not verify either immediate guidance after Unsure or an incorrect answer, or the exclusion of reading guidance alone as pass evidence.",
+          "action": "Supply specification passages establishing both requirements, then reassess the premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence does not address the claimed requirements; no evidence-derived text correction is available.",
+            "options": [
+              "Provide exact specification lines supporting both requirements.",
+              "If supporting passages cannot be supplied, mark the premise as unverified pending specification clarification."
+            ]
+          }
+        },
+        {
+          "claimId": "p14",
+          "ref": "k6",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The product specification requires personal original answers, confidence and assisted attempts to remain distinct from work-item delivery state.",
+          "evidence": "The only evidence is docs/pre-commit-understanding-spec.md:1: “# SPEC: Pre-commit understanding assessments”. This confirms the document's title, but does not establish requirements separating personal original answers, confidence, and assisted attempts from work-item delivery state.",
+          "action": "Gather the specification passages defining these concepts and their relationship to delivery state, then reassess the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied title alone cannot support a substantive correction to the premise.",
+            "options": [
+              "Provide specification passages explicitly requiring the separation.",
+              "If the specification is silent, resolve whether this separation is a new design requirement and revise the premise accordingly."
+            ]
+          }
+        },
+        {
+          "claimId": "p15",
+          "ref": "k7",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "AGENTS.md requires CLI-backed cloud providers, sequential LLM calls and daemon-served structured context and prohibits direct cloud REST calls.",
+          "evidence": "The only gathered evidence, AGENTS.md:1 (`# CLAUDE.md — insrc backend`), confirms the document heading but does not address any of the claimed requirements or prohibitions. The premise is unverifiable from this evidence.",
+          "action": "Gather the AGENTS.md passages covering cloud providers, sequential LLM calls, daemon-served structured context, and direct cloud REST before judging the premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied heading cannot support a substantive correction to the premise.",
+            "options": [
+              "Re-run the probes to capture the relevant AGENTS.md policy passages.",
+              "Mark the premise as unverified pending supporting policy excerpts."
+            ]
+          }
+        },
+        {
+          "claimId": "p16",
+          "ref": "k7",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "An existing CliProvider implementation supplies the CLI-backed provider integration this definition proposes to reuse.",
+          "evidence": "AGENTS.md:20 and :121 describe CliProvider as the claude/codex subprocess provider. However, the grep output is truncated before any implementation matches, and src/agent/providers/cli-provider.ts:1 shows only a comment opener. The supplied evidence confirms documentation and file existence, but does not verify the implementation or its reusable integration.",
+          "action": "Gather source reads showing the CliProvider declaration and CLI invocation implementation to verify the proposed reuse.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence neither verifies implementation behavior nor establishes a concrete contradiction or build failure.",
+            "options": [
+              "Provide source evidence for the CliProvider declaration and subprocess integration, then reassess.",
+              "Qualify the premise as documented CLI integration whose implementation and suitability for reuse remain unverified."
+            ]
+          }
+        },
+        {
+          "claimId": "p17",
+          "ref": "k8",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The product specification requires copying or adapting relevant pinned Grokcheck modules with attribution and excludes a separate Grokcheck process or Python runtime.",
+          "evidence": "The only supplied evidence is docs/pre-commit-understanding-spec.md:1: '# SPEC: Pre-commit understanding assessments'. This confirms the document title but does not verify module copying/adaptation, attribution, pinning, or the exclusion of a separate Grokcheck process or Python runtime.",
+          "action": "Supply the specification passages addressing reuse, attribution, and runtime constraints, then re-evaluate the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied title alone cannot support a safe correction to the premise.",
+            "options": [
+              "Provide specification excerpts that establish each claimed requirement.",
+              "If the specification omits these constraints, resolve and document them before relying on this premise."
+            ]
+          }
+        },
+        {
+          "claimId": "p18",
+          "ref": "k8",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The proposed Grokcheck reuse depends on an identifiable pinned upstream version containing modules that can be copied or adapted with attribution.",
+          "evidence": "The Grokcheck search returned 0 matches. The only supplied read, docs/pre-commit-understanding-spec.md:1, contains “# SPEC: Pre-commit understanding assessments”; it establishes no upstream identity, pinned version, reusable modules, or attribution terms. The premise is unverifiable from this evidence.",
+          "action": "Supply evidence identifying the upstream repository, immutable version, candidate modules, and license terms permitting the proposed reuse.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence cannot establish the external reuse contract or support a mechanical correction.",
+            "options": [
+              "Document and verify the upstream repository, pinned revision, reusable modules, and applicable license and attribution requirements.",
+              "Remove the upstream reuse dependency and define an independent implementation scope."
+            ]
+          }
+        },
+        {
+          "claimId": "p19",
+          "ref": "k9",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The UI specification places assessments in a resumable VS Code editor pane and denies UI-computed scores authority to authorize commits.",
+          "evidence": "The only evidence, mocks/commit-understanding.md:1 ('# Pre-commit understanding check — VS Code mocks'), establishes the document's topic but does not verify a resumable editor pane or restrictions on UI-computed scores authorizing commits.",
+          "action": "Provide specification excerpts covering assessment placement, resumability, and commit-authorization authority, then reassess the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied heading cannot substantiate or contradict the premise; no evidence-derived correction is available.",
+            "options": [
+              "Supply specification lines confirming both claims.",
+              "Revise the premise after verifying the specification's actual UI and authorization requirements."
+            ]
+          }
+        },
+        {
+          "claimId": "p20",
+          "ref": "s1/ac1",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A saved understanding session must retain person identity, original change identity, linked work items, answers, confidence, assisted attempts and progress sufficiently to resume the same person's check.",
+          "evidence": "The probe returned 0 matches. The only read, docs/pre-commit-understanding-spec.md:1, contains the heading “# SPEC: Pre-commit understanding assessments”; it provides no evidence of saved session fields or resume behavior. The premise is unverifiable from the supplied evidence.",
+          "action": "Gather source evidence for session persistence and restoration, showing whether all listed information survives saving and resumes the same person's check.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports neither verification nor a safe artifact correction.",
+            "options": [
+              "Provide persistence and restoration code evidence covering every required field.",
+              "If persistence is not implemented, explicitly frame the premise as a requirement and define the saved-session contract."
+            ]
+          }
+        },
+        {
+          "claimId": "p21",
+          "ref": "s1/ac2",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Failing, skipping or resuming an understanding check must preserve the delivery status and approvals of its linked epic, story, task or issue.",
+          "evidence": "The probe returned 0 matches. The only read, docs/pre-commit-understanding-spec.md:1, contains '# SPEC: Pre-commit understanding assessments'; it provides no evidence that failing, skipping, or resuming a check preserves linked delivery status or approvals. The premise is unverifiable.",
+          "action": "Gather evidence for the fail, skip, and resume handlers and their writes to linked work-item delivery status and approvals.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports neither verification nor a safe artifact correction.",
+            "options": [
+              "Provide handler and persistence reads covering fail, skip, and resume transitions.",
+              "Provide tests demonstrating preservation of delivery status and approvals for linked epics, stories, tasks, and issues."
+            ]
+          }
+        },
+        {
+          "claimId": "p22",
+          "ref": "s1/ac3",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Persisted check state must survive editor closure and daemon restart without interpreting missing or uncertain state as a pass.",
+          "evidence": "The probe returned 0 matches. The reads confirm only document titles: docs/pre-commit-understanding-spec.md:1 is '# SPEC: Pre-commit understanding assessments'; mocks/commit-understanding.md:1 is '# Pre-commit understanding check — VS Code mocks'. Neither establishes persistence across editor closure or daemon restart, or how missing and uncertain state affects passing. The premise is unverifiable from this evidence.",
+          "action": "Provide source or behavioral-test evidence for persistence, restart recovery, and handling of missing or uncertain check state.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the required behavior; no evidence-derived artifact correction is safe.",
+            "options": [
+              "Retain the requirement and supply implementation or test evidence covering closure, restart, and missing or uncertain state.",
+              "Explicitly identify this as an unverified acceptance requirement pending implementation and validation."
+            ]
+          }
+        },
+        {
+          "claimId": "p23",
+          "ref": "s2",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S002 depends on S001 establishing the personal resumable understanding record.",
+          "evidence": "DEF.md:34 and :86 confirm that S001 covers personal understanding history and resumable progress. DEF.md:38 and :98 identify S002 as impact classification and project requirements. None of the supplied matches establishes that S002 depends on S001, so the ordering is unverifiable.",
+          "action": "Provide the dependency declaration or acceptance criteria demonstrating that S002 requires S001's record.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence confirms both story scopes but does not establish their dependency.",
+            "options": [
+              "Supply evidence explicitly establishing S002's dependency on S001.",
+              "Describe the ordering as a proposed dependency pending confirmation."
+            ]
+          }
+        },
+        {
+          "claimId": "p24",
+          "ref": "s3",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S003 depends on S001 and S002 providing session records and contextual impact requirements.",
+          "evidence": "DEF.md:34 and :38 identify S001's resumable history and S002's contextual impact requirements; :42 identifies S003's grounded questions and evaluation. The supplied matches do not show dependency declarations or session-record interfaces, so the claimed S003 ordering is unverifiable.",
+          "action": "Provide the story dependency declarations or acceptance criteria establishing that S003 consumes S001 session records and S002 contextual impact requirements.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence confirms related story scopes but does not establish the asserted dependency ordering.",
+            "options": [
+              "Supply explicit dependency or acceptance-criteria evidence for both prerequisites.",
+              "Reword the dependency as a proposed ordering requiring confirmation."
+            ]
+          }
+        },
+        {
+          "claimId": "p25",
+          "ref": "s4",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S004 depends on S003 providing grounded questions and daemon evaluation before guidance and reassessment are implemented.",
+          "evidence": "DEF.md:42 and :112 identify S003 as providing grounded questions and authoritative evaluation; :46 and :126 identify S004 as providing guidance and fresh reassessment. These matches support the story responsibilities but do not establish an explicit S004 → S003 dependency, daemon ownership of evaluation, or implementation ordering.",
+          "action": "Provide the dependency declaration and daemon-evaluation ownership evidence to verify the claimed ordering.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence establishes related responsibilities but does not verify the full ordering premise.",
+            "options": [
+              "Supply artifact excerpts explicitly establishing S004's dependency on S003 and daemon evaluation ownership.",
+              "Reword the premise to describe the verified story responsibilities, leaving dependency order and evaluation ownership unverified."
+            ]
+          }
+        },
+        {
+          "claimId": "p26",
+          "ref": "s5",
+          "kind": "ordering",
+          "severity": "LOW",
+          "premise": "Story S005 depends on S002, S003 and S004 providing impact requirements, assessment and guided reassessment for the editor pane.",
+          "evidence": "DEF.md:38 assigns impact classification and project requirements to S002; :42 assigns grounded questions and authoritative evaluation to S003; :46 assigns contextual guidance and fresh reassessment to S004. DEF.md:50 assigns the full check and recovery experience in a resumable VS Code editor pane to S005. These responsibilities support the stated dependency ordering.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited story responsibilities support S005 consuming the capabilities provided by S002–S004."
+          }
+        },
+        {
+          "claimId": "p27",
+          "ref": "s6",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S006 depends on S002, S003 and S005 before enforcing proportional authorization for the intended commit.",
+          "evidence": "DEF.md:154 identifies S006 as “Apply proportional checks to the exact commit”; lines 98, 112, and 140 identify S002, S003, and S005 respectively. However, none of the supplied matches states a dependency or ordering relationship between these stories. The claimed prerequisites are therefore unverifiable.",
+          "action": "Provide the story dependency declarations or ordering section establishing whether S006 requires S002, S003, and S005.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "Story titles establish scope but do not establish prerequisite ordering; no evidence-derived artifact correction is available.",
+            "options": [
+              "Supply explicit dependency declarations confirming all three prerequisites.",
+              "Treat the dependency ordering as unverified pending review of the story dependency section."
+            ]
+          }
+        },
+        {
+          "claimId": "p28",
+          "ref": "s7",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S007 depends on S006 providing commit authorization before adding explicit High exceptions and durable commit records.",
+          "evidence": "DEF.md:54 assigns commit authorization to S006; :58 assigns explicit High exceptions and final commit-message preservation to S007. The headings at :154 and :168 corroborate those scopes. However, none of the supplied matches establishes that S007 depends on S006 or requires that implementation order.",
+          "action": "Verify the dependency using the story dependency declarations or acceptance criteria; the supplied evidence confirms scope, but not ordering.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The claimed ordering is unverified, not contradicted. No concrete build-breaking failure is established.",
+            "options": [
+              "Retain the ordering claim after supplying evidence explicitly establishing S007's dependency on S006.",
+              "Narrow the premise to the verified scopes: S006 provides commit authorization, while S007 provides explicit High exceptions and durable commit-message records."
+            ]
+          }
+        },
+        {
+          "claimId": "p29",
+          "ref": "s3/ac1",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Questions must be grounded in the exact change and available linked requirements, design, implementation, tests and review evidence, with unavailable evidence disclosed.",
+          "evidence": "The probe returned 0 matches. The only supplied read, docs/pre-commit-understanding-spec.md:1, contains the title '# SPEC: Pre-commit understanding assessments'; it does not establish question grounding in the exact change or linked evidence, or disclosure of unavailable evidence. The premise is unverifiable from the supplied evidence.",
+          "action": "Provide source or specification excerpts establishing how questions use the exact change and available linked evidence, and how unavailable evidence is disclosed.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied title and empty probe results neither verify nor contradict the premise; no evidence-derived text correction is supported.",
+            "options": [
+              "Supply implementation and test excerpts demonstrating grounding and unavailable-evidence disclosure.",
+              "Clarify that this is a required acceptance behavior, with implementation verification still pending."
+            ]
+          }
+        },
+        {
+          "claimId": "p30",
+          "ref": "s3/ac2",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The daemon must preserve the first submitted answer and confidence and evaluate them using validated criteria independently of the editor's claimed result.",
+          "evidence": "The probe returned 0 matches. The reads at docs/pre-commit-understanding-spec.md:1 and mocks/commit-understanding.md:1 establish only document titles; neither verifies preservation of the first answer/confidence, criteria validation, or daemon evaluation independent of the editor's claimed result.",
+          "action": "Provide source evidence for answer/confidence capture and preservation, criteria validation, and independent daemon evaluation before treating this premise as grounded.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence neither confirms nor contradicts the required behavior, so no mechanical correction is supported.",
+            "options": [
+              "Supply implementation reads covering each required behavior and rerun verification.",
+              "Explicitly identify this behavior as a new requirement whose implementation remains unverified."
+            ]
+          }
+        },
+        {
+          "claimId": "p31",
+          "ref": "s3/ac3",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "Every supported authoring assistant must support the same daemon-managed assessment experience without Claude-specific hooks or a separate Grokcheck service.",
+          "evidence": "The grep probe returned 0 matches. The only read, docs/pre-commit-understanding-spec.md:1, contains the heading '# SPEC: Pre-commit understanding assessments'; it does not establish the supported assistant set, daemon-managed assessment parity, or independence from Claude hooks and Grokcheck.",
+          "action": "Gather evidence identifying all supported authoring assistants and tracing each assistant's assessment integration before asserting universal support.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither verifies nor contradicts the premise; no evidence-derived artifact edit is safe.",
+            "options": [
+              "Retain the premise as an explicitly unverified requirement pending assistant inventory and integration evidence.",
+              "After gathering evidence, scope the premise to the verified supported assistants and their assessment paths."
+            ]
+          }
+        },
+        {
+          "claimId": "p32",
+          "ref": "s4/ac3",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "After guidance, a fresh grounded question must assess understanding before an assisted pass can be recorded, while preserving the original attempt separately.",
+          "evidence": "The probe for guidance, reassessment, assisted, originalAttempt, or question returned 0 matches. The only supplied read, docs/pre-commit-understanding-spec.md:1, is the heading “# SPEC: Pre-commit understanding assessments”; it does not verify reassessment ordering or separate preservation of the original attempt. The premise is unverifiable from this evidence.",
+          "action": "Provide source or specification lines establishing the post-guidance fresh grounded question, its completion before recording an assisted pass, and separate retention of the original attempt.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the required ordering and preservation behavior; no evidence-derived text correction is available.",
+            "options": [
+              "Supply implementation evidence for the ordering and original-attempt retention.",
+              "Clarify that this is a proposed acceptance requirement and supply specification text defining the intended behavior."
+            ]
+          }
+        },
+        {
+          "claimId": "p33",
+          "ref": "s5/ac2",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Reopening the editor pane must obtain current session state and eligibility from the daemon rather than deriving permission from stale UI state.",
+          "evidence": "The probe for eligibility|authorization|resume|understanding|assessment returned 0 matches. The only read, mocks/commit-understanding.md:1, contains '# Pre-commit understanding check — VS Code mocks'; it establishes neither editor reopening behavior nor daemon-provided session state and eligibility. The premise is unverifiable from the supplied evidence.",
+          "action": "Gather evidence for the editor reopen handler, daemon session-state and eligibility API, and UI permission calculation before validating this premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the required behavior and supports no exact artifact correction.",
+            "options": [
+              "Retain the requirement and supply source evidence tracing editor reopening to daemon state and eligibility retrieval.",
+              "Label this as an unverified behavioral requirement pending evidence of the daemon contract and reopen flow."
+            ]
+          }
+        },
+        {
+          "claimId": "p34",
+          "ref": "s5/ac3",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The UI specification must distinguish voluntarily declining an optional check from explicitly overriding a required High check and explain their commit consequences.",
+          "evidence": "mocks/commit-understanding.md:1 and docs/pre-commit-understanding-spec.md:1 confirm only document titles. Neither supplied line establishes the distinction between declining an optional check and overriding a required High check, or their commit consequences.",
+          "action": "Provide the relevant specification and mock sections, plus S005:ac3, k3, and k9, to verify the distinction and commit consequences.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence does not address the premise; no evidence-derived artifact correction is safe.",
+            "options": [
+              "Supply the relevant passages from the cited artifacts for verification.",
+              "If the distinction is not yet specified, define both actions and their commit consequences before reassessment."
+            ]
+          }
+        },
+        {
+          "claimId": "p35",
+          "ref": "s6/ac2",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A change to the assessed staged snapshot or base must invalidate both previous passes and overrides for authorization while retaining historical results.",
+          "evidence": "The probe returned 0 matches for snapshot, baseCommit, baseHash, override, eligibility, or invalidate. The only supplied read, docs/pre-commit-understanding-spec.md:1, contains the title '# SPEC: Pre-commit understanding assessments'. Neither establishes invalidation of previous passes and overrides or retention of historical results; the premise is unverifiable.",
+          "action": "Provide evidence showing how staged snapshot or base changes affect authorization from prior passes and overrides, and how historical results are retained.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports neither verification nor a safe artifact correction.",
+            "options": [
+              "Supply implementation reads and tests covering invalidation and historical retention.",
+              "Explicitly identify this as a required behavior to implement, with acceptance checks for both passes and overrides."
+            ]
+          }
+        },
+        {
+          "claimId": "p36",
+          "ref": "s6/ac3",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The commit integration must be able to withhold a required commit when daemon unavailability or concurrent attempts prevent confirmation of current authorization.",
+          "evidence": "The probe for pre-commit, commit guards/checks/authorization, eligibility, concurrency, and locks returned 0 matches. The only read, docs/pre-commit-understanding-spec.md:1, contains the heading “# SPEC: Pre-commit understanding assessments”; it does not establish commit withholding, daemon-failure handling, or concurrent authorization checks. The premise is unverifiable from this evidence.",
+          "action": "Provide evidence of the commit integration’s blocking contract and its behavior when daemon availability or concurrent attempts prevent authorization confirmation.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the required integration behavior.",
+            "options": [
+              "Supply implementation or contract evidence demonstrating commit withholding under both conditions.",
+              "Explicitly identify this behavior as a new integration requirement, with acceptance tests for daemon unavailability and concurrent attempts."
+            ]
+          }
+        },
+        {
+          "claimId": "p37",
+          "ref": "s7/ac2",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The commit integration must be able to place the explicitly confirmed High exception and its reason in the actual resulting commit message.",
+          "evidence": "The probe for commit-message hooks, commitMessage, override, or trailer returned 0 matches. docs/pre-commit-understanding-spec.md:1 contains only the heading “# SPEC: Pre-commit understanding assessments”. Neither establishes that the commit integration can write a confirmed High exception and its reason into the resulting commit message; the premise is unverifiable.",
+          "action": "Provide evidence of the commit-message creation or modification path and how it receives the confirmed exception and reason.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence identifies no commit integration contract or implementation from which a safe artifact correction can be derived.",
+            "options": [
+              "Supply the actual commit-message integration contract and source evidence for confirmation and reason propagation.",
+              "Define a commit-message integration mechanism and an acceptance check verifying that the resulting commit contains the confirmed exception and reason."
+            ]
+          }
+        },
+        {
+          "claimId": "p38",
+          "ref": "s7/ac3",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The commit integration must be able to reject finalization when the required exception record is absent from the final message or the staged content differs from the authorized snapshot.",
+          "evidence": "The probe for commit-msg, pre-commit, snapshot, write-tree, override, and authorization returned 0 matches. docs/pre-commit-understanding-spec.md:1 contains only the heading “# SPEC: Pre-commit understanding assessments”. This evidence does not establish a commit integration capable of enforcing either rejection condition; the premise is unverifiable.",
+          "action": "Provide source evidence identifying the finalization enforcement point, access to the final commit message, and comparison of staged content with the authorized snapshot.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports neither an existing enforcement contract nor a safe artifact correction.",
+            "options": [
+              "Supply implementation evidence demonstrating both rejection conditions.",
+              "Explicitly scope implementation of the enforcement mechanism and define its message and snapshot contracts."
+            ]
+          }
+        },
+        {
+          "claimId": "p39",
+          "ref": "s7/ac4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A successful High assessment must authorize a retry of the matching current commit automatically without requiring an override.",
+          "evidence": "The probe returned 0 matches for eligibility, authorization, assessment, override, snapshot, or policy. The only read, docs/pre-commit-understanding-spec.md:1, contains the title “# SPEC: Pre-commit understanding assessments”. This does not establish whether a successful High assessment automatically authorizes retry of the matching current commit. The premise is unverifiable.",
+          "action": "Obtain evidence for the assessment-success and retry-authorization paths, including current-commit matching and override requirements, before validating this acceptance criterion.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports neither confirmation nor a safe correction of the required behavior.",
+            "options": [
+              "Provide implementation evidence showing how a successful High assessment authorizes a retry for the matching current commit.",
+              "Clarify that this is new required behavior and provide the intended authorization contract for review."
+            ]
+          }
+        },
+        {
+          "claimId": "p40",
+          "ref": "E20261017670419c4:FR004",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Commit authorization must evaluate matching current evidence against the current project requirement before permitting the intended commit.",
+          "evidence": "The probe returned 0 matches for eligibility, authorization, projectPolicy, policy, snapshot, or assessment. The only read, docs/pre-commit-understanding-spec.md:1, contains the heading '# SPEC: Pre-commit understanding assessments'. This does not establish that current evidence is evaluated against the current project requirement before commit authorization; the premise is unverifiable.",
+          "action": "Gather evidence showing the authorization path, how evidence is matched to the current project requirement, and whether evaluation occurs before the commit is permitted.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the required ordering, so no evidence-derived text correction is safe.",
+            "options": [
+              "Provide implementation reads demonstrating evidence matching and evaluation before commit authorization.",
+              "Clarify that this is a prospective requirement and specify an acceptance check for the required ordering."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 37,
+        "low": 3
+      },
+      "reviewedAt": "2026-10-17T08:59:45.557Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-17T09:45:21.027Z",
+    "reviewOverride": {
+      "reason": "Explicitly authorized by the user to finalize the DEF wording and approve with override, without changing timeout code. The original review blocked on insufficient evidence and conflation of proposed requirements with existing implementation. The corrected DEF qualifies bounded discovery, labels future behavior, provides 67 validated exact source references, and preserves five open design decisions. Independent re-review was attempted but failed when a Codex subprocess exceeded its 10-minute timeout; no replacement verdict was saved. This approval accepts that incomplete-review risk for this DEF only, does not claim the revised DEF passed review, and does not waive design decisions or downstream review/approval gates. Historical first-round findings remain preserved.",
+      "at": "2026-10-17T09:45:21.027Z"
+    },
+    "questionResolutions": {
+      "qa741fe5a": {
+        "question": "Design decision: define passing criteria, completion with gaps, first-release question types, retry limits and independent verification while preserving strict Medium completion without score blocking and High pass-or-override. Evidence: docs/pre-commit-understanding-spec.md:44; docs/pre-commit-understanding-spec.md:71; docs/pre-commit-understanding-spec.md:117.",
+        "status": "resolved",
+        "choice": "Bounded rubric gate: evidence-backed explanation and change-impact questions, with two retries per question. A pass requires every required criterion to be satisfied and independently verified. Strict Medium permits committing after assessment completion with recorded gaps; enabled High requires a pass or explicit override.",
+        "rationale": "User explicitly accepted these assessment rules in chat.",
+        "resolvedAt": "2026-10-17T09:55:34.071Z"
+      }
+    }
   },
   "body": {
     "title": "Understand changes before committing",
     "flavor": "new-capability",
-    "problem": "Developers can commit completed designs and implementations without knowing whether they understand the behavior, decisions, and failure modes they are accepting. Existing delivery approvals and reviews describe the work, not a particular person's understanding, so uncertainty and confident misconceptions are invisible. There is no contextual assessment of the proposed commit's impact, no proportional understanding requirement, and no durable record connecting a person's demonstrated knowledge or explicit exception to the exact changes committed.",
+    "problem": "Developers need to know whether they understand the behavior, decisions, and failure modes of changes they are about to commit. Work-item approval or completion alone does not demonstrate an individual's understanding. The initial bounded code and document searches did not identify a complete personal pre-commit assessment flow; this is a discovery limit, not proof that no related capability exists. Without a verified connection between a person, their demonstrated understanding or explicit exception, and the exact proposed change, uncertainty and misconceptions can remain invisible.",
     "summary": {
       "audience": "product",
-      "prose": "Before a commit, developers receive an understanding check proportionate to its contextual impact. They can learn through guided explanations, demonstrate understanding, and retain a personal record without changing the work item's completion status. High-impact exceptions are explicit and visible in the commit message."
+      "prose": "Before a commit, developers receive an understanding check proportionate to its contextual impact. They can learn through guided explanations, demonstrate understanding, and retain a personal record without changing the work item's completion status. High-impact exceptions are explicit and visible in the commit message. This is a proposed new capability: all functional requirements and story acceptance criteria below describe behavior to build, not claims of existing implementation. Story dependencies are the proposed delivery order. The mocks illustrate UX only."
     },
     "nonGoals": [
       {
@@ -45,79 +742,89 @@
     ],
     "assumptions": [
       {
-        "text": "The current specification and mocks express the desired product behavior; unresolved implementation choices require explicit decisions before implementation.",
+        "text": "The specification supplies the requested behavior; implementation has not started. The mock is a UX prototype rather than a functioning extension or hook.",
         "confidence": "high",
         "source": "c1"
+      },
+      {
+        "text": "Existing CLI provider access is a foundation to integrate, not an existing assessment engine. Its current provider kinds are Claude and Codex; this epic does not promise a new OpenCode model-provider adapter.",
+        "confidence": "high",
+        "source": "c2"
+      },
+      {
+        "text": "Detailed grading, identity, privacy and commit coordination decisions remain open and must be settled in the design before the affected implementation.",
+        "confidence": "high",
+        "source": "c3"
       }
     ],
     "constraints": [
       {
         "id": "k1",
-        "text": "Daemon owns canonical state, keys, grading, guidance, and authorization; clients use IPC only.",
+        "text": "New requirement: the daemon owns canonical assessment state, keys, grading, guidance and commit eligibility; the editor communicates through IPC.",
         "type": "invariant",
-        "source": "c1"
+        "source": "c4"
       },
       {
         "id": "k2",
-        "text": "Impact classification is contextual daemon reasoning, never line-count or filename rules.",
+        "text": "New requirement: impact is classified contextually by the daemon, not by line-count or filename rules.",
         "type": "stakeholder",
-        "source": "c1"
+        "source": "c5"
       },
       {
         "id": "k3",
-        "text": "Trivial skips; Low optional; strict Medium requires completion regardless of result; configured High requires pass or explicit commit-recorded override.",
+        "text": "New requirement: Trivial skips; Low is optional; strict Medium requires completion regardless of result; enabled High requires a pass or explicit commit-recorded override.",
         "type": "contract",
-        "source": "c1"
+        "source": "c6"
       },
       {
         "id": "k4",
-        "text": "Assessment and authorization bind to the intended staged snapshot and base; changed content cannot reuse authorization silently.",
+        "text": "New requirement: assessments and authorization bind to the intended staged snapshot and base; a changed snapshot or base cannot reuse authorization silently.",
         "type": "invariant",
-        "source": "c1"
+        "source": "c7"
       },
       {
         "id": "k5",
-        "text": "Unsure immediately starts guidance; incorrect submitted answers also start guidance; reading guidance alone is not a pass.",
+        "text": "New requirement: Unsure immediately starts guidance; incorrect submitted answers also start guidance; reading guidance alone is not a pass.",
         "type": "contract",
-        "source": "c1"
+        "source": "c8"
       },
       {
         "id": "k6",
-        "text": "Preserve personal original answers, confidence and assisted attempts separately from work-item delivery state.",
+        "text": "New requirement: retain original responses, confidence, guidance and assisted attempts; assessment outcomes must not alter work-item delivery state.",
         "type": "invariant",
-        "source": "c1"
+        "source": "c9"
       },
       {
         "id": "k7",
-        "text": "Use existing CLI-backed providers with sequential LLM calls and daemon-served structured context, never direct cloud REST.",
+        "text": "Existing repository convention to preserve: LLM access uses the provider abstraction; cloud access uses CLI-backed providers, LLM calls are sequential, and context is structured rather than raw file dumps.",
         "type": "convention",
-        "source": "c2"
+        "source": "c10"
       },
       {
         "id": "k8",
-        "text": "Copy/adapt relevant pinned Grokcheck modules with attribution; no separate Grokcheck process or Python runtime.",
+        "text": "New requirement: copy/adapt selected pinned Grokcheck modules into daemon-managed functionality with attribution; no separate Grokcheck process or Python runtime.",
         "type": "stakeholder",
-        "source": "c1"
+        "source": "c11"
       },
       {
         "id": "k9",
-        "text": "Assessments appear in a resumable VS Code editor pane; UI scores cannot authorize commits.",
+        "text": "New requirement: assessments appear in a resumable VS Code editor pane; the daemon remains authoritative for commit eligibility, not UI scores.",
         "type": "contract",
-        "source": "c3"
+        "source": "c12"
       }
     ],
     "stories": [
       {
         "id": "s1",
         "title": "Keep a personal, resumable understanding record",
-        "userValue": "I can resume my check and distinguish my understanding from delivery progress.",
+        "userValue": "Required new behavior: I can resume my check and distinguish my understanding from delivery progress.",
         "sizeEstimate": "L",
         "acceptanceCriteria": [
           {
             "id": "ac1",
             "given": "a developer begins a check for a staged change",
             "when": "the session is saved and later resumed",
-            "then": "the same person's answers, confidence, assisted attempts and progress remain associated with the original change and linked work items",
+            "then": "the same person's answers, confidence, assisted attempts and progress remain associated with the original change and linked work items Requirement evidence: [[c13]], [[c14]], [[c15]], [[c16]].",
             "operationalizes": [
               "k1",
               "k4",
@@ -128,7 +835,7 @@
             "id": "ac2",
             "given": "a linked epic, story, task or issue is completed",
             "when": "a check is failed, skipped or resumed",
-            "then": "its delivery status and approvals remain unchanged",
+            "then": "its delivery status and approvals remain unchanged Requirement evidence: [[c17]].",
             "operationalizes": [
               "k6"
             ]
@@ -137,7 +844,7 @@
             "id": "ac3",
             "given": "the editor closes or the daemon restarts during a check",
             "when": "the developer returns",
-            "then": "persisted progress is recoverable and missing or uncertain state cannot masquerade as a pass",
+            "then": "persisted progress is recoverable and missing or uncertain state cannot masquerade as a pass Requirement evidence: [[c12]], [[c18]].",
             "operationalizes": [
               "k1",
               "k9"
@@ -153,7 +860,7 @@
       {
         "id": "s2",
         "title": "Explain change impact and the applicable project requirement",
-        "userValue": "I understand why this commit needs a check and what the project requires.",
+        "userValue": "Required new behavior: I understand why this commit needs a check and what the project requires.",
         "dependsOn": [
           "s1"
         ],
@@ -163,7 +870,7 @@
             "id": "ac1",
             "given": "an exact staged change and its base are available",
             "when": "impact is assessed",
-            "then": "the daemon provides High, Medium, Low or Trivial with contextual reasons and relevant evidence rather than a filename or line-count rule",
+            "then": "the daemon provides High, Medium, Low or Trivial with contextual reasons and relevant evidence rather than a filename or line-count rule Requirement evidence: [[c5]], [[c19]], [[c20]].",
             "operationalizes": [
               "k2",
               "k4",
@@ -174,7 +881,7 @@
             "id": "ac2",
             "given": "a classification and current project settings exist",
             "when": "requirements are shown",
-            "then": "Trivial bypasses assessment, Low offers a voluntary check, strict Medium requires completion without score blocking, and enabled High requires a pass or explicit override",
+            "then": "Trivial bypasses assessment, Low offers a voluntary check, strict Medium requires completion without score blocking, and enabled High requires a pass or explicit override Requirement evidence: [[c21]], [[c22]], [[c23]], [[c6]].",
             "operationalizes": [
               "k3"
             ]
@@ -183,7 +890,7 @@
             "id": "ac3",
             "given": "context or classification is unavailable or uncertain",
             "when": "a commit check is requested",
-            "then": "the user sees the uncertainty and recovery options without silently treating it as Trivial or a pass",
+            "then": "the user sees the uncertainty and recovery options without silently treating it as Trivial or a pass Requirement evidence: [[c20]].",
             "operationalizes": [
               "k1",
               "k2"
@@ -199,7 +906,7 @@
       {
         "id": "s3",
         "title": "Demonstrate understanding with grounded questions",
-        "userValue": "I can demonstrate understanding of the actual requirements, design and behavior I am committing.",
+        "userValue": "Required new behavior: I can demonstrate understanding of the actual requirements, design and behavior I am committing.",
         "dependsOn": [
           "s1",
           "s2"
@@ -210,7 +917,7 @@
             "id": "ac1",
             "given": "linked requirements, design, implementation, tests and review evidence are available",
             "when": "a check is prepared",
-            "then": "questions address the exact change and cite supporting evidence; unavailable evidence is disclosed rather than invented",
+            "then": "questions address the exact change and cite supporting evidence; unavailable evidence is disclosed rather than invented Requirement evidence: [[c24]], [[c25]], [[c26]].",
             "operationalizes": [
               "k4",
               "k7"
@@ -220,7 +927,7 @@
             "id": "ac2",
             "given": "a developer submits an answer and confidence",
             "when": "the answer is evaluated",
-            "then": "the daemon records the first response and determines the outcome using validated criteria; the editor cannot declare itself passed",
+            "then": "the daemon records the first response and determines the outcome using validated criteria; the editor cannot declare itself passed Requirement evidence: [[c27]], [[c9]].",
             "operationalizes": [
               "k1",
               "k6",
@@ -229,9 +936,9 @@
           },
           {
             "id": "ac3",
-            "given": "an assessment is run with any supported authoring assistant",
+            "given": "a developer uses the VS Code assessment after code was authored manually or with an assistant",
             "when": "questions and results are produced",
-            "then": "the same daemon-managed experience works without requiring Claude-specific hooks or a separate Grokcheck service",
+            "then": "the new assessment flow does not depend on a Claude-specific hook or separate Grokcheck service; reasoning uses existing configured insrc providers. Requirement evidence: [[c28]].",
             "operationalizes": [
               "k1",
               "k7",
@@ -248,7 +955,7 @@
       {
         "id": "s4",
         "title": "Learn through guidance after uncertainty or an incorrect answer",
-        "userValue": "I can understand the concept I missed and demonstrate what I learned.",
+        "userValue": "Required new behavior: I can understand the concept I missed and demonstrate what I learned.",
         "dependsOn": [
           "s3"
         ],
@@ -258,7 +965,7 @@
             "id": "ac1",
             "given": "a question is visible with no answer submitted",
             "when": "the user selects Unsure",
-            "then": "guided understanding opens immediately with explanation and relevant evidence",
+            "then": "guided understanding opens immediately with explanation and relevant evidence Requirement evidence: [[c29]].",
             "operationalizes": [
               "k5"
             ]
@@ -267,7 +974,7 @@
             "id": "ac2",
             "given": "an answer has been submitted",
             "when": "it is evaluated as incorrect",
-            "then": "the user receives a guided walkthrough of the concept and supporting evidence",
+            "then": "the user receives a guided walkthrough of the concept and supporting evidence Requirement evidence: [[c30]].",
             "operationalizes": [
               "k5"
             ]
@@ -276,7 +983,7 @@
             "id": "ac3",
             "given": "the user has read guidance",
             "when": "the user continues",
-            "then": "a fresh grounded question assesses understanding; reading guidance alone never yields a pass and the original attempt remains visible separately from assisted outcomes",
+            "then": "a fresh grounded question assesses understanding; reading guidance alone never yields a pass and the original attempt remains visible separately from assisted outcomes Requirement evidence: [[c31]], [[c9]], [[c8]].",
             "operationalizes": [
               "k5",
               "k6"
@@ -292,7 +999,7 @@
       {
         "id": "s5",
         "title": "Complete and resume checks in a VS Code editor pane",
-        "userValue": "I can manage the whole check alongside my code without leaving VS Code.",
+        "userValue": "Required new behavior: I can manage the whole check alongside my code without leaving VS Code.",
         "dependsOn": [
           "s2",
           "s3",
@@ -304,7 +1011,7 @@
             "id": "ac1",
             "given": "a commit needs or offers a check",
             "when": "the user opens it",
-            "then": "an editor pane shows impact, rationale, requirement, linked scope and progress with questions, confidence, guidance and results",
+            "then": "an editor pane shows impact, rationale, requirement, linked scope and progress with questions, confidence, guidance and results Requirement evidence: [[c32]], [[c33]].",
             "operationalizes": [
               "k3",
               "k9"
@@ -314,7 +1021,7 @@
             "id": "ac2",
             "given": "the pane is closed or reloaded",
             "when": "the user reopens it",
-            "then": "the daemon's current session and eligibility are shown without losing saved answers or granting permission from stale UI state",
+            "then": "the daemon's current session and eligibility are shown without losing saved answers or granting permission from stale UI state Requirement evidence: [[c4]], [[c12]].",
             "operationalizes": [
               "k1",
               "k9"
@@ -324,7 +1031,7 @@
             "id": "ac3",
             "given": "a check is offered voluntarily or requires an override",
             "when": "the user chooses skip or override",
-            "then": "the pane clearly distinguishes voluntary decline from a recorded exception and explains the commit consequence",
+            "then": "the pane clearly distinguishes voluntary decline from a recorded exception and explains the commit consequence Requirement evidence: [[c22]], [[c6]], [[c34]].",
             "operationalizes": [
               "k3",
               "k9"
@@ -340,7 +1047,7 @@
       {
         "id": "s6",
         "title": "Apply proportional checks to the exact commit",
-        "userValue": "I can commit once the applicable requirement is satisfied, knowing the decision covers what is actually committed.",
+        "userValue": "Required new behavior: I can commit once the applicable requirement is satisfied, knowing the decision covers what is actually committed.",
         "dependsOn": [
           "s2",
           "s3",
@@ -352,7 +1059,7 @@
             "id": "ac1",
             "given": "a commit is attempted under enabled policy",
             "when": "the pre-commit check evaluates current evidence",
-            "then": "Trivial proceeds without a test, Low may decline, strict Medium proceeds after completion regardless of outcome, and enabled High passes automatically only after a successful test",
+            "then": "Trivial proceeds without a test, Low may decline, strict Medium proceeds after completion regardless of outcome, and enabled High passes automatically only after a successful test Requirement evidence: [[c21]], [[c22]], [[c23]], [[c6]], [[c35]].",
             "operationalizes": [
               "k1",
               "k3",
@@ -363,7 +1070,7 @@
             "id": "ac2",
             "given": "a previously checked snapshot or base changes",
             "when": "commit eligibility is requested",
-            "then": "old passes and overrides no longer authorize the new commit while historical results are retained",
+            "then": "old passes and overrides no longer authorize the new commit while historical results are retained Requirement evidence: [[c7]].",
             "operationalizes": [
               "k4",
               "k6"
@@ -373,7 +1080,7 @@
             "id": "ac3",
             "given": "the daemon is unavailable or concurrent attempts occur",
             "when": "a required check cannot be confirmed",
-            "then": "the user receives actionable recovery and the commit is not silently authorized with an unknown result",
+            "then": "the user receives actionable recovery and the commit is not silently authorized with an unknown result Requirement evidence: [[c20]], [[c12]], [[c36]].",
             "operationalizes": [
               "k1",
               "k3",
@@ -390,7 +1097,7 @@
       {
         "id": "s7",
         "title": "Explicitly override a High requirement with a durable commit record",
-        "userValue": "I can make an accountable exception when I cannot pass or choose to skip a High check.",
+        "userValue": "Required new behavior: I can make an accountable exception when I cannot pass or choose to skip a High check.",
         "dependsOn": [
           "s6"
         ],
@@ -400,7 +1107,7 @@
             "id": "ac1",
             "given": "an enabled High check is failed or skipped",
             "when": "the developer does not explicitly override",
-            "then": "the commit remains blocked",
+            "then": "the commit remains blocked Requirement evidence: [[c37]].",
             "operationalizes": [
               "k3"
             ]
@@ -409,7 +1116,7 @@
             "id": "ac2",
             "given": "an enabled High check is failed or skipped",
             "when": "the developer explicitly confirms an override for the current snapshot",
-            "then": "the exception and reason are recorded in the actual resulting commit message and understanding history",
+            "then": "the exception and reason are recorded in the actual resulting commit message and understanding history Requirement evidence: [[c38]], [[c39]], [[c40]].",
             "operationalizes": [
               "k1",
               "k3",
@@ -421,7 +1128,7 @@
             "id": "ac3",
             "given": "the required override record is missing from the final message or the staged content changes",
             "when": "the commit is finalized",
-            "then": "the exception cannot authorize that commit",
+            "then": "the exception cannot authorize that commit Requirement evidence: [[c7]], [[c40]].",
             "operationalizes": [
               "k3",
               "k4"
@@ -431,7 +1138,7 @@
             "id": "ac4",
             "given": "a valid High assessment succeeds",
             "when": "the matching commit is retried",
-            "then": "it proceeds automatically without requiring an override",
+            "then": "it proceeds automatically without requiring an override Requirement evidence: [[c41]].",
             "operationalizes": [
               "k3",
               "k4"
@@ -445,7 +1152,13 @@
         ]
       }
     ],
-    "openQuestions": [],
+    "openQuestions": [
+      "Design decision: define passing criteria, completion with gaps, first-release question types, retry limits and independent verification while preserving strict Medium completion without score blocking and High pass-or-override. Evidence: docs/pre-commit-understanding-spec.md:44; docs/pre-commit-understanding-spec.md:71; docs/pre-commit-understanding-spec.md:117.",
+      "Design decision: define stable learner identity, retention, visibility and privacy controls. Evidence: docs/pre-commit-understanding-spec.md:133.",
+      "Design decision: define setting defaults and behavior for disabled requirements or unavailable classification; never silently classify missing evidence as Trivial. Evidence: docs/pre-commit-understanding-spec.md:42; docs/pre-commit-understanding-spec.md:57.",
+      "Design decision: specify staged-evidence reconciliation and Git gate/message coordination, including partial commits, amendments, concurrency, retries, cancellation and bypass boundaries. Evidence: docs/pre-commit-understanding-spec.md:65; docs/pre-commit-understanding-spec.md:157; docs/pre-commit-understanding-spec.md:220.",
+      "Design decision: define work-item association when multiple items or no item is linked. Evidence: docs/pre-commit-understanding-spec.md:14; docs/pre-commit-understanding-spec.md:221."
+    ],
     "functionalDefinition": {
       "requirements": [
         {
@@ -517,17 +1230,404 @@
     {
       "id": "c1",
       "kind": "doc",
-      "ref": "docs/pre-commit-understanding-spec.md"
+      "ref": "docs/pre-commit-understanding-spec.md:4",
+      "quotedText": "Status: Consolidated product specification from the agreed UX discussion; implementation not started."
     },
     {
       "id": "c2",
-      "kind": "convention",
-      "ref": "AGENTS.md"
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:64",
+      "quotedText": "export type CliKind = 'claude' | 'codex';"
     },
     {
       "id": "c3",
       "kind": "doc",
-      "ref": "mocks/commit-understanding.md"
+      "ref": "docs/pre-commit-understanding-spec.md:218",
+      "quotedText": "- Passing criteria, question selection/length, partial outcomes, retry policy, and independent verifier configuration."
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:29",
+      "quotedText": "The UI must not grade authoritatively, store the canonical assessment record, or decide whether a commit is permitted. It accesses daemon-owned state through IPC. Existing daemon ownership of storage and sequential LLM invocation conventions remain in force."
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:48",
+      "quotedText": "Classification is performed by the daemon's reasoning pipeline, not fixed rules, changed-line counts, filename lists, or size thresholds. Deterministic extraction may collect facts; it does not substitute for contextual impact judgment."
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:40",
+      "quotedText": "| High | Mandatory passing assessment when the project's High-impact requirement is enabled | A pass unblocks automatically. A failed or skipped assessment requires an explicit override recorded in the commit message. |"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:63",
+      "quotedText": "Recheck the identity before authorizing the commit. If the base or staged content changes, preserve the prior understanding history but reevaluate the new snapshot. Never silently reuse a pass or override for different content. Repeated commit attempts against the same snapshot should resume applicable state instead of creating duplicate assessments."
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:115",
+      "quotedText": "Reading guidance does not count as demonstrated understanding. A successful reassessment may satisfy the concept requirement; an unresolved gap remains recorded. The mock offers **Continue with gap recorded** after guidance: this permits assessment completion with gaps, not a pass. Medium remains non-blocking on outcome after completion; High still requires a passing assessment or an explicit override."
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:113",
+      "quotedText": "Guidance must be more than a correct-answer reveal. It should help the user understand why the behavior or design follows from the evidence. Preserve original responses, confidence, guidance events, and subsequent attempts. Distinguish understanding demonstrated without assistance from understanding demonstrated after guidance."
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "AGENTS.md:12",
+      "quotedText": "- **No direct cloud REST calls from our process.** Cloud LLM access happens through the locally-installed `claude` and `codex` CLI binaries (via `CliProvider`). Auth + quota stay with the user's CLI OAuth sessions. Direct REST providers to Anthropic / OpenAI / Gemini / Mistral must not be reintroduced."
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:18",
+      "quotedText": "The daemon owns and manages the complete assessment lifecycle. Relevant Grokcheck code is copied and adapted into insrc, retaining attribution. There is no external Grokcheck installation, Python runtime, localhost Grokcheck server, or independent Grokcheck background process."
+    },
+    {
+      "id": "c12",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:92",
+      "quotedText": "Answers and progress survive tab closure or UI reconnection because the daemon owns them. Closing the editor tab is not a pass or an override. Show a recoverable waiting/error state when the daemon is unavailable."
+    },
+    {
+      "id": "c13",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:125",
+      "quotedText": "| Identity | Assessment ID, person identity, project/repository, linked work-item IDs when available. |"
+    },
+    {
+      "id": "c14",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:126",
+      "quotedText": "| Version | Base revision, staged snapshot identity, evidence versions, assessment/schema version, applicable project policy. |"
+    },
+    {
+      "id": "c15",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:129",
+      "quotedText": "| Attempts | Responses, confidence at the time of response, grades, timestamps, guidance shown, reassessment attempts. |"
+    },
+    {
+      "id": "c16",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:130",
+      "quotedText": "| Understanding | Demonstrated concepts, unresolved gaps, confidence mismatches, assisted/unassisted outcomes, freshness. |"
+    },
+    {
+      "id": "c17",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:12",
+      "quotedText": "Understanding is an individual record. It is separate from delivery status: an assessment must never reopen an item, revoke approval, or change whether work is completed. Project policy may pause a commit until an assessment requirement is satisfied, but that is a commit decision, not a work-item status transition."
+    },
+    {
+      "id": "c18",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:121",
+      "quotedText": "The daemon persists an assessment separately from work-item delivery state. The logical record includes:"
+    },
+    {
+      "id": "c19",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:52",
+      "quotedText": "- The exact staged changes, including additions, removals, renames, and partial-file staging."
+    },
+    {
+      "id": "c20",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:57",
+      "quotedText": "Return a validated impact value, a concise rationale, affected concepts to assess, evidence references, and any material context limitations. Unsupported or missing evidence must be visible; it must not be represented as proof of Trivial impact. Classifier unavailability needs an explicit project policy, not a silent fallback to a rule-based classifier."
+    },
+    {
+      "id": "c21",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:37",
+      "quotedText": "| Trivial | No assessment | Continue after classification. |"
+    },
+    {
+      "id": "c22",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:38",
+      "quotedText": "| Low | Offer an optional assessment | Declining or an unsuccessful outcome does not block. |"
+    },
+    {
+      "id": "c23",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:39",
+      "quotedText": "| Medium | Mandatory completion when project strict mode is enabled | Completion is required in strict mode; the outcome never blocks. |"
+    },
+    {
+      "id": "c24",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:10",
+      "quotedText": "Track a person's understanding of what has been designed and built, using a contextual assessment before a commit. The assessment covers the staged changes and their linked epic, story, task, or issue: requirements, design decisions, implementation behavior, dependencies, tests, and review findings."
+    },
+    {
+      "id": "c25",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:61",
+      "quotedText": "Bind classification, generated questions, answers, evidence verification, passes, and overrides to an immutable description of the intended commit. At minimum, account for the base revision and staged tree; exact fingerprint representation is a design decision. Evidence must describe staged content, not an unstaged working-tree revision of the same file."
+    },
+    {
+      "id": "c26",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:73",
+      "quotedText": "Each question and explanatory claim needs attributable evidence. Separate facts derived from the code graph or source snapshot from generated interpretation. Independent verification should judge the claims against the evidence and reject or revise contradicted claims before presentation. An author marking its own claim “verified” is insufficient."
+    },
+    {
+      "id": "c27",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:77",
+      "quotedText": "Keep answer keys and grading authority in the daemon. An unresolved model judgment, pending rubric evaluation, or self-rating must not be treated as a successful High-impact assessment."
+    },
+    {
+      "id": "c28",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:27",
+      "quotedText": "The initial implementation targets VS Code only. Keep assessment contracts independent of the authoring agent, so future Claude Code, Codex, OpenCode, or other clients can use the same daemon-owned lifecycle. This version does not require implementing new agent adapters or a separate browser learning application."
+    },
+    {
+      "id": "c29",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:100",
+      "quotedText": "1. The user selects **Unsure**, even before submitting an answer."
+    },
+    {
+      "id": "c30",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:101",
+      "quotedText": "2. The submitted answer is incorrect."
+    },
+    {
+      "id": "c31",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:111",
+      "quotedText": "5. Offer a fresh question or example that checks the same concept after guidance."
+    },
+    {
+      "id": "c32",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:81",
+      "quotedText": "An attempted commit opens or reveals an **Understanding check** editor tab when an assessment is relevant. Source Control shows whether the commit is ready or paused. The tab is a normal editor-area surface, not a modal dialog, terminal quiz, or external browser."
+    },
+    {
+      "id": "c33",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:90",
+      "quotedText": "Questions show the relevant prompt, supporting code/design reference, response controls, and confidence controls. Source references should navigate to the corresponding evidence without losing assessment progress. The mock's source details are illustrative, not implemented navigation."
+    },
+    {
+      "id": "c34",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:88",
+      "quotedText": "- An action to begin the assessment, plus a skip/override action only where policy permits it."
+    },
+    {
+      "id": "c35",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:44",
+      "quotedText": "“Completion” must distinguish finishing the assessment, including unresolved gaps, from abandoning it. Opening the pane or merely viewing guidance does not satisfy a completion requirement. Skipping a strict Medium assessment does not silently satisfy it. For High impact, skipping is only an allowed bypass through the explicit override flow."
+    },
+    {
+      "id": "c36",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:157",
+      "quotedText": "The logical trigger is pre-commit, but do not assume one Git hook can both enforce the gate and reliably modify the final message. Design the pre-commit/commit-message coordination explicitly, including cancellation, retries, amended commits, and user edits to the message. Local enforcement is not a tamper-proof organizational policy; hook bypass and enforcement boundaries must be documented."
+    },
+    {
+      "id": "c37",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:140",
+      "quotedText": "- Failing or skipping leaves the commit blocked until the user explicitly overrides."
+    },
+    {
+      "id": "c38",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:142",
+      "quotedText": "- Bind the override to the person, assessment, policy, and intended snapshot."
+    },
+    {
+      "id": "c39",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:145",
+      "quotedText": "The mock proposes a required reason, explicit acknowledgment, and these trailers. Names and encoding are not yet a finalized wire contract:"
+    },
+    {
+      "id": "c40",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:155",
+      "quotedText": "A manually typed trailer must not by itself count as a daemon-recorded explicit override. The integration must ensure required metadata actually appears in the committed message and refers to the authorized snapshot."
+    },
+    {
+      "id": "c41",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:139",
+      "quotedText": "- Passing automatically authorizes the assessed snapshot without requiring an override."
+    },
+    {
+      "id": "c42",
+      "kind": "convention",
+      "ref": "AGENTS.md:120",
+      "quotedText": "- All LLM interaction goes through the `LLMProvider` interface in `shared/types.ts`"
+    },
+    {
+      "id": "c43",
+      "kind": "convention",
+      "ref": "AGENTS.md:122",
+      "quotedText": "- Never `Promise.all` anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial `for...of` with sequential awaits."
+    },
+    {
+      "id": "c44",
+      "kind": "convention",
+      "ref": "AGENTS.md:135",
+      "quotedText": "1. **Daemon owns all DB access** — CLI, MCP, and the IDE workbench communicate via IPC only."
+    },
+    {
+      "id": "c45",
+      "kind": "convention",
+      "ref": "AGENTS.md:139",
+      "quotedText": "5. **No raw file dumps** — context is always structured entity summaries + relations from the graph."
+    },
+    {
+      "id": "c46",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:22",
+      "quotedText": "| Daemon | Capture and identify staged scope; gather context; classify impact; generate and verify questions; grade; generate guidance; persist individual history; enforce assessment policy; issue commit decisions and override records. |"
+    },
+    {
+      "id": "c47",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:23",
+      "quotedText": "| VS Code plugin | Open the assessment as an editor tab; render daemon-provided content; collect answers, confidence, and explicit override actions; show commit eligibility and source references. |"
+    },
+    {
+      "id": "c48",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:24",
+      "quotedText": "| Git integration | Request the daemon's decision before committing; ensure it still applies to the intended commit; arrange verified override trailers in the commit message. |"
+    },
+    {
+      "id": "c49",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:161",
+      "quotedText": "Source reviewed: [Tsadoq/grokcheck](https://github.com/Tsadoq/grokcheck), pinned to revision [`0d8fa1730f11fa3178bb132f30d42f2dea2d8a90`](https://github.com/Tsadoq/grokcheck/tree/0d8fa1730f11fa3178bb132f30d42f2dea2d8a90)."
+    },
+    {
+      "id": "c50",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:167",
+      "quotedText": "| [`web/grading.js`](https://github.com/Tsadoq/grokcheck/blob/0d8fa1730f11fa3178bb132f30d42f2dea2d8a90/skills/grokcheck/web/grading.js) | Deterministic grading, normalization, partial outcomes, and confidence summaries. | Port to strict TypeScript; run authoritative grading inside the daemon; map outcomes to insrc assessment semantics. Do not confuse its numeric summary with commit policy. |"
+    },
+    {
+      "id": "c51",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:185",
+      "quotedText": "The inspected project uses the [MIT license](https://github.com/Tsadoq/grokcheck/blob/0d8fa1730f11fa3178bb132f30d42f2dea2d8a90/LICENSE), with copyright attributed to Matteo Villosio. Preserve the upstream notice for copied/adapted code and record the source revision, original paths, and local modifications. Bundled fonts and libraries carry separate notices; avoid copying unused assets and retain applicable notices for anything adopted."
+    },
+    {
+      "id": "c52",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:187",
+      "quotedText": "The source audit ran 44 JavaScript tests and 30 focused Python tests successfully, including grading, grounding, run history, and export/grading parity. This is evidence for reuse, not validation of the future insrc integration. No upstream modules have been copied into production code yet."
+    },
+    {
+      "id": "c53",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:204",
+      "quotedText": "4. Assessments open in a VS Code editor pane and remain associated with the same person and snapshot across UI reconnections."
+    },
+    {
+      "id": "c54",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:211",
+      "quotedText": "11. Canonical state and grading remain daemon-owned. The UI cannot unlock the commit by asserting a client-side score."
+    },
+    {
+      "id": "c55",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:217",
+      "quotedText": "- Setting defaults, configuration names, and final behavior when a requirement is disabled."
+    },
+    {
+      "id": "c56",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:219",
+      "quotedText": "- Person identity, record retention, visibility, and privacy controls."
+    },
+    {
+      "id": "c57",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:220",
+      "quotedText": "- Hook/message coordination, partial commits, amend/merge handling, concurrent commits, cancellation, and unavailable daemon behavior."
+    },
+    {
+      "id": "c58",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:221",
+      "quotedText": "- Work-item association when several items contribute to a commit or no item is linked."
+    },
+    {
+      "id": "c59",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:222",
+      "quotedText": "- Staged-source grounding and graph-version reconciliation without violating structured-context conventions."
+    },
+    {
+      "id": "c60",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:223",
+      "quotedText": "- Final IPC contracts, module paths, persisted schemas, and exact trailer names."
+    },
+    {
+      "id": "c61",
+      "kind": "doc",
+      "ref": "mocks/commit-understanding.md:3",
+      "quotedText": "Open [commit-understanding.html](commit-understanding.html) in a browser. The assessment occupies a VS Code editor tab next to the source file, with Source Control showing whether the pending commit can proceed. This is an interactive UX prototype, not an implemented extension or hook."
+    },
+    {
+      "id": "c62",
+      "kind": "doc",
+      "ref": "mocks/commit-understanding.md:39",
+      "quotedText": "- Trailer names and the required reason/acknowledgment interaction are proposed UI details. The intended requirement is an explicit override tracked in the commit message."
+    },
+    {
+      "id": "c63",
+      "kind": "doc",
+      "ref": "mocks/commit-understanding.md:41",
+      "quotedText": "- Controls and progress are local to the open preview and reset on reload. Real source navigation, agent integration, hooks, staged-content verification, and commit-message writes are not implemented."
+    },
+    {
+      "id": "c64",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:142",
+      "quotedText": "export class CliProvider implements LLMProvider {"
+    },
+    {
+      "id": "c65",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:177",
+      "quotedText": "async complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse> {"
+    },
+    {
+      "id": "c66",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:180",
+      "quotedText": "if (this.kind === 'claude') {"
+    },
+    {
+      "id": "c67",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts:188",
+      "quotedText": "const args = ['exec', '--json', ...this.modelArgs(opts)];"
     }
   ]
 }

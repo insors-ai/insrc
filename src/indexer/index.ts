@@ -35,6 +35,7 @@ import './parser/scala.js';
 import './parser/kotlin.js';
 import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
+import { hasIgnoredSegment, selectFile } from './file-selection.js';
 import { Watcher, IGNORE_DIRS } from './watcher.js';
 import { resolveRepoIgnore, initRepoIgnore } from './repo-ignore-config.js';
 import { IndexQueue } from '../daemon/queue.js';
@@ -71,40 +72,6 @@ const IGNORE_SET = new Set(IGNORE_DIRS);
  *
  * Falls back to the directory walker for non-git repos.
  */
-
-/**
- * Skip patterns for generated / minified files. These have a parser
- * (e.g. tree-sitter-typescript handles `.mjs`) but indexing them is
- * unhelpful and pathologically expensive: a 1.5MB minified file
- * produces thousands of fake-looking entities, each ~8KB long, and
- * embedding 2548 entities × 16/batch × ~99s/batch on Ollama runs to
- * 4+ hours per file. Better to drop them here than burn the daemon
- * for an entire afternoon on a build artifact the user didn't want
- * indexed in the first place. Tested against:
- *
- *   `pdf.worker.min.mjs`        -> match (.min.mjs)
- *   `vendor.bundle.js`          -> match (.bundle.js)
- *   `react.production.min.js`   -> match (.min.js)
- *   `chunk-AB12CD.js`           -> no match (kept)
- *   `Component.test.ts`         -> no match (kept)
- */
-const GENERATED_FILE_PATTERN = /\.(min|bundle|dist|production|prod)\.(js|mjs|cjs|css|html|json)$|[-_]min\.(js|mjs|cjs|css)$/i;
-
-/**
- * @returns true if the file should be skipped because it's a build
- * artifact / minified output rather than source.
- */
-function isGeneratedOrMinified(filePath: string): boolean {
-  return GENERATED_FILE_PATTERN.test(filePath);
-}
-
-/** True when any path segment of `file` (relative to `repoPath`) is in the
- *  ignore set. Applies the ignore list to `git ls-files` output too — the git
- *  walker honours `.gitignore`, but a repo can COMMIT ignore-worthy dirs (e.g.
- *  insrc's own `.insrc/artifacts/*.md`), which `.gitignore` never excludes. */
-function hasIgnoredSegment(file: string, repoPath: string, ignoreSet: Set<string>): boolean {
-  return relative(repoPath, file).split(sep).some(seg => ignoreSet.has(seg));
-}
 
 function listRepoFiles(repoPath: string, ignore: readonly string[] = IGNORE_DIRS): string[] {
   const ignoreSet = new Set(ignore);
@@ -630,22 +597,17 @@ export class IndexerService {
       let total = 0;
       const t0 = Date.now();
 
-      const files = listRepoFiles(repoPath, resolveRepoIgnore(repoPath));
+      const ignore = resolveRepoIgnore(repoPath);
+      const files = listRepoFiles(repoPath, ignore);
       const supported: string[] = [];
-      let skippedGenerated = 0;
+      let notCode = 0;
       for (const filePath of files) {
-        const ext = extname(filePath).toLowerCase();
-        const hasParser = this.supported.has(ext) || basenameParser.handles(filePath);
-        if (!hasParser) continue;
-        if (isGeneratedOrMinified(filePath)) {
-          skippedGenerated++;
-          continue;
-        }
-        supported.push(filePath);
+        if (selectFile(filePath, repoPath, ignore) === 'selected') supported.push(filePath);
+        else notCode++;
       }
       setIndexRunSelected(repoPath, supported.length);
       log.info(
-        { repo: repoPath, total: files.length, supported: supported.length, skippedGenerated },
+        { repo: repoPath, total: files.length, supported: supported.length, notCode },
         'full index: files to process',
       );
 

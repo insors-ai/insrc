@@ -46,11 +46,14 @@ test('codeIndexWorkFor counts full, reconcile and file jobs for the repository (
 	await drained;
 	await running;
 
-	assert.deepEqual(seen[0], { kind: 'full', inFlight: true, pending: 2 }, 'the in-flight full job counts, the two queued A jobs count');
-	assert.deepEqual(seen[1], { kind: 'reconcile', inFlight: true, pending: 1 }, 'after the throw, the next job is the in-flight one');
-	assert.deepEqual(seen[2], { kind: 'file', inFlight: true, pending: 0 });
-	assert.deepEqual(seen[3], { kind: 'full', inFlight: false, pending: 0 }, "another repository's job in flight is not A's work");
-	assert.ok(seen.slice(3).every(s => !s.inFlight && s.pending === 0), 'no other job counts for A');
+	// The summary lane runs at the same time (Story b94cf2c9 S001), so only the index lane's order is fixed.
+	const indexSeen = seen.filter(s => !s.kind.startsWith('doc-summarise'));
+	assert.equal(indexSeen.length, seen.length - 2, 'both summary jobs ran, in their own lane');
+	assert.deepEqual(indexSeen[0], { kind: 'full', inFlight: true, pending: 2 }, 'the in-flight full job counts, the two queued A jobs count');
+	assert.deepEqual(indexSeen[1], { kind: 'reconcile', inFlight: true, pending: 1 }, 'after the throw, the next job is the in-flight one');
+	assert.deepEqual(indexSeen[2], { kind: 'file', inFlight: true, pending: 0 });
+	assert.deepEqual(indexSeen[3], { kind: 'full', inFlight: false, pending: 0 }, "another repository's job in flight is not A's work");
+	assert.ok(indexSeen.slice(3).every(s => !s.inFlight && s.pending === 0), 'no other job counts for A');
 	assert.deepEqual(q.codeIndexWorkFor(A), { inFlight: false, pending: 0 }, 'cleared once drained');
 });
 

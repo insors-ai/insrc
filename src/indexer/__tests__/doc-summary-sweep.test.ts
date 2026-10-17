@@ -25,10 +25,10 @@ const entity = (id: string): Entity => ({
 
 /** Deps over a scripted world; `events` records what ran, in order. */
 function world(opts: {
-	results?: Record<string, SummariseDocResult | 'throw'>;
-	missing?: readonly string[];
-	edits?: string[];
-	stopAfterSummaries?: number;
+	results?: Record<string, SummariseDocResult | 'throw'> | undefined;
+	missing?: readonly string[] | undefined;
+	edits?: string[] | undefined;
+	stopAfterSummaries?: number | undefined;
 }): { deps: DocSummarySweepDeps; events: string[]; progress: [number, number][]; edits: string[] } {
 	const events: string[] = [];
 	const progress: [number, number][] = [];

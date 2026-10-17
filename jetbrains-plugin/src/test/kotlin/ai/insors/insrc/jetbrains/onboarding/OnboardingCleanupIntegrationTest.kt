@@ -81,6 +81,8 @@ class OnboardingCleanupIntegrationTest : BasePlatformTestCase() {
         override fun backup(targetDir: String): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
         override fun compact(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
         override fun update(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")
+        override fun readRepoSettings(repoPath: String): ai.insors.insrc.jetbrains.daemon.RepoSettingsResult = ai.insors.insrc.jetbrains.daemon.RepoSettingsResult.Unavailable("not used in this test")
+        override fun writeRepoSetting(repoPath: String, key: String, value: Any?): ai.insors.insrc.jetbrains.daemon.SaveResult = ai.insors.insrc.jetbrains.daemon.SaveResult.Unavailable("not used in this test")
         override fun updateOutcome(): DaemonUpdateOutcomeResult = DaemonUpdateOutcomeResult.Unavailable("not used in this test")
     }
 

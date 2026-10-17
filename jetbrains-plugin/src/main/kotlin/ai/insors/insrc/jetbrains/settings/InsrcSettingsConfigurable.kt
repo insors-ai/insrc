@@ -5,6 +5,7 @@ import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
 import ai.insors.insrc.jetbrains.daemon.PerRepoOverridesResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
 import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
+import ai.insors.insrc.jetbrains.daemon.RepoSettingsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
 import com.intellij.openapi.application.ApplicationManager
@@ -95,10 +96,14 @@ class InsrcSettingsConfigurable : Configurable {
             // in-session runner switch immediately shows the new provider's list; Refresh
             // re-queries them. The plugin is a dumb consumer of these results (k2).
             val modelLists = ModelTiersModel.PROVIDERS.associateWith { gateway.listModels(it) }
+            // Story s3: each registered repo's tracker settings (values, sign-in, policy), read here on the
+            // pooled thread so no socket round trip runs on the EDT. A failed repo keeps its own reason.
+            val repoSettings: Map<String, RepoSettingsResult> =
+                if (registered is RegisteredReposResult.Loaded) registered.repos.associateWith { gateway.readRepoSettings(it) } else emptyMap()
             ApplicationManager.getApplication().invokeLater({
                 // Only render if this component is still the live page.
                 if (root === scroll) {
-                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, modelLists, gateway))
+                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, modelLists, repoSettings, gateway))
                     scroll.revalidate()
                     scroll.repaint()
                 }
@@ -192,6 +197,7 @@ class InsrcSettingsConfigurable : Configurable {
         perRepo: PerRepoOverridesResult,
         registered: RegisteredReposResult,
         modelLists: Map<String, ai.insors.insrc.jetbrains.daemon.ModelListResult>,
+        repoSettings: Map<String, RepoSettingsResult>,
         gateway: DaemonGatewayService,
     ): JComponent = when (result) {
         is SettingsCatalogResult.Unavailable -> {
@@ -236,6 +242,8 @@ class InsrcSettingsConfigurable : Configurable {
                     PerRepoSection(
                         PerRepoOverridesModel(registered.repos, catalog.roles, catalog.tierNames, perRepo.overrides),
                         gateway,
+                        fullCatalog.repoFields,
+                        repoSettings,
                     ),
                 )
             } else {

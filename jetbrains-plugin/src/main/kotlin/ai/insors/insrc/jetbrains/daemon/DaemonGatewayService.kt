@@ -49,6 +49,11 @@ class DaemonGatewayService : DaemonGateway {
 
     override fun settingsCatalog(): SettingsCatalogResult = delegate.settingsCatalog()
 
+    override fun readRepoSettings(repoPath: String): RepoSettingsResult = delegate.readRepoSettings(repoPath)
+
+    override fun writeRepoSetting(repoPath: String, key: String, value: Any?): SaveResult =
+        delegate.writeRepoSetting(repoPath, key, value)
+
     override fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult =
         delegate.writeSetting(pathSegments, value)
 

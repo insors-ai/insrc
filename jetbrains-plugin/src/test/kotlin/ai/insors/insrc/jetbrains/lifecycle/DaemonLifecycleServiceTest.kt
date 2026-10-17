@@ -76,6 +76,10 @@ class DaemonLifecycleServiceTest : BasePlatformTestCase() {
         override fun compact(): DaemonActionResult = DaemonActionResult.Failed("not used")
         override fun update(): DaemonActionResult =
             throw AssertionError("S003 must never call update (that is the S004 freshness flow)")
+        override fun readRepoSettings(repoPath: String): ai.insors.insrc.jetbrains.daemon.RepoSettingsResult =
+            throw AssertionError("S003 must never call readRepoSettings")
+        override fun writeRepoSetting(repoPath: String, key: String, value: Any?): ai.insors.insrc.jetbrains.daemon.SaveResult =
+            throw AssertionError("S003 must never call writeRepoSetting")
         override fun updateOutcome(): DaemonUpdateOutcomeResult =
             throw AssertionError("S003 must never call updateOutcome (that is the S004 freshness flow)")
     }

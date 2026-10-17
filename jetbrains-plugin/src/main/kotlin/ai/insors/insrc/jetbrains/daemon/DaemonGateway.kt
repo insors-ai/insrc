@@ -203,7 +203,73 @@ data class SettingsCatalogDto(
     val options: List<ConfigOptionDto>,
     val roles: List<RoleDto>,
     val tierNames: List<String>,
+    /** The repo-scoped tracker rows (Story s3); empty when an older daemon omits them. */
+    val repoFields: List<RepoFieldDto> = emptyList(),
 )
+
+/**
+ * One repo-scoped tracker row definition (Story s3), forwarded verbatim from the
+ * `config.catalog` payload's `repoFields`. [kind] is `local` (editable, stored in
+ * github.json), `status` (derived, read-only) or `policy` (read-only, from the team
+ * policy). [note] is a short hint such as "saved; not used yet".
+ */
+data class RepoFieldDto(
+    val key: String,
+    val label: String,
+    val type: String,
+    val enumValues: List<String>?,
+    val default: Any?,
+    val description: String,
+    val group: String,
+    val kind: String,
+    val note: String?,
+)
+
+/** The resolved tracker target of a repo and where it came from (Story s3). */
+data class ResolvedTargetDto(
+    val type: String,
+    val owner: String?,
+    val repo: String?,
+    val source: String,
+    val error: String?,
+)
+
+/** The live, read-only sign-in status (Story s3): signed-in, missing-tool, missing-signin, unreachable, rejected or disabled. */
+data class SigninDto(
+    val state: String,
+    val login: String?,
+    val reason: String?,
+)
+
+/** The read-only policy rows (Story s3): [ok]=false carries [reason]; mode `none` has no values; mode `team` carries one value per policy row. */
+data class PolicyRowsDto(
+    val ok: Boolean,
+    val mode: String?,
+    val values: Map<String, Any?>,
+    val reason: String?,
+)
+
+/** One repo's tracker settings payload (Story s3), mirroring the daemon's `repo.settings.get` reply. */
+data class RepoSettingsDto(
+    val repo: String,
+    /** Only the keys the repo's own entry sets. */
+    val values: Map<String, Any?>,
+    val resolved: ResolvedTargetDto,
+    val signin: SigninDto,
+    val policy: PolicyRowsDto,
+)
+
+/**
+ * The result of a `repo.settings.get` read (Story s3). Three-state: [Loaded], a
+ * business refusal from the daemon ([Rejected], e.g. an unreadable github.json,
+ * with the daemon's message) and a transport fault ([Unavailable]). A repo whose
+ * read is not [Loaded] shows its reason without affecting the other repos.
+ */
+sealed interface RepoSettingsResult {
+    data class Loaded(val settings: RepoSettingsDto) : RepoSettingsResult
+    data class Rejected(val reason: String) : RepoSettingsResult
+    data class Unavailable(val reason: String) : RepoSettingsResult
+}
 
 /**
  * The result of a config.catalog read (Story S002 / sc1). Two-state by design,
@@ -623,6 +689,25 @@ interface DaemonGateway {
     fun settingsCatalog(): SettingsCatalogResult
 
     /**
+     * Read one repo's tracker settings (Story s3) over the `repo.settings.get` IPC —
+     * the repo's own values, the resolved target, the live sign-in status and the
+     * policy rows. [repoPath] must be the path exactly as registered. Never throws:
+     * a business refusal is [RepoSettingsResult.Rejected], a transport fault or
+     * malformed reply is [RepoSettingsResult.Unavailable].
+     */
+    fun readRepoSettings(repoPath: String): RepoSettingsResult
+
+    /**
+     * Set (or, with a null [value], clear) one local tracker row of a repo (Story s3)
+     * over the `repo.settings.set` IPC — NOT config.write. [value] is a String or
+     * Boolean. Never throws: ok is [SaveResult.Saved], a daemon refusal (any error
+     * code) is [SaveResult.Rejected] carrying its message, and a transport fault is
+     * [SaveResult.Unavailable]. A null value is sent as an ABSENT `value` (the wire
+     * serializer drops nulls), which the daemon treats as a clear.
+     */
+    fun writeRepoSetting(repoPath: String, key: String, value: Any?): SaveResult
+
+    /**
      * Persist an edited setting (Story S003 / sc2) via the segment-aware
      * `config.write` IPC. [pathSegments] are LITERAL key segments (never a dotted
      * string) so a dotted dynamic key is never mis-nested (k4); [value] is the
@@ -986,6 +1071,44 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             SettingsCatalogResult.Unavailable(e.message ?: "unexpected daemon fault")
         }
 
+    override fun readRepoSettings(repoPath: String): RepoSettingsResult =
+        try {
+            val r = rpc.call(METHOD_REPO_SETTINGS_GET, mapOf(PARAM_REPO to repoPath))
+            when {
+                !r.ok || r.error != null ->
+                    RepoSettingsResult.Unavailable(r.error ?: "repo.settings.get returned an error")
+                r.data["ok"] == true -> {
+                    val payload = r.data["payload"] as? Map<*, *>
+                        ?: throw IllegalStateException("repo.settings.get reply has no payload")
+                    RepoSettingsResult.Loaded(parseRepoSettings(payload))
+                }
+                else -> RepoSettingsResult.Rejected(repoSettingsErrorMessage(r.data))
+            }
+        } catch (e: DaemonUnavailableException) {
+            RepoSettingsResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            // A malformed reply or any unexpected transport fault is Unavailable, never a partial Loaded.
+            RepoSettingsResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
+    override fun writeRepoSetting(repoPath: String, key: String, value: Any?): SaveResult =
+        try {
+            // A null value is dropped by the serializer, so the daemon sees an absent `value` and clears the row.
+            val r = rpc.call(
+                METHOD_REPO_SETTINGS_SET,
+                mapOf(PARAM_REPO to repoPath, PARAM_KEY to key, PARAM_VALUE to value),
+            )
+            when {
+                !r.ok || r.error != null -> SaveResult.Rejected(r.error ?: "the daemon rejected the setting")
+                r.data["ok"] == true -> SaveResult.Saved
+                else -> SaveResult.Rejected(repoSettingsErrorMessage(r.data))
+            }
+        } catch (e: DaemonUnavailableException) {
+            SaveResult.Unavailable(e.message ?: "daemon unavailable")
+        } catch (e: RuntimeException) {
+            SaveResult.Unavailable(e.message ?: "unexpected daemon fault")
+        }
+
     override fun writeSetting(pathSegments: List<String>, value: Any?): SaveResult =
         // A SET carries the value; the segments go through verbatim as config.write's
         // literal `path` array so a dotted dynamic key is never mis-nested (k4).
@@ -1262,6 +1385,10 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         const val METHOD_CONFIG_CATALOG = "config.catalog"
         const val METHOD_CONFIG_WRITE = "config.write"
         const val METHOD_CONFIG_SHOW = "config.show"
+        // Repo-scoped tracker settings (Story s3): the daemon is the only writer of github.json.
+        const val METHOD_REPO_SETTINGS_GET = "repo.settings.get"
+        const val METHOD_REPO_SETTINGS_SET = "repo.settings.set"
+        const val PARAM_KEY = "key"
         const val METHOD_REPO_STATS = "repo.stats"
         // providers.listModels (Epic ba132c185fe45860 / S004, sc2): one provider per call.
         const val METHOD_LIST_MODELS = "providers.listModels"
@@ -1483,6 +1610,46 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             }
         }
 
+        /** The message of a `repo.settings.*` business error: `{ ok:false, error:{ code, message } }`. */
+        private fun repoSettingsErrorMessage(data: Map<String, Any?>): String {
+            val err = data["error"] as? Map<*, *>
+            val message = (err?.get("message") as? String)?.takeIf { it.isNotEmpty() }
+            return message ?: "the daemon rejected the request"
+        }
+
+        /** Map a `repo.settings.get` payload to the DTO; a field of the wrong shape degrades to a safe default. */
+        private fun parseRepoSettings(payload: Map<*, *>): RepoSettingsDto {
+            val values = (payload["values"] as? Map<*, *>)?.entries
+                ?.associate { (k, v) -> k.toString() to v } ?: emptyMap()
+            val resolved = payload["resolved"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
+            val signin = payload["signin"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
+            val policy = payload["policy"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
+            val policyValues = (policy["values"] as? Map<*, *>)?.entries
+                ?.associate { (k, v) -> k.toString() to v } ?: emptyMap()
+            return RepoSettingsDto(
+                repo = str(payload["repo"]),
+                values = values,
+                resolved = ResolvedTargetDto(
+                    type = str(resolved["type"]),
+                    owner = (resolved["owner"] as? String)?.takeIf { it.isNotEmpty() },
+                    repo = (resolved["repo"] as? String)?.takeIf { it.isNotEmpty() },
+                    source = str(resolved["source"]),
+                    error = (resolved["error"] as? String)?.takeIf { it.isNotEmpty() },
+                ),
+                signin = SigninDto(
+                    state = str(signin["state"]),
+                    login = (signin["login"] as? String)?.takeIf { it.isNotEmpty() },
+                    reason = (signin["reason"] as? String)?.takeIf { it.isNotEmpty() },
+                ),
+                policy = PolicyRowsDto(
+                    ok = policy["ok"] == true,
+                    mode = policy["mode"] as? String,
+                    values = policyValues,
+                    reason = (policy["reason"] as? String)?.takeIf { it.isNotEmpty() },
+                ),
+            )
+        }
+
         /**
          * Map the daemon's `config.catalog` reply to the settings DTO (Story S002,
          * verbatim k1). options/groups/roles/tierNames come straight from the
@@ -1518,7 +1685,22 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                 val m = item as? Map<*, *> ?: return@mapNotNull null
                 RoleDto(id = str(m["id"]), defaultTier = str(m["defaultTier"]))
             } ?: emptyList()
-            return SettingsCatalogDto(groups = groups, options = options, roles = roles, tierNames = tierNames)
+            // Story s3: the repo-scoped tracker rows. Absent from an older daemon => empty (the DTO default).
+            val repoFields = (data["repoFields"] as? List<*>)?.mapNotNull { item ->
+                val m = item as? Map<*, *> ?: return@mapNotNull null
+                RepoFieldDto(
+                    key = str(m["key"]),
+                    label = str(m["label"]),
+                    type = str(m["type"]),
+                    enumValues = (m["enumValues"] as? List<*>)?.map { it.toString() },
+                    default = m["default"],
+                    description = str(m["description"]),
+                    group = str(m["group"]),
+                    kind = str(m["kind"]),
+                    note = (m["note"] as? String)?.takeIf { it.isNotEmpty() },
+                )
+            } ?: emptyList()
+            return SettingsCatalogDto(groups = groups, options = options, roles = roles, tierNames = tierNames, repoFields = repoFields)
         }
 
         /**

@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## t1
 
-Run at 2026-10-17T06:56:06.405Z on commit `5a4d776a`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-17T06:57:58.056Z on commit `e52f50e2`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built**
 
@@ -20,4 +20,4 @@ Run at 2026-10-17T06:56:06.405Z on commit `5a4d776a`. Tests check: **passed**. 1
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/__tests__/subject.test.ts` | 0 | 20 | 1.2 s |  |
+| `src/workflow/code-review/__tests__/subject.test.ts` | 0 | 20 | 1.4 s |  |

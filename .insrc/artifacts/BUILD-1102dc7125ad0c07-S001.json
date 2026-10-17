@@ -4,7 +4,7 @@
     "epicHash": "1102dc7125ad0c07",
     "storyId": "S001",
     "createdAt": "2026-10-17T06:56:06.405Z",
-    "updatedAt": "2026-10-17T06:56:06.405Z",
+    "updatedAt": "2026-10-17T06:57:58.056Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
@@ -14,10 +14,10 @@
     "tasks": [
       {
         "id": "t1",
-        "passed": false
+        "passed": true
       }
     ],
-    "summary": "5a4d776a: CodeReviewSubject.buildRecord is the general BuildRecord and the subject gains testRecord; DEFAULT_DEPS supplies readStoryBuildRecord (null with a warning when absent or misshapen) and readTestRecord. subject-paths.ts unchanged (reads buildRecord.meta, which both types share; subject-paths.test.ts passes). Three falsifying mutations each fail the new test. tsc clean; workflow, daemon/steps and MCP suites 2297 pass, the only failure the pre-existing review-decision /private/var realpath one.",
+    "summary": "5a4d776a + e52f50e2: CodeReviewSubject.buildRecord is the general BuildRecord and the subject gains testRecord; DEFAULT_DEPS supplies readStoryBuildRecord and readTestRecord. After the first gate's finding, readStoryBuildRecord requires meta.workflow 'build', this Story's epicHash and storyId, a string createdAt, an object (non-array) body, and tasks (when present) with a string id and boolean-or-absent passed; an absent record is warned about. subject.test.ts covers each misshapen case and the warning; six falsifying mutations (one per check) each fail it, plus the earlier three (no build reader, no test reader, no shape check). tsc clean.",
     "testRecord": {
       "md": "docs/standalone/ground-code-review-coverage-story-s-E202610171102dc71/S001/TESTS.md"
     },
@@ -27,23 +27,23 @@
           "file": "src/workflow/code-review/__tests__/subject.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T06:56:06.405Z"
+        "timestamp": "2026-10-17T06:57:58.056Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/subject.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T06:56:06.405Z"
+        "timestamp": "2026-10-17T06:57:58.056Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T06:56:06.405Z"
+        "timestamp": "2026-10-17T06:57:58.056Z"
       }
     ],
-    "commit": "5a4d776a"
+    "commit": "e52f50e2"
   }
 }

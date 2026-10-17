@@ -1,0 +1,586 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792217666023-8m55er",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-17T06:17:20.975Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 174944,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "storyId": "s2",
+    "lldRunId": "wf-1792216010054-u5nrq5",
+    "lldEffectiveHash": "381fe69e77e409d505db564a5981d474ae65c6197d503bfb89d3619f99f11854",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-17T06:20:59.715Z",
+    "rangeBase": "bcd270b5f98581859b6b2c1c914f771c2dc6bfe6"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story adds a self-contained team-policy module (policy file parser, per-repository sighting record and lock, anchor finder, reader, refresh and starter writer) and two command-bar commands, team init and team refresh, that expose it. The work is ordered so each piece is tested against real git before the next builds on it, and the existing gate code is not touched.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Team types, PATHS entry and policy-file parser",
+        "summary": "Add the ~/.insrc/team directory entry to PATHS in src/shared/paths.ts, and create src/workflow/team/ with the types (TeamPolicy including source.anchorKnown, PolicyResult, PolicyAnchor, PolicyRefreshOutcome) and the parser that validates .insrc/policy.json against the authored-fields schema (teamMode, signoffStages, claimsEnforced, administrators), rejecting unknown fields, wrong types, and files carrying claimUnits, forceTaskIssues or source, and that derives claimUnits and forceTaskIssues itself.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A valid policy file parses to a TeamPolicy with the fixed claimUnits and forceTaskIssues true.",
+          "Bad JSON, an unknown field, a wrong type, or a file carrying claimUnits, forceTaskIssues or source is rejected with a reason.",
+          "PATHS exposes the team directory used by the sighting store."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/policy-parser.test.ts: a valid policy file parses with the fixed claimUnits and forceTaskIssues true"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/policy-parser.test.ts: bad JSON, an unknown field, a wrong type and a file carrying claimUnits, forceTaskIssues or source are rejected with a reason"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Sighting store and per-repository lock",
+        "summary": "Implement the per-repository sighting file at ~/.insrc/team/seen/<16 hex sha256 of realpath>.json: read with shape validation (damaged is distinguishable from absent), unique-temp-name overwrite writer for refresh, create-only hard-link publish for the reader, removal, the anchor merge rule (a known anchor is never replaced by an unknown one), and the exclusive lock with the 30 second stale rule.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Two repositories, including a symlinked path, get distinct keys from the real path.",
+          "A damaged sighting reads as damaged evidence, never as absent.",
+          "Create-only publish never overwrites an existing or damaged sighting; the overwrite writer uses a unique temp name.",
+          "The lock refuses a second holder, and takes over a lock older than 30 seconds."
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: the sighting key comes from the real path so repositories and symlinks are distinct"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: a damaged sighting reads as damaged evidence, branchSource remote or user is validated"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: create-only publish never overwrites an existing or damaged sighting"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: a known anchor is never replaced by an unknown one and an unknown one is replaced by a known one"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/sighting-store.test.ts: the lock refuses a second holder and takes over a lock older than 30 seconds"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "AnchorFinder",
+        "summary": "Implement the grandfathering anchor: the oldest add of .insrc/policy.json on the first-parent history of the tracking ref, with committer time in ISO form, known false and empty values for a shallow repository, a failed walk or no add found; a later delete and re-add never moves it.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "On a history with adoption, deletion and reintroduction the anchor is the adoption commit.",
+          "A depth-1 shallow clone gives known false with empty commit and time.",
+          "A failing git log gives known false without throwing."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/anchor-finder.test.ts: parsing git log output picks the oldest add even after a later delete and re-add"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/anchor-finder.test.ts: adoption, approval, deletion and reintroduction keeps the adoption commit on real history"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/anchor-finder.test.ts: a depth-1 shallow clone gives known false and deepening gives a known anchor"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/anchor-finder.test.ts: a failing git log gives known false without throwing"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "PolicyReader",
+        "summary": "Implement the synchronous, network-free reader in the HLD envelope: sighting checked first and taking precedence over every solo shortcut; branch from the sighting, else the remote HEAD, else unknown (remote is origin, else the sole remote, a sighting's recorded remote stays authoritative); read the policy from the tracking ref or the recorded commit; refuse with the team refresh --branch instruction only when a fetched tracking ref (symbolic HEAD skipped) carries the policy file while the branch is unknown; none when no sighting and no evidence; create-only sighting write on first observation; fill the derived source block including the anchor.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The policy is read from the default branch tracking ref and working-tree or feature-branch edits have no effect.",
+          "Non-git, no-commit and no-remote directories without a sighting read as none with no write.",
+          "A known team repo whose remote was removed is refused or read from the recorded commit, never none.",
+          "An unknown default branch with a policy on a fetched ref is refused with the --branch instruction and no policy is applied; with no policy on any fetched ref it reads as none.",
+          "A never-fetched repo with no sighting reads as none.",
+          "The remote is origin when present, else the sole remote; several remotes without origin are not guessed (none without a sighting); a sighting's recorded remote stays authoritative.",
+          "The first observation creates the sighting create-only and a failed write never changes the result."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: reads the policy from the remote default branch's tracking ref"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a working-tree edit has no effect"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a feature-branch edit has no effect"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a policy on an unlabelled tracking ref is never applied"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: an unknown default branch with a fetched policy is refused with the --branch instruction"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a remote without a remote HEAD and with no policy on any fetched ref reads as none"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a repo with no policy and no sighting reads as none and writes nothing"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: non-git, no-commit and no-remote directories without a sighting read as none"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a never-fetched repo with no sighting reads as none"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a known team repo with no fetched policy is refused with the reason"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: a known team repo whose remote was removed is refused or read from the recorded commit, never none"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/policy-reader.test.ts: first observation creates the sighting create-only and a failed write does not change the result"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Default-branch resolution and pin verification",
+        "summary": "Implement the refresh's branch decision: parse git ls-remote --symref output (the remote's answer wins over any pin), fall back to the branch recorded in a valid sighting, then to a supplied --branch name verified with git ls-remote --heads (non-empty output) and recorded with source user, otherwise refuse with the instruction to re-run with --branch; an unreachable remote or a missing branch records nothing.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The remote's named default branch is used and overrides an earlier user pin; the supplied name is ignored.",
+          "With a dangling remote HEAD and no pin the result is a refusal asking for --branch.",
+          "A supplied branch is accepted only when ls-remote --heads prints it; a missing branch or an unreachable remote returns a reason and records nothing."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/branch-resolution.test.ts: the remote's answer wins over a supplied branch, then the sighting's branch, then the supplied branch after verification"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/branch-resolution.test.ts: a dangling remote HEAD is refused without --branch and a real branch is recorded with source user"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/branch-resolution.test.ts: a missing branch name or an unreachable remote records nothing"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "PolicyRefresh fetch and record",
+        "summary": "Implement the guarded refresh sequence under the per-repository lock and one 10 second deadline: use the resolved branch, fetch only that branch with an explicit refspec, --refmap= and the isolating flags, read the policy from the updated tracking ref, find the anchor, write the sighting (or remove it when the file is absent) before the cosmetic remote HEAD update, return ok false when the sighting cannot be recorded after the ref moved, and treat a failed cosmetic update as a warning.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Only the default branch tracking ref changes; no tag, other tracking ref, FETCH_HEAD or prune effect.",
+          "A refresh brings a changed policy into the tracking ref and the reader then applies it.",
+          "An unreachable remote reports failure and leaves the last fetched policy in use.",
+          "A sighting write failure reports failure, a cosmetic HEAD failure is only a warning, and a second refresh is refused while the lock is held.",
+          "The policy file removed from the default branch removes the sighting and the repo reads as none."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: refresh brings a changed policy into the tracking ref and the reader applies it"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: only the default branch's tracking ref changes with no tag, other branch, FETCH_HEAD or prune effect"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: unreachable remote reports failure and the last fetched policy stays in use"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: a supplied branch is refused when the remote is unreachable and nothing is recorded"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: sighting write failure reports failure and cosmetic HEAD failure is a warning only"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: a second refresh is refused while the lock is held and a stale lock is taken over"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/policy-refresh.test.ts: default-branch rename and policy file removal"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "StarterPolicyWriter",
+        "summary": "Write the starter .insrc/policy.json (authored fields: signoff for DEF, HLD, LLD and BUILD, claims enforced) by hard link so an existing file is never overwritten, and nothing is committed or pushed.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The starter has signoff for DEF, HLD, LLD and BUILD and claims enforced.",
+          "An existing file, including an uncommitted one, is refused and left untouched."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/starter-policy.test.ts: writes a starter with signoff for DEF, HLD, LLD and BUILD and claims enforced"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/starter-policy.test.ts: refuses to overwrite an existing file"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "team init and team refresh commands",
+        "summary": "Add src/cli/services/team.ts with teamInit and teamRefresh, the team entry in the Services interface and makeServices in src/cli/services/index.ts, the help lines and the team dispatch case with runTeam (sub words init and refresh, optional path, --branch flag) in src/cli/command.ts, one-line result formatting and cross-prefixed error rendering, and add the team entry to the two test facades.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "team init and team refresh dispatch with an optional path and the context repo as default.",
+          "team refresh --branch passes the name through and the refusal that asks for it is rendered.",
+          "A thrown error from either command renders as a cross-prefixed line.",
+          "The existing command and TUI tests still run with the facades carrying the team entry.",
+          "A team refresh followed by a reader call in a temp clone returns the policy end to end."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/cli/__tests__/command.test.ts: team init writes the starter and reports its path"
+          },
+          {
+            "level": "integration",
+            "name": "src/cli/__tests__/command.test.ts: team refresh runs the refresh and reports the outcome"
+          },
+          {
+            "level": "integration",
+            "name": "src/cli/__tests__/command.test.ts: team refresh --branch passes the name through and renders the refusal that asks for it"
+          },
+          {
+            "level": "integration",
+            "name": "src/cli/__tests__/command.test.ts: a thrown error from either team command renders as a cross-prefixed line"
+          },
+          {
+            "level": "integration",
+            "name": "src/cli/__tests__/tui.test.ts: the TUI tests run with fakeServices carrying the team entry"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Policy file parsing against the authored-fields schema: valid file, unknown field, wrong type, bad JSON, a file carrying claimUnits, forceTaskIssues or source",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Sighting read and validation, branchSource remote or user, damaged sighting treated as evidence",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reader precedence: a sighting is checked before any solo shortcut; branch precedence is sighting branch, then remote HEAD, then unknown",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reader with an unknown default branch: refuses with the --branch instruction when a tracking ref carries the policy file, skips the symbolic HEAD, returns none when none does, and never applies a policy from an unlabelled ref",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reader create-only sighting write on first observation, never overwriting an existing or damaged sighting, failure not changing the result",
+        "coveredByTaskIds": [
+          "t2",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Anchor parsing of git log output: the oldest add is chosen even after a later delete and re-add; shallow gives known false; a known anchor is never replaced by an unknown one",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Refresh branch resolution: the remote's answer wins over a supplied branch, then the sighting's branch, then the supplied branch after verification",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Sighting key derivation from the real path",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "StarterPolicyWriter no-clobber hard link",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reader returns the policy from the default branch's tracking ref and ignores working-tree and feature-branch edits",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reader returns ok none for a non-git directory, a repo with no commits and a repo with no remote when no sighting exists",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reader in a repo with a remote, the remote HEAD removed with git remote set-head -d and a fetched policy: refused with the --branch instruction; the same repo with no policy on any fetched ref: none",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Regression: a known team repo whose remote was removed, whose clone has no commits or refs, or that is no longer a git repo is refused or read from the recorded commit, never read as none",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Refresh isolation: only the default branch's tracking ref changes, with no tag, other branch, FETCH_HEAD or prune effect",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Refresh with the remote HEAD dangling: refused without --branch; with --branch naming a real branch it records source user and fetches; with a missing branch name or an unreachable remote nothing is recorded",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Refresh where the remote names its default branch overrides an earlier user pin",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Refresh offline: unreachable remote leaves the last fetched policy in use, and a known team repo with nothing fetched is refused with the reason",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Refresh step failures: sighting write failure reports failure, cosmetic HEAD failure is a warning only",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Refresh lock: a second refresh is refused, a lock older than 30 seconds is taken over",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Default-branch rename and policy file removal",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Anchor on real history: adoption, approval, deletion, reintroduction keeps the adoption commit; a depth-1 shallow clone gives known false; deepening the history lets the next refresh record a known anchor",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "team init and team refresh dispatch, help lines and result lines, with an optional path and the context repo as default",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "team refresh --branch passes the name through to the service and renders the refusal that asks for it",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "A thrown error from either command rendered as a cross-prefixed line",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "The two Services test facades gain the team entry so the command tests run; no claim is made that they compile",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 PolicyReader contract and reader error paths"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 PolicyRefresh contract and refresh error paths"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 AnchorFinder contract (first-appearance anchor, shallow gives unknown)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 StarterPolicyWriter, TeamInitCommand and TeamRefreshCommand contracts"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 data model changes (TeamPolicy source.anchorKnown, PolicyFile, PolicySighting, Services)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 error paths and edge cases"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 test strategy and acceptance mapping"
+    }
+  ]
+}

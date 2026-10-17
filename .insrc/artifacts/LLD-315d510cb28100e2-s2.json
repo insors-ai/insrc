@@ -224,7 +224,9 @@
         "rationale": "User decision (option a), recorded in docs/plans/team-workflow.md.",
         "resolvedAt": "2026-10-17T06:13:58.002Z"
       }
-    }
+    },
+    "staleAckedAt": "2026-10-17T06:14:20.100Z",
+    "staleAckedReason": "HLD effective state changed only by approving AMD-315d510cb28100e2-4 (sc2 source.anchorKnown), the additive field this LLD itself proposes and already contains; no other HLD change since approval."
   },
   "body": {
     "summary": {

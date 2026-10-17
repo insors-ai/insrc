@@ -226,10 +226,12 @@ test('first observation creates the sighting create-only and a failed write does
 	try {
 		const { clone } = teamRepo(f);
 
-		// A team directory that cannot be created (a file is in the way): the result is unchanged.
-		const blocked = join(f.root, 'blocked');
-		writeFileSync(blocked, 'a file where the directory should be');
-		assert.equal(policyOf(readPolicy(clone, { teamDir: blocked })).teamMode, true);
+		// The first-observation write fails: the result is unchanged and nothing is recorded.
+		let attempts = 0;
+		const failing = (): never => { attempts++; throw new Error('disk full'); };
+		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir, publish: failing })).teamMode, true);
+		assert.equal(attempts, 1, 'the write path was exercised');
+		assert.equal(readSighting(clone, f.teamDir).kind, 'absent');
 
 		// Create-only: an existing sighting is never overwritten by a later read.
 		writeSighting(clone, { remote: 'origin', branch: 'main', branchSource: 'user', sha: git(clone, 'rev-parse', 'origin/main'), refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, f.teamDir);

@@ -32,6 +32,8 @@ export interface ReaderOptions {
 	/** Where sightings live; defaults to ~/.insrc/team. Tests pass a scratch directory. */
 	readonly teamDir?: string | undefined;
 	readonly now?: (() => Date) | undefined;
+	/** Seam for the create-only first-observation write; tests inject a failing one. */
+	readonly publish?: typeof publishSightingIfAbsent | undefined;
 }
 
 type Found =
@@ -96,7 +98,7 @@ export function readPolicy(repo: string, opts: ReaderOptions = {}): PolicyResult
 
 	if (seen.kind === 'valid') return readKnownRepo(repo, seen.sighting);
 	if (seen.kind === 'damaged') return readDamaged(repo, seen.reason, now);
-	return readUnseen(repo, now, opts.teamDir);
+	return readUnseen(repo, now, opts.teamDir, opts.publish ?? publishSightingIfAbsent);
 }
 
 /** A sighting exists: the repo is known to carry a policy, so it is never 'none'. */
@@ -129,7 +131,7 @@ function readDamaged(repo: string, why: string, now: string): PolicyResult<TeamP
 }
 
 /** No sighting: only local evidence of a policy on the default branch's tracking ref counts. */
-function readUnseen(repo: string, now: string, teamDir: string | undefined): PolicyResult<TeamPolicy | 'none'> {
+function readUnseen(repo: string, now: string, teamDir: string | undefined, publish: typeof publishSightingIfAbsent): PolicyResult<TeamPolicy | 'none'> {
 	if (!isGitRepo(repo)) return { ok: true, value: 'none' };
 	const remote = pickRemote(repo);
 	if (remote === undefined) return { ok: true, value: 'none' };
@@ -154,7 +156,7 @@ function readUnseen(repo: string, now: string, teamDir: string | undefined): Pol
 	const sha = resolveSha(repo, ref);
 	if (sha !== undefined) {
 		try {
-			publishSightingIfAbsent(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
+			publish(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
 		} catch (err) {
 			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record first sighting; the result is unchanged');
 		}

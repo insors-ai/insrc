@@ -43,10 +43,40 @@ let _nextId = 1;
  * Moved verbatim from src/cli/client.ts (which now re-exports it) so the CLI/TUI
  * and the extension share exactly one socket-client path.
  */
-export async function rpc<T = unknown>(method: string, params: unknown = {}, connect: () => Socket = () => createConnection(PATHS.sockFile)): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
+export async function rpc<T = unknown>(
+  method: string,
+  params: unknown = {},
+  connect: () => Socket = () => createConnection(PATHS.sockFile),
+  opts?: { readonly timeoutMs?: number | undefined },
+): Promise<T> {
+  return new Promise<T>((resolveReply, rejectReply) => {
     const socket = connect();
     let   buffer = '';
+
+    // Opt-in deadline (Story s3). Without `timeoutMs` nothing below changes the
+    // request: no timer, no extra listeners, no destroy. With it, the request also
+    // rejects on the deadline and on the socket ending or closing before a reply,
+    // and the socket is destroyed and the timer cleared on every outcome.
+    const timeoutMs = opts?.timeoutMs;
+    let settled = false;
+    let timer: NodeJS.Timeout | undefined;
+    const settle = (fn: () => void): void => {
+      if (timeoutMs === undefined) { fn(); return; }
+      if (settled) return;
+      settled = true;
+      if (timer !== undefined) clearTimeout(timer);
+      socket.destroy();
+      fn();
+    };
+    const resolve = (v: T): void => settle(() => resolveReply(v));
+    const reject = (e: Error): void => settle(() => rejectReply(e));
+
+    if (timeoutMs !== undefined) {
+      timer = setTimeout(() => reject(new Error(`daemon did not reply within ${timeoutMs} ms (timeout)`)), timeoutMs);
+      const closed = (): void => reject(new Error('daemon closed the connection before replying (closed)'));
+      socket.on('end', closed);
+      socket.on('close', closed);
+    }
 
     socket.on('connect', () => {
       // Self-identify to the daemon's attached-client registry (Story s4).

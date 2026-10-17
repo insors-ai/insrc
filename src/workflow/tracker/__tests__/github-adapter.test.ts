@@ -102,6 +102,7 @@ test('compatibility exception 1, a failed typed create is not retried untyped un
 		['missing tool', execError({ code: 'ENOENT' })],
 		['missing sign-in', execError({ stderr: 'gh auth login required' })],
 		['non-type rejection', execError({ stderr: 'HTTP 403: Resource not accessible' })],
+		['422 about an unknown type elsewhere', execError({ stderr: 'HTTP 422: Validation Failed: labels has unknown type' })],
 		['422 about another field', execError({ stderr: 'HTTP 422: Validation Failed: title must be of type string' })],
 	];
 	for (const [label, err] of failures) {

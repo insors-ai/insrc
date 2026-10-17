@@ -204,7 +204,7 @@ export interface CreatedIssue {
 function isIssueTypeRejection(err: unknown): boolean {
 	return err instanceof GhCommandError
 		&& err.kind === 'rejected'
-		&& /\bissue[ _-]?types?\b|\bunknown type\b|"field":\s*"type"/i.test(err.reason)
+		&& /\bissue[ _-]?types?\b/i.test(err.reason)
 		&& /422|unprocessable|validation failed|not enabled|not supported|unsupported|unknown|invalid/i.test(err.reason);
 }
 

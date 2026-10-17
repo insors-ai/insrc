@@ -574,6 +574,8 @@ Preserve both legacy behaviours exactly so no compatibility exception is needed.
   - **resolved**: Keep the stated scope — Matches the approved LLD's timeout scope. _(2026-10-17T10:22:43.303Z)_
 - `qa4cb22d7` — The adoption lookup in autoPushEpicOnHld creates the Epic issue when the lookup fails, which can duplicate an Epic after a transient lookup failure. This is a pre-existing behaviour kept unchanged for k4; s4's find-by-label dedupe work is the place to decide whether to change it.
   - **deferred**: deferred for review — Belongs to s4's find-by-label dedupe work; s1 keeps the existing behaviour for k4. _(2026-10-17T10:23:09.273Z)_
+- `q6051ee2a` — The companion design LLD-9a7bbe63297457c2-S001 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-S001; it needs its own decision.
+  - **deferred**: deferred for review — The companion LLD-9a7bbe63297457c2-S001 needs its own decision outside s1's plan. _(2026-10-17T10:23:24.719Z)_
 
 ## Citations
 

@@ -200,6 +200,12 @@
         "status": "deferred",
         "rationale": "Belongs to s4's find-by-label dedupe work; s1 keeps the existing behaviour for k4.",
         "resolvedAt": "2026-10-17T10:23:09.273Z"
+      },
+      "q6051ee2a": {
+        "question": "The companion design LLD-9a7bbe63297457c2-S001 (Epic, Story and Task entries in the same flow, retiring the three tracker workflows) was planned to be built with the superseded LLD-38436e90625a83a2-S001; it needs its own decision.",
+        "status": "deferred",
+        "rationale": "The companion LLD-9a7bbe63297457c2-S001 needs its own decision outside s1's plan.",
+        "resolvedAt": "2026-10-17T10:23:24.719Z"
       }
     }
   },

@@ -4,7 +4,7 @@
     "epicHash": "bd1c6c9005ff6390",
     "storyId": "S001",
     "createdAt": "2026-10-17T09:39:24.421Z",
-    "updatedAt": "2026-10-17T10:04:43.184Z",
+    "updatedAt": "2026-10-17T10:22:41.922Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T08:20:53.100Z",
     "epicSlug": "record-calls-made-module-level-statements"
@@ -223,6 +223,42 @@
               },
               {
                 "title": "isTestFile accepts the Python, Go and JVM test conventions and every path it accepted before, and rejects ordinary source files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "ee65595e",
+        "ranAt": "2026-10-17T10:22:41.922Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test file whose test('...', () => { ... }) callback calls a function imported from another file, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's entity in the function's testsReaching",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/test-callers-reach-grounding.test.ts",
+                "title": "a test file whose test callback calls an imported function is listed in that function's testsReaching",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/test-callers-reach-grounding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "a test file whose test callback calls an imported function is listed in that function's testsReaching",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -60,3 +60,19 @@ Run at 2026-10-17T10:04:43.184Z on commit `78c8493a`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/__tests__/grounding.test.ts` | 0 | 6 | 0.9 s |  |
+
+## t4
+
+Run at 2026-10-17T10:22:41.922Z on commit `ee65595e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test file whose test('...', () => { ... }) callback calls a function imported from another file, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's entity in the function's testsReaching**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a test file whose test callback calls an imported function is listed in that function's testsReaching | `src/indexer/__tests__/test-callers-reach-grounding.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/test-callers-reach-grounding.test.ts` | 0 | 1 | 0.7 s |  |

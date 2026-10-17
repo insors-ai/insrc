@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792217353742-a4xeve",
+    "runId": "wf-1792217871733-ixwhd4",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T06:14:29.493Z",
+    "createdAt": "2026-10-17T06:18:22.252Z",
     "epicCreatedAt": "2026-10-17T06:04:27.059Z",
     "attribution": {
       "outputs": [
@@ -15,14 +15,14 @@
         }
       ]
     },
-    "elapsedMs": 315743,
+    "elapsedMs": 30517,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "1102dc7125ad0c07",
     "epicSlug": "ground-code-review-coverage-story-s",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792217353742-a4xeve",
-    "hldEffectiveHash": "3454ce3e48bb174f27874494744b751b7319bf99fcec6069ba87ce66fd6c3528",
+    "hldBaseRunId": "wf-1792217871733-ixwhd4",
+    "hldEffectiveHash": "1ebdb5b7474b78f4bc08a909c4249b09e2214a6f021168208a593bc1947fd82a",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
@@ -125,7 +125,8 @@
           "postconditions": [
             "When testRecord is non-null, the prompt carries a trailing section listing, per test file in the latest run of each task, the file, its exit code and each title with its result, plus the BUILD verdict when buildRecord is non-null.",
             "The system text says: a test the record shows passing is passing; a test is unverified only when no record covers its file or title; a failing or skipped title is present-but-failing.",
-            "When testRecord is null, the prompt keeps today's rule that every pass-state is unverified."
+            "When testRecord is null, the prompt keeps today's rule that every pass-state is unverified.",
+            "The section is built from a defensive normalisation of the test record: a task without a files array, a file without a titles array, or a title whose result is not pass/fail/skipped is skipped with a note in the section rather than iterated, because readTestRecord validates only the record's top level and each task's taskId and tests (src/workflow/runners/build/test-record.ts)."
           ]
         },
         {
@@ -153,12 +154,12 @@
           ],
           "returns": {
             "type": "FreshnessResult",
-            "meaning": "{ isProcessing, staleFiles, pendingCodeIndexJobs }: isProcessing is true only while code-index work for repoPath is in flight or pending; pendingCodeIndexJobs counts it."
+            "meaning": "{ isProcessing, inFlight, pendingCodeIndexJobs, staleFiles }: inFlight is true when the job being processed is code-index work for repoPath; pendingCodeIndexJobs counts queued code-index jobs for repoPath; isProcessing = inFlight || pendingCodeIndexJobs > 0."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "Jobs for other repositories, config jobs, re-embeds and document-summary jobs never set isProcessing.",
+            "Jobs for other repositories, config jobs, re-embeds and document-summary jobs never set isProcessing, inFlight or pendingCodeIndexJobs.",
             "staleFiles is computed exactly as today."
           ]
         },
@@ -185,7 +186,7 @@
         },
         {
           "name": "codeReview.freshness",
-          "signature": "IPC 'codeReview.freshness' (params: { repo?: string; epicHash: string; storyId: string; changedFiles?: string[] }) => { isProcessing: boolean; staleFiles: string[]; pendingCodeIndexJobs: number } | { error: string }",
+          "signature": "IPC 'codeReview.freshness' (params: { repo?: string; epicHash: string; storyId: string; changedFiles?: string[] }) => { isProcessing: boolean; inFlight: boolean; pendingCodeIndexJobs: number; staleFiles: string[] } | { error: string }",
           "parameters": [
             {
               "name": "params",
@@ -195,8 +196,8 @@
             }
           ],
           "returns": {
-            "type": "{ isProcessing; staleFiles; pendingCodeIndexJobs } | { error }",
-            "meaning": "Additive pendingCodeIndexJobs; isProcessing narrowed to the repository's code-index work."
+            "type": "{ isProcessing; inFlight; pendingCodeIndexJobs; staleFiles } | { error }",
+            "meaning": "Additive inFlight and pendingCodeIndexJobs; isProcessing narrowed to the repository code-index work."
           },
           "errors": [
             {
@@ -229,7 +230,51 @@
             "Every caller passes a reason: 'freshness-timeout' from the proceed:true wait, 'declined' from proceed:false, 'hollow-grounding' from an empty symbol set."
           ],
           "postconditions": [
-            "The daemon-reviewed path forwards the reason to codeReview.run so the record written by the daemon carries it."
+            "The daemon-reviewed path forwards the reason as codeReview.run params.fallbackReason; parseParams accepts and validates it; the run passes it to runCodeReview, whose buildArtifact stamps body.fallbackReason.",
+            "The controller-reviewed path saves the reason in the step state (CodeReviewStepState.fallbackReason, src/daemon/steps/code-review-step/types.ts) so the separate judgements turn passes it to runCodeReview.",
+            "The done frame (CodeReviewStepDone, src/daemon/steps/code-review-step/types.ts) carries fallbackReason on both paths."
+          ]
+        },
+        {
+          "name": "freshnessFromReply",
+          "signature": "freshnessFromReply(res: { isProcessing?: boolean; inFlight?: boolean; pendingCodeIndexJobs?: number; staleFiles?: readonly string[]; error?: string }): CodeReviewFreshnessResult",
+          "parameters": [
+            {
+              "name": "res",
+              "type": "the codeReview.freshness reply",
+              "purpose": "The raw IPC reply, from a current or an older daemon.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "CodeReviewFreshnessResult = { ok: true; isProcessing: boolean; inFlight: boolean; pendingCodeIndexJobs: number; staleFiles: readonly string[] } | { ok: false; reason: string }",
+            "meaning": "The reply normalised for both clients (src/daemon/steps/daemon-client.ts and src/mcp/daemon-stream.ts). An older reply without the new fields maps inFlight to its isProcessing and pendingCodeIndexJobs to 0."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The new fields survive the socket and in-process clients unchanged."
+          ]
+        },
+        {
+          "name": "runCodeReview",
+          "signature": "runCodeReview(subject: CodeReviewSubject, provider: LLMProvider, opts: RunCodeReviewOpts, deps?: CodeReviewRunnerDeps): Promise<CodeReviewOutcome>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "RunCodeReviewOpts",
+              "purpose": "Adds optional fallbackReason?: CodeReviewFallbackReason | undefined beside groundingMode.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "CodeReviewOutcome",
+            "meaning": "Unchanged; the artifact body carries fallbackReason when opts has one."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "buildArtifact copies opts.fallbackReason onto CodeReviewBody.fallbackReason (src/workflow/code-review/types.ts) and omits the key when absent."
           ]
         }
       ]
@@ -258,18 +303,28 @@
       {
         "entity": "FreshnessDeps / FreshnessResult",
         "change": "field-modify",
-        "details": "FreshnessDeps.isProcessing() is replaced by codeIndexWork(repoPath); FreshnessResult adds pendingCodeIndexJobs: number.",
+        "details": "FreshnessDeps.isProcessing() is replaced by codeIndexWork(repoPath) => { inFlight, pending }; FreshnessResult adds inFlight: boolean and pendingCodeIndexJobs: number. The shared CodeReviewFreshnessResult (src/shared/review-stream.ts:72) and freshnessFromReply (src/shared/review-stream.ts:81) add the same two fields.",
         "callSites": [
           "src/workflow/code-review/freshness.ts",
-          "src/daemon/index.ts:808-830"
+          "src/daemon/index.ts:808-830",
+          "src/shared/review-stream.ts:72",
+          "src/shared/review-stream.ts:81",
+          "src/daemon/steps/daemon-client.ts:124",
+          "src/mcp/daemon-stream.ts:350"
         ]
       },
       {
         "entity": "CodeReviewFallbackReason",
         "change": "new",
-        "details": "{ kind: 'freshness-timeout'; waitedMs: number; inFlight: boolean; pendingCodeIndexJobs: number; staleFiles: string[] } | { kind: 'declined' } | { kind: 'hollow-grounding' }. Carried on the step's done frame and stored on the code-review record body as fallbackReason (optional; absent on a full review and on older records).",
+        "details": "{ kind: 'freshness-timeout'; waitedMs: number; inFlight: boolean; pendingCodeIndexJobs: number; staleFiles: string[] } | { kind: 'declined' } | { kind: 'hollow-grounding' }. Carried on CodeReviewStepDone.fallbackReason, saved on CodeReviewStepState.fallbackReason across the judgements turn, passed as codeReview.run params.fallbackReason (CodeReviewRunParams, parseParams) and RunCodeReviewOpts.fallbackReason, and stored as the optional CodeReviewBody.fallbackReason.",
         "callSites": [
-          "src/daemon/steps/code-review-step/handler.ts:285-345"
+          "src/daemon/steps/code-review-step/handler.ts:285-345",
+          "src/daemon/steps/code-review-step/types.ts",
+          "src/daemon/code-review-rpc.ts:50-60",
+          "src/daemon/code-review-rpc.ts:189-208",
+          "src/workflow/code-review/runner.ts:90-102",
+          "src/workflow/code-review/runner.ts:275-292",
+          "src/workflow/code-review/types.ts:150-162"
         ]
       }
     ],
@@ -303,6 +358,13 @@
           "response": "Unchanged: the step returns freshness-unavailable; no fallback reason is written because no review runs.",
           "userImpact": "Unchanged.",
           "recoverable": true
+        },
+        {
+          "scenario": "A TESTS record passes readTestRecord's shape check but a task lacks files, a file lacks titles, or a title has an unknown result.",
+          "detection": "The coverage normaliser checks Array.isArray(task.files), Array.isArray(file.titles) and the result value for each item it reads.",
+          "response": "Skip the malformed item, note it in the test-record section, and treat what it would have covered as unverified.",
+          "userImpact": "The review runs; only the malformed part of the record is not used.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -333,6 +395,14 @@
         {
           "input": "A code-review record written before this change (no fallbackReason).",
           "expected": "Reads and renders as today; the field is optional."
+        },
+        {
+          "input": "A freshness reply from an older daemon (no inFlight, no pendingCodeIndexJobs).",
+          "expected": "freshnessFromReply maps inFlight to isProcessing and pendingCodeIndexJobs to 0; the step works as before."
+        },
+        {
+          "input": "Only queued code-index work (nothing in flight) versus a code-index job in flight with none queued.",
+          "expected": "The first gives inFlight false, pendingCodeIndexJobs > 0; the second inFlight true, pendingCodeIndexJobs 0; a timeout records each exactly."
         }
       ],
       "invariantsToPreserve": [
@@ -369,7 +439,7 @@
           "purpose": "The subject carries the Story's records, and coverage renders them.",
           "subjects": [
             "src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
-            "src/workflow/code-review/__tests__/runner.test.ts: the coverage prompt lists each test file's titles and results from the test record in a trailing section and states the pass/unverified rule; with no test record it keeps the every-test-unverified rule"
+            "src/workflow/code-review/__tests__/runner.test.ts: the coverage prompt lists each test file's titles and results from the test record in a trailing section and states the pass/unverified rule; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record it keeps the every-test-unverified rule"
           ],
           "fixturesNeeded": [
             "A temp repo with .insrc/artifacts/BUILD-<hash>-S001.json and TESTS-<hash>-S001.json, one valid and one misshapen variant."
@@ -388,6 +458,15 @@
           "purpose": "A fallback says why.",
           "subjects": [
             "src/daemon/steps/code-review-step/__tests__/handler.test.ts: a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The fallback reason and freshness fields survive every transport boundary to the persisted record.",
+          "subjects": [
+            "src/shared/__tests__/review-stream-freshness.test.ts: freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0",
+            "src/daemon/__tests__/code-review-rpc-fallback.test.ts: codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason",
+            "src/daemon/steps/code-review-step/__tests__/handler.test.ts: on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work"
           ]
         }
       ],
@@ -409,7 +488,10 @@
         {
           "criterionId": "ac3",
           "provingTests": [
-            "src/daemon/steps/code-review-step/__tests__/handler.test.ts: a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason"
+            "src/daemon/steps/code-review-step/__tests__/handler.test.ts: a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason",
+            "src/shared/__tests__/review-stream-freshness.test.ts: freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0",
+            "src/daemon/__tests__/code-review-rpc-fallback.test.ts: codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason",
+            "src/daemon/steps/code-review-step/__tests__/handler.test.ts: on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work"
           ]
         }
       ],
@@ -431,12 +513,12 @@
         },
         {
           "order": 3,
-          "action": "Record the in-flight job in the index queue and add codeIndexWorkFor; switch the freshness compute and the daemon handler from the whole-queue flag to it, adding pendingCodeIndexJobs to the answer.",
+          "action": "Record the in-flight job in the index queue and add codeIndexWorkFor; switch the freshness compute and the daemon handler from the whole-queue flag to it, adding inFlight and pendingCodeIndexJobs to the answer, to the shared CodeReviewFreshnessResult and to freshnessFromReply.",
           "rollbackable": true
         },
         {
           "order": 4,
-          "action": "Pass a fallback reason into the diff-only review from each of its three callers, carry it on the done frame, forward it through codeReview.run, and store it as an optional field on the code-review record body.",
+          "action": "Pass a fallback reason into the diff-only review from each of its three callers; carry it on the done frame and in the step state across the judgements turn; accept it in codeReview.run params and parseParams; pass it through RunCodeReviewOpts so buildArtifact stores it as the optional CodeReviewBody.fallbackReason.",
           "rollbackable": true
         },
         {
@@ -445,7 +527,7 @@
           "rollbackable": true
         }
       ],
-      "backwardCompat": "All additions are optional fields: older code-review records without fallbackReason read and render as before; a freshness answer without pendingCodeIndexJobs (an older daemon) is read as 0 by the step. isProcessing keeps its name and type with a narrower meaning. depthForRepo and repo.stats pendingJobs are unchanged.",
+      "backwardCompat": "All additions are optional fields: older code-review records without fallbackReason read and render as before; a freshness answer without pendingCodeIndexJobs (an older daemon) is read as 0 by the step. isProcessing keeps its name and type with a narrower meaning. depthForRepo and repo.stats pendingJobs are unchanged. freshnessFromReply reads an older daemon's reply (no inFlight, no pendingCodeIndexJobs) as inFlight=isProcessing and 0.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },
@@ -500,7 +582,7 @@
     "chosenAlternative": "a1",
     "openQuestions": [
       "cd1 (partial): IndexQueue.codeIndexWorkFor is a new method on the existing IndexQueue class (src/daemon/queue.ts); there is no HLD to own it [c4].",
-      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the approved issue's fix intent (ac1 coverage reads the Story's records, ac2 freshness counts only the repository's code-index work, ac3 a fallback records why) [c7]."
+      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the approved issue's fix intent (ac1 coverage reads the Story's records, ac2 freshness counts only the repository's code-index work, ac3 a fallback records why, through every transport boundary to the record) [c8]."
     ]
   },
   "citations": [
@@ -536,8 +618,18 @@
     },
     {
       "id": "c7",
+      "kind": "step-output",
+      "ref": "s1 context.assemble bundle 7: freshnessFromReply, codeReview.run params, buildArtifact and the step state (src/shared/review-stream.ts:81, src/daemon/code-review-rpc.ts:189-208, src/workflow/code-review/runner.ts:275-292)"
+    },
+    {
+      "id": "c8",
       "kind": "prior-artifact",
       "ref": "ISSUE-1102dc7125ad0c07 fix intent"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "Review round 1 of LLD-1102dc7125ad0c07-S001 (2026-10-17): inFlight not carried, transport sites missing, nested TESTS fields unvalidated, no transport-to-record tests; all four addressed in this version"
     }
   ]
 }

@@ -14,7 +14,11 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createGithubTracker } from '../github-adapter.js';
-import { GH_TIMEOUT_MS, GhCommandError, ghCreateIssueTyped, ghGetIssueBody, runGh, _setTrackerExecForTests } from '../github.js';
+import {
+	GH_TIMEOUT_MS, GhCommandError, ghAttachMilestone, ghCloseIssue, ghComment, ghCreateIssueTyped, ghCreateLabel, ghEditIssueBody,
+	ghEnsureMilestone, ghGetIssueBody, ghLinkSubIssue, runGh, _setTrackerExecForTests,
+} from '../github.js';
+import type { IssueSpec } from '../port.js';
 
 afterEach(() => _setTrackerExecForTests());
 
@@ -298,4 +302,110 @@ test('setAssignee reports rejected or unreachable without a retry when the re-re
 	const readFails = fakeAssigneeGh([], { failOn: () => execError({ code: 'ETIMEDOUT' }) });
 	assert.equal(port.setAssignee('o/r#5', 'alice').ok, false);
 	assert.equal(readFails.calls.length, 1);
+});
+
+// ---------------------------------------------------------------------------
+// issueOps parity with the wrappers
+// ---------------------------------------------------------------------------
+
+/** Recording fake gh: REST creates answer { number, id }, everything else an empty string. */
+function recordingGh(opts: { failOn?: (args: readonly string[]) => Error | undefined } = {}) {
+	const calls: string[][] = [];
+	let n = 40;
+	_setTrackerExecForTests((_cmd, args) => {
+		calls.push([...args]);
+		const err = opts.failOn?.(args);
+		if (err !== undefined) throw err;
+		if (args[0] === 'api' && args.includes('POST') && (args.find(a => a.startsWith('repos/')) ?? '').endsWith('/issues')) {
+			n += 1;
+			return JSON.stringify({ number: n, id: 9000 + n });
+		}
+		return '';
+	});
+	return calls;
+}
+
+/** What tracker-auto does today for one create: the typed create, then the optional native sub-issue link. */
+function legacyCreate(spec: IssueSpec): void {
+	const created = ghCreateIssueTyped('o', 'r', spec.title, spec.body, spec.labels, spec.issueType);
+	if (spec.parent !== undefined) ghLinkSubIssue('o', 'r', spec.parent, created.id);
+}
+
+function assertCreateParity(spec: IssueSpec): void {
+	const legacy = recordingGh();
+	legacyCreate(spec);
+	const viaPort = recordingGh();
+	const r = createGithubTracker('o', 'r').createIssue(spec);
+	assert.equal(r.ok, true);
+	assert.deepEqual(viaPort, legacy, 'the port runs the same gh argv in the same order');
+	assert.equal(viaPort[0]!.some(a => a.startsWith('type=')), (spec.issueType ?? '').length > 0, 'a type is sent only when one is given');
+	if ((spec.issueType ?? '').length > 0) assert.ok(viaPort[0]!.includes(`type=${spec.issueType}`));
+	for (const l of spec.labels) assert.ok(viaPort[0]!.includes(`labels[]=${l}`));
+	if (r.ok) assert.equal(r.value, 'o/r#41');
+}
+
+test('Epic create parity with ghCreateIssueTyped', () => {
+	assertCreateParity({ title: 'E1 — problem', body: 'epic body', labels: ['insrc:epic', 'epic:slug'], issueType: 'Epic' });
+});
+
+test('Story create and Epic parent link parity', () => {
+	assertCreateParity({ title: 'S1 — story', body: 'story body', labels: ['insrc:story', 'epic:slug'], issueType: 'Story', parent: 'o/r#10' });
+	// A failed parent link never fails the create: the ref comes back ok.
+	recordingGh({ failOn: a => (a.some(x => x.includes('sub_issues')) ? execError({ stderr: 'HTTP 403' }) : undefined) });
+	const r = createGithubTracker('o', 'r').createIssue({ title: 't', body: 'b', labels: ['x'], parent: 'o/r#10' });
+	assert.deepEqual(r, { ok: true, value: 'o/r#41' });
+});
+
+test('Task create and Story parent link parity', () => {
+	assertCreateParity({ title: 'T1 — task', body: 'task body', labels: ['insrc:task', 'epic:slug'], issueType: 'Task', parent: 'o/r#20' });
+	assertCreateParity({ title: 'T2 — untyped task', body: 'b', labels: ['insrc:task'], issueType: '', parent: 'o/r#20' });
+});
+
+test('each issueOps operation runs the same gh argv and keeps the same failure result as its wrapper', () => {
+	const ops = createGithubTracker('o', 'r').issueOps;
+	const run = (fn: () => unknown): string[][] => {
+		const calls = recordingGh();
+		fn();
+		return calls;
+	};
+	const pairs: Array<[string, () => unknown, () => unknown]> = [
+		['linkSubIssue', () => ops.linkSubIssue('o/r#10', 9001), () => ghLinkSubIssue('o', 'r', 'o/r#10', 9001)],
+		['close', () => ops.close('o/r#4'), () => ghCloseIssue('o', 'r', 'o/r#4')],
+		['comment', () => ops.comment('o/r#4', 'hi'), () => ghComment('o', 'r', 'o/r#4', 'hi')],
+		['readBody', () => ops.readBody('o/r#4'), () => ghGetIssueBody('o', 'r', 'o/r#4')],
+		['writeBody', () => ops.writeBody('o/r#4', 'new'), () => ghEditIssueBody('o', 'r', 'o/r#4', 'new')],
+		['ensureLabel', () => ops.ensureLabel('insrc:epic'), () => ghCreateLabel('o', 'r', 'insrc:epic')],
+		['ensureMilestone', () => ops.ensureMilestone('m1'), () => ghEnsureMilestone('o', 'r', 'm1')],
+		['attachMilestone', () => ops.attachMilestone('o/r#4', 'm1'), () => ghAttachMilestone('o', 'r', 'o/r#4', 'm1')],
+		['create', () => ops.create({ title: 't', body: 'b', labels: ['a'], issueType: 'Task' }), () => ghCreateIssueTyped('o', 'r', 't', 'b', ['a'], 'Task')],
+	];
+	for (const [name, viaOps, viaWrapper] of pairs) {
+		assert.deepEqual(run(viaOps), run(viaWrapper), `${name}: same argv`);
+	}
+
+	// Failure results: the wrappers that throw come back as ok:false with the same kind and message; the
+	// boolean and swallowing ones keep their legacy result.
+	const boom = execError({ stderr: 'HTTP 500 boom' });
+	recordingGh({ failOn: () => boom });
+	for (const [name, viaOps, viaWrapper] of pairs) {
+		if (name === 'ensureLabel' || name === 'ensureMilestone') continue;
+		let thrown: unknown;
+		try { viaWrapper(); } catch (e) { thrown = e; }
+		assert.ok(thrown instanceof GhCommandError, `${name}: wrapper throws`);
+		const r = viaOps() as { ok: boolean; kind?: string; reason?: string };
+		assert.equal(r.ok, false, name);
+		assert.equal(r.kind, (thrown as GhCommandError).kind, name);
+		assert.equal(r.reason, (thrown as GhCommandError).reason, name);
+	}
+});
+
+test('ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds', () => {
+	const ops = createGithubTracker('o', 'r').issueOps;
+	recordingGh({ failOn: () => execError({ code: 'ETIMEDOUT' }) });
+	assert.equal(ops.ensureLabel('x'), false);
+	assert.doesNotThrow(() => ops.ensureMilestone('m'));
+	// gh exits 0 with a note when the issue is already closed.
+	recordingGh();
+	assert.deepEqual(ops.close('o/r#4'), { ok: true, value: undefined });
+	assert.deepEqual(ops.close('o/r#4'), { ok: true, value: undefined });
 });

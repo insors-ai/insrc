@@ -180,6 +180,15 @@
     "reviewOverride": {
       "reason": "User decision (option a): accept the bootstrap limitation that a repo with no sighting and nothing fetched reads as solo until team refresh runs, consistent with k4; DEF ac9 and HLD to be amended to state it. Three review rounds this cycle (nine across cycles) ended blocked; remaining findings are text fixes (grandfathering edge-case wording, gates.ts cited as s5 consumer not s2 change site, never-fetched ac9 test, policy remote selection rule).",
       "at": "2026-10-17T06:02:58.378Z"
+    },
+    "questionResolutions": {
+      "q90c58cff": {
+        "question": "cd1 (partial): PolicyRefresh, AnchorFinder, StarterPolicyWriter, TeamInitCommand and TeamRefreshCommand are new functions inside s2's boundary that sc2 does not name; decide whether sc2 should list them or they stay internal to s2.",
+        "status": "resolved",
+        "choice": "Keep all five internal",
+        "rationale": "They are implementation details inside s2's boundary; sc2 stays the HLD envelope.",
+        "resolvedAt": "2026-10-17T06:11:05.997Z"
+      }
     }
   },
   "body": {

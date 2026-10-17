@@ -185,13 +185,17 @@ export class UnderstandingService {
         || current.job.inputRevision !== expectedJob.inputRevision)) throw new AssessmentError('unavailable');
       if (scopeFingerprint(command.scope) !== current.scopeFingerprint) throw new AssessmentError('scope-mismatch');
       const key = tupleKey(current.view.id, command.requestId);
+      const revisionMatches = current.view.revision === command.expectedRevision;
       const cached: unknown = store.understandingRequest.get(key);
       if (cached !== undefined) {
         const receipt = parse(DedupSchema, cached);
         if (receipt.hash !== hash) throw new AssessmentError('request-conflict');
+        if (receipt.appliedRevision !== command.expectedRevision + 1 || current.view.revision < receipt.appliedRevision) {
+          throw new AssessmentError('schema-unsupported');
+        }
         return { view: publicView(current), appliedRevision: receipt.appliedRevision };
       }
-      if (current.view.revision !== command.expectedRevision) throw new AssessmentError('revision-conflict', publicView(current));
+      if (!revisionMatches) throw new AssessmentError('revision-conflict', publicView(current));
       if (kind !== 'cancel' && ['canceled', 'stale', 'completed', 'error'].includes(current.view.state)) throw new AssessmentError('unavailable');
       const transition = kind === 'cancel' ? { state: 'canceled' as const } : this.transitions.get(kind)?.(structuredClone(current), payload);
       if (!transition) throw new AssessmentError('unavailable');

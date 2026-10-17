@@ -67,7 +67,12 @@ test('RPC rejects forged authority and returns typed revision conflicts', async 
   const id = (await service.prepare(owner, scope, randomUUID())).view.id;
   const forged = await client('understanding.cancel', { ...command(id, 1), ownerPrincipal: 'forged' });
   assert.equal(forged.frames[0]!.result.error.code, 'invalid-input');
-  await service.cancel(owner, command(id, 1));
+  const retry = command(id, 1);
+  await service.cancel(owner, retry);
+  const replay = await client('understanding.cancel', retry);
+  assert.equal(replay.frames[0]!.result.ok, true);
+  assert.equal(replay.frames[0]!.result.appliedRevision, 2);
+  assert.equal(replay.frames[0]!.result.value.revision, 2);
   const conflict = await client('understanding.cancel', command(id, 1));
   assert.equal(conflict.frames[0]!.id, 73);
   assert.equal(conflict.frames[0]!.result.protocolVersion, 1);

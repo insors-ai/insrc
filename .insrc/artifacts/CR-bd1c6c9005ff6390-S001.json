@@ -1,0 +1,482 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792233080298-w54j2y",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T10:31:20.298Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 73946,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd1c6c9005ff6390",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-17T08:20:53.100Z",
+    "epicSlug": "record-calls-made-module-level-statements",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "bd1c6c9005ff6390",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/indexer/__tests__/test-callers-reach-grounding.test.ts",
+        "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts",
+        "src/indexer/parser/typescript.ts",
+        "src/workflow/code-review/__tests__/grounding.test.ts",
+        "src/workflow/code-review/grounding.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/__tests__/test-callers-reach-grounding.test.ts",
+            "message": "The changed file entity has empty testsReaching; the passing test record does not establish reachability for this symbol.",
+            "expectationRef": "/Users/subhagho/work/projects/insors/insrc/src/indexer/__tests__/test-callers-reach-grounding.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts",
+            "message": "The changed file entity has empty testsReaching; the passing test record does not establish reachability for this symbol.",
+            "expectationRef": "/Users/subhagho/work/projects/insors/insrc/src/indexer/parser/__tests__/typescript-module-level-calls.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts",
+            "message": "Changed symbol parse has empty testsReaching and is not exercised according to the supplied grounding.",
+            "expectationRef": "parse (423992)",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "The changed file entity has empty testsReaching.",
+            "expectationRef": "/Users/subhagho/work/projects/insors/insrc/src/indexer/parser/typescript.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol SyntaxNode has empty testsReaching.",
+            "expectationRef": "SyntaxNode",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol _fieldText has empty testsReaching.",
+            "expectationRef": "_fieldText",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol _hasAncestor has empty testsReaching.",
+            "expectationRef": "_hasAncestor",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol isNodeExported has empty testsReaching.",
+            "expectationRef": "isNodeExported",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol TypeScriptParser has empty testsReaching.",
+            "expectationRef": "TypeScriptParser",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed method parse has empty testsReaching. Passing parser tests do not override the supplied reachability edges.",
+            "expectationRef": "TypeScriptParser.parse (424001)",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol walkNode has empty testsReaching.",
+            "expectationRef": "walkNode",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol ownedElsewhere has empty testsReaching.",
+            "expectationRef": "ownedElsewhere",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractFunction has empty testsReaching.",
+            "expectationRef": "extractFunction",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractClass has empty testsReaching.",
+            "expectationRef": "extractClass",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractClassHeritage has empty testsReaching.",
+            "expectationRef": "extractClassHeritage",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractMethod has empty testsReaching.",
+            "expectationRef": "extractMethod",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractInterface has empty testsReaching.",
+            "expectationRef": "extractInterface",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractTypeAlias has empty testsReaching.",
+            "expectationRef": "extractTypeAlias",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractArrowFunction has empty testsReaching.",
+            "expectationRef": "extractArrowFunction",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractImport has empty testsReaching.",
+            "expectationRef": "extractImport",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractCalls has empty testsReaching.",
+            "expectationRef": "extractCalls",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol collectClassHttpFields has empty testsReaching.",
+            "expectationRef": "collectClassHttpFields",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol collectPatternIdentifiers has empty testsReaching.",
+            "expectationRef": "collectPatternIdentifiers",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol AxiosScope has empty testsReaching.",
+            "expectationRef": "AxiosScope",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol collectScopeFrame has empty testsReaching.",
+            "expectationRef": "collectScopeFrame",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol isProvenAxios has empty testsReaching.",
+            "expectationRef": "isProvenAxios",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol collectTsImportSpecifiers has empty testsReaching.",
+            "expectationRef": "collectTsImportSpecifiers",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol extractTsTopicExpr has empty testsReaching.",
+            "expectationRef": "extractTsTopicExpr",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol walkForCalls has empty testsReaching.",
+            "expectationRef": "walkForCalls",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "Changed symbol resolveCalleeName has empty testsReaching.",
+            "expectationRef": "resolveCalleeName",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/__tests__/grounding.test.ts",
+            "message": "The changed file entity has empty testsReaching; the passing test record does not establish reachability for this symbol.",
+            "expectationRef": "/Users/subhagho/work/projects/insors/insrc/src/workflow/code-review/__tests__/grounding.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "The changed file entity has empty testsReaching.",
+            "expectationRef": "/Users/subhagho/work/projects/insors/insrc/src/workflow/code-review/grounding.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol GroundedEntity has empty testsReaching.",
+            "expectationRef": "GroundedEntity",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol GroundingDeps has empty testsReaching.",
+            "expectationRef": "GroundingDeps",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol isTestFile has empty testsReaching. Its promised test is present and passing, but does not supply a reaching edge in this grounding.",
+            "expectationRef": "isTestFile",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol assembleCodeReviewGrounding has empty testsReaching. Passing grounding tests do not override the supplied reachability edges.",
+            "expectationRef": "assembleCodeReviewGrounding",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol realGroundingDeps has empty testsReaching.",
+            "expectationRef": "realGroundingDeps",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol toGrounded has empty testsReaching.",
+            "expectationRef": "toGrounded",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol rowById has empty testsReaching.",
+            "expectationRef": "rowById",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol DiffResult has empty testsReaching.",
+            "expectationRef": "DiffResult",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol DiffUnavailableError has empty testsReaching.",
+            "expectationRef": "DiffUnavailableError",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol DiffGroundingDeps has empty testsReaching.",
+            "expectationRef": "DiffGroundingDeps",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol DiffGroundingOptions has empty testsReaching.",
+            "expectationRef": "DiffGroundingOptions",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol assembleDiffCodeReviewGrounding has empty testsReaching.",
+            "expectationRef": "assembleDiffCodeReviewGrounding",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol sequence has empty testsReaching.",
+            "expectationRef": "sequence",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol buildDiffSymbols has empty testsReaching.",
+            "expectationRef": "buildDiffSymbols",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol splitDiffByFile has empty testsReaching.",
+            "expectationRef": "splitDiffByFile",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol extractDiffBody has empty testsReaching.",
+            "expectationRef": "extractDiffBody",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol runDiff has empty testsReaching.",
+            "expectationRef": "runDiff",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol excludeInput has empty testsReaching.",
+            "expectationRef": "excludeInput",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol storyRangeDiff has empty testsReaching.",
+            "expectationRef": "storyRangeDiff",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol collect has empty testsReaching.",
+            "expectationRef": "collect",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/grounding.ts",
+            "message": "Changed symbol realDiffGroundingDeps has empty testsReaching.",
+            "expectationRef": "realDiffGroundingDeps",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 53,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

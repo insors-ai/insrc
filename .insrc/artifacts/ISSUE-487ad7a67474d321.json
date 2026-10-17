@@ -21,7 +21,12 @@
     "epicSlug": "send-codex-only-schema-keywords-strict",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-17T12:09:33.517Z",
+    "parentRef": {
+      "slug": "send-codex-structured-output-schemas-openai",
+      "storyId": "s1"
+    }
   },
   "body": {
     "title": "Send codex only the schema keywords strict mode accepts",

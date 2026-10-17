@@ -49,7 +49,7 @@ import { IndexQueue } from './queue.js';
 import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
-import { buildDaemonStatus } from './status.js';
+import { buildDaemonStatus, composeQueueLanes } from './status.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { entitiesForSourceRoots, METHOD_ENTITIES_FOR_SOURCE_ROOTS } from './source-roots-rpc.js';
@@ -1062,6 +1062,7 @@ async function main(): Promise<void> {
 				uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
 				listRepos: () => listRepos(db),
 				queueDepth: queue.depth,
+				queueLanes: () => composeQueueLanes(queue.laneStatus(), indexer.summarySweepProgress()),
 				modelState: getModelState(),
 				// Story S002 (sc2): the daemon's installed source commit for freshness
 				// checks. Best-effort git read; '' when undeterminable, never throws.

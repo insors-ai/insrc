@@ -12,7 +12,7 @@
 
 import { getStoreHealth, recordStoreFailureIfLockError } from '../db/graph/store.js';
 import type { StoreHealth } from '../db/graph/store.js';
-import type { DaemonStatus, RegisteredRepo } from '../shared/types.js';
+import type { DaemonStatus, QueueLanes, RegisteredRepo } from '../shared/types.js';
 
 /** What the user is told. It states the cause and the remedy, and does not
  *  repeat the store library's own text, which blames a system limit. */
@@ -37,6 +37,16 @@ export interface DaemonStatusSources {
 	readonly lmdbFileSizeMb?: number | undefined;
 	/** Test seam; production reads the store module's record. */
 	readonly storeHealth?:    () => StoreHealth;
+	/** The queue's per-lane state; absent, the status carries no `queueLanes`. */
+	readonly queueLanes?:     () => QueueLanes;
+}
+
+/** The queue's per-lane state, with the running summary sweep's progress on the summary lane. */
+export function composeQueueLanes(
+	lanes: { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } },
+	sweep: { repoPath: string; done: number; total: number } | undefined,
+): QueueLanes {
+	return { index: { ...lanes.index }, summary: { ...lanes.summary, ...(sweep !== undefined && { sweep: { ...sweep } }) } };
 }
 
 /**
@@ -70,5 +80,6 @@ export async function buildDaemonStatus(src: DaemonStatusSources): Promise<Daemo
 		installedCommit: src.installedCommit,
 		...(src.lmdbFileSizeMb !== undefined && { lmdbFileSizeMb: src.lmdbFileSizeMb }),
 		...(failure !== undefined && { storeFailure: failure }),
+		...(src.queueLanes !== undefined && { queueLanes: src.queueLanes() }),
 	};
 }

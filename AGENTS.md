@@ -120,6 +120,7 @@ CliProvider suites) and skip cleanly when unset.
 - All LLM interaction goes through the `LLMProvider` interface in `shared/types.ts`
 - Two implementations: `OllamaProvider` (local) and `CliProvider` (subprocess wrapper for claude + codex)
 - Never `Promise.all` anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial `for...of` with sequential awaits.
+  - One accepted exception: the daemon's index queue runs its index lane and its document-summary lane at the same time (`src/daemon/queue.ts`, Story b94cf2c9), so a summary and code embeddings can reach Ollama together. Each lane stays serial. Decided by the stakeholder on 2026-10-17; revisit (for example a serial mode) if memory or GPU pressure shows up.
 
 ### Entity IDs
 

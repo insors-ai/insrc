@@ -940,6 +940,19 @@ export interface DaemonStatus {
    * Read best-effort inside daemon.status's never-throw contract.
    */
   installedCommit:   string;
+  /**
+   * The index queue's two lanes (Story b94cf2c9 S001): each lane's queued
+   * count, whether its worker is running a job, and the running summary
+   * sweep's progress. `queueDepth` stays the total of both lanes; a consumer
+   * that does not know this field sees no change.
+   */
+  queueLanes?:       QueueLanes;
+}
+
+/** Per-lane state of the daemon's index queue (`DaemonStatus.queueLanes`). */
+export interface QueueLanes {
+  index:   { depth: number; running: boolean };
+  summary: { depth: number; running: boolean; sweep?: { repoPath: string; done: number; total: number } };
 }
 
 /**

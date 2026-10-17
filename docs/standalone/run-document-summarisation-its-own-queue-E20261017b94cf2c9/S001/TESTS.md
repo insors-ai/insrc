@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -91,3 +91,20 @@ Run at 2026-10-17T13:53:06.888Z on commit `fb2c43f6`. Tests check: **passed**. 9
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/doc-summary-sweep.test.ts` | 0 | 5 | 0.7 s |  |
 | `src/indexer/__tests__/summary-sweep-progress.test.ts` | 0 | 4 | 1.1 s |  |
+
+## t4
+
+Run at 2026-10-17T13:59:25.416Z on commit `3cf219dd`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/__tests__/daemon-status-lanes.test.ts: buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress | `src/daemon/__tests__/daemon-status-lanes.test.ts` |
+| pass | with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes | `src/daemon/__tests__/daemon-status-lanes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/daemon-status-lanes.test.ts` | 0 | 2 | 0.5 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "b94cf2c9058fd82a",
     "storyId": "S001",
     "createdAt": "2026-10-17T13:31:05.601Z",
-    "updatedAt": "2026-10-17T13:53:06.888Z",
+    "updatedAt": "2026-10-17T13:59:25.416Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-17T13:11:51.789Z",
     "epicSlug": "run-document-summarisation-its-own-queue"
@@ -387,6 +387,51 @@
               },
               {
                 "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "3cf219dd",
+        "ranAt": "2026-10-17T13:59:25.416Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/daemon-status-lanes.test.ts: buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+                "title": "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+                "title": "with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 539,
+            "titles": [
+              {
+                "title": "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+                "result": "pass"
+              },
+              {
+                "title": "with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes",
                 "result": "pass"
               }
             ],

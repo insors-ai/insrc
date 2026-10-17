@@ -5,8 +5,8 @@
 ## Summary
 
 **Epic:** `ground-code-review-coverage-story-s`
-**HLD base run:** `wf-1792218012635-stjezd`
-**HLD effective hash:** `c6c671cdea71...`
+**HLD base run:** `wf-1792218379933-78wvo6`
+**HLD effective hash:** `48ce976a93a2...`
 
 The code review stops calling every test unverified and stops waiting on unrelated work. Its subject now carries the Story's BUILD and TESTS records, and the coverage judge is shown each test file's latest results from the gate. The wait for a fresh index looks only at indexing work that changes the Story repository's code graph, so other repositories and document summaries no longer push a review into the diff fallback; and a review that does fall back records why.
 
@@ -67,7 +67,7 @@ buildCoveragePrompt(subject: CodeReviewSubject, grounding: CodeReviewGrounding, 
 **Returns:** `LLMMessage[]` — The coverage prompt; the one-line build-record signal is replaced by a trailing test-record section.
 
 **Postconditions:**
-- When testRecord is non-null, the prompt carries a trailing section listing, per test file in the latest run of each task, the file, its exit code and each title with its result, plus the BUILD verdict when buildRecord is non-null.
+- When testRecord is non-null, the prompt carries a trailing section with one line per (file, title): its result taken from the task whose ranAt is latest among the tasks that ran that file and title, with that task id and ranAt shown, plus each file's exit code from the same run and the BUILD verdict when buildRecord is non-null. Precedence: a task with a valid ISO ranAt beats one without; among tasks with no valid ranAt, or with equal ranAt, a fail beats a skipped beats a pass, so a tie never yields an unsupported green.
 - The system text says: a test the record shows passing is passing; a test is unverified only when no record covers its file or title; a failing or skipped title is present-but-failing.
 - When testRecord is null, the prompt keeps today's rule that every pass-state is unverified.
 - The section is built from a defensive normalisation of the test record: a task without a files array, a file without a titles array, or a title whose result is not pass/fail/skipped is skipped with a note in the section rather than iterated, because readTestRecord validates only the record's top level and each task's taskId and tests (src/workflow/runners/build/test-record.ts).
@@ -263,7 +263,7 @@ FreshnessDeps.isProcessing() is replaced by codeIndexWork(repoPath) => { inFligh
 
 | Input | Expected |
 | :--- | :--- |
-| A TESTS record with several tasks that ran the same test file at different times. | The prompt shows, per task, its latest run's files and titles; a file is passing for a title when the most recent run that includes it shows pass. |
+| Two tasks ran the same file and title; the task stored first in body.tasks was re-run later (ranAt newer) and now fails, the other task passes. | The section shows fail for that title, from the re-run task, because results are chosen by ranAt, not by position. |
 | A TESTS record whose files list is empty (a trivial build with no touched test files). | The section says the gate ran no test files; pass-state stays unverified for every symbol. |
 | A repository path that is a prefix of another (e.g. /a/repo and /a/repo2) with a file job under /a/repo2. | codeIndexWorkFor('/a/repo') does not count it: the match is repoPath itself or repoPath followed by the path separator, as depthForRepo does. |
 | Only doc-summarise-entity, config and reembed jobs queued, and one in flight. | isProcessing false and pendingCodeIndexJobs 0; the review proceeds immediately when no file is stale. |
@@ -272,6 +272,7 @@ FreshnessDeps.isProcessing() is replaced by codeIndexWork(repoPath) => { inFligh
 | A code-review record written before this change (no fallbackReason). | Reads and renders as today; the field is optional. |
 | A freshness reply from an older daemon (no inFlight, no pendingCodeIndexJobs). | freshnessFromReply maps inFlight to isProcessing and pendingCodeIndexJobs to 0; the step works as before. |
 | Only queued code-index work (nothing in flight) versus a code-index job in flight with none queued. | The first gives inFlight false, pendingCodeIndexJobs > 0; the second inFlight true, pendingCodeIndexJobs 0; a timeout records each exactly. |
+| Two tasks ran the same title with equal ranAt, or neither has a valid ranAt, and one passed while the other failed. | The section shows fail: on a tie or missing time, fail beats skipped beats pass. |
 
 **Invariants to preserve**
 
@@ -289,7 +290,7 @@ FreshnessDeps.isProcessing() is replaced by codeIndexWork(repoPath) => { inFligh
 **Test levels**
 
 - **unit** — The subject carries the Story's records, and coverage renders them.
-  - Subjects: `src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built`, `src/workflow/code-review/__tests__/runner.test.ts: the coverage prompt lists each test file's titles and results from the test record in a trailing section and states the pass/unverified rule; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record it keeps the every-test-unverified rule`
+  - Subjects: `src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built`, `src/workflow/code-review/__tests__/runner.test.ts: the coverage prompt lists each test file's titles and results from the test record in a trailing section and states the pass/unverified rule; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record it keeps the every-test-unverified rule; when two tasks ran the same file and title, the result shown is the one from the latest ranAt even if that task is stored first (an earlier-position task re-run from pass to fail shows fail), and a tie or missing ranAt resolves fail over skipped over pass`
   - Fixtures: `A temp repo with .insrc/artifacts/BUILD-<hash>-S001.json and TESTS-<hash>-S001.json, one valid and one misshapen variant.`
 - **unit** — Freshness counts only the Story repository's code-index work.
   - Subjects: `src/daemon/__tests__/queue-code-index-work.test.ts: codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor`, `src/workflow/code-review/__tests__/freshness.test.ts: computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before`
@@ -302,7 +303,7 @@ FreshnessDeps.isProcessing() is replaced by codeIndexWork(repoPath) => { inFligh
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built`, `src/workflow/code-review/__tests__/runner.test.ts: the coverage prompt lists each test file's titles and results from the test record in a trailing section and states the pass/unverified rule; with no test record it keeps the every-test-unverified rule` |
+| `ac1` | `src/workflow/code-review/__tests__/subject.test.ts: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built`, `src/workflow/code-review/__tests__/runner.test.ts: the coverage prompt lists each test file's titles and results from the test record in a trailing section and states the pass/unverified rule; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record it keeps the every-test-unverified rule; when two tasks ran the same file and title, the result shown is the one from the latest ranAt even if that task is stored first (an earlier-position task re-run from pass to fail shows fail), and a tie or missing ranAt resolves fail over skipped over pass` |
 | `ac2` | `src/daemon/__tests__/queue-code-index-work.test.ts: codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor`, `src/workflow/code-review/__tests__/freshness.test.ts: computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before` |
 | `ac3` | `src/daemon/steps/code-review-step/__tests__/handler.test.ts: a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason`, `src/shared/__tests__/review-stream-freshness.test.ts: freshnessFromReply keeps inFlight and pendingCodeIndexJobs from a current reply and maps an older reply to inFlight=isProcessing, pendingCodeIndexJobs=0`, `src/daemon/__tests__/code-review-rpc-fallback.test.ts: codeReview.run with params.fallbackReason writes a record whose body.fallbackReason equals it, and refuses a malformed reason; without one the body has no fallbackReason`, `src/daemon/steps/code-review-step/__tests__/handler.test.ts: on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work`, `src/shared/__tests__/review-stream.test.ts: codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)`, `src/daemon/__tests__/code-review-rpc-fallback.test.ts: a step-to-daemon run through the real codeReviewRequestParams and codeReview.run writes body.fallbackReason identical to the step's done-frame fallbackReason` |
 

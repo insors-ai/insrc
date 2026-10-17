@@ -1,0 +1,208 @@
+{
+  "_comment": "Shared contract fixture for Story s3: the repoFields of the config.catalog payload plus one repo.settings.get payload. The terminal, VS Code and JetBrains clients must render the same rows from it. src/cli/__tests__/repo-fields-contract.test.ts checks repoFields equals the daemon table; regenerate with the snippet in that test if the table changes.",
+  "repoFields": [
+    {
+      "key": "type",
+      "label": "Tracker",
+      "type": "enum",
+      "enumValues": [
+        "github",
+        "none"
+      ],
+      "description": "Which tracker this repo uses; none turns tracker integration off.",
+      "group": "Tracker",
+      "kind": "local"
+    },
+    {
+      "key": "owner",
+      "label": "Owner",
+      "type": "string",
+      "description": "GitHub owner. Empty means the origin remote.",
+      "group": "Tracker",
+      "kind": "local"
+    },
+    {
+      "key": "repo",
+      "label": "Repository",
+      "type": "string",
+      "description": "GitHub repository name. Empty means the origin remote.",
+      "group": "Tracker",
+      "kind": "local"
+    },
+    {
+      "key": "ghPath",
+      "label": "gh program",
+      "type": "string",
+      "description": "Where the gh program lives.",
+      "group": "Tracker",
+      "kind": "local",
+      "note": "saved; not used yet"
+    },
+    {
+      "key": "ghHost",
+      "label": "GitHub host",
+      "type": "string",
+      "default": "github.com",
+      "description": "The host gh signs in to.",
+      "group": "Tracker",
+      "kind": "local",
+      "note": "saved; not used yet"
+    },
+    {
+      "key": "branchPattern",
+      "label": "Branch pattern",
+      "type": "string",
+      "description": "Branch name pattern with {id}, {slug} and {type}.",
+      "group": "Tracker",
+      "kind": "local",
+      "note": "saved; not used yet",
+      "grammar": {
+        "placeholders": [
+          "id",
+          "slug",
+          "type"
+        ],
+        "minLength": 1,
+        "maxLength": 200,
+        "literalChars": {
+          "letters": true,
+          "digits": true,
+          "extra": "/-_."
+        },
+        "slashes": {
+          "leading": false,
+          "trailing": false,
+          "consecutive": false
+        },
+        "forbiddenSubstrings": [
+          ".."
+        ],
+        "forbiddenSuffixes": [
+          ".lock"
+        ]
+      }
+    },
+    {
+      "key": "signin",
+      "label": "Sign-in",
+      "type": "string",
+      "description": "Who gh is signed in as, read live.",
+      "group": "Tracker",
+      "kind": "status"
+    },
+    {
+      "key": "target",
+      "label": "Resolved target",
+      "type": "string",
+      "description": "The owner and repository the tracker calls go to, and where that came from.",
+      "group": "Tracker",
+      "kind": "status"
+    },
+    {
+      "key": "teamMode",
+      "label": "Team mode",
+      "type": "boolean",
+      "description": "Whether this repo runs in team mode.",
+      "group": "Tracker",
+      "kind": "policy",
+      "note": "set by the team policy"
+    },
+    {
+      "key": "signoffStages",
+      "label": "Signoff stages",
+      "type": "string",
+      "description": "Stages that need a signoff before the next stage starts.",
+      "group": "Tracker",
+      "kind": "policy",
+      "note": "set by the team policy"
+    },
+    {
+      "key": "claimsEnforced",
+      "label": "Claims enforced",
+      "type": "boolean",
+      "description": "Whether only the assignee may change a stage unit.",
+      "group": "Tracker",
+      "kind": "policy",
+      "note": "set by the team policy"
+    },
+    {
+      "key": "claimUnits",
+      "label": "Claim units",
+      "type": "string",
+      "description": "The artifacts each claim covers.",
+      "group": "Tracker",
+      "kind": "policy",
+      "note": "set by the team policy"
+    },
+    {
+      "key": "administrators",
+      "label": "Administrators",
+      "type": "string",
+      "description": "People who may override a claim.",
+      "group": "Tracker",
+      "kind": "policy",
+      "note": "set by the team policy"
+    },
+    {
+      "key": "forceTaskIssues",
+      "label": "Task issues forced",
+      "type": "boolean",
+      "description": "Whether a tracker issue is created for every Task.",
+      "group": "Tracker",
+      "kind": "policy",
+      "note": "set by the team policy"
+    }
+  ],
+  "settings": {
+    "repo": "/work/repo-a",
+    "values": {
+      "type": "github",
+      "owner": "acme",
+      "repo": "widgets",
+      "ghHost": "ghe.example.com"
+    },
+    "resolved": {
+      "type": "github",
+      "owner": "acme",
+      "repo": "widgets",
+      "source": "per-repo-config"
+    },
+    "signin": {
+      "state": "missing-signin",
+      "reason": "gh is not signed in"
+    },
+    "policy": {
+      "ok": true,
+      "mode": "team",
+      "values": {
+        "teamMode": true,
+        "signoffStages": [
+          "DEF",
+          "HLD"
+        ],
+        "claimsEnforced": true,
+        "administrators": [
+          "ada"
+        ],
+        "claimUnits": {
+          "epic": [
+            "DEF",
+            "HLD"
+          ],
+          "story": [
+            "LLD",
+            "PLAN"
+          ],
+          "task": [
+            "BUILD"
+          ]
+        },
+        "forceTaskIssues": true
+      },
+      "source": {
+        "ref": "origin/main",
+        "fetchedAt": "2026-10-17T00:00:00.000Z"
+      }
+    }
+  }
+}

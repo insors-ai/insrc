@@ -383,6 +383,8 @@ The reader is synchronous and performs a git fetch of the remote default branch 
   - **resolved**: Verify test locations before planning — Tests live in src/**/__tests__/*.test.ts run by tsx --test; confirm existing suites while planning. _(2026-10-17T06:12:45.609Z)_
 - `q042661a7` — alt2 (partial): the Epic constraints k4 and k5 are covered through the acceptance criteria but not scored separately.
   - **resolved**: Keep acceptance-criteria scoring — Design-time scoring only; k4 and k5 are already proved by ac5-ac9 tests in the build. _(2026-10-17T06:13:19.963Z)_
+- `q6e2bbee3` — sbdry3 (partial): the one change to the HLD contract, source.anchorKnown, is proposed as a non-breaking fieldAdd amendment.
+  - **resolved**: Optional field addition — AMD-315d510cb28100e2-4 approved as additive and non-breaking; the reader always populates it and a consumer treats absence as unknown (grandfather nothing). _(2026-10-17T06:13:45.109Z)_
 
 ## Citations
 

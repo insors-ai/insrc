@@ -209,6 +209,13 @@
         "choice": "Keep acceptance-criteria scoring",
         "rationale": "Design-time scoring only; k4 and k5 are already proved by ac5-ac9 tests in the build.",
         "resolvedAt": "2026-10-17T06:13:19.963Z"
+      },
+      "q6e2bbee3": {
+        "question": "sbdry3 (partial): the one change to the HLD contract, source.anchorKnown, is proposed as a non-breaking fieldAdd amendment.",
+        "status": "resolved",
+        "choice": "Optional field addition",
+        "rationale": "AMD-315d510cb28100e2-4 approved as additive and non-breaking; the reader always populates it and a consumer treats absence as unknown (grandfather nothing).",
+        "resolvedAt": "2026-10-17T06:13:45.109Z"
       }
     }
   },

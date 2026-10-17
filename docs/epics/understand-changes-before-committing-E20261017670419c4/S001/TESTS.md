@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -52,3 +52,25 @@ Run at 2026-10-17T13:15:42.605Z on commit `68612a86`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/understanding/__tests__/contracts.test.ts` | 0 | 3 | 0.5 s |  |
+
+## t3
+
+Run at 2026-10-17T13:18:35.728Z on commit `e89d309d`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Open complete namespace inventory fresh and existing; retain old data**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Complete namespace inventory opens fresh and existing stores without data loss | `src/understanding/__tests__/storage.test.ts` |
+
+**integration: Reject missing/corrupt/future schema; owner-index pagination**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Schema corruption fails closed and owner pagination is isolated and bounded | `src/understanding/__tests__/storage.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/understanding/__tests__/storage.test.ts` | 0 | 2 | 1 s |  |

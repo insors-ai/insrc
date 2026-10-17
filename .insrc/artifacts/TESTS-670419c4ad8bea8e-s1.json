@@ -4,7 +4,7 @@
     "epicHash": "670419c4ad8bea8e",
     "storyId": "s1",
     "createdAt": "2026-10-17T13:09:28.300Z",
-    "updatedAt": "2026-10-17T13:15:42.605Z",
+    "updatedAt": "2026-10-17T13:18:35.728Z",
     "epicCreatedAt": "2026-10-17T08:59:42.630Z",
     "epicSlug": "understand-changes-before-committing"
   },
@@ -136,6 +136,59 @@
               },
               {
                 "title": "Nested scopes and transport versions fail closed on every envelope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e89d309d",
+        "ranAt": "2026-10-17T13:18:35.728Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Open complete namespace inventory fresh and existing; retain old data",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/storage.test.ts",
+                "title": "Complete namespace inventory opens fresh and existing stores without data loss",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Reject missing/corrupt/future schema; owner-index pagination",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/storage.test.ts",
+                "title": "Schema corruption fails closed and owner pagination is isolated and bounded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/storage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 983,
+            "titles": [
+              {
+                "title": "Complete namespace inventory opens fresh and existing stores without data loss",
+                "result": "pass"
+              },
+              {
+                "title": "Schema corruption fails closed and owner pagination is isolated and bounded",
                 "result": "pass"
               }
             ],

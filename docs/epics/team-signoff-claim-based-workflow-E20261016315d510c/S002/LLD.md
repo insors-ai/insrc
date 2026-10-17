@@ -385,6 +385,8 @@ The reader is synchronous and performs a git fetch of the remote default branch 
   - **resolved**: Keep acceptance-criteria scoring — Design-time scoring only; k4 and k5 are already proved by ac5-ac9 tests in the build. _(2026-10-17T06:13:19.963Z)_
 - `q6e2bbee3` — sbdry3 (partial): the one change to the HLD contract, source.anchorKnown, is proposed as a non-breaking fieldAdd amendment.
   - **resolved**: Optional field addition — AMD-315d510cb28100e2-4 approved as additive and non-breaking; the reader always populates it and a consumer treats absence as unknown (grandfather nothing). _(2026-10-17T06:13:45.109Z)_
+- `qcfb3b56e` — A repo that never fetched anything and has no sighting has no local evidence of a policy and reads as none until a refresh; this is the one remaining unenforced state and is accepted because nothing can be known locally without a network call.
+  - **resolved**: Accept until refresh — User decision (option a), recorded in docs/plans/team-workflow.md. _(2026-10-17T06:13:58.002Z)_
 
 ## Citations
 

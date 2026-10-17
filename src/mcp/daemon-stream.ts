@@ -338,14 +338,15 @@ export function fetchCodeReviewGrounding(
 /** Fetch the code-review index-freshness verdict (code-review s9) over the
  *  daemon `codeReview.freshness` IPC — the controller's ONLY access to the queue
  *  + graph freshness signal (k5), the peer of {@link fetchCodeReviewGrounding}.
- *  The daemon computes `{ isProcessing, staleFiles }` read-only (never a reindex);
+ *  The daemon computes `{ isProcessing, inFlight, pendingCodeIndexJobs, staleFiles }`
+ *  read-only (never a reindex);
  *  a daemon `{ error }` or an unreachable socket maps to `{ ok:false, reason }`
  *  (never a throw), so the gate can relay a clean `error` frame. */
 export function fetchCodeReviewFreshness(
 	params: { repo: string; epicHash: string; storyId: string; changedFiles: readonly string[] },
 	deps: UnaryRpcDeps = {},
 ): Promise<CodeReviewFreshnessResult> {
-	return unaryRpc<{ isProcessing?: boolean; staleFiles?: readonly string[]; error?: string }>(
+	return unaryRpc<Parameters<typeof freshnessFromReply>[0]>(
 		'codeReview.freshness', params, deps,
 	).then(freshnessFromReply, unavailableFromError);
 }

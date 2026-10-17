@@ -74,7 +74,7 @@ function maps(stream: Partial<Record<'workflow.review' | 'codeReview.run', Strea
 	const calls: string[] = [];
 	const unary: RpcHandlers = {
 		'codeReview.grounding': async () => { calls.push('codeReview.grounding'); return { ok: true, grounding: GROUNDING }; },
-		'codeReview.freshness': async () => { calls.push('codeReview.freshness'); return { isProcessing: false, staleFiles: [] }; },
+		'codeReview.freshness': async () => { calls.push('codeReview.freshness'); return { isProcessing: false, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: [] }; },
 		'repo.resolveForCwd':   async (p) => { calls.push('repo.resolveForCwd'); return { path: (p as { cwd: string }).cwd === '/caller' ? '/registered' : null }; },
 	};
 	const record = (method: string, h: StreamHandler): StreamHandler => async (params, send, signal) => { calls.push(method); return h(params, send, signal); };
@@ -153,7 +153,7 @@ test("in-daemon client: a done frame resolves with its data and progress reaches
 	assert.deepEqual(frames, [{ step: 'working' }]);
 	assert.deepEqual(await client.codeReviewStream({ epicHash: 'e', storyId: 's' }, { timeoutMs: 60_000 }), CR_DONE);
 	assert.deepEqual(await client.fetchCodeReviewGrounding({ repo: '/r', epicHash: 'e', storyId: 's' }), { ok: true, grounding: GROUNDING });
-	assert.deepEqual(await client.fetchCodeReviewFreshness({ repo: '/r', epicHash: 'e', storyId: 's', changedFiles: [] }), { ok: true, isProcessing: false, staleFiles: [] });
+	assert.deepEqual(await client.fetchCodeReviewFreshness({ repo: '/r', epicHash: 'e', storyId: 's', changedFiles: [] }), { ok: true, isProcessing: false, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: [] });
 	assert.equal(await client.resolveRepoForCwd('/caller'), '/registered');
 	assert.equal(await client.resolveRepoForCwd('/elsewhere'), null);
 
@@ -312,4 +312,12 @@ test('in-daemon client: the wait limit is named in whole minutes when it is one,
 	assert.equal(waitText(20_000), '20 seconds');
 	assert.equal(waitText(1_000), '1 second');
 	assert.equal(waitText(10), '1 second');
+});
+
+test('in-daemon review client: the codeReview.freshness reply keeps inFlight and pendingCodeIndexJobs (ISSUE-1102dc71)', async () => {
+	const client = createInDaemonClient({
+		'codeReview.freshness': async () => ({ isProcessing: true, inFlight: false, pendingCodeIndexJobs: 2, staleFiles: ['src/a.ts'] }),
+	}, {});
+	assert.deepEqual(await client.fetchCodeReviewFreshness({ repo: '/r', epicHash: 'e', storyId: 's', changedFiles: ['src/a.ts'] }),
+		{ ok: true, isProcessing: true, inFlight: false, pendingCodeIndexJobs: 2, staleFiles: ['src/a.ts'] });
 });

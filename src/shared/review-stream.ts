@@ -69,7 +69,9 @@ export interface CodeReviewStreamResult {
 // ---------------------------------------------------------------------------
 
 export type CodeReviewGroundingResult = { ok: true; grounding: CodeReviewGrounding } | { ok: false; reason: string };
-export type CodeReviewFreshnessResult = { ok: true; isProcessing: boolean; staleFiles: readonly string[] } | { ok: false; reason: string };
+export type CodeReviewFreshnessResult =
+	| { ok: true; isProcessing: boolean; inFlight: boolean; pendingCodeIndexJobs: number; staleFiles: readonly string[] }
+	| { ok: false; reason: string };
 
 /** The `codeReview.grounding` reply as a result. */
 export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }): CodeReviewGroundingResult {
@@ -77,10 +79,17 @@ export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGr
 	return { ok: false, reason: res.reason ?? res.error ?? 'code-review grounding unavailable' };
 }
 
-/** The `codeReview.freshness` reply as a result. */
-export function freshnessFromReply(res: { isProcessing?: boolean; staleFiles?: readonly string[]; error?: string }): CodeReviewFreshnessResult {
+/** The `codeReview.freshness` reply as a result. A reply from an older daemon
+ *  (no inFlight / pendingCodeIndexJobs) reads as inFlight = isProcessing and 0. */
+export function freshnessFromReply(res: { isProcessing?: boolean; inFlight?: boolean; pendingCodeIndexJobs?: number; staleFiles?: readonly string[]; error?: string }): CodeReviewFreshnessResult {
 	if (res.error === undefined && typeof res.isProcessing === 'boolean') {
-		return { ok: true, isProcessing: res.isProcessing, staleFiles: res.staleFiles ?? [] };
+		return {
+			ok: true,
+			isProcessing: res.isProcessing,
+			inFlight: typeof res.inFlight === 'boolean' ? res.inFlight : res.isProcessing,
+			pendingCodeIndexJobs: typeof res.pendingCodeIndexJobs === 'number' ? res.pendingCodeIndexJobs : 0,
+			staleFiles: res.staleFiles ?? [],
+		};
 	}
 	return { ok: false, reason: res.error ?? 'code-review freshness unavailable' };
 }

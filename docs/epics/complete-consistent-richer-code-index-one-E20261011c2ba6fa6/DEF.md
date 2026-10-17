@@ -371,6 +371,19 @@ An analysis, a workflow step, a review or a triage asked for from a client sessi
 
 - `lc1` (stakeholder) Removing the temporary allowance is part of this Story and not optional: by the stakeholder's decision of 2026-10-11 the allowance exists only until this Story lands, and Story s4's first acceptance criterion is met in full only when it is gone. [[c11]]
 
+### 6.12 E20261011c2ba6fa6:S012 — Every supported parser records the calls its code makes, and calls resolve within a package
+
+**User value:**
+
+Someone asking what calls a function, or a code review asking which tests reach a change, gets the true answer in every supported language, not only in TypeScript: Python and Go record calls at all, calls outside methods (class bodies, initializers, scripts) are recorded in every parser, JVM callee names match what resolution looks up, and calls between files of one package resolve without an import.
+
+**Acceptance criteria:**
+
+- **ac1:** Given a Python test function calling a function imported from another module, and a Go TestX calling a function in another file of the same package, when the repository is indexed and the callers of the called function are requested, then each test is returned as a caller, and the code-review grounding lists the test file in the function's testsReaching.
+- **ac2:** Given a ScalaTest class-body test("x") { ... }, a Kotest FunSpec({ test("x") { ... } }) lambda, a Kotlin init block, a Java initializer block, a field or property initializer and a Python class-body statement, each calling a function, when the file is indexed, then each call is a CALLS relation from the nearest enclosing entity (the class, variable or property), never dropped.
+- **ac3:** Given a Java qualified call obj.method() and a Scala receiver call x.method(s), where method is defined on a class in the repository, when the cross-file pass runs, then the call resolves to that method, or is reported ambiguous with its candidates; it is not left unresolved.
+- **ac4:** Given a JUnit test under src/test/java/com/x calling a class in src/main/java/com/x, and a Kotlin test calling a function in another file of its package, when the cross-file pass runs, then both calls resolve without an import.
+
 ## 7. References
 
 - **[[c1]]** `code` `src/db/relations.ts` — "s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));"

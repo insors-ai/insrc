@@ -11,6 +11,8 @@
  *  - Type alias declarations
  *  - Method definitions inside class bodies
  *  - Import statements → unresolved IMPORTS relations
+ *  - Calls outside any function (program-level statements, non-function
+ *    initializers, export default) → CALLS from the file entity
  *  - Export modifier → isExported: true
  */
 
@@ -111,6 +113,7 @@ class TypeScriptParser implements CodeParser {
     const tree = (parser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
     const lang: Language = isJS ? 'javascript' : 'typescript';
     currentClassHttpFields = new Set();  // S001 (t3): reset per file; set per class
+    fileCallsSeen = new Set();           // ISSUE-bd1c6c90: one CALLS per callee from the file
     // S004 (t2): messaging detection is import-gated for every language — a file
     // is scanned for pub/sub call-sites only when it imports a messaging library.
     messagingEnabled = fileImportsMessagingLibrary(lang, collectTsImportSpecifiers(source));
@@ -184,6 +187,11 @@ function walkNode(
     case 'lexical_declaration':
     case 'variable_declaration':
       extractArrowFunction(node, source, repo, repoId, filePath, lang, fileId, now, entities, relations);
+      // A program-level or exported declaration's non-function values run with
+      // no enclosing entity, so their calls belong to the file.
+      if (node.parent?.type === 'program' || node.parent?.type === 'export_statement') {
+        extractCalls(node, fileId, repo, filePath, relations, fileCallsSeen, ownedElsewhere);
+      }
       break;
 
     case 'export_statement': {
@@ -192,14 +200,50 @@ function walkNode(
       if (decl) {
         walkNode(decl, source, repo, repoId, filePath, lang, fileId, now, entities, relations);
       }
+      // `export default <expr>`: the value runs at module load.
+      const value = node.childForFieldName('value');
+      if (value) {
+        extractCalls(value, fileId, repo, filePath, relations, fileCallsSeen, ownedElsewhere);
+      }
       return;
     }
+  }
+
+  // A program-level statement that is not a declaration (every test('...', ...)
+  // call, a top-level if/for/try) runs at module load: its calls belong to the
+  // file. The walk below still extracts the declarations nested in it.
+  if (node.parent?.type === 'program' && PROGRAM_STATEMENT_TYPES.has(node.type)) {
+    extractCalls(node, fileId, repo, filePath, relations, fileCallsSeen, ownedElsewhere);
   }
 
   for (const child of node.namedChildren) {
     walkNode(child, source, repo, repoId, filePath, lang, fileId, now, entities, relations);
   }
 }
+
+/** Declarator values that become a function entity of their own (extractArrowFunction). */
+const FUNCTION_VALUE_TYPES = new Set(['arrow_function', 'function_expression', 'generator_function', 'generator_function_expression']);
+
+/** Program-level statements whose calls are credited to the file entity. */
+const PROGRAM_STATEMENT_TYPES = new Set([
+  'expression_statement', 'if_statement', 'for_statement', 'for_in_statement',
+  'while_statement', 'do_statement', 'try_statement', 'switch_statement',
+  'statement_block', 'labeled_statement', 'throw_statement', 'with_statement',
+]);
+
+/** A node the walk gives an entity of its own (a function or class declaration,
+ *  a function-valued declarator), at any depth: its calls are that entity's, so
+ *  a scan crediting the file skips it. */
+function ownedElsewhere(n: SyntaxNode): boolean {
+  if (n.type === 'function_declaration' || n.type === 'generator_function_declaration' || n.type === 'class_declaration') return true;
+  return FUNCTION_VALUE_TYPES.has(n.type) && n.parent?.type === 'variable_declarator'
+    && n.parent.childForFieldName('value')?.id === n.id
+    && (n.parent.parent?.type === 'lexical_declaration' || n.parent.parent?.type === 'variable_declaration');
+}
+
+/** Callees already credited to the file entity in the file being parsed; reset
+ *  per file in parse() (same idiom as currentClassHttpFields). */
+let fileCallsSeen: Set<string> = new Set();
 
 // ---------------------------------------------------------------------------
 // Entity extractors
@@ -310,12 +354,19 @@ function extractClass(
   const prevClassHttpFields = currentClassHttpFields;
   currentClassHttpFields = collectClassHttpFields(node);
 
-  // Walk class_body for method definitions
+  // Walk class_body for method definitions. Field initializers and the
+  // constructor have no entity of their own: their calls are the class's.
   const body = node.childForFieldName('body');
   if (body) {
+    const classCallsSeen = new Set<string>();
     for (const member of body.namedChildren) {
       if (member.type === 'method_definition' || member.type === 'method_signature') {
         extractMethod(member, source, repo, repoId, filePath, lang, fileId, id, name, now, entities, relations);
+        const ctorBody = member.childForFieldName('name')?.text === 'constructor' ? member.childForFieldName('body') : null;
+        if (ctorBody) extractCalls(ctorBody, id, repo, filePath, relations, classCallsSeen);
+      } else if (member.type === 'public_field_definition' || member.type === 'field_definition') {
+        const value = member.childForFieldName('value');
+        if (value && !FUNCTION_VALUE_TYPES.has(value.type)) extractCalls(value, id, repo, filePath, relations, classCallsSeen);
       }
     }
   }
@@ -515,8 +566,7 @@ function extractArrowFunction(
     const nameNode = declarator.childForFieldName('name');
     const valueNode = declarator.childForFieldName('value');
     if (!nameNode || !valueNode) continue;
-    if (valueNode.type !== 'arrow_function' && valueNode.type !== 'function_expression' &&
-        valueNode.type !== 'generator_function_expression') continue;
+    if (!FUNCTION_VALUE_TYPES.has(valueNode.type)) continue;
 
     const name    = nameNode.text;
     const isAsync = valueNode.children.some(c => c.type === 'async');
@@ -634,14 +684,15 @@ function extractCalls(
   repo:       string,
   filePath:   string,
   relations:  Relation[],
+  seen:       Set<string> = new Set<string>(),  // shared when one caller has several bodies
+  skip?:      (n: SyntaxNode) => boolean,      // subtrees whose calls belong to another caller
 ): void {
-  const seen = new Set<string>();
   // S001 (t3 + scope-hardening): local `const x = axios.create()` receivers,
   // resolved to their NEAREST lexical scope. axiosScopes is a stack of per-scope
   // frames (innermost last); it is seeded with THIS body's frame and grows/shrinks
   // as walkForCalls descends into / leaves nested function/arrow/method scopes.
   const axiosScopes: AxiosScope[] = [collectScopeFrame(bodyNode)];
-  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, axiosScopes);
+  walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, axiosScopes, skip);
 }
 
 const BUILTIN_OBJECTS = new Set([
@@ -848,7 +899,10 @@ function walkForCalls(
   relations:   Relation[],
   seen:        Set<string>,
   axiosScopes: AxiosScope[],
+  skip?:       (n: SyntaxNode) => boolean,
 ): void {
+  if (skip?.(node)) return;
+
   // Push a fresh axios frame when entering a nested lexical scope; switch the
   // class `this.<field>` proof when entering ANY class node (including one
   // declared inside a method body — the MED2 case extractClass never reaches).
@@ -919,7 +973,7 @@ function walkForCalls(
   }
 
   for (const child of node.namedChildren) {
-    walkForCalls(child, callerId, repo, filePath, relations, seen, axiosScopes);
+    walkForCalls(child, callerId, repo, filePath, relations, seen, axiosScopes, skip);
   }
 
   // Leave the scope: pop the axios frame / restore the outer class proof.

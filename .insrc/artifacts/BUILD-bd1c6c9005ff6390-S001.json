@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "bd1c6c9005ff6390",
+    "storyId": "S001",
+    "createdAt": "2026-10-17T09:39:24.421Z",
+    "updatedAt": "2026-10-17T10:22:41.922Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-17T08:20:53.100Z",
+    "epicSlug": "record-calls-made-module-level-statements"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "An integration test indexes a two-file TypeScript fixture through the indexer's own per-file steps (real parser, resolveRelations, store writes; no embedding) and the real cross-file resolver over a temporary graph store, then runs assembleCodeReviewGrounding with realGroundingDeps: the test file's entity is the imported function's only caller and its testsReaching entry. Undoing the t1 program-statement scan, making isTestFile return false, or skipping the cross-file resolver each fails it.",
+    "testRecord": {
+      "md": "docs/standalone/record-calls-made-module-level-statements-E20261017bd1c6c90/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/DEF-670419c4ad8bea8e.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:22:41.922Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-bd1c6c9005ff6390-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:22:41.922Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:22:41.922Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/test-callers-reach-grounding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:22:41.922Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:22:41.922Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/typescript.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:22:41.922Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/grounding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:22:41.922Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/grounding.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T10:22:41.922Z"
+      }
+    ],
+    "commit": "ee65595e"
+  }
+}

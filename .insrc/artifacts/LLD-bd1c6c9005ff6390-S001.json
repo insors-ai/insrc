@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792225824604-r1od88",
+    "runId": "wf-1792227721731-1vwusb",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T08:30:25.582Z",
+    "createdAt": "2026-10-17T09:02:02.722Z",
     "epicCreatedAt": "2026-10-17T08:20:53.100Z",
     "attribution": {
       "outputs": [
@@ -15,22 +15,122 @@
         }
       ]
     },
-    "elapsedMs": 928,
+    "elapsedMs": 989,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "bd1c6c9005ff6390",
     "epicSlug": "record-calls-made-module-level-statements",
     "storyId": "S001",
-    "hldBaseRunId": "wf-1792225824604-r1od88",
-    "hldEffectiveHash": "efdb09f50850965b5afbbffe1942d47007326ed6bf11a7a779ed1406446b423d",
+    "hldBaseRunId": "wf-1792227721731-1vwusb",
+    "hldEffectiveHash": "bf2048f4fa400e92e98ec8b1e1936c0a45174c973a5277a4179b8fc3370f14a5",
     "hldAmendmentsApplied": [],
     "standalone": true,
     "sizeClass": "bugfix",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Scanning module-level test callbacks with the file entity as caller addresses the missing testsReaching root cause.",
+          "evidence": "walkNode currently descends through expression statements without extracting calls. walkForCalls recursively visits callback bodies. Grounding uses `callers.filter(c => isTestFile(c.file))`, without restricting caller entity kind. The proposed file-source CALLS therefore addresses the stated defect. [files: src/indexer/parser/typescript.ts, src/workflow/code-review/grounding.ts, src/indexer/cross-file-resolver.ts]",
+          "action": "Implement the proposed extraction and parser-to-grounding integration test.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "fix-targets-defect.2",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The narrowed scope leaves out none of the approved ISSUE fix intent.",
+          "evidence": "The repository ISSUE still says: 'The same is checked, and fixed where it applies, for the other language parsers.' The supplied design cites stakeholder feedback de8a2c97 narrowing that scope, but the inspected repository artifacts do not contain that feedback or a corresponding scope transfer. Analyzer access also failed with invalid_json_schema. [files: docs/standalone/record-calls-made-module-level-statements-E20261017bd1c6c90/ISSUE.md, docs/standalone/record-calls-made-module-level-statements-E20261017bd1c6c90/S001/LLD.md]",
+          "action": "Attach the narrowing decision or update the ISSUE and identify the destination Story for deferred parser work.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Current extraction omits the listed module-level contexts, field initializers and constructors; test recognition has exactly the two described branches.",
+          "evidence": "extractCalls is invoked from function, method and function-valued declarator bodies. extractClass visits methods only; extractMethod returns for `constructor`; export handling visits only `declaration`. isTestFile is `/(^|\\/)__tests__\\//.test(file) || /\\.(test|spec)\\.[cm]?[jt]sx?$/.test(file)`, so its directory branch is language-independent. [files: src/indexer/parser/typescript.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Retain these precise descriptions of existing behavior.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The specified parser functions and isTestFile are sufficient change sites for the enumerated extraction contexts and direct imported-function grounding path.",
+          "evidence": "parse supplies fileId to walkNode; extractClass creates a class ID before visiting members; extractArrowFunction controls function-valued declarators. resolveRelations preserves relation sources, and resolveCall derives visibility from the source entity's file and language without requiring a function source. realGroundingDeps reads CALLS neighbors without filtering caller kinds. [files: src/indexer/parser/typescript.ts, src/indexer/resolver.ts, src/indexer/cross-file-resolver.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Keep export-context handling explicit and perform class extraction within the existing class HTTP-field scope.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "File/class-source edges and pending relations use existing deletion cleanup without a new entity-kind-specific path.",
+          "evidence": "fileEvent's delete branch and indexFile's cleanFirst branch invoke entity and unresolved-row deletion. deleteEntitiesForFile collects all file entities and calls detachDeleteEntities; its transactional core calls `sweepOutgoingEdges(s, u64)` and `sweepIncomingEdges(s, u64)`. deleteUnresolvedForFile removes rows through the file index, independent of caller kind. [files: src/indexer/index.ts, src/db/entities.ts, src/db/relations.ts]",
+          "action": "Preserve the existing file/repo metadata on emitted relations.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed tests provide regression assertions for each of the three derived acceptance criteria.",
+          "evidence": "For ac1, the current parser cannot emit the proposed module-level or constructor-source assertions. For ac2, the real-parser integration fixture currently produces no callback CALLS edge, so testsReaching would be empty. For ac3, current isTestFile rejects examples such as test_example.py, example_test.go and FooTest.java. Existing grounding tests use a synthetic function caller and do not already prove this integration. The two new test files are planned, not implemented or executed. [files: src/indexer/parser/typescript.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/__tests__/grounding.test.ts, src/indexer/__tests__/cross-file-resolver-lmdb.test.ts]",
+          "action": "Implement the mapped tests, using the real resolver and realGroundingDeps for ac2, and demonstrate failure before the fix.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6,
+        "unverified": 1
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-17T09:02:37.523Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-17T09:14:27.069Z",
+    "rangeBase": "3fd11e2e5860d89e06a50491260103c5394e46e7",
+    "questionResolutions": {
+      "qce9baba4": {
+        "question": "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the narrowed issue's fix intent (ac1 TS calls outside an extracted function are credited to the nearest entity, ac2 a TS test file's calls reach the code-review grounding, ac3 the review recognises test files of every supported language) [c5].",
+        "status": "resolved",
+        "choice": "Adopt all three criteria",
+        "rationale": "Same decision as the user's for ISSUE-5437d6e5 and ISSUE-1102dc71 (2026-10-16/17): keep the criteria derived from the approved issue's fix intent, recorded with that provenance.",
+        "resolvedAt": "2026-10-17T09:24:03.891Z"
+      }
+    }
   },
   "body": {
     "summary": {
-      "prose": "Calls made in a file's top-level statements are recorded, credited to the file itself. Every test written as test('…', () => { … }) is such a statement, so after this change a test file's calls reach the functions they exercise, and the code review's test links reflect real tests.",
+      "prose": "In TypeScript and JavaScript, every call is now recorded with the nearest entity, even when it sits in no function: calls at the top of a file, in exported initializers and in export default go to the file, and calls in class field initializers and constructors go to the class. Every test('…', () => { … }) body is such a call, so test files reach the code they call. The code review also recognises Python, Go and JVM test files.",
       "audience": "technical"
     },
     "hldContextSlice": {
@@ -55,15 +155,9 @@
           "signature": "walkNode(node: SyntaxNode, source: string, repo: string, repoId: number, filePath: string, lang: Language, fileId: string, now: string, entities: Entity[], relations: Relation[]): void",
           "parameters": [
             {
-              "name": "node",
-              "type": "SyntaxNode",
-              "purpose": "The node being walked; module-level handling applies when node.parent is the program node.",
-              "optional": false
-            },
-            {
               "name": "fileId",
               "type": "string",
-              "purpose": "The file entity id, now also the caller of module-level calls.",
+              "purpose": "The file entity id, also the caller of calls with no enclosing entity.",
               "optional": false
             }
           ],
@@ -74,31 +168,56 @@
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "For a program-level expression_statement, extractCalls runs over the statement with fileId as the caller, then the walk into its children continues as today.",
-            "For a program-level lexical_declaration or variable_declaration, each declarator whose value is not an arrow_function, function_expression or generator_function_expression has extractCalls run over its value with fileId as the caller; function-valued declarators are unchanged (extractArrowFunction).",
-            "For any other program-level statement that is not a declaration walkNode already handles (if/for/while/try/block/labeled statements), extractCalls runs over it with fileId as the caller.",
-            "Calls inside function declarations, class bodies and function-valued declarators are not also credited to the file, unless they are nested inside a module-level statement."
+            "A program-level statement that is not an import, function, class, interface, type alias or lexical/variable declaration (expression_statement, if/for/while/try/block/labeled) has extractCalls run over it with fileId as caller; the walk into its children continues as today.",
+            "For a lexical/variable declaration at program level or as an export_statement's declaration, each declarator whose value is not an arrow_function, function_expression or generator_function has extractCalls run over its value with fileId as caller; function-valued declarators (including generator_function) keep or gain their own function entity and caller.",
+            "An export_statement with a `value` (export default <expr>) has extractCalls run over the value with fileId as caller; an exported function or class declaration is walked as today and never scanned with the file as caller.",
+            "Calls inside function declarations, class methods and function-valued declarators are not also credited to the file unless they are nested inside a statement the file is credited for.",
+            "extractArrowFunction treats a generator_function value as a function: the declarator gets a function entity and its body's calls are CALLS from that entity, in TypeScript and JavaScript."
           ]
         },
         {
-          "name": "extractCalls",
-          "signature": "extractCalls(bodyNode: SyntaxNode, callerId: string, repo: string, filePath: string, relations: Relation[]): void",
+          "name": "extractClass",
+          "signature": "extractClass(node: SyntaxNode, source: string, repo: string, repoId: number, filePath: string, lang: Language, fileId: string, now: string, entities: Entity[], relations: Relation[]): void",
           "parameters": [
             {
-              "name": "callerId",
-              "type": "string",
-              "purpose": "Now also the file entity id for module-level calls.",
+              "name": "node",
+              "type": "SyntaxNode",
+              "purpose": "A class_declaration.",
               "optional": false
             }
           ],
           "returns": {
             "type": "void",
-            "meaning": "Unchanged: CALLS (and CALLS_HTTP) relations from callerId."
+            "meaning": "Unchanged."
           },
           "errors": [],
           "preconditions": [],
           "postconditions": [
-            "Unchanged."
+            "Each class-body field (public_field_definition in TypeScript, field_definition in JavaScript) whose value is not a function has extractCalls run over the value with the class entity as caller.",
+            "The constructor's body has extractCalls run over it with the class entity as caller; the constructor still creates no entity of its own (the class covers it, as today).",
+            "Other methods keep their own entities and callers."
+          ]
+        },
+        {
+          "name": "isTestFile",
+          "signature": "isTestFile(file: string): boolean",
+          "parameters": [
+            {
+              "name": "file",
+              "type": "string",
+              "purpose": "A repo-relative or absolute path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "True for the existing TS/JS conventions and also test_*.py, *_test.py, *_test.go, any src/test/ directory, *Test.java/.kt/.scala and *Spec.scala."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Both existing branches are kept: any file under a __tests__/ directory, whatever its language, and a TS/JS .test./.spec. suffix.",
+            "Ordinary source files are rejected."
           ]
         }
       ]
@@ -107,9 +226,11 @@
       {
         "entity": "CALLS relation",
         "change": "invariant-change",
-        "details": "A CALLS (or CALLS_HTTP) relation may now have the file entity as its source, for calls in module-level statements. No new entity kind, no new field, no store schema change.",
+        "details": "A CALLS (or CALLS_HTTP) relation from the TypeScript parser may now have the file entity (calls outside any function) or a class entity (field initializers, constructor bodies) as its source. No new entity kind, no new field, no store schema change. A generator-valued declarator now gets a function entity, as other function-valued declarators do.",
         "callSites": [
           "src/indexer/parser/typescript.ts:150-200",
+          "src/indexer/parser/typescript.ts:313-320",
+          "src/indexer/parser/typescript.ts:385-388",
           "src/indexer/parser/typescript.ts:631",
           "src/workflow/code-review/grounding.ts:81-92"
         ]
@@ -119,9 +240,9 @@
     "errorPaths": {
       "errorCases": [
         {
-          "scenario": "A file is re-indexed or deleted after module-level calls were recorded from its file entity.",
-          "detection": "indexFile and fileEvent delete the file's entities (src/indexer/index.ts:1041, :785); the entity cascade removes incident edges and deleteUnresolvedForFile removes the file's pending CALLS rows.",
-          "response": "Nothing new: the file entity is deleted with the file, so its CALLS go with it; the re-parse emits the current ones.",
+          "scenario": "A file is re-indexed or deleted after its calls were recorded.",
+          "detection": "indexFile and fileEvent delete the file's entities (src/indexer/index.ts:1041, :785); the cascade removes incident edges and deleteUnresolvedForFile removes pending CALLS rows.",
+          "response": "Nothing new: CALLS from the file and class entities follow the same clean-up.",
           "userImpact": "No stale callers.",
           "recoverable": true
         }
@@ -129,35 +250,59 @@
       "edgeCases": [
         {
           "input": "describe('x', () => { test('y', () => { foo(); }); })",
-          "expected": "One CALLS foo from the file entity (nested callbacks are walked)."
+          "expected": "One CALLS foo from the file entity."
         },
         {
-          "input": "const deps = makeDeps(); at program level",
+          "input": "export const deps = makeDeps();",
           "expected": "CALLS makeDeps from the file entity."
         },
         {
-          "input": "const f = () => bar(); at program level",
-          "expected": "Unchanged: an entity f with CALLS bar from f; not also from the file."
+          "input": "export function f() { g(); }",
+          "expected": "Unchanged: CALLS g from f only."
         },
         {
-          "input": "function g() { baz(); }",
-          "expected": "Unchanged: CALLS baz from g only."
-        },
-        {
-          "input": "test('t', () => { function helper() { qux(); } helper(); })",
-          "expected": "helper is an entity with CALLS qux (as today); the file entity also calls qux and helper, because both are inside the module-level statement."
-        },
-        {
-          "input": "A module-level call to console.log or another built-in",
-          "expected": "Skipped by the existing built-in filter, as inside functions."
+          "input": "export class C { m() { h(); } }",
+          "expected": "Unchanged: CALLS h from C.m only."
         },
         {
           "input": "export default foo();",
-          "expected": "An export_statement with a value is treated as a module-level statement: CALLS foo from the file entity."
+          "expected": "CALLS foo from the file entity."
         },
         {
-          "input": "A module-level axios.get(url) call",
-          "expected": "A CALLS_HTTP from the file entity, as the HTTP recognizer already does inside functions."
+          "input": "const f = () => bar(); at program level",
+          "expected": "Unchanged: entity f with CALLS bar from f only."
+        },
+        {
+          "input": "class C { private readonly x = make(); constructor() { init(); } }",
+          "expected": "CALLS make and init from C."
+        },
+        {
+          "input": "class C { handler = () => run(); }",
+          "expected": "A function-valued field is not scanned as an initializer of C: run is not credited to C."
+        },
+        {
+          "input": "test('t', () => { function helper() { qux(); } helper(); })",
+          "expected": "As today helper is an entity with CALLS qux; the file entity also calls qux and helper."
+        },
+        {
+          "input": "A module-level console.log",
+          "expected": "Skipped as a built-in, as inside functions."
+        },
+        {
+          "input": "A module-level axios.get(url)",
+          "expected": "A CALLS_HTTP from the file entity."
+        },
+        {
+          "input": "isTestFile on src/x.ts, pkg/a.go, app/models.py, src/main/java/Foo.java",
+          "expected": "false."
+        },
+        {
+          "input": "JavaScript: class C { x = make(); }",
+          "expected": "CALLS make from C (field_definition)."
+        },
+        {
+          "input": "const g = function* () { foo(); }; (TS and JS)",
+          "expected": "An entity g with CALLS foo from g; foo is not credited to the file."
         }
       ],
       "invariantsToPreserve": [
@@ -166,11 +311,11 @@
           "source": "c1"
         },
         {
-          "text": "A file's edges are removed with its entities on re-index or delete; module-level CALLS from the file entity must follow the same clean-up.",
+          "text": "A file's edges and pending rows are removed with its entities on re-index or delete.",
           "source": "c2"
         },
         {
-          "text": "The code review counts a caller as a test caller by its file (isTestFile).",
+          "text": "Every path isTestFile accepts today is still accepted, including any file under a __tests__/ directory regardless of language.",
           "source": "c3"
         }
       ]
@@ -179,16 +324,18 @@
       "testLevels": [
         {
           "level": "unit",
-          "purpose": "Module-level calls are credited to the file entity; existing attribution is unchanged.",
+          "purpose": "TS calls outside an extracted function are credited to the nearest entity; isTestFile knows every language.",
           "subjects": [
-            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity"
+            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default, in both TypeScript (.ts) and JavaScript (.js) sources, are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity",
+            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: in both TypeScript and JavaScript sources, calls in class field initializers (public_field_definition, field_definition) and the constructor body are CALLS from the class entity, a function-valued field is not credited to the class, and a generator-valued declarator gets its own function entity whose calls are not credited to the file",
+            "src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files"
           ]
         },
         {
           "level": "integration",
-          "purpose": "A test file's calls reach the code-review grounding.",
+          "purpose": "A TS test file's calls reach the code-review grounding through the real parser, resolver and grounding.",
           "subjects": [
-            "src/workflow/code-review/__tests__/grounding.test.ts: with the real TypeScript parser output for a test file that calls a function from inside test('...', () => { ... }), assembleCodeReviewGrounding lists that test file's entity in the function's testsReaching"
+            "src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test file whose test('...', () => { ... }) callback calls a function imported from another file, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's entity in the function's testsReaching"
           ]
         }
       ],
@@ -196,30 +343,47 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level initializer, other program-level statements and export default are CALLS from the file entity; calls in function declarations, class methods and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity"
+            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: calls in a program-level expression statement (including nested describe/test callbacks), a non-function program-level or exported initializer, other program-level statements and export default, in both TypeScript (.ts) and JavaScript (.js) sources, are CALLS from the file entity; calls in function declarations, class methods, exported functions and classes and function-valued declarators keep their caller and are not credited to the file; built-ins are still skipped; a module-level HTTP call is a CALLS_HTTP from the file entity",
+            "src/indexer/parser/__tests__/typescript-module-level-calls.test.ts: in both TypeScript and JavaScript sources, calls in class field initializers (public_field_definition, field_definition) and the constructor body are CALLS from the class entity, a function-valued field is not credited to the class, and a generator-valued declarator gets its own function entity whose calls are not credited to the file"
           ]
         },
         {
           "criterionId": "ac2",
           "provingTests": [
-            "src/workflow/code-review/__tests__/grounding.test.ts: with the real TypeScript parser output for a test file that calls a function from inside test('...', () => { ... }), assembleCodeReviewGrounding lists that test file's entity in the function's testsReaching"
+            "src/indexer/__tests__/test-callers-reach-grounding.test.ts: for a TypeScript test file whose test('...', () => { ... }) callback calls a function imported from another file, the real parser, the real cross-file resolver over a temporary graph store and assembleCodeReviewGrounding with the real graph deps list the test file's entity in the function's testsReaching"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/code-review/__tests__/grounding.test.ts: isTestFile accepts test_*.py, *_test.py, *_test.go, src/test/ paths, *Test.java/.kt/.scala and *Spec.scala as well as every path it accepted before, and rejects ordinary source files"
           ]
         }
       ],
       "testFramework": "node:test via npx tsx --test (assert/strict), run under Node 22"
     },
     "migration": {
-      "stateBefore": "Per s1: the TypeScript parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); calls in program-level statements are never recorded, so no test file reaches any symbol.",
-      "stateAfter": "Calls in program-level statements are CALLS (or CALLS_HTTP) from the file entity; existing attribution is unchanged.",
+      "stateBefore": "Per s1: the TS parser extracts calls only inside function declarations, class methods and function-valued declarators (src/indexer/parser/typescript.ts:259, :419, :552); program-level statements, exported initializers, export default, class field initializers and constructors are never scanned (src/indexer/parser/typescript.ts:150-200, :313-320, :385-388); isTestFile recognises a __tests__/ directory of any language and TS/JS .test./.spec. suffixes only (src/workflow/code-review/grounding.ts:60-62).",
+      "stateAfter": "TS calls outside any extracted function are CALLS from the file or class entity; isTestFile recognises Python, Go and JVM test files.",
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Add the module-level handling to walkNode.",
+          "action": "Add the program-level and export handling to walkNode.",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Update and restart the installed daemon, then reindex the repositories (or let the watcher re-parse changed files) so existing files gain their module-level CALLS.",
+          "action": "Extract field-initializer (public_field_definition and field_definition) and constructor-body calls in extractClass, and treat a generator_function value as a function in extractArrowFunction.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Extend isTestFile with the Python, Go and JVM test conventions.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Update and restart the installed daemon, then reindex the registered repositories so every TS file gains its new CALLS.",
           "rollbackable": true
         }
       ],
@@ -230,53 +394,51 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Credit module-level calls to the file entity",
-        "oneLineSummary": "A call in a program-level statement that is not a declaration, or in a program-level non-function initializer, is emitted as CALLS from the file entity.",
-        "approach": "walkNode gains a case for a program-level expression_statement (and any other program-level statement that is not a declaration the walker already handles) and for a program-level const/let whose value is not a function: extractCalls runs over it with the file entity as the caller. The walk into its children continues as today, so nested named declarations still become entities with their own CALLS. No new entity kind and no store change; the file entity already exists, is a test file's entity for test files, and is deleted with the file.",
+        "name": "Calls outside an extracted function go to the nearest entity",
+        "oneLineSummary": "TS program-level, exported-initializer and export-default calls are CALLS from the file entity; class field initializers and constructor bodies are CALLS from the class entity; isTestFile learns the other languages.",
+        "approach": "walkNode extracts calls with the file entity as caller for a program-level statement that is not a declaration it handles, for each non-function declarator value of a program-level or exported lexical/variable declaration, and for an export_statement's `value` (export default <expr>); export unwrapping passes the module-level context into the declaration and never scans an exported function or class wholesale. extractClass extracts calls with the class entity as caller from each field initializer (a public_field_definition value that is not a function; a function-valued field keeps or gains its own handling unchanged) and from the constructor body. isTestFile also matches test_*.py, *_test.py, *_test.go, a src/test/ directory, *Test.java/.kt/.scala and *Spec.scala.",
         "pros": [
-          "No schema or EntityKind change; reuses the file entity and the existing cascade clean-up.",
-          "Meets the fix intent: a test file's calls reach the symbols it exercises, and the review joins them to the record per file (ISSUE-1102dc71)."
+          "No new entity kind and no store schema change.",
+          "Every TS test file reaches the code it calls; constructors and field initializers stop dropping calls."
         ],
         "cons": [
-          "Test-level granularity is lost: the caller is the test file, not the test title.",
-          "Calls inside a nested named helper are credited both to the helper and to the file."
+          "Calls in a nested named helper are credited to the helper and to the file.",
+          "Other languages wait for the Epic c2ba6fa6 Story."
         ],
-        "costEstimate": "S"
+        "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "A synthetic entity per top-level test call",
-        "oneLineSummary": "Each test('title', ...) / it(...) at program level becomes an entity named by its title that owns the calls in its callback.",
-        "approach": "Recognise test-runner calls (test, it, describe and their variants) at program level, create an entity per call named by its title, and credit the callback's calls to it; other module-level calls go to the file entity.",
+        "name": "A synthetic entity per test call",
+        "oneLineSummary": "As a1, but each program-level test('title', ...) becomes its own entity.",
+        "approach": "As a1, plus a new entity per recognised test-runner call named by its title.",
         "pros": [
-          "Test-title granularity: a caller names the very test that reaches a symbol."
+          "Test-title granularity."
         ],
         "cons": [
-          "A new EntityKind needs its byte mapping in the graph keys and a store schema step (the live store is v5).",
-          "Runner recognition is heuristic and per framework; titles can be computed strings."
+          "A new EntityKind with its graph-key byte mapping and a store schema step on the live v5 store; the review joins per file."
         ],
         "costEstimate": "L",
         "reasonRejected": "Adds a new EntityKind and a store schema step on the live v5 store for test-title granularity the code review does not use (it joins callers to the test record per file)."
       },
       {
         "id": "a3",
-        "name": "File-entity credit for test files only",
-        "oneLineSummary": "As a1, but only in files isTestFile matches.",
-        "approach": "Same mechanism as a1, guarded by the test-file predicate.",
+        "name": "Program-level statements only",
+        "oneLineSummary": "Only program-level expression statements.",
+        "approach": "The expression_statement part of a1 only.",
         "pros": [
-          "Smallest change in graph size."
+          "Smallest."
         ],
         "cons": [
-          "Production module-level calls (top-level registration, setup) stay invisible to \"who calls this\"."
+          "Exported initializers, export default, class fields and constructors keep dropping calls."
         ],
         "costEstimate": "S",
-        "reasonRejected": "Partial on fixIntent-1: production module-level calls stay unrecorded."
+        "reasonRejected": "Partial on fixIntent-1: exported initializers, export default, class fields and constructors keep dropping calls."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps two derived from the approved issue's fix intent (ac1 module-level calls are CALLS from the file entity, ac2 a test file reaches the symbols it calls in the code-review grounding) [c6].",
-      "Kotlin and Scala DSL-style tests written in a class body (test(\"x\") { ... }) were not checked; out of scope here [c4]."
+      "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the narrowed issue's fix intent (ac1 TS calls outside an extracted function are credited to the nearest entity, ac2 a TS test file's calls reach the code-review grounding, ac3 the review recognises test files of every supported language) [c5]."
     ]
   },
   "citations": [
@@ -288,27 +450,27 @@
     {
       "id": "c2",
       "kind": "step-output",
-      "ref": "s1 context.assemble bundle 2: the file entity and how its edges are cleaned up (src/indexer/parser/typescript.ts:123, src/indexer/index.ts:1041, src/indexer/index.ts:785)"
+      "ref": "s1 context.assemble bundle 2: the file and class entities and clean-up (src/indexer/parser/typescript.ts:123, src/indexer/index.ts:1041, src/indexer/index.ts:785)"
     },
     {
       "id": "c3",
       "kind": "step-output",
-      "ref": "s1 context.assemble bundle 3: how the code review reads test callers (src/workflow/code-review/grounding.ts:81-92)"
+      "ref": "s1 context.assemble bundle 3: how the code review recognises a test caller (src/workflow/code-review/grounding.ts:60-62, src/workflow/code-review/grounding.ts:81-92)"
     },
     {
       "id": "c4",
       "kind": "step-output",
-      "ref": "s1 context.assemble bundle 4: other parsers and test styles (src/indexer/parser/python.ts, src/indexer/parser/go.ts, src/indexer/parser/java.ts)"
+      "ref": "s1 context.assemble bundle 4: parser and grounding tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/workflow/code-review/__tests__/grounding.test.ts, src/indexer/__tests__/cross-file-resolver-lmdb.test.ts)"
     },
     {
       "id": "c5",
-      "kind": "step-output",
-      "ref": "s1 context.assemble bundle 5: TypeScript parser tests (src/indexer/parser/__tests__/http-client-shapes.test.ts, src/workflow/code-review/__tests__/grounding.test.ts)"
+      "kind": "prior-artifact",
+      "ref": "ISSUE-bd1c6c9005ff6390 fix intent, narrowed by the stakeholder (ISSUE feedback de8a2c97, 2026-10-17)"
     },
     {
       "id": "c6",
       "kind": "prior-artifact",
-      "ref": "ISSUE-bd1c6c9005ff6390 fix intent"
+      "ref": "Review rounds 1-3 of LLD-bd1c6c9005ff6390-S001 (2026-10-17): other parsers, export unwrapping, the current-behaviour claim (round 1; scope widened to Python and Go by the user); Scala/Kotlin class-body and initializer calls, same-package call resolution, end-to-end tests (round 2); further parser contexts, JVM callee naming and test-to-main roots (round 3); then on the narrowed design JS field_definition and the generator_function node type (cycle 2 round 1); the isTestFile current behaviour described exactly (cycle 2 round 2); all but the TS contexts and isTestFile moved to an Epic c2ba6fa6 Story"
     }
   ]
 }

@@ -6,12 +6,15 @@ import { createHash } from 'node:crypto';
 const str = Type.String({ minLength: 1, maxLength: 2048 });
 const uuid = Type.String({ pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' });
 const revision = Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER });
-const oid = Type.String({ pattern: '^(?:[0-9a-f]{40}|[0-9a-f]{64})$' });
 const obj = <T extends Record<string, TSchema>>(properties: T) => Type.Object(properties, { additionalProperties: false });
-const choices = <T extends string>(values: readonly T[]) => Type.Union(values.map(v => Type.Literal(v)));
-export const ScopeSchema = obj({ repoId: str, worktreeId: str, baseOid: Type.Union([oid, Type.Null()]), stagedTreeOid: oid,
-  commitMode: choices(['normal', 'amend', 'merge']), parentOids: Type.Array(oid, { maxItems: 64 }),
-  learnerKey: str, policyRevision: str, evidenceRevision: str });
+const choices = <const T extends string>(values: readonly T[]) => Type.Union(values.map(v => Type.Literal(v)));
+function scopeVariant(length: number, unborn: boolean) {
+  const hash = Type.String({ pattern: `^[0-9a-f]{${length}}$` });
+  return obj({ repoId: str, worktreeId: str, baseOid: unborn ? Type.Null() : hash, stagedTreeOid: hash,
+    commitMode: unborn ? Type.Literal('normal') : choices(['normal', 'amend', 'merge']),
+    parentOids: Type.Array(hash, { maxItems: unborn ? 0 : 64 }), learnerKey: str, policyRevision: str, evidenceRevision: str });
+}
+export const ScopeSchema = Type.Union([scopeVariant(40, false), scopeVariant(64, false), scopeVariant(40, true), scopeVariant(64, true)]);
 export type AssessmentScope = Static<typeof ScopeSchema>;
 export const AssociationSchema = obj({ itemId: str, parentIds: Type.Array(str, { maxItems: 64 }),
   state: choices(['inferred', 'learner-proposed', 'verified', 'unresolved']), evidenceRefs: Type.Array(str, { maxItems: 256 }),
@@ -50,6 +53,23 @@ export type AssessmentResult<T> = { protocolVersion: 1; ok: true; value: T; appl
   | { protocolVersion: 1; ok: false; error: { code: ErrorCode; retryable: boolean; message: string }; current?: AssessmentView };
 export type AssessmentEvent = { protocolVersion: 1; type: 'snapshot'; assessmentId: string; revision: number; view: AssessmentView }
   | { protocolVersion: 1; type: 'deleted' | 'unavailable'; assessmentId: string };
+const ErrorSchema = obj({ code: choices(['invalid-input', 'not-found', 'revision-conflict', 'request-conflict', 'scope-mismatch',
+  'unavailable', 'schema-unsupported', 'storage-failure']), retryable: Type.Boolean(), message: str });
+export function resultSchema<T extends TSchema>(value: T) {
+  return Type.Union([obj({ protocolVersion: Type.Literal(1), ok: Type.Literal(true), value, appliedRevision: Type.Optional(revision) }),
+    obj({ protocolVersion: Type.Literal(1), ok: Type.Literal(false), error: ErrorSchema, current: Type.Optional(ViewSchema) })]);
+}
+export const EventSchema = Type.Union([
+  obj({ protocolVersion: Type.Literal(1), type: Type.Literal('snapshot'), assessmentId: uuid, revision, view: ViewSchema }),
+  obj({ protocolVersion: Type.Literal(1), type: choices(['deleted', 'unavailable']), assessmentId: uuid }),
+]);
+export function parseEvent(input: unknown): AssessmentEvent {
+  const event = parse(EventSchema, input);
+  if (event.type === 'snapshot' && (event.assessmentId !== event.view.id || event.revision !== event.view.revision)) {
+    throw new AssessmentError('invalid-input');
+  }
+  return event;
+}
 export interface AssessmentService {
   prepare(scope: AssessmentScope): Promise<AssessmentView>;
   resume(id: string): Promise<AssessmentView>;

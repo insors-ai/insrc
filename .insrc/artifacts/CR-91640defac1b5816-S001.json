@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1792213105837-r8buf5",
+    "runId": "cr-1792213549832-oralvg",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-10-17T04:58:25.888Z",
+    "createdAt": "2026-10-17T05:05:49.925Z",
     "model": "codex:gpt-6-astra",
-    "elapsedMs": 38629,
+    "elapsedMs": 29933,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "91640defac1b5816",
@@ -23,6 +23,7 @@
     "subject": {
       "changedFiles": [
         "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+        "src/daemon/steps/build-step/__tests__/build-step.test.ts",
         "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
         "src/daemon/steps/build-step/phases/validate.ts",
         "src/daemon/steps/build-step/validation-checks.ts"
@@ -44,15 +45,23 @@
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/steps/build-step/__tests__/build-start.test.ts:404",
-            "message": "This changed file symbol has empty testsReaching, a not-exercised gap under the supplied coverage contract. The added test is present but failing/unverified: no build record confirms its pass-state.",
+            "message": "The changed file has empty testsReaching edges, constituting a not-exercised gap under the supplied coverage rule. The added test is present but failing/unverified; no build record confirms its pass-state.",
             "expectationRef": "src/daemon/steps/build-step/__tests__/build-start.test.ts",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/__tests__/build-step.test.ts:1464",
+            "message": "The changed file has empty testsReaching edges, constituting a not-exercised gap under the supplied coverage rule. The modified test is present but failing/unverified; no build record confirms its pass-state.",
+            "expectationRef": "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
             "location": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts:129",
-            "message": "This changed file symbol has empty testsReaching, a not-exercised gap under the supplied coverage contract. The added test is present but failing/unverified: no build record confirms its pass-state.",
+            "message": "The changed file has empty testsReaching edges, constituting a not-exercised gap under the supplied coverage rule. The added test is present but failing/unverified; no build record confirms its pass-state.",
             "expectationRef": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts",
             "confidence": "breach"
           },
@@ -60,38 +69,29 @@
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/steps/build-step/phases/validate.ts:348",
-            "message": "Empty testsReaching provides no coverage of the changed handleStandaloneValidate behavior that passes the Story range base to trivialCheckPlan.",
-            "expectationRef": "src/daemon/steps/build-step/phases/validate.ts — handleStandaloneValidate",
+            "message": "Empty testsReaching edges provide no coverage of the changed standalone validation behavior that passes the Story range base into trivialCheckPlan.",
+            "expectationRef": "handleStandaloneValidate",
             "confidence": "breach"
           },
           {
             "dimension": "coverage",
             "severity": "HIGH",
             "location": "src/daemon/steps/build-step/validation-checks.ts:328",
-            "message": "Empty testsReaching provides no coverage of trivialCheckPlan's new base..HEAD test-file selection behavior.",
-            "expectationRef": "src/daemon/steps/build-step/validation-checks.ts — trivialCheckPlan",
+            "message": "Empty testsReaching edges provide no coverage of trivialCheckPlan's changed range selection and failed-file-listing behavior.",
+            "expectationRef": "trivialCheckPlan",
             "confidence": "breach"
           }
         ]
       },
       {
         "dimension": "quality",
-        "findings": [
-          {
-            "dimension": "quality",
-            "severity": "MED",
-            "location": "src/daemon/steps/build-step/validation-checks.ts:337",
-            "message": "If the supplied range base cannot be resolved by Git, the catch only logs the failure and leaves touched empty. Validation then treats failed test discovery as a successful no-tests case, potentially passing the build without running its tests. Propagate discovery failure into a failed validation check instead.",
-            "counterpartRef": "",
-            "confidence": "observation"
-          }
-        ]
+        "findings": []
       }
     ],
     "verdict": "block",
     "counts": {
-      "high": 4,
-      "med": 1,
+      "high": 5,
+      "med": 0,
       "low": 0
     }
   }

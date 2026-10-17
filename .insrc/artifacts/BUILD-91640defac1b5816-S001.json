@@ -10,12 +10,13 @@
     "triageRationale": "bugfix/small: one function and its caller, reuses the existing range-base resolver.",
     "epicCreatedAt": "2026-10-16T19:09:31.298Z",
     "epicSlug": "run-trivial-build-s-tests-from",
-    "updatedAt": "2026-10-17T05:02:48.540Z"
+    "updatedAt": "2026-10-17T05:24:47.364Z",
+    "approvedAt": "2026-10-17T05:24:47.416Z"
   },
   "body": {
     "focus": "A trivial standalone build's validate gate runs the test files touched across the build's range (from resolveStoryRangeBase, src/workflow/runners/build/range-base.ts:327, the same base the change log and typecheck use), falling back to the HEAD commit only when no range base resolves. trivialCheckPlan (src/daemon/steps/build-step/validation-checks.ts:323-338) and its caller (src/daemon/steps/build-step/phases/validate.ts:348). Tests show a test committed earlier in the range is run when a later commit is HEAD, and the HEAD fallback still applies with no base. Implements ISSUE-91640defac1b5816.",
     "producesLld": false,
-    "commit": "8a0516f9",
+    "commit": "87ece959",
     "tasks": [
       {
         "id": "S001",
@@ -32,63 +33,14 @@
           "file": ".insrc/artifacts/CR-91640defac1b5816-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
-      },
-      {
-        "target": {
-          "file": ".insrc/artifacts/ISSUE-91640defac1b5816.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
-      },
-      {
-        "target": {
-          "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/ISSUE.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
+        "timestamp": "2026-10-17T05:24:47.364Z"
       },
       {
         "target": {
           "file": "docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/CR.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/build-step/phases/validate.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/steps/build-step/validation-checks.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T05:02:48.540Z"
+        "timestamp": "2026-10-17T05:24:47.364Z"
       }
     ]
   }

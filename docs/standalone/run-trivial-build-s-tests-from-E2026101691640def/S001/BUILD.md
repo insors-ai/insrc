@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-17T04:33:19.483Z  ·  **Updated:** 2026-10-17T05:02:48.540Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-17T04:33:19.483Z  ·  **Updated:** 2026-10-17T05:24:47.364Z
 
-**Commit:** 8a0516f9
+**Commit:** 87ece959
 
 ## Scope
 
@@ -26,12 +26,5 @@ bugfix/small: one function and its caller, reuses the existing range-base resolv
 
 ## Changes
 
-- `.insrc/artifacts/CR-91640defac1b5816-S001.json` — **insrc-build** (2026-10-17T05:02:48.540Z)
-- `.insrc/artifacts/ISSUE-91640defac1b5816.json` — **insrc-build** (2026-10-17T05:02:48.540Z)
-- `docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/ISSUE.md` — **insrc-build** (2026-10-17T05:02:48.540Z)
-- `docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/CR.md` — **insrc-build** (2026-10-17T05:02:48.540Z)
-- `src/daemon/steps/build-step/__tests__/build-start.test.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
-- `src/daemon/steps/build-step/__tests__/build-step.test.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
-- `src/daemon/steps/build-step/__tests__/validation-checks.test.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
-- `src/daemon/steps/build-step/phases/validate.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
-- `src/daemon/steps/build-step/validation-checks.ts` — **insrc-build** (2026-10-17T05:02:48.540Z)
+- `.insrc/artifacts/CR-91640defac1b5816-S001.json` — **insrc-build** (2026-10-17T05:24:47.364Z)
+- `docs/standalone/run-trivial-build-s-tests-from-E2026101691640def/S001/CR.md` — **insrc-build** (2026-10-17T05:24:47.364Z)

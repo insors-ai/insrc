@@ -800,8 +800,9 @@ async function main(): Promise<void> {
 		},
 
 		// Code-review s9 — the indexing-readiness freshness check. Read-only:
-		// returns { isProcessing, staleFiles } for the changed set computed from
-		// queue.isProcessing + the per-file graph watermark (never a reindex, never
+		// returns { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles } for the
+		// changed set, from the repo's code-index work in the queue (ISSUE-1102dc71)
+		// + the per-file graph watermark (never a reindex, never
 		// a store mutation). The controller-side gate (insrc_code_review_step) polls
 		// this before assembling grounding so a stale graph cannot yield a hollow
 		// PASS. Additive sibling of codeReview.grounding.
@@ -817,7 +818,7 @@ async function main(): Promise<void> {
 			const repos = await listRepos(db);
 			const repoRow = repos.find(r => r.path === repoPath);
 			const result = await computeCodeReviewFreshness(repoPath, changedFiles, {
-				isProcessing: () => queue.isProcessing,
+				codeIndexWork: (r: string) => queue.codeIndexWorkFor(r),
 				repoLastIndexed: async () => {
 					const li = repoRow?.lastIndexed;
 					if (li === undefined) return 0;
@@ -826,7 +827,8 @@ async function main(): Promise<void> {
 				},
 				...graphDeps,
 			});
-			return { isProcessing: result.isProcessing, staleFiles: result.staleFiles };
+			// The FreshnessResult is the reply: { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles }.
+			return result;
 		},
 
 		'repo.reindex': async (params) => {

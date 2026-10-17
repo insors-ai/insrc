@@ -21,8 +21,9 @@
  *   - `UnregisteredRepoError` (and any other non-Artifact error) PROPAGATES
  *     unchanged (operator misconfiguration, not a missing-contract condition).
  *
- * The changed-file set is git-DERIVED — the build record is consumed for
- * identity only and is never re-recorded or duplicated (k9). Since the tracked
+ * The changed-file set is git-DERIVED — the build record is never re-recorded or
+ * duplicated (k9). The BUILD and TESTS records are read for the coverage
+ * dimension's pass-state (ISSUE-1102dc71). Since the tracked
  * workflow runs build → review → commit, at review time the build's changes are
  * the uncommitted working-tree diff (HEAD vs worktree, plus staged), so that is
  * the "Story's build changed" set. An empty diff is a valid (trivial) subject,
@@ -40,7 +41,11 @@ import type { ChangedFilesOptions } from '../runners/build/changed-files.js';
 import { resolveStoryRangeBase } from '../runners/build/range-base.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
-import type { StandaloneBuildRecord } from '../runners/build/standalone-record.js';
+import { existsSync, readFileSync } from 'node:fs';
+
+import { artifactJsonPath, buildArtifactId } from '../storage.js';
+import type { BuildRecord } from '../runners/build/standalone-record.js';
+import { readTestRecord as realReadTestRecord, type TestRecord } from '../runners/build/test-record.js';
 import type { CodeReviewSubjectResult } from './types.js';
 
 const log = getLogger('workflow:code-review:subject');
@@ -63,13 +68,50 @@ export interface SubjectDeps {
 	 *  BUILD writers use, so the review and the record measure from the same commit. */
 	readonly resolveRangeBase?: ((repoPath: string, epicHash: string, storyId: string) => string | undefined) | undefined;
 	/** Reads the persisted build record for identity; `null` when none. Read-only. */
-	readonly readBuildRecord?: (repoPath: string, epicHash: string, storyId: string) => StandaloneBuildRecord | null;
+	readonly readBuildRecord?: (repoPath: string, epicHash: string, storyId: string) => BuildRecord | null;
+	/** Reads the Story's TESTS record; `null` when none or unreadable. Read-only. */
+	readonly readTestRecord?: (repoPath: string, epicHash: string, storyId: string) => TestRecord | null;
+}
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+
+/** Whether `v` has the BuildRecord shape the review reads: build meta naming the
+ *  Story, an object body, and (when present) tasks with a string id and an
+ *  optional boolean `passed`. */
+function isBuildRecord(v: unknown, epicHash: string, storyId: string): v is BuildRecord {
+	if (!isPlainObject(v) || !isPlainObject(v['meta']) || !isPlainObject(v['body'])) return false;
+	const meta = v['meta'];
+	const tasks = v['body']['tasks'];
+	return meta['workflow'] === 'build' && meta['epicHash'] === epicHash && meta['storyId'] === storyId
+		&& typeof meta['createdAt'] === 'string'
+		&& (tasks === undefined || (Array.isArray(tasks) && tasks.every(t =>
+			isPlainObject(t) && typeof t['id'] === 'string' && (t['passed'] === undefined || typeof t['passed'] === 'boolean'))));
+}
+
+/** The Story's BUILD record from `.insrc/artifacts`, or null (with a warning)
+ *  when it is absent, unreadable, or not a build record for this Story. Never throws. */
+export function readStoryBuildRecord(repoPath: string, epicHash: string, storyId: string): BuildRecord | null {
+	const jsonPath = artifactJsonPath(repoPath, buildArtifactId(epicHash, storyId));
+	if (!existsSync(jsonPath)) {
+		log.warn({ jsonPath }, 'resolveCodeReviewSubject: the Story has no BUILD record; coverage gets no per-task result');
+		return null;
+	}
+	try {
+		const parsed: unknown = JSON.parse(readFileSync(jsonPath, 'utf8'));
+		if (isBuildRecord(parsed, epicHash, storyId)) return parsed;
+		log.warn({ jsonPath }, 'resolveCodeReviewSubject: the BUILD record does not have a build record\'s shape; treating it as absent');
+	} catch (err) {
+		log.warn({ jsonPath, err: err instanceof Error ? err.message : String(err) }, 'resolveCodeReviewSubject: the BUILD record is unreadable; treating it as absent');
+	}
+	return null;
 }
 
 const DEFAULT_DEPS: SubjectDeps = {
 	requireApprovedLld,
 	requireApprovedPlan,
 	changedFiles:    realChangedFiles,
+	readBuildRecord: readStoryBuildRecord,
+	readTestRecord:  realReadTestRecord,
 };
 
 /** Resolve the fixed per-Story review subject. Never throws for a
@@ -138,9 +180,10 @@ export async function resolveCodeReviewSubject(
 	if (changedFiles === undefined) return { ok: false, reason: 'no-build-record' };
 
 	const buildRecord = deps.readBuildRecord?.(repoPath, epicHash, storyId) ?? null;
+	const testRecord  = deps.readTestRecord?.(repoPath, epicHash, storyId) ?? null;
 
 	return {
 		ok: true,
-		subject: { repoPath, epicHash, storyId, changedFiles, approvedLld, approvedPlan, buildRecord },
+		subject: { repoPath, epicHash, storyId, changedFiles, approvedLld, approvedPlan, buildRecord, testRecord },
 	};
 }

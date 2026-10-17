@@ -21,7 +21,7 @@ function deps(opts: {
 	onReindex?: () => void;
 }): FreshnessDeps {
 	return {
-		isProcessing: () => opts.processing ?? false,
+		codeIndexWork: () => ({ inFlight: opts.processing ?? false, pending: 0 }),
 		entityWatermark: async (_r, f) => (f in (opts.watermark ?? {}) ? opts.watermark![f]! : null),
 		repoLastIndexed: async () => opts.repo ?? 0,
 		fileMtime: async (_r, f) => opts.mtime?.[f] ?? 0,
@@ -94,5 +94,23 @@ test('freshness: a mixed changed set reports only the stale files', async () => 
 
 test('freshness: an empty changed set is fresh (no stale files)', async () => {
 	const res = await computeCodeReviewFreshness('/repo', [], deps({ processing: false }));
-	assert.deepEqual(res, { isProcessing: false, staleFiles: [] });
+	assert.deepEqual(res, { isProcessing: false, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: [] });
+});
+
+// ---- ISSUE-1102dc71 S001/t4: only the repo's code-index work counts ----
+
+test('computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before', async () => {
+	const base = { watermark: { 'src/a.ts': 100, 'src/b.ts': 300 }, mtime: { 'src/a.ts': 200, 'src/b.ts': 200 } };
+	const asked: string[] = [];
+	const at = (work: { inFlight: boolean; pending: number }): FreshnessDeps => ({
+		...deps(base),
+		codeIndexWork: (repo) => { asked.push(repo); return work; },
+	});
+	const queuedOnly = await computeCodeReviewFreshness('/repo', ['src/a.ts', 'src/b.ts'], at({ inFlight: false, pending: 2 }));
+	assert.deepEqual(queuedOnly, { isProcessing: true, inFlight: false, pendingCodeIndexJobs: 2, staleFiles: ['src/a.ts'] });
+	const inFlightOnly = await computeCodeReviewFreshness('/repo', ['src/a.ts', 'src/b.ts'], at({ inFlight: true, pending: 0 }));
+	assert.deepEqual(inFlightOnly, { isProcessing: true, inFlight: true, pendingCodeIndexJobs: 0, staleFiles: ['src/a.ts'] });
+	const idle = await computeCodeReviewFreshness('/repo', ['src/a.ts', 'src/b.ts'], at({ inFlight: false, pending: 0 }));
+	assert.deepEqual(idle, { isProcessing: false, inFlight: false, pendingCodeIndexJobs: 0, staleFiles: ['src/a.ts'] });
+	assert.deepEqual(asked, ['/repo', '/repo', '/repo'], 'the work is asked for the Story\'s repository');
 });

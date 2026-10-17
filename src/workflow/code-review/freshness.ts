@@ -8,7 +8,8 @@
  *
  * `computeCodeReviewFreshness` decides whether the daemon's graph is current for
  * the Story's changed files, using the COMBINED signal the brainstorm settled
- * on: `queue.isProcessing` AND each changed file's per-file index watermark vs
+ * on: the repo's code-index work in the queue (in flight or pending; ISSUE-1102dc71)
+ * AND each changed file's per-file index watermark vs
  * its mtime. It is the read-only core the `codeReview.freshness` daemon IPC
  * serves; the controller-side gate (insrc_code_review_step) block-and-polls it
  * before assembling grounding, so an empty/partial `grounding.symbols` (the S001
@@ -30,8 +31,9 @@
 
 /** The read-only seams `computeCodeReviewFreshness` composes. */
 export interface FreshnessDeps {
-	/** The index queue's in-flight flag (queue.isProcessing). */
-	readonly isProcessing: () => boolean;
+	/** The code-graph work for `repoPath` queued or in flight (IndexQueue.codeIndexWorkFor);
+	 *  other repos, config, re-embed and document-summary jobs are not counted (ISSUE-1102dc71). */
+	readonly codeIndexWork: (repoPath: string) => { inFlight: boolean; pending: number };
 	/** The max per-entity `indexedAt` (unix ms) over entities DEFINED in `file`,
 	 *  or `null` when the file has NO indexed entities. */
 	readonly entityWatermark: (repoPath: string, file: string) => Promise<number | null>;
@@ -43,8 +45,13 @@ export interface FreshnessDeps {
 
 /** The freshness verdict for a changed set. */
 export interface FreshnessResult {
-	/** queue.isProcessing at check time — the other half of the combined signal. */
+	/** Code-index work for the repo is in flight or queued — the other half of the
+	 *  combined signal: `inFlight || pendingCodeIndexJobs > 0`. */
 	readonly isProcessing: boolean;
+	/** A code-index job for the repo is being processed. */
+	readonly inFlight: boolean;
+	/** Code-index jobs for the repo still queued. */
+	readonly pendingCodeIndexJobs: number;
 	/** The subset of changedFiles whose index watermark is behind their mtime. */
 	readonly staleFiles: readonly string[];
 }
@@ -60,7 +67,8 @@ export async function computeCodeReviewFreshness(
 	changedFiles: readonly string[],
 	deps:         FreshnessDeps,
 ): Promise<FreshnessResult> {
-	const isProcessing = deps.isProcessing();
+	const work = deps.codeIndexWork(repoPath);
+	const isProcessing = work.inFlight || work.pending > 0;
 	const staleFiles: string[] = [];
 	// The repo-level watermark is only needed for files with no entities; read it
 	// at most once, lazily.
@@ -78,13 +86,13 @@ export async function computeCodeReviewFreshness(
 		if (repoLastIndexed < mtime) staleFiles.push(file);
 	}
 
-	return { isProcessing, staleFiles };
+	return { isProcessing, inFlight: work.inFlight, pendingCodeIndexJobs: work.pending, staleFiles };
 }
 
 /**
  * Build the real GRAPH + fs seams for the freshness compute — `entityWatermark`
  * (LMDB graph) + `fileMtime` (fs). The daemon handler supplies the remaining two
- * seams from its own runtime state: `isProcessing` (the queue instance) and
+ * seams from its own runtime state: `codeIndexWork` (the queue instance) and
  * `repoLastIndexed` (the registered-repo row it already reads). Lazy-imports the
  * graph layer so the pure compute + its unit tests never open the env. Read-only.
  */

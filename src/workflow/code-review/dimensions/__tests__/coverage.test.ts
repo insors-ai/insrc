@@ -162,9 +162,9 @@ test('judgeCoverage: runs and returns a valid result with subject.buildRecord===
 	assert.deepEqual(res, { dimension: 'coverage', findings: [] });
 });
 
-test('buildCoveragePrompt: a null buildRecord degrades the pass-state to unverified in the prompt', () => {
+test('buildCoveragePrompt: a null test record degrades the pass-state to unverified in the prompt', () => {
 	const user = buildCoveragePrompt(subject(['src/a.ts'], [], null), groundingTwoFiles(), undefined).find(m => m.role === 'user')!.content as string;
-	assert.match(user, /No build record is available/);
+	assert.match(user, /No test record is available/);
 	assert.match(user, /UNVERIFIED/);
 });
 
@@ -210,4 +210,104 @@ test('buildCoveragePrompt: symbols, then promised tests, then the output-shape r
 	const iOutput   = user.indexOf('## Output');
 	assert.ok(iSymbols < iPromised, 'symbols come before promised tests');
 	assert.ok(iPromised < iOutput, 'output shape comes last (trailing)');
+});
+
+// ---- ISSUE-1102dc71 S001/t2: pass-state from the Story's test record ----
+
+type FileRun = { file?: unknown; exitCode?: unknown; timedOut?: unknown; titles?: unknown; durationMs?: number; otherFailures?: string[] };
+const run = (file: string, titles: readonly [string, string][], over: Partial<FileRun> = {}): FileRun =>
+	({ file, exitCode: 0, timedOut: false, durationMs: 1, otherFailures: [], titles: titles.map(([title, result]) => ({ title, result })), ...over });
+const task = (taskId: string, ranAt: string | undefined, files: unknown) => ({ taskId, ...(ranAt !== undefined ? { ranAt } : {}), testsPassed: true, tests: [], files });
+const withRecords = (tasks: readonly unknown[], buildTasks?: readonly unknown[]): CodeReviewSubject => ({
+	...subject(['src/a.ts']),
+	buildRecord: { meta: {}, body: buildTasks === undefined ? {} : { tasks: buildTasks } } as unknown as CodeReviewSubject['buildRecord'],
+	testRecord: { meta: {}, body: { tasks } } as unknown as CodeReviewSubject['testRecord'],
+});
+/** The JSON test-record section of the prompt, parsed. */
+function viewOf(s: CodeReviewSubject): { files: { file: string; state: string; reason?: string | undefined; decidedBy: { taskId: string }; titles: { title: string; result: string }[]; notInLatestRun: string[] }[]; buildTasks: { taskId: string; passed: string }[]; notes: string[] } {
+	const user = buildCoveragePrompt(s, groundingTwoFiles(), undefined).find(m => m.role === 'user')!.content as string;
+	const at = user.indexOf('## Test-record results');
+	assert.ok(at >= 0 && at < user.indexOf('## Output'), 'the section is present, before the output reminder');
+	const json = user.slice(at).split('```json\n')[1]!.split('\n```')[0]!;
+	return JSON.parse(json);
+}
+
+test("the coverage prompt shows each test file from its latest run by ranAt, even when that task is stored first; a newer timed-out or title-less run supersedes an older passing title, which is not shown as passing; a title missing from a newer successful run is unverified; a tie or missing ranAt is decided by the failing run; a record with a task missing files, a file missing titles or an unknown result is rendered without throwing and notes the skipped part; with no test record the every-test-unverified rule stays; a newer malformed entry for a file (titles missing) is a barrier: the file is unverified and the older pass is not shown; the BUILD record's per-task passed is shown, and a record without tasks or without passed shows 'unavailable'", () => {
+	const T1 = '2026-10-17T01:00:00.000Z';
+	const T2 = '2026-10-17T02:00:00.000Z';
+	const one = (tasks: readonly unknown[]) => viewOf(withRecords(tasks)).files[0]!;
+
+	// A re-run task stored FIRST with the newer ranAt decides; it now fails.
+	let f = one([task('t1', T2, [run('a.test.ts', [['x', 'fail']], { exitCode: 1 })]), task('t2', T1, [run('a.test.ts', [['x', 'pass']])])]);
+	assert.equal(f.decidedBy.taskId, 't1');
+	assert.equal(f.state, 'failing');
+	assert.deepEqual(f.titles, [{ title: 'x', result: 'fail' }]);
+
+	// A newer timed-out run, and a newer title-less run, supersede an older pass.
+	f = one([task('t1', T1, [run('a.test.ts', [['x', 'pass']])]), task('t2', T2, [run('a.test.ts', [], { exitCode: null, timedOut: true })])]);
+	assert.equal(f.decidedBy.taskId, 't2');
+	assert.equal(f.state, 'failing');
+	assert.deepEqual(f.titles, []);
+	assert.deepEqual(f.notInLatestRun, ['x'], 'the older pass is listed only as not in the latest run');
+	assert.match(f.reason ?? '', /timed out/, 'the reason names the timeout');
+	f = one([task('t1', T1, [run('a.test.ts', [['x', 'pass']])]), task('t2', T2, [run('a.test.ts', [])])]);
+	assert.equal(f.state, 'unverified');
+
+	// A title missing from a newer SUCCESSFUL run is unverified (not in the latest run).
+	f = one([task('t1', T1, [run('a.test.ts', [['x', 'pass'], ['y', 'pass']])]), task('t2', T2, [run('a.test.ts', [['x', 'pass']])])]);
+	assert.equal(f.state, 'passing');
+	assert.deepEqual(f.notInLatestRun, ['y']);
+
+	// A tie, or no valid ranAt on either, is decided by the failing run, in either storage order.
+	for (const [a, b] of [[T1, T1], [undefined, undefined], [undefined, 'not a time']] as const) {
+		for (const order of [0, 1]) {
+			const pass = task('tp', a, [run('a.test.ts', [['x', 'pass']])]);
+			const fail = task('tf', b, [run('a.test.ts', [['x', 'fail']], { exitCode: 1 })]);
+			f = one(order === 0 ? [pass, fail] : [fail, pass]);
+			assert.equal(f.decidedBy.taskId, 'tf', `tie ${String(a)}/${String(b)} order ${order}`);
+			assert.equal(f.state, 'failing');
+		}
+	}
+
+	// A newer malformed entry (titles missing) is a barrier: unverified, and the older pass is not shown.
+	f = one([task('t1', T1, [run('a.test.ts', [['x', 'pass']])]), task('t2', T2, [{ file: 'a.test.ts', exitCode: 0, timedOut: false }])]);
+	assert.equal(f.decidedBy.taskId, 't2');
+	assert.equal(f.state, 'unverified');
+	assert.deepEqual(f.titles, []);
+	assert.ok(!JSON.stringify(f.titles).includes('pass'));
+	// An unknown result is malformed too.
+	f = one([task('t1', T1, [run('a.test.ts', [['x', 'pass']])]), task('t2', T2, [run('a.test.ts', [['x', 'maybe']])])]);
+	assert.equal(f.state, 'unverified');
+
+	// A task with no files list, and a file entry with no file name, are noted and skipped; nothing throws.
+	const v = viewOf(withRecords([task('t1', T1, undefined), task('t2', T1, [{ exitCode: 0 }, run('b.test.ts', [['z', 'pass']])])]));
+	assert.deepEqual(v.files.map(x => x.file), ['b.test.ts']);
+	assert.equal(v.notes.length, 2);
+	assert.ok(v.notes.some(n => n.includes('t1') && n.includes('no files list')));
+	assert.ok(v.notes.some(n => n.includes('t2') && n.includes('no file name')));
+
+	// The BUILD record's per-task passed is shown; missing tasks or passed show 'unavailable'.
+	assert.deepEqual(viewOf(withRecords([], [{ id: 't1', passed: true }, { id: 't2', passed: false }, { id: 't3' }])).buildTasks,
+		[{ taskId: 't1', passed: 'pass' }, { taskId: 't2', passed: 'fail' }, { taskId: 't3', passed: 'unavailable' }]);
+	assert.deepEqual(viewOf(withRecords([])).buildTasks, [{ taskId: '(all)', passed: 'unavailable' }]);
+
+	// With no test record the every-test-unverified rule stays.
+	const user = buildCoveragePrompt({ ...subject(['src/a.ts']), testRecord: null }, groundingTwoFiles(), undefined).find(m => m.role === 'user')!.content as string;
+	assert.match(user, /No test record is available — treat every test's pass-state as UNVERIFIED/);
+	assert.ok(!user.includes('```json\n{\n  "files"'));
+});
+
+test('buildCoveragePrompt: a testsReaching entry is joined to its test FILE in the test record, never to a title by its caller name (ISSUE-1102dc71)', () => {
+	const s = withRecords([task('t1', '2026-10-17T01:00:00.000Z', [run('src/__tests__/a.test.ts', [['the real test title', 'pass']])])]);
+	const g = grounding([{ file: 'src/a.ts', name: 'alpha', testsReaching: ['src/__tests__/a.test.ts#mkFixture'] }]);
+	const msgs = buildCoveragePrompt(s, g, undefined);
+	const sys  = msgs.find(m => m.role === 'system')!.content as string;
+	const user = msgs.find(m => m.role === 'user')!.content as string;
+	assert.match(sys, /`<test file>#<caller>`/);
+	assert.match(sys, /NEVER match the caller name against test titles/);
+	assert.match(sys, /Judge a reaching entry by its TEST FILE/);
+	assert.doesNotMatch(sys, /does not cover is unverified/, 'the old title-matching rule is gone');
+	// The two sides of the join are both in the prompt: the entry names the file the record lists.
+	assert.ok(user.includes('"src/__tests__/a.test.ts#mkFixture"'));
+	assert.ok(user.includes('"file": "src/__tests__/a.test.ts"'));
 });

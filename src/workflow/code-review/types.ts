@@ -24,7 +24,8 @@ import type { Severity, ReviewVerdict } from '../review/types.js';
 import type { ArtifactMetaBase } from '../types.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
-import type { StandaloneBuildRecord } from '../runners/build/standalone-record.js';
+import type { BuildRecord } from '../runners/build/standalone-record.js';
+import type { TestRecord } from '../runners/build/test-record.js';
 
 // ---------------------------------------------------------------------------
 // sc3 — the per-dimension finding vocabulary (owned here, emitted by s2-s5)
@@ -87,7 +88,8 @@ export interface ChangedSymbolSummary {
 	readonly callers:   readonly string[];
 	/** Names of entities this symbol calls. */
 	readonly callees:   readonly string[];
-	/** Names of test entities that reach this symbol (graph edges test -> symbol). */
+	/** Test-file callers that reach this symbol, each `<test file>#<caller name>`
+	 *  (the file joins it to the Story's test record; ISSUE-1102dc71). */
 	readonly testsReaching: readonly string[];
 }
 
@@ -99,6 +101,14 @@ export interface CodeReviewGrounding {
 // ---------------------------------------------------------------------------
 // sc1 — the fixed per-Story review subject + its resolution result
 // ---------------------------------------------------------------------------
+
+/** Why a code review fell back from the graph to the diff (ISSUE-1102dc71):
+ *  the wait for a fresh index ran out (with what it was still waiting on), the
+ *  caller declined the wait, or the fresh graph had no symbols for the Story. */
+export type CodeReviewFallbackReason =
+	| { readonly kind: 'freshness-timeout'; readonly waitedMs: number; readonly inFlight: boolean; readonly pendingCodeIndexJobs: number; readonly staleFiles: readonly string[] }
+	| { readonly kind: 'declined' }
+	| { readonly kind: 'hollow-grounding' };
 
 /** The fixed subject of a code review: exactly the files the Story's build
  *  changed (git-derived) plus its approved LLD + PLAN — BOTH optional. The
@@ -118,8 +128,12 @@ export interface CodeReviewSubject {
 	readonly changedFiles: readonly string[];
 	readonly approvedLld:  LldArtifact | null;
 	readonly approvedPlan: PlanArtifact | null;
-	/** Consumed for identity; the code-review stage never re-records this. */
-	readonly buildRecord:  StandaloneBuildRecord | null;
+	/** The Story's BUILD record: its meta gives identity, its tasks the per-task
+	 *  validate result. The code-review stage never re-records this. */
+	readonly buildRecord:  BuildRecord | null;
+	/** The Story's TESTS record: the gate's per-file, per-title results, which
+	 *  the coverage dimension judges pass-state from (ISSUE-1102dc71). */
+	readonly testRecord:   TestRecord | null;
 }
 
 /** Resolving a subject either yields the subject, or a REASON that is NOT a
@@ -156,6 +170,9 @@ export interface CodeReviewBody {
 	 *  downstream completion gate distinguishes a full graph-grounded review from a
 	 *  degraded one by this field. */
 	readonly groundingMode: 'full' | 'degraded';
+	/** Why a `degraded` review fell back to the diff (ISSUE-1102dc71). Absent on a
+	 *  full review and on records written before this field. */
+	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 	/** The exact review subject: the Story's changed files (git-derived). */
 	readonly subject:    { readonly changedFiles: readonly string[] };
 	/** All four dimension results (adherence / conventions / coverage / quality). */

@@ -626,3 +626,93 @@ test('11e4fa88 — with nothing dropped the response, the record and the markdow
 	assert.ok(!/out of scope|in scope/i.test(md), 'no dropped-findings wording in the markdown');
 	assert.match(md, /^## conventions — 0 finding\(s\)\n\n_No findings\._$/m);
 });
+
+// ---- ISSUE-1102dc71 S001/t5: every diff fallback records why ----
+
+/** A start that waits on stale freshness and times out on the resume. */
+async function timedOutFallback(fresh: { inFlight: boolean; pendingCodeIndexJobs: number }, over: Partial<CodeReviewStepDeps> = {}) {
+	let clock = 0;
+	const made = makeDeps({
+		fetchFreshness: async () => ({ ok: true, isProcessing: true, ...fresh, staleFiles: ['src/a.ts'] }),
+		now: () => clock,
+		sleep: async () => { clock += 1000; },
+		freshnessTimeoutMs: () => 2500,
+		...over,
+	});
+	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, made.deps));
+	assert.ok(cw.next === 'confirm_wait');
+	const out = parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: true }, made.deps));
+	return { ...made, out };
+}
+/** Finish a controller-reviewed emit_judgements and return the done frame and the record body. */
+async function finish(deps: CodeReviewStepDeps, writes: { path: string; content: string }[], out: CodeReviewStepOutput) {
+	assert.ok(out.next === 'emit_judgements', JSON.stringify(out));
+	const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: judgements(), state: out.state }, deps));
+	assert.ok(done.next === 'done', JSON.stringify(done));
+	const json = writes.find(w => w.path.endsWith('.json'))!;
+	return { done, body: (JSON.parse(json.content) as { body: { groundingMode: string; fallbackReason?: unknown } }).body };
+}
+
+test('a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason', async () => {
+	// Timed out: the record and the done frame carry what the wait was still on.
+	reset();
+	let t = await timedOutFallback({ inFlight: false, pendingCodeIndexJobs: 4 });
+	let r = await finish(t.deps, t.writes, t.out);
+	const timedOut = { kind: 'freshness-timeout', waitedMs: 3000, inFlight: false, pendingCodeIndexJobs: 4, staleFiles: ['src/a.ts'] };
+	assert.deepEqual(r.body.fallbackReason, timedOut);
+	assert.equal(r.body.groundingMode, 'degraded');
+	assert.deepEqual((r.done as { fallbackReason?: unknown }).fallbackReason, timedOut);
+	assert.match(t.writes.find(w => w.path.endsWith('.md'))!.content, /Reviewed on the diff:\*\* the wait for a fresh index timed out after 3 s .*queued: 4; stale files: src\/a\.ts/);
+
+	// proceed:false: declined.
+	reset();
+	const d = makeDeps({ fetchFreshness: async () => ({ ok: true, isProcessing: true, inFlight: true, pendingCodeIndexJobs: 0, staleFiles: [] }) });
+	const cw = parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, d.deps));
+	assert.ok(cw.next === 'confirm_wait');
+	r = await finish(d.deps, d.writes, parse(await handleCodeReviewStep({ phase: 'start', state: cw.state, proceed: false }, d.deps)));
+	assert.deepEqual(r.body.fallbackReason, { kind: 'declined' });
+
+	// A fresh but hollow grounding: hollow-grounding.
+	reset();
+	const h = makeDeps({ fetchGrounding: async () => ({ ok: true, grounding: hollowGrounding }) });
+	r = await finish(h.deps, h.writes, parse(await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: STORY, repo: '/repo' }, h.deps)));
+	assert.deepEqual(r.body.fallbackReason, { kind: 'hollow-grounding' });
+
+	// A fresh full review carries none, in the record or the done frame.
+	reset();
+	const full = await runFullFlow();
+	const fullBody = JSON.parse(full.writes.find(w => w.path.endsWith('.json'))!.content) as { body: Record<string, unknown> };
+	assert.equal(fullBody.body['groundingMode'], 'full');
+	assert.equal('fallbackReason' in fullBody.body, false);
+	assert.equal('fallbackReason' in (full.done as object), false);
+	assert.doesNotMatch(full.writes.find(w => w.path.endsWith('.md'))!.content, /Reviewed on the diff/);
+
+	// The daemon-reviewed path (code the controller wrote) forwards the reason to the daemon and onto the done frame.
+	reset();
+	const asked: unknown[] = [];
+	t = await timedOutFallback({ inFlight: true, pendingCodeIndexJobs: 0 }, {
+		readBuildAuthor: () => 'controller',
+		reviewByDaemon: async (params) => {
+			asked.push(params);
+			return { runId: 'cr-d', artifact: { meta: { reviewedBy: 'daemon', model: 'm' }, body: { groundingMode: 'degraded', verdict: 'warn', counts: { high: 0, med: 0, low: 0 } } } as never };
+		},
+	});
+	assert.ok(t.out.next === 'done', JSON.stringify(t.out));
+	const sent = { kind: 'freshness-timeout', waitedMs: 3000, inFlight: true, pendingCodeIndexJobs: 0, staleFiles: ['src/a.ts'] };
+	assert.deepEqual((asked[0] as { fallbackReason?: unknown }).fallbackReason, sent);
+	assert.deepEqual((t.out as { fallbackReason?: unknown }).fallbackReason, sent);
+});
+
+test('on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work', async () => {
+	for (const fresh of [{ inFlight: false, pendingCodeIndexJobs: 2 }, { inFlight: true, pendingCodeIndexJobs: 0 }]) {
+		reset();
+		const t = await timedOutFallback(fresh);
+		assert.ok(t.out.next === 'emit_judgements');
+		assert.equal(t.writes.length, 0, 'nothing is written before the judgements turn');
+		// The reason crosses the turn only through the saved state.
+		const r = await finish(t.deps, t.writes, t.out);
+		const expected = { kind: 'freshness-timeout', waitedMs: 3000, ...fresh, staleFiles: ['src/a.ts'] };
+		assert.deepEqual(r.body.fallbackReason, expected, JSON.stringify(fresh));
+		assert.deepEqual((r.done as { fallbackReason?: unknown }).fallbackReason, expected);
+	}
+});

@@ -293,3 +293,55 @@ test('T43: an error that is NOT a derivation failure propagates from the first a
 	);
 	assert.equal(n, 1, 'no retry on an unexpected error');
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-1102dc71 S001/t1 — the default deps read the Story's BUILD and TESTS
+// records onto the subject, so the coverage dimension can judge pass-state.
+// ---------------------------------------------------------------------------
+
+test('the default deps read the Story\'s BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built', async () => {
+	const fx = mkStoryRepo(['src/story.ts']);
+	try {
+		const artifacts = join(fx.repo, '.insrc', 'artifacts');
+		const build = { meta: { workflow: 'build', epicHash: 'x', storyId: 'S009', createdAt: '2026-10-17T00:00:00.000Z' }, body: { tasks: [{ id: 't1', passed: true }] } };
+		const tests = { meta: { workflow: 'tests', epicHash: 'x', storyId: 'S009', createdAt: '2026-10-17T00:00:00.000Z', updatedAt: '2026-10-17T00:00:00.000Z' },
+			body: { tasks: [{ taskId: 't1', ranAt: '2026-10-17T00:00:00.000Z', testsPassed: true, tests: [], files: [] }] } };
+		writeFileSync(join(artifacts, 'BUILD-x-S009.json'), JSON.stringify(build));
+		writeFileSync(join(artifacts, 'TESTS-x-S009.json'), JSON.stringify(tests));
+
+		// No deps argument: the production defaults (S009 has no LLD or PLAN, so both are null).
+		const res = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+		assert.ok(res.ok);
+		assert.deepEqual(res.subject.buildRecord, build);
+		assert.deepEqual(res.subject.testRecord, tests);
+
+		// Misshapen BUILD json, each way, is null; an unreadable TESTS json is null; the subject is still built.
+		writeFileSync(join(artifacts, 'TESTS-x-S009.json'), '{ not json');
+		const meta = build.meta;
+		for (const [label, rec] of [
+			['no epicHash/storyId', { meta: { workflow: 'build' }, body: {} }],
+			['an array body', { meta, body: [] }],
+			['another Story', { meta: { ...meta, storyId: 'S010' }, body: {} }],
+			['not a build record', { meta: { ...meta, workflow: 'tests' }, body: {} }],
+			['tasks not an array', { meta, body: { tasks: {} } }],
+			['a task without an id', { meta, body: { tasks: [{ passed: true }] } }],
+			['a non-boolean passed', { meta, body: { tasks: [{ id: 't1', passed: 'yes' }] } }],
+		] as const) {
+			writeFileSync(join(artifacts, 'BUILD-x-S009.json'), JSON.stringify(rec));
+			const bad = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+			assert.ok(bad.ok, label);
+			assert.equal(bad.subject.buildRecord, null, label);
+			assert.equal(bad.subject.testRecord, null, label);
+		}
+
+		// Absent records are null too, and the absent BUILD record is warned about.
+		rmSync(join(artifacts, 'BUILD-x-S009.json'));
+		rmSync(join(artifacts, 'TESTS-x-S009.json'));
+		let none!: Awaited<ReturnType<typeof resolveCodeReviewSubject>>;
+		const warned = await warningsDuring(async () => { none = await resolveCodeReviewSubject(fx.repo, 'x', 'S009'); });
+		assert.ok(warned.some(w => String(w[1] ?? w[0]).includes('no BUILD record')), 'an absent BUILD record is warned about');
+		assert.ok(none.ok);
+		assert.equal(none.subject.buildRecord, null);
+		assert.equal(none.subject.testRecord, null);
+	} finally { fx.cleanup(); }
+});

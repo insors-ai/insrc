@@ -11,7 +11,7 @@
  * c2ba6fa6, Story s11).
  */
 
-import type { CodeReviewArtifact, CodeReviewGrounding } from '../workflow/code-review/types.js';
+import type { CodeReviewArtifact, CodeReviewFallbackReason, CodeReviewGrounding } from '../workflow/code-review/types.js';
 
 /** Why a review request did not produce a review. */
 export type ReviewStreamFailure =
@@ -55,6 +55,8 @@ export interface CodeReviewStreamParams {
 	readonly client?:  'claude' | 'codex' | undefined;
 	/** How the daemon should ground the review. Omitted means `full`. */
 	readonly groundingMode?: 'full' | 'degraded' | undefined;
+	/** Why a degraded review fell back to the diff (ISSUE-1102dc71). */
+	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 }
 
 export interface CodeReviewStreamResult {
@@ -69,7 +71,9 @@ export interface CodeReviewStreamResult {
 // ---------------------------------------------------------------------------
 
 export type CodeReviewGroundingResult = { ok: true; grounding: CodeReviewGrounding } | { ok: false; reason: string };
-export type CodeReviewFreshnessResult = { ok: true; isProcessing: boolean; staleFiles: readonly string[] } | { ok: false; reason: string };
+export type CodeReviewFreshnessResult =
+	| { ok: true; isProcessing: boolean; inFlight: boolean; pendingCodeIndexJobs: number; staleFiles: readonly string[] }
+	| { ok: false; reason: string };
 
 /** The `codeReview.grounding` reply as a result. */
 export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }): CodeReviewGroundingResult {
@@ -77,10 +81,17 @@ export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGr
 	return { ok: false, reason: res.reason ?? res.error ?? 'code-review grounding unavailable' };
 }
 
-/** The `codeReview.freshness` reply as a result. */
-export function freshnessFromReply(res: { isProcessing?: boolean; staleFiles?: readonly string[]; error?: string }): CodeReviewFreshnessResult {
+/** The `codeReview.freshness` reply as a result. A reply from an older daemon
+ *  (no inFlight / pendingCodeIndexJobs) reads as inFlight = isProcessing and 0. */
+export function freshnessFromReply(res: { isProcessing?: boolean | undefined; inFlight?: boolean | undefined; pendingCodeIndexJobs?: number | undefined; staleFiles?: readonly string[] | undefined; error?: string | undefined }): CodeReviewFreshnessResult {
 	if (res.error === undefined && typeof res.isProcessing === 'boolean') {
-		return { ok: true, isProcessing: res.isProcessing, staleFiles: res.staleFiles ?? [] };
+		return {
+			ok: true,
+			isProcessing: res.isProcessing,
+			inFlight: typeof res.inFlight === 'boolean' ? res.inFlight : res.isProcessing,
+			pendingCodeIndexJobs: typeof res.pendingCodeIndexJobs === 'number' ? res.pendingCodeIndexJobs : 0,
+			staleFiles: res.staleFiles ?? [],
+		};
 	}
 	return { ok: false, reason: res.error ?? 'code-review freshness unavailable' };
 }
@@ -115,6 +126,7 @@ export function codeReviewRequestParams(params: CodeReviewStreamParams): Record<
 		...(params.repo          !== undefined ? { repo:          params.repo }          : {}),
 		...(params.client        !== undefined ? { client:        params.client }        : {}),
 		...(params.groundingMode !== undefined ? { groundingMode: params.groundingMode } : {}),
+		...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}),
 	};
 }
 

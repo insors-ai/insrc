@@ -87,7 +87,9 @@ export async function assembleCodeReviewGrounding(
 				signature:     ent.signature,
 				callers:       callers.map(c => c.name),
 				callees:       callees.map(c => c.name),
-				testsReaching: testsReaching.map(c => c.name),
+				// `<test file>#<caller>`: the file joins the entry to that file's runs in the
+				// Story's test record (ISSUE-1102dc71); a caller is often a helper, not a test.
+				testsReaching: testsReaching.map(c => `${c.file}#${c.name}`),
 			});
 		}
 	}

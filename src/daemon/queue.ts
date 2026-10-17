@@ -17,6 +17,8 @@ type JobProcessor = (job: IndexJob) => Promise<void>;
 export class IndexQueue {
   private readonly queue:  IndexJob[] = [];
   private processing = false;
+  /** The job `processor` is running, for the duration of the call. */
+  private inFlight: IndexJob | null = null;
   private stopped    = false;
   private resolve:   (() => void) | null = null;
 
@@ -51,6 +53,32 @@ export class IndexQueue {
       }
     }
     return n;
+  }
+
+  /**
+   * The code-graph work queued or running for one repo (ISSUE-1102dc71): a
+   * `full` or `reconcile` job naming `repoPath`, or a `file` job under it. A
+   * code review waits only on this; other repos, config, re-embed and document
+   * summary jobs do not change the repo's code graph. Read-only; separate from
+   * `depthForRepo`, which counts every per-repo kind.
+   */
+  codeIndexWorkFor(repoPath: string): { inFlight: boolean; pending: number } {
+    const prefix = repoPath.endsWith(sep) ? repoPath : repoPath + sep;
+    const isCodeIndexWork = (job: IndexJob): boolean => {
+      switch (job.kind) {
+        case 'full':
+        case 'reconcile':
+          return job.repoPath === repoPath;
+        case 'file':
+          return job.filePath === repoPath || job.filePath.startsWith(prefix);
+        default:
+          return false;
+      }
+    };
+    return {
+      inFlight: this.inFlight !== null && isCodeIndexWork(this.inFlight),
+      pending:  this.queue.filter(isCodeIndexWork).length,
+    };
   }
 
   /** Add a job to the end of the queue. */
@@ -176,6 +204,7 @@ export class IndexQueue {
       }
 
       this.processing = true;
+      this.inFlight = job;
       try {
         await processor(job);
       } catch (err) {
@@ -191,6 +220,7 @@ export class IndexQueue {
         }
       } finally {
         this.processing = false;
+        this.inFlight = null;
       }
     }
   }

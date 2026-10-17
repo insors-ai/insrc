@@ -152,3 +152,12 @@ test('shared review request: the two requests\' parameters, and neither client i
 	// The check sees such code: the socket client's separate workflow.run stream maps its own frames.
 	assert.ok(/=== 'progress' \|\| [\w.]+ === 'delta'/.test(body('mcp/daemon-stream.ts', 'export function runWorkflowStream(')));
 });
+
+test('codeReviewRequestParams forwards fallbackReason exactly and omits the key when absent (fails if serialization drops it)', () => {
+	const fallbackReason = { kind: 'freshness-timeout', waitedMs: 120000, inFlight: false, pendingCodeIndexJobs: 4, staleFiles: ['src/a.ts'] } as const;
+	const sent = codeReviewRequestParams({ epicHash: 'e', storyId: 's', groundingMode: 'degraded', fallbackReason });
+	assert.deepEqual(sent, { epicHash: 'e', storyId: 's', groundingMode: 'degraded', fallbackReason });
+	assert.deepEqual(JSON.parse(JSON.stringify(sent))['fallbackReason'], fallbackReason, 'it survives the wire');
+	assert.deepEqual(codeReviewRequestParams({ epicHash: 'e', storyId: 's', groundingMode: 'degraded', fallbackReason: { kind: 'declined' } })['fallbackReason'], { kind: 'declined' });
+	assert.equal('fallbackReason' in codeReviewRequestParams({ epicHash: 'e', storyId: 's', groundingMode: 'degraded' }), false);
+});

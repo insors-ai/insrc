@@ -47,8 +47,8 @@ test('assembleCodeReviewGrounding: emits ChangedSymbolSummary rows with callers/
 	// callers = both the test and gamma; callees = beta
 	assert.deepEqual([...alpha!.callers].sort(), ['gamma', 'testAlpha']);
 	assert.deepEqual(alpha!.callees, ['beta']);
-	// testsReaching = only the caller whose file is a test file
-	assert.deepEqual(alpha!.testsReaching, ['testAlpha']);
+	// testsReaching = only the caller whose file is a test file, as `<file>#<caller>`
+	assert.deepEqual(alpha!.testsReaching, ['src/__tests__/a.test.ts#testAlpha']);
 	// no raw file content anywhere on the row
 	assert.ok(!('body' in (alpha as object)) && !('content' in (alpha as object)));
 });

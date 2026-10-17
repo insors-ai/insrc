@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "1102dc7125ad0c07",
+    "storyId": "S001",
+    "createdAt": "2026-10-17T06:56:06.405Z",
+    "updatedAt": "2026-10-17T08:18:18.094Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-17T06:04:27.059Z",
+    "epicSlug": "ground-code-review-coverage-story-s",
+    "approvedAt": "2026-10-17T08:18:18.148Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Re-validate after code review round 1 (222cc3f0): testsReaching entries now carry the caller's test file (`<file>#<caller>`, grounding.ts) and the coverage rule judges a reaching entry by its test file's latest run in the test record, never by matching a caller name to a title (round 1's 6 MEDs came from helper names matched against titles). New case: buildCoveragePrompt join test; grounding.test.ts updated for the entry format. Two falsifying mutations each fail them. Earlier t2 behaviour (latest run by ranAt, barriers, BUILD per-task passed) unchanged; the named t2 test still passes.",
+    "testRecord": {
+      "md": "docs/standalone/ground-code-review-coverage-story-s-E202610171102dc71/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-1102dc7125ad0c07-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:18:18.094Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/ground-code-review-coverage-story-s-E202610171102dc71/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T08:18:18.094Z"
+      }
+    ],
+    "commit": "7fc29ed3"
+  }
+}

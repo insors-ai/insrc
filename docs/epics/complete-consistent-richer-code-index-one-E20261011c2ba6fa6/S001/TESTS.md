@@ -107,7 +107,7 @@ Run at 2026-10-16T16:46:20.693Z on commit `7225408a`. Tests check: **passed**. 4
 
 ## t5
 
-Run at 2026-10-16T17:08:30.802Z on commit `ca2c1c2e`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-17T06:07:23.576Z on commit `56c0d3fd`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/indexer/__tests__/resolver-file-target.test.ts: missing relative import is no-candidate/target-file-missing; resolved relations carry meta.repo; DEPENDS_ON and Pass 1 rewire carry meta.repo and absolute meta.file**
 

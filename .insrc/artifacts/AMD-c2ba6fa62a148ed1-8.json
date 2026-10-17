@@ -1,0 +1,52 @@
+{
+  "id": "AMD-c2ba6fa62a148ed1-8",
+  "epicHash": "c2ba6fa62a148ed1",
+  "epicSlug": "complete-consistent-richer-code-index-one",
+  "hldBaseRunId": "wf-1791697214822-7bombm",
+  "amendment": {
+    "type": "storyBoundary.addStory",
+    "storyId": "s13",
+    "internal": "Private implementation of s13: Settling file changes does work proportional to the changed files, never a scan of the repository or the store"
+  },
+  "rationale": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa6): adds a Story that makes the settle pass after file events proportional to the changed files, building on DEF-c2ba6fa6, Story s1's settle mode and pending-row index, and absorbing ISSUE-61045de91faef1a0; code in src/indexer/index.ts, src/indexer/cross-file-resolver.ts, src/indexer/external-endpoints.ts, src/indexer/messaging-endpoints.ts and src/db/entities.ts.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/indexer/index.ts:866-869",
+      "quotedText": "runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, scopeFile: file })"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:114",
+      "quotedText": "const entities = await listEntitiesForRepo(opts.db, opts.repoRoot);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/db/entities.ts:785",
+      "quotedText": "for (const { key, value } of store.entity.getRange()) {"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": ".insrc/artifacts/ISSUE-61045de91faef1a0.json",
+      "quotedText": "Reading the entities of one file or one repository scans the whole entity table"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "chat 2026-10-17",
+      "quotedText": "why scan the repos? the whole point of an event based implementation is to avoid these scans"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "define",
+    "runId": "wf-1792248283134-4nauky",
+    "storyId": "s13",
+    "stepId": "scope.assess"
+  },
+  "proposedAt": "2026-10-17T14:44:51.062Z",
+  "status": "pending"
+}

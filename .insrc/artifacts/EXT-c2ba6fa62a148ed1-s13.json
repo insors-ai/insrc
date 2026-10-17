@@ -1,0 +1,129 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1792248283134-4nauky",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T14:44:51.062Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 7905,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s13",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "scope": "L",
+    "notify": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa6): adds a Story that makes the settle pass after file events proportional to the changed files, building on DEF-c2ba6fa6, Story s1's settle mode and pending-row index, and absorbing ISSUE-61045de91faef1a0; code in src/indexer/index.ts, src/indexer/cross-file-resolver.ts, src/indexer/external-endpoints.ts, src/indexer/messaging-endpoints.ts and src/db/entities.ts.",
+    "addedStory": {
+      "id": "s13",
+      "title": "Settling file changes does work proportional to the changed files, never a scan of the repository or the store",
+      "userValue": "After an edit, a branch switch or a merge, the graph catches up in time proportional to what changed: a burst of file events no longer costs one whole-repository resolve per file, and reading one file's or one repository's entities no longer passes over every other repository's rows. The results are the same as a full index gives.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "a repository whose index is complete, and one file in it that changes",
+          "when": "the settle pass for that file event runs",
+          "then": "the entity rows, pending rows and edges it reads are those the changed file defines, imports, exports or awaits, and their number does not grow with the size of the repository or of the store",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "a burst of file events touching N files of a repository",
+          "when": "their settle work runs",
+          "then": "the work done grows with N and with what those files touch, not with N times the repository",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "the same file changes settled event by event, and the same files indexed by a full index",
+          "when": "the edges and pending-row classes of those files are compared",
+          "then": "they are identical",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "a store holding several repositories",
+          "when": "the entities of one file, or of one repository, are read",
+          "then": "no row of another file or another repository is read, and the result is what it is today",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-c2ba6fa62a148ed1-8",
+    "evidence": [
+      {
+        "kind": "code",
+        "ref": "src/indexer/index.ts:866-869",
+        "quote": "runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, scopeFile: file })"
+      },
+      {
+        "kind": "code",
+        "ref": "src/indexer/cross-file-resolver.ts:114",
+        "quote": "const entities = await listEntitiesForRepo(opts.db, opts.repoRoot);"
+      },
+      {
+        "kind": "code",
+        "ref": "src/db/entities.ts:785",
+        "quote": "for (const { key, value } of store.entity.getRange()) {"
+      },
+      {
+        "kind": "prior-artifact",
+        "ref": ".insrc/artifacts/ISSUE-61045de91faef1a0.json",
+        "quote": "Reading the entities of one file or one repository scans the whole entity table"
+      },
+      {
+        "kind": "stakeholder",
+        "ref": "chat 2026-10-17",
+        "quote": "why scan the repos? the whole point of an event based implementation is to avoid these scans"
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"c2ba6fa62a148ed1\",\"storyId\":\"s13\"}",
+      "description": "Approve the HLD amendment (`AMD-c2ba6fa62a148ed1-8`) and the updated Epic, then run `design.story` for the new Story `s13` to produce its LLD."
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/indexer/index.ts:866-869",
+      "quotedText": "runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, scopeFile: file })"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:114",
+      "quotedText": "const entities = await listEntitiesForRepo(opts.db, opts.repoRoot);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/db/entities.ts:785",
+      "quotedText": "for (const { key, value } of store.entity.getRange()) {"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": ".insrc/artifacts/ISSUE-61045de91faef1a0.json",
+      "quotedText": "Reading the entities of one file or one repository scans the whole entity table"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "chat 2026-10-17",
+      "quotedText": "why scan the repos? the whole point of an event based implementation is to avoid these scans"
+    }
+  ]
+}

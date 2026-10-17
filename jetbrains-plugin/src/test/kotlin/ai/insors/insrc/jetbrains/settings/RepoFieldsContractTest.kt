@@ -11,7 +11,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.awt.Container
 import java.io.File
+import java.lang.reflect.Proxy
+import javax.swing.JLabel
+import javax.swing.JTextField
+import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 
 /**
  * Story s3 / t10 — the repo tracker rows contract, JetBrains side. Loads the same shared fixture as
@@ -99,5 +104,40 @@ class RepoFieldsContractTest {
         assertEquals("ghe.example.com", rows.first { it.key == "ghHost" }.value)
         assertEquals("missing-signin: gh is not signed in", rows.first { it.key == "signin" }.value)
         assertEquals(fields.filter { it["kind"] == "local" }.map { it["key"] }, rows.filter { it.editable }.map { it.key })
+    }
+
+    private fun labels(c: Container): List<JLabel> =
+        c.components.flatMap { if (it is JLabel) listOf(it) else if (it is Container) labels(it) else emptyList() }
+
+    @Test
+    fun `the rendered Tracker block shows each fixture row's label and note, and only local rows have a text field`() {
+        val fields = fixtureFields()
+        val repo = fixtureSettings()["repo"] as String
+        val catalog = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
+            DaemonResult(ok = true, data = mapOf<String, Any?>(
+                "options" to emptyList<Any?>(), "groups" to emptyList<Any?>(), "roles" to emptyList<Any?>(),
+                "tierNames" to emptyList<Any?>(), "values" to emptyMap<String, Any?>(), "repoFields" to fields,
+            ))
+        }).settingsCatalog()
+        val repoFields = assertInstanceOf(SettingsCatalogResult.Loaded::class.java, catalog).catalog.repoFields
+        val settings = DaemonGatewayImpl(FakeDaemonRpc { _, _ ->
+            DaemonResult(ok = true, data = mapOf("ok" to true, "payload" to fixtureSettings()))
+        }).readRepoSettings(repo)
+
+        val gateway = Proxy.newProxyInstance(DaemonGateway::class.java.classLoader, arrayOf(DaemonGateway::class.java)) { _, m, _ ->
+            throw AssertionError("rendering must not call the gateway: ${m.name}")
+        } as DaemonGateway
+        val model = PerRepoOverridesModel(listOf(repo), emptyList(), emptyList(), emptyMap())
+        val root = PerRepoSection(model, gateway, repoFields, mapOf(repo to settings)).component()
+
+        val shown = labels(root).map { it.text }
+        for (f in fields) {
+            assertTrue(shown.contains(f["label"] as String), "the section shows the label of ${f["key"]}")
+            val note = f["note"] as String?
+            if (note != null) assertTrue(shown.contains(note), "the section shows the note of ${f["key"]}: $note")
+        }
+        // Every local row is a text field; status and policy rows are not.
+        fun fieldCount(c: Container): Int = c.components.sumOf { if (it is JTextField) 1 else if (it is Container) fieldCount(it) else 0 }
+        assertEquals(fields.count { it["kind"] == "local" }, fieldCount(root))
     }
 }

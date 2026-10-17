@@ -89,6 +89,7 @@ const CASES: readonly Case[] = [
   { cls: 'ai.insors.insrc.jetbrains.daemon.DaemonGatewayServiceTest', name: 'the gateway declares both methods and calls repo_settings_get and repo_settings_set, not config_write' },
   { cls: 'ai.insors.insrc.jetbrains.daemon.DaemonGatewayServiceTest', name: 'the four DaemonGateway test doubles implement both new methods' },
   { cls: 'ai.insors.insrc.jetbrains.settings.RepoFieldsContractTest', name: 'JetBrains rows equal the shared catalog fixture and a new row appears' },
+  { cls: 'ai.insors.insrc.jetbrains.settings.RepoFieldsContractTest', name: "the rendered Tracker block shows each fixture row's label and note, and only local rows have a text field" },
   { cls: 'ai.insors.insrc.jetbrains.settings.PerRepoSectionTest', name: "one repo's failure shows its reason and the others still render" },
   { cls: 'ai.insors.insrc.jetbrains.settings.PerRepoSectionTest', name: 'the sign-in row is read-only for signed-in and every failure state' },
 ];

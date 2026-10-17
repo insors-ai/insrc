@@ -233,6 +233,13 @@ class PerRepoSection(
             } else {
                 rowPanel.add(JLabel("${row.value} (read-only)"), BorderLayout.EAST)
             }
+            // The daemon's note for the row ("saved; not used yet", "set by the team policy"), shown for every
+            // row as in the other clients. Added last so the label and control keep their child positions.
+            row.note?.let { note ->
+                val noteLabel = JLabel(note)
+                noteLabel.foreground = java.awt.Color.GRAY
+                rowPanel.add(noteLabel, BorderLayout.CENTER)
+            }
             rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
             panel.add(rowPanel)
         }

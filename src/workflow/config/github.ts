@@ -309,8 +309,8 @@ export interface StrictTrackerTarget {
 	readonly repo: string;
 }
 
-const OWNER_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
-const REPO_NAME_RE = /^(?!\.{1,2}$)[A-Za-z0-9._-]+$/;
+export const OWNER_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
+export const REPO_NAME_RE = /^(?!\.{1,2}$)[A-Za-z0-9._-]+$/;
 
 function strictRefuse(reason: string): PortResult<StrictTrackerTarget> {
 	return { ok: false, kind: 'rejected', reason };

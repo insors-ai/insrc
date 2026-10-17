@@ -19,6 +19,7 @@
  */
 
 import { CONFIG_CATALOG, type ConfigOption } from './config-catalog.js';
+import { REPO_TRACKER_FIELDS, type RepoFieldDef } from './repo-fields.js';
 import { reasoningRoleTaxonomy } from './role-taxonomy.js';
 
 /** One recognized reasoning role the per-role override editor (S004) targets. */
@@ -47,6 +48,8 @@ export interface SettingsCatalogPayload {
 	 * missing entry as "unset / using the default".
 	 */
 	readonly values:    Readonly<Record<string, unknown>>;
+	/** The repo-scoped tracker rows (static, from REPO_TRACKER_FIELDS); clients render them per repo. */
+	readonly repoFields: readonly RepoFieldDef[];
 }
 
 /**
@@ -90,5 +93,5 @@ export function buildSettingsCatalog(rawConfig: Record<string, unknown>): Settin
 		if (v !== undefined) values[opt.path] = v;
 	}
 
-	return { options, groups, roles, tierNames, values };
+	return { options, groups, roles, tierNames, values, repoFields: REPO_TRACKER_FIELDS };
 }

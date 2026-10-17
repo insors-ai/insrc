@@ -33,6 +33,15 @@
     "reviewOverride": {
       "reason": "Stakeholder approved 2026-10-17 after 3 daemon review rounds (1H/3M, 1H/3M, 0H/1M; all real, rounds 1-2 fixed). The round-3 MED (the 'no orphan or stale summary' promise overstated the conditional write) was fixed by narrowing the wording only, with no design change; that fix was not re-reviewed.",
       "at": "2026-10-17T13:19:50.220Z"
+    },
+    "questionResolutions": {
+      "q6401ddcc": {
+        "question": "ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the request (ac1 code indexing never waits on summaries, ac2 summaries still run with edits first and only for current documents, ac3 status and the queue readers stay correct) [c5].",
+        "status": "resolved",
+        "choice": "Adopt all three criteria",
+        "rationale": "Same decision as the user's for ISSUE-5437d6e5, ISSUE-1102dc71 and ISSUE-bd1c6c90 (2026-10-16/17): keep the criteria derived from the approved request, recorded with that provenance.",
+        "resolvedAt": "2026-10-17T13:20:21.772Z"
+      }
     }
   },
   "body": {

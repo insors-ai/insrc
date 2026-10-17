@@ -319,3 +319,16 @@ As a1 but serial: the worker takes from the index lane while it has jobs; a swee
 ## 9. Open questions
 
 - ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the request (ac1 code indexing never waits on summaries, ac2 summaries still run with edits first and only for current documents, ac3 status and the queue readers stay correct) [c5].
+
+## Resolved questions
+
+- `q6401ddcc` — ts1 (partial): the standalone story carries no acceptance criteria; the test strategy maps three derived from the request (ac1 code indexing never waits on summaries, ac2 summaries still run with edits first and only for current documents, ac3 status and the queue readers stay correct) [c5].
+  - **resolved**: Adopt all three criteria — Same decision as the user's for ISSUE-5437d6e5, ISSUE-1102dc71 and ISSUE-bd1c6c90 (2026-10-16/17): keep the criteria derived from the approved request, recorded with that provenance. _(2026-10-17T13:20:21.772Z)_
+
+## Citations
+
+- **[[c1]]** `step-output` `s1 context.assemble bundle 1: the index queue and its worker (src/daemon/queue.ts:85, src/daemon/queue.ts:193, src/daemon/queue.ts:229)`
+- **[[c2]]** `step-output` `s1 context.assemble bundle 2: document summary jobs and what they write (src/indexer/index.ts:759, src/indexer/index.ts:812-819, src/indexer/index.ts:918)`
+- **[[c3]]** `step-output` `s1 context.assemble bundle 3: the readers of queue state (src/daemon/index.ts:1060, src/daemon/status.ts:66, src/shared/types.ts:915-918)`
+- **[[c4]]** `step-output` `s1 context.assemble bundle 4: queue and summary tests (src/daemon/__tests__/queue-depth-for-repo.test.ts, src/daemon/__tests__/queue-code-index-work.test.ts, src/db/__tests__/doc-summaries-lmdb.test.ts)`
+- **[[c5]]** `stakeholder` `Stakeholder decisions in chat, 2026-10-17: two lanes running at the same time as an accepted exception to serial LLM calls, revisited if memory or GPU becomes a problem; single-document summaries ahead of sweeps, with a running sweep yielding to them` — "let's go with the reco, if memory/GPU become an issue we will revisit again"

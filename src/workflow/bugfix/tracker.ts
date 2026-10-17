@@ -27,7 +27,7 @@
  * `promptOnLostRef` is consulted for a next-step ACTION rather than silently
  * degrading. Its default is a no-op returning `skip`, which keeps the pure-defer
  * behaviour byte-compatible with the approved LLD when no prompter is injected
- * (non-interactive runs). `ghFindIssueByLabels` is consulted ONLY inside the
+ * (non-interactive runs). The label lookup (`findByLabels`) is consulted ONLY inside the
  * user-chosen `relink-by-label` branch — never on the normal create path — so
  * the create path pays no per-create GitHub round-trip (a1).
  */
@@ -39,14 +39,8 @@ import { renderIssueMarkdown } from '../artifacts/issue.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../config/github.js';
 import { GithubConfigError } from '../config/github.js';
 import { artifactJsonPath, issueArtifactId } from '../storage.js';
-import {
-	ghAuthOk,
-	ghCloseIssue,
-	ghCreateIssueTyped,
-	ghFindIssueByLabels,
-	ghLinkSubIssue,
-	type CreatedIssue,
-} from '../tracker/github.js';
+import { ghAuthOk, type CreatedIssue } from '../tracker/github.js';
+import { createGithubTracker, unwrap } from '../tracker/github-adapter.js';
 import { patchTrackerMeta, readTrackerMeta } from '../tracker/refs.js';
 import { issueForWorkflowId } from '../tracker/resolve.js';
 import type { WorkItemRef } from '../types.js';
@@ -425,9 +419,11 @@ export function defaultTrackerCreateDeps(
 		readIssue:             readIssueFromDisk,
 		readRecordedRef:       readRecordedRefFromDisk,
 		renderBody:            renderIssueMarkdown,
-		createIssue:           ghCreateIssueTyped,
+		// Adapter bound to the owner/repo of each call; a failed result is thrown again (the wrappers threw).
+		createIssue:           (owner, repo, title, body, labels, issueType) =>
+			unwrap(createGithubTracker(owner, repo).issueOps.create({ title, body, labels, issueType })),
 		resolveParentIssueRef: defaultResolveParentIssueRef,
-		linkSubIssue:          ghLinkSubIssue,
+		linkSubIssue:          (owner, repo, parentRef, childId) => unwrap(createGithubTracker(owner, repo).issueOps.linkSubIssue(parentRef, childId)),
 		recordRef:             recordRefToDisk,
 		labels:                opts?.labels ?? [],
 		promptOnLostRef:       opts?.promptOnLostRef ?? defaultPromptOnLostRef,
@@ -447,9 +443,13 @@ export function defaultTrackerCloseDeps(
 		resolveConfig:   (repoPath) => resolveGithubConfig(repoPath),
 		authOk:          ghAuthOk,
 		readRecordedRef: readRecordedRefFromDisk,
-		closeIssue:      ghCloseIssue,
+		closeIssue:      (owner, repo, ref) => unwrap(createGithubTracker(owner, repo).issueOps.close(ref)),
 		recordRef:       recordRefToDisk,
-		findByLabels:    ghFindIssueByLabels,
+		// A failed lookup reads as "not found", exactly as ghFindIssueByLabels did.
+		findByLabels:    (owner, repo, labels) => {
+			const found = createGithubTracker(owner, repo).findIssue([...labels]);
+			return found.ok ? found.value ?? undefined : undefined;
+		},
 		labels:          opts?.labels ?? [],
 		promptOnLostRef: opts?.promptOnLostRef ?? defaultPromptOnLostRef,
 	};

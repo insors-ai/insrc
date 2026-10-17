@@ -60,6 +60,13 @@ function attempt<T>(fn: () => T): PortResult<T> {
 	}
 }
 
+/** The one unwrapping rule for callers that relied on the gh wrappers throwing: a
+ *  failed result is thrown again as a classified {@link GhCommandError}. */
+export function unwrap<T>(r: PortResult<T>): T {
+	if (!r.ok) throw new GhCommandError(r.kind, r.reason);
+	return r.value;
+}
+
 function unsupported<T>(what: string): PortResult<T> {
 	return { ok: false, kind: 'rejected', reason: `the github tracker does not support ${what}` };
 }

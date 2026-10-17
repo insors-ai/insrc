@@ -715,6 +715,13 @@
         "choice": "Bounded rubric gate: evidence-backed explanation and change-impact questions, with two retries per question. A pass requires every required criterion to be satisfied and independently verified. Strict Medium permits committing after assessment completion with recorded gaps; enabled High requires a pass or explicit override.",
         "rationale": "User explicitly accepted these assessment rules in chat.",
         "resolvedAt": "2026-10-17T09:55:34.071Z"
+      },
+      "qecdceb0c": {
+        "question": "Design decision: define stable learner identity, retention, visibility and privacy controls. Evidence: docs/pre-commit-understanding-spec.md:133.",
+        "status": "resolved",
+        "choice": "Infer learner identity from the user's available GitHub, GitLab or Jira IDs. When multiple IDs are available, use the Git identity as the canonical learner ID. If no applicable provider/Git identity is available, fall back to the OS user ID. This replaces the proposed random repository/device learner ID. Retention and visibility/privacy controls are not decided by this choice; carry them explicitly into detailed design rather than treating the proposed 30-day retention as accepted.",
+        "rationale": "User explicitly specified identity sources, Git precedence when multiple IDs exist, and OS user ID fallback. They did not accept the proposed retention or privacy defaults.",
+        "resolvedAt": "2026-10-17T10:08:51.127Z"
       }
     }
   },

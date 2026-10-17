@@ -1,0 +1,698 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792240274744-t3dd4f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-17T12:35:32.844Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 258066,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "hldEffectiveHash": "3738518e4be6d4ee1efeb0f0c379e9ae123ace652810455c1fbc91ff650b3117",
+    "hldAmendmentsApplied": [
+      "AMD-315d510cb28100e2-1",
+      "AMD-315d510cb28100e2-4",
+      "AMD-315d510cb28100e2-8"
+    ],
+    "authoredBy": "controller",
+    "questionResolutions": {
+      "sg1": {
+        "question": "[sg1 / ambiguous] The story says developers can edit 'tool locations and sign-in', but insrc stores no secrets and sign-in stays with the tracker's CLI. This LLD makes sign-in a read-only status row plus an editable ghHost (the host gh is signed in to). Is that what 'edit sign-in' should mean, or should it be something else?",
+        "status": "resolved",
+        "choice": "Sign-in is a read-only status row computed live from gh (signed in as X, not signed in, gh not found, timed out); the only editable part is ghHost, the host gh signs in to (default github.com). No secret is stored.",
+        "rationale": "Owner chose option A on 2026-10-17: satisfies 'see sign-in' with live truth and gives GitHub Enterprise users something to edit, inside the no-secrets rule.",
+        "resolvedAt": "2026-10-17T12:39:59.765Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "A developer sees and edits their own tracker settings for a repo (tracker type, target, the gh tool location and sign-in host, and branch naming) in VS Code, JetBrains and the terminal client, and sees the team's policy rules next to them as read-only values. All three clients render the same rows from one daemon definition and one read and write path over ~/.insrc/github.json, so a change made in one client shows in the others.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-S001) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc2",
+          "name": "TeamPolicy",
+          "purpose": "The central rules read from the remote default branch: team mode, signoff stages, claim enforcement, claim units, administrators, and the grandfathering anchor. Owned by s2.",
+          "interfaceSketch": "interface TeamPolicy {\n  teamMode: boolean;\n  signoffStages: Array<'DEF' | 'HLD' | 'LLD' | 'BUILD'>;\n  claimsEnforced: boolean;\n  claimUnits: { epic: ['DEF','HLD']; story: ['LLD','PLAN']; task: ['BUILD'] };\n  administrators: string[];\n  forceTaskIssues: true;\n  source: { ref: string; fetchedAt: string; firstCommit: string; firstCommitTime: string };\n}\ninterface PolicyReader { (repo: string): PolicyResult<TeamPolicy | 'none'>; }\ntype PolicyResult<T> = { ok: true; value: T } | { ok: false; reason: string };\n  // + source.anchorKnown: boolean;  // States whether firstCommit and firstCommitTime are the true date the policy file first appeared on the default branch; false when history is too shallow to show it, in which case s7 must grandfather no artifact. (amend:AMD-315d510cb28100e2-4)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s7"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc2"
+        ],
+        "internal": "The repo-scoped kind of row in the shared settings catalog whose reads and writes go to the per-repo map in github.json read by resolveGithubConfig; its rendering in VS Code, JetBrains and the terminal client; read-only display of policy values. Shares the single store with s1's target resolution."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-S001 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Reading the policy file from the remote default branch ref, the cached last-fetched copy and the offline rule, finding the first default-branch commit that carried the policy file, the starter policy and the team setup command."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Shared issue-creation code refactored out of autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan, find-by-label dedupe for Story and Task issues, forcing Task issues on in team mode, daemon-side triggering when a draft is first written, the terminal approve path kept as manual fallback, the inventory and classification of artifact write paths (including the two writeFileSync writers, and both verdicts.ts and run-artifact.ts as content writes when auto-fixes change the body), the single content-write helper and the revision minting, the bypass test that also detects raw writeFileSync on artifact paths, and the rule that an artifact without meta.revision reads as revision 0."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The team gate and its call sites (daemon step entry points and approveArtifactByJsonPath), the acting-user read through the port, claim and release commands, live assignee reads, the guarded-action list (code-review and analyze are never guarded; review is never refused), the report-only review for a non-holder through the review-fix decision on both review paths (verdicts.ts and run-artifact.ts), the typed TeamGateRefusedError, its handling beside ReviewBlockedError in approveWorkflowTarget and its formatting in the terminal client's approve case in src/cli/command.ts, the no-issue outcome handling, administrator release, and the declaration of the completion hook, shipped unregistered."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc4"
+          ],
+          "internal": "Parking a draft on a handoff branch, the issue note, resuming from committed files, and reconstructing in-flight workflow state from committed artifacts instead of the opaque token."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Opening the signoff request with the chosen artifacts, prerequisite checks for model review and local approval, registering the completion hook to produce the awaiting-signoff outcome, the on-demand completion check, automatic release of the claim on completion, recording sign-off together, grandfathering of artifacts approved before the policy anchor, and the separate display of signoff."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "Revision of an open request: re-run of local approval, push to the same request, discarding an earlier completion, refusing non-holders."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s9: Keep tracker issues and status in step with the work without a manual step"
+        }
+      ],
+      "rolloutPhase": "Phase B — settings and issue readiness",
+      "nonFunctional": {
+        "performance": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 10-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call.",
+        "security": "Policy is read only from the remote default branch ref and is not locally overridable; enforcement lives in the daemon-owned workflow library (k1); no tracker secrets are stored by insrc, sign-in stays with the tracker's CLI; administrators come only from the policy.",
+        "observability": "Every gate outcome other than allowed is logged with unit, action and reason; port failures carry their kind (missing-tool, missing-signin, unreachable, rejected).",
+        "durability": "Claim, issue and signoff state live in the tracker and in committed artifact files; the in-memory step state stores (100 entries, 1 hour) are not relied on for handoff. Artifact writes stay atomic through the existing helper."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "buildSettingsCatalog",
+          "signature": "buildSettingsCatalog(rawConfig: Record<string, unknown>): SettingsCatalogPayload",
+          "parameters": [
+            {
+              "name": "rawConfig",
+              "type": "Record<string, unknown>",
+              "purpose": "The parsed ~/.insrc/config.json, or {} when absent.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SettingsCatalogPayload",
+            "meaning": "The existing payload plus one new static field, repoFields: the definitions of the repo-scoped rows (key, label, type, enum values, default, description, kind 'local' | 'policy' | 'status', group). Still pure and total; it reads no file and no policy."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The definitions come from the single REPO_TRACKER_FIELDS table, so config.catalog is where every client learns which repo-scoped rows exist (k6)",
+            "Existing fields of the payload are unchanged, so a client that does not know repoFields keeps working"
+          ]
+        },
+        {
+          "name": "repo.settings.get",
+          "signature": "repo.settings.get(params: { repo: string }): Promise<RepoSettingsPayload>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute path of a repo registered with the daemon.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RepoSettingsPayload",
+            "meaning": "The repo's current value for each local row (absent means unset), the resolved tracker target with its source, the live sign-in status, and the policy rows with the policy value and source, or the reason the policy could not be read."
+          },
+          "errors": [
+            {
+              "type": "repo-not-registered",
+              "condition": "repo is not a registered repo"
+            },
+            {
+              "type": "github-json-unreadable",
+              "condition": "github.json exists but is not valid JSON or not an object; the payload is not returned and nothing is written"
+            }
+          ],
+          "preconditions": [
+            "repo is a registered repo path"
+          ],
+          "postconditions": [
+            "Reads github.json on every call, so it shows what any other client wrote (ac13)",
+            "Never writes",
+            "A policy that cannot be read yields policy rows with the reason, not a failure of the whole call"
+          ]
+        },
+        {
+          "name": "repo.settings.set",
+          "signature": "repo.settings.set(params: { repo: string; key: string; value: string | boolean | null }): Promise<{ ok: true; payload: RepoSettingsPayload }>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute path of a registered repo.",
+              "optional": false
+            },
+            {
+              "name": "key",
+              "type": "string",
+              "purpose": "A key of a 'local' row in REPO_TRACKER_FIELDS.",
+              "optional": false
+            },
+            {
+              "name": "value",
+              "type": "string | boolean | null",
+              "purpose": "The new value, checked against the row's type and enum; null removes the key from the repo's entry.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ ok: true; payload: RepoSettingsPayload }",
+            "meaning": "The payload re-read after the write, so the caller shows what is on disk."
+          },
+          "errors": [
+            {
+              "type": "unknown-key",
+              "condition": "key is not a row of the table"
+            },
+            {
+              "type": "read-only-key",
+              "condition": "key is a 'policy' or 'status' row"
+            },
+            {
+              "type": "invalid-value",
+              "condition": "value fails the row's type, enum or format check (for example an owner or repo name that is not a valid GitHub name)"
+            },
+            {
+              "type": "repo-not-registered",
+              "condition": "repo is not a registered repo"
+            },
+            {
+              "type": "github-json-unreadable",
+              "condition": "the existing file is invalid JSON or not an object; it is left untouched"
+            }
+          ],
+          "preconditions": [
+            "repo is a registered repo path"
+          ],
+          "postconditions": [
+            "Changes only that key of repos[repo]; the default entry, other repos and unknown keys of the file are preserved",
+            "The write is atomic (temp file in the same directory, then rename) and serialized inside the daemon",
+            "A repo with no entry gets one created holding only the written key"
+          ]
+        },
+        {
+          "name": "resolveGithubConfig",
+          "signature": "resolveGithubConfig(repoPath: string, configPath?: string): ResolvedGithubConfig",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Repo whose tracker target is resolved.",
+              "optional": false
+            },
+            {
+              "name": "configPath",
+              "type": "string",
+              "purpose": "Config file; defaults to githubConfigPath().",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ResolvedGithubConfig",
+            "meaning": "Unchanged. repo.settings.get calls it to report the resolved target and its source (per-repo-config, default-config or git-remote)."
+          },
+          "errors": [
+            {
+              "type": "GithubConfigError",
+              "condition": "github is enabled for the repo but no owner/repo could be resolved; repo.settings.get reports it in the payload"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged behaviour; the new GithubEntry fields are optional and ignored by it and by resolveStrictTrackerTarget"
+          ]
+        },
+        {
+          "name": "PolicyReader",
+          "signature": "PolicyReader(repo: string): PolicyResult<TeamPolicy | 'none'>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repo whose policy is read.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PolicyResult<TeamPolicy | 'none'>",
+            "meaning": "The sc2 reader, consumed unchanged; repo.settings.get maps its value to the read-only policy rows."
+          },
+          "errors": [
+            {
+              "type": "PolicyResult ok:false",
+              "condition": "the policy could not be read; the reason is shown in the policy rows"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Never refreshes or fetches on behalf of a settings view beyond what the reader does itself"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "REPO_TRACKER_FIELDS",
+        "change": "new",
+        "details": "The one definition table of the repo-scoped rows, in src/config next to CONFIG_CATALOG. Each row: key, label, type ('string' | 'boolean' | 'enum'), enumValues, default, description, group 'Tracker', and kind: 'local' (editable, stored in github.json), 'status' (derived, read-only: sign-in status of gh and the resolved target with its source) or 'policy' (read-only, from sc2). Local rows: type (github | none), owner, repo, ghPath (tool location of the gh program), ghHost (the GitHub host gh is signed in to, for GitHub Enterprise; default github.com), branchPattern (branch naming, with {id} {slug} {type} placeholders). Policy rows: teamMode, signoffStages, claimsEnforced, administrators, forceTaskIssues.",
+        "callSites": [
+          "src/config/config-catalog.ts",
+          "src/config/settings-catalog.ts"
+        ]
+      },
+      {
+        "entity": "SettingsCatalogPayload",
+        "change": "field-add",
+        "details": "Adds repoFields: readonly RepoFieldDef[], the rows of REPO_TRACKER_FIELDS without values. Additive: clients that ignore it are unaffected.",
+        "schemaDiff": "+ readonly repoFields: readonly RepoFieldDef[];",
+        "callSites": [
+          "src/config/settings-catalog.ts",
+          "src/daemon/index.ts:1479"
+        ]
+      },
+      {
+        "entity": "RepoSettingsPayload",
+        "change": "new",
+        "details": "{ repo: string; values: Record<string, string | boolean>; resolved: { type: 'github' | 'none'; owner?: string; repo?: string; source: 'per-repo-config' | 'default-config' | 'git-remote'; error?: string }; signin: { state: 'signed-in' | 'missing-tool' | 'missing-signin' | 'unreachable' | 'unknown'; login?: string }; policy: { ok: true; mode: 'none' } | { ok: true; mode: 'team'; values: Record<string, unknown>; source: { ref: string; fetchedAt: string } } | { ok: false; reason: string } }. 'values' holds only keys the repo's own entry sets; the resolved block is what resolveGithubConfig reports (ac12).",
+        "callSites": [
+          "src/daemon/index.ts"
+        ]
+      },
+      {
+        "entity": "GithubEntry",
+        "change": "field-add",
+        "details": "Adds optional ghPath, ghHost and branchPattern (strings). resolveGithubConfig, loadGithubConfigFile and resolveStrictTrackerTarget ignore them, so a repo without them resolves exactly as today (k4). The tool location and host are read by the gh runner only in a later story; this story stores and shows them.",
+        "schemaDiff": "+ readonly ghPath?: string; + readonly ghHost?: string; + readonly branchPattern?: string;",
+        "callSites": [
+          "src/workflow/config/github.ts"
+        ]
+      },
+      {
+        "entity": "github.json writer",
+        "change": "new",
+        "details": "One writer module (readRepoEntry and writeRepoEntryKey) that parses the file, merges one key into repos[repo], and replaces the file atomically; used by repo.settings.set and by the config step of tracker setup so the file has a single writer path.",
+        "callSites": [
+          "src/workflow/tracker/setup.ts:163-200",
+          "src/workflow/config/github.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "repo.settings.get calls PolicyReader(repo) once and maps TeamPolicy to read-only rows: teamMode, signoffStages, claimsEnforced, administrators, forceTaskIssues, with source.ref and source.fetchedAt shown as where the value came from. No policy key can be written: repo.settings.set refuses any key whose kind is not 'local'. TeamPolicy is not changed and nothing is cached by this story."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "github.json exists but is not valid JSON or its top level is not an object",
+          "detection": "The read path in the github.json writer parses the file with JSON.parse and checks the result is a non-array object; a parse error or a wrong shape is caught there.",
+          "response": "repo.settings.get and repo.settings.set return github-json-unreadable naming the file and the parse error; set writes nothing and leaves the file untouched. The lenient resolver keeps its own behaviour (treats the file as empty).",
+          "userImpact": "The client shows the error and an offer to fix the file by hand; no setting is lost or overwritten.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Two clients write at nearly the same time",
+          "detection": "All writes pass through one in-daemon queue, so two repo.settings.set calls never interleave; a write by a process other than the daemon (the terminal setup step before it is moved onto the writer) is detected by comparing the file's mtime and size read at the start of the merge with those just before the rename.",
+          "response": "The queued writes apply one after the other, each merging into the latest file. If the file changed between read and rename, the merge is redone once from the new content; if it changes again the call returns file-changed and writes nothing.",
+          "userImpact": "Both edits survive, or the second client is asked to retry; neither silently overwrites the other.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A client sends a write for a policy or status row",
+          "detection": "repo.settings.set looks the key up in REPO_TRACKER_FIELDS and checks kind === 'local'.",
+          "response": "Returns read-only-key and writes nothing.",
+          "userImpact": "The row is shown read-only in every client, so this only happens from a hand-made call; the value cannot be changed locally (k5).",
+          "recoverable": false
+        },
+        {
+          "scenario": "A value does not match its row (an enum outside its values, an owner or repo that is not a valid GitHub name, a branch pattern with an unknown placeholder, a ghPath that contains a newline)",
+          "detection": "repo.settings.set validates the value against the row's type, enumValues and format before any file access.",
+          "response": "Returns invalid-value with the reason; nothing is written.",
+          "userImpact": "The client shows the reason next to the field and keeps the old value.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repo is not registered with the daemon",
+          "detection": "Both methods look the path up in the repo registry before reading or writing.",
+          "response": "Returns repo-not-registered; no file is read or written.",
+          "userImpact": "The client's repo picker only lists registered repos, so this appears only after a repo is removed while the settings are open.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The policy cannot be read (offline, no default branch known, malformed policy file)",
+          "detection": "PolicyReader returns ok:false and repo.settings.get checks the result.",
+          "response": "The payload carries policy: { ok: false, reason }; the local rows are still returned.",
+          "userImpact": "The policy section shows the reason instead of values; editing the local rows is unaffected.",
+          "recoverable": true
+        },
+        {
+          "scenario": "gh is not installed or not signed in when the sign-in status is computed",
+          "detection": "The status row uses the s1 classified runner and reads GhCommandError.kind (missing-tool, missing-signin, unreachable).",
+          "response": "signin.state is set to that kind with no login; the call does not fail and uses the 10-second timeout.",
+          "userImpact": "The sign-in row says what is missing and how to fix it (gh auth login), without blocking the settings view.",
+          "recoverable": true
+        },
+        {
+          "scenario": "github is enabled for the repo but no target can be resolved (type github, no owner/repo, git remote not parseable)",
+          "detection": "resolveGithubConfig throws GithubConfigError, caught in repo.settings.get.",
+          "response": "resolved.error carries the message and resolved.type is 'none'; the call succeeds.",
+          "userImpact": "The target row shows why there is no target and which fields to set.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An older client calls config.catalog and does not know repoFields",
+          "detection": "The field is additive; the client simply does not read it.",
+          "response": "No change in what the client receives for existing fields.",
+          "userImpact": "The older client shows no tracker section until it is updated; nothing else changes.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repo with no entry in github.json and no default entry",
+          "expected": "values is empty, resolved.type is 'none' with source 'default-config', and the editable rows show their defaults as unset."
+        },
+        {
+          "input": "A repo with no own target and a default entry of type github",
+          "expected": "resolved shows owner and repo from the repo's git remote with source 'git-remote'; the default entry's own owner and repo are never shown as the target (ac12)."
+        },
+        {
+          "input": "A value of null for a key that is not set",
+          "expected": "The write succeeds as a no-op, the file is not rewritten, and the payload is returned."
+        },
+        {
+          "input": "Setting the type to none for a repo",
+          "expected": "The own entry gets type none; resolveGithubConfig then reports none and the target rows show it as disabled; owner and repo values already in the entry are kept."
+        },
+        {
+          "input": "A repo path given with a trailing slash or as a symlink",
+          "expected": "The path is normalised to the registered form before the lookup and before it is used as the key in repos, so one repo has one entry."
+        },
+        {
+          "input": "github.json has keys this story does not know in a repo entry (epicLabel, pushTasks)",
+          "expected": "They are preserved unchanged by every write and are not shown as rows."
+        },
+        {
+          "input": "The policy file exists but teamMode is false",
+          "expected": "The policy rows show the values with the source; there is no special case beyond showing teamMode false."
+        },
+        {
+          "input": "The sign-in status is requested for a repo with type none",
+          "expected": "No gh command is run and the status row says the tracker is disabled."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A repo without the policy file and without the new fields behaves exactly as it does today: the resolvers ignore ghPath, ghHost and branchPattern.",
+          "source": "c1"
+        },
+        {
+          "text": "Policy is read only from the remote default branch and cannot be changed through a settings client; only 'local' rows are writable.",
+          "source": "c8"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure rules: the field table, the catalog's new static field, value validation, the payload builder, and the merge that writes one key.",
+          "subjects": [
+            "REPO_TRACKER_FIELDS has a unique key per row and a kind of local, status or policy on every row, and every local key is a GithubEntry field",
+            "buildSettingsCatalog still returns every existing field unchanged, adds repoFields, stays pure and never throws for an empty or garbage config",
+            "validateRepoSetting accepts and rejects values per row: type enum, owner and repo names, branchPattern placeholders, ghPath with a newline",
+            "buildRepoSettings reports values from the repo's own entry only, the resolved target with its source (per-repo-config, default-config, git-remote), and the policy rows from a PolicyResult for none, team and ok:false",
+            "mergeRepoEntryKey changes only the named key, keeps the default entry, other repos and unknown keys, removes a key for null, and is a no-op for null on an unset key"
+          ],
+          "fixturesNeeded": [
+            "temp github.json files written per test with INSRC_GITHUB_CONFIG pointing at them",
+            "fake PolicyResult values for none, team and failure"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the daemon methods end to end against a real temp github.json, the writer under concurrency, and each client's rendering and write path against the same payload.",
+          "subjects": [
+            "repo.settings.get returns what repo.settings.set just wrote, and a write made outside the daemon is shown on the next get (ac13)",
+            "repo.settings.set refuses a policy row, a status row, an unknown key, an invalid value and an unregistered repo, and writes nothing in each case",
+            "two repo.settings.set calls issued together both land, and a write that changes the file between read and rename is merged again or returns file-changed",
+            "an unreadable github.json makes get and set return github-json-unreadable and leave the file byte for byte unchanged",
+            "a repo with no own target resolves to its git remote in the payload, and a default entry's owner and repo are never reported as the target (ac12)",
+            "sign-in status maps GhCommandError kinds to the payload and runs no gh command when the tracker type is none",
+            "terminal client: the settings view built from the same payload lists the same rows with the same labels and values as the VS Code panel model and offers an edit for local rows only",
+            "VS Code panel model: tracker section renders the rows from repoFields and sends repo.settings.set for an edit, with policy rows shown read-only",
+            "JetBrains PerRepoSection model: tracker rows built from repoFields, edits sent through repo.settings.set, policy rows not editable"
+          ],
+          "fixturesNeeded": [
+            "a fake daemon IPC server answering config.catalog, repo.settings.get and repo.settings.set for the client tests",
+            "a scratch git repo with an origin remote",
+            "fake gh through _setTrackerExecForTests"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin that the three clients show the same rows from one definition, so they cannot drift.",
+          "subjects": [
+            "the row keys, labels and kinds each client renders equal the keys, labels and kinds in repoFields from config.catalog, for VS Code, JetBrains and the terminal client",
+            "adding a row to REPO_TRACKER_FIELDS in a test copy appears in all three client models without any client change"
+          ],
+          "fixturesNeeded": [
+            "a shared JSON fixture of the config.catalog payload that the TypeScript client tests and the Kotlin test both load"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac10",
+          "provingTests": [
+            "VS Code panel model: tracker section renders the rows from repoFields and sends repo.settings.set for an edit, with policy rows shown read-only",
+            "JetBrains PerRepoSection model: tracker rows built from repoFields, edits sent through repo.settings.set, policy rows not editable",
+            "REPO_TRACKER_FIELDS has a unique key per row and a kind of local, status or policy on every row, and every local key is a GithubEntry field"
+          ]
+        },
+        {
+          "criterionId": "ac11",
+          "provingTests": [
+            "terminal client: the settings view built from the same payload lists the same rows with the same labels and values as the VS Code panel model and offers an edit for local rows only",
+            "the row keys, labels and kinds each client renders equal the keys, labels and kinds in repoFields from config.catalog, for VS Code, JetBrains and the terminal client"
+          ]
+        },
+        {
+          "criterionId": "ac12",
+          "provingTests": [
+            "a repo with no own target resolves to its git remote in the payload, and a default entry's owner and repo are never reported as the target (ac12)",
+            "buildRepoSettings reports values from the repo's own entry only, the resolved target with its source (per-repo-config, default-config, git-remote), and the policy rows from a PolicyResult for none, team and ok:false"
+          ]
+        },
+        {
+          "criterionId": "ac13",
+          "provingTests": [
+            "repo.settings.get returns what repo.settings.set just wrote, and a write made outside the daemon is shown on the next get (ac13)",
+            "two repo.settings.set calls issued together both land, and a write that changes the file between read and rename is merged again or returns file-changed"
+          ]
+        },
+        {
+          "criterionId": "ac14",
+          "provingTests": [
+            "repo.settings.set refuses a policy row, a status row, an unknown key, an invalid value and an unregistered repo, and writes nothing in each case",
+            "buildRepoSettings reports values from the repo's own entry only, the resolved target with its source (per-repo-config, default-config, git-remote), and the policy rows from a PolicyResult for none, team and ok:false",
+            "VS Code panel model: tracker section renders the rows from repoFields and sends repo.settings.set for an edit, with policy rows shown read-only"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with tsx (the daemon, the terminal client and the VS Code plugin); JUnit 5 for the JetBrains plugin"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Repo settings payload and write over their own IPC pair, one field table",
+        "oneLineSummary": "A single field table in src/config describes the repo-scoped rows; two new daemon methods read the payload (editable local values plus read-only policy values) and write one field to github.json; all three clients render from the payload.",
+        "approach": "Add one definition site, a REPO_TRACKER_FIELDS table next to CONFIG_CATALOG: each row has a key, type, enum values, default, description and a kind of 'local' (editable) or 'policy' (read-only). Add a pure buildRepoSettings(repoPath, fileContent, policyResult) that returns the rows with the repo's current value, the resolved source of the target (own entry, default entry or git remote) and, for policy rows, the policy value with its source. Add two daemon IPC methods: repo.settings.get(repo) returns that payload, and repo.settings.set(repo, key, value) validates the key and value against the table, refuses a policy key, and writes only that repo's entry in github.json through a single atomic writer (read, merge, write to temp, rename) that also keeps the default entry untouched. VS Code, JetBrains and the terminal client render rows from the payload, so a field added to the table appears in all three. The new fields (tool location, sign-in note, branch naming) are added to GithubEntry as optional, so resolveGithubConfig and s1's strict resolver ignore them.",
+        "pros": [
+          "One definition of the fields, so the three clients cannot drift (FR2, ac13)",
+          "Does not touch config.write or config.json, so the existing model-tier settings are unaffected",
+          "Reuses the github.json store that s1's resolution reads, so a change is seen by the next tracker resolution",
+          "Policy values and their source travel in the same payload, so ac14 needs no extra client logic"
+        ],
+        "cons": [
+          "Two new daemon methods and a new atomic writer for github.json",
+          "The IDE plugins and the terminal client each need a new section, though they render from one payload",
+          "The writer must keep the file's other repos and the default entry intact under concurrent edits from two clients"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Generalise config.catalog and config.write with a store selector",
+        "oneLineSummary": "Keep one catalog and one write method, and add a 'store' dimension so the same calls can address github.json per-repo entries as well as config.json.",
+        "approach": "Extend ConfigOption with an optional scope of 'repo' and a store of 'github.json', add a repoPath parameter to config.catalog and config.write, and branch inside buildSettingsCatalog and the write handler on the store. Repo-scoped rows live in CONFIG_CATALOG beside the daemon-wide rows. Policy rows are added to the same payload with a read-only flag.",
+        "pros": [
+          "The smallest change in the clients if they already render the catalog generically",
+          "One catalog and one pair of methods for every setting",
+          "No new IPC method names to keep in step across the three clients"
+        ],
+        "cons": [
+          "config.write is path-based and global: adding a repo path and a second file widens a method used by every model-tier setting, and a mistake there can corrupt config.json",
+          "The catalog is pure and total over one raw object; making it read a second file and the policy breaks that property and its tests",
+          "buildSettingsCatalog would now depend on s2's policy reader, coupling the catalog to the workflow library"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Closest to k6 but widens a global write path and breaks the catalog's purity and totality (partial on ac14, sc2 and k4)."
+      },
+      {
+        "id": "a3",
+        "name": "Each client owns its tracker form and talks to github.json through a thin read and write",
+        "oneLineSummary": "Add only a raw read and a raw write of a repo entry to the daemon, and let each client define its own fields and validation.",
+        "approach": "Add repo.githubEntry.get and repo.githubEntry.set that move the entry JSON as is, with the daemon checking only that it is an object. VS Code, JetBrains and the terminal client each hard-code the tracker fields, their labels and their validation.",
+        "pros": [
+          "The least daemon code",
+          "Clients can lay the form out as suits their toolkit"
+        ],
+        "cons": [
+          "Three copies of the field list and validation, which is exactly the drift the story forbids (FR2)",
+          "A client bug can write an invalid entry that s1's strict resolver then refuses",
+          "Policy values would need a third method and per-client handling"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates the one-definition rule (k6) and leaves validation to three clients."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "[sg1 / ambiguous] The story says developers can edit 'tool locations and sign-in', but insrc stores no secrets and sign-in stays with the tracker's CLI. This LLD makes sign-in a read-only status row plus an editable ghHost (the host gh is signed in to). Is that what 'edit sign-in' should mean, or should it be something else?",
+      "[sg2 / missed] ghPath, ghHost and branchPattern are stored and shown by this story, but no story makes the gh runner or branch creation read them. Which story consumes them, so a developer who sets them sees an effect? (Candidate: an s1 follow-up for ghPath/ghHost and the handoff story s6 for branchPattern.)",
+      "[sg3 / partial] repo.settings.get and repo.settings.set are new IPC method names with no precedent in the analysis; confirm the names before they are mirrored in the VS Code and JetBrains clients.",
+      "[sg4 / ambiguous] The config step of tracker setup (src/workflow/tracker/setup.ts) writes github.json directly today. This LLD moves it onto the shared writer so the file has one write path; confirm that touching the setup step is acceptable here rather than a separate change."
+    ],
+    "dataModelChanges_note_omitted": null
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "Settings catalog definition and serving: src/config/config-catalog.ts, src/config/settings-catalog.ts, src/daemon/index.ts:1479, src/daemon/index.ts:1518"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "Per-repo settings in the clients today: vscode-plugin/src/panels/repo-config.ts, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt, src/cli/services/config.ts, src/cli/panes/ReposPane.tsx"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/config/github.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/tracker/setup.ts:163-200"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/team/policy-reader.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "HLD-315d510cb28100e2"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD-315d510cb28100e2-S002"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/plans/team-workflow.md"
+    }
+  ]
+}

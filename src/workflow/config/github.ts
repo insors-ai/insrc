@@ -352,9 +352,10 @@ function strictEntry(raw: unknown, repoPath: string, where: string, allowEntryTa
 	const type = e['type'];
 	if (type !== undefined && type !== 'github' && type !== 'none') return strictRefuse(`${where}: unsupported tracker type '${String(type)}'`);
 	if (type === 'none') return strictRefuse(`${where}: the tracker is disabled (type none)`);
-	const hasOwner = allowEntryTarget && e['owner'] !== undefined && e['owner'] !== '';
-	const hasRepo = allowEntryTarget && e['repo'] !== undefined && e['repo'] !== '';
-	if (hasOwner && hasRepo) return strictTarget(e['owner'], e['repo'], where);
+	// Any owner or repo the repo's own entry names is a target and must be valid
+	// and complete: a half-named or empty one is refused, never papered over by
+	// the origin remote.
+	if (allowEntryTarget && (e['owner'] !== undefined || e['repo'] !== undefined)) return strictTarget(e['owner'], e['repo'], where);
 	if (type === 'github') return strictOrigin(repoPath, where);
 	return null;
 }

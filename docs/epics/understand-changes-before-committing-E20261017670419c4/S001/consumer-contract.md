@@ -27,4 +27,4 @@ The identity adapter evidence is in `identity-sources.md`: GitHub stable IDs use
 - s6 owns receipts and final Git enforcement; s7 owns explicit overrides and commit-message recording. This foundation issues no receipt and never grants a pass. Override requests remain unavailable.
 - s5 consumes the shared result/event schemas and supplied fixtures in an editor pane.
 
-No direct cloud REST, model calls, workflow status updates or tracker writes are introduced here. Existing service tests cover atomic retries, conflicts, rollback, recovery and deletion; the acceptance test kills a separate writer process after acknowledgment and verifies recovery and unchanged delivery evidence.
+No direct cloud REST, model calls, workflow status updates or tracker writes are introduced here. Existing service tests cover atomic retries, conflicts, rollback, recovery and deletion; the acceptance test kills a separate writer process after acknowledgment and verifies recovery and unchanged canonical DEF/PLAN/BUILD bytes and delivery-handler state.

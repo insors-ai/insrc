@@ -88,7 +88,8 @@ export interface ChangedSymbolSummary {
 	readonly callers:   readonly string[];
 	/** Names of entities this symbol calls. */
 	readonly callees:   readonly string[];
-	/** Names of test entities that reach this symbol (graph edges test -> symbol). */
+	/** Test-file callers that reach this symbol, each `<test file>#<caller name>`
+	 *  (the file joins it to the Story's test record; ISSUE-1102dc71). */
 	readonly testsReaching: readonly string[];
 }
 

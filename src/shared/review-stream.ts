@@ -83,7 +83,7 @@ export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGr
 
 /** The `codeReview.freshness` reply as a result. A reply from an older daemon
  *  (no inFlight / pendingCodeIndexJobs) reads as inFlight = isProcessing and 0. */
-export function freshnessFromReply(res: { isProcessing?: boolean; inFlight?: boolean; pendingCodeIndexJobs?: number; staleFiles?: readonly string[]; error?: string }): CodeReviewFreshnessResult {
+export function freshnessFromReply(res: { isProcessing?: boolean | undefined; inFlight?: boolean | undefined; pendingCodeIndexJobs?: number | undefined; staleFiles?: readonly string[] | undefined; error?: string | undefined }): CodeReviewFreshnessResult {
 	if (res.error === undefined && typeof res.isProcessing === 'boolean') {
 		return {
 			ok: true,

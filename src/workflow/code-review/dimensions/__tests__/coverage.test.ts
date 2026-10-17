@@ -224,7 +224,7 @@ const withRecords = (tasks: readonly unknown[], buildTasks?: readonly unknown[])
 	testRecord: { meta: {}, body: { tasks } } as unknown as CodeReviewSubject['testRecord'],
 });
 /** The JSON test-record section of the prompt, parsed. */
-function viewOf(s: CodeReviewSubject): { files: { file: string; state: string; reason?: string; decidedBy: { taskId: string }; titles: { title: string; result: string }[]; notInLatestRun: string[] }[]; buildTasks: { taskId: string; passed: string }[]; notes: string[] } {
+function viewOf(s: CodeReviewSubject): { files: { file: string; state: string; reason?: string | undefined; decidedBy: { taskId: string }; titles: { title: string; result: string }[]; notInLatestRun: string[] }[]; buildTasks: { taskId: string; passed: string }[]; notes: string[] } {
 	const user = buildCoveragePrompt(s, groundingTwoFiles(), undefined).find(m => m.role === 'user')!.content as string;
 	const at = user.indexOf('## Test-record results');
 	assert.ok(at >= 0 && at < user.indexOf('## Output'), 'the section is present, before the output reminder');
@@ -295,4 +295,19 @@ test("the coverage prompt shows each test file from its latest run by ranAt, eve
 	const user = buildCoveragePrompt({ ...subject(['src/a.ts']), testRecord: null }, groundingTwoFiles(), undefined).find(m => m.role === 'user')!.content as string;
 	assert.match(user, /No test record is available — treat every test's pass-state as UNVERIFIED/);
 	assert.ok(!user.includes('```json\n{\n  "files"'));
+});
+
+test('buildCoveragePrompt: a testsReaching entry is joined to its test FILE in the test record, never to a title by its caller name (ISSUE-1102dc71)', () => {
+	const s = withRecords([task('t1', '2026-10-17T01:00:00.000Z', [run('src/__tests__/a.test.ts', [['the real test title', 'pass']])])]);
+	const g = grounding([{ file: 'src/a.ts', name: 'alpha', testsReaching: ['src/__tests__/a.test.ts#mkFixture'] }]);
+	const msgs = buildCoveragePrompt(s, g, undefined);
+	const sys  = msgs.find(m => m.role === 'system')!.content as string;
+	const user = msgs.find(m => m.role === 'user')!.content as string;
+	assert.match(sys, /`<test file>#<caller>`/);
+	assert.match(sys, /NEVER match the caller name against test titles/);
+	assert.match(sys, /Judge a reaching entry by its TEST FILE/);
+	assert.doesNotMatch(sys, /does not cover is unverified/, 'the old title-matching rule is gone');
+	// The two sides of the join are both in the prompt: the entry names the file the record lists.
+	assert.ok(user.includes('"src/__tests__/a.test.ts#mkFixture"'));
+	assert.ok(user.includes('"file": "src/__tests__/a.test.ts"'));
 });

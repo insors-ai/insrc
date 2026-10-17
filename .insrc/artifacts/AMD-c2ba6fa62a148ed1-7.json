@@ -42,5 +42,7 @@
     "stepId": "scope.assess"
   },
   "proposedAt": "2026-10-17T09:16:43.957Z",
-  "status": "pending"
+  "status": "approved",
+  "approvedAt": "2026-10-17T09:21:44.661Z",
+  "approvedBy": "Subho Ghosh"
 }

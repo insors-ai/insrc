@@ -243,6 +243,23 @@ Reviewer feedback is handled in one place without weakening the author's own app
 - **ac37:** Given a revised artifact that has been pushed, when the request is checked, then it is still the single review thread and an earlier completion does not carry over. _(operationalizes `k1`)_
 - **ac38:** Given someone who does not hold the claim, when they try to revise an artifact in an open request, then the revision is refused. _(operationalizes `k1`)_
 
+### 6.9 E20261016315d510c:S009 — Keep tracker issues and status in step with the work without a manual step
+
+**User value:**
+
+Issues exist and their status is current without anyone remembering to create or refresh them, in team and solo repos, whichever tracker is used.
+
+**Acceptance criteria:**
+
+- **ac1:** Given a team repo and a stage's draft is first written, when the draft is written, then the daemon creates the stage's issue with no manual step.
+- **ac2:** Given a solo repo (no policy) with a tracker configured and a draft is first written, when the draft is written, then the daemon creates the issue itself, which is a deliberate change from today, where only the terminal approve creates it.
+- **ac3:** Given a solo repo with no tracker configured, when a draft is first written, then nothing is created and nothing fails.
+- **ac4:** Given an issue already exists for an artifact, when the terminal approve path is used manually, then it creates only the issues that do not yet exist and never a duplicate.
+- **ac5:** Given an artifact with an issue in a tracker, when a git pull or push completes, then the tracker's status is refreshed into the artifact's tracker record, and the user can ask for the same refresh explicitly.
+- **ac6:** Given the tracker is slow or fails during a git pull or push, when the refresh runs, then the git operation still completes and the failure is reported.
+- **ac7:** Given an issue the daemon has created for an artifact, when the artifact is next shown, then it carries the issue key, the artifact id and a revision number that is separate from the schema version.
+- **ac8:** Given a tracker other than GitHub is configured, when issues are created and status is synced, then the same create, write-back and sync steps apply as for GitHub.
+
 ## 7. References
 
 - **[[c1]]** `doc` `docs/standalone/team-signoff-claim-based-workflow-E20261016be8bcc43/SPEC.md`
@@ -262,25 +279,3 @@ Reviewer feedback is handled in one place without weakening the author's own app
 
 - Item a2: One assumption is low confidence (Jira approval can stand in for a signoff request, unverified); how a Jira approval refers to artifact content must be verified at design.
 - Item s1d: The 'one tracker only' part of the problem is only enabled by the common interface, since GitLab and Jira trackers are a stated non-goal. Open items in the plan doc (migration of existing artifacts, a 'my items' view) have no Story yet.
-
-## Resolved questions
-
-- `q425abf90` — Item a2: One assumption is low confidence (Jira approval can stand in for a signoff request, unverified); how a Jira approval refers to artifact content must be verified at design.
-  - **resolved**: Reference by artifact id + version only — Jira follows the GitHub pattern: the daemon creates the Epic, Story and Task issues in Jira, as tracker-auto does for GitHub, and writes the Jira issue key back into the artifact record. The binding is the recorded issue key plus the artifact id and version; no content hash for now. The HLD must carry a note on artifact versioning: record which artifact version a Jira signoff request was opened for, and treat a hash or snapshot binding as a later hardening. A git sync (pull or push) also runs a Jira sync that writes Jira status back into the artifact tracker record, as tracker.sync does for GitHub, and the user can trigger the Jira sync explicitly. A failing or slow Jira call never blocks the git operation; it only reports. Completion is still read live from the tracker when a stage is attempted. _(2026-10-16T16:35:16.152Z)_
-- `q8baf0b8f` — Item s1d: The 'one tracker only' part of the problem is only enabled by the common interface, since GitLab and Jira trackers are a stated non-goal. Open items in the plan doc (migration of existing artifacts, a 'my items' view) have no Story yet.
-  - **resolved**: Reword the problem statement to narrow scope — User chose option 4 over the daemon's recommendation, to avoid amending the approved DEF. The HLD treats the goal as 'a common tracker interface with GitHub as its first adapter' (GitLab and Jira adapters are later work, but Jira must follow the GitHub pattern: daemon-created issues, Jira key written back to the artifact, git sync also runs a Jira sync). The DEF text is not edited. Migration of existing artifacts means deciding whether artifacts that have a local approval but no signoff are grandfathered in team mode or need a one-time signoff; the HLD must settle that in its Story boundaries. The 'my items' view is deferred as a non-goal of this HLD. _(2026-10-16T16:38:18.518Z)_
-
-## Citations
-
-- **[[c1]]** `doc` `docs/standalone/team-signoff-claim-based-workflow-E20261016be8bcc43/SPEC.md`
-- **[[c2]]** `doc` `docs/plans/team-workflow.md`
-- **[[c3]]** `code` `src/workflow/gates.ts`
-- **[[c4]]** `code` `src/workflow/tracker-auto.ts` — "const adopted = ghFindIssueByLabels(cfg.owner, cfg.repo, [cfg.epicLabel, membership]);"
-- **[[c5]]** `code` `src/config/settings-catalog.ts`
-- **[[c6]]** `doc` `docs/plans/meta-workflow-framework.md` — "Tracker integration (GitHub only)"
-- **[[c7]]** `doc` `docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md` — "ONE tracker tool, with one implementation per tracker type."
-- **[[c8]]** `stakeholder` `User decisions made in the 2026-10-16 brainstorm session, recorded in docs/plans/team-workflow.md`
-- **[[c9]]** `convention` `CLAUDE.md` — "Daemon owns all DB access"
-- **[[c10]]** `code` `src/cli/config-catalog.ts` — "export { CONFIG_CATALOG } from '../config/config-catalog.js';"
-- **[[c11]]** `analyze-bundle` `s1.analyzeBundles[0]`
-- **[[c12]]** `analyze-bundle` `s1.analyzeBundles[1]`

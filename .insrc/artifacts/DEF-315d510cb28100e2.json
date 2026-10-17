@@ -1028,6 +1028,69 @@
             "rationale": "Merging must mean the same thing the reviewers saw."
           }
         ]
+      },
+      {
+        "id": "s9",
+        "title": "Keep tracker issues and status in step with the work without a manual step",
+        "userValue": "Issues exist and their status is current without anyone remembering to create or refresh them, in team and solo repos, whichever tracker is used.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a team repo and a stage's draft is first written",
+            "when": "the draft is written",
+            "then": "the daemon creates the stage's issue with no manual step",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "a solo repo (no policy) with a tracker configured and a draft is first written",
+            "when": "the draft is written",
+            "then": "the daemon creates the issue itself, which is a deliberate change from today, where only the terminal approve creates it",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "a solo repo with no tracker configured",
+            "when": "a draft is first written",
+            "then": "nothing is created and nothing fails",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "an issue already exists for an artifact",
+            "when": "the terminal approve path is used manually",
+            "then": "it creates only the issues that do not yet exist and never a duplicate",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "an artifact with an issue in a tracker",
+            "when": "a git pull or push completes",
+            "then": "the tracker's status is refreshed into the artifact's tracker record, and the user can ask for the same refresh explicitly",
+            "operationalizes": []
+          },
+          {
+            "id": "ac6",
+            "given": "the tracker is slow or fails during a git pull or push",
+            "when": "the refresh runs",
+            "then": "the git operation still completes and the failure is reported",
+            "operationalizes": []
+          },
+          {
+            "id": "ac7",
+            "given": "an issue the daemon has created for an artifact",
+            "when": "the artifact is next shown",
+            "then": "it carries the issue key, the artifact id and a revision number that is separate from the schema version",
+            "operationalizes": []
+          },
+          {
+            "id": "ac8",
+            "given": "a tracker other than GitHub is configured",
+            "when": "issues are created and status is synced",
+            "then": "the same create, write-back and sync steps apply as for GitHub",
+            "operationalizes": []
+          }
+        ]
       }
     ],
     "openQuestions": [

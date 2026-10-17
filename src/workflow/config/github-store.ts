@@ -16,7 +16,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import { githubConfigPath } from './github.js';
@@ -71,6 +71,11 @@ function unreadable(configPath: string, detail: string): { ok: false; error: Wri
 	return { ok: false, error: { code: 'github-json-unreadable', message: `${configPath}: ${detail}` } };
 }
 
+/** Only ENOENT means the file is absent; EACCES on a parent and the like are real read failures. */
+function isMissing(e: unknown): boolean {
+	return (e as NodeJS.ErrnoException).code === 'ENOENT';
+}
+
 function describe(v: unknown): string {
 	return v === null ? 'null' : Array.isArray(v) ? 'an array' : typeof v;
 }
@@ -100,11 +105,11 @@ function validateSnapshot(parsed: unknown, repoPath: string, configPath: string)
  * `default`, `repos` or the repo's own entry is reported, naming the level.
  */
 export function readRepoEntry(repoPath: string, configPath: string = githubConfigPath()): ReadResult {
-	if (!existsSync(configPath)) return { ok: true, file: {}, entry: undefined };
 	let raw: string;
 	try {
 		raw = readFileSync(configPath, 'utf8');
 	} catch (e) {
+		if (isMissing(e)) return { ok: true, file: {}, entry: undefined };
 		return unreadable(configPath, `cannot be read: ${(e as Error).message}`);
 	}
 	let parsed: unknown;
@@ -154,8 +159,13 @@ export function mergeRepoEntryKeys(
 interface Fingerprint { readonly present: boolean; readonly size: number; readonly mtimeMs: number; readonly hash: string }
 
 function fingerprint(configPath: string): Fingerprint {
-	if (!existsSync(configPath)) return { present: false, size: 0, mtimeMs: 0, hash: '' };
-	const content = readFileSync(configPath);
+	let content: Buffer;
+	try {
+		content = readFileSync(configPath);
+	} catch (e) {
+		if (isMissing(e)) return { present: false, size: 0, mtimeMs: 0, hash: '' };
+		throw e;
+	}
 	const st = statSync(configPath);
 	return { present: true, size: st.size, mtimeMs: st.mtimeMs, hash: createHash('sha256').update(content).digest('hex') };
 }

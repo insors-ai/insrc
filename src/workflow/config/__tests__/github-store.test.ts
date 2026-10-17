@@ -70,6 +70,22 @@ test('readRepoEntry rejects each malformed level and accepts missing parts', () 
 		assert.equal(full.ok, true);
 		if (full.ok) assert.deepEqual(full.entry, { owner: 'o' });
 
+		// An existing file behind an inaccessible parent directory is a read failure, not a missing file.
+		if (typeof process.getuid === 'function' && process.getuid() !== 0) {
+			const locked = join(dir, 'locked');
+			mkdirSync(locked);
+			writeFileSync(join(locked, 'github.json'), '{}\n');
+			chmodSync(locked, 0o000);
+			try {
+				const r = readRepoEntry(REPO, join(locked, 'github.json'));
+				assert.equal(r.ok, false);
+				if (!r.ok) {
+					assert.equal(r.error.code, 'github-json-unreadable');
+					assert.match(r.error.message, /EACCES/);
+				}
+			} finally { chmodSync(locked, 0o700); }
+		}
+
 		// A directory in place of the file cannot be read.
 		const asDir = readRepoEntry(REPO, dir);
 		assert.equal(asDir.ok, false);

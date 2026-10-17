@@ -93,9 +93,20 @@ Tracker target defaults to the git remote (existing `source: 'git-remote'`
 resolution in `workflow/config/github.ts`); Jira declares site and project.
 Repos without the policy file behave exactly as today (solo mode).
 
+## Known limitations
+
+- **Bootstrap (accepted 2026-10-17, s2 LLD override):** a repo with no
+  sighting and nothing fetched has no local evidence of a policy and is treated
+  as solo until `team refresh` has run once. This refines the offline rule
+  (DEF ac9) and is consistent with k4; refusal applies once a repo is known to
+  carry a policy (a sighting exists, or a fetched tracking ref carries the file
+  while the default branch is unknown, in which case the user is asked to run
+  `team refresh --branch <name>`).
+
 ## Open items for design
 
-- Offline rule for the policy file (last fetched policy, refuse if none).
+- Offline rule for the policy file (last fetched policy, refuse if none; see
+  the bootstrap limitation above).
 - Migration: existing artifacts have `approvedAt` but no signoff; treat as
   grandfathered in team mode or require a one-time signoff.
 - Epic-stage issue creation has no earlier approval to hook; decide the trigger.

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-17T16:44:37.038Z  ·  **Updated:** 2026-10-17T16:50:34.941Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-17T16:44:37.038Z  ·  **Updated:** 2026-10-17T18:23:24.116Z
 
-**Commit:** f14d99a9
+**Commit:** 0e30e7e7
 
 ## Scope
 
@@ -26,5 +26,4 @@ extractClass passes the class's export status to extractMethod, which marks a me
 
 ## Changes
 
-- `src/indexer/__tests__/method-calls-cross-file.test.ts` — **insrc-build** (2026-10-17T16:50:34.941Z)
-- `src/indexer/parser/typescript.ts` — **insrc-build** (2026-10-17T16:50:34.941Z)
+- `.insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json` — **insrc-build** (2026-10-17T18:23:24.116Z)

@@ -10,12 +10,13 @@
     "triageRationale": "bugfix (small): the TypeScript parser writes method entities without isExported and resolveCall's cross-file step requires it; marking a method visible when its class is exported and the method is not private makes the existing import-scoped rule and its ambiguity handling apply.",
     "epicCreatedAt": "2026-10-17T16:43:29.367Z",
     "epicSlug": "resolve-calls-methods-class-defined-another",
-    "updatedAt": "2026-10-17T16:50:34.941Z"
+    "updatedAt": "2026-10-17T18:23:24.116Z",
+    "approvedAt": "2026-10-17T18:23:24.193Z"
   },
   "body": {
     "focus": "ISSUE-ae864466e7f1f4ea: a method of an exported TypeScript/JavaScript class is visible, through the existing import-scoped rule, to the files that import that class's file; a private method (TypeScript private modifier or a #name) stays invisible. x.method() resolves when exactly one such method is visible through the caller's imports, and is recorded ambiguous with its candidates when several are. Only the TypeScript/JavaScript parser changes (src/indexer/parser/typescript.ts extractMethod/extractClass); the resolver is unchanged.",
     "producesLld": false,
-    "commit": "f14d99a9",
+    "commit": "0e30e7e7",
     "tasks": [
       {
         "id": "S001",
@@ -29,17 +30,10 @@
     "changeLog": [
       {
         "target": {
-          "file": "src/indexer/__tests__/method-calls-cross-file.test.ts"
+          "file": ".insrc/artifacts/LLD-0f0e4f45f698aeb6-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-17T16:50:34.941Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/typescript.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-17T16:50:34.941Z"
+        "timestamp": "2026-10-17T18:23:24.116Z"
       }
     ]
   }

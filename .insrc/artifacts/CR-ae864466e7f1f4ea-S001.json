@@ -1,0 +1,167 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792260373174-uzwq4o",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T18:06:13.174Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 69717,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ae864466e7f1f4ea",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-17T16:43:29.367Z",
+    "epicSlug": "resolve-calls-methods-class-defined-another",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ae864466e7f1f4ea",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "src/daemon/__tests__/queue-lanes.test.ts",
+        "src/daemon/queue.ts",
+        "src/indexer/__tests__/doc-summary-sweep.test.ts",
+        "src/indexer/__tests__/method-calls-cross-file.test.ts",
+        "src/indexer/__tests__/summary-sweep-progress.test.ts",
+        "src/indexer/doc-summary-sweep.ts",
+        "src/indexer/index.ts",
+        "src/indexer/parser/typescript.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "AGENTS.md",
+            "message": "The supplied changed file and section symbols all have empty testsReaching edges; none is exercised under the specified coverage criterion.",
+            "expectationRef": "AGENTS.md; ⚠️ CRITICAL MODEL REQUIREMENT ⚠️; Testing; Run all tests; Run a specific area; By marker; Coverage; Development; Always activate the venv first; Install; Lint / format; Run the master startup orchestrator (k3s-based); Cannot run sudo. If a step requires sudo, print the command for the user.; Architecture Overview; Rules Framework (active feature on `v2`); Extraction pipeline shape; Service Topology (k3s ports); Database & Models; Messaging; Prompt System; Add a new region; Add or change a rule type; Database schema changes; Important Notes; Field Label Updates; insrc — front door (insrc MCP server); Front-door decision tree (intent → surface); Tool catalog (all registered insrc_* MCP tools); Approval discipline (applies to every workflow artifact); Review discipline (applies to every review); AGENTS.md — AFM (code-review use); Code exploration via `insrc_analyze` / `insrc_analyze_step` (insrc MCP server); Which tool to use; Codex is used here for REVIEW; `insrc_analyze_step` loop shape; When NOT to use either; `repo` argument; CLAUDE.md — insrc backend; Project principles; What lives here; Tech stack; Project structure; Build and run; Imports; TypeScript strictness; Logging; LLM provider abstraction; Entity IDs; IPC; Key architectural rules; Design documents",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "CLAUDE.md",
+            "message": "The supplied changed file and section symbols all have empty testsReaching edges; none is exercised under the specified coverage criterion.",
+            "expectationRef": "CLAUDE.md; ⚠️ CRITICAL MODEL REQUIREMENT ⚠️; Documented exceptions to the Haiku-only rule; Testing; Run all tests; Run a specific area; By marker; Coverage; Development; Always activate the venv first; Install; Lint / format; Run the master startup orchestrator (k3s-based); Cannot run sudo. If a step requires sudo, print the command for the user.; Architecture Overview; Rules Framework (active feature on `v2`); Extraction pipeline shape; Service Topology (k3s ports); Database & Models; Messaging; Prompt System; Add a new region; Add or change a rule type; Database schema changes; Important Notes; Field Label Updates; insrc — front door (insrc MCP server); Front-door decision tree (intent → surface); Tool catalog (all registered insrc_* MCP tools); Approval discipline (applies to every workflow artifact); Review discipline (applies to every review); ⛔ FOLLOW THE INSTRUCTION — no compromises, no drift (read this FIRST); ⛔ SEGMENT ISOLATION — inviolable; THE PRIME DIRECTIVE — never violated; Forbidden in code (violations); Enforcement tests (apply to every line you write); NO DEVIATION — mandatory pre/post-build validation against FIRST_PRINCIPLES; ⛔ STEP PREREQUISITES — a red test BEFORE the design, and no unreproducible \"measured\"; Architecture; Working norms; Dev; CLAUDE.md — insrc backend; Project principles; What lives here; Tech stack; Project structure; Build and run; Imports; TypeScript strictness; Logging; LLM provider abstraction; Entity IDs; IPC; Key architectural rules; Design documents",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/queue.ts",
+            "message": "All listed changed symbols have empty testsReaching edges. The test records provide no reaching coverage for these symbols.",
+            "expectationRef": "src/daemon/queue.ts; JobProcessor; LaneName; Lane; isSummaryJob; IndexQueue; laneFor; queued; depth; depthForRepo; codeIndexWorkFor; enqueue; takeDocSummaryEdit; laneStatus; start; drain; isIndexIdle; releaseIndexIdleWaiters; waitForIndexIdle; stop; isStopping; isProcessing",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/doc-summary-sweep.ts",
+            "message": "All listed changed symbols have empty testsReaching edges, including runDocSummarySweep and its outcome helpers.",
+            "expectationRef": "src/indexer/doc-summary-sweep.ts; DocSummarySweepDeps; DocSummarySweepCounts; Outcome; classify; failed; runDocSummarySweep",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/index.ts",
+            "message": "All supplied changed symbols have empty testsReaching edges. No passing-test coverage is established for them by the supplied graph.",
+            "expectationRef": "src/indexer/index.ts; isGeneratedOrMinified; hasIgnoredSegment; listRepoFiles; walkFilesLegacy; contentHash; FilePresenceCheck; statPresence; ReconcileResult; ReconcileCounts; ReconcileProgress; IndexerService; start; detectDelta; addRepo; removeRepo; processJob; reconcileJob; reconcileRepo; reconcileInto; removeStoredFile; resolveAfterReconcile; _armedSettleTimersForTest; writeIndexStatus; fullIndex; fileEvent; enqueueDocSummarisationForFile; scheduleSettle; runSettlePass; summarySweepProgress; summariseEntity; docSummariseRepo; docSummariseEntity; reembed; indexFile; indexManifest; configFullIndex; configFileEvent; configReindex; indexConfigFile; walkConfigDir; repoForFile",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/parser/typescript.ts",
+            "message": "All listed changed symbols have empty testsReaching edges. Although method-calls-cross-file.test.ts passed, no supplied edge connects that test file to these symbols.",
+            "expectationRef": "src/indexer/parser/typescript.ts; SyntaxNode; _fieldText; _hasAncestor; isNodeExported; TypeScriptParser; parse; walkNode; ownedElsewhere; extractFunction; extractClass; extractClassHeritage; extractMethod; extractInterface; extractTypeAlias; extractArrowFunction; extractImport; extractCalls; collectClassHttpFields; collectPatternIdentifiers; AxiosScope; collectScopeFrame; isProvenAxios; collectTsImportSpecifiers; extractTsTopicExpr; walkForCalls; resolveCalleeName",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/__tests__/queue-lanes.test.ts",
+            "message": "The changed file symbol has empty testsReaching edges.",
+            "expectationRef": "/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/queue-lanes.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/__tests__/queue-lanes.test.ts",
+            "message": "Reaching tests for gate, tick, until and label are present but failing/unverified: their test file is absent from the test record, so its pass-state is unverified.",
+            "expectationRef": "gate; tick; until; label",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+            "message": "The changed file symbol has empty testsReaching edges.",
+            "expectationRef": "/Users/subhagho/work/projects/insors/insrc/src/indexer/__tests__/doc-summary-sweep.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+            "message": "Reaching tests for entity and world are present but failing/unverified: their test file is absent from the test record, so its pass-state is unverified.",
+            "expectationRef": "entity; world",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/__tests__/method-calls-cross-file.test.ts",
+            "message": "The changed file symbol has empty testsReaching edges. The file's passing result confirms coverage of callersIn through its supplied edge, but does not supply a reaching edge for the file symbol itself.",
+            "expectationRef": "/Users/subhagho/work/projects/insors/insrc/src/indexer/__tests__/method-calls-cross-file.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+            "message": "These supplied changed symbols have empty testsReaching edges.",
+            "expectationRef": "src/indexer/__tests__/summary-sweep-progress.test.ts; Progress; Probe; summariseEntity; FailingQueue; takeDocSummaryEdit; RacedQueue; waitForIndexIdle",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+            "message": "Reaching tests for sweep, gate, tick and until are present but failing/unverified: their test file is absent from the test record, so its pass-state is unverified.",
+            "expectationRef": "sweep; gate; tick; until",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 10,
+      "med": 3,
+      "low": 0
+    }
+  }
+}

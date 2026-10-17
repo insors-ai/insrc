@@ -152,7 +152,9 @@
       "reviewedAt": "2026-10-17T17:25:53.096Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
-    }
+    },
+    "approvedAt": "2026-10-17T17:32:33.407Z",
+    "rangeBase": "4ef6b571494916c7e1c46ba5778a758f213f42e0"
   },
   "body": {
     "summary": {

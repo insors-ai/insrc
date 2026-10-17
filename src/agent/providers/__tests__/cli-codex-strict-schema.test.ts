@@ -280,3 +280,23 @@ test('a schema with a format the reply check cannot enforce, anywhere including 
 		f.cleanup();
 	}
 });
+
+test('a schema whose $ref points into a part the codex copy leaves out is refused before codex is called; a $ref into a kept part is sent', async () => {
+	const intoDropped: StructuredSchema = {
+		type: 'object', properties: { v: { $ref: '#/$defs/w/allOf/0' } },
+		$defs: { w: { allOf: [{ type: 'string' }] } },
+	};
+	assert.throws(() => codexStrictSchema(intoDropped), /its \$ref '#\/\$defs\/w\/allOf\/0' points into a part the codex copy leaves out/);
+	const f = fakeCodex();
+	try {
+		await assert.rejects(new CliProvider({ kind: 'codex', binPath: f.bin }).completeStructured([{ role: 'user', content: 'x' }], intoDropped), /points into a part the codex copy leaves out/);
+		assert.throws(() => f.seen(), /ENOENT/, 'codex was not called');
+	} finally {
+		f.cleanup();
+	}
+	const intoKept: StructuredSchema = {
+		type: 'object', properties: { v: { $ref: '#/$defs/w' }, u: { $ref: '#/properties/v' } },
+		$defs: { w: { type: 'string', minLength: 1 } },
+	};
+	assert.deepEqual((codexStrictSchema(intoKept) as Record<string, any>)['properties'], { v: { $ref: '#/$defs/w' }, u: { $ref: '#/properties/v' } });
+});

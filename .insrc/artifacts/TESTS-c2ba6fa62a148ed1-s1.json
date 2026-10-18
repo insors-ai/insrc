@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-18T06:06:44.097Z",
+    "updatedAt": "2026-10-18T06:18:25.328Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1613,6 +1613,114 @@
               },
               {
                 "title": "renderDaemonTab keeps the daemon status when repo.list fails, and says the list is unavailable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "d899f265",
+        "ranAt": "2026-10-18T06:18:25.328Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts: five lookups notEstablished for an incomplete repository, executor sets the field at all three constructions (mutation: one construction left without it)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "graphCompleteness existing-argument behaviour unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "a table test over all twenty lookup types finds a completeness record with its stated basis",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+                "title": "every graph-based record carries the coverage note, on the paths that return early as well",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2760,
+            "titles": [
+              {
+                "title": "a table test over all twenty lookup types finds a completeness record with its stated basis",
+                "result": "pass"
+              },
+              {
+                "title": "the fixture gives every lookup something to return, so the table is not a table of empty results",
+                "result": "pass"
+              },
+              {
+                "title": "each lookup that stops at a count reports the limit with its scope",
+                "result": "pass"
+              },
+              {
+                "title": "data-model.trace reports its overall limit and both per-target limits",
+                "result": "pass"
+              },
+              {
+                "title": "search.text and config.trace turn the search's omissions into skipped, partlyRead and limited",
+                "result": "pass"
+              },
+              {
+                "title": "the table-listing lookup reads the data driver's cut flag into a limit",
+                "result": "pass"
+              },
+              {
+                "title": "every graph-based record carries the coverage note, on the paths that return early as well",
+                "result": "pass"
+              },
+              {
+                "title": "a limit below 1 does not make a text lookup fail",
+                "result": "pass"
+              },
+              {
+                "title": "a prepared value without the carried facts gives a record that is not established",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness",
                 "result": "pass"
               }
             ],

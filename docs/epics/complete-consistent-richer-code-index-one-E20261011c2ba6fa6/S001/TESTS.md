@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 77 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 82 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -347,3 +347,28 @@ Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/com
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts` | 0 | 11 | 0.5 s |  |
 | `vscode-plugin/src/panels/__tests__/detail-renderers.test.ts` | 0 | 10 | 0.4 s |  |
+
+## t16
+
+Run at 2026-10-18T06:18:25.328Z on commit `d899f265`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/analyze/explore/__tests__/completeness-all-lookups.test.ts: five lookups notEstablished for an incomplete repository, executor sets the field at all three constructions (mutation: one construction left without it)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts | `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` |
+| pass | s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository | `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` |
+
+**unit: graphCompleteness existing-argument behaviour unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness | `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` |
+| pass | a table test over all twenty lookup types finds a completeness record with its stated basis | `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` |
+| pass | every graph-based record carries the coverage note, on the paths that return early as well | `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` | 0 | 12 | 2.8 s |  |

@@ -255,3 +255,14 @@ The s6 LLD was approved with a recorded review override of the daemon's `block` 
 2. **MCP exposure sites are part of the change inventory (s6-R3-2).** The `park` and `resume` phases are added everywhere the tool surface is declared: the phase `z.enum` in `src/mcp/server.ts`, the workflow-step input and output unions in `src/daemon/steps/workflow-step/types.ts`, the dispatcher in `src/daemon/steps/workflow-step/handler.ts`, the schema-registry expectations in `src/mcp/__tests__/schema-registry.test.ts` and the tool-surface fixture `src/mcp/__tests__/fixtures/tool-surface.golden.json`. A test proves an MCP call with `phase: 'park'` and `phase: 'resume'` passes validation and reaches the handler.
 
 Also recorded for the build: `registerParkOfferProvider` is an sc4 amendment proposed by this LLD; and ac28 is read at stage level (decision above).
+
+## Revision rule decision (S4-2, S4-3, S4-6; 2026-10-19)
+
+The two S4 deviations are settled in favour of the code, and the contract text is amended to match:
+
+1. **The revision names the content.** A content write that changes nothing apart from `meta.revision` keeps the revision (`writeArtifact` in `src/workflow/storage.ts`). Minting prior + 1 on an identical rewrite would invalidate a signoff bound to a revision when nothing it covers changed, and it would break byte-identity of BUILD and TESTS records rewritten on a no-op validate.
+2. **Provenance is not content.** Reviewer feedback and comment resolution (`provenance/writer.ts`, `writeArtifact(..., 'meta-only')`) never mint a revision: a comment must not invalidate a signoff, and the review-decision "changes no state" rule holds.
+3. **What this amends.** S4 PLAN t1 / t2 ("a content write mints prior + 1", provenance classed as content) now read: a content write that changes the artifact mints prior + 1; an identical write and every meta-only write keep it.
+4. **What s8 inherits.** A signoff binds to `meta.revision`; "the stage changed" means the revision moved, which happens exactly when content changed. s8 must not rely on a bump for a no-op write.
+
+The existing tests (`artifact-writer.test.ts`, the provenance round-trip tests, the BUILD-record byte-identity test) already pin this behaviour. No code change.

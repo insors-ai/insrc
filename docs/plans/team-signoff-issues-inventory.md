@@ -6,9 +6,9 @@ Epic `team-signoff-claim-based-workflow` (`315d510cb28100e2`). Written 2026-10-1
 
 | # | Status | Complexity | Issue | Next step |
 | :--- | :--- | :--- | :--- | :--- |
-| S4-2 | open | high | Identical content writes keep their revision (`writeArtifact`); the contract says every content write mints prior + 1. Accepted deviation: the BUILD-record byte-identity test depends on it. | Decide the rule with s8 (signoff binds to the revision), then change the writer and the tests that depend on it. |
-| S4-3 | open | high | The provenance writer is meta-only; the plan classified it as content. Accepted deviation: provenance round-trip tests and the "review decision changes no state" rule depend on it. | Same decision as S4-2. |
-| S4-6 | open | high | The t3, t4 and t5 gate failures came from S4-2, S4-3 and the first-write meta gaining `revision: 1` in two test files. | Closes with S4-2 and S4-3. |
+| S4-2 | resolved by decision 2026-10-19 (team-workflow.md "Revision rule decision") | high | Identical content writes keep their revision (`writeArtifact`); the contract says every content write mints prior + 1. Accepted deviation: the BUILD-record byte-identity test depends on it. | Decide the rule with s8 (signoff binds to the revision), then change the writer and the tests that depend on it. |
+| S4-3 | resolved by decision 2026-10-19 (team-workflow.md "Revision rule decision") | high | The provenance writer is meta-only; the plan classified it as content. Accepted deviation: provenance round-trip tests and the "review decision changes no state" rule depend on it. | Same decision as S4-2. |
+| S4-6 | resolved by decision 2026-10-19 (team-workflow.md "Revision rule decision") | high | The t3, t4 and t5 gate failures came from S4-2, S4-3 and the first-write meta gaining `revision: 1` in two test files. | Closes with S4-2 and S4-3. |
 | S4-1 | open | high | Amendment `AMD-315d510cb28100e2-11` (`resolveIssueId(ref)` on the tracker port) is pending. An issue adopted by its label after a timed-out create is not linked under its parent. Shared with s5. | Agree the amendment (s1), then link adopted Story and Task issues in `ensureUnitIssueDetailed`. |
 | S4-5 | open | medium | A second draft write reads the team policy through local git; the build gate reads that as "runs a command". The LLD says the policy read comes first. | Cache the policy read, or amend the acceptance check. |
 | S4-4 | open | medium | No per-Task body comment: the plan review comment goes on the Story issue. | Decide the content with the owner, or amend the LLD. |

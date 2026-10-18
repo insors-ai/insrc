@@ -18,7 +18,7 @@ import { dirname, join } from 'node:path';
 
 import { artifactJsonPath, hldArtifactId, lldArtifactId, planArtifactId } from '../../storage.js';
 import {
-	CHECKPOINT_SCHEMA_VERSION, DEFAULT_BRANCH_PATTERN, handoffBranchName, inferStageWorkflow, isUnitArtifactPath, rebindCheckpoint, validateCheckpoint,
+	CHECKPOINT_SCHEMA_VERSION, DEFAULT_BRANCH_PATTERN, REPO_ROOT_TOKEN, handoffBranchName, inferStageWorkflow, isUnitArtifactPath, portablePaths, rebindCheckpoint, validateCheckpoint,
 	type HandoffUnit, type RunCheckpoint,
 } from '../handoff.js';
 
@@ -150,6 +150,25 @@ test('rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, rese
 	assert.equal(late.executor, undefined);
 	assert.equal(late.intent.repoIndexedAt, 12345);
 	assert.equal(JSON.stringify(late).includes(PARKER), false);
+
+	// a path the parker's step outputs quote is made portable at park time and becomes the receiving clone's path when rebound
+	const quoted = { pathsCited: [`${PARKER}/src/todos/filter.ts`, `${PARKER}2/other.ts`, 'src/relative.ts'], note: `see ${PARKER}.` };
+	const scrubbed = portablePaths(quoted, PARKER);
+	assert.deepEqual(scrubbed, { pathsCited: [`${REPO_ROOT_TOKEN}/src/todos/filter.ts`, `${PARKER}2/other.ts`, 'src/relative.ts'], note: `see ${REPO_ROOT_TOKEN}.` });
+	assert.equal(/\/home\/parker\/work\/repo(?![0-9A-Za-z_-])/.test(JSON.stringify(scrubbed)), false, 'only the sibling repo2 path (a different directory) is left');
+	assert.deepEqual(portablePaths(quoted, ''), quoted, 'an empty path scrubs nothing');
+	const withPaths = asRun({
+		intent: { workflow: 'design.story', focus: `work in ${REPO_ROOT_TOKEN}`, params: { epicHash: HASH, storyId: 's1', dir: `${REPO_ROOT_TOKEN}/docs` } },
+		executor: { runId: 'wf-1', plan: { workflow: 'design.story', steps: [] }, nextStepIndex: 1, stepOutputs: { s1: scrubbed } },
+	});
+	const rebound = rebindCheckpoint(withPaths, binding);
+	assert.deepEqual(rebound.executor?.stepOutputs['s1'], { pathsCited: ['/Users/bob/clone/src/todos/filter.ts', `${PARKER}2/other.ts`, 'src/relative.ts'], note: 'see /Users/bob/clone.' });
+	assert.equal(rebound.intent.params['dir'], '/Users/bob/clone/docs');
+	assert.equal(rebound.intent.focus, 'work in /Users/bob/clone');
+	assert.equal(JSON.stringify(rebound).includes(REPO_ROOT_TOKEN), false, 'no token is left');
+	const lateWithPaths = rebindCheckpoint(asRun({ stage: 'awaiting_synthesize', executor: undefined, stepOutputs: { s1: scrubbed } }), binding);
+	assert.deepEqual((lateWithPaths.stepOutputs?.['s1'] as { note: string }).note, 'see /Users/bob/clone.');
+	assert.equal(JSON.stringify(lateWithPaths).includes(`"${PARKER}/`), false);
 
 	// a different indexing state on the receiving side is respected as given
 	assert.equal(rebindCheckpoint(asRun({}), { ...binding, repoIndexedAt: null }).intent.repoIndexedAt, null);

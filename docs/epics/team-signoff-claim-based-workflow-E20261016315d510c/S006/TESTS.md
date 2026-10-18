@@ -63,7 +63,7 @@ Run at 2026-10-18T17:20:30.641Z on commit `53e59f21`. Tests check: **passed**. 2
 
 ## t4
 
-Run at 2026-10-18T17:33:11.671Z on commit `d66c692a`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T17:35:02.752Z on commit `708e09d9`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/team/__tests__/handoff-pure.test.ts: handoffBranchName fills placeholders, applies the default, rejects a grammar break and a pattern without {id}**
 
@@ -87,4 +87,4 @@ Run at 2026-10-18T17:33:11.671Z on commit `d66c692a`. Tests check: **passed**. 3
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/team/__tests__/handoff-pure.test.ts` | 0 | 3 | 0.9 s |  |
+| `src/workflow/team/__tests__/handoff-pure.test.ts` | 0 | 3 | 1.1 s |  |

@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s6
 
-**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T17:33:11.671Z
+**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T17:35:02.752Z
 
-**Commit:** d66c692a
+**Commit:** 708e09d9
 
 ## Summary
 
-New src/workflow/team/handoff.ts (pure; no git, tracker or store): DEFAULT_BRANCH_PATTERN 'insrc/handoff/{type}-{id}'; handoffBranchName(pattern, unit, slug) validates the pattern with the existing validateBranchPattern grammar, requires {id}, fills {id} (epic hash, plus '-<storyId>' for a Story), {type} (epic|story) and a lower-cased branch-safe {slug}, then refuses a result that is empty, over 200 characters, has disallowed characters, a leading/trailing/doubled slash (an empty slug), '..', a '.lock' or trailing '.' or a dot-leading part; the HandoffCheckpoint types (RunCheckpoint with runId, epicKey, stage, intent without repoPath/repoIndexedAt, executor without intent at awaiting_llm_step, stepOutputs at awaiting_synthesize, owner, upstream; DraftCheckpoint; common schemaVersion 1, unit, parkedBy, parkedAt, sourceHead, repositoryId, artifactPaths); isUnitArtifactPath (only the unit's own .insrc/artifacts JSON ids, or markdown in the unit's work-item folder, with the Story's S<nnn> folder for a Story and not a Story folder for an Epic; absolute paths, '..' and backslashes are never the unit's); validateCheckpoint (schema version, kind, unit match incl. storyId, string fields, every parked path, and for runs the stage, intent with no machine paths, upstream list, executor iff awaiting_llm_step, stepOutputs iff awaiting_synthesize), each failure naming the field; rebindCheckpoint (version 1 payload with startedAtMs = now, repoPath and repoIndexedAt on the payload intent AND on the executor intent, executor/stepOutputs by stage); inferStageWorkflow (Epic: HLD present means complete else design.epic; Story: no LLD design.story, LLD without PLAN plan, both complete). repo-fields.ts: the branchPattern row gets default 'insrc/handoff/{type}-{id}', a description that says a parked draft goes to it and {id} is required, and loses the not-used-yet note (grammar unchanged). handoff-pure.test.ts has the three named tests. Because that row is pinned elsewhere I updated the shared fixture src/config/__tests__/fixtures/repo-fields-catalog.json, repo-fields.test.ts and settings-modal.test.ts (branchPattern now has no note and has the default); config 149, cli, daemon repo-settings and team suites pass; tsc clean. Note for the IDE repo: it mirrors that fixture.
+Both findings fixed. (1) isUnitArtifactPath now accepts only a path already in normal form: posix.normalize(path) must equal the path and no segment may be empty, '.' or '..' (plus the existing absolute, drive-letter and backslash refusals), so 'docs/epics/<item>/./S001/LLD.md', '<item>//S001/LLD.md' and '.insrc/artifacts/./<id>.json' are refused; the checkpoint test lists those four forms for both the run and the draft variant, and the draft variant now also has its own kind, storyId-mismatch, epic-vs-story and empty-field cases. (2) inferStageWorkflow now counts an artifact only when it is committed at HEAD (git cat-file -e HEAD:<relative path> through runGit), so a draft that exists only in the working tree is not a completed stage. The named test runs in a real temporary git repository: an HLD present but uncommitted still gives design.epic, committing it gives complete; a committed LLD gives plan; an uncommitted PLAN still gives plan; committing it gives complete; an Epic being complete does not complete a Story. Everything else is as submitted; the handoff-pure test (3 tests) passes and tsc is clean.
 
 ## Tasks validated
 
@@ -21,18 +21,18 @@ New src/workflow/team/handoff.ts (pure; no git, tracker or store): DEFAULT_BRANC
 
 ## Changes
 
-- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
-- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T17:33:11.671Z)
+- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)
+- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T17:35:02.752Z)

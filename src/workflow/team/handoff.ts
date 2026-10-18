@@ -178,13 +178,39 @@ export function validateCheckpoint(raw: unknown, unit: HandoffUnit): CheckpointC
 // Rebinding
 // ---------------------------------------------------------------------------
 
+/** Stands for the parker's repository root inside a checkpoint; rebinding writes the receiving clone's path in its place. */
+export const REPO_ROOT_TOKEN = '<repo-root>';
+
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** A deep copy of `value` with every string passed through `fn` (objects and arrays are walked; other values are kept). */
+function mapStrings<T>(value: T, fn: (text: string) => string): T {
+	if (typeof value === 'string') return fn(value) as T;
+	if (Array.isArray(value)) return value.map(v => mapStrings(v, fn)) as T;
+	if (isObject(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, mapStrings(v, fn)])) as T;
+	return value;
+}
+
+/**
+ * `value` with the parker's absolute repository path replaced, wherever it appears in a string, by REPO_ROOT_TOKEN. Park runs
+ * a run's params, executor state and step outputs through this, so a checkpoint never carries the parker's machine path
+ * (a step output may quote a file by its full path). A longer name that merely starts with the path (repo2, repo.v2) is left alone; a path that ends a sentence is replaced.
+ */
+export function portablePaths<T>(value: T, parkerRepoPath: string): T {
+	if (parkerRepoPath.length === 0) return value;
+	const re = new RegExp(`${escapeRegExp(parkerRepoPath.replace(/\/+$/, ''))}(?![A-Za-z0-9_-]|\\.[A-Za-z0-9])`, 'g');
+	return mapStrings(value, text => text.replace(re, REPO_ROOT_TOKEN));
+}
+
 /**
  * A runnable payload for the receiving clone from a validated run checkpoint: the payload intent and the executor intent both get the
- * receiving repo's path and index watermark, and the run's clock starts now. Nothing from the parker's machine is left in the fields
- * the daemon reads (the checkpoint never stored them).
+ * receiving repo's path and index watermark, the run's clock starts now, and every REPO_ROOT_TOKEN a park left in the params, the
+ * executor state or the step outputs becomes the receiving clone's path. Nothing from the parker's machine is left in the payload.
  */
 export function rebindCheckpoint(checkpoint: RunCheckpoint, binding: { readonly repoPath: string; readonly repoIndexedAt: number | null; readonly now: number }): WorkflowStepStatePayload {
-	const intent: WorkflowIntent = { ...checkpoint.intent, repoPath: binding.repoPath, repoIndexedAt: binding.repoIndexedAt };
+	// every REPO_ROOT_TOKEN, in the params, the executor state and the step outputs, becomes the receiving clone's path
+	const local = <V>(v: V): V => mapStrings(v, text => text.split(REPO_ROOT_TOKEN).join(binding.repoPath));
+	const intent: WorkflowIntent = { ...local(checkpoint.intent), repoPath: binding.repoPath, repoIndexedAt: binding.repoIndexedAt };
 	return {
 		version:     1,
 		runId:       checkpoint.runId,
@@ -192,8 +218,8 @@ export function rebindCheckpoint(checkpoint: RunCheckpoint, binding: { readonly 
 		startedAtMs: binding.now,
 		intent,
 		stage:       checkpoint.stage,
-		...(checkpoint.stage === 'awaiting_llm_step' && checkpoint.executor !== undefined ? { executor: { ...checkpoint.executor, intent } } : {}),
-		...(checkpoint.stage === 'awaiting_synthesize' && checkpoint.stepOutputs !== undefined ? { stepOutputs: checkpoint.stepOutputs } : {}),
+		...(checkpoint.stage === 'awaiting_llm_step' && checkpoint.executor !== undefined ? { executor: { ...local(checkpoint.executor), intent } } : {}),
+		...(checkpoint.stage === 'awaiting_synthesize' && checkpoint.stepOutputs !== undefined ? { stepOutputs: local(checkpoint.stepOutputs) } : {}),
 	};
 }
 

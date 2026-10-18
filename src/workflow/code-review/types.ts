@@ -52,6 +52,21 @@ export interface DimensionFinding {
 	readonly counterpartRef?: string | undefined;
 	/** conventions: a signal sampled from too few examples is an observation, not a breach. */
 	readonly confidence?: 'observation' | 'breach' | undefined;
+	/** coverage (ISSUE-b47dadc7): what the finding is about. */
+	readonly findingKind?: CoverageFindingKind | undefined;
+	/** coverage: the entityId of the prepared symbol a 'symbol-coverage' finding names. */
+	readonly symbolId?: string | undefined;
+}
+
+/** What a coverage finding is about (ISSUE-b47dadc7). */
+export type CoverageFindingKind = 'symbol-coverage' | 'promised-test' | 'other';
+
+/** A coverage HIGH lowered to LOW because its evidence does not support a breach. */
+export interface LoweredFinding {
+	readonly location: string;
+	readonly reason:   string;
+	readonly symbolId?: string | undefined;
+	readonly expectationRef?: string | undefined;
 }
 
 /** All findings one dimension produced for a Story. */
@@ -70,6 +85,9 @@ export interface DimensionResult {
 	 * this field existed.
 	 */
 	readonly outOfScope?: readonly DimensionFinding[] | undefined;
+	/** Coverage HIGHs lowered to LOW, each with why (ISSUE-b47dadc7). Not part of
+	 *  the verdict beyond the lowered severity; omitted when nothing was lowered. */
+	readonly lowered?: readonly LoweredFinding[] | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +113,12 @@ export interface ChangedSymbolSummary {
 	 *  function, method or class in a non-test file. Absent on a diff-review row
 	 *  and on summaries built before the field existed. */
 	readonly coverageEligible?: boolean | undefined;
+	/** The coverage judge's evidence class for an eligible symbol (ISSUE-b47dadc7). */
+	readonly coverageEvidence?: CoverageEvidence | undefined;
 }
+
+/** How far the graph and the Story's test record show a symbol is exercised. */
+export type CoverageEvidence = 'reached-passing' | 'reached-not-passing' | 'no-edge-story-tests-pass' | 'no-edge-no-tests';
 
 /** What every judge slot is told about the run (ISSUE-b47dadc7). */
 export interface JudgeContext {

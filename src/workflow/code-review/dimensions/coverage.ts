@@ -28,11 +28,22 @@
  *     the grounding is already scoped to the Story's own symbols, plus the shared
  *     changedFiles scope-drop; and
  *   - runs no tests and modifies no file on disk (read-only; S001 ac5).
+ *
+ * Evidence classes (ISSUE-b47dadc7): {@link prepareCoverageGrounding} keeps only
+ * the coverage-eligible symbols and gives each one class from its testsReaching
+ * edges and the Story's test record; {@link normalizeCoverageFindings} then keeps
+ * a HIGH only for a test the approved plan promised or a symbol with no edge and
+ * no passing Story test file, and lowers every other HIGH to LOW with the reason.
+ * The controller path uses the same two helpers.
  */
 
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import { validateAgainstSchema, type StructuredCall, type StructuredValidator } from '../../../agent/providers/structured-output.js';
-import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, ReviewDimension } from '../types.js';
+import type {
+	ChangedSymbolSummary, CodeReviewSubject, CodeReviewGrounding, CoverageEvidence, CoverageFindingKind,
+	DimensionResult, DimensionFinding, JudgeContext, LoweredFinding, ReviewDimension,
+} from '../types.js';
+import { isCoverageEligible } from '../grounding.js';
 import { testRecordView } from './test-record-view.js';
 
 const DIMENSION: ReviewDimension = 'coverage';
@@ -50,6 +61,8 @@ interface CoverageOutput {
 		readonly message:  string;
 		readonly expectationRef?: string;
 		readonly confidence?: 'breach' | 'observation';
+		readonly findingKind: CoverageFindingKind;
+		readonly symbolId?: string;
 	}[];
 }
 
@@ -67,13 +80,15 @@ export const COVERAGE_FINDINGS_SCHEMA: StructuredSchema = {
 			items: {
 				type: 'object',
 				additionalProperties: false,
-				required: ['severity', 'location', 'message'],
+				required: ['severity', 'location', 'message', 'findingKind'],
 				properties: {
 					severity:       { type: 'string', enum: ['HIGH', 'MED', 'LOW'] },
 					location:       { type: 'string' },   // `file:line` inside the changed set
 					message:        { type: 'string' },
 					expectationRef: { type: 'string' },   // the uncovered symbol / missing promised test
 					confidence:     { type: 'string', enum: ['breach', 'observation'] },
+					findingKind:    { type: 'string', enum: ['symbol-coverage', 'promised-test', 'other'] },
+					symbolId:       { type: 'string' },   // the listed symbol's entityId (symbol-coverage)
 				},
 			},
 		},
@@ -82,7 +97,7 @@ export const COVERAGE_FINDINGS_SCHEMA: StructuredSchema = {
 
 /** Flatten the approved plan's promised per-task tests into a flat list the
  *  prompt can name (ac1). Tolerates a plan stub whose tasks/tests are absent. */
-function promisedTestsOf(subject: CodeReviewSubject): { level?: string; name: string }[] {
+export function promisedTestsOf(subject: CodeReviewSubject): { level?: string; name: string }[] {
 	// A null approvedPlan (mode B/C) has no promised tests. Guard the null
 	// BEFORE the cast — the cast only tolerated a missing body.tasks, not a
 	// genuinely absent plan.
@@ -93,6 +108,102 @@ function promisedTestsOf(subject: CodeReviewSubject): { level?: string; name: st
 		for (const tr of t.tests ?? []) out.push(tr);
 	}
 	return out;
+}
+
+/** The test file of a `<test file>#<caller>` testsReaching entry. */
+function reachingFile(entry: string): string {
+	const i = entry.lastIndexOf('#');
+	return i >= 0 ? entry.slice(0, i) : entry;
+}
+
+/** One symbol's evidence class: edges and a passing reaching file; edges
+ *  otherwise; no edge but a passing Story test file; no edge and nothing passing. */
+function evidenceOf(symbol: ChangedSymbolSummary, passingFiles: ReadonlySet<string>): CoverageEvidence {
+	if (symbol.testsReaching.length > 0) {
+		return symbol.testsReaching.some(t => passingFiles.has(reachingFile(t))) ? 'reached-passing' : 'reached-not-passing';
+	}
+	return passingFiles.size > 0 ? 'no-edge-story-tests-pass' : 'no-edge-no-tests';
+}
+
+/**
+ * The grounding the coverage dimension judges (ISSUE-b47dadc7): only the
+ * coverage-eligible symbols, each with its evidence class. A symbol without the
+ * eligibility flag (a grounding from before it existed) is classified by kind and
+ * file. With no test record, or one with no passing file, an edge-free symbol is
+ * 'no-edge-no-tests'. A diff review ('degraded') has no symbols to grade.
+ */
+export function prepareCoverageGrounding(
+	subject:       CodeReviewSubject,
+	grounding:     CodeReviewGrounding,
+	groundingMode: 'full' | 'degraded',
+): CodeReviewGrounding {
+	if (groundingMode === 'degraded') return { symbols: [] };
+	const view = testRecordView(subject);
+	const passingFiles = new Set((view?.files ?? []).filter(f => f.state === 'passing').map(f => f.file));
+	return {
+		symbols: grounding.symbols
+			.filter(s => s.coverageEligible ?? isCoverageEligible(s.kind, s.file))
+			.map(s => ({ ...s, coverageEligible: true, coverageEvidence: evidenceOf(s, passingFiles) })),
+	};
+}
+
+/** Why a coverage HIGH may not stand, or undefined when it may. */
+function whyLowered(f: DimensionFinding, prepared: CodeReviewGrounding, promised: ReadonlySet<string>): string | undefined {
+	switch (f.findingKind) {
+		case 'promised-test': {
+			const ref = f.expectationRef?.trim() ?? '';
+			if (promised.has(ref)) return undefined;
+			return promised.size === 0
+				? 'no plan was approved, so no test was promised'
+				: `"${ref}" is not a test the approved plan promised`;
+		}
+		case 'symbol-coverage': {
+			if (f.symbolId === undefined) return 'the finding names no symbolId';
+			const matches = prepared.symbols.filter(s => s.entityId === f.symbolId);
+			if (matches.length === 0) {
+				return prepared.symbols.length === 0
+					? 'no symbol is graded in this review (a diff review cannot grade symbol coverage)'
+					: `symbolId ${f.symbolId} is not a listed symbol`;
+			}
+			if (matches.length > 1) return `symbolId ${f.symbolId} matches ${matches.length} listed symbols`;
+			const evidence = matches[0]!.coverageEvidence;
+			return evidence === 'no-edge-no-tests' ? undefined : `the symbol's evidence is ${evidence ?? 'unknown'}, not no-edge-no-tests`;
+		}
+		case 'other':
+			return 'only a promised test or a symbol with no edge and no passing test may be HIGH';
+		default:
+			return 'the finding has no findingKind';
+	}
+}
+
+/**
+ * Keep a coverage HIGH only when it is a test the approved plan promised, or a
+ * symbol whose evidence is 'no-edge-no-tests'; lower every other HIGH to LOW /
+ * 'observation' and record why on the result (ISSUE-b47dadc7). Non-HIGH findings
+ * are unchanged. Used by the daemon judge and the controller path alike.
+ */
+export function normalizeCoverageFindings(
+	result:   DimensionResult,
+	prepared: CodeReviewGrounding,
+	subject:  CodeReviewSubject,
+): DimensionResult {
+	const promised = new Set(promisedTestsOf(subject).map(t => t.name.trim()));
+	const lowered: LoweredFinding[] = [];
+	const findings = result.findings.map((f): DimensionFinding => {
+		if (f.severity !== 'HIGH') return f;
+		const reason = whyLowered(f, prepared, promised);
+		if (reason === undefined) return f;
+		lowered.push({
+			location: f.location, reason,
+			...(f.symbolId !== undefined ? { symbolId: f.symbolId } : {}),
+			...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
+		});
+		return { ...f, severity: 'LOW', confidence: 'observation' };
+	});
+	return {
+		...result, findings,
+		...(lowered.length > 0 ? { lowered: [...(result.lowered ?? []), ...lowered] } : {}),
+	};
 }
 
 /** The pass-state evidence for ac3: the Story's test record, per file from its
@@ -117,17 +228,22 @@ export function buildCoveragePrompt(
 	subject:   CodeReviewSubject,
 	grounding: CodeReviewGrounding,
 	extraNote: string | undefined,
+	opts?:     { readonly groundingMode?: 'full' | 'degraded' | undefined },
 ): LLMMessage[] {
 	const hasPlan = subject.approvedPlan !== null;
+	const degraded = opts?.groundingMode === 'degraded';
 	const system = [
 		'You are an independent code reviewer judging COVERAGE: whether a Story\'s new/changed behaviour is actually exercised by passing tests.',
-		'For each changed symbol, use its `testsReaching` edges (tests that reach it) as the ground-truth: a changed symbol with an EMPTY testsReaching is a not-exercised gap — report it HIGH with the symbol named in `expectationRef` and confidence:"breach".',
+		degraded
+			? 'This is a DIFF review: there is no graph, so symbol coverage CANNOT be graded and no symbols are listed. Judge ONLY the promised tests against the test-record results; do NOT report any not-exercised or symbol-coverage finding.'
+			: 'Each listed symbol (a function, method or class in a non-test file) carries its `entityId` and a `coverageEvidence` class, computed from its `testsReaching` edges and the Story\'s test record. Grade it by that class: "no-edge-no-tests" (no test reaches it and no Story test file passes) is a not-exercised gap — report it HIGH, findingKind:"symbol-coverage", `symbolId` set to its entityId, confidence:"breach"; "no-edge-story-tests-pass" (the graph shows no edge, but the Story\'s test files pass) may be reported only as an observation (LOW/MED, confidence:"observation"), because the graph may have missed the edge; "reached-passing" needs no finding; "reached-not-passing" is present-but-failing/unverified (confidence:"observation").',
+		'Every finding carries `findingKind`: "symbol-coverage" for a finding about a listed symbol (with its `symbolId`), "promised-test" for a finding about a test the plan promised (naming it in `expectationRef` exactly as listed), "other" for anything else. Only a "promised-test" finding naming a promised test, or a "symbol-coverage" finding on a "no-edge-no-tests" symbol, may be HIGH.',
 		// The promised-tests rule applies ONLY when a plan was approved. With no
 		// plan there is no promised-tests list, so judge testsReaching coverage
 		// of the changed symbols only and never report a "missing promised test".
 		hasPlan
-			? 'For each test the approved plan PROMISED (listed below), report whether it is present or missing. A promised test with no corresponding test in the grounding is a HIGH missing-promised-test finding naming the test in `expectationRef`, confidence:"breach".'
-			: 'No plan was approved, so there is no promised-tests list — judge the testsReaching coverage of the changed symbols ONLY; do NOT report any missing-promised-test finding.',
+			? 'For each test the approved plan PROMISED (listed below), report whether it is present or missing. A promised test with no corresponding test in the grounding is a HIGH missing-promised-test finding, findingKind:"promised-test", naming the test in `expectationRef`, confidence:"breach".'
+			: 'No plan was approved, so there is no promised-tests list — judge the coverage of the listed symbols ONLY; do NOT report any missing-promised-test finding.',
 		'DISTINGUISH a test that is present but does NOT pass (or whose pass-state cannot be confirmed) from a wholly-missing test: the former is a distinct finding with confidence:"observation" and a message saying "present but failing/unverified" — NOT reported as "no test". Never assert a pass-state the test record does not support.',
 		'Each `testsReaching` entry is `<test file>#<caller>`: the caller is the function in that test file that reaches the symbol, often a helper rather than a test, so NEVER match the caller name against test titles. Judge a reaching entry by its TEST FILE in the test-record results below: a file whose state is passing means the symbol is exercised by passing tests; a file whose state is failing is present-but-failing; a file whose state is unverified, or a test file the record does not list, is unverified. A title listed under notInLatestRun, or a failing or skipped title, is unverified or present-but-failing in the same way. With no test record, every pass-state is unverified.',
 		hasPlan
@@ -140,15 +256,17 @@ export function buildCoveragePrompt(
 	// Structural payload trailing: the changed symbols (with testsReaching), then
 	// the promised tests + test-record results, then the output-shape reminder — last.
 	const user = [
-		'## The Story\'s changed symbols (structured summaries with their test-reaching edges)',
-		'```json', JSON.stringify(grounding.symbols, null, 2), '```',
+		...(degraded
+			? ['## The Story\'s changed symbols', 'None listed: this is a diff review, so symbol coverage cannot be graded.']
+			: ['## The Story\'s changed symbols (functions, methods and classes in non-test files, each with its entityId, test-reaching edges and coverageEvidence)',
+				'```json', JSON.stringify(grounding.symbols, null, 2), '```']),
 		hasPlan
 			? '## The approved plan\'s promised tests (each should be present and passing)'
 			: '## The approved plan\'s promised tests (none — no plan was approved)',
 		'```json', JSON.stringify(promisedTestsOf(subject), null, 2), '```',
 		testRecordSection(subject),
 		'## Output',
-		'Return { "findings": [ { "severity": "HIGH|MED|LOW", "location": "file:line", "message": "...", "expectationRef": "the uncovered symbol or missing promised test", "confidence": "breach|observation" } ] }.',
+		'Return { "findings": [ { "severity": "HIGH|MED|LOW", "location": "file:line", "message": "...", "findingKind": "symbol-coverage|promised-test|other", "symbolId": "the listed symbol\'s entityId (symbol-coverage)", "expectationRef": "the uncovered symbol or missing promised test", "confidence": "breach|observation" } ] }.',
 		'Each finding.location MUST be a file within the Story\'s changed set. Return an empty findings array if the changed behaviour is fully covered.',
 	].join('\n');
 
@@ -173,11 +291,14 @@ export async function judgeCoverage(
 	subject:   CodeReviewSubject,
 	grounding: CodeReviewGrounding,
 	provider:  LLMProvider,
+	context?:  JudgeContext,
 ): Promise<DimensionResult> {
 	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
+	const groundingMode = context?.groundingMode ?? 'full';
+	const prepared = prepareCoverageGrounding(subject, grounding, groundingMode);
 
 	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildCoveragePrompt(subject, grounding, note), COVERAGE_FINDINGS_SCHEMA, { cwd: subject.repoPath });
+		provider.completeStructured<unknown>(buildCoveragePrompt(subject, prepared, note, { groundingMode }), COVERAGE_FINDINGS_SCHEMA, { cwd: subject.repoPath });
 
 	const validate: StructuredValidator<CoverageOutput> = (raw) =>
 		validateAgainstSchema<CoverageOutput>(COVERAGE_FINDINGS_SCHEMA, raw);
@@ -197,7 +318,9 @@ export async function judgeCoverage(
 			message:   f.message,
 			...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
 			...(f.confidence     !== undefined ? { confidence:     f.confidence     } : {}),
+			findingKind: f.findingKind,
+			...(f.symbolId       !== undefined ? { symbolId:       f.symbolId       } : {}),
 		}));
 
-	return { dimension: DIMENSION, findings };
+	return normalizeCoverageFindings({ dimension: DIMENSION, findings }, prepared, subject);
 }

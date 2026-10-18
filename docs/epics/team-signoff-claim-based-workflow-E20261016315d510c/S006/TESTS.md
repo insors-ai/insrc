@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -202,3 +202,19 @@ Run at 2026-10-18T19:41:34.369Z on commit `e4928c76`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts` | 0 | 1 | 0.9 s |  |
+
+## t11
+
+Run at 2026-10-18T19:43:54.346Z on commit `1aaa00f4`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/mcp/__tests__/park-resume-phases.test.ts: an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases | `src/mcp/__tests__/park-resume-phases.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/mcp/__tests__/park-resume-phases.test.ts` | 0 | 1 | 2 s |  |

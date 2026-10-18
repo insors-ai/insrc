@@ -322,7 +322,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Only for phase=start. Natural-language framing of what to analyze.')
 					.optional(),
 				repo: z.string()
-					.describe('For phase=start / park / resume. Absolute repo path; falls back to INSRC_REPO env.')
+					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
 				target: z.enum(['code', 'docs', 'data', 'infra', 'generic'])
 					.describe('Only for phase=start. Optional target hint.')
@@ -475,7 +475,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Only for phase=start. Natural-language framing of the ask.')
 					.optional(),
 				repo: z.string()
-					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
+					.describe('For phase=start / park / resume. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
 				epicHash: z.string()
 					.describe('Only for phase=park / resume. The Epic\'s hash.')

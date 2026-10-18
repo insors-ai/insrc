@@ -68,7 +68,7 @@
 				},
 				"repo": {
 					"type": "string",
-					"description": "For phase=start / park / resume. Absolute repo path; falls back to INSRC_REPO env."
+					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
 				},
 				"target": {
 					"type": "string",
@@ -748,7 +748,7 @@
 				},
 				"repo": {
 					"type": "string",
-					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+					"description": "For phase=start / park / resume. Absolute repo path; falls back to INSRC_REPO env."
 				},
 				"epicHash": {
 					"type": "string",

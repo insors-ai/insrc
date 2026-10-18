@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T19:41:34.369Z",
+    "updatedAt": "2026-10-18T19:43:54.346Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -486,6 +486,42 @@
             "titles": [
               {
                 "title": "the park and resume phases and the team.park and team.resume operations reach the run store, return the park result or the next turn, and map a gate refusal to team-gate-refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "1aaa00f4",
+        "ranAt": "2026-10-18T19:43:54.346Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/mcp/__tests__/park-resume-phases.test.ts: an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/park-resume-phases.test.ts",
+                "title": "an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/park-resume-phases.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1998,
+            "titles": [
+              {
+                "title": "an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases",
                 "result": "pass"
               }
             ],

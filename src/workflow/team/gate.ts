@@ -21,7 +21,7 @@ import { loadTracker } from '../tracker/github-adapter.js';
 import type { Capability, IssueRef, PortResult, SignoffRequestRef, TrackerPort } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
 import { ensureUnitIssue, resolveUnitIssueLocal, unitKey } from '../tracker/unit-issue.js';
-import { artifactJsonPath, defineArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
+import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
 import { policyReader } from './policy-reader.js';
 import type { PolicyReader } from './types.js';
 
@@ -150,12 +150,21 @@ export function claimsEnforcedFor(repo: string): 'yes' | 'no' | string {
 	} catch (err) { return `the team policy cannot be read: ${errorText(err)}`; }
 }
 
-/** The unit's own artifact (Define, LLD or plan) is on disk. */
-function unitArtifactExists(unit: UnitRef): boolean {
+/**
+ * The artifact being authored is on disk. `authoring` names the workflow that writes it (an HLD is
+ * written against the Epic unit, a plan against the Story unit, so the unit's own artifact is the wrong
+ * one to look for); without it the unit's own artifact (Define, LLD or plan) is looked for.
+ */
+function authoredArtifactExists(unit: UnitRef, authoring: string | undefined): boolean {
 	if (testDeps.artifactExists !== undefined) return testDeps.artifactExists(unit);
-	const id = unit.unit === 'epic' ? defineArtifactId(unit.epicHash)
-		: unit.unit === 'story' ? lldArtifactId(unit.epicHash, unit.storyId ?? '')
-		: planArtifactId(unit.epicHash, unit.storyId ?? '');
+	const story = unit.storyId ?? '';
+	const id = authoring === 'define' ? defineArtifactId(unit.epicHash)
+		: authoring === 'design.epic' ? hldArtifactId(unit.epicHash)
+		: authoring === 'design.story' ? lldArtifactId(unit.epicHash, story)
+		: authoring === 'plan' ? planArtifactId(unit.epicHash, story)
+		: unit.unit === 'epic' ? defineArtifactId(unit.epicHash)
+		: unit.unit === 'story' ? lldArtifactId(unit.epicHash, story)
+		: planArtifactId(unit.epicHash, story);
 	return existsSync(artifactJsonPath(unit.repoPath, id));
 }
 
@@ -194,13 +203,13 @@ export function readHolder(ctx: Extract<TeamContext, { team: true }>, unit: Unit
  * May `action` change this stage unit? Allowed with no tracker call outside team mode;
  * otherwise the live assignee decides. Never throws.
  */
-export function teamGate(repo: string, unit: UnitRef, action: GuardedAction): GateOutcome {
+export function teamGate(repo: string, unit: UnitRef, action: GuardedAction, authoring?: string): GateOutcome {
 	try {
 		if (!GUARDED.has(action)) return allowed();
 		const ctx = teamContext(repo, unit);
 		if (!ctx.ok) {
 			// The one exception: the first author turn of a stage that has no artifact yet can be written without its issue
-			if (ctx.noIssue === true && ctx.outcome.kind === 'no-issue' && action === 'author' && !unitArtifactExists(unit)) {
+			if (ctx.noIssue === true && ctx.outcome.kind === 'no-issue' && action === 'author' && !authoredArtifactExists(unit, authoring)) {
 				return logOutcome(unit, action, { ...ctx.outcome, allowFirstAuthor: true });
 			}
 			return logOutcome(unit, action, ctx.outcome);

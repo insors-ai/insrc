@@ -165,3 +165,42 @@ test('build with no policy behaves as before and never touches the tracker', asy
 		assert.equal(seen.reads, 0);
 	} finally { fx.cleanup(); }
 });
+
+test('validate asks the gate again before each record it writes: a claim that moved to someone else meanwhile refuses the write', async () => {
+	const fx = mkGit();
+	try {
+		seedEpic(fx, { s1: ['t1'] });
+		approvePlansInOneSweep(fx, ['s1']);
+		const records = (): string[] => [`BUILD-${HASH}-s1.json`, `TESTS-${HASH}-s1.json`].filter(f => existsSync(join(fx.repo, ARTIFACTS_DIR, f)));
+		const passing = { ok: true, command: 'x', exitCode: 0, timedOut: false, durationMs: 1, outputTail: '' };
+		const flipAfter = (asks: number): { reads: () => number } => {
+			let reads = 0;
+			const port = {
+				whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
+				readAssignee: (): PortResult<string | null> => { reads += 1; return { ok: true, value: reads <= asks ? 'alice' : 'bob' }; },
+				addAssignee: (): PortResult<string[]> => ({ ok: true, value: ['alice'] }),
+			} as unknown as TrackerPort;
+			_setGateDepsForTests({
+				readPolicy: team, loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#7',
+				ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }), artifactExists: () => true,
+			});
+			_setBuildValidateCheckRunnerForTests(async () => ({ typecheck: passing, tests: passing }));
+			_setBuildValidateProviderForTests({ runReviewSession: async () => ({ taskId: 't1', passed: true, checks: [], scopeRespected: true, reason: 'ok' }) } as never);
+			return { reads: () => reads };
+		};
+
+		// the claim moves while the checks run: refused before the test record is written
+		flipAfter(1);
+		const early = out(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo: fx.repo }));
+		assert.equal(errorOf(early).code, 'team-gate-refused', JSON.stringify(early));
+		assert.match(errorOf(early).message ?? '', /held by bob/);
+		assert.deepEqual(records(), [], 'no record was written');
+
+		// the claim moves while the judge runs: the test record stands, the BUILD record is not written
+		const late = flipAfter(2);
+		const res = out(await handleBuildStep({ phase: 'validate', target: 's1/t1', repo: fx.repo }));
+		assert.equal(errorOf(res).code, 'team-gate-refused', JSON.stringify(res));
+		assert.ok(late.reads() >= 3);
+		assert.ok(!records().includes(`BUILD-${HASH}-s1.json`), 'the BUILD record was not written');
+	} finally { fx.cleanup(); }
+});

@@ -26,7 +26,7 @@ export interface ApprovalRefusal {
 	readonly subject: string | undefined;
 }
 
-interface Meta { workflow?: string; repoPath?: string; epicHash?: string; storyId?: string; standalone?: boolean }
+interface Meta { workflow?: string | undefined; repoPath?: string | undefined; epicHash?: string | undefined; storyId?: string | undefined; standalone?: boolean | undefined }
 
 /** The workflow a claim-unit artifact belongs to, from its file name, for an artifact whose meta does not say. */
 const WORKFLOW_BY_PREFIX: Readonly<Record<string, string>> = { 'DEF-': 'define', 'HLD-': 'design.epic', 'LLD-': 'design.story', 'PLAN-': 'plan' };
@@ -36,7 +36,7 @@ const STORY_WORKFLOWS: ReadonlySet<string> = new Set(['design.story', 'plan']);
 
 function readMeta(jsonPath: string): Meta | undefined {
 	try {
-		const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: Meta }).meta;
+		const meta = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: Meta | undefined }).meta;
 		return typeof meta === 'object' && meta !== null ? meta : undefined;
 	} catch { return undefined; }
 }
@@ -50,9 +50,10 @@ function taskIdsOf(repoPath: string, epicHash: string, storyId: string): { ok: t
 	if (!existsSync(path)) return { ok: true, ids: [] };
 	try {
 		const tasks = (JSON.parse(readFileSync(path, 'utf8')) as { body?: { tasks?: Array<{ id?: unknown; order?: unknown }> } }).body?.tasks;
-		if (tasks === undefined) return { ok: true, ids: [] };
-		if (!Array.isArray(tasks)) return { ok: false, reason: `the plan of Story ${storyId} has a malformed task list` };
-		return { ok: true, ids: [...tasks].sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)).map(t => t.id).filter((id): id is string => typeof id === 'string') };
+		if (!Array.isArray(tasks)) return { ok: false, reason: `the plan of Story ${storyId} has no task list` };
+		// every Task needs a usable id: dropping one would skip its claim
+		if (tasks.some(t => typeof t?.id !== 'string' || t.id.length === 0)) return { ok: false, reason: `the plan of Story ${storyId} has a task with no id` };
+		return { ok: true, ids: [...tasks].sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)).map(t => t.id as string) };
 	} catch (err) {
 		return { ok: false, reason: `the plan of Story ${storyId} cannot be read: ${err instanceof Error ? err.message : String(err)}` };
 	}

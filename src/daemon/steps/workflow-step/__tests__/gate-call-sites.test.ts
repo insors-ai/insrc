@@ -40,7 +40,7 @@ const none: PolicyReader = () => ({ ok: true, value: 'none' });
 
 interface Seen { loads: number; reads: number }
 
-function inject(holder: string | null, over: { readPolicy?: PolicyReader; issue?: string | null; artifact?: boolean } = {}): Seen {
+function inject(holder: string | null, over: { readPolicy?: PolicyReader | undefined; issue?: string | null | undefined; artifact?: boolean | undefined } = {}): Seen {
 	const seen: Seen = { loads: 0, reads: 0 };
 	const port = {
 		whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),

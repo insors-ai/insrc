@@ -37,7 +37,7 @@ export function authorUnitOf(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath
 export function assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): void {
 	const unit = authorUnitOf(intent);
 	if (unit === undefined) return;
-	const outcome = teamGate(intent.repoPath, unit, 'author');
+	const outcome = teamGate(intent.repoPath, unit, 'author', intent.workflow);
 	if (outcome.kind === 'allowed') return;
 	if (outcome.kind === 'no-issue' && outcome.allowFirstAuthor) return;   // the first draft is what creates the issue
 	throw new TeamGateRefusedError(outcome);

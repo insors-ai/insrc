@@ -392,6 +392,14 @@ async function runValidateSession(
 	const planned = withTypecheckProjects(repoPath, checks, resolveStoryRangeBase(repoPath, ident.epicHash, ident.storyId));
 	const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, planned);
 
+	// The checks and the judge take minutes, and the claim may have moved meanwhile: ask the gate again
+	// before each record this turn writes, so a non-holder never persists results.
+	const recheckGate = (): void => {
+		if (ident.epicHash.length === 0 || ident.storyId.length === 0) return;
+		assertMayBuild(repoPath, ident.standalone !== undefined ? { epicHash: ident.epicHash, storyId: ident.storyId } : ident);
+	};
+	recheckGate();
+
 	// ONE time and ONE resolved route flag for both of the Story's records.
 	const now = (clockOverride ?? (() => new Date().toISOString()))();
 	const identified = ident.epicHash.length > 0 && ident.storyId.length > 0;
@@ -465,6 +473,7 @@ async function runValidateSession(
 			return err('unparseable-verdict', `insrc_build_step[validate]: the judge's verdict is unusable: ${shapeError}.`);
 		}
 		const judge = judged as JudgeVerdict;
+		recheckGate();
 		const testsPassed = results.tests.ok;
 		const typecheckClean = results.typecheck.ok;
 		const passed = judge.passed && testsPassed && typecheckClean;

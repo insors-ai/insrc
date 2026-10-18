@@ -149,6 +149,22 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		assert.ok(!(free instanceof Error && /plan of Story/.test(free.message)), 'no policy: the plan is not even looked at');
 	});
 
+	// a plan with no task list, or with a task that has no usable id, is refused too: no Task claim is silently skipped
+	for (const [label, body, why] of [
+		['no task list', {}, /has no task list/],
+		['a task without an id', { tasks: [{ id: 't1', order: 1 }, { order: 2 }] }, /task with no id/],
+		['a task with a non-string id', { tasks: [{ id: 7, order: 1 }] }, /task with no id/],
+	] as const) {
+		await withRepo(async (repo, dir) => {
+			put(dir, `PLAN-${HASH}-s1.json`, { meta: { workflow: 'plan', repoPath: repo, epicHash: HASH, storyId: 's1' }, body, citations: [] });
+			const buildPath = join(dir, `BUILD-${HASH}-s1.json`);
+			inject({ 'story:s1': 'alice' });
+			const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath });
+			assert.match(out.skipped[0]?.reason ?? '', why, label);
+			assert.ok(!existsSync(buildPath), label);
+		});
+	}
+
 	// a Story with no Tasks is authorized against the Story unit
 	await withRepo(async (repo, dir) => {
 		put(dir, `PLAN-${HASH}-s1.json`, planDoc(repo, []));

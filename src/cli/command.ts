@@ -220,7 +220,7 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 				res = svc.workflow.resolveFinding(path, id, action as 'apply' | 'accept' | 'override' | 'defer', note.length > 0 ? note : undefined);
 			} catch (err) {
 				// Applying a finding changes the stage: a team repo refuses it for anyone but the holder.
-				if (err instanceof Error && err.name === 'TeamGateRefusedError') return [`✗ not applied — ${(err as { reason?: string }).reason ?? err.message}`];
+				if (err instanceof Error && err.name === 'TeamGateRefusedError') return [`✗ not applied — ${(err as { reason?: string | undefined }).reason ?? err.message}`];
 				throw err;
 			}
 			const tail = res.effectiveVerdict === 'block'
@@ -244,7 +244,7 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 					return [`✗ blocked by review (${(err as { summary?: string }).summary ?? 'findings'}) — run 'workflow review ${rest[0]}' to fix, or approve --override <reason>`];
 				}
 				if (err instanceof Error && err.name === 'TeamGateRefusedError') {
-					return [`✗ not approved — ${(err as { reason?: string }).reason ?? err.message}`];
+					return [`✗ not approved — ${(err as { reason?: string | undefined }).reason ?? err.message}`];
 				}
 				throw err;
 			}

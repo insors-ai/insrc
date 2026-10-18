@@ -12,6 +12,9 @@
 
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 import { _setGateDepsForTests, claim, registerCompletionHook, release, teamGate, type GateDeps, type GuardedAction } from '../gate.js';
 import type { PortFailureKind, PortResult, TrackerPort } from '../../tracker/port.js';
@@ -31,7 +34,7 @@ const none: PolicyReader = () => ({ ok: true, value: 'none' });
 interface Fake { port: TrackerPort; assignees: string[]; calls: string[] }
 
 /** An in-memory port: `assignees` is the issue's live assignee list. */
-function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureKind; failRead?: PortFailureKind; failAdd?: PortFailureKind; raceWith?: string; staleRead?: boolean; shared?: string[]; failSet?: PortFailureKind; failReread?: PortFailureKind } = {}): Fake {
+function fakePort(initial: string[], over: { me?: string | undefined; failWho?: PortFailureKind | undefined; failRead?: PortFailureKind | undefined; failAdd?: PortFailureKind | undefined; raceWith?: string | undefined; staleRead?: boolean | undefined; shared?: string[] | undefined; failSet?: PortFailureKind | undefined; failReread?: PortFailureKind | undefined } = {}): Fake {
 	const assignees = over.shared ?? [...initial];
 	const calls: string[] = [];
 	const port = {
@@ -70,7 +73,7 @@ function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureK
 	return { port, assignees, calls };
 }
 
-function inject(f: Fake | undefined, readPolicy: PolicyReader = policy(), extra: { issue?: string | null; ensure?: GateDeps['ensureIssue']; artifact?: boolean } = {}): { loads: number } {
+function inject(f: Fake | undefined, readPolicy: PolicyReader = policy(), extra: { issue?: string | null | undefined; ensure?: GateDeps['ensureIssue'] | undefined; artifact?: boolean | undefined } = {}): { loads: number } {
 	const seen = { loads: 0 };
 	_setGateDepsForTests({
 		readPolicy,
@@ -363,4 +366,31 @@ test('release clears the assignees for the holder and for an administrator, incl
 	registerCompletionHook(() => ({ kind: 'refused', reason: 'signoff pending' }));
 	inject(fakePort(['alice']));
 	assert.deepEqual(release('/repo', UNIT), { kind: 'refused', reason: 'signoff pending' });
+});
+
+test('the first-author exception looks for the artifact being authored, not the unit\'s own: a first HLD or plan is let through when its issue cannot be created', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-first-author-'));
+	try {
+		const hash = 'a3f4b8c9d1e2f3a4';
+		const dir = join(repo, '.insrc', 'artifacts');
+		mkdirSync(dir, { recursive: true });
+		// the Define and the Story's LLD exist; the HLD and the plan do not
+		writeFileSync(join(dir, `DEF-${hash}.json`), '{}');
+		writeFileSync(join(dir, `LLD-${hash}-s1.json`), '{}');
+		const down: GateDeps['ensureIssue'] = () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' });
+		inject(fakePort([]), policy(), { issue: null, ensure: down });
+		const epic: UnitRef = { unit: 'epic', repoPath: repo, epicHash: hash };
+		const story: UnitRef = { unit: 'story', repoPath: repo, epicHash: hash, storyId: 's1' };
+		const first = (o: ReturnType<typeof teamGate>): boolean => o.kind === 'no-issue' && o.allowFirstAuthor;
+
+		assert.ok(first(teamGate(repo, epic, 'author', 'design.epic')), 'the first HLD is let through although the Define exists');
+		assert.ok(first(teamGate(repo, story, 'author', 'plan')), 'the first plan is let through although the LLD exists');
+		// once the artifact being authored exists the exception is gone
+		writeFileSync(join(dir, `HLD-${hash}.json`), '{}');
+		writeFileSync(join(dir, `PLAN-${hash}-s1.json`), '{}');
+		assert.ok(!first(teamGate(repo, epic, 'author', 'design.epic')));
+		assert.ok(!first(teamGate(repo, story, 'author', 'plan')));
+		// with no workflow named, the unit's own artifact decides, as before
+		assert.ok(!first(teamGate(repo, epic, 'author')));
+	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

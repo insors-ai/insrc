@@ -1,0 +1,460 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792337301999-jyeceo",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-18T15:28:25.372Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 127860,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s5",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s5",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "src/cli/__tests__/command.test.ts",
+        "src/cli/__tests__/gate-refusal-output.test.ts",
+        "src/cli/__tests__/team-claim-release.test.ts",
+        "src/cli/__tests__/tui.test.ts",
+        "src/cli/command.ts",
+        "src/cli/services/index.ts",
+        "src/cli/services/team.ts",
+        "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts",
+        "src/daemon/steps/build-step/handler.ts",
+        "src/daemon/steps/build-step/phases/implement.ts",
+        "src/daemon/steps/build-step/phases/validate.ts",
+        "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts",
+        "src/daemon/steps/review-step/phases/verdicts.ts",
+        "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+        "src/daemon/steps/workflow-step/handler.ts",
+        "src/daemon/steps/workflow-step/phases/plan.ts",
+        "src/daemon/steps/workflow-step/phases/start.ts",
+        "src/daemon/steps/workflow-step/phases/step.ts",
+        "src/daemon/steps/workflow-step/phases/synthesize.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/workflow/__tests__/gate-approve.test.ts",
+        "src/workflow/__tests__/gate-guarded-entry-points.test.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/review/__tests__/gate-resolve-finding.test.ts",
+        "src/workflow/review/resolve.ts",
+        "src/workflow/review/run-artifact.ts",
+        "src/workflow/team/__tests__/gate.test.ts",
+        "src/workflow/team/__tests__/review-fix-decision.test.ts",
+        "src/workflow/team/approval-gate.ts",
+        "src/workflow/team/author-gate.ts",
+        "src/workflow/team/gate.ts",
+        "src/workflow/tracker/__tests__/github-adapter.test.ts",
+        "src/workflow/tracker/github-adapter.ts",
+        "src/workflow/tracker/port.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/team/gate.ts:156",
+            "message": "The first-author exception checks the unit's DEF or LLD instead of the artifact being authored. A first design.epic draft already has a DEF, and a first PLAN already has an LLD, so when issue creation fails these first drafts are refused despite having no artifact of their own. Pass the authoring stage into the existence check so the exception tests the target artifact.",
+            "expectationRef": "PLAN t3: allowFirstAuthor must be true for the first author turn of a stage with no issue and no artifact; PLAN t7: the first-author exception lets the first draft through."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/cli/command.ts:223",
+            "message": "The new error-shape assertion declares `reason?: string` without the required explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/cli/command.ts:247",
+            "message": "The new approval-error assertion declares `reason?: string` without the required explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/approval-gate.ts:28",
+            "message": "Every optional property in `Meta` omits the documented explicit `| undefined` union.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/approval-gate.ts:38",
+            "message": "The parsed artifact shape declares `meta?: Meta` without explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts:41",
+            "message": "The optional `readPolicy`, `issue`, and `artifact` properties omit explicit `| undefined` unions.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/__tests__/gate.test.ts:33",
+            "message": "The optional properties of the fake port's `over` argument omit the required explicit `| undefined` unions.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/__tests__/gate.test.ts:71",
+            "message": "The optional `issue` and `artifact` properties omit the required explicit `| undefined` unions.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/command.test.ts:83",
+            "message": "The changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/__tests__/command.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/gate-refusal-output.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded tests pass, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/cli/__tests__/gate-refusal-output.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/team-claim-release.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded test passes, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/cli/__tests__/team-claim-release.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/tui.test.ts:103",
+            "message": "The changed file symbol has empty testsReaching: not exercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/__tests__/tui.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/command.ts:215",
+            "message": "Empty testsReaching leaves the changed command parsing and refusal rendering unexercised under the supplied coverage contract. Passing related tests do not supply the missing edges.",
+            "expectationRef": "src/cli/command.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/index.ts:149",
+            "message": "Empty testsReaching leaves the new claim/release service wiring unexercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/services/index.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/team.ts:35",
+            "message": "Empty testsReaching leaves the new unit formatting and claim/release services unexercised under the supplied coverage contract.",
+            "expectationRef": "src/cli/services/team.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded tests pass, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/handler.ts:54",
+            "message": "Empty testsReaching leaves the new team-gate error translation unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/handler.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/phases/implement.ts:65",
+            "message": "Empty testsReaching leaves the planned and standalone build authorization changes unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/phases/implement.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/build-step/phases/validate.ts:218",
+            "message": "Empty testsReaching leaves the planned and standalone validation authorization changes unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/build-step/phases/validate.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded test passes, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/review-step/phases/verdicts.ts:94",
+            "message": "Empty testsReaching leaves the new report-only versus auto-fix decision unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/review-step/phases/verdicts.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded tests pass, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts:243",
+            "message": "The changed file symbol has empty testsReaching. The added test is recorded as passing, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/handler.ts:75",
+            "message": "Empty testsReaching leaves the new team-gate error translation unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/workflow-step/handler.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/phases/plan.ts:40",
+            "message": "Empty testsReaching leaves the new authorization before executor execution unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/workflow-step/phases/plan.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/phases/start.ts:60",
+            "message": "Empty testsReaching leaves the new authorization before the upstream-question gate unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/workflow-step/phases/start.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/phases/step.ts:38",
+            "message": "Empty testsReaching leaves the new authorization before executor resumption unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/workflow-step/phases/step.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/phases/synthesize.ts:40",
+            "message": "Empty testsReaching leaves the authorization checks before and after finalization unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/steps/workflow-step/phases/synthesize.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/workflow-rpc.ts:182",
+            "message": "Empty testsReaching leaves the new entry and pre-write authorization checks unexercised under the supplied coverage contract.",
+            "expectationRef": "src/daemon/workflow-rpc.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/gate-approve.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded test passes, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/workflow/__tests__/gate-approve.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/gate-guarded-entry-points.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded test passes, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/workflow/__tests__/gate-guarded-entry-points.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/gates.ts:603",
+            "message": "Empty testsReaching leaves approval authorization, refusal handling and authorization before BUILD record creation unexercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/gates.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/review/__tests__/gate-resolve-finding.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded test passes, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/workflow/review/__tests__/gate-resolve-finding.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/review/resolve.ts:106",
+            "message": "Empty testsReaching leaves authorization before applying a finding unexercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/review/resolve.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/review/run-artifact.ts:107",
+            "message": "Empty testsReaching leaves the new report-only versus auto-fix decision unexercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/review/run-artifact.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/gate.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded tests pass, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/workflow/team/__tests__/gate.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/review-fix-decision.test.ts:1",
+            "message": "The changed file symbol has empty testsReaching. Its recorded test passes, but no reaching edge establishes coverage of this symbol.",
+            "expectationRef": "src/workflow/team/__tests__/review-fix-decision.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/approval-gate.ts:1",
+            "message": "Empty testsReaching leaves the new artifact-to-unit authorization and review-fix policy unexercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/approval-gate.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/author-gate.ts:1",
+            "message": "Empty testsReaching leaves the new authoring/build unit resolution and authorization unexercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/author-gate.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts:1",
+            "message": "Empty testsReaching leaves the new team gate, completion hook, claim, release and review-fix behavior unexercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/team/gate.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/github-adapter.test.ts:327",
+            "message": "The changed file symbol has empty testsReaching. The promised addAssignee test is present and passing, but no reaching edge establishes coverage of this symbol. All other 18 promised tests are also present and passing in the supplied records; none is missing.",
+            "expectationRef": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/github-adapter.ts:119",
+            "message": "Empty testsReaching leaves the new addAssignee implementation and adapter wiring unexercised under the supplied coverage contract.",
+            "expectationRef": "src/workflow/tracker/github-adapter.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/port.ts:76",
+            "message": "The changed file symbol has empty testsReaching for the new addAssignee contract: not exercised under the supplied coverage rule.",
+            "expectationRef": "src/workflow/tracker/port.ts",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/team/approval-gate.ts:52",
+            "message": "Unhandled malformed-plan path: missing task lists become an empty list, and tasks with non-string IDs are silently discarded. BUILD approval can consequently check only the Story or a subset of Tasks instead of refusing an unreadable task identity. Validate every task ID and refuse malformed plans when claims are enforced.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/phases/validate.ts:218",
+            "message": "Correctness risk: ownership is checked before the asynchronous validation session, but no second check is shown before its BUILD record write. If ownership changes during checks or model review, validation can persist results after the actor loses the claim. Recheck at the persistence boundary, as the authoring routes already do.",
+            "counterpartRef": "",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/team/gate.ts:252",
+            "message": "Duplication: claim repeats teamGate's holder comparison, add-only assignment, failure handling and contention detection. Changes to claim verification must be maintained in both paths, risking different behavior for explicit and implicit claims. Extract the shared assignment decision while preserving their distinct outcome messages.",
+            "counterpartRef": "src/workflow/team/gate.ts:teamGate",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 35,
+      "med": 3,
+      "low": 8
+    }
+  }
+}

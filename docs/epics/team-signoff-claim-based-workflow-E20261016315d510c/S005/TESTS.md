@@ -86,7 +86,7 @@ Run at 2026-10-18T14:32:06.718Z on commit `cf59ff21`. Tests check: **passed**. 3
 
 ## t4
 
-Run at 2026-10-18T14:34:47.859Z on commit `202cc695`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T14:36:33.618Z on commit `c5e1e766`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/team/__tests__/gate.test.ts: claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused**
 
@@ -110,5 +110,5 @@ Run at 2026-10-18T14:34:47.859Z on commit `202cc695`. Tests check: **passed**. 3
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/team/__tests__/gate.test.ts` | 0 | 9 | 1.2 s |  |
-| `src/workflow/team/__tests__/review-fix-decision.test.ts` | 0 | 1 | 1.1 s |  |
+| `src/workflow/team/__tests__/gate.test.ts` | 0 | 9 | 1 s |  |
+| `src/workflow/team/__tests__/review-fix-decision.test.ts` | 0 | 1 | 0.9 s |  |

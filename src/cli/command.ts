@@ -234,6 +234,9 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 				if (err instanceof Error && err.name === 'ReviewBlockedError') {
 					return [`✗ blocked by review (${(err as { summary?: string }).summary ?? 'findings'}) — run 'workflow review ${rest[0]}' to fix, or approve --override <reason>`];
 				}
+				if (err instanceof Error && err.name === 'TeamGateRefusedError') {
+					return [`✗ not approved — ${(err as { reason?: string }).reason ?? err.message}`];
+				}
 				throw err;
 			}
 		}

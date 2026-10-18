@@ -63,6 +63,8 @@ import {
 	writeAtomic,
 } from './storage.js';
 import { ensureBuildRecordOnCompletion } from './runners/build/completion-record.js';
+import { authorizeApproval } from './team/approval-gate.js';
+import { TeamGateRefusedError } from './team/gate.js';
 
 // ---------------------------------------------------------------------------
 // Read + require-approved helpers
@@ -596,6 +598,11 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`Artifact at ${jsonPath} has no meta`);
 	}
+	// Team gate: in a team repo a stage held by someone else is not approved here. Refused before any
+	// review check or stamp; a repo with no policy is untouched.
+	const teamRefusal = authorizeApproval(jsonPath);
+	if (teamRefusal !== undefined) throw new TeamGateRefusedError(teamRefusal.outcome, teamRefusal.subject);
+
 	// Review gate: refuses approval while any HIGH/MED finding is UNRESOLVED
 	// (the effective verdict, after the interactive resolutions in R3), unless
 	// an explicit override reason is supplied. Auto-fixes + per-finding
@@ -835,6 +842,14 @@ export async function approveWorkflowTarget(
 	const skipped:    { path: string; reason: string }[] = [];
 	const codeReview: CodeReviewApprovalOutcome[] = [];
 
+	/** A BUILD target the team gate refuses goes to skipped[] before its record is created or merged. */
+	const refuseBeforeRecord = (jsonPath: string): boolean => {
+		const refusal = authorizeApproval(jsonPath);
+		if (refusal === undefined) return false;
+		skipped.push({ path: jsonPath, reason: new TeamGateRefusedError(refusal.outcome, refusal.subject).reason });
+		return true;
+	};
+
 	const approveOne = (jsonPath: string): void => {
 		// A test record carries an Epic and a Story in its meta, so without this it
 		// would be put through the code-review gate below and come back with that
@@ -870,6 +885,8 @@ export async function approveWorkflowTarget(
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
 				skipped.push({ path: jsonPath, reason: err.summary });
+			} else if (err instanceof TeamGateRefusedError) {
+				skipped.push({ path: jsonPath, reason: err.reason });
 			} else {
 				throw err;   // ArtifactMissingError / no-meta — surface, not skip
 			}
@@ -882,6 +899,8 @@ export async function approveWorkflowTarget(
 		// BUILD ledger record may not exist yet. CREATE-or-MERGE it from the changed
 		// set BEFORE the existsSync/approve so the artifact is present to stamp.
 		if (basename(jsonPath).startsWith('BUILD-')) {
+			// Authorize BEFORE the record is created or merged: a refused target changes nothing.
+			if (refuseBeforeRecord(jsonPath)) return { approved, skipped, codeReview };
 			const ref = buildRefFor(jsonPath);
 			if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
 		}
@@ -892,6 +911,7 @@ export async function approveWorkflowTarget(
 		if (pending.length === 0) throw new NoPendingArtifactsError(`No pending artifacts under epic ${req.epicHash} to approve`);
 		for (const p of pending) {
 			if (basename(p).startsWith('BUILD-')) {
+				if (refuseBeforeRecord(p)) continue;
 				const ref = buildRefFor(p);
 				if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
 			}

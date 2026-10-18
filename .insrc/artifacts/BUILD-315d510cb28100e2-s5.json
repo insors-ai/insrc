@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:34:47.859Z",
+    "updatedAt": "2026-10-18T14:36:33.618Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -25,10 +25,10 @@
       },
       {
         "id": "t4",
-        "passed": false
+        "passed": true
       }
     ],
-    "summary": "gate.ts gains claim, release, reviewFixDecision and ReviewFixMode. claim reads the holder, refuses another holder naming them, takes an unassigned stage only through addAssignee (never setAssignee), and refuses a failed add (state unknown) or a result with more than one assignee as contested, removing nobody; contention is reported when observed. release consults the hook once (a hook-originated call skips it), lets the holder or a policy administrator clear the stage through setAssignee(null) (an administrator needs no read, so a contested multi-assignee stage can be cleared), refuses anyone else naming the holder with no write, treats an unassigned stage as nothing to release, and reports a failed clear as state unknown. reviewFixDecision returns apply-auto-fixes when the gate allows review-fix and report-only otherwise (non-holder, failed read, thrown dependency); a review takes no claim. Tests: two in gate.test.ts (including the interleaving where the earlier claimant returned allowed and only the later one sees contention, and the earlier one finds out on its next gate read) and review-fix-decision.test.ts.",
+    "summary": "Added the missing failed-re-read scenario to the claim test: a fake whose addAssignee takes effect and then fails reading the assignees back (failReread). The test asserts the claim is refused with 'claim failed (unreachable): re-read unreachable; the stage state is unknown', that the assignee list is exactly ['alice'] (the add happened, nobody else touched), and that a following claim, reading the stage again, finds it already mine and is allowed. The earlier failed-add, failed-initial-read and contested cases remain.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/TESTS.md"
     },
@@ -38,65 +38,65 @@
           "file": ".insrc/artifacts/AMD-315d510cb28100e2-12.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       },
       {
         "target": {
           "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/gate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/review-fix-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/github-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:34:47.859Z"
+        "timestamp": "2026-10-18T14:36:33.618Z"
       }
     ],
-    "commit": "202cc695"
+    "commit": "c5e1e766"
   }
 }

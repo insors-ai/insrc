@@ -49,8 +49,8 @@ export type RefusedOutcome = Exclude<GateOutcome, { kind: 'allowed' }>;
 export class TeamGateRefusedError extends Error {
 	readonly outcome: RefusedOutcome;
 	readonly reason:  string;
-	constructor(outcome: RefusedOutcome) {
-		const reason = describeOutcome(outcome);
+	constructor(outcome: RefusedOutcome, subject?: string) {
+		const reason = subject !== undefined ? `${subject}: ${describeOutcome(outcome)}` : describeOutcome(outcome);
 		super(reason);
 		this.name = 'TeamGateRefusedError';
 		this.outcome = outcome;
@@ -137,6 +137,18 @@ export type TeamContext =
 	| { readonly ok: false; readonly outcome: GateOutcome; readonly noIssue?: true | undefined }
 	| { readonly ok: true; readonly team: false }
 	| { readonly ok: true; readonly team: true; readonly port: TrackerPort; readonly issue: IssueRef; readonly who: string; readonly administrators: readonly string[] };
+
+/**
+ * Does this repo enforce claims? 'no' with no policy, teamMode false or claimsEnforced false (no tracker is
+ * touched); a string is the reason the policy could not be read.
+ */
+export function claimsEnforcedFor(repo: string): 'yes' | 'no' | string {
+	try {
+		const policy = (testDeps.readPolicy ?? policyReader)(repo);
+		if (!policy.ok) return `the team policy cannot be read: ${policy.reason}`;
+		return policy.value !== 'none' && policy.value.teamMode && policy.value.claimsEnforced ? 'yes' : 'no';
+	} catch (err) { return `the team policy cannot be read: ${errorText(err)}`; }
+}
 
 /** The unit's own artifact (Define, LLD or plan) is on disk. */
 function unitArtifactExists(unit: UnitRef): boolean {

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:34:47.859Z",
+    "updatedAt": "2026-10-18T14:36:33.618Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -293,8 +293,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "202cc695",
-        "ranAt": "2026-10-18T14:34:47.859Z",
+        "commit": "c5e1e766",
+        "ranAt": "2026-10-18T14:36:33.618Z",
         "testsPassed": true,
         "tests": [
           {
@@ -342,7 +342,7 @@
             "file": "src/workflow/team/__tests__/gate.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1201,
+            "durationMs": 1008,
             "titles": [
               {
                 "title": "teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false",
@@ -387,7 +387,7 @@
             "file": "src/workflow/team/__tests__/review-fix-decision.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1130,
+            "durationMs": 879,
             "titles": [
               {
                 "title": "reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read",

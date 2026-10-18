@@ -14,6 +14,7 @@ import type { IndexStateRow, PendingClass } from './graph/codec.js';
 import { getIndexStateRowInTxn, readUnattributedUnwritableInTxn, updateIndexStateRowInTxn, type UnattributedUnwritable } from './graph/index-state-rows.js';
 import { zeroPending } from './graph/pending-class.js';
 import { lookupRepoId } from './repos.js';
+import type { RepoCompleteness } from '../shared/types.js';
 
 export type { PendingClass, UnattributedUnwritable };
 
@@ -24,14 +25,8 @@ export interface IndexState extends IndexStateRow {
 	complete:      boolean;
 }
 
-/** The completeness field returned beside a repository's unchanged status. */
-export interface RepoCompleteness {
-	complete:         boolean;
-	reasons:          string[];
-	counts:           { pending: Record<PendingClass, number>; unwritable: number; unembedded: number; uncommittedFiles: number };
-	uncommittedFiles: string[];
-	generation:       number;
-}
+/** The completeness field returned beside a repository's unchanged status (the contract type lives in shared/types). */
+export type { RepoCompleteness };
 
 /** The sc1 formula. */
 export function deriveIndexState(repoPath: string, row: IndexStateRow): IndexState {

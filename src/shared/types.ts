@@ -697,6 +697,30 @@ export interface RegisteredRepo {
   errorMsg?:    string;
   /** The last full index's final figures, written once when it ended. */
   lastRun?:     RepoLastRun | undefined;
+  /**
+   * Whether the repository's index is complete, beside the unchanged status
+   * (Epic c2ba6fa6 s1). Set on the daemon's repo.list and daemon.status replies;
+   * absent when it cannot be read, which a consumer reads as unknown.
+   */
+  completeness?: RepoCompleteness | undefined;
+}
+
+/** The class of a pending relationship (Epic c2ba6fa6 s1, sc1 PendingClass). */
+export type PendingRelationshipClass = 'awaiting-target' | 'ambiguous' | 'no-candidate' | 'external-endpoint';
+
+/** A repository's completeness: one plain reason line per cause, with the counts behind them (Epic c2ba6fa6 s1). */
+export interface RepoCompleteness {
+  complete:         boolean;
+  reasons:          string[];
+  counts:           { pending: Record<PendingRelationshipClass, number>; unwritable: number; unembedded: number; uncommittedFiles: number };
+  uncommittedFiles: string[];
+  generation:       number;
+}
+
+/** Relationships the store refused with no repository to count them against (Epic c2ba6fa6 s1). */
+export interface UnattributedUnwritableCount {
+  total:   number;
+  reasons: Record<string, number>;
 }
 
 /**
@@ -932,6 +956,8 @@ export interface DaemonStatus {
    * it is present, `repos` is empty: the repository list could not be read.
    */
   storeFailure?:     { kind: 'locks-lost'; at: string; operation: string; cause: string };
+  /** Relationships refused with no repository to count them against (Epic c2ba6fa6 s1); absent when it cannot be read. */
+  unattributedUnwritable?: UnattributedUnwritableCount | undefined;
   /**
    * The daemon's currently-installed source commit (Story S002 / sc2): the full
    * `git rev-parse HEAD` of the daemon checkout root, or `""` when undeterminable
@@ -1023,6 +1049,8 @@ export interface RepoStats {
   sizeBytes:         number;
   /** Queued index jobs attributable to this repo. */
   pendingJobs:       number;
+  /** Whether the index is complete (Epic c2ba6fa6 s1); absent when it cannot be read. */
+  completeness?:     RepoCompleteness | undefined;
 }
 
 // ---------------------------------------------------------------------------

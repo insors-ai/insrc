@@ -49,6 +49,7 @@ import { IndexQueue } from './queue.js';
 import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
+import { unattributedUnwritable, withCompleteness } from './repo-completeness.js';
 import { buildDaemonStatus, composeQueueLanes } from './status.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
@@ -582,7 +583,7 @@ async function main(): Promise<void> {
 		},
 
 		'repo.list': async () => {
-			return await listRepos(db);
+			return await withCompleteness(await listRepos(db), r => r.path);
 		},
 
 		// Combined per-repo index statistics in one call (Story
@@ -594,7 +595,7 @@ async function main(): Promise<void> {
 			const { repoPath } = (params ?? {}) as { repoPath?: unknown };
 			const repos = await listRepos(db);
 			const store = await getGraphStore();
-			const all = collectRepoStats(store, repos, queue);
+			const all = await withCompleteness(collectRepoStats(store, repos, queue), s => s.repoPath);
 			if (typeof repoPath === 'string' && repoPath.length > 0) {
 				const one = all.find(s => s.repoPath === repoPath);
 				return one ?? { error: `repo.stats: ${repoPath} is not a registered repo` };
@@ -1060,7 +1061,8 @@ async function main(): Promise<void> {
 			// store has failed (Epic c2ba6fa6, Story s4).
 			const status: DaemonStatus = await buildDaemonStatus({
 				uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
-				listRepos: () => listRepos(db),
+				listRepos: async () => withCompleteness(await listRepos(db), r => r.path),
+				unattributedUnwritable,
 				queueDepth: queue.depth,
 				queueLanes: () => composeQueueLanes(queue.laneStatus(), indexer.summarySweepProgress()),
 				modelState: getModelState(),

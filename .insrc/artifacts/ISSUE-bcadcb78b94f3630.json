@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792331926111-fzla0g",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-18T13:59:18.901Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 32787,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "bcadcb78b94f3630",
+    "epicSlug": "show-running-index-job-beside-queue",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Show the running index job beside the queue count",
+    "reproduction": "Queue a full reindex of a large repository (repo.reindex) and watch the insrc TUI. Observed: the Daemon pane reads 'queue 0 job(s)' and the header 'queue 0' for the whole run; on 2026-10-18 a 42-minute full reindex of this repository (3,385 files) looked like an idle daemon, and the user concluded nothing was running. The VS Code daemon status line ('queue N') and the JetBrains daemon settings row ('Queue depth') show the same number. Expected: while a job runs, every daemon surface shows that one is running, which repository, and how far it has got.",
+    "rootCause": "Every surface shows the daemon status's queueDepth, the number of jobs waiting to start; the job being worked on is never counted in it (src/cli/panes/DaemonPane.tsx:111, src/cli/app.tsx:190, vscode-plugin/src/panels/daemon-gateway.ts:59, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DaemonConfigurable.kt:74). The status's per-lane field reports the index lane only as { depth, running }, with no repository or progress (src/shared/types.ts:979-980, src/daemon/status.ts:86), while the summary lane already carries its sweep's progress. The full index's progress (repository, files selected, files done) is kept in daemon memory (src/indexer/run-record.ts:21-28, :57) and read only for refusal messages (src/analyze/context/invariants.ts:369), so no surface can show it.",
+    "fixIntent": "While the daemon works on an index job, every daemon surface (the TUI's Daemon pane and header, the VS Code daemon status and the JetBrains daemon settings) shows that a job is running beside the waiting count, which repository it is for, and for a full index how many files are done of how many selected. An idle daemon still reads as it does today. The waiting count keeps its meaning; nothing that reads it today changes behaviour."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/cli/panes/DaemonPane.tsx:111",
+      "quotedText": "queue     <Text bold>{s.queueDepth}</Text> job(s)"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/cli/app.tsx:190",
+      "quotedText": "queue {d.status.queueDepth}"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/daemon-gateway.ts:59",
+      "quotedText": "`queue ${raw.queueDepth}`"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/ops/DaemonConfigurable.kt:74",
+      "quotedText": "row(\"Queue depth\", s.queueDepth.toString())"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/shared/types.ts:979-980",
+      "quotedText": "export interface QueueLanes { index:   { depth: number; running: boolean };"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/status.ts:86",
+      "quotedText": "...(src.queueLanes !== undefined && { queueLanes: src.queueLanes() }),"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/indexer/run-record.ts:21-28",
+      "quotedText": "export interface IndexRunView { readonly repoPath: string; ... readonly filesSelected?: number | undefined; readonly filesDone: number; }"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/analyze/context/invariants.ts:369",
+      "quotedText": "const view = (indexRun ?? readIndexRun)(repo.path);"
+    },
+    {
+      "id": "c9",
+      "kind": "stakeholder",
+      "ref": "user, 2026-10-18",
+      "quotedText": "the TUI is showing 0 jobs in queue"
+    }
+  ]
+}

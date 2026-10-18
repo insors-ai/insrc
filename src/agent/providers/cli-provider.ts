@@ -221,6 +221,8 @@ export class CliProvider implements LLMProvider {
 				return await op();
 			} catch (err) {
 				lastErr = err;
+				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
+				if (err instanceof InputTooLargeError) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
 				const backoffMs = 2000 * attempt;
@@ -285,7 +287,8 @@ export class CliProvider implements LLMProvider {
 			];
 			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd));
 			if (envelope.is_error) {
-				throw new Error(`claude --print failed: ${envelope.result ?? 'no error message'}`);
+				const message = `claude --print failed: ${envelope.result ?? 'no error message'}`;
+				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));
 			}
 			if (envelope.structured_output === undefined) {
 				throw new Error('claude envelope had is_error=false but no structured_output field');
@@ -506,7 +509,9 @@ export class CliProvider implements LLMProvider {
 		}
 		const errorEvent = events.find(e => e.type === 'error' || e.type === 'turn.failed');
 		if (errorEvent !== undefined) {
-			throw new Error(`codex emitted error event: ${JSON.stringify(errorEvent)}`);
+			const said = JSON.stringify(errorEvent);
+			const message = `codex emitted error event: ${said}`;
+			throw sizeRefusalOr(message, said, () => new Error(message));
 		}
 		if (out.exitCode !== 0) {
 			throw cliExitError('codex', out.exitCode, out.stdout, out.stderr);
@@ -607,6 +612,62 @@ export class CliExitError extends Error {
 	}
 }
 
+/**
+ * The model refused the call because its input is too large (ISSUE-aef82b03).
+ * Resending the same prompt cannot succeed, so no retry layer repeats it; the
+ * caller splits the work instead. `maxChars` / `actualChars` are the sizes the
+ * CLI reported, when it reported them. Its message is the one the failure
+ * would have carried anyway.
+ */
+export class InputTooLargeError extends CliExitError {
+	readonly maxChars:    number | undefined;
+	readonly actualChars: number | undefined;
+
+	constructor(message: string, said: string, sizes: InputSizes) {
+		super(message, said);
+		this.name = 'InputTooLargeError';
+		this.maxChars = sizes.maxChars;
+		this.actualChars = sizes.actualChars;
+	}
+}
+
+/** The sizes an input-size refusal reported. */
+export interface InputSizes {
+	readonly maxChars?:    number | undefined;
+	readonly actualChars?: number | undefined;
+}
+
+/** A number the refusal states for `key` (codex: `"max_chars":1048576`). */
+function reportedNumber(text: string, key: string): number | undefined {
+	// Backslashes dropped first: inside a re-serialised codex event the quotes arrive escaped.
+	const m = new RegExp(`"?${key}"?\\s*[:=]\\s*(\\d+)`).exec(text.replace(/\\/g, ''));
+	return m?.[1] !== undefined ? Number(m[1]) : undefined;
+}
+
+/**
+ * Whether what a CLI said is a refusal of the input for its size, and the
+ * sizes it reported. codex says `input_error_code: input_too_large` with
+ * max_chars / actual_chars (observed 2026-10-18); claude's result is taken to
+ * say "Prompt is too long" (not yet observed: ISSUE-aef82b03 smoke).
+ */
+export function classifyInputTooLarge(said: string): InputSizes | undefined {
+	if (/input_too_large|input exceeds the maximum length/i.test(said)) {
+		const stated = /maximum length of (\d+)/i.exec(said)?.[1];
+		return {
+			maxChars:    reportedNumber(said, 'max_chars') ?? (stated !== undefined ? Number(stated) : undefined),
+			actualChars: reportedNumber(said, 'actual_chars'),
+		};
+	}
+	if (/prompt is too long/i.test(said)) return {};
+	return undefined;
+}
+
+/** The error for a CLI failure: an InputTooLargeError when `said` is a size refusal, else `plain()`. */
+function sizeRefusalOr(message: string, said: string, plain: () => Error): Error {
+	const sizes = classifyInputTooLarge(said);
+	return sizes !== undefined ? new InputTooLargeError(message, said, sizes) : plain();
+}
+
 /** The text a failure is judged transient on: what the CLI said, where that is known. */
 export function transienceText(err: unknown): string {
 	if (err instanceof CliExitError && err.said.length > 0) return err.said;
@@ -642,16 +703,21 @@ export function cliExitError(
 	const lead = result.length > 0 ? ` ${result}` : '';
 
 	const output = `stderr=${stderr} stdout=${stdout}`;
-	if (output.length <= CLI_OUTPUT_INLINE_CHARS) return new CliExitError(`${head}${lead} ${output}`, said);
+	// A size refusal (ISSUE-aef82b03) keeps the same message, as an InputTooLargeError.
+	const make = (message: string): CliExitError => {
+		const sizes = classifyInputTooLarge(said);
+		return sizes !== undefined ? new InputTooLargeError(message, said, sizes) : new CliExitError(message, said);
+	};
+	if (output.length <= CLI_OUTPUT_INLINE_CHARS) return make(`${head}${lead} ${output}`);
 	try {
 		const path = writeCliFailureFile(dir, cli, stdout, stderr);
 		// The error output stays in the message when it fits: with no envelope it is the only statement of the cause.
 		const errOut = stderr.length > 0 && stderr.length <= CLI_OUTPUT_INLINE_CHARS ? ` stderr=${stderr}` : '';
-		return new CliExitError(`${head}${lead}${errOut} The CLI's full output (${output.length} characters, nothing cut) is in ${path}`, said);
+		return make(`${head}${lead}${errOut} The CLI's full output (${output.length} characters, nothing cut) is in ${path}`);
 	} catch (err) {
 		// The file could not be written: the output goes in the message, whole.
 		log.warn({ dir, err: err instanceof Error ? err.message : String(err) }, 'CLI failure output could not be written to a file; it stays in the message');
-		return new CliExitError(`${head}${lead} ${output}`, said);
+		return make(`${head}${lead} ${output}`);
 	}
 }
 

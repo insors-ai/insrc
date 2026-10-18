@@ -212,6 +212,10 @@ export async function withStructuredRetry<T>(
 			// A cancelled call ends the helper as it was raised: it is neither
 			// retried nor reported as a failure of shape or of the model.
 			if (err instanceof Error && err.name === 'AbortError') throw err;
+			// A refusal of the input for its size (cli-provider's InputTooLargeError,
+			// matched by name: that module imports this one) is never resent: the
+			// same prompt cannot succeed, and the caller splits the work instead.
+			if (err instanceof Error && err.name === 'InputTooLargeError') throw err;
 			// Application-level error (model didn't use the tool, parse
 			// error inside the provider's call closure, etc.). Convert to
 			// a validation failure so the next attempt re-issues with the

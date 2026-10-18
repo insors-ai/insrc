@@ -48,6 +48,8 @@ function fakeTracker(over: {
 	staleFinds?: number;
 	/** Another daemon's issue, created just before this call's own, so it has the lower number. */
 	racer?: boolean;
+	/** Runs right after this fake's create commits an issue and before it returns (another daemon acting in between). */
+	afterCreate?: () => void;
 	/** Share the numbering and issues of another fake (two daemons, one tracker). */
 	shared?: { issues: Issue[]; next: { n: number } };
 } = {}) {
@@ -80,6 +82,7 @@ function fakeTracker(over: {
 				const ref = `acme/demo#${number}`;
 				issues.push({ number, ref, spec, state: 'open' });
 				if (over.commitThenFail === true) { over.commitThenFail = false; over.failCreate = false; return { ok: false, reason: 'timed out after the issue was committed', kind: 'unreachable' }; }
+				over.afterCreate?.();
 				return { ok: true, value: { ref, id: 1000 + number, typed: true } };
 			},
 			linkSubIssue: (parent: IssueRef, childId: number): PortResult<void> => { calls.link.push([parent, childId]); return { ok: true, value: undefined }; },
@@ -352,14 +355,17 @@ test('two simulated daemons that both create converge on the lowest issue', () =
 	const a = seed();
 	const b = seed();
 	try {
-		const first = fakeTracker({ withListing: true, staleFinds: 1 });
-		const second = fakeTracker({ withListing: true, staleFinds: 1, shared: first.shared });
-		// both look up before either creates (each lookup is a stale "not found"), then both create and list
+		const shared = { issues: [] as Issue[], next: { n: 1 } };
+		// Daemon B does its whole call (both its lookups stale, so it creates, lists, and breaks the tie) in the gap
+		// after daemon A's create and before A's listing: both have created before either lists.
+		const second = fakeTracker({ withListing: true, staleFinds: 2, shared });
+		let rb: ReturnType<typeof ensureUnitIssueDetailed> | undefined;
+		const first = fakeTracker({ withListing: true, shared, afterCreate: () => { rb = ensureUnitIssueDetailed(epic(b.repo), second.port, deps); } });
 		const ra = ensureUnitIssueDetailed(epic(a.repo), first.port, deps);
-		const rb = ensureUnitIssueDetailed(epic(b.repo), second.port, deps);
-		assert.equal(ra.ok && rb.ok, true);
-		const open = first.issues.filter(i => i.state === 'open').map(i => i.ref);
-		assert.deepEqual(open, ['acme/demo#1'], 'one open issue: the lowest');
+		assert.equal(first.calls.create + second.calls.create, 2, 'both daemons created an issue');
+		assert.equal(ra.ok && rb?.ok, true);
+		assert.deepEqual(shared.issues.filter(i => i.state === 'open').map(i => i.ref), ['acme/demo#1'], 'one open issue: the lowest');
+		assert.deepEqual(second.calls.closed, ['acme/demo#2']);
 		assert.equal(a.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1');
 		assert.equal(b.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1', 'both records name it');
 	} finally { a.cleanup(); b.cleanup(); }

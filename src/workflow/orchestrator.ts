@@ -1075,6 +1075,7 @@ function defineDecisionOf(stepOutputs: Readonly<Record<string, unknown>>): 'new'
 function persistScopeAnalyzeCache(epicHash: string, bundles: unknown): void {
 	if (bundles === undefined) return;
 	try {
+		// raw-write: the scope-analyze cache is a scratch file, not an artifact.
 		writeAtomic(scopeAnalyzeCachePath(epicHash), JSON.stringify({ epicHash, analyzeBundles: bundles }, null, 2) + '\n');
 	} catch { /* cache is best-effort */ }
 }

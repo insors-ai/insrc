@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-18T05:51:41.231Z",
+    "updatedAt": "2026-10-18T06:06:44.097Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1468,6 +1468,157 @@
         ],
         "files": [],
         "note": "named tests matched no test file: jetbrains-plugin RepoStatsGatewayTest.kt: decode a recorded repo.stats reply (complete, incomplete, no field); jetbrains-plugin RepoStatusPopupLayoutTest.kt: the dialog shows the reasons (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)"
+      },
+      {
+        "taskId": "t15",
+        "commit": "f9392563",
+        "ranAt": "2026-10-18T06:06:44.097Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts and detail-renderers.test.ts: RepoRef completeness and the Daemon tab list",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+                "title": "registeredRepos() carries each repository's status and completeness from repo.list: complete, incomplete with its reasons, and none for a reply without the field (Epic c2ba6fa6 s1)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+                "title": "registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status clients (attached ⇒ wired)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+                "title": "renderDaemonTab lists each repository with its status and completeness: complete, incomplete with its reasons, and the status alone without the field (Epic c2ba6fa6 s1)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+                "title": "renderDaemonTab keeps the daemon status when repo.list fails, and says the list is unavailable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "headless-Chrome screenshot of the rendered Daemon tab, read by eye",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/t15-daemon-tab.png, read as described in S001/t15-evidence.md (the real host's Daemon tab: insrc ready + green complete; afm ready + amber incomplete with its three reasons; findme indexing with no badge)"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 468,
+            "titles": [
+              {
+                "title": "status() maps a DaemonStatus (incl. missing optionals) to a DaemonStatusView { state, detail }, over daemon.status only (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "status() shows the store failure cause when the payload carries storeFailure, and accepts a status without it",
+                "result": "pass"
+              },
+              {
+                "title": "status() rejects GatewayReadError when daemon.status fails",
+                "result": "pass"
+              },
+              {
+                "title": "registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status clients (attached ⇒ wired)",
+                "result": "pass"
+              },
+              {
+                "title": "mcpClients() tolerates a debug-status payload with no clients (empty view, not an error)",
+                "result": "pass"
+              },
+              {
+                "title": "workflowChain() returns empty rows when artifactsRoot is undefined (valid empty state)",
+                "result": "pass"
+              },
+              {
+                "title": "the VS Code plugin's workflow chain lists no row for a TESTS record and the same rows as without it (mutation: list every json)",
+                "result": "pass"
+              },
+              {
+                "title": "workflowChain() reads the .insrc/artifacts tree into rows, and a malformed artifact rejects GatewayReadError",
+                "result": "pass"
+              },
+              {
+                "title": "scanOrphans() maps the injected scan and rejects GatewayReadError on failure (and never kills)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: daemon-gateway.ts imports no vscode and uses no cloud/HTTP client (only sc1 + fs/process — ac4/k2)",
+                "result": "pass"
+              },
+              {
+                "title": "registeredRepos() carries each repository's status and completeness from repo.list: complete, incomplete with its reasons, and none for a reply without the field (Epic c2ba6fa6 s1)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 428,
+            "titles": [
+              {
+                "title": "renderDaemonTab renders state + detail (ac1); a missing detail renders just the state",
+                "result": "pass"
+              },
+              {
+                "title": "renderWorkflowsTab groups rows by slug with stage+status lines (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)",
+                "result": "pass"
+              },
+              {
+                "title": "both renderers HTML-escape every daemon-derived value (no <script> break-out)",
+                "result": "pass"
+              },
+              {
+                "title": "both renderers include a Refresh control that posts {type:'refresh'}",
+                "result": "pass"
+              },
+              {
+                "title": "a renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: detail-renderers.ts imports no vscode and uses no cloud/HTTP (only the injected gateway) — ac4/k2",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: the webview bootstraps post only the sanctioned message shapes (closed set)",
+                "result": "pass"
+              },
+              {
+                "title": "renderDaemonTab lists each repository with its status and completeness: complete, incomplete with its reasons, and the status alone without the field (Epic c2ba6fa6 s1)",
+                "result": "pass"
+              },
+              {
+                "title": "renderDaemonTab keeps the daemon status when repo.list fails, and says the list is unavailable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
       }
     ]
   }

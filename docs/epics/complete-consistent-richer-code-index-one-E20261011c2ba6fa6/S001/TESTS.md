@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 73 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 77 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -323,3 +323,27 @@ Not mapped: no test case was named for this test, and nothing was run for it.
 **unit: jetbrains-plugin RepoStatusPopupLayoutTest.kt: the dialog shows the reasons**
 
 Not mapped: no test case was named for this test, and nothing was run for it.
+
+## t15
+
+Run at 2026-10-18T06:06:44.097Z on commit `f9392563`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**unit: vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts and detail-renderers.test.ts: RepoRef completeness and the Daemon tab list**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | registeredRepos() carries each repository's status and completeness from repo.list: complete, incomplete with its reasons, and none for a reply without the field (Epic c2ba6fa6 s1) | `vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts` |
+| pass | registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.debug-status clients (attached ⇒ wired) | `vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts` |
+| pass | renderDaemonTab lists each repository with its status and completeness: complete, incomplete with its reasons, and the status alone without the field (Epic c2ba6fa6 s1) | `vscode-plugin/src/panels/__tests__/detail-renderers.test.ts` |
+| pass | renderDaemonTab keeps the daemon status when repo.list fails, and says the list is unavailable | `vscode-plugin/src/panels/__tests__/detail-renderers.test.ts` |
+
+**smoke: headless-Chrome screenshot of the rendered Daemon tab, read by eye**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/t15-daemon-tab.png, read as described in S001/t15-evidence.md (the real host's Daemon tab: insrc ready + green complete; afm ready + amber incomplete with its three reasons; findme indexing with no badge)
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `vscode-plugin/src/panels/__tests__/daemon-gateway.test.ts` | 0 | 11 | 0.5 s |  |
+| `vscode-plugin/src/panels/__tests__/detail-renderers.test.ts` | 0 | 10 | 0.4 s |  |

@@ -209,6 +209,13 @@
         "choice": "A — Accept the legacy recovery gap",
         "rationale": "Recommended in the approved LLD.",
         "resolvedAt": "2026-10-18T04:34:09.975Z"
+      },
+      "q40802bd9": {
+        "question": "sg4: Legacy mode keeps the old approve-time behaviour for a repo without a policy by design (k4), including its fail-open weaknesses: a failed Epic lookup still leads to a create and label failures are best-effort, so such a repo can still get a duplicate Epic. Options: (A) accept, since k4 requires an unchanged repo and the strict behaviour is team-only; (B) raise an HLD amendment to harden the solo path too. Recommendation: A.",
+        "status": "resolved",
+        "choice": "A — Preserve legacy behavior",
+        "rationale": "k4 requires an unchanged repo without a policy.",
+        "resolvedAt": "2026-10-18T04:34:35.273Z"
       }
     }
   },

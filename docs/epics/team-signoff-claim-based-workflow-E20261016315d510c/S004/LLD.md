@@ -676,6 +676,8 @@ Leave drafting alone and let the team gate treat a unit with no issue as 'create
   - **resolved**: A — Keep synchronous creation — Recommended in the approved LLD; preserves the immediate ac18 message. _(2026-10-18T04:33:39.530Z)_
 - `q071506f5` — sg2: Story and Task issues created before this change carry no per-unit label. They are adopted from the LLD storyRef, the Define storyRefs and the plan taskRefs and recorded, but not relabelled; if every local ref is lost, a Story or Task (unlike the Epic, which has the old two-label search) would get a second issue. Options: (A) accept, since the refs live in committed files; (B) add a relabel or a title search to the port. Recommendation: A; B needs a new port method owned by s1.
   - **resolved**: A — Accept the legacy recovery gap — Recommended in the approved LLD. _(2026-10-18T04:34:09.975Z)_
+- `q40802bd9` — sg4: Legacy mode keeps the old approve-time behaviour for a repo without a policy by design (k4), including its fail-open weaknesses: a failed Epic lookup still leads to a create and label failures are best-effort, so such a repo can still get a duplicate Epic. Options: (A) accept, since k4 requires an unchanged repo and the strict behaviour is team-only; (B) raise an HLD amendment to harden the solo path too. Recommendation: A.
+  - **resolved**: A — Preserve legacy behavior — k4 requires an unchanged repo without a policy. _(2026-10-18T04:34:35.273Z)_
 
 ## Citations
 

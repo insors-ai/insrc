@@ -1,0 +1,594 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792342326755-tr40od",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-18T16:55:47.133Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 220362,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "storyId": "s6",
+    "lldRunId": "wf-1792338834491-rpu44e",
+    "lldEffectiveHash": "2ed0cef29a4f3bc4bcf6efada6407a148ae7a5828a6ba98d49916d53cc6502e3",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-18T17:04:59.277Z",
+    "rangeBase": "9b9bb1d25fa6483da78f1e4f6acb8c11f41066a6"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s6 starts with the one addition to the team gate (the park-offer provider the approved amendment declares), then gives every authoring run an owner and an upstream snapshot at creation, then adds a pure handoff module (branch name, checkpoints, rebinding, stage inference). On top of that come parking (decide, then commit, push and note through a temporary worktree) and resuming (verify, then restore with rollback and return the next turn). The work finishes by exposing park and resume to the daemon, the MCP server and the terminal, and a two-clone end-to-end test proves the handoff.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Declare registerParkOfferProvider and set offerPark in the gate",
+        "summary": "In src/workflow/team/gate.ts add registerParkOfferProvider (amendment AMD-315d510cb28100e2-13, shaped like registerCompletionHook, shipped with no provider). teamGate and claim consult it for a held-by-other outcome (a throwing provider counts as false, no call without a policy) and describeOutcome appends the park command when offerPark is true.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "With no provider registered offerPark stays false on every outcome",
+          "offerPark is true only on held-by-other and only when the provider returns true for (repo, unit, actor); a throwing provider counts as false",
+          "A repo with no policy makes no provider call and no tracker call",
+          "describeOutcome appends the park command only for held-by-other with offerPark true"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/park-offer.test.ts: teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Give the workflow state store an entry meta, listStates and a meta-carrying encodeState",
+        "summary": "Extend src/daemon/steps/workflow-step/state-store.ts so each entry can carry meta { owner, upstream } beside payload, createdAt and touchedAt, with saveState taking the meta, replaceState carrying the previous entry's meta, and a listStates that returns entries newest first without touching expiry. encodeState takes the optional meta and reencodeState preserves it; the payload shape and token format do not change.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "encodeState stores meta beside the payload and reencodeState and replaceState carry it onto the replacement",
+          "listStates returns every live entry newest-touch first and does not change any entry's expiry",
+          "An entry saved without meta behaves exactly as before and has no owner"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts: the state store keeps meta beside the payload, carries it through reencodeState and replaceState, lists entries newest first without touching expiry, and an entry saved without meta behaves as before"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Capture the acting user and the upstream snapshot when a run is created",
+        "summary": "Add actingUser(repo) (the tracker login when claims are enforced, otherwise undefined with no tracker call) and snapshotUpstream(repo, workflow, params) covering every input the stage reads: design.epic the Define; design.story the Define and the effective HLD including approved-amendment state; plan the Story LLD, the effective HLD and the Define dependency edges; revisions through readRevision so a missing one is 0; the standalone exception kept. handleStart sets meta.owner and meta.upstream before encodeState.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "handleStart stores the acting user and the upstream snapshot on the run, and the plan and step turns keep them",
+          "snapshotUpstream records the Define and the effective HLD (base revision plus approved-amendment state) for design.story, the LLD, effective HLD and Define for plan, and the Define for design.epic",
+          "A standalone Story with no HLD or Epic does not fail the snapshot",
+          "A repo without a team policy records neither owner nor snapshot and makes no tracker call"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/snapshot-upstream.test.ts: snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts: handleStart records the acting user and the upstream snapshot on the stored run, plan and step turns keep them, and a repo without a policy records neither and makes no tracker call"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Write the pure handoff module: branch name, checkpoints, rebinding, stage inference",
+        "summary": "Add src/workflow/team/handoff.ts with handoffBranchName (placeholders id, slug, type; default insrc/handoff/{type}-{id}; grammar check; pattern must contain {id}), the HandoffCheckpoint run and draft variants with validation (schema version, kind, unit match, path containment under the unit's artifact paths), rebindCheckpoint (repoPath and repoIndexedAt replaced in both intents, startedAtMs reset, for all three stages) and inferStageWorkflow from the committed artifact chain. Set the branchPattern catalog row default in src/config/repo-fields.ts and drop its not-used-yet note.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "handoffBranchName fills placeholders, applies the default, rejects a name that breaks the grammar and a pattern without {id}",
+          "Checkpoint validation rejects an unknown schemaVersion or kind, a unit mismatch and any path outside the unit's artifact paths",
+          "rebindCheckpoint leaves no parker path in the payload or executor intent and works for awaiting_plan, awaiting_llm_step and awaiting_synthesize",
+          "inferStageWorkflow returns plan for a Story with an LLD and no PLAN and complete when both are committed"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/handoff-pure.test.ts: handoffBranchName fills placeholders, applies the default, rejects a grammar break and a pattern without {id}"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/handoff-pure.test.ts: checkpoint validation rejects an unknown schemaVersion or kind, a unit mismatch and a path outside the unit's artifact paths, for the run and draft variants"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/handoff-pure.test.ts: rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, resets startedAtMs and leaves no parker path, for all three stages, and inferStageWorkflow follows the committed artifact chain"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Register the park-offer provider from the owner recorded on runs and from uncommitted drafts",
+        "summary": "Implement the provider the handoff module registers with the gate: true when the actor owns a live run for the unit in any stage (meta.owner equals the actor, found through listStates) or has an uncommitted draft artifact for the unit (git status on the unit's artifact paths); a run without an owner never counts. Register it at daemon startup beside the other gate registrations.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A held-by-other refusal carries offerPark for an owned run in any stage and for an uncommitted draft",
+          "A run with no owner never produces an offer",
+          "The refusal text printed by the workflow-step handler and the terminal names the park command"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/park-offer.test.ts: a held-by-other refusal carries offerPark when the actor owns a live run in any stage or has an uncommitted draft for the unit, never for an unowned run, and the workflow-step refusal text names the park command"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Decide what to park: refusals, run selection and checkpoint assembly",
+        "summary": "Add parkPlan(repo, unit, opts) in src/workflow/team/handoff.ts: refuse when the actor holds the unit, the unit is a Task, there is no issue or holder, there is nothing to park, the supplied token belongs to another unit, another actor or no owner, or the branch name is invalid; otherwise choose the actor's most recently touched owned run (or only the draft), and assemble the run or draft-only checkpoint with the owner, the upstream snapshot, the repository identity (root commit id) and the artifact paths. No git command that changes anything runs here.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Every park refusal in the LLD's error paths returns ok:false with its reason and writes nothing",
+          "With an owned live run the plan is a run checkpoint carrying the owner, the upstream snapshot and the repository identity; with only an uncommitted draft it is a draft-only checkpoint",
+          "With two owned runs for the unit the most recently touched one is chosen and its run id is named"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/handoff-park-plan.test.ts: parkPlan refuses when the actor holds the unit, for a Task, with no issue or holder, with nothing to park, and for a supplied token of another unit, actor or no owner, and assembles a run or draft-only checkpoint otherwise"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Perform the park: temporary worktree, commit, push, issue note and cleanup",
+        "summary": "Add executePark(plan) and parkDraft(repo, unit, opts) (= parkPlan then executePark): commit the draft artifacts and the checkpoint through a temporary worktree to the handoff branch, push it, add one note through port.issueOps.comment, and clean up the worktree and the local branch on any git failure. A rejected push is reported as another owner having parked first; a failed note returns ok with noted:false without undoing the push.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Parking pushes a branch holding the checkpoint and draft artifacts and adds exactly one issue note, leaving the user's checked-out branch, index and working tree unchanged",
+          "A git failure removes the temporary worktree and local branch and leaves the run in the store",
+          "A failed note returns ok with noted:false; a rejected push is reported as another owner having parked first",
+          "Parking a unit twice reuses the deterministic branch and commits on top"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/handoff-park.test.ts: parking commits the draft and checkpoint to the handoff branch, pushes it, notes the branch on the issue through issueOps.comment and leaves the user's branch, index and working tree untouched"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/handoff-park.test.ts: a git failure cleans up the worktree and local branch, a failed note returns noted false, a rejected push says someone else parked first, and a second park commits on top"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Verify before resuming: receiving repo, branch lookup, checkpoint and upstream",
+        "summary": "Add verifyReceivingRepo (path registered through listRepos, repository identity by the root commit id) and resumeCheck(repo, unit, opts): the author gate with the workflow, the registration and identity check before anything is fetched or restored, ls-remote to tell a missing branch from a failure, fetch of the branch into a temporary ref, checkpoint validation, comparison of the whole upstream snapshot with current revisions, the stage inference and the dirty-file check. It returns a validated restore plan, or restart, nothing-to-resume or refused, and changes no working file.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "An unregistered path and a clone of a different repository are refused before any file is restored",
+          "A moved upstream (including revision 0 on both sides, the effective HLD and the Define) is refused",
+          "A missing branch returns restart while a network or permission failure is refused with the git message",
+          "An unknown schema, a unit mismatch, a path outside the unit and a dirty target file are each refused with the specific reason",
+          "A committed LLD with no PLAN infers plan and both committed returns nothing-to-resume"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/handoff-resume-check.test.ts: resumeCheck refuses an unregistered receiving path and a clone of a different repository before restoring anything, and refuses a moved upstream including the effective HLD and the Define"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/handoff-resume-check.test.ts: a missing branch returns restart, a network failure is refused, a committed LLD with no PLAN resumes as plan, both committed is nothing-to-resume, and an unknown schema, unit mismatch, outside path and dirty file are each refused"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Restore and resume: apply the plan with rollback and return the next turn",
+        "summary": "Add applyResume(plan) and resumeStage(repo, unit, opts) (= resumeCheck then applyResume): restore the parked files keeping the pre-restore copies, roll every file back if any step fails, rebind both intents to the receiving clone with rebindCheckpoint, store the run with the actor as owner and the checkpoint's snapshot, and return the next turn (emit_plan, emit_step or emit_synthesize); a draft-only checkpoint restores the draft and returns restart with draftRestored.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "A run parked before the plan and one parked mid-steps resume on a clone at another absolute path at the right turn with earlier step outputs",
+          "A failed restore leaves the working tree exactly as it was and saves no state",
+          "A draft-only checkpoint restores the draft and returns restart for the inferred stage with draftRestored true",
+          "The stored run is owned by the actor and carries the checkpoint's upstream snapshot"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/handoff-resume.test.ts: a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/handoff-resume.test.ts: a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Expose park and resume as workflow-step phases and daemon operations",
+        "summary": "Add the park and resume phases to the workflow-step input and output types, the dispatcher in src/daemon/steps/workflow-step/handler.ts (and its unknown-phase message) and new phase handlers that call parkDraft and resumeStage and map TeamGateRefusedError to team-gate-refused; register the team.park and team.resume operations in the daemon handler map beside repo.add.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t7",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "The park and resume phases reach the run store and return the park result or the next workflow turn",
+          "team.park and team.resume return the same results over the daemon operation",
+          "A refusal by the gate comes back as team-gate-refused naming the holder"
+        ],
+        "derivedFrom": [
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts: the park and resume phases and the team.park and team.resume operations reach the run store, return the park result or the next turn, and map a gate refusal to team-gate-refused"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Declare park and resume at every MCP exposure site",
+        "summary": "Add the two phases to the phases array and the z.enum in src/mcp/server.ts, extend the tool description and the params description for runToken and workflow, update the schema-registry expectation in src/mcp/__tests__/schema-registry.test.ts and regenerate the tool-surface golden fixture, with a test that an MCP call with phase park and with phase resume passes validation and reaches the handler.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "The MCP server accepts phase park and phase resume and forwards them to the daemon handler",
+          "The schema-registry test and the tool-surface golden fixture list the new phases",
+          "No other phase's schema changes"
+        ],
+        "derivedFrom": [
+          "c11",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/mcp/__tests__/park-resume-phases.test.ts: an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Add the team park and team resume terminal commands",
+        "summary": "In runTeam (src/cli/command.ts) add team park <epicHash> [storyId] and team resume <epicHash> [storyId] [--workflow <name>], parse the unit and workflow, call teamPark and teamResume in src/cli/services/team.ts, which use the daemon rpc for team.park and team.resume, extend the Services interface and the test fakes, the usage line and the help text, and print the outcome or the refusal naming the holder.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "team park and team resume parse the unit and --workflow, call the daemon operations and print the outcome or the holder",
+          "Bad or missing arguments print the usage line and call nothing",
+          "The refusal line for a held stage includes the park command when an offer exists"
+        ],
+        "derivedFrom": [
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/cli/__tests__/team-park-resume.test.ts: team park and team resume parse the unit and --workflow, print the offer, the outcome or the holder, and print the usage line for bad arguments"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Update the guarded entry-point inventory and prove the two-clone handoff end to end",
+        "summary": "Add the park and resume entry points to src/workflow/__tests__/gate-guarded-entry-points.test.ts (resumeStage asks the author gate, parkDraft reads the holder through the gate) and add an end-to-end test with a bare origin and two clones at different absolute paths: refusal with an offer, park, resume at the right turn, and the lost-machine restart.",
+        "size": "S",
+        "order": 13,
+        "dependsOn": [
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Removing the gate call from resumeStage or parkDraft fails the inventory test",
+          "The end-to-end test goes from a reassignment refusal with an offer through park to resume on the second clone",
+          "The lost-machine case restarts only the stage that has no artifact"
+        ],
+        "derivedFrom": [
+          "c13",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/gate-guarded-entry-points.test.ts: the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget, resolveReviewFinding apply) is complete, and the analyze and code-review steps are not on it"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/team/__tests__/handoff-e2e.test.ts: from a reassignment refusal with an offer through park to resume on a second clone, and after a lost machine with no parked branch only the stage that has no artifact restarts, a committed LLD leaving the plan to do"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "handoffBranchName: placeholder filling, the default pattern, grammar rejection, a pattern that omits {id}",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "HandoffCheckpoint validation: schema version, kind, unit match, path containment under the unit's artifact paths, run and draft variants",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "rebindCheckpoint: repoPath and repoIndexedAt replaced in both the payload intent and the executor intent, startedAtMs reset, no parker path left, for stages awaiting_plan, awaiting_llm_step and awaiting_synthesize",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "inferStageWorkflow: Epic without HLD, Story with no LLD, with an LLD and no PLAN (plan), with both (complete)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "snapshotUpstream: the artifacts each workflow reads, a missing revision reading as 0",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "describeOutcome appends the park command only for held-by-other with offerPark true",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "teamGate sets offerPark only on held-by-other and only through a registered provider; a throwing provider counts as false",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "state store: encodeState keeps meta beside the payload, reencodeState and replaceState carry it, listStates is newest-first and does not touch expiry",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleStart records the acting user and the upstream snapshot on the stored run, and the plan and step turns keep them; a repo without a policy records neither and makes no tracker call",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "parkDraft from a refused holder to a pushed branch, a checkpoint and one issue note through issueOps.comment, leaving the checked-out branch, index and working tree unchanged",
+        "coveredByTaskIds": [
+          "t7",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "reassignment before the plan: a run parked at awaiting_plan resumes on the second clone and returns the emit_plan turn",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "a run parked mid-steps resumes on the second clone at nextStepIndex with its earlier step outputs, rebound to that clone",
+        "coveredByTaskIds": [
+          "t9",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "a daemon restart leaves a draft-only checkpoint; resume restores the draft and returns restart with draftRestored, and a restore that fails part way leaves the working tree as it was",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "resumeStage refuses an unregistered receiving path and a clone of a different repository before restoring anything",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "a Story whose LLD is committed and whose PLAN is not resumes as plan, and a Story with both committed returns nothing-to-resume",
+        "coveredByTaskIds": [
+          "t8",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "resumeStage with no branch returns restart naming the stage to start fresh",
+        "coveredByTaskIds": [
+          "t8",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "park and resume error paths: supplied token of another unit, actor or no owner, push rejected, comment fails, unknown schema, upstream revision moved (including revision 0 on both sides), dirty target files, network failure versus missing branch",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "the workflow-step park and resume phases and the team.park and team.resume daemon operations reach the run store and return the next turn",
+        "coveredByTaskIds": [
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "the terminal team park and team resume commands parse the unit and --workflow, print the outcome or the holder, and print the usage line for bad arguments",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 teamGate and GateOutcome.held-by-other.offerPark"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 hld.amendmentProposal registerParkOfferProvider (AMD-315d510cb28100e2-13)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 Workflow state store entry and encodeState"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 snapshotUpstream and handleStart"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 HandoffCheckpoint, rebindCheckpoint, inferStageWorkflow and handoffBranchName"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 branchPattern row"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 offerPark invariant change and actingUser"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 parkDraft and its error paths"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/team/git.ts:16-33"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 resumeStage, verifyReceivingRepo and its error paths"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 insrc_workflow_step park and resume phases, team.park and team.resume"
+    },
+    {
+      "id": "c12",
+      "kind": "analyze-bundle",
+      "ref": "src/mcp/server.ts:464"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 teamPark and teamResume"
+    },
+    {
+      "id": "c14",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/__tests__/gate-guarded-entry-points.test.ts"
+    }
+  ]
+}

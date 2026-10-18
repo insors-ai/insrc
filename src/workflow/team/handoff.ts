@@ -505,12 +505,9 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 
 	const dir = mkdtempSync(join(deps.tmpRoot ?? tmpdir(), 'insrc-park-'));
 	const tmpBranch = `insrc-park-tmp-${Math.random().toString(36).slice(2, 10)}`;
-	let worktreeMade = false;
-	let branchMade = false;
 	try {
 		const added = await git(repo, ['worktree', 'add', '-q', '-b', tmpBranch, dir, base.sha]);
-		if (!added.ok) return fail('making the temporary worktree', added.stderr);
-		worktreeMade = true; branchMade = true;
+		if (!added.ok) return fail('making the temporary worktree', added.stderr);   // the finally below removes whatever git did make
 
 		// the draft files, copied as they are in the working tree (a deleted draft is deleted on the branch)
 		const paths: string[] = [];
@@ -548,10 +545,12 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 	} catch (err) {
 		return fail('parking', err instanceof Error ? err.message : String(err));
 	} finally {
-		if (worktreeMade) await git(repo, ['worktree', 'remove', '--force', dir]);
-		if (branchMade) await git(repo, ['branch', '-D', tmpBranch]);
-		await git(repo, ['worktree', 'prune']);
+		// Always, and in this order: even a worktree that git half-made (a hook failed after the branch and directory existed) is
+		// removed. Each step is harmless when there is nothing to remove.
+		await git(repo, ['worktree', 'remove', '--force', dir]);
 		rmSync(dir, { recursive: true, force: true });
+		await git(repo, ['worktree', 'prune']);
+		await git(repo, ['branch', '-D', tmpBranch]);
 	}
 }
 

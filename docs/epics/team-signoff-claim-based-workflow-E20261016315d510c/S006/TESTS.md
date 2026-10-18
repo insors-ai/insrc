@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -120,3 +120,25 @@ Run at 2026-10-18T17:58:42.749Z on commit `dbaaaf5c`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/team/__tests__/handoff-park-plan.test.ts` | 0 | 1 | 1.9 s |  |
+
+## t7
+
+Run at 2026-10-18T18:03:23.785Z on commit `2a8d1d61`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/team/__tests__/handoff-park.test.ts: parking commits the draft and checkpoint to the handoff branch, pushes it, notes the branch on the issue through issueOps.comment and leaves the user's branch, index and working tree untouched**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | parking commits the draft and checkpoint to the handoff branch, pushes it, notes the branch on the issue through issueOps.comment and leaves the user's branch, index and working tree untouched | `src/workflow/team/__tests__/handoff-park.test.ts` |
+
+**integration: src/workflow/team/__tests__/handoff-park.test.ts: a git failure cleans up the worktree and local branch, a failed note returns noted false, a rejected push says someone else parked first, and a second park commits on top**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a git failure cleans up the worktree and local branch, a failed note returns noted false, a rejected push says someone else parked first, and a second park commits on top | `src/workflow/team/__tests__/handoff-park.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/team/__tests__/handoff-park.test.ts` | 0 | 2 | 1.9 s |  |

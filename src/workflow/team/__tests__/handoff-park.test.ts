@@ -159,6 +159,16 @@ test('a git failure cleans up the worktree and local branch, a failed note retur
 		assert.equal(env.notes.length, 0, 'no note for a park that did not happen');
 		rmSync(hook);
 
+		// a worktree git half-makes (its post-checkout hook fails after the branch and the directory exist) is cleaned up too
+		const postCheckout = join(env.repo, '.git', 'hooks', 'post-checkout');
+		writeFileSync(postCheckout, '#!/bin/sh\nexit 1\n'); chmodSync(postCheckout, 0o755);
+		const half = await parkDraft(env.repo, env.unit, {}, deps(env));
+		assert.equal(half.ok, false);
+		assert.match(half.ok ? '' : half.reason, /park failed at making the temporary worktree/);
+		assertClean(env);
+		assert.deepEqual(snapshot(env), before);
+		rmSync(postCheckout);
+
 		// a failed note: the park succeeded, the push stands, and the failure is reported
 		env.noteResult.fail = true;
 		const unnoted = must(await parkDraft(env.repo, env.unit, {}, deps(env)));

@@ -300,7 +300,9 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		if (!port.issueOps.ensureLabel(l)) return before(`the label '${l}' could not be created`);
 	}
 
-	const spec = buildSpec(unit, cfg, define, epicSlug, membership, label, kindLabel, parentRef, repo);
+	let spec: ReturnType<typeof buildSpec>;
+	try { spec = buildSpec(unit, cfg, define, epicSlug, membership, label, kindLabel, parentRef, repo); }
+	catch (err) { return before(`cannot build the issue for ${unitKey(unit)}: ${(err as Error).message}`); }
 	if ('error' in spec) return before(spec.error);
 
 	const created = port.issueOps.create(spec.value);

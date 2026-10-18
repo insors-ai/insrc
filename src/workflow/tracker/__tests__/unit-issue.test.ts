@@ -415,3 +415,18 @@ test('a link under the parent that failed at creation is retried on the next ens
 		assert.equal(t.calls.link.length, settledLinks);
 	} finally { fx.cleanup(); }
 });
+
+test('a malformed plan is a before-create failure, not a throw', () => {
+	const fx = seed();
+	try {
+		const plan = fx.read(planArtifactId(HASH, 's1')); plan.body.tasks = 'not a list';
+		writeFileSync(fx.json(planArtifactId(HASH, 's1')), JSON.stringify(plan));
+		const t = fakeTracker();
+		ensureUnitIssueDetailed(epic(fx.repo), t.port, deps); ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		const creates = t.calls.create;
+		const r = ensureUnitIssueDetailed(task(fx.repo), t.port, deps);
+		assert.equal(r.ok, false);
+		assert.equal(r.ok ? '' : r.phase, 'before-create');
+		assert.equal(t.calls.create, creates);
+	} finally { fx.cleanup(); }
+});

@@ -128,6 +128,13 @@
         "choice": "LLD as contract authority",
         "rationale": "Stakeholder decision 2026-10-19: the standalone S001 LLD's contract section is the authority for packIntoBatches, ReviewJob, DimensionStrategy, JobCall, InputTooLargeError, AtomTooLargeError and LLMProvider.inputBudgetChars; this fix has no owning HLD.",
         "resolvedAt": "2026-10-18T19:29:35.231Z"
+      },
+      "q67d97a8d": {
+        "question": "Acceptance criteria (the Story carries none; derived from the ISSUE's fix intent, c1): ac1 every changed symbol of a dimension is judged, in parts when the whole does not fit, and nothing is truncated (a symbol or fixed context that alone cannot fit fails with a named PromptTooLargeError); ac2 the parts' findings make up each dimension's one result and the Story's one verdict; ac3 an input-size refusal is recognised and split, never retried as a malformed answer; ac4 a Story that fits is reviewed exactly as today (one call per dimension, one controller frame); ac5 the controller review walks the same parts turn by turn, and Epic c2ba6fa6 s1's code review completes on the installed daemon.",
+        "status": "resolved",
+        "choice": "Adopt all five criteria",
+        "rationale": "Stakeholder decision 2026-10-19: ac1-ac5 are binding for S001, read with the approved LLD's names: 'in parts' means the bounded ReviewJob (map, keyed reduce, compare), and the named error is AtomTooLargeError (one original atom larger than the whole budget). The installed-daemon completion of Epic c2ba6fa6 s1's code review is part of acceptance.",
+        "resolvedAt": "2026-10-18T19:31:56.099Z"
       }
     }
   },

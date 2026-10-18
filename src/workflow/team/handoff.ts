@@ -10,13 +10,18 @@
  * committed artifact chain. Nothing in this module touches git, the tracker or the daemon's run store.
  */
 
-import { posix, relative } from 'node:path';
+import { posix, relative, resolve } from 'node:path';
 
 import { validateBranchPattern } from '../../config/repo-fields.js';
+import { resolveBranchPattern } from '../config/github.js';
 import type { WorkflowStepStatePayload } from '../../daemon/steps/workflow-step/state.js';
-import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
+import { listStates, type RunEntryMeta } from '../../daemon/steps/workflow-step/state-store.js';
+import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, readEpicDefinitionCore } from '../storage.js';
+import type { IssueRef, TrackerPort } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
 import type { ExecutorState, WorkflowIntent } from '../types.js';
+import { authorUnitOf } from './author-gate.js';
+import { describeOutcome, readHolder, teamContext, type GateOutcome } from './gate.js';
 import { runGit } from './git.js';
 import type { UpstreamRevision } from './run-meta.js';
 
@@ -312,4 +317,111 @@ export function inferStageWorkflow(repoPath: string, unit: UnitRef | (HandoffUni
 	if (unit.storyId === undefined) return has(hldArtifactId(unit.epicHash)) ? 'complete' : 'design.epic';
 	if (!has(lldArtifactId(unit.epicHash, unit.storyId))) return 'design.story';
 	return has(planArtifactId(unit.epicHash, unit.storyId)) ? 'complete' : 'plan';
+}
+
+// ---------------------------------------------------------------------------
+// Parking: deciding what to hand over
+// ---------------------------------------------------------------------------
+
+/** Does a stored run change this unit (same repository, unit kind, epic and story)? */
+export function runIsForUnit(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>, unit: UnitRef): boolean {
+	const u = authorUnitOf(intent);
+	return u !== undefined
+		&& resolve(u.repoPath) === resolve(unit.repoPath)
+		&& u.unit === unit.unit
+		&& u.epicHash === unit.epicHash
+		&& (u.storyId ?? undefined) === (unit.storyId ?? undefined);
+}
+
+/** What park may be told about its surroundings; tests replace these. */
+export interface ParkDeps {
+	readonly branchPattern?: ((repo: string) => string | undefined) | undefined;
+	readonly now?:           (() => string) | undefined;
+}
+
+/** Everything park has decided, ready to be carried out. Nothing has been changed yet. */
+export interface ParkPlan {
+	readonly ok:         true;
+	readonly repo:       string;
+	readonly unit:       UnitRef;
+	readonly branch:     string;
+	readonly variant:    'run' | 'draft';
+	readonly checkpoint: HandoffCheckpoint;
+	/** The unit's uncommitted draft files that go to the branch with the checkpoint. */
+	readonly files:      readonly string[];
+	/** The run that is checkpointed, for the issue note; absent for a draft-only plan. */
+	readonly runId?:     string | undefined;
+	readonly actor:      string;
+	readonly holder:     string;
+	readonly issue:      IssueRef;
+	readonly port:       TrackerPort;
+}
+
+export type ParkPlanResult = ParkPlan | { readonly ok: false; readonly reason: string };
+
+const refuse = (reason: string): ParkPlanResult => ({ ok: false, reason });
+const reasonOf = (o: GateOutcome): string => (o.kind === 'allowed' ? 'the gate allowed an action it should have refused' : describeOutcome(o));
+
+/**
+ * Decide whether and what to park, as the actor, for a unit someone else now holds. Refuses (with the reason, changing nothing)
+ * when the unit is a Task, the repo does not enforce claims, the unit has no issue or nobody holds it, the actor holds it, a
+ * supplied run token is not the actor's run for this unit, there is nothing to hand over, or the branch name is not valid.
+ * Otherwise it picks the actor's most recently touched owned run (or only the draft) and assembles the checkpoint. Only reads.
+ */
+export function parkPlan(repo: string, unit: UnitRef, opts: { readonly runToken?: string | undefined } = {}, deps: ParkDeps = {}): ParkPlanResult {
+	try {
+		if (unit.unit === 'task') return refuse('a Task has no run to hand over: commit your code on a branch as usual');
+
+		// the tracker side: who acts, which issue, who holds it
+		const ctx = teamContext(repo, unit);
+		if (!ctx.ok) return refuse(ctx.outcome.kind === 'no-issue' ? 'this stage has no tracker issue yet, so there is nobody to hand over to' : reasonOf(ctx.outcome));
+		if (!ctx.team) return refuse('this repository does not enforce claims, so there is nothing to hand over');
+		const read = readHolder(ctx, unit, deps.now ?? (() => new Date().toISOString()));
+		if (!read.ok) return refuse(reasonOf(read.outcome));
+		const holder = read.state.holder;
+		if (holder === null) return refuse('nobody holds this stage: claim it and continue, there is nothing to hand over');
+		if (holder.toLowerCase() === ctx.who.toLowerCase()) return refuse('you hold this stage; there is nothing to hand over');
+		const actor = ctx.who;
+
+		// the run: a supplied token must be the actor's own run for this unit; otherwise the most recently touched owned run
+		const mine = (e: ReturnType<typeof listStates>[number]): boolean => e.meta?.owner !== undefined && e.meta.owner.toLowerCase() === actor.toLowerCase() && runIsForUnit(e.payload.intent, { ...unit, repoPath: repo });
+		let chosen: ReturnType<typeof listStates>[number] | undefined;
+		if (opts.runToken !== undefined) {
+			const entry = listStates().find(e => e.token === opts.runToken);
+			if (entry === undefined) return refuse('that run token is not a live run (the daemon may have restarted or the run expired)');
+			if (!runIsForUnit(entry.payload.intent, { ...unit, repoPath: repo })) return refuse('that run belongs to another unit');
+			if (entry.meta?.owner === undefined) return refuse('that run has no recorded owner, so it cannot be shown to be yours');
+			if (entry.meta.owner.toLowerCase() !== actor.toLowerCase()) return refuse(`that run belongs to ${entry.meta.owner}`);
+			chosen = entry;
+		} else {
+			chosen = listStates().find(mine);   // newest touch first
+		}
+		const files = unitDraftFiles(repo, unit);
+		if (chosen === undefined && files.length === 0) return refuse('no draft or run to hand over');
+
+		// the branch
+		const slug = readEpicDefinitionCore(repo, unit.epicHash).epicSlug ?? unit.epicHash;
+		const pattern = (deps.branchPattern ?? resolveBranchPattern)(repo);
+		const named = handoffBranchName(pattern, unit, slug);
+		if (!named.ok) return refuse(named.reason);
+
+		// the checkpoint
+		const head = runGit(repo, ['rev-parse', 'HEAD']);
+		const roots = runGit(repo, ['rev-list', '--max-parents=0', 'HEAD']);
+		if (!head.ok || !roots.ok) return refuse(`cannot read the repository's history: ${head.ok ? (roots as { stderr: string }).stderr : head.stderr}`);
+		const repositoryId = roots.stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0).sort()[0];
+		if (repositoryId === undefined) return refuse('the repository has no commits to park from');
+		const common = { unit: { epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) }, parkedBy: actor, parkedAt: (deps.now ?? (() => new Date().toISOString()))(), sourceHead: head.stdout.trim(), repositoryId, artifactPaths: files };
+		const meta: RunEntryMeta | undefined = chosen?.meta;
+		const checkpoint: HandoffCheckpoint = chosen !== undefined
+			? buildRunCheckpoint({ ...common, payload: chosen.payload, owner: actor, upstream: meta?.upstream ?? [] })
+			: { schemaVersion: CHECKPOINT_SCHEMA_VERSION, kind: 'draft', portable: true, ...common };
+		return {
+			ok: true, repo, unit, branch: named.name, variant: checkpoint.kind, checkpoint, files,
+			...(chosen !== undefined ? { runId: chosen.payload.runId } : {}),
+			actor, holder, issue: ctx.issue, port: ctx.port,
+		};
+	} catch (err) {
+		return refuse(`park could not be planned: ${err instanceof Error ? err.message : String(err)}`);
+	}
 }

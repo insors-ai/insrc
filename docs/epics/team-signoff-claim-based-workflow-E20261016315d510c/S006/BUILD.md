@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s6
 
-**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T17:43:59.622Z
+**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T17:46:56.854Z
 
-**Commit:** e36c49ef
+**Commit:** bb85e188
 
 ## Summary
 
-New src/daemon/steps/workflow-step/park-offer.ts: hasUnparkedWork(repo, unit, actor) is true when listStates holds a run whose meta.owner equals the actor (case-insensitive), whose intent maps through authorUnitOf to the same repo (resolved), unit kind, epic hash and story id, in any stage (awaiting_plan, awaiting_llm_step, awaiting_synthesize); or, for an Epic or Story unit, when unitDraftFiles(repo, unit) finds a changed, staged or untracked artifact of the unit; a run with no meta, no owner or another owner never counts; it never throws. registerParkOffer() registers it with the gate through registerParkOfferProvider, and stepToolTable() in src/daemon/steps/host.ts (where the daemon builds its step tools and already registers the workflow runners) calls it, so it is registered at daemon startup. handoff.ts gains unitDraftFiles (git status --porcelain=v1 -z --untracked-files=all over .insrc/artifacts and docs, rename entries handled, filtered by isUnitArtifactPath), which park will reuse. park-offer.test.ts's second test (named in the plan) calls stepToolTable() to get the registration, uses a real temporary git repo and the real state store and gate (fake tracker with bob as holder, actor alice): no work gives offerPark false; an owned run in each of the three stages gives true (and ALICE owner too); no meta, empty meta, another owner, another story, another repo and a non-claim-unit workflow give false; an untracked LLD json gives true, committed gives false, modified gives true again, an untracked PLAN.md in the Story's folder gives true, committed false, an unrelated changed docs file gives false; and handleWorkflowStep start for the held plan returns team-gate-refused whose message matches 'held by bob; ... team park <epicHash> [storyId]' with an owned run, and exactly 'held by bob' without one. Suites: steps 387, team 80 pass; tsc clean.
+Both gaps closed. Startup: src/daemon/index.ts now imports registerParkOffer and main() calls it right after installStepDaemonClient(...) before the IPC server starts (stepToolTable keeps its idempotent call too), and a new test in park-offer.test.ts checks that wiring in main(). Terminal: the CLI runs the gate in its own process with no run store, so makeServices() in src/cli/services/index.ts registers a provider there that offers on an uncommitted draft only: handoff.ts gains draftParkOffer(repo, unit) (unitDraftFiles non-empty for an Epic or Story unit, never throws), which the daemon's hasUnparkedWork also uses for its draft half. The named integration test now also drives the real terminal command: with bob holding the Story and no draft, 'team claim <hash> s1' prints exactly '✗ not claimed — held by bob'; after an untracked LLD.md appears in the Story's folder it prints '✗ not claimed — held by bob; ... team park <epicHash> [storyId]'. Everything else in that test (owned run in each stage, case-insensitive owner, no meta / empty meta / another owner / another story / another repo / non-claim-unit workflow giving false, untracked, committed, modified and markdown drafts, the workflow-step refusal text with and without an offer) is unchanged and passes. park-offer.test.ts has 3 passing tests; team suite 81 and cli 207 pass (the cli poll-interval flake aside); tsc clean.
 
 ## Tasks validated
 
@@ -16,26 +16,28 @@ New src/daemon/steps/workflow-step/park-offer.ts: hasUnparkedWork(repo, unit, ac
 - ✓ `t2`
 - ✓ `t3`
 - ✓ `t4`
-- ✗ `t5`
+- ✓ `t5`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/daemon/steps/host.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
-- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T17:43:59.622Z)
+- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/cli/services/index.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/daemon/index.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/daemon/steps/host.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)
+- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T17:46:56.854Z)

@@ -204,6 +204,19 @@ export function resolveGithubConfig(repoPath: string, configPath: string = githu
 	return resolveGithubConfigFromFile(loadGithubConfigFile(configPath), repoPath);
 }
 
+/**
+ * The branch pattern the repo sets for handoff branches: its own entry's, else the default entry's; undefined when neither sets
+ * one (the caller then uses its default). A config file that cannot be read has none.
+ */
+export function resolveBranchPattern(repoPath: string, configPath: string = githubConfigPath()): string | undefined {
+	try {
+		const file = loadGithubConfigFile(configPath);
+		const own = file.repos?.[repoPath]?.branchPattern;
+		const set = own !== undefined && own.length > 0 ? own : file.default?.branchPattern;
+		return set !== undefined && set.length > 0 ? set : undefined;
+	} catch { return undefined; }
+}
+
 /** {@link resolveGithubConfig} over an already loaded file, so a caller that has
  *  read and validated the file once can resolve from that same snapshot instead
  *  of reading it again. The selection and resolution logic is the same code, only

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T17:43:59.622Z",
+    "updatedAt": "2026-10-18T17:46:56.854Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -220,8 +220,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "e36c49ef",
-        "ranAt": "2026-10-18T17:43:59.622Z",
+        "commit": "bb85e188",
+        "ranAt": "2026-10-18T17:46:56.854Z",
         "testsPassed": true,
         "tests": [
           {
@@ -243,7 +243,7 @@
             "file": "src/workflow/team/__tests__/park-offer.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1864,
+            "durationMs": 3091,
             "titles": [
               {
                 "title": "teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then",
@@ -251,6 +251,10 @@
               },
               {
                 "title": "a held-by-other refusal carries offerPark when the actor owns a live run in any stage or has an uncommitted draft for the unit, never for an unowned run, and the workflow-step refusal text names the park command",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon registers the park-offer provider at startup, not only when its step tools are first used",
                 "result": "pass"
               }
             ],

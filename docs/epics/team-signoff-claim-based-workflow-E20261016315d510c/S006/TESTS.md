@@ -91,7 +91,7 @@ Run at 2026-10-18T17:39:37.745Z on commit `35e5c249`. Tests check: **passed**. 3
 
 ## t5
 
-Run at 2026-10-18T17:43:59.622Z on commit `e36c49ef`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T17:46:56.854Z on commit `bb85e188`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/team/__tests__/park-offer.test.ts: a held-by-other refusal carries offerPark when the actor owns a live run in any stage or has an uncommitted draft for the unit, never for an unowned run, and the workflow-step refusal text names the park command**
 
@@ -103,4 +103,4 @@ Run at 2026-10-18T17:43:59.622Z on commit `e36c49ef`. Tests check: **passed**. 1
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/team/__tests__/park-offer.test.ts` | 0 | 2 | 1.9 s |  |
+| `src/workflow/team/__tests__/park-offer.test.ts` | 0 | 3 | 3.1 s |  |

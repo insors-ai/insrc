@@ -88,6 +88,9 @@ export interface DimensionResult {
 	/** Coverage HIGHs lowered to LOW, each with why (ISSUE-b47dadc7). Not part of
 	 *  the verdict beyond the lowered severity; omitted when nothing was lowered. */
 	readonly lowered?: readonly LoweredFinding[] | undefined;
+	/** How many calls of each stage the dimension took, when it took more than one
+	 *  (ISSUE-aef82b03: judged as a bounded review job). Absent for one call. */
+	readonly parts?: { readonly map: number; readonly reduce: number; readonly compare: number } | undefined;
 }
 
 // ---------------------------------------------------------------------------

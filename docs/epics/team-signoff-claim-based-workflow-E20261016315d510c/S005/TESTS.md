@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -207,3 +207,26 @@ Run at 2026-10-18T15:11:50.055Z on commit `c9ac9ad4`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/__tests__/team-claim-release.test.ts` | 0 | 1 | 2.6 s |  |
+
+## t10
+
+Run at 2026-10-18T15:14:28.687Z on commit `6d34aade`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/__tests__/gate-guarded-entry-points.test.ts: the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget, resolveReviewFinding apply) is complete, and the analyze and code-review steps are not on it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget, resolveReviewFinding apply) is complete, and the analyze and code-review steps are not on it | `src/workflow/__tests__/gate-guarded-entry-points.test.ts` |
+
+**integration: src/cli/__tests__/gate-refusal-output.test.ts: the terminal approve and resolve commands print the refusal naming the holder, formatted beside the review-block message**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the terminal approve and resolve commands print the refusal naming the holder, formatted beside the review-block message | `src/cli/__tests__/gate-refusal-output.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/__tests__/gate-refusal-output.test.ts` | 0 | 3 | 0.9 s |  |
+| `src/workflow/__tests__/gate-guarded-entry-points.test.ts` | 0 | 1 | 0.9 s |  |

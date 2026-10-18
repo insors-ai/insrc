@@ -1541,6 +1541,18 @@
         "relPath": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/er-model.html",
         "title": "ER model"
       }
+    ],
+    "feedback": [
+      {
+        "id": "79b127bb",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-18T04:21:08.617Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
+        },
+        "comment": "Amended 2026-10-18 by the stakeholder's decision during the build of task t8: a resolved relative IMPORTS carries the target file's absolute path as meta.targetFile, written by the per-file resolver (src/indexer/resolver.ts). The cross-file pass's file-target classification (section 2.9: 'not-code' -> 'no-candidate' with reason 'target-not-code'; 'excluded-by-ignore' / not stored -> stays 'awaiting-target' with reasons 'target-excluded-by-ignore' / 'target-not-committed') needs the path of a file that is not stored. A pending row holds only the file's entity id, a hash of the path that cannot be reversed, and the design named no source for the path. The keep-awaiting writer keeps the rest of the meta, so the path rides on the row; edges store no meta. t8's scope therefore includes this change to src/indexer/resolver.ts.",
+        "kind": "feedback"
+      }
     ]
   },
   "citations": [

@@ -11,6 +11,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -86,8 +87,14 @@ test("checkpoint validation rejects an unknown schemaVersion or kind, a unit mis
 	assert.match(reason(runCheckpoint({ unit: { epicHash: 'ffffffffffffffff', storyId: 's1' } })), /different unit/);
 	assert.match(reason('nope'), /not an object/);
 
+	// the draft variant is held to the same checks
+	assert.match(reason({ ...draft, kind: 'weird' }), /unknown checkpoint kind/);
+	assert.match(reason({ ...draft, unit: { epicHash: HASH, storyId: 's2' } }), /different unit/);
+	assert.match(reason({ ...draft, unit: { epicHash: HASH } }), /different unit/);
+	assert.match(reason({ ...draft, parkedBy: '' }), /no parkedBy/);
+
 	// paths: both variants refuse a file that is not the unit's own
-	for (const bad of ['../outside.json', '/etc/passwd', 'src/workflow/team/gate.ts', `.insrc/artifacts/${lldArtifactId(HASH, 's2')}.json`, `.insrc/artifacts/LLD-ffffffffffffffff-s1.json`, `${WORK_ITEM}/S002/LLD.md`, 'docs/epics/x-E20260718deadbeef/S001/LLD.md', `${WORK_ITEM}/S001/../S002/LLD.md`, 'C:\\x.json']) {
+	for (const bad of ['../outside.json', '/etc/passwd', 'src/workflow/team/gate.ts', `.insrc/artifacts/${lldArtifactId(HASH, 's2')}.json`, `.insrc/artifacts/LLD-ffffffffffffffff-s1.json`, `${WORK_ITEM}/S002/LLD.md`, 'docs/epics/x-E20260718deadbeef/S001/LLD.md', `${WORK_ITEM}/S001/../S002/LLD.md`, 'C:\\x.json', `${WORK_ITEM}/./HLD.md`, `${WORK_ITEM}/./S001/LLD.md`, `${WORK_ITEM}//S001/LLD.md`, `.insrc/artifacts/./${lldArtifactId(HASH, 's1')}.json`]) {
 		assert.match(reason(runCheckpoint({ artifactPaths: [bad] })), /outside the unit's own artifacts/, bad);
 		assert.match(reason({ ...draft, artifactPaths: [bad] }), /outside the unit's own artifacts/, bad);
 	}
@@ -147,20 +154,30 @@ test('rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, rese
 	// a different indexing state on the receiving side is respected as given
 	assert.equal(rebindCheckpoint(asRun({}), { ...binding, repoIndexedAt: null }).intent.repoIndexedAt, null);
 
-	// stage inference follows the artifact chain on disk
+	// stage inference follows the artifacts COMMITTED at HEAD: a file only in the working tree does not count
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-infer-'));
 	try {
-		const put = (id: string): void => { const p = artifactJsonPath(repo, id); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, '{}'); };
+		const git = (...a: string[]): void => { execFileSync('git', a, { cwd: repo, stdio: 'ignore' }); };
+		git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
+		writeFileSync(join(repo, 'README.md'), 'x'); git('add', '-A'); git('commit', '-qm', 'init');
+		const put = (id: string, commit: boolean): void => {
+			const p = artifactJsonPath(repo, id); mkdirSync(dirname(p), { recursive: true }); writeFileSync(p, '{}');
+			if (commit) { git('add', '-A'); git('commit', '-qm', id); }
+		};
 		const story = { ...STORY, repoPath: repo, unit: 'story' as const };
 		const epic = { ...EPIC, repoPath: repo, unit: 'epic' as const };
 		assert.equal(inferStageWorkflow(repo, epic), 'design.epic');
 		assert.equal(inferStageWorkflow(repo, story), 'design.story');
-		put(hldArtifactId(HASH));
+		put(hldArtifactId(HASH), false);
+		assert.equal(inferStageWorkflow(repo, epic), 'design.epic', 'an HLD that is only a local draft is not a committed stage');
+		git('add', '-A'); git('commit', '-qm', 'hld');
 		assert.equal(inferStageWorkflow(repo, epic), 'complete');
 		assert.equal(inferStageWorkflow(repo, story), 'design.story', 'the Epic being complete says nothing about the Story');
-		put(lldArtifactId(HASH, 's1'));
+		put(lldArtifactId(HASH, 's1'), true);
 		assert.equal(inferStageWorkflow(repo, story), 'plan', 'a committed LLD does not hide an unfinished plan');
-		put(planArtifactId(HASH, 's1'));
+		put(planArtifactId(HASH, 's1'), false);
+		assert.equal(inferStageWorkflow(repo, story), 'plan', 'an uncommitted PLAN is a draft, not a completed stage');
+		git('add', '-A'); git('commit', '-qm', 'plan');
 		assert.equal(inferStageWorkflow(repo, story), 'complete');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

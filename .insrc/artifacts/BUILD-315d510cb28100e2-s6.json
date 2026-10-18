@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T17:20:30.641Z",
+    "updatedAt": "2026-10-18T17:33:11.671Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -22,77 +22,123 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": false
       }
     ],
-    "summary": "The judge was right that handoff-ownership.test.ts did not exercise a step turn or the snapshot after a turn. It now seeds an approved Define (revision 3), HLD (5) and Story LLD (7) the way plan-e2e does and drives the real plan workflow through handleWorkflowStep: start (stored entry meta has owner alice and the snapshot LLD 7, HLD 5, Define 3), then phase plan (new token; owner and the whole upstream list equal the start's; the superseded token is gone), then phase step for s1 and again for s2 (each new token keeps the owner and the identical upstream list, and each releases the token it decoded). A second half runs the same start and plan turn with a no-policy repo: both stored entries have meta undefined and the tracker loader is never called. The other test file and the implementation are unchanged from the first submission; tsc clean; workflow-step, team and daemon suites pass.",
+    "summary": "New src/workflow/team/handoff.ts (pure; no git, tracker or store): DEFAULT_BRANCH_PATTERN 'insrc/handoff/{type}-{id}'; handoffBranchName(pattern, unit, slug) validates the pattern with the existing validateBranchPattern grammar, requires {id}, fills {id} (epic hash, plus '-<storyId>' for a Story), {type} (epic|story) and a lower-cased branch-safe {slug}, then refuses a result that is empty, over 200 characters, has disallowed characters, a leading/trailing/doubled slash (an empty slug), '..', a '.lock' or trailing '.' or a dot-leading part; the HandoffCheckpoint types (RunCheckpoint with runId, epicKey, stage, intent without repoPath/repoIndexedAt, executor without intent at awaiting_llm_step, stepOutputs at awaiting_synthesize, owner, upstream; DraftCheckpoint; common schemaVersion 1, unit, parkedBy, parkedAt, sourceHead, repositoryId, artifactPaths); isUnitArtifactPath (only the unit's own .insrc/artifacts JSON ids, or markdown in the unit's work-item folder, with the Story's S<nnn> folder for a Story and not a Story folder for an Epic; absolute paths, '..' and backslashes are never the unit's); validateCheckpoint (schema version, kind, unit match incl. storyId, string fields, every parked path, and for runs the stage, intent with no machine paths, upstream list, executor iff awaiting_llm_step, stepOutputs iff awaiting_synthesize), each failure naming the field; rebindCheckpoint (version 1 payload with startedAtMs = now, repoPath and repoIndexedAt on the payload intent AND on the executor intent, executor/stepOutputs by stage); inferStageWorkflow (Epic: HLD present means complete else design.epic; Story: no LLD design.story, LLD without PLAN plan, both complete). repo-fields.ts: the branchPattern row gets default 'insrc/handoff/{type}-{id}', a description that says a parked draft goes to it and {id} is required, and loses the not-used-yet note (grammar unchanged). handoff-pure.test.ts has the three named tests. Because that row is pinned elsewhere I updated the shared fixture src/config/__tests__/fixtures/repo-fields-catalog.json, repo-fields.test.ts and settings-modal.test.ts (branchPattern now has no note and has the default); config 149, cli, daemon repo-settings and team suites pass; tsc clean. Note for the IDE repo: it mirrors that fixture.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S006/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": "src/cli/__tests__/settings-modal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:33:11.671Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/fixtures/repo-fields-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:33:11.671Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/repo-fields.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:33:11.671Z"
+      },
+      {
+        "target": {
+          "file": "src/config/repo-fields.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:33:11.671Z"
+      },
+      {
+        "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/handoff-pure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:33:11.671Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/park-offer.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/snapshot-upstream.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/handoff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:33:11.671Z"
       },
       {
         "target": {
           "file": "src/workflow/team/run-meta.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:20:30.641Z"
+        "timestamp": "2026-10-18T17:33:11.671Z"
       }
     ],
-    "commit": "53e59f21"
+    "commit": "d66c692a"
   }
 }

@@ -10,13 +10,14 @@
  * committed artifact chain. Nothing in this module touches git, the tracker or the daemon's run store.
  */
 
-import { existsSync } from 'node:fs';
+import { posix, relative } from 'node:path';
 
 import { validateBranchPattern } from '../../config/repo-fields.js';
 import type { WorkflowStepStatePayload } from '../../daemon/steps/workflow-step/state.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
 import type { UnitRef } from '../tracker/refs.js';
 import type { ExecutorState, WorkflowIntent } from '../types.js';
+import { runGit } from './git.js';
 import type { UpstreamRevision } from './run-meta.js';
 
 /** The branch pattern used when the repo sets none. */
@@ -113,7 +114,8 @@ function unitArtifactIds(unit: HandoffUnit): readonly string[] {
  * Absolute paths, '..' and backslashes are never the unit's.
  */
 export function isUnitArtifactPath(unit: HandoffUnit, path: string): boolean {
-	if (path.length === 0 || path.startsWith('/') || path.includes('\\') || path.split('/').includes('..') || /^[A-Za-z]:/.test(path)) return false;
+	// only a path already in normal form: no '.', '..' or empty segments, no backslash, not absolute or drive-lettered
+	if (path.length === 0 || path.startsWith('/') || path.includes('\\') || /^[A-Za-z]:/.test(path) || posix.normalize(path) !== path || path.split('/').some(part => part === '' || part === '.' || part === '..')) return false;
 	if (unitArtifactIds(unit).some(id => path === `.insrc/artifacts/${id}.json`)) return true;
 	const parts = path.split('/');
 	if (parts[0] !== 'docs' || (parts[1] !== 'epics' && parts[1] !== 'standalone') || !path.endsWith('.md')) return false;
@@ -199,12 +201,18 @@ export function rebindCheckpoint(checkpoint: RunCheckpoint, binding: { readonly 
 // Stage inference
 // ---------------------------------------------------------------------------
 
+/** Is this file committed at HEAD? (A file only in the working tree, such as a local draft, is not.) */
+function committedAtHead(repoPath: string, artifactId: string): boolean {
+	return runGit(repoPath, ['cat-file', '-e', `HEAD:${relative(repoPath, artifactJsonPath(repoPath, artifactId)).split('\\').join('/')}`]).ok;
+}
+
 /**
- * Which stage a unit needs next, from the artifact chain on disk: an Epic with no HLD needs design.epic; a Story with no LLD needs
- * design.story, with an LLD and no PLAN needs plan (a committed LLD never hides an unfinished plan), with both is complete.
+ * Which stage a unit needs next, from the artifacts committed at HEAD (a draft that exists only in the working tree does not
+ * count): an Epic with no HLD needs design.epic; a Story with no LLD needs design.story, with an LLD and no PLAN needs plan (a
+ * committed LLD never hides an unfinished plan), with both is complete.
  */
 export function inferStageWorkflow(repoPath: string, unit: UnitRef | (HandoffUnit & { readonly repoPath: string })): 'design.epic' | 'design.story' | 'plan' | 'complete' {
-	const has = (id: string): boolean => existsSync(artifactJsonPath(repoPath, id));
+	const has = (id: string): boolean => committedAtHead(repoPath, id);
 	if (unit.storyId === undefined) return has(hldArtifactId(unit.epicHash)) ? 'complete' : 'design.epic';
 	if (!has(lldArtifactId(unit.epicHash, unit.storyId))) return 'design.story';
 	return has(planArtifactId(unit.epicHash, unit.storyId)) ? 'complete' : 'plan';

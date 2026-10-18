@@ -100,6 +100,8 @@ interface TrailerScan {
 	readonly carrying: ReadonlySet<string>;
 	/** Each commit's subject line, for the missed-commit warning. */
 	readonly subjects: ReadonlyMap<string, string>;
+	/** Abbreviated sha of the newest carrying commit on the first-parent line. */
+	readonly newest:   string | undefined;
 }
 
 /** The first-parent commits in the range that carry `Insrc-Story: <storyKey>`;
@@ -107,20 +109,32 @@ interface TrailerScan {
 function scanTrailers(repoPath: string, base: string, storyKey: string): TrailerScan | undefined {
 	let out: string;
 	try {
-		out = git(repoPath, ['log', '--first-parent', `--format=%H%x1f%s%x1f%(trailers:key=${STORY_TRAILER_KEY},valueonly,separator=%x1f)%x1e`, `${base}..HEAD`]);
+		out = git(repoPath, ['log', '--first-parent', `--format=%H%x1f%h%x1f%s%x1f%(trailers:key=${STORY_TRAILER_KEY},valueonly,separator=%x1f)%x1e`, `${base}..HEAD`]);
 	} catch (err) {
 		log.warn({ repoPath, storyKey, err: err instanceof Error ? err.message : String(err) }, 'storyChangeSet: could not read commit trailers; using the first-parent range');
 		return undefined;
 	}
 	const carrying = new Set<string>();
 	const subjects = new Map<string, string>();
+	let newest: string | undefined;
+	// git log lists newest first, so the first carrying commit is the newest.
 	for (const record of out.split('\x1e')) {
-		const [sha, subject, ...values] = record.trim().split('\x1f');
+		const [sha, short, subject, ...values] = record.trim().split('\x1f');
 		if (sha === undefined || sha.length === 0) continue;
 		subjects.set(sha, subject ?? '');
-		if (values.some(v => v.trim() === storyKey)) carrying.add(sha);
+		if (values.some(v => v.trim() === storyKey)) {
+			carrying.add(sha);
+			newest ??= short;
+		}
 	}
-	return { carrying, subjects };
+	return { carrying, subjects, newest };
+}
+
+/** The abbreviated sha of the newest first-parent commit since `base` carrying
+ *  `Insrc-Story: <storyKey>`; undefined when none does or the trailers cannot
+ *  be read. Never throws. */
+export function newestStoryCommit(repoPath: string, base: string, storyKey: string): string | undefined {
+	return scanTrailers(repoPath, base, storyKey)?.newest;
 }
 
 /**

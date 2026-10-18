@@ -450,6 +450,11 @@ export function workflowDoneData(out: RunWorkflowResult): Record<string, unknown
 	};
 }
 
+let driver: typeof runWorkflowServerSide = (...args) => runWorkflowServerSide(...args);
+
+/** Test seam: replace the workflow driver `runStart` calls (needs a real provider otherwise); no argument resets. */
+export function _setWorkflowDriverForTests(fn?: typeof runWorkflowServerSide): void { driver = fn ?? ((...args) => runWorkflowServerSide(...args)); }
+
 /** `workflow.run` stream handler. Emits `progress` frames per phase, then a
  *  terminal `done` (with the artifact path) or `error`. */
 export async function runStart(
@@ -474,7 +479,7 @@ export async function runStart(
 		// Both stay s1-internal — WorkflowProgress/onToken are unchanged.
 		let stageIndex = 0;
 		const tokens = makeTokenAccumulator();
-		const drive = (): Promise<RunWorkflowResult> => runWorkflowServerSide(intent, provider, {
+		const drive = (): Promise<RunWorkflowResult> => driver(intent, provider, {
 			runId, epicKey, modelLabel, signal, router, cfg, repoPath,
 			onProgress: (f) => { appendProgressLog(runId, 'workflow.run', f.phase, formatProgressDetail(f)); send({ id: 0, stream: 'progress', data: workflowProgressToStage(f, stageIndex++) }); },
 			onToken:    (stepId, token) => { const ev = tokens.push(stepId, token); if (ev !== null) send({ id: 0, stream: 'delta', data: ev }); },

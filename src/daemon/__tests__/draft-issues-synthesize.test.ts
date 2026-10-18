@@ -22,7 +22,7 @@ import { join } from 'node:path';
 
 import { handleWorkflowStep } from '../steps/workflow-step/handler.js';
 import { _clearWorkflowStateStoreForTests } from '../steps/workflow-step/state-store.js';
-import { runWorkflowServerSide, workflowDoneData } from '../workflow-rpc.js';
+import { _setWorkflowDriverForTests, runStart, runWorkflowServerSide, workflowDoneData } from '../workflow-rpc.js';
 import { registerWorkflowRunners } from '../../workflow/index.js';
 import { _setDraftHookForTests, type IssueReadiness } from '../../workflow/draft-issues.js';
 import type { LLMProvider, LLMMessage, StructuredSchema } from '../../shared/types.js';
@@ -134,6 +134,25 @@ test('the whole workflow.run path carries readiness at every hop, including the 
 		const ready = await run('wf-ready');
 		assert.deepEqual(workflowDoneData(ready)['issueReadiness'], READY);
 		assert.equal('notice' in workflowDoneData(ready), false);
+
+		// hop 3: the frame runStart actually sends, captured from its send callback (the driver is the real
+		// runWorkflowServerSide with a fake provider; prepareWorkflowRun's own provider is not used)
+		const frames: Array<{ stream?: string; data?: Record<string, unknown> }> = [];
+		_setWorkflowDriverForTests((i, _p, o) => runWorkflowServerSide(i, new FakeProvider([STUB_PLAN, STUB_ARTIFACT]), { ...o, router: undefined, cfg: undefined }));
+		_setDraftHookForTests(() => NOT_READY);
+		await runStart({ workflow: 'stub', focus: 'demo stub run', repo, review: false }, m => frames.push(m as never), new AbortController().signal);
+		const done = frames.find(f => f.stream === 'done');
+		assert.ok(done !== undefined, JSON.stringify(frames.filter(f => f.stream === 'error')));
+		assert.deepEqual(done.data?.['issueReadiness'], NOT_READY);
+		assert.match(String(done.data?.['notice']), /cannot be claimed yet/);
+		frames.length = 0;
+		_setDraftHookForTests();
+		await runStart({ workflow: 'stub', focus: 'demo stub run', repo, review: false }, m => frames.push(m as never), new AbortController().signal);
+		const plainFrame = frames.find(f => f.stream === 'done');
+		assert.ok(plainFrame !== undefined);
+		assert.equal('issueReadiness' in (plainFrame.data ?? {}), false);
+		assert.equal('notice' in (plainFrame.data ?? {}), false);
+		_setWorkflowDriverForTests();
 
 		// no policy: neither field on the result nor on the frame
 		_setDraftHookForTests();

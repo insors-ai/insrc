@@ -18,7 +18,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ensureDraftIssues, readinessFields, type DraftHookDeps } from '../draft-issues.js';
-import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
+import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, writeArtifact } from '../storage.js';
+import { _setTrackerExecForTests } from '../tracker/github.js';
 import type { ResolvedGithubConfig } from '../config/github.js';
 import type { CreatedIssue, IssueRef, IssueSpec, PortFailureKind, PortResult, TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
@@ -163,7 +164,13 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 		const loadsBefore = h.seen.loads;
 		const findsBefore = h.seen.finds;
 		const lost = { ...h.deps(), loadTracker: () => { throw new Error('gh is signed out'); } };
+		const ghCalls: string[][] = [];
+		_setTrackerExecForTests((cmd, args) => { ghCalls.push([cmd, ...args]); throw new Error('gh is signed out'); });
 		for (const path of [fx.define, fx.hld, fx.lld, fx.plan]) {
+			// a real re-draft: the file is replaced by a fresh draft that carries no tracker block of its own
+			const fresh = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
+			delete fresh.meta['tracker'];
+			writeArtifact(path, fresh, 'content');
 			const r = ensureDraftIssues(path, lost);
 			assert.equal(r.status, 'ready');
 			assert.equal(r.status === 'ready' ? r.units.every(u => !u.created) : false, true);
@@ -171,12 +178,17 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 		assert.equal(h.seen.creates, 4);
 		assert.equal(h.seen.loads, loadsBefore);
 		assert.equal(h.seen.finds, findsBefore, 'no tracker call at all');
-	} finally { fx.cleanup(); }
+		assert.deepEqual(ghCalls, [], 'no gh command ran for the second writes (sign-in lost)');
+		_setTrackerExecForTests();
+	} finally { _setTrackerExecForTests(); fx.cleanup(); }
 
 	// a failure on the second Task keeps the first, stops, and reports the second as unconfirmed
 	const fy = seed();
 	try {
-		const h = harness({ failCreateAt: 4 });   // the Epic, the Story, Task t1, then t2 fails
+		const withThree = JSON.parse(readFileSync(fy.plan, 'utf8'));
+		withThree.body.tasks.push({ id: 't3', title: 'Persist the filter', summary: 's', size: 'S', order: 3, dependsOn: ['t2'], acceptanceChecks: ['persists'], derivedFrom: [], tests: [] });
+		writeFileSync(fy.plan, JSON.stringify(withThree));
+		const h = harness({ failCreateAt: 4 });   // the Epic, the Story, Task t1, then t2 fails; t3 must not be attempted
 		const r = ensureDraftIssues(fy.plan, h.deps());
 		assert.equal(r.status, 'not-ready');
 		if (r.status !== 'not-ready') return;
@@ -185,6 +197,7 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 		assert.deepEqual(r.readyUnits.map(u => u.unit), ['epic', 'story:s1', 'task:s1/t1']);
 		assert.equal(JSON.parse(readFileSync(fy.plan, 'utf8')).meta.tracker.taskRefs.t1, 'acme/demo#3', 'the first Task is recorded');
 		assert.equal(h.seen.creates, 4, 'no later Task is attempted');
+		assert.equal(JSON.parse(readFileSync(fy.plan, 'utf8')).meta.tracker.taskRefs.t3, undefined, 'Task t3 has no issue');
 	} finally { fy.cleanup(); }
 });
 

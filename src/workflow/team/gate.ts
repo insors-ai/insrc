@@ -14,11 +14,14 @@
  * tracker call (k4). Every failure is a `refused` outcome; the gate never throws.
  */
 
+import { existsSync } from 'node:fs';
+
 import { getLogger } from '../../shared/logger.js';
 import { loadTracker } from '../tracker/github-adapter.js';
 import type { Capability, IssueRef, PortResult, SignoffRequestRef, TrackerPort } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
-import { resolveUnitIssueLocal, unitKey } from '../tracker/unit-issue.js';
+import { ensureUnitIssue, resolveUnitIssueLocal, unitKey } from '../tracker/unit-issue.js';
+import { artifactJsonPath, defineArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
 import { policyReader } from './policy-reader.js';
 import type { PolicyReader } from './types.js';
 
@@ -73,6 +76,8 @@ export interface GateDeps {
 	readonly readPolicy?:  PolicyReader | undefined;
 	readonly loadTracker?: ((repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>) | undefined;
 	readonly resolveIssue?: ((unit: UnitRef) => IssueRef | null) | undefined;
+	readonly ensureIssue?: ((unit: UnitRef, port: TrackerPort) => PortResult<IssueRef>) | undefined;
+	readonly artifactExists?: ((unit: UnitRef) => boolean) | undefined;
 	readonly now?:         (() => string) | undefined;
 }
 
@@ -80,6 +85,30 @@ let testDeps: GateDeps = {};
 
 /** Test seam: inject the policy reader, tracker loader and issue lookup; no argument resets. */
 export function _setGateDepsForTests(deps: GateDeps = {}): void { testDeps = deps; }
+
+// ---------------------------------------------------------------------------
+// Completion hook (declared here, registered by s7)
+// ---------------------------------------------------------------------------
+
+/** Called by the gate for author and build on a next stage and for open-signoff, revise and release. */
+export type CompletionHook = (repo: string, unit: UnitRef, port: TrackerPort) => GateOutcome | 'continue';
+
+let registeredHook: CompletionHook | undefined;
+/** True while a hook runs: gate calls made by the hook itself (for example its release) skip the hook. */
+let insideHook = false;
+
+export function registerCompletionHook(hook: CompletionHook | undefined): void { registeredHook = hook; }
+
+const HOOKED: ReadonlySet<string> = new Set<GuardedAction>(['author', 'build', 'open-signoff', 'revise', 'release']);
+
+/** The hook's answer for this action, or 'continue' when none is registered, the call came from the hook, or the action is not hooked. */
+function consultHook(repo: string, unit: UnitRef, action: GuardedAction, port: TrackerPort): GateOutcome | 'continue' {
+	if (registeredHook === undefined || insideHook || !HOOKED.has(action)) return 'continue';
+	insideHook = true;
+	try { return registeredHook(repo, unit, port); }
+	catch (err) { return refused(`the completion hook failed: ${errorText(err)}`); }
+	finally { insideHook = false; }
+}
 
 // ---------------------------------------------------------------------------
 // The gate
@@ -105,9 +134,18 @@ function logOutcome(unit: UnitRef, action: string, outcome: GateOutcome): GateOu
 
 /** The team-mode context shared by the gate, claim and release: policy, tracker, actor and issue. */
 export type TeamContext =
-	| { readonly ok: false; readonly outcome: GateOutcome }
+	| { readonly ok: false; readonly outcome: GateOutcome; readonly noIssue?: true | undefined }
 	| { readonly ok: true; readonly team: false }
 	| { readonly ok: true; readonly team: true; readonly port: TrackerPort; readonly issue: IssueRef; readonly who: string; readonly administrators: readonly string[] };
+
+/** The unit's own artifact (Define, LLD or plan) is on disk. */
+function unitArtifactExists(unit: UnitRef): boolean {
+	if (testDeps.artifactExists !== undefined) return testDeps.artifactExists(unit);
+	const id = unit.unit === 'epic' ? defineArtifactId(unit.epicHash)
+		: unit.unit === 'story' ? lldArtifactId(unit.epicHash, unit.storyId ?? '')
+		: planArtifactId(unit.epicHash, unit.storyId ?? '');
+	return existsSync(artifactJsonPath(unit.repoPath, id));
+}
 
 /** Read the policy, then (team mode with claims enforced only) the tracker, the actor and the unit's issue. */
 export function teamContext(repo: string, unit: UnitRef): TeamContext {
@@ -115,13 +153,21 @@ export function teamContext(repo: string, unit: UnitRef): TeamContext {
 	if (!policy.ok) return { ok: false, outcome: refused(`the team policy cannot be read: ${policy.reason}`) };
 	if (policy.value === 'none' || !policy.value.teamMode || !policy.value.claimsEnforced) return { ok: true, team: false };
 
-	const issue = (testDeps.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
-	if (issue === null) return { ok: false, outcome: refused('the stage has no tracker issue yet') };
-
 	const loaded = (testDeps.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim']));
 	if (!loaded.ok) return { ok: false, outcome: refused(`the tracker cannot be used (${loaded.kind}): ${loaded.reason}`) };
 	const who = loaded.value.whoAmI();
 	if (!who.ok) return { ok: false, outcome: refused(`cannot tell who is acting (${who.kind}): ${who.reason}`) };
+
+	// The unit's issue: recorded, found, or created now. If it cannot be had, the stage has no issue yet.
+	let issue = (testDeps.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
+	let creationFailure: string | undefined;
+	if (issue === null) {
+		const ensured = (testDeps.ensureIssue ?? ensureUnitIssue)(unit, loaded.value);
+		if (ensured.ok) issue = ensured.value; else creationFailure = ensured.reason;
+	}
+	if (issue === null) {
+		return { ok: false, outcome: { kind: 'no-issue', allowFirstAuthor: false, creationFailure }, noIssue: true };
+	}
 	return { ok: true, team: true, port: loaded.value, issue, who: who.value, administrators: policy.value.administrators };
 }
 
@@ -140,8 +186,17 @@ export function teamGate(repo: string, unit: UnitRef, action: GuardedAction): Ga
 	try {
 		if (!GUARDED.has(action)) return allowed();
 		const ctx = teamContext(repo, unit);
-		if (!ctx.ok) return logOutcome(unit, action, ctx.outcome);
+		if (!ctx.ok) {
+			// The one exception: the first author turn of a stage that has no artifact yet can be written without its issue
+			if (ctx.noIssue === true && ctx.outcome.kind === 'no-issue' && action === 'author' && !unitArtifactExists(unit)) {
+				return logOutcome(unit, action, { ...ctx.outcome, allowFirstAuthor: true });
+			}
+			return logOutcome(unit, action, ctx.outcome);
+		}
 		if (!ctx.team) return allowed();
+
+		const hooked = consultHook(repo, unit, action, ctx.port);
+		if (hooked !== 'continue') return logOutcome(unit, action, hooked);
 
 		const now = testDeps.now ?? ((): string => new Date().toISOString());
 		const read = readHolder(ctx, unit, now);

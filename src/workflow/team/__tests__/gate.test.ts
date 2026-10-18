@@ -13,12 +13,12 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { _setGateDepsForTests, teamGate, type GuardedAction } from '../gate.js';
+import { _setGateDepsForTests, registerCompletionHook, teamGate, type GateDeps, type GuardedAction } from '../gate.js';
 import type { PortFailureKind, PortResult, TrackerPort } from '../../tracker/port.js';
 import type { UnitRef } from '../../tracker/refs.js';
 import type { PolicyReader, TeamPolicy } from '../types.js';
 
-afterEach(() => _setGateDepsForTests());
+afterEach(() => { _setGateDepsForTests(); registerCompletionHook(undefined); });
 
 const UNIT: UnitRef = { unit: 'story', repoPath: '/repo', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' };
 const ISSUE = 'acme/demo#7';
@@ -58,12 +58,14 @@ function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureK
 	return { port, assignees, calls };
 }
 
-function inject(f: Fake | undefined, readPolicy: PolicyReader = policy(), extra: { issue?: string | null } = {}): { loads: number } {
+function inject(f: Fake | undefined, readPolicy: PolicyReader = policy(), extra: { issue?: string | null; ensure?: GateDeps['ensureIssue']; artifact?: boolean } = {}): { loads: number } {
 	const seen = { loads: 0 };
 	_setGateDepsForTests({
 		readPolicy,
 		loadTracker: () => { seen.loads += 1; return f === undefined ? { ok: false, kind: 'missing-tool', reason: 'gh is not installed' } : { ok: true, value: f.port }; },
 		resolveIssue: () => (extra.issue === undefined ? ISSUE : extra.issue),
+		...(extra.ensure !== undefined ? { ensureIssue: extra.ensure } : {}),
+		...(extra.artifact !== undefined ? { artifactExists: () => extra.artifact as boolean } : {}),
 		now: () => '2026-10-18T00:00:00.000Z',
 	});
 	return seen;
@@ -152,8 +154,8 @@ test('teamGate returns held-by-other naming the holder for author, build, approv
 	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /gh is not installed/);
 	inject(fakePort([]), () => ({ ok: false, reason: 'default branch unknown' }));
 	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /policy cannot be read: default branch unknown/);
-	inject(fakePort([]), policy(), { issue: null });
-	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'refused');
+	inject(fakePort([]), policy(), { issue: null, ensure: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }), artifact: true });
+	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'no-issue');
 	// a throwing policy reader never escapes
 	_setGateDepsForTests({ readPolicy: () => { throw new Error('boom'); } });
 	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /team gate failed: boom/);
@@ -164,4 +166,88 @@ test('teamGate returns held-by-other naming the holder for author, build, approv
 		assert.equal(o.kind, 'refused', String(thrown));
 	}
 	assert.match(String((() => { _setGateDepsForTests({ readPolicy: () => { throw 'a string'; } }); return (teamGate('/repo', UNIT, 'author') as { reason?: string }).reason; })()), /team gate failed: a string/);
+});
+
+const FAIL_ENSURE: GateDeps['ensureIssue'] = () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' });
+
+test('the first author turn of a stage with no issue and no artifact is allowed as an explicit exception and any other action on a stage with no issue is refused', () => {
+	// no issue, no artifact: only the first author turn is let through, and it says why the issue is missing
+	inject(fakePort([]), policy(), { issue: null, ensure: FAIL_ENSURE, artifact: false });
+	assert.deepEqual(teamGate('/repo', UNIT, 'author'), { kind: 'no-issue', allowFirstAuthor: true, creationFailure: 'gh timed out' });
+	for (const action of ['build', 'approve-local', 'review-fix', 'open-signoff', 'revise', 'release', 'claim'] as GuardedAction[]) {
+		const o = teamGate('/repo', UNIT, action);
+		assert.deepEqual(o, { kind: 'no-issue', allowFirstAuthor: false, creationFailure: 'gh timed out' }, action);
+	}
+	// no issue but the artifact exists: not the first draft, so author is refused too
+	inject(fakePort([]), policy(), { issue: null, ensure: FAIL_ENSURE, artifact: true });
+	assert.equal((teamGate('/repo', UNIT, 'author') as { allowFirstAuthor?: boolean }).allowFirstAuthor, false);
+
+	// a missing issue that ensureUnitIssue can create is created, and the gate then decides on the live assignee
+	const f = fakePort([]);
+	let ensured = 0;
+	inject(f, policy(), { issue: null, ensure: () => { ensured += 1; return { ok: true, value: ISSUE }; }, artifact: false });
+	assert.deepEqual(teamGate('/repo', UNIT, 'author'), { kind: 'allowed', implicitClaim: true });
+	assert.equal(ensured, 1);
+	assert.deepEqual(f.assignees, ['alice']);
+});
+
+test('the registered completion hook is consulted for author and build on a next stage and for open-signoff, revise and release, a release called by the hook does not consult it again, and with none registered the gate behaves as continue (a hook-contract test; the completion-releases-the-claim integration test belongs to s7)', () => {
+	const f = fakePort(['alice']);
+	inject(f);
+
+	// none registered: continue
+	assert.deepEqual(teamGate('/repo', UNIT, 'author'), { kind: 'allowed', implicitClaim: false });
+
+	// consulted for the five hooked actions, not for the others; 'continue' lets the gate decide
+	const seen: string[] = [];
+	registerCompletionHook((_repo, _unit, port) => { seen.push(typeof port.whoAmI); return 'continue'; });
+	for (const action of ['author', 'build', 'open-signoff', 'revise', 'release', 'approve-local', 'review-fix', 'claim'] as GuardedAction[]) teamGate('/repo', UNIT, action);
+	assert.equal(seen.length, 5, 'author, build, open-signoff, revise and release only');
+
+	// an outcome from the hook is the answer, before the holder is read
+	const reads = f.calls.filter(c => c === 'readAssignee').length;
+	registerCompletionHook(() => ({ kind: 'awaiting-signoff', request: { ref: 'acme/demo#99' } as never }));
+	const o = teamGate('/repo', UNIT, 'author');
+	assert.equal(o.kind, 'awaiting-signoff');
+	assert.equal(f.calls.filter(c => c === 'readAssignee').length, reads, 'the holder was not read');
+
+	// a gate call made by the hook itself (its release) does not consult the hook again
+	let consulted = 0;
+	let inner: ReturnType<typeof teamGate> | undefined;
+	registerCompletionHook(() => { consulted += 1; inner = teamGate('/repo', UNIT, 'release'); return 'continue'; });
+	teamGate('/repo', UNIT, 'open-signoff');
+	assert.equal(consulted, 1, 'no recursion');
+	assert.equal(inner?.kind, 'allowed');
+	// and the guard is released afterwards
+	teamGate('/repo', UNIT, 'open-signoff');
+	assert.equal(consulted, 2);
+});
+
+test('each port failure kind, several assignees, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw', () => {
+	for (const kind of ['missing-tool', 'missing-signin', 'unreachable', 'rejected'] as PortFailureKind[]) {
+		inject(fakePort([], { failRead: kind }));
+		const r = teamGate('/repo', UNIT, 'build');
+		assert.equal(r.kind, 'refused', kind);
+		assert.match(r.kind === 'refused' ? r.reason : '', new RegExp(`\\(${kind}\\)`));
+	}
+	inject(fakePort(['bob', 'carol']));
+	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /more than one assignee/);
+	inject(fakePort([]), () => ({ ok: false, reason: 'default branch unknown' }));
+	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /policy cannot be read/);
+	inject(fakePort([]), policy(), { issue: null, ensure: FAIL_ENSURE, artifact: true });
+	assert.equal(teamGate('/repo', UNIT, 'build').kind, 'no-issue');
+
+	// a hook that throws (an Error or anything else) refuses with its message and the gate does not throw
+	inject(fakePort([]));
+	for (const thrown of [new Error('hook broke'), 'plain string', null]) {
+		registerCompletionHook(() => { throw thrown; });
+		const o = teamGate('/repo', UNIT, 'author');
+		assert.equal(o.kind, 'refused');
+		assert.match(o.kind === 'refused' ? o.reason : '', /completion hook failed/);
+	}
+	registerCompletionHook(() => { throw new Error('hook broke'); });
+	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /hook broke/);
+	// the guard against recursion is reset after a throw
+	registerCompletionHook(() => 'continue');
+	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'allowed');
 });

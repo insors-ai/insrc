@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:27:16.123Z",
+    "updatedAt": "2026-10-18T14:28:59.399Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -120,8 +120,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "6b6b6657",
-        "ranAt": "2026-10-18T14:27:16.123Z",
+        "commit": "af5faa3e",
+        "ranAt": "2026-10-18T14:28:59.399Z",
         "testsPassed": true,
         "tests": [
           {
@@ -182,7 +182,7 @@
             "file": "src/workflow/team/__tests__/gate.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1214,
+            "durationMs": 1190,
             "titles": [
               {
                 "title": "teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false",

@@ -24,7 +24,7 @@ Run at 2026-10-18T14:24:07.223Z on commit `ecac83d1`. Tests check: **passed**. 1
 
 ## t2
 
-Run at 2026-10-18T14:27:16.123Z on commit `6b6b6657`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T14:28:59.399Z on commit `af5faa3e`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/team/__tests__/gate.test.ts: teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false**
 

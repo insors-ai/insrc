@@ -120,6 +120,11 @@ export type CodeReviewFallbackReason =
  *  implementation-correctness; (B) LLD only → LLD-contract review; (C) neither
  *  → pure code review with no design contract. The conventions + quality
  *  dimensions read neither, so they are mode-agnostic. */
+/** How a review's changed set was scoped (ISSUE-b47dadc7): the uncommitted
+ *  working tree, or the committed range by the Story's `Insrc-Story` trailer or
+ *  by every first-parent commit. */
+export type ChangeSetAttribution = 'story-trailer' | 'first-parent-range' | 'working-tree';
+
 export interface CodeReviewSubject {
 	readonly repoPath:     string;
 	readonly epicHash:     string;
@@ -134,6 +139,11 @@ export interface CodeReviewSubject {
 	/** The Story's TESTS record: the gate's per-file, per-title results, which
 	 *  the coverage dimension judges pass-state from (ISSUE-1102dc71). */
 	readonly testRecord:   TestRecord | null;
+	/** How `changedFiles` was scoped; absent when the changed-file seam did not say. */
+	readonly changeSetAttribution?: ChangeSetAttribution | undefined;
+	/** Story files that another Story's excluded commit also changed: a full review
+	 *  judges them whole (stated limit, ISSUE-b47dadc7). */
+	readonly sharedWithExcluded?: readonly string[] | undefined;
 }
 
 /** Resolving a subject either yields the subject, or a REASON that is NOT a
@@ -174,7 +184,12 @@ export interface CodeReviewBody {
 	 *  full review and on records written before this field. */
 	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 	/** The exact review subject: the Story's changed files (git-derived). */
-	readonly subject:    { readonly changedFiles: readonly string[] };
+	readonly subject:    {
+		readonly changedFiles: readonly string[];
+		/** Optional on read: records written before ISSUE-b47dadc7 lack both. */
+		readonly changeSetAttribution?: ChangeSetAttribution | undefined;
+		readonly sharedWithExcluded?: readonly string[] | undefined;
+	};
 	/** All four dimension results (adherence / conventions / coverage / quality). */
 	readonly dimensions: readonly DimensionResult[];
 	/** Folded from the aggregated finding severities: any HIGH → block,

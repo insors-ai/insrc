@@ -245,7 +245,10 @@ test('the resolver is asked for THIS Story\'s base, and that base plus the ledge
 		changedFiles: async (_r, opts) => { calls.push(opts); return []; },
 	}));
 	assert.deepEqual(asked, [['/repo', 'epic-h', 'S007']]);
-	assert.deepEqual(calls, [{ base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS }]);
+	assert.equal(calls.length, 1);
+	const { onAttribution, ...rest } = calls[0] as { onAttribution?: unknown };
+	assert.deepEqual(rest, { base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: 'epic-h/S007' });
+	assert.equal(typeof onAttribution, 'function');
 });
 
 test('T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attempt is called with no options and its result is returned', async () => {
@@ -261,8 +264,12 @@ test('T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attem
 			},
 		}));
 	});
-	assert.deepEqual(calls, [
-		['/repo', { base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS }],
+	// The range-base attempt also carries the Story key and its attribution callback (ISSUE-b47dadc7).
+	const first = calls[0]?.[1] as { onAttribution?: unknown } | undefined;
+	assert.equal(typeof first?.onAttribution, 'function');
+	const { onAttribution: _cb, ...firstOpts } = first ?? {};
+	assert.deepEqual([calls[0]?.[0], firstOpts, ...calls.slice(1)], [
+		'/repo', { base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: 'epic/s1' },
 		['/repo', { excludeGlobs: LEDGER_EXCLUDE_GLOBS }],
 		['/repo'],                                   // exactly the old call: one argument
 	]);

@@ -27,6 +27,7 @@ import type { ToolDeps } from '../../../daemon/tools/types.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { ChangeLog, ChangeLogEntry } from '../../artifacts/provenance/types.js';
 import { storyChangeSet } from './story-commits.js';
+import type { StoryAttribution } from './story-commits.js';
 
 const log = getLogger('workflow:build:changed-files');
 
@@ -81,6 +82,20 @@ export interface ChangedFilesOptions {
 	 *  which filters the reported paths here, these never reach the diff at all —
 	 *  so a tree dirty only with matching files is clean for the emptiness gate. */
 	readonly excludeGlobs?: readonly string[] | undefined;
+	/** `<epicHash>/<storyId>` (ISSUE-b47dadc7): on the committed-range derivation,
+	 *  keeps only the commits carrying the Story's `Insrc-Story` trailer (see
+	 *  {@link storyChangeSet}). Ignored while the working tree is dirty. */
+	readonly storyKey?: string | undefined;
+	/** Told how the returned set was scoped: the working tree, or the committed
+	 *  range by trailer or by first-parent commits, with the Story paths another
+	 *  Story's excluded commit also changed. */
+	readonly onAttribution?: ((a: ChangeSetAttributionReport) => void) | undefined;
+}
+
+/** How {@link changedFiles} scoped its result (ISSUE-b47dadc7). */
+export interface ChangeSetAttributionReport {
+	readonly attribution:        StoryAttribution | 'working-tree';
+	readonly sharedWithExcluded: readonly string[];
 }
 
 /** Run one `git_diff` and collect its changed paths into `into`. */
@@ -135,20 +150,35 @@ export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions)
 	// work: the range was skipped as "tree is dirty", the set then filtered to
 	// nothing, and the record silently kept the previous write's file list.
 	const kept = keep(working);
-	if (kept.length > 0) return kept;
+	if (kept.length > 0) {
+		opts?.onAttribution?.({ attribution: 'working-tree', sharedWithExcluded: [] });
+		return kept;
+	}
 
 	// Committed-range fallback: only when the working tree yielded nothing of the
 	// Story's own. A tree carrying real uncommitted work never reaches here, so the
 	// result still cannot depend on which range was supplied.
 	if (opts?.base !== undefined && opts.base.length > 0) {
+		const set = storyChangeSet(repoPath, opts.base, { storyKey: opts.storyKey });
 		const ranged = new Set<string>();
-		await collectDiff(repoPath, { from: opts.base, ...globs }, ranged);
-		// Only the Story's OWN changes count (ISSUE-f9ced66a): a file a mid-build
-		// merge brought in is in base..HEAD but in none of the Story's units. The
-		// exclusions above stay with git; this only narrows what git reported.
-		const own = new Set(storyChangeSet(repoPath, opts.base).paths);
-		return keep(new Set([...ranged].filter(f => own.has(f))));
+		if (set.attribution === 'story-trailer') {
+			// Each kept unit's own diff (ISSUE-b47dadc7), not the net range: a file
+			// this Story changed and another Story later restored is still this
+			// Story's. The exclusions stay with git.
+			for (const u of set.units) await collectDiff(repoPath, { from: u.from, to: u.to, ...globs }, ranged);
+		} else {
+			await collectDiff(repoPath, { from: opts.base, ...globs }, ranged);
+			// Only the Story's OWN changes count (ISSUE-f9ced66a): a file a mid-build
+			// merge brought in is in base..HEAD but in none of the Story's units. The
+			// exclusions above stay with git; this only narrows what git reported.
+			const own = new Set(set.paths);
+			for (const f of [...ranged]) if (!own.has(f)) ranged.delete(f);
+		}
+		const files = keep(ranged);
+		opts.onAttribution?.({ attribution: set.attribution, sharedWithExcluded: set.sharedWithExcluded.filter(p => files.includes(p)) });
+		return files;
 	}
+	opts?.onAttribution?.({ attribution: 'working-tree', sharedWithExcluded: [] });
 	return kept;
 }
 

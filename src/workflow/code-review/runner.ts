@@ -289,7 +289,11 @@ function buildArtifact(
 		// fallback passes opts.groundingMode:'degraded' to stamp its own path.
 		groundingMode: opts.groundingMode ?? 'full',
 		...(opts.fallbackReason !== undefined ? { fallbackReason: opts.fallbackReason } : {}),
-		subject:       { changedFiles: subject.changedFiles },
+		subject:       {
+			changedFiles: subject.changedFiles,
+			...(subject.changeSetAttribution !== undefined ? { changeSetAttribution: subject.changeSetAttribution } : {}),
+			...(subject.sharedWithExcluded !== undefined ? { sharedWithExcluded: subject.sharedWithExcluded } : {}),
+		},
 		dimensions,
 		verdict,
 		counts,

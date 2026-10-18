@@ -17,6 +17,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import { changedFiles } from '../changed-files.js';
 import { storyChangeSet } from '../story-commits.js';
 
 const STORY = 'b47dadc7cf0cccb1/S001';
@@ -107,5 +108,20 @@ test("with no trailered commit in the range, or when reading trailers fails, the
 		assert.equal(failed.attribution, 'first-parent-range');
 		assert.deepEqual(failed.units, storyChangeSet(r, base).units);
 		assert.deepEqual(failed.paths, ['src/a.ts', 'src/b.ts', 'src/c.ts']);
+	} finally { cleanup(); }
+});
+
+test("a file one Story changed and another Story reverted stays in the first Story's subject and diff", async () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		commit(r, { 'src/keep.ts': '1\n', 'src/flip.ts': 'mine\n' }, 'feat(build): S001/t1 mine', STORY);
+		git(r, 'rm', '-q', 'src/flip.ts');
+		git(r, 'commit', '-q', '-m', 'feat(build): s3/t1 reverts flip.ts\n\nInsrc-Story: c2ba6fa6aaaaaaaa/s3\n');
+
+		assert.deepEqual([...await changedFiles(r, { base })].sort(), ['src/keep.ts'], 'the net range no longer shows flip.ts');
+		let attribution: string | undefined;
+		const files = await changedFiles(r, { base, storyKey: STORY, onAttribution: a => { attribution = a.attribution; } });
+		assert.deepEqual([...files].sort(), ['src/flip.ts', 'src/keep.ts']);
+		assert.equal(attribution, 'story-trailer');
 	} finally { cleanup(); }
 });

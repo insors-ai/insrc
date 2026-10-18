@@ -477,6 +477,7 @@ export async function runStart(
 	const p = { review: prep.review };
 
 	try {
+		assertMayAuthor(intent);   // team gate at the entry; the driver asks again before the draft is written
 		// t5/t6: map the driver's internal vocabulary onto the sc1 wire shape.
 		// WorkflowProgress → StageProgressEvent on `progress`; the per-token
 		// string stream is counted + batched into TokenProgressEvent on `delta`.

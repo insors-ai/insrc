@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -158,16 +158,17 @@ Run at 2026-10-18T14:53:33.952Z on commit `404fb77f`. Tests check: **passed**. 3
 
 ## t7
 
-Run at 2026-10-18T14:57:12.036Z on commit `01766e6a`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T15:00:11.605Z on commit `c8b901a0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts: workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before | `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` |
+| pass | the team gate comes before the upstream-question gate: a held stage whose upstream has open questions is refused naming the holder | `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` | 0 | 2 | 4.5 s |  |

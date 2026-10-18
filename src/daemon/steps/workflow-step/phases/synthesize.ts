@@ -66,6 +66,8 @@ export async function handleSynthesize(
 		const retryable = failure.ok ? true : (failure.retryable ?? true);
 		return errorResult(code, formatFailure(failure), retryable);
 	}
+	// Finalizing awaits a long review: ask again right before anything is written, so a claim that moved meanwhile is honored
+	assertMayAuthor(state.intent);
 	// The finalized artifact carries the definitive epicHash in its
 	// meta (Define mints it; downstream workflows echo it). Read it
 	// back to pick paths, so we never diverge from the artifact.

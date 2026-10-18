@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:57:12.036Z",
+    "updatedAt": "2026-10-18T15:00:11.605Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -538,8 +538,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "01766e6a",
-        "ranAt": "2026-10-18T14:57:12.036Z",
+        "commit": "c8b901a0",
+        "ranAt": "2026-10-18T15:00:11.605Z",
         "testsPassed": true,
         "tests": [
           {
@@ -551,6 +551,11 @@
                 "file": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
                 "title": "workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
+                "title": "the team gate comes before the upstream-question gate: a held stage whose upstream has open questions is refused naming the holder",
+                "result": "pass"
               }
             ],
             "files": []
@@ -561,10 +566,14 @@
             "file": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 915,
+            "durationMs": 4491,
             "titles": [
               {
                 "title": "workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before",
+                "result": "pass"
+              },
+              {
+                "title": "the team gate comes before the upstream-question gate: a held stage whose upstream has open questions is refused naming the holder",
                 "result": "pass"
               }
             ],

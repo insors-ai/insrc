@@ -28,6 +28,8 @@ import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { approveArtifactByJsonPath, jsonPathForMd } from '../../../../workflow/gates.js';
 import { computeHldEffectiveHash } from '../../../../workflow/artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths } from '../../../../workflow/storage.js';
+import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
+import type { TeamPolicy } from '../../../../workflow/team/policy.js';
 import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -236,4 +238,32 @@ test('plan: finalize rejects a task graph with a dangling dependsOn', async () =
 		assert.equal(errOut['next'], 'error', JSON.stringify(errOut));
 		assert.match((errOut['error'] as { message: string }).message, /t9|cross-artifact/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('plan: synthesize asks the team gate again after finalizing, so a claim that moved meanwhile refuses the write', async () => {
+	_clearWorkflowStateStoreForTests();
+	registerWorkflowRunners();
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-e2e-'));
+	try {
+		seed(repo, { lldApproved: true });
+		const state = await walkToSynthesize(repo);
+		// from here on the first ask finds the actor holding the Story and every later ask finds bob
+		let reads = 0;
+		const port = {
+			whoAmI: () => ({ ok: true, value: 'alice' }),
+			readAssignee: () => { reads += 1; return { ok: true, value: reads === 1 ? 'alice' : 'bob' }; },
+			addAssignee: () => ({ ok: true, value: ['alice'] }),
+		};
+		_setGateDepsForTests({
+			readPolicy: () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy }),
+			loadTracker: () => ({ ok: true, value: port as never }),
+			resolveIssue: () => 'acme/demo#7',
+			ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }),
+			artifactExists: () => true,
+		});
+		const out = payload(await handleWorkflowStep({ phase: 'synthesize', artifact: synthArtifact, state }));
+		assert.equal((out['error'] as { code?: string } | undefined)?.code, 'team-gate-refused', JSON.stringify(out));
+		assert.ok(reads >= 2, 'asked before and after finalizing');
+		assert.ok(!existsSync(join(repo, '.insrc', 'artifacts', `PLAN-${HASH}-s1.json`)), 'the plan was not written');
+	} finally { _setGateDepsForTests(); rmSync(repo, { recursive: true, force: true }); }
 });

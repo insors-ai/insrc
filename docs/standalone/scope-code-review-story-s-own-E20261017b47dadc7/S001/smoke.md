@@ -79,3 +79,12 @@ daemon (the controller built it). Round 1, after t8 and the first smoke commit (
   not yet in the test record, as t9 had not been through the validate gate), 3 LOW conventions
   (optional properties without an explicit `| undefined`, fixed in 3b836723). No coverage finding
   on a Markdown file or a test-file entity.
+
+Round 2 (after t9's validate recorded the smoke as reported by the builder): 1 HIGH, the same
+promised-smoke finding. The coverage judge's test-record view did not include builder-reported
+results; filed and fixed as ISSUE-11e2b8a7 (bf6c8922), shipped to the installed daemon.
+
+Round 3, on the daemon at bf6c8922: `pass`, 0 findings; `changeSetAttribution: story-trailer`,
+the same 26 files. `sharedWithExcluded: [src/workflow/code-review/dimensions/coverage.ts]`: the
+ISSUE-11e2b8a7 commit, another Story's, also changed that file after this Story's commits; it is
+left out of this Story's change set and the shared file is recorded, as designed.

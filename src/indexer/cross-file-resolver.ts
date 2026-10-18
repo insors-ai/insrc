@@ -66,6 +66,8 @@ import type { PendingClass } from '../db/graph/codec.js';
 import { readIndexState } from '../db/index-state.js';
 import type { SourceRoots } from './source-roots.js';
 import { selectFile } from './file-selection.js';
+import { resolveImportPath } from './resolver.js';
+import { listExportNames } from '../db/export-names.js';
 import { resolveRepoIgnore } from './repo-ignore-config.js';
 
 const log = getLogger('cross-file-resolver');
@@ -165,6 +167,9 @@ export async function runCrossFileResolver(
     'cross-file Pass 1 (IMPORTS rewire) complete',
   );
 
+  // -- Pass 1b: re-exports --
+  const reExported = await runPass1b(opts, mode, index);
+
   // -- Pass 2 --
   const tPass2 = Date.now();
   const { resolved, ambiguous, stillUnresolved } = await runPass2(opts, mode, index);
@@ -177,7 +182,7 @@ export async function runCrossFileResolver(
   const pendingByClass = (await readIndexState(opts.repoRoot))?.pending ?? zeroPending();
   const elapsedMs = Date.now() - t0;
   log.info(
-    { repo: opts.repoRoot, mode, completedById, importsRewired, resolved, ambiguous, stillUnresolved, pendingByClass, pass2ElapsedMs, elapsedMs },
+    { repo: opts.repoRoot, mode, completedById, importsRewired, reExported, resolved, ambiguous, stillUnresolved, pendingByClass, pass2ElapsedMs, elapsedMs },
     'cross-file resolver pass complete',
   );
   return { importsRewired, resolved, ambiguous, stillUnresolved, completedById, pendingByClass, elapsedMs };
@@ -381,6 +386,101 @@ async function runPass1(
 }
 
 // ---------------------------------------------------------------------------
+// Pass 1b: re-exports -> EXPORTS edges + export_names
+// ---------------------------------------------------------------------------
+
+/** File entity id -> exported name -> target entity ids: the stored export_names plus this run's. */
+type ExportMap = Map<string, Map<string, Set<string>>>;
+
+function addExport(map: ExportMap, fileId: string, name: string, targetId: string): void {
+  let names = map.get(fileId);
+  if (names === undefined) { names = new Map(); map.set(fileId, names); }
+  let targets = names.get(name);
+  if (targets === undefined) { targets = new Set(); names.set(name, targets); }
+  targets.add(targetId);
+}
+
+/**
+ * What `name` refers to when it is imported from the file `fileId`: an exported
+ * entity of that file with the name, else what the file re-exports under the
+ * name, else what its `export *` sources export under it (transitively; the
+ * visited set stops a cycle). A target that is not stored is ignored.
+ */
+function exportedTargets(fileId: string, name: string, index: EntityIndex, exports: ExportMap, visited: Set<string> = new Set()): Entity[] {
+  if (visited.has(fileId)) return [];
+  visited.add(fileId);
+  const file = index.byId.get(fileId);
+  if (file === undefined) return [];
+  const found = new Map<string, Entity>();
+  for (const e of index.byFile.get(file.file) ?? []) {
+    if (e.name === name && e.isExported === true) found.set(e.id, e);
+  }
+  const names = exports.get(fileId);
+  for (const id of names?.get(name) ?? []) {
+    const e = index.byId.get(id);
+    if (e !== undefined) found.set(e.id, e);
+  }
+  if (found.size > 0) return [...found.values()];
+  for (const source of names?.get('*') ?? []) {
+    for (const e of exportedTargets(source, name, index, exports, visited)) found.set(e.id, e);
+  }
+  return [...found.values()];
+}
+
+/**
+ * Resolve the pending EXPORTS rows: each to the named exported entity of the
+ * file its specifier resolves to (or that file entity for `export *`), written
+ * as an EXPORTS edge (empty value) with its export_names entry in one
+ * transaction. Rows resolve in rounds, so a barrel of a barrel resolves in one
+ * pass; a row whose source file is not stored is left for a later pass; a name
+ * found through no file (a re-export cycle) is 'no-candidate'.
+ */
+async function runPass1b(opts: CrossFileResolveOpts, mode: CrossFileMode, index: EntityIndex): Promise<number> {
+  let pending = (await rowsInScope({ ...opts, scopeFile: undefined }, mode))
+    .filter(r => r.kind === 'EXPORTS' && r.meta['awaitsId'] !== true);
+  if (pending.length === 0) return 0;
+  const exports = await listExportNames();
+  const promotes: { unresolved: UnresolvedRelation; targetEntityId: string; exportName: string }[] = [];
+  const classUpdates: { id: string; meta: Record<string, unknown> }[] = [];
+  const settle = (row: UnresolvedRelation, meta: Record<string, unknown>): void => {
+    const update = classUpdate(row, meta);
+    if (update !== undefined) classUpdates.push(update);
+  };
+
+  for (let progress = true; progress && pending.length > 0;) {
+    progress = false;
+    const next: UnresolvedRelation[] = [];
+    for (const row of pending) {
+      const barrel = index.fileEntities.get(row.fromFile);
+      const specifier = row.meta['specifier'];
+      if (barrel === undefined || typeof specifier !== 'string') continue;
+      const sourcePath = resolveImportPath(row.fromFile, specifier, opts.repoRoot, barrel.language);
+      if (sourcePath === null) { settle(row, { class: 'no-candidate', reason: 'target-file-missing' }); continue; }
+      const source = index.fileEntities.get(sourcePath);
+      if (source === undefined) continue;   // not stored yet: a later pass resolves it
+      const exportedAs = typeof row.meta['exportedAs'] === 'string' ? row.meta['exportedAs'] as string : row.rawTo;
+      const targets = row.rawTo === '*' ? [source] : exportedTargets(source.id, row.rawTo, index, exports);
+      if (targets.length === 1) {
+        promotes.push({ unresolved: row, targetEntityId: targets[0]!.id, exportName: exportedAs });
+        addExport(exports, barrel.id, exportedAs, targets[0]!.id);
+        progress = true;
+      } else if (targets.length > 1) {
+        settle(row, { class: 'ambiguous', candidates: targets.map(e => e.id) });
+      } else {
+        next.push(row);
+      }
+    }
+    pending = next;
+  }
+  for (const row of pending) settle(row, { class: 'no-candidate', reason: 'no-match' });
+
+  const result = await promoteResolvedBatch(opts.db, promotes);
+  await updateUnresolvedMetaBatch(opts.db, classUpdates);
+  log.info({ repo: opts.repoRoot, mode, promoted: result.promoted, unresolved: pending.length }, 'cross-file Pass 1b (re-exports) complete');
+  return result.promoted;
+}
+
+// ---------------------------------------------------------------------------
 // Pass 2: resolve INHERITS / IMPLEMENTS / CALLS rows
 // ---------------------------------------------------------------------------
 
@@ -421,6 +521,7 @@ async function runPass2(
 
   const tImports = Date.now();
   const importsByFile = await prefetchImportsByFile(opts.db, index);
+  const exports = await listExportNames();
   log.info(
     { repo: opts.repoRoot, files: importsByFile.size, elapsedMs: Date.now() - tImports },
     'cross-file Pass 2: prefetched file->file imports',
@@ -449,7 +550,7 @@ async function runPass2(
       continue;
     }
     const intent: ResolveIntent = row.kind === 'CALLS'
-      ? resolveCall(opts, row, index, importsByFile)
+      ? resolveCall(opts, row, index, importsByFile, exports)
       : resolveInheritance(opts, row, index, importsByFile);
     if (intent.kind === 'resolved') {
       promotes.push({ unresolved: row, targetEntityId: intent.targetId });
@@ -611,6 +712,7 @@ function resolveCall(
   row:            UnresolvedRelation,
   index:          EntityIndex,
   importsByFile:  Map<string, Set<string>>,
+  exports:        ExportMap,
 ): ResolveIntent {
   const fromEntity = (index.byFile.get(row.fromFile) ?? []).find(e => e.id === row.fromEntity)
     ?? index.byId.get(row.fromEntity);
@@ -633,15 +735,24 @@ function resolveCall(
   const importedFiles = fileEntity ? (importsByFile.get(fileEntity.id) ?? new Set<string>()) : new Set<string>();
   if (importedFiles.size === 0) return UNRESOLVED;
 
-  const candidates: Entity[] = [];
+  const found = new Map<string, Entity>();
   for (const kind of CALL_TARGET_KINDS) {
     const all = index.byNameKindLang.get(entityKey(language, kind, row.rawTo)) ?? [];
     for (const e of all) {
       if (!importedFiles.has(e.file)) continue;
       if (e.isExported !== true) continue;
-      candidates.push(e);
+      found.set(e.id, e);
     }
   }
+  // Through re-exports: the name as each imported file exports it, alias and `export *` included.
+  for (const path of importedFiles) {
+    const imported = index.fileEntities.get(path);
+    if (imported === undefined) continue;
+    for (const e of exportedTargets(imported.id, row.rawTo, index, exports)) {
+      if (e.language === language && CALL_TARGET_KINDS.includes(e.kind)) found.set(e.id, e);
+    }
+  }
+  const candidates = [...found.values()];
 
   if (candidates.length === 1) return { kind: 'resolved', targetId: candidates[0]!.id };
   if (candidates.length > 1) {

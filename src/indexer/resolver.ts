@@ -127,7 +127,7 @@ export function resolveRelations(
  * per-language extension candidate map.
  * Returns null if the file cannot be found.
  */
-function resolveImportPath(
+export function resolveImportPath(
   fromFile:  string,
   specifier: string,
   repo:      string,

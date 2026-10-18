@@ -113,6 +113,13 @@ class RepoStatusDialog(
             add("Pending jobs" to s.pendingJobs.toString())
         }
         column.add(InsrcCollapsible.collapsiblePanel("Repository", keyValueTable("Property", "Value", overview), expanded = true))
+        column.add(
+            InsrcCollapsible.collapsiblePanel(
+                "Index completeness",
+                keyValueTable("Property", "Value", completenessRows(s.completeness)),
+                expanded = s.completeness?.complete == false,
+            ),
+        )
 
         column.add(
             InsrcCollapsible.collapsiblePanel(
@@ -197,5 +204,23 @@ class RepoStatusDialog(
             unit++
         }
         return String.format("%.1f %s", value, units[unit])
+    }
+}
+
+/**
+ * The rows of the "Index completeness" group (Epic c2ba6fa6 s1): complete, or
+ * incomplete with one row per reason (each reason carries its count) and the
+ * counts behind them; "unknown" when the daemon sent no completeness.
+ */
+internal fun completenessRows(c: ai.insors.insrc.jetbrains.daemon.RepoCompletenessDto?): List<Pair<String, String>> = when {
+    c == null -> listOf("Completeness" to "unknown")
+    c.complete -> listOf("Completeness" to "complete")
+    else -> buildList {
+        add("Completeness" to "incomplete")
+        c.reasons.forEach { add("Reason" to it) }
+        add("Awaiting a target" to (c.pending["awaiting-target"] ?: 0).toString())
+        add("Could not be stored" to c.unwritable.toString())
+        add("Files not indexed" to c.uncommittedFiles.size.toString())
+        c.uncommittedFiles.forEach { add("File not indexed" to it) }
     }
 }

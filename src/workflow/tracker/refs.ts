@@ -35,6 +35,7 @@ export interface UnitIssue {
 		readonly taskList?:      string;
 		readonly designComment?: string;
 		readonly reviewComment?: string;
+		readonly planComment?:   string;
 	};
 }
 

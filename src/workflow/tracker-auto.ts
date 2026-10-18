@@ -38,12 +38,15 @@ import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPat
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
 import { GhCommandError, ghAuthOk } from './tracker/github.js';
 import { createGithubTracker } from './tracker/github-adapter.js';
-import type { CreatedIssue, IssueOps, PortResult } from './tracker/port.js';
+import type { CreatedIssue, IssueOps, PortResult, TrackerPort } from './tracker/port.js';
 import {
 	allTrackerLabels, epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody,
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
 } from './tracker/conventions.js';
-import { patchTrackerMeta, readTrackerMeta, type TrackerMeta } from './tracker/refs.js';
+import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitRef } from './tracker/refs.js';
+import { ensureUnitIssueDetailed, runUnitExtras, type ExtraStep } from './tracker/unit-issue.js';
+import { policyReader } from './team/policy-reader.js';
+import type { PolicyReader } from './team/types.js';
 import { epicWorkflowId, storyWorkflowId, taskWorkflowId, safeCanonical } from './id.js';
 import { renderReviewReport } from './review/index.js';
 import type { ReviewReport } from './review/types.js';
@@ -54,9 +57,12 @@ import type { Citation, QuestionResolution } from './types.js';
 const log = getLogger('workflow:tracker-auto');
 
 
+/** Team mode only: an approve-time extra that did not run (the issue itself is fine; the next approve retries it). */
+export type ExtrasFailed = readonly { readonly name: string; readonly reason: string }[];
+
 export type AutoPushResult =
-	| { readonly status: 'created';        readonly epicRef?: string; readonly storyRef?: string; readonly taskRefs?: Readonly<Record<string, string>>; readonly labelsCreated?: readonly string[] }
-	| { readonly status: 'already-exists'; readonly epicRef?: string; readonly storyRef?: string; readonly taskRefs?: Readonly<Record<string, string>> }
+	| { readonly status: 'created';        readonly epicRef?: string; readonly storyRef?: string; readonly taskRefs?: Readonly<Record<string, string>>; readonly labelsCreated?: readonly string[]; readonly extrasFailed?: ExtrasFailed }
+	| { readonly status: 'already-exists'; readonly epicRef?: string; readonly storyRef?: string; readonly taskRefs?: Readonly<Record<string, string>>; readonly extrasFailed?: ExtrasFailed }
 	| { readonly status: 'skipped';        readonly reason: string }
 	| { readonly status: 'failed';         readonly reason: string };
 
@@ -97,7 +103,7 @@ function gate(repoPath: string): { cfg: Extract<ResolvedGithubConfig, { type: 'g
 // HLD → Epic issue
 // ---------------------------------------------------------------------------
 
-export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
+function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	const meta = readMeta(hldJsonPath);
 	if (typeof meta.tracker?.epicRef === 'string' && meta.tracker.epicRef.length > 0) {
 		return { status: 'already-exists', epicRef: meta.tracker.epicRef };
@@ -166,7 +172,7 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 // LLD → Story issue + Epic task-list splice
 // ---------------------------------------------------------------------------
 
-export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
+function legacyPushStory(lldJsonPath: string): AutoPushResult {
 	const meta = readMeta(lldJsonPath);
 	if (typeof meta.tracker?.storyRef === 'string' && meta.tracker.storyRef.length > 0) {
 		return { status: 'already-exists', storyRef: meta.tracker.storyRef };
@@ -246,11 +252,11 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 // Plan → Task issues (sub-issues of the Story, native issue type Task)
 // ---------------------------------------------------------------------------
 
-/** On plan approve, create one GitHub issue per PlanTask — typed `Task`
+/** (Legacy mode.) On plan approve, create one GitHub issue per PlanTask — typed `Task`
  *  (best-effort) and linked as a sub-issue of the Story issue. Opt-in via
  *  `pushTasks` in the github config. Idempotent: adopts refs already in
  *  `meta.tracker.taskRefs`; requires the Story issue to exist first. */
-export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
+function legacyPushTasks(planJsonPath: string): AutoPushResult {
 	const meta = readMeta(planJsonPath);
 	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.storyId !== 'string' || typeof meta.repoPath !== 'string') {
 		return { status: 'skipped', reason: 'Plan meta is missing epicHash / epicSlug / storyId / repoPath' };
@@ -326,6 +332,204 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 	return createdCount > 0
 		? { status: 'created', taskRefs, ...(created.length > 0 ? { labelsCreated: created } : {}) }
 		: { status: 'already-exists', taskRefs };
+}
+
+// ---------------------------------------------------------------------------
+// Mode: legacy (no policy, or teamMode false) or team
+// ---------------------------------------------------------------------------
+
+/** Seams for tests; the production call sites pass none. */
+export interface AutoPushDeps {
+	readonly policy?: PolicyReader;
+	/** A tracker port to use instead of the GitHub one (its auth check is skipped). */
+	readonly port?:   TrackerPort;
+}
+
+type Mode = 'legacy' | 'team' | { readonly failed: string };
+
+/** A repo with no policy, or with teamMode off, keeps today's behaviour exactly (k4). */
+function pickMode(repoPath: string, deps: AutoPushDeps): Mode {
+	const p = (deps.policy ?? policyReader)(repoPath);
+	if (!p.ok) return { failed: `the team policy cannot be read: ${p.reason}` };
+	return p.value !== 'none' && p.value.teamMode ? 'team' : 'legacy';
+}
+
+function modeFor(meta: MetaShape, deps: AutoPushDeps): Mode {
+	return typeof meta.repoPath === 'string' ? pickMode(meta.repoPath, deps) : 'legacy';
+}
+
+export function autoPushEpicOnHld(hldJsonPath: string, deps: AutoPushDeps = {}): AutoPushResult {
+	const meta = readMeta(hldJsonPath);
+	const mode = modeFor(meta, deps);
+	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
+	return mode === 'team' ? teamPushEpic(hldJsonPath, meta, deps) : legacyPushEpic(hldJsonPath);
+}
+
+export function autoPushStoryOnLld(lldJsonPath: string, deps: AutoPushDeps = {}): AutoPushResult {
+	const meta = readMeta(lldJsonPath);
+	const mode = modeFor(meta, deps);
+	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
+	return mode === 'team' ? teamPushStory(lldJsonPath, meta, deps) : legacyPushStory(lldJsonPath);
+}
+
+export function autoPushTasksOnPlan(planJsonPath: string, deps: AutoPushDeps = {}): AutoPushResult {
+	const meta = readMeta(planJsonPath);
+	const mode = modeFor(meta, deps);
+	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
+	return mode === 'team' ? teamPushTasks(planJsonPath, meta, deps) : legacyPushTasks(planJsonPath);
+}
+
+// ---------------------------------------------------------------------------
+// Team mode: adopt what the draft hook created, create only what is missing, and
+// run each extra as its own marked step (see tracker/unit-issue.ts)
+// ---------------------------------------------------------------------------
+
+type GithubCfg = Extract<ResolvedGithubConfig, { type: 'github' }>;
+
+function teamGate(repoPath: string, deps: AutoPushDeps): { cfg: GithubCfg; port: TrackerPort } | { skip: AutoPushResult } {
+	const g = deps.port !== undefined ? gateNoAuth(repoPath) : gate(repoPath);
+	if ('skip' in g) return g;
+	return { cfg: g.cfg, port: deps.port ?? createGithubTracker(g.cfg.owner, g.cfg.repo) };
+}
+
+function gateNoAuth(repoPath: string): { cfg: GithubCfg } | { skip: AutoPushResult } {
+	try {
+		const cfg = resolveGithubConfig(repoPath);
+		return cfg.type === 'none' ? { skip: { status: 'skipped', reason: `tracker disabled via config (source: ${cfg.source})` } } : { cfg };
+	} catch (err) {
+		if (err instanceof GithubConfigError) return { skip: { status: 'skipped', reason: err.message } };
+		throw err;
+	}
+}
+
+const failedResult = (reason: string): AutoPushResult => ({ status: 'failed', reason });
+
+function withExtras<T extends object>(base: T, failed: ExtrasFailed): T & { extrasFailed?: ExtrasFailed } {
+	return failed.length > 0 ? { ...base, extrasFailed: failed } : base;
+}
+
+/** The review comment step, only when the artifact carries a review. */
+function reviewStep(ops: IssueOps, ref: string, jsonPath: string): ExtraStep[] {
+	const review = readReview(jsonPath);
+	return review === undefined ? [] : [{ name: 'reviewComment', run: () => ops.comment(ref, `<!-- insrc:review -->\n${renderReviewReport(review)}`) }];
+}
+
+function milestoneStep(ops: IssueOps, cfg: GithubCfg, ref: string, epicSlug: string): ExtraStep[] {
+	return cfg.useMilestones ? [{ name: 'milestone', run: () => { ops.ensureMilestone(epicSlug); return ops.attachMilestone(ref, epicSlug); } }] : [];
+}
+
+function teamPushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): AutoPushResult {
+	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.repoPath !== 'string') {
+		return { status: 'skipped', reason: 'HLD meta is missing epicHash / epicSlug / repoPath' };
+	}
+	const { epicHash, epicSlug, repoPath } = { epicHash: meta.epicHash, epicSlug: meta.epicSlug, repoPath: meta.repoPath };
+	const g = teamGate(repoPath, deps);
+	if ('skip' in g) return g.skip;
+	const { cfg, port } = g;
+	const unit: UnitRef = { unit: 'epic', repoPath, epicHash };
+
+	const ensured = ensureUnitIssueDetailed(unit, port);
+	if (!ensured.ok) return failedResult(`the Epic issue could not be ensured: ${ensured.reason}`);
+	const epicRef = ensured.value.issue;
+
+	const now = new Date().toISOString();
+	const anchor = readEpicCreatedAt(repoPath, epicHash) ?? now;
+	patchTrackerMeta(hldJsonPath, { epicRef, pushedAt: now });
+	const definePaths = defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug);
+	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
+	relink(hldArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug).md, () => { const a = readHldArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderHldMarkdown(a)); });
+	relink(definePaths.md, () => { const a = readDefineArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderDefineMarkdown(a)); });
+
+	const ops = port.issueOps;
+	const out = runUnitExtras(unit, [
+		...milestoneStep(ops, cfg, epicRef, epicSlug),
+		{ name: 'designComment', run: () => ops.comment(epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))) },
+		...reviewStep(ops, epicRef, hldJsonPath),
+	]);
+	return withExtras(ensured.value.created ? { status: 'created' as const, epicRef } : { status: 'already-exists' as const, epicRef }, out.failed);
+}
+
+function teamPushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps): AutoPushResult {
+	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.storyId !== 'string' || typeof meta.repoPath !== 'string') {
+		return { status: 'skipped', reason: 'LLD meta is missing epicHash / epicSlug / storyId / repoPath' };
+	}
+	const { epicHash, epicSlug, storyId, repoPath } = { epicHash: meta.epicHash, epicSlug: meta.epicSlug, storyId: meta.storyId, repoPath: meta.repoPath };
+	const g = teamGate(repoPath, deps);
+	if ('skip' in g) return g.skip;
+	const { cfg, port } = g;
+
+	let define: DefineArtifact;
+	try { define = readDefineArtifact(repoPath, epicHash); }
+	catch (err) { return failedResult(`cannot read parent Define: ${(err as Error).message}`); }
+	const story = define.body.stories.find(s => s.id === storyId);
+	if (story === undefined) return failedResult(`Story '${storyId}' not present in Define body`);
+
+	const epic = ensureUnitIssueDetailed({ unit: 'epic', repoPath, epicHash }, port);
+	if (!epic.ok) return failedResult(`the Epic issue could not be ensured: ${epic.reason}`);
+	const epicRef = epic.value.issue;
+	const unit: UnitRef = { unit: 'story', repoPath, epicHash, storyId };
+	const ensured = ensureUnitIssueDetailed(unit, port);
+	if (!ensured.ok) return failedResult(`the Story issue could not be ensured: ${ensured.reason}`);
+	const storyRef = ensured.value.issue;
+
+	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
+	const anchor = readEpicCreatedAt(repoPath, epicHash) ?? new Date().toISOString();
+	relink(lldArtifactPaths(repoPath, epicHash, storyId, anchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
+
+	const ops = port.issueOps;
+	const out = runUnitExtras(unit, [
+		...milestoneStep(ops, cfg, storyRef, epicSlug),
+		{
+			name: 'taskList',
+			run: (): PortResult<void> => {
+				const current = ops.readBody(epicRef);
+				if (!current.ok) return current;
+				const updated = updateEpicTaskList(current.value, storyId, storyRef, story.title);
+				return updated === current.value ? { ok: true, value: undefined } : ops.writeBody(epicRef, updated);
+			},
+		},
+		{ name: 'designComment', run: () => ops.comment(storyRef, renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))) },
+		...reviewStep(ops, storyRef, lldJsonPath),
+	]);
+	return withExtras(ensured.value.created ? { status: 'created' as const, storyRef } : { status: 'already-exists' as const, storyRef }, out.failed);
+}
+
+function teamPushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps): AutoPushResult {
+	if (typeof meta.epicHash !== 'string' || typeof meta.epicSlug !== 'string' || typeof meta.storyId !== 'string' || typeof meta.repoPath !== 'string') {
+		return { status: 'skipped', reason: 'Plan meta is missing epicHash / epicSlug / storyId / repoPath' };
+	}
+	const { epicHash, storyId, repoPath } = { epicHash: meta.epicHash, storyId: meta.storyId, repoPath: meta.repoPath };
+	const g = teamGate(repoPath, deps);
+	if ('skip' in g) return g.skip;
+	const { port } = g;
+
+	// Team mode makes a Task issue for every Task whatever pushTasks says (forceTaskIssues).
+	let tasks: readonly PlanTask[];
+	try { tasks = (JSON.parse(readFileSync(planJsonPath, 'utf8')) as PlanArtifact).body?.tasks ?? []; }
+	catch (err) { return failedResult(`cannot read plan tasks: ${(err as Error).message}`); }
+	if (tasks.length === 0) return { status: 'skipped', reason: 'plan has no tasks' };
+
+	const epic = ensureUnitIssueDetailed({ unit: 'epic', repoPath, epicHash }, port);
+	if (!epic.ok) return failedResult(`the Epic issue could not be ensured: ${epic.reason}`);
+	const storyUnit: UnitRef = { unit: 'story', repoPath, epicHash, storyId };
+	const story = ensureUnitIssueDetailed(storyUnit, port);
+	if (!story.ok) return failedResult(`the Story issue could not be ensured: ${story.reason}`);
+
+	let createdCount = 0;
+	for (const task of [...tasks].sort((a, b) => a.order - b.order)) {
+		const r = ensureUnitIssueDetailed({ unit: 'task', repoPath, epicHash, storyId, taskId: task.id }, port);
+		if (!r.ok) return failedResult(`task ${task.id}: ${r.reason}`);
+		if (r.value.created) createdCount += 1;
+	}
+
+	// The plan's review lands on its parent Story issue, once (marked on the Story's record).
+	const review = readReview(planJsonPath);
+	const ops = port.issueOps;
+	const out = runUnitExtras(storyUnit, review === undefined ? [] : [
+		{ name: 'planComment', run: () => ops.comment(story.value.issue, `<!-- insrc:review -->\n${renderReviewReport(review)}`) },
+	]);
+	const taskRefs = readTrackerMeta(planJsonPath)?.taskRefs ?? {};
+	return withExtras(createdCount > 0 ? { status: 'created' as const, taskRefs } : { status: 'already-exists' as const, taskRefs }, out.failed);
 }
 
 // ---------------------------------------------------------------------------

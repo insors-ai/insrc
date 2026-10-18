@@ -223,3 +223,15 @@ The s5 LLD (`docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005
 | s5-R2-5 | could not verify | BUILD claims belong to Tasks, but `approveWorkflowTarget` sees a Story-wide BUILD record. | A rule mapping a BUILD approval (and the standalone implement and validate routes) to the Task claims it needs, including what happens when Tasks have different holders. |
 
 Also still pending: amendment `AMD-315d510cb28100e2-12` (`addAssignee`, s1), a build prerequisite for the claim.
+
+### s5 LLD approval (2026-10-18)
+
+The s5 LLD was approved with a recorded review override of the daemon's `block` verdict (round 2: 3 HIGH, 1 MED, 1 could-not-verify). The five open findings above are settled as **binding build requirements**:
+
+1. **Commands (s5-R2-1).** `claim` and `release` ship as `team` subcommands (`team claim <unit>` and `team release <unit>`), with the unit given as an epic hash, an epic hash and story id, or an epic hash, story id and task id. Dispatch lives beside `init` and `refresh` in the terminal client; a refusal prints the holder, formatted like the review-block message.
+2. **Identity (s5-R2-2).** The gate makes its own `whoAmI` call after `loadTracker`; the performance budget is one `whoAmI` plus one assignee read per guarded turn on top of the loader's own check. No sc1 change.
+3. **Authoring route (s5-R2-3).** The daemon's workflow driver (`runWorkflowServerSide` in `src/daemon/workflow-rpc.ts`) is a guarded entry point: the gate runs at its start and before it writes the draft. The guarded entry-point inventory test lists it and the terminal streaming route.
+4. **Contention wording (s5-R2-4).** A contested claim is reported when it is observed; an earlier successful claimant may discover it on a later gate read. The tests include that interleaving.
+5. **BUILD approval target (s5-R2-5).** A Story-wide BUILD approval is authorized against every Task claim of the Story and is refused naming the first Task held by someone else; a standalone BUILD authorizes against the standalone unit. An approval that cannot resolve a unit is refused with the reason.
+
+Still pending: `AMD-315d510cb28100e2-12` (`addAssignee`), a build prerequisite; until it is agreed the build uses a fake port that implements it.

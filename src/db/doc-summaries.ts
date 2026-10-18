@@ -21,11 +21,14 @@
  */
 
 import { createHash } from 'node:crypto';
+import { realpathSync, statSync } from 'node:fs';
+import { isAbsolute } from 'node:path';
+import { open } from 'lmdb';
 import { Packr, Unpackr } from 'msgpackr';
 
 import type { DocSummary } from '../shared/analyze-types.js';
 import type { DbClient } from './client.js';
-import { getGraphStore, withWriteTxn } from './graph/store.js';
+import { getGraphStore, getGraphStorePath, withWriteTxn } from './graph/store.js';
 import type { GraphStore } from './graph/store.js';
 import { encodeEntityKey, prefixSuccessor } from './graph/keys.js';
 import { decodeEntityRow } from './graph/codec.js';
@@ -354,6 +357,80 @@ export async function restoreCarriedDocSummaries(
 			return batch.length < CARRY_BATCH;
 		});
 		if (done) return counts;
+	}
+}
+
+// ---------------------------------------------------------------------------
+// One-time restore from a backup store (ISSUE-dced4385)
+// ---------------------------------------------------------------------------
+
+/** What `restoreDocSummariesFromBackup` did with the backup's summaries. */
+export interface DocSummaryRestoreCounts {
+	readonly read:          number;
+	readonly written:       number;
+	readonly alreadyPresent: number;
+	readonly entityGone:    number;
+	readonly bodyChanged:   number;
+	readonly undecodable:   number;
+}
+
+/**
+ * Restore the summaries a backup store holds (a single-file LMDB store with
+ * doc_summary and entity_string_by_u64, e.g. a schema backup) into the live
+ * store. Each is written only for a document stored now whose body hashes to
+ * its contentHash, and never over a summary the live store holds
+ * (onlyIfAbsent), CARRY_BATCH rows per write transaction; summaries by an
+ * earlier model are written as they are. The backup is opened read-only and
+ * closed before this returns. Running it again writes nothing new.
+ */
+export async function restoreDocSummariesFromBackup(backupPath: string): Promise<DocSummaryRestoreCounts> {
+	if (!isAbsolute(backupPath)) throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' is not an absolute path`);
+	let isFile: boolean;
+	try { isFile = statSync(backupPath).isFile(); } catch { throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' does not exist`); }
+	if (!isFile) throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' is not a file`);
+	let live: string | undefined;
+	try { live = realpathSync(getGraphStorePath()); } catch { /* not created yet: it cannot be the backup */ }
+	if (live !== undefined && realpathSync(backupPath) === live) {
+		throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' is the live store`);
+	}
+
+	const backup = open({ path: backupPath, readOnly: true, maxDbs: 64 });
+	try {
+		const names = new Set([...backup.getKeys({})].map(String));
+		for (const name of ['doc_summary', 'entity_string_by_u64']) {
+			if (!names.has(name)) throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' has no ${name} database`);
+		}
+		const summaries = backup.openDB({ name: 'doc_summary', keyEncoding: 'binary', encoding: 'binary' });
+		const ids = backup.openDB({ name: 'entity_string_by_u64', keyEncoding: 'binary', encoding: 'ordered-binary' });
+
+		// Decoded first (the backup is read-only and small next to the live store).
+		const rows: { entityId: string; summary: DocSummary }[] = [];
+		let read = 0, undecodable = 0;
+		for (const { key, value } of summaries.getRange({})) {
+			read++;
+			const entityId = ids.get(key as Buffer) as string | undefined;
+			let summary: DocSummary | undefined;
+			try { summary = decodeDocSummary(value as Buffer); } catch { summary = undefined; }
+			if (typeof entityId !== 'string' || typeof summary?.contentHash !== 'string') { undecodable++; continue; }
+			rows.push({ entityId, summary });
+		}
+
+		const counts = { read, written: 0, alreadyPresent: 0, entityGone: 0, bodyChanged: 0, undecodable };
+		for (let i = 0; i < rows.length; i += CARRY_BATCH) {
+			const batch = rows.slice(i, i + CARRY_BATCH);
+			await withWriteTxn(s => {
+				for (const { entityId, summary } of batch) {
+					const outcome = writeDocSummaryIfCurrentInTxn(s, entityId, summary, { onlyIfAbsent: true });
+					if (outcome === 'written') counts.written++;
+					else if (outcome === 'already-present') counts.alreadyPresent++;
+					else if (outcome === 'entity-gone') counts.entityGone++;
+					else counts.bodyChanged++;
+				}
+			});
+		}
+		return counts;
+	} finally {
+		await backup.close();
 	}
 }
 

@@ -845,6 +845,16 @@ async function main(): Promise<void> {
 			return { ok: true };
 		},
 
+		// One-time restore of document summaries from a backup store (ISSUE-dced4385).
+		'docSummary.restoreFromBackup': async (params) => {
+			const { backupPath } = (params ?? {}) as { backupPath?: unknown };
+			if (typeof backupPath !== 'string') throw new Error('docSummary.restoreFromBackup: backupPath must be a string');
+			const { restoreDocSummariesFromBackup } = await import('../db/doc-summaries.js');
+			const counts = await restoreDocSummariesFromBackup(backupPath);
+			log.info({ backupPath, ...counts }, 'document summaries restored from a backup');
+			return counts;
+		},
+
 		'session.list': async (params) => {
 			const { repo, limit } = (params ?? {}) as { repo?: string; limit?: number };
 			const sessions = await listSessions(db, repo);

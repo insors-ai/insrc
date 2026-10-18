@@ -42,7 +42,7 @@ test('handoffBranchName fills placeholders, applies the default, rejects a gramm
 	assert.notEqual((handoffBranchName(undefined, STORY, 'x') as { name: string }).name, (handoffBranchName(undefined, { epicHash: HASH, storyId: 's2' }, 'x') as { name: string }).name, 'two Stories never share a branch');
 
 	// a pattern that breaks the grammar is refused with the rule's message
-	for (const bad of ['/lead-{id}', 'trail-{id}/', 'a//{id}', 'a..{id}', '{id}.lock', 'foo.lock/{id}', 'team/x.lock/{id}', '{id}/.hidden', 'sp ace-{id}', '{nope}-{id}', 'open-{id']) {
+	for (const bad of ['/lead-{id}', 'trail-{id}/', 'a//{id}', 'a..{id}', '{id}.lock', 'foo.lock/{id}', 'team/x.lock/{id}', '{id}/.hidden', '-{id}', '-x/{id}', 'sp ace-{id}', '{nope}-{id}', 'open-{id']) {
 		const r = handoffBranchName(bad, STORY, 'x');
 		assert.equal(r.ok, false, bad);
 		if (!r.ok) assert.match(r.reason, /^the branch (pattern|name) /, bad);
@@ -51,6 +51,14 @@ test('handoffBranchName fills placeholders, applies the default, rejects a gramm
 	const noId = handoffBranchName('insrc/handoff/{type}-{slug}', STORY, 'x');
 	assert.equal(noId.ok, false);
 	if (!noId.ok) assert.match(noId.reason, /does not identify the unit/);
+	// whatever this accepts, git accepts: a cross-check of many shapes against git's own rules
+	const parts = ['', '-', '.', 'a', 'a.lock', '.h', 'a.', 'A_b-c', 'x..y', '{slug}', '{type}'];
+	for (const head of parts) for (const mid of parts) for (const tail of ['', '.lock', '-', '.', '/', '.x']) {
+		const pattern = `${head}/${mid}${tail}/{id}`;
+		const r = handoffBranchName(pattern, STORY, 'Tag');
+		if (r.ok) execFileSync('git', ['check-ref-format', '--branch', r.name], { stdio: 'ignore' });   // throws (fails the test) when git rejects it
+	}
+
 	// an empty slug leaves a doubled slash in the name: refused, not silently repaired
 	const empty = handoffBranchName('team/{slug}/{id}', STORY, '!!!');
 	assert.equal(empty.ok, false);

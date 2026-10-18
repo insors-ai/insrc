@@ -100,7 +100,7 @@ export function handoffBranchName(pattern: string | undefined, unit: HandoffUnit
 	if (name.length === 0 || name.length > 200) return { ok: false, reason: `the branch name '${name}' must be 1 to 200 characters` };
 	if (!/^[A-Za-z0-9/_.-]+$/.test(name)) return { ok: false, reason: `the branch name '${name}' has characters a branch name cannot have` };
 	if (name.startsWith('/') || name.endsWith('/') || name.includes('//')) return { ok: false, reason: `the branch name '${name}' has a leading, trailing or doubled slash (an empty {slug}?)` };
-	if (name.includes('..') || name.endsWith('.') || name.split('/').some(part => part.startsWith('.') || part.endsWith('.lock'))) return { ok: false, reason: `the branch name '${name}' is not a valid branch name` };
+	if (name.startsWith('-') || name.includes('..') || name.endsWith('.') || name.split('/').some(part => part.startsWith('.') || part.endsWith('.lock'))) return { ok: false, reason: `the branch name '${name}' is not a valid branch name` };
 	return { ok: true, name };
 }
 

@@ -111,7 +111,7 @@ export async function runConventionDetect(
 		return {
 			type:              'convention.detect',
 			// The graph holds no entity under the path: empty, and complete.
-			completeness:      graphCompleteness({ returned: 0 }),
+			completeness:      graphCompleteness({ returned: 0, repoCompleteness: ctx.repoCompleteness }),
 			path:              params.path,
 			namingSchema:      emptyNamingSchema(),
 			baseClassIdioms:   [],
@@ -167,6 +167,7 @@ export async function runConventionDetect(
 	return {
 		type:              'convention.detect',
 		completeness:      graphCompleteness({
+			repoCompleteness: ctx.repoCompleteness,
 			returned: baseClassIdioms.length,
 			found:    idiomScan.totalIdioms,
 			limited,

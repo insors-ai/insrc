@@ -24,6 +24,9 @@
  * responsibility to emit a valid topological ordering).
  */
 
+import { lookupRepoId } from '../../db/repos.js';
+import { completenessOf, readIndexState } from '../../db/index-state.js';
+import type { RepoCompleteness } from '../../shared/types.js';
 import type { ResolvedScope } from '../context/scope.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import { getCachedExploration, putCachedExploration } from '../../db/exploration-cache.js';
@@ -150,6 +153,8 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 	// ls-files` powers .gitignore-aware directory filtering across
 	// the whole plan.
 	const ignoreFilter = createRepoIgnoreFilter(args.repoPath);
+	// One read per plan execution: the relationship lookups state an incomplete index.
+	const repoCompleteness = await readRepoCompleteness(args.repoPath);
 
 	for (const originalExp of args.plan.explorations) {
 		const runnerStart = Date.now();
@@ -216,6 +221,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 						closureRepos: args.closureRepos,
 						readDep:      (id: string) => outputsById.get(id),
 						ignoreFilter,
+						repoCompleteness,
 						scope:        args.scope,
 						requestSize:  args.requestSize,
 					};
@@ -470,6 +476,8 @@ export async function stepPlan(
 	}
 
 	const ignoreFilter = createRepoIgnoreFilter(args.repoPath);
+	// One read per plan execution: the relationship lookups state an incomplete index.
+	const repoCompleteness = await readRepoCompleteness(args.repoPath);
 
 	for (const originalExp of args.plan.explorations) {
 		// Skip explorations that already have an output from a prior
@@ -522,6 +530,7 @@ export async function stepPlan(
 					closureRepos: args.closureRepos,
 					readDep:      (id: string) => outputsById.get(id),
 					ignoreFilter,
+					repoCompleteness,
 					scope:        args.scope,
 					requestSize:  args.requestSize,
 				};
@@ -584,6 +593,7 @@ export async function stepPlan(
 						closureRepos: args.closureRepos,
 						readDep:      (id: string) => outputsById.get(id),
 						ignoreFilter,
+						repoCompleteness,
 						scope:        args.scope,
 						requestSize:  args.requestSize,
 					};
@@ -859,6 +869,17 @@ export function _overrideRunnerForTest(
 	else RUNNERS[type] = runner;
 }
 
+/** Replace (or, with undefined, remove) a narrow-LLM runner; returns the restore. Tests only. */
+export function _overrideNarrowRunnerForTest(type: ExplorationType, entry: NarrowRunnerEntry | undefined): () => void {
+	const previous = NARROW_RUNNERS[type];
+	if (entry === undefined) delete NARROW_RUNNERS[type];
+	else NARROW_RUNNERS[type] = entry;
+	return () => {
+		if (previous === undefined) delete NARROW_RUNNERS[type];
+		else NARROW_RUNNERS[type] = previous;
+	};
+}
+
 /** Return the current runner registry. Read-only for tests. */
 export function _getRunnersForTest(): Readonly<Partial<Record<ExplorationType, ExplorationRunner>>> {
 	return RUNNERS;
@@ -867,3 +888,17 @@ export function _getRunnersForTest(): Readonly<Partial<Record<ExplorationType, E
 // Reference the type in the exported surface so it appears in JSDoc.
 export type { ExplorationRunner as _ExplorationRunnerRef } from './types.js';
 void 0 as unknown as Exploration;
+
+/**
+ * The repository's index completeness for the runner context (Epic c2ba6fa6 s1):
+ * undefined for a repository that is not registered (no repository facts), and
+ * for a store read that fails (the lookups then report as before).
+ */
+async function readRepoCompleteness(repoPath: string): Promise<RepoCompleteness | undefined> {
+	try {
+		if (await lookupRepoId(repoPath) === undefined) return undefined;
+		return completenessOf(await readIndexState(repoPath));
+	} catch {
+		return undefined;
+	}
+}

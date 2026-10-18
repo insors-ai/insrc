@@ -102,7 +102,7 @@ export async function runDataModelTrace(
 		return {
 			type:         'data-model.trace',
 			// The graph holds no class, interface or type of this name: empty, and complete.
-			completeness: graphCompleteness({ returned: 0 }),
+			completeness: graphCompleteness({ returned: 0, repoCompleteness: ctx.repoCompleteness }),
 			subject:      params.entityName,
 			nodes:        [],
 			notFoundNote: `No class/interface/type named "${params.entityName}" found in repo "${ctx.repoPath}".`,
@@ -204,6 +204,7 @@ export async function runDataModelTrace(
 	return {
 		type:         'data-model.trace',
 		completeness: graphCompleteness({
+			repoCompleteness: ctx.repoCompleteness,
 			returned: nodes.length,
 			found:    allTargets.length,
 			limited,

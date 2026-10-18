@@ -138,7 +138,7 @@ export async function runUsageExample(
 		return {
 			type:         'usage.example',
 			// Nothing in the graph carries this name or id: an empty result, and a complete one.
-			completeness: graphCompleteness({ returned: 0 }),
+			completeness: graphCompleteness({ returned: 0, repoCompleteness: ctx.repoCompleteness }),
 			subject:      params.symbolName ?? params.entityId ?? '',
 			callers:      [],
 		};
@@ -181,6 +181,7 @@ export async function runUsageExample(
 	return {
 		type:            'usage.example',
 		completeness: graphCompleteness({
+			repoCompleteness: ctx.repoCompleteness,
 			returned: hits.length,
 			found:    callers.length,
 			limited:  callers.length > topK ? [reachedLimit('callers', topK, 'overall', callers.length)] : [],

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:48:57.040Z",
+    "updatedAt": "2026-10-18T14:53:33.952Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -30,9 +30,13 @@
       {
         "id": "t5",
         "passed": false
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "Fixed the missing-workflow bypass: authorizeApproval takes the workflow from meta.workflow, and for an artifact whose meta does not say reads it from the file-name prefix (DEF, HLD, LLD, PLAN), so a PLAN with no workflow in its meta is authorized like any plan; a test covers it (a nameless plan held by bob is refused and not stamped). On the scope remark: the optional subject parameter of TeamGateRefusedError and claimsEnforcedFor in gate.ts are s5's own file and are what this Task needs to name a Task in the refusal and to decide whether an unresolvable approval applies; no other Story's shared machinery was changed. gates.ts changes are the approval guard only. The earlier fixes stand.",
+    "summary": "approval-gate.ts is generalized: authorizeStageChange maps an artifact to its stage unit(s) and asks a decide function; authorizeApproval (approve-local) is unchanged in behaviour, authorizeFindingApply asks review-fix, and reviewFixModeFor decides through reviewFixDecision (apply-auto-fixes only when every unit allows). resolveReviewFinding (resolve.ts) calls authorizeFindingApply for action apply before reading the markdown or writing anything and throws TeamGateRefusedError for a non-holder; accept, override and defer are untouched. Both automatic review paths consult reviewFixModeFor before applyAutoFixes (verdicts.ts and run-artifact.ts) and, when report-only, skip the fixes so the review still runs, stamps its findings, writes meta only and keeps the revision. The terminal resolve case prints '✗ not applied — <reason>'. Tests: gate-resolve-finding.test.ts (apply refused with markdown and artifact byte-identical, accept/override/defer still run, holder and no-policy apply work), gate-review-fix.test.ts (verdicts phase and reviewArtifactFile: non-holder reports findings, applies no fix and keeps revision 2; holder applies and mints revision 3), and a resolve test in gate-refusal-output.test.ts. The review, cli, workflow and review-step suites pass apart from the known TUI poll-interval timing flake.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/TESTS.md"
     },
@@ -42,100 +46,135 @@
           "file": ".insrc/artifacts/AMD-315d510cb28100e2-12.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/gate-refusal-output.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/cli/command.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:53:33.952Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/review-step/phases/verdicts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/gate-approve.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/gates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/gate-resolve-finding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:53:33.952Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/resolve.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:53:33.952Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/run-artifact.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/gate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/review-fix-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/team/approval-gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/github-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:48:57.040Z"
+        "timestamp": "2026-10-18T14:53:33.952Z"
       }
     ],
-    "commit": "68ff6426"
+    "commit": "404fb77f"
   }
 }

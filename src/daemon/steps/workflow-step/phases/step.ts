@@ -26,6 +26,8 @@ import type {
 	WorkflowStepInputStep,
 } from '../types.js';
 
+import { assertMayAuthor } from '../../../../workflow/team/author-gate.js';
+
 const log = getLogger('mcp:workflow-step:step');
 
 export async function handleStep(
@@ -33,6 +35,7 @@ export async function handleStep(
 ): Promise<WorkflowStepEmitStep | WorkflowStepEmitSynthesize | WorkflowStepError> {
 	const state = decodeState(input.state);
 	assertStage(state, 'awaiting_llm_step');
+	assertMayAuthor(state.intent);   // team gate: before the executor resumes
 
 	if (state.executor === undefined || state.executor.pause === undefined) {
 		return errorResult(

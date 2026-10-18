@@ -11,6 +11,7 @@
 import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
+import { TeamGateRefusedError } from '../../../workflow/team/gate.js';
 import { handlePlan } from './phases/plan.js';
 import { handleResolveQuestion } from './phases/resolve-question.js';
 import { handleReviewDeferred } from './phases/review-deferred.js';
@@ -71,6 +72,8 @@ async function dispatch(input: unknown): Promise<WorkflowStepOutput> {
 				);
 		}
 	} catch (err) {
+		// The team gate refused the action: say so with its own code and the reason (it names the holder).
+		if (err instanceof TeamGateRefusedError) return errorResult('team-gate-refused', err.reason, false);
 		const msg = err instanceof Error ? err.message : String(err);
 		log.warn({ phase: step.phase, err: msg }, 'insrc_workflow_step: uncaught error');
 		return errorResult('internal', msg, false);

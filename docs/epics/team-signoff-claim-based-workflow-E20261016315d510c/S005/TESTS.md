@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -130,3 +130,28 @@ Run at 2026-10-18T14:48:57.040Z on commit `68ff6426`. Tests check: **passed**. 2
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/__tests__/gate-refusal-output.test.ts` | 0 | 1 | 1.1 s |  |
 | `src/workflow/__tests__/gate-approve.test.ts` | 0 | 1 | 1.2 s |  |
+
+## t6
+
+Run at 2026-10-18T14:53:33.952Z on commit `404fb77f`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/review/__tests__/gate-resolve-finding.test.ts: resolveReviewFinding with action apply by a non-holder throws TeamGateRefusedError before writing the markdown or the artifact, while accept, override and defer still run**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | resolveReviewFinding with action apply by a non-holder throws TeamGateRefusedError before writing the markdown or the artifact, while accept, override and defer still run | `src/workflow/review/__tests__/gate-resolve-finding.test.ts` |
+| pass | the terminal resolve command prints the refusal naming the holder when applying a finding is refused | `src/cli/__tests__/gate-refusal-output.test.ts` |
+
+**integration: src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts: a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged | `src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/__tests__/gate-refusal-output.test.ts` | 0 | 2 | 1.1 s |  |
+| `src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts` | 0 | 1 | 1.3 s |  |
+| `src/workflow/review/__tests__/gate-resolve-finding.test.ts` | 0 | 1 | 1.2 s |  |

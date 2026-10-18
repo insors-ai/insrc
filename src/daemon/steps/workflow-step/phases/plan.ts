@@ -28,6 +28,8 @@ import type {
 	WorkflowStepInputPlan,
 } from '../types.js';
 
+import { assertMayAuthor } from '../../../../workflow/team/author-gate.js';
+
 const log = getLogger('mcp:workflow-step:plan');
 
 export async function handlePlan(
@@ -35,6 +37,7 @@ export async function handlePlan(
 ): Promise<WorkflowStepEmitStep | WorkflowStepEmitSynthesize | WorkflowStepError> {
 	const state = decodeState(input.state);
 	assertStage(state, 'awaiting_plan');
+	assertMayAuthor(state.intent);   // team gate: before the executor runs
 
 	if (input.plan.workflow !== state.intent.workflow) {
 		return errorResult(

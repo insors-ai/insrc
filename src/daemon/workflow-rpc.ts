@@ -26,6 +26,7 @@
  */
 
 import { ensureDraftIssues, readinessFields, type IssueReadiness } from '../workflow/draft-issues.js';
+import { assertMayAuthor } from '../workflow/team/author-gate.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
@@ -178,6 +179,7 @@ export async function runWorkflowServerSide(
 	opts:     RunWorkflowOpts,
 ): Promise<RunWorkflowResult> {
 	registerWorkflowRunners();   // idempotent — the daemon never registers them otherwise
+	assertMayAuthor(intent);     // team gate: nothing is decomposed or generated for a stage someone else holds
 	if (!provider.capabilities.structuredOutput) {
 		throw new Error(`workflow.run: provider '${opts.modelLabel}' does not support structured output`);
 	}
@@ -335,6 +337,8 @@ export async function runWorkflowServerSide(
 		issueHash: meta.issueHash,
 		storyId: meta.storyId, storyIdParam, standalone: meta.standalone,
 	});
+	// Team gate again, right before the draft is written: the stage may have been claimed while this run generated it.
+	assertMayAuthor(intent);
 	// raw-write: markdown render of the draft.
 	writeAtomic(paths.md,   finalized.renderedMd);
 	// content: a draft mints a revision and keeps a replaced draft's tracker block.

@@ -33,6 +33,8 @@ import { preflightUpstreamQuestions } from '../questions-gate.js';
 import { encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
 import type { WorkflowStepEmitPlan, WorkflowStepInputStart, WorkflowStepResolveQuestions } from '../types.js';
 
+import { assertMayAuthor } from '../../../../workflow/team/author-gate.js';
+
 const log = getLogger('mcp:workflow-step:start');
 
 export async function handleStart(
@@ -73,6 +75,9 @@ export async function handleStart(
 		repoIndexedAt: null,
 		params,
 	};
+
+	// Team gate: refuse before anything is prepared or saved when someone else holds the stage.
+	assertMayAuthor(intent);
 
 	const prepared = prepareDecompose(intent);
 

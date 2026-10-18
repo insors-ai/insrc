@@ -28,6 +28,8 @@ import type {
 	WorkflowStepInputSynthesize,
 } from '../types.js';
 
+import { assertMayAuthor } from '../../../../workflow/team/author-gate.js';
+
 const log = getLogger('mcp:workflow-step:synthesize');
 
 export async function handleSynthesize(
@@ -35,6 +37,7 @@ export async function handleSynthesize(
 ): Promise<WorkflowStepDone | WorkflowStepError> {
 	const state = decodeState(input.state);
 	assertStage(state, 'awaiting_synthesize');
+	assertMayAuthor(state.intent);   // team gate: before the draft is finalized and written
 
 	if (state.stepOutputs === undefined) {
 		return errorResult(

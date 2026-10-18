@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:48:57.040Z",
+    "updatedAt": "2026-10-18T14:53:33.952Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -445,6 +445,90 @@
             "titles": [
               {
                 "title": "approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder before any review check or stamp, and approveWorkflowTarget authorizes a BUILD target before ensureBuildRecordOnCompletion so a refused target creates no BUILD record, puts it in skipped[] with the reason and approves the others",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "404fb77f",
+        "ranAt": "2026-10-18T14:53:33.952Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/__tests__/gate-resolve-finding.test.ts: resolveReviewFinding with action apply by a non-holder throws TeamGateRefusedError before writing the markdown or the artifact, while accept, override and defer still run",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/gate-resolve-finding.test.ts",
+                "title": "resolveReviewFinding with action apply by a non-holder throws TeamGateRefusedError before writing the markdown or the artifact, while accept, override and defer still run",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/gate-refusal-output.test.ts",
+                "title": "the terminal resolve command prints the refusal naming the holder when applying a finding is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts: a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts",
+                "title": "a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/gate-refusal-output.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1095,
+            "titles": [
+              {
+                "title": "the terminal approve command prints the refusal naming the holder, formatted beside the review-block message",
+                "result": "pass"
+              },
+              {
+                "title": "the terminal resolve command prints the refusal naming the holder when applying a finding is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1300,
+            "titles": [
+              {
+                "title": "a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/gate-resolve-finding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1180,
+            "titles": [
+              {
+                "title": "resolveReviewFinding with action apply by a non-holder throws TeamGateRefusedError before writing the markdown or the artifact, while accept, override and defer still run",
                 "result": "pass"
               }
             ],

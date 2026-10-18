@@ -309,3 +309,17 @@ Run at 2026-10-18T05:45:00.291Z on commit `52fb8228`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/panes/__tests__/ReposPane-completeness.test.ts` | 0 | 3 | 0.7 s |  |
+
+## t14
+
+Run at 2026-10-18T05:51:41.231Z on commit `0aed1903`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+named tests matched no test file: jetbrains-plugin RepoStatsGatewayTest.kt: decode a recorded repo.stats reply (complete, incomplete, no field); jetbrains-plugin RepoStatusPopupLayoutTest.kt: the dialog shows the reasons (pass a `tests` mapping at the validate turn: for each named test, the file and title of the test cases that carry it)
+
+**unit: jetbrains-plugin RepoStatsGatewayTest.kt: decode a recorded repo.stats reply (complete, incomplete, no field)**
+
+Not mapped: no test case was named for this test, and nothing was run for it.
+
+**unit: jetbrains-plugin RepoStatusPopupLayoutTest.kt: the dialog shows the reasons**
+
+Not mapped: no test case was named for this test, and nothing was run for it.

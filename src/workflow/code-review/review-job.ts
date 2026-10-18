@@ -28,7 +28,7 @@ import { createHash } from 'node:crypto';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
 import { validateAgainstSchema, withStructuredRetry } from '../../agent/providers/structured-output.js';
-import { packIntoBatches } from './pack-into-batches.js';
+import { AtomTooLargeError, packIntoBatches } from './pack-into-batches.js';
 import type { DimensionFinding, DimensionResult, ReviewDimension } from './types.js';
 
 const log = getLogger('code-review:review-job');
@@ -142,7 +142,7 @@ function issue(job: ReviewJob, calls: readonly Omit<JobCall, 'callId'>[]): Revie
  * beside a batch is paired with that batch re-split around it, so every symbol
  * meets every context atom while each fits beside the other.
  */
-function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context: readonly Atom[], budget: number): Omit<JobCall, 'callId'>[] {
+function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context: readonly Atom[], budget: number, hardBudget: number = budget): Omit<JobCall, 'callId'>[] {
 	if (symbols.length === 0) return [];
 	const size = (syms: readonly Atom[], ctx: readonly Atom[]): number => promptChars(strategy.map.messages(syms, ctx, undefined));
 	const call = (syms: readonly Atom[], ctx: readonly Atom[]): Omit<JobCall, 'callId'> => {
@@ -159,9 +159,16 @@ function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context:
 		const fit = symbols.filter(s => size([s], ctx) <= budget);
 		for (const syms of packIntoBatches(fit, b => size(b, ctx), budget, a => a.label)) calls.push(call(syms, ctx));
 		for (const s of symbols.filter(x => !fit.includes(x))) {
-			// This symbol does not fit beside the whole batch: meet the batch's atoms in smaller groups.
+			// Never dropped. A symbol on its own may use the provider's whole budget,
+			// as today's single call does; one larger than that cannot be read whole.
+			if (ctx.length === 0) {
+				if (size([s], []) > hardBudget) throw new AtomTooLargeError(s.label, size([s], []), hardBudget);
+				calls.push(call([s], []));
+				continue;
+			}
+			// It does not fit beside the whole batch: meet the batch's atoms in smaller groups.
 			// (A context atom it cannot fit beside at all is the joint-fit case, S001/t6.)
-			for (const sub of packIntoBatches(ctx, b => size([s], b), budget, a => `${a.label} beside ${s.label}`)) calls.push(call([s], sub));
+			for (const sub of packIntoBatches(ctx, b => size([s], b), hardBudget, a => `${a.label} beside ${s.label}`)) calls.push(call([s], sub));
 		}
 	}
 	return calls;
@@ -188,7 +195,7 @@ export function createReviewJob(strategy: DimensionStrategy, providerBudget: num
 }
 
 function startMap(job: ReviewJob, strategy: DimensionStrategy, budget: number): ReviewJob {
-	const planned = issue({ ...job, phase: 'map', budget }, planMap(strategy, strategy.symbols, strategy.context ?? [], budget));
+	const planned = issue({ ...job, phase: 'map', budget }, planMap(strategy, strategy.symbols, strategy.context ?? [], budget, Math.max(budget, Math.min(job.providerBudget ?? budget, budget + RETRY_NOTE_RESERVE_CHARS))));
 	return planned.pending.length > 0 ? planned : { ...planned, phase: 'done' };
 }
 

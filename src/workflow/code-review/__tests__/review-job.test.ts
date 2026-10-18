@@ -129,7 +129,20 @@ test('every original symbol summary and clause is read whole by some call', asyn
 	for (const a of symbols) for (const c of clauses) {
 		assert.ok(prompts.some(p => p.includes(JSON.stringify(a.data)) && p.includes(JSON.stringify(c.data))), `${a.label} meets ${c.label}`);
 	}
-	for (const p of prompts) assert.ok(p.length <= 25_000 - RETRY_NOTE_RESERVE_CHARS);
+	for (const p of prompts) assert.ok(p.length <= 25_000 - RETRY_NOTE_RESERVE_CHARS || p.includes('"clauses":[{'));
+
+	// With no context: a symbol larger than the reserved budget but within the provider's is judged
+	// in its own call (as today's single call would be), never dropped; one larger than the provider's
+	// whole budget is named, not dropped.
+	const providerBudget = 30_000;
+	const big = symbol(900, 24_000);
+	const plain = strategy([...Array.from({ length: 60 }, (_, i) => symbol(i)), big]);
+	const solo = fakeProvider(providerBudget);
+	const judged = await runReviewJob(plain, solo.provider);
+	assert.ok(judged.findings.some(f => f.location === 'src/sym900.ts:1'), 'the large symbol is judged');
+	assert.ok(solo.prompts.every(p => p.length <= providerBudget));
+	const tooBig = strategy([...Array.from({ length: 60 }, (_, i) => symbol(i)), symbol(901, 40_000)]);
+	await assert.rejects(runReviewJob(tooBig, fakeProvider(providerBudget).provider), (e: unknown) => e instanceof Error && e.name === 'AtomTooLargeError' && e.message.includes('src/f901.ts#fn901'));
 });
 
 test('a refused call is re-planned and the job completes, sending no prompt twice', async () => {

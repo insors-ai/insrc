@@ -89,7 +89,10 @@ async function service(): Promise<Svc> {
 async function edit(svc: Svc, abs: string, settled: () => Promise<boolean>): Promise<void> {
 	await svc.processJob({ kind: 'file', filePath: abs, event: 'update' });
 	for (let i = 0; i < 300; i++) {
-		if (svc._armedSettleTimersForTest() === 0 && await settled()) return;
+		if (svc._armedSettleTimersForTest() === 0 && await settled()) {
+			await svc._settlePassesDoneForTest();   // nothing of this edit runs on into the next test
+			return;
+		}
 		await new Promise(r => setTimeout(r, 10));
 	}
 	assert.fail(`the settle after editing ${abs} did not reach the expected state`);

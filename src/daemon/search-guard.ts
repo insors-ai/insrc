@@ -59,7 +59,10 @@ async function storedRepoOf(entityId: string): Promise<string | undefined> {
 
 /**
  * Refuse with SearchRefusedError when any repository the request names is
- * under index; resolve otherwise (an entity that is not stored names nothing).
+ * under index; resolve otherwise. An entity that is not stored names every
+ * repository being indexed: a full index deletes a repository's rows before it
+ * writes them again (Epic c2ba6fa6 s1), so the entity may be one of them, and
+ * an answer without it would be a partial one (stakeholder decision 2026-10-18).
  */
 export async function guardSearchRequest(names: SearchRequestNames, deps: SearchGuardDeps = {}): Promise<void> {
 	const paths = new Set<string>();
@@ -67,6 +70,7 @@ export async function guardSearchRequest(names: SearchRequestNames, deps: Search
 		if (typeof p === 'string' && p !== '') paths.add(p);
 	}
 	const entityRepo = deps.entityRepo ?? storedRepoOf;
+	let unstored = false;
 	for (const id of names.entityIds ?? []) {
 		if (typeof id !== 'string' || id === '') continue;
 		let repo: string | undefined;
@@ -78,7 +82,16 @@ export async function guardSearchRequest(names: SearchRequestNames, deps: Search
 			log.debug({ entityId: id, err: (err as Error).message }, 'guardSearchRequest: entity read failed; not guarded by it');
 			continue;
 		}
-		if (repo !== undefined) paths.add(repo);
+		if (repo !== undefined) paths.add(repo); else unstored = true;
+	}
+	if (unstored) {
+		try {
+			const registered = deps.listRepos !== undefined ? await deps.listRepos() : await listRepos(null);
+			for (const r of registered) if (r.status === 'indexing') paths.add(r.path);
+		} catch (err) {
+			// As below: a registry that cannot be read refuses nothing.
+			log.debug({ err: (err as Error).message }, 'guardSearchRequest: registry read failed; an unstored entity names nothing');
+		}
 	}
 	for (const path of paths) {
 		try {

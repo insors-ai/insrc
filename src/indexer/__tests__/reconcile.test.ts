@@ -41,6 +41,7 @@ import { IndexQueue } from '../../daemon/queue.js';
 import type { Watcher } from '../watcher.js';
 import { IndexerService, type FilePresenceCheck } from '../index.js';
 import { makeEntityId } from '../parser/base.js';
+import { finishFullIndexState } from '../../db/index-state.js';
 
 const NOW = '2026-10-10T00:00:00.000Z';
 const db = null as unknown as DbClient;
@@ -565,10 +566,10 @@ test('an ignored file is removed whatever the check of its presence says, also w
 
 test('a clean-up failure inside a full index fails the full index and marks the repository error', async () => {
 	onDisk(join(repoA, 'src', 'real.ts'), 'export function hello(): number { return 1; }\n');
-	const gone = join(repoA, 'src', 'gone.ts');
-	await upsertEntities(null, [ent(repoA, gone, 'function', 'gone')]);
 	const svc = service();
-	svc.failRemovalOf = gone;
+	// A full index rebuilds the repository from scratch (Epic c2ba6fa6 s1), so no stale
+	// stored file is left for the clean-up to fail on: the failure is the clean-up's own.
+	svc.reconcileRepo = async () => { throw new Error('store write failed'); };
 
 	await assert.rejects(svc.processJob({ kind: 'full', repoPath: repoA }), /store write failed/);
 
@@ -617,8 +618,9 @@ test('a ready repository gets a clean-up job at daemon start, one that gets a fu
 	const queue = new RecordingQueue();
 	const svc = new ProbeService(db, queue, standInWatcher(), undefined, 600_000);
 
-	// repoA is ready and unchanged since its last index; repoC was never indexed.
+	// repoA is ready, unchanged since its last index and its full index finished; repoC was never indexed.
 	const future = new Date(Date.now() + 3_600_000).toISOString();
+	await finishFullIndexState(repoA, false);
 	await svc.start([registered(repoA, 'ready', future), registered(repoC, 'pending')]);
 
 	assert.deepEqual(queue.of(repoA), ['reconcile'], 'no changed file, and still one clean-up job');

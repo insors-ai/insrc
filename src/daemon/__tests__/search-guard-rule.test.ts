@@ -59,3 +59,17 @@ test('guardSearchRequest: an entity whose store read fails names nothing and the
 		SearchRefusedError,
 	);
 });
+
+test('guardSearchRequest: an entity that is not stored names every repository being indexed (a full index deletes its rows before writing them again), and is answered when none is', async () => {
+	const unstored = async (): Promise<undefined> => undefined;
+	const deps = (registry: RegisteredRepo[]) => ({ listRepos: async () => registry, indexRun: () => undefined, entityRepo: unstored });
+	// A repository being indexed: refused, naming that repository.
+	await assert.rejects(
+		guardSearchRequest({ entityIds: ['gone'] }, deps([repoAt('ready'), repoAt('indexing')])),
+		(e: unknown) => e instanceof SearchRefusedError && e.message.includes('/r/indexing'),
+	);
+	// None being indexed: answered, even beside a repository whose last index failed.
+	await guardSearchRequest({ entityIds: ['gone'] }, deps([repoAt('ready'), repoAt('error'), repoAt('pending')]));
+	// A stored entity of a ready repository is answered while another repository is indexed.
+	await guardSearchRequest({ entityIds: ['kept'] }, { ...deps([repoAt('ready'), repoAt('indexing')]), entityRepo: async () => '/r/ready' });
+});

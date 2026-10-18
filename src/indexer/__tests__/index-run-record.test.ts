@@ -32,6 +32,7 @@ import { IndexQueue } from '../../daemon/queue.js';
 import type { Watcher } from '../watcher.js';
 import { IndexerService } from '../index.js';
 import { readIndexRun } from '../run-record.js';
+import { finishFullIndexState } from '../../db/index-state.js';
 
 const NOW = '2026-10-13T00:00:00.000Z';
 const db = null as unknown as DbClient;
@@ -202,6 +203,9 @@ test('start-up re-queue: repositories left indexing without lastIndexed are stil
 			{ path: dirs[4]!.d, name: '', addedAt: NOW, status: 'ready', lastIndexed: NOW },
 		];
 		for (const r of repos) await addRepo(null, r);
+		// Every one's full index finished, so only the status rule decides (the rule for
+		// an unfinished full index is tested in full-index-rebuild.test.ts).
+		for (const r of repos) await finishFullIndexState(r.path, false);
 		const jobs: IndexJob[] = [];
 		class RecordingQueue extends IndexQueue {
 			override enqueue(j: IndexJob): void { jobs.push(j); }

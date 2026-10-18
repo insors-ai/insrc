@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -166,3 +166,29 @@ Run at 2026-10-17T20:31:08.513Z on commit `6e9df751`. Tests check: **passed**. 4
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/file-selection.test.ts` | 0 | 3 | 0.9 s |  |
 | `src/indexer/__tests__/index-run-record.test.ts` | 0 | 3 | 1 s |  |
+
+## t8
+
+Run at 2026-10-18T04:22:33.616Z on commit `9eca857a`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/__tests__/first-index-order.test.ts: ac1 fixture (mutation: keep-awaiting branch removed fails it)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac1: a file sorting earlier imports and calls into a later one; after a first full index the IMPORTS and the CALLS are stored and findCallers returns the call site | `src/indexer/__tests__/first-index-order.test.ts` |
+
+**integration: src/indexer/__tests__/cross-file-modes.test.ts: settle promotes awaited targets (mutation: committedFiles not passed), settle classes JSON.parse and logo.png rows, reconcile leaves fullIndexFinished, file-target classes fixture (mutation: selection rule not applied)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a settle that commits an awaited target promotes the rows awaiting it | `src/indexer/__tests__/cross-file-modes.test.ts` |
+| pass | a settle classes the rows of an edit that adds a call to JSON.parse, a call to a library function and an import of ./logo.png, and a complete repository stays complete | `src/indexer/__tests__/cross-file-modes.test.ts` |
+| pass | the pass after an index clean-up changes neither fullIndexFinished nor the classes only a full index sets | `src/indexer/__tests__/cross-file-modes.test.ts` |
+| pass | after a full index, rows awaiting a file are classed by the selection rule: not code is no-candidate, an ignored source file and a source file not stored stay awaiting with their reason | `src/indexer/__tests__/cross-file-modes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/cross-file-modes.test.ts` | 0 | 4 | 1.5 s |  |
+| `src/indexer/__tests__/first-index-order.test.ts` | 0 | 1 | 0.8 s |  |

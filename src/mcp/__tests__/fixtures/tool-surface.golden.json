@@ -68,7 +68,7 @@
 				},
 				"repo": {
 					"type": "string",
-					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+					"description": "For phase=start / park / resume. Absolute repo path; falls back to INSRC_REPO env."
 				},
 				"target": {
 					"type": "string",
@@ -706,7 +706,7 @@
 	{
 		"name": "insrc_workflow_step",
 		"title": "insrc workflow (multi-turn)",
-		"description": "Phase-driven multi-turn workflow runner. Supports:\n\n  - `define`        — Epic + Stories with citations (Phase B)\n  - `design.epic`   — HLD: framework + shared contracts + rollout (Phase C)\n  - `design.story`  — LLD: Story contract + tests + optional migration (Phase D)\n  - `tracker.push`  — push Epic+Stories to GitHub Issues (Phase F)\n  - `tracker.sync`  — pull GitHub Issue status back into artifact meta\n  - `tracker.post`  — post HLD/LLD/amendment summary as issue comment\n  - `stub`          — Phase A test workflow (echo/echo/echo)\n\nChain: define → design.epic → design.story (per Story) → tracker.*.\nEach gate requires human approval via `insrc workflow approve <path>`.\nAmendments to the HLD are typed proposals from downstream steps; review with `insrc workflow amend <slug> --list`. Use `insrc workflow chain <slug>` at any time to see status + the exact next command.\n\nMulti-turn loop:\n\n  1. phase='start' with { workflow, focus, params? }. Server returns\n     { next: 'emit_plan', prompt, schema, state }.\n  2. Emit the plan JSON matching the schema, then phase='plan'\n     with plan=<your JSON> + state.\n  3. If the server returns { next: 'emit_step', stepId, prompt,\n     schema, state }, emit the JSON matching the schema and call\n     phase='step' with stepId + response + state. Repeat until\n     you receive emit_synthesize.\n  4. Server returns { next: 'emit_synthesize', prompt, schema, state }.\n     Emit the artifact JSON, then phase='synthesize' with artifact + state.\n  5. Server returns { next: 'done', path, markdown, artifact } once\n     the artifact has been written to disk. `done` may also carry\n     `openQuestions` — the new artifact's own still-open questions;\n     you MAY resolve them now via phase='resolve_question' (optional).\n\nOpen-question gate (design.epic / design.story / plan):\n  - phase='start' first checks the IMMEDIATE-UPSTREAM artifact\n    (design.epic->DEF, design.story->HLD, plan->LLD) for unresolved\n    open questions. If any it returns { next: 'resolve_questions',\n    questions: [{ questionId, text, options, recommendation }] } INSTEAD\n    of emit_plan. Present each ONE AT A TIME (Resolve / Defer / Ignore),\n    then call phase='resolve_question' with { workflow, params,\n    questionId, choice? | defer? | ignore?, rationale? }. When it returns\n    { next: 'ready' }, re-call phase='start'. Deferred questions do NOT\n    re-trigger; surface them later with phase='review_deferred'\n    { params: { epicHash | epicSlug } } -> { next: 'deferred', questions }.\n\nCommon params:\n  - design.epic:  { epicSlug }\n  - design.story: { epicSlug, storyId }\n  - tracker.push: { epicSlug, force? }\n  - tracker.sync: { epicSlug }\n  - tracker.post: { epicSlug, target: { kind: hld|lld|amendment, storyId?, amendmentId? } }\n\nThe `guidance` field on each response explains what to do next in one sentence; the `prompt` + `schema` fields are the authoritative instructions. Preserve `state` verbatim between calls.",
+		"description": "Phase-driven multi-turn workflow runner. Supports:\n\n  - `define`        — Epic + Stories with citations (Phase B)\n  - `design.epic`   — HLD: framework + shared contracts + rollout (Phase C)\n  - `design.story`  — LLD: Story contract + tests + optional migration (Phase D)\n  - `tracker.push`  — push Epic+Stories to GitHub Issues (Phase F)\n  - `tracker.sync`  — pull GitHub Issue status back into artifact meta\n  - `tracker.post`  — post HLD/LLD/amendment summary as issue comment\n  - `stub`          — Phase A test workflow (echo/echo/echo)\n\nChain: define → design.epic → design.story (per Story) → tracker.*.\nEach gate requires human approval via `insrc workflow approve <path>`.\nAmendments to the HLD are typed proposals from downstream steps; review with `insrc workflow amend <slug> --list`. Use `insrc workflow chain <slug>` at any time to see status + the exact next command.\n\nMulti-turn loop:\n\n  1. phase='start' with { workflow, focus, params? }. Server returns\n     { next: 'emit_plan', prompt, schema, state }.\n  2. Emit the plan JSON matching the schema, then phase='plan'\n     with plan=<your JSON> + state.\n  3. If the server returns { next: 'emit_step', stepId, prompt,\n     schema, state }, emit the JSON matching the schema and call\n     phase='step' with stepId + response + state. Repeat until\n     you receive emit_synthesize.\n  4. Server returns { next: 'emit_synthesize', prompt, schema, state }.\n     Emit the artifact JSON, then phase='synthesize' with artifact + state.\n  5. Server returns { next: 'done', path, markdown, artifact } once\n     the artifact has been written to disk. `done` may also carry\n     `openQuestions` — the new artifact's own still-open questions;\n     you MAY resolve them now via phase='resolve_question' (optional).\n\nOpen-question gate (design.epic / design.story / plan):\n  - phase='start' first checks the IMMEDIATE-UPSTREAM artifact\n    (design.epic->DEF, design.story->HLD, plan->LLD) for unresolved\n    open questions. If any it returns { next: 'resolve_questions',\n    questions: [{ questionId, text, options, recommendation }] } INSTEAD\n    of emit_plan. Present each ONE AT A TIME (Resolve / Defer / Ignore),\n    then call phase='resolve_question' with { workflow, params,\n    questionId, choice? | defer? | ignore?, rationale? }. When it returns\n    { next: 'ready' }, re-call phase='start'. Deferred questions do NOT\n    re-trigger; surface them later with phase='review_deferred'\n    { params: { epicHash | epicSlug } } -> { next: 'deferred', questions }.\n\nHanding a stage over (team repos): phase='park' { epicHash, storyId?, runToken? } commits the\n  unit's drafts and a checkpoint of the run to its handoff branch -> { next: 'parked', branch }.\n  phase='resume' { epicHash, storyId?, workflow? } on the next owner's clone restores them and returns\n  the turn the run stopped at (emit_plan / emit_step / emit_synthesize), or { next: 'restart' } to start\n  the stage afresh. A unit another user holds is refused with team-gate-refused.\n\nCommon params:\n  - design.epic:  { epicSlug }\n  - design.story: { epicSlug, storyId }\n  - tracker.push: { epicSlug, force? }\n  - tracker.sync: { epicSlug }\n  - tracker.post: { epicSlug, target: { kind: hld|lld|amendment, storyId?, amendmentId? } }\n\nThe `guidance` field on each response explains what to do next in one sentence; the `prompt` + `schema` fields are the authoritative instructions. Preserve `state` verbatim between calls.",
 		"inputSchema": {
 			"type": "object",
 			"properties": {
@@ -718,7 +718,9 @@
 						"step",
 						"synthesize",
 						"resolve_question",
-						"review_deferred"
+						"review_deferred",
+						"park",
+						"resume"
 					],
 					"description": "Which turn of the loop this call carries."
 				},
@@ -737,7 +739,7 @@
 						"tracker.sync",
 						"tracker.post"
 					],
-					"description": "For phase=start (which workflow to run) and phase=resolve_question (the consuming stage whose upstream artifact to patch)."
+					"description": "For phase=start (which workflow to run), phase=resolve_question (the consuming stage whose upstream artifact to patch) and phase=resume (the stage's workflow, only when it cannot be told from the committed artifacts)."
 				},
 				"focus": {
 					"type": "string",
@@ -747,6 +749,18 @@
 				"repo": {
 					"type": "string",
 					"description": "Only for phase=start. Absolute repo path; falls back to INSRC_REPO env."
+				},
+				"epicHash": {
+					"type": "string",
+					"description": "Only for phase=park / resume. The Epic's hash."
+				},
+				"storyId": {
+					"type": "string",
+					"description": "Only for phase=park / resume. The Story to hand over (lowercase, e.g. s1); omit for the Epic itself."
+				},
+				"runToken": {
+					"type": "string",
+					"description": "Only for phase=park. The state token of the run to park; omitted, the run you own for the unit is found."
 				},
 				"params": {
 					"type": "object",

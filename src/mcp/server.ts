@@ -67,7 +67,7 @@ const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote
 			'authoritative inner `schema` (plan / narrow / bundle) to emit next.',
 	},
 	insrc_workflow_step: {
-		phases: ['start', 'plan', 'step', 'synthesize', 'resolve_question', 'review_deferred'],
+		phases: ['start', 'plan', 'step', 'synthesize', 'resolve_question', 'review_deferred', 'park', 'resume'],
 		dynamicNote:
 			'Multi-turn: the plan / step / synthesize bodies are schemas the run hands back — ' +
 			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
@@ -322,7 +322,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Only for phase=start. Natural-language framing of what to analyze.')
 					.optional(),
 				repo: z.string()
-					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
+					.describe('For phase=start / park / resume. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),
 				target: z.enum(['code', 'docs', 'data', 'infra', 'generic'])
 					.describe('Only for phase=start. Optional target hint.')
@@ -446,6 +446,11 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'    { next: \'ready\' }, re-call phase=\'start\'. Deferred questions do NOT\n' +
 				'    re-trigger; surface them later with phase=\'review_deferred\'\n' +
 				'    { params: { epicHash | epicSlug } } -> { next: \'deferred\', questions }.\n\n' +
+				'Handing a stage over (team repos): phase=\'park\' { epicHash, storyId?, runToken? } commits the\n' +
+				'  unit\'s drafts and a checkpoint of the run to its handoff branch -> { next: \'parked\', branch }.\n' +
+				'  phase=\'resume\' { epicHash, storyId?, workflow? } on the next owner\'s clone restores them and returns\n' +
+				'  the turn the run stopped at (emit_plan / emit_step / emit_synthesize), or { next: \'restart\' } to start\n' +
+				'  the stage afresh. A unit another user holds is refused with team-gate-refused.\n\n' +
 				'Common params:\n' +
 				'  - design.epic:  { epicSlug }\n' +
 				'  - design.story: { epicSlug, storyId }\n' +
@@ -461,16 +466,25 @@ export function buildInsrcMcpServerWithRegistry(): {
 				openWorldHint:  false,
 			},
 			inputSchema: {
-				phase: z.enum(['start', 'plan', 'step', 'synthesize', 'resolve_question', 'review_deferred'])
+				phase: z.enum(['start', 'plan', 'step', 'synthesize', 'resolve_question', 'review_deferred', 'park', 'resume'])
 					.describe('Which turn of the loop this call carries.'),
 				workflow: z.enum(WORKFLOW_NAMES)
-					.describe('For phase=start (which workflow to run) and phase=resolve_question (the consuming stage whose upstream artifact to patch).')
+					.describe('For phase=start (which workflow to run), phase=resolve_question (the consuming stage whose upstream artifact to patch) and phase=resume (the stage\'s workflow, only when it cannot be told from the committed artifacts).')
 					.optional(),
 				focus: z.string().min(1)
 					.describe('Only for phase=start. Natural-language framing of the ask.')
 					.optional(),
 				repo: z.string()
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
+					.optional(),
+				epicHash: z.string()
+					.describe('Only for phase=park / resume. The Epic\'s hash.')
+					.optional(),
+				storyId: z.string()
+					.describe('Only for phase=park / resume. The Story to hand over (lowercase, e.g. s1); omit for the Epic itself.')
+					.optional(),
+				runToken: z.string()
+					.describe('Only for phase=park. The state token of the run to park; omitted, the run you own for the unit is found.')
 					.optional(),
 				params: z.record(z.string(), z.unknown())
 					.describe('For phase=start / resolve_question / review_deferred. Workflow-specific params (epicHash, epicSlug, storyId, …).')

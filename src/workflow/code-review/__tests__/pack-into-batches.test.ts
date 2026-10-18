@@ -49,3 +49,13 @@ test('every item in exactly one batch, every batch fits, and an item that alone 
 			&& e.message.includes(String(budget)),
 	);
 });
+
+test('an item over the budget but within the hard budget is a batch of its own; over the hard budget it is named', () => {
+	const items = [{ id: 'a', body: 'x'.repeat(50) }, { id: 'big', body: 'y'.repeat(300) }, { id: 'b', body: 'z'.repeat(50) }];
+	const budget = 200;
+	const hard = prompt([items[1]!]).length;
+	const batches = packIntoBatches(items, b => prompt(b).length, budget, i => i.id, hard);
+	assert.deepEqual(batches.map(b => b.map(i => i.id)), [['a'], ['big'], ['b']], 'the large item alone; nothing packed beside it');
+	for (const b of batches) assert.ok(prompt(b).length <= (b.length === 1 && b[0]!.id === 'big' ? hard : budget));
+	assert.throws(() => packIntoBatches(items, b => prompt(b).length, budget, i => i.id, hard - 1), (e: unknown) => e instanceof AtomTooLargeError && e.atom === 'big' && e.budget === hard - 1);
+});

@@ -143,6 +143,20 @@ test('every original symbol summary and clause is read whole by some call', asyn
 	assert.ok(solo.prompts.every(p => p.length <= providerBudget));
 	const tooBig = strategy([...Array.from({ length: 60 }, (_, i) => symbol(i)), symbol(901, 40_000)]);
 	await assert.rejects(runReviewJob(tooBig, fakeProvider(providerBudget).provider), (e: unknown) => e instanceof Error && e.name === 'AtomTooLargeError' && e.message.includes('src/f901.ts#fn901'));
+
+	// A clause larger than the reserved budget, which fits the provider's beside each small symbol:
+	// read whole, beside every symbol, never refused for the reserve.
+	const wideClause = clause(98, 24_000);
+	const few = Array.from({ length: 60 }, (_, i) => symbol(i));
+	const wide = fakeProvider(providerBudget);
+	await runReviewJob(strategy(few, [clause(1), wideClause]), wide.provider);
+	assert.ok(wide.prompts.every(p => p.length <= providerBudget));
+	for (const a of few) {
+		assert.ok(wide.prompts.some(p => p.includes(JSON.stringify(a.data)) && p.includes(JSON.stringify(wideClause.data))), `${a.label} meets the wide clause`);
+	}
+	// The wide clause's calls are packed with symbols up to the provider's budget, not one call per symbol.
+	const besideWide = wide.prompts.filter(p => p.includes(JSON.stringify(wideClause.data)));
+	assert.ok(besideWide.length < few.length / 4, `${besideWide.length} calls beside the wide clause`);
 });
 
 test('a refused call is re-planned and the job completes, sending no prompt twice', async () => {
@@ -170,6 +184,18 @@ test('a refused call is re-planned and the job completes, sending no prompt twic
 	assert.equal(new Set(silent.prompts).size, silent.prompts.length, 'no prompt sent twice');
 	assert.equal(new Set(halved.findings.map(f => f.location)).size, 30, 'every symbol judged');
 	for (const c of clauses) assert.ok(silent.prompts.some(p => p.length <= 15_000 && p.includes(JSON.stringify(c.data))), `${c.label} read in an accepted call`);
+
+	// An indivisible symbol within the reported limit but over it less the reserve: judged, not refused.
+	const large = symbol(500, 15_000);
+	const limited = fakeProvider(undefined, 20_000);
+	const judged = await runReviewJob(strategy([...Array.from({ length: 40 }, (_, i) => symbol(i)), large]), limited.provider);
+	assert.equal(new Set(limited.prompts).size, limited.prompts.length, 'no prompt sent twice');
+	assert.ok(judged.findings.some(f => f.location === 'src/sym500.ts:1'), 'the large symbol is judged');
+	// One over the reported limit is named, not resent.
+	const over = fakeProvider(undefined, 20_000);
+	await assert.rejects(runReviewJob(strategy([...Array.from({ length: 40 }, (_, i) => symbol(i)), symbol(501, 25_000)]), over.provider),
+		(e: unknown) => e instanceof Error && e.name === 'AtomTooLargeError' && e.message.includes('src/f501.ts#fn501'));
+	assert.equal(new Set(over.prompts).size, over.prompts.length, 'no prompt sent twice');
 });
 
 test('identical findings merge once; findings differing in any field are all kept', () => {

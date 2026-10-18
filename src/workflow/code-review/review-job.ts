@@ -98,6 +98,12 @@ export interface ReviewJob {
 	readonly providerBudget: number | undefined;
 	/** Usable characters per call (the provider's budget less the retry reserve); undefined = unknown. */
 	readonly budget:    number | undefined;
+	/**
+	 * The most one call may hold: the provider's whole budget, or the size the model
+	 * last reported accepting. A call holding one indivisible unit may use it; the
+	 * reserve is a preference, never a reason to drop an atom. undefined = unknown.
+	 */
+	readonly hardBudget: number | undefined;
 	readonly phase:     JobStage | 'done';
 	readonly pending:   readonly JobCall[];
 	readonly findings:  readonly DimensionFinding[];
@@ -136,13 +142,22 @@ function issue(job: ReviewJob, calls: readonly Omit<JobCall, 'callId'>[]): Revie
 	return { ...job, seq, counts, issued, pending: [...job.pending, ...made] };
 }
 
+/** A call's budgets: `soft` to pack by, `hard` for a unit that cannot be split further. */
+interface Budgets {
+	readonly soft: number;
+	readonly hard: number;
+}
+
 /**
- * MAP calls over `symbols` x `context` within `budget` (see the module comment).
- * Context batches leave room for the smallest symbol; a symbol that does not fit
- * beside a batch is paired with that batch re-split around it, so every symbol
- * meets every context atom while each fits beside the other.
+ * MAP calls over `symbols` x `context` (see the module comment), packed within
+ * `b.soft`. Context batches leave room for the smallest symbol; a symbol that
+ * does not fit beside a batch is paired with that batch re-split around it, so
+ * every symbol meets every context atom while each fits beside the other. A
+ * unit that cannot be split further (one atom, or one symbol beside one context
+ * atom) may use `b.hard`; nothing is dropped: an atom too large even for that is
+ * named with AtomTooLargeError.
  */
-function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context: readonly Atom[], budget: number, hardBudget: number = budget): Omit<JobCall, 'callId'>[] {
+function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context: readonly Atom[], b: Budgets): Omit<JobCall, 'callId'>[] {
 	if (symbols.length === 0) return [];
 	const size = (syms: readonly Atom[], ctx: readonly Atom[]): number => promptChars(strategy.map.messages(syms, ctx, undefined));
 	const call = (syms: readonly Atom[], ctx: readonly Atom[]): Omit<JobCall, 'callId'> => {
@@ -153,22 +168,22 @@ function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context:
 	const smallest = Math.min(...symbols.map(s => size([s], []) - bare));
 	const contextBatches = context.length === 0
 		? [[] as Atom[]]
-		: packIntoBatches(context, b => size([], b) + smallest, budget, a => a.label);
+		: packIntoBatches(context, c => size([], c) + smallest, b.soft, a => a.label, b.hard);
 	const calls: Omit<JobCall, 'callId'>[] = [];
 	for (const ctx of contextBatches) {
-		const fit = symbols.filter(s => size([s], ctx) <= budget);
-		for (const syms of packIntoBatches(fit, b => size(b, ctx), budget, a => a.label)) calls.push(call(syms, ctx));
+		// A batch that is one context atom too large for the soft budget is read at the hard one.
+		const within = size([], ctx) + smallest <= b.soft ? b.soft : b.hard;
+		const fit = symbols.filter(s => size([s], ctx) <= within);
+		for (const syms of packIntoBatches(fit, x => size(x, ctx), within, a => a.label, b.hard)) calls.push(call(syms, ctx));
 		for (const s of symbols.filter(x => !fit.includes(x))) {
-			// Never dropped. A symbol on its own may use the provider's whole budget,
-			// as today's single call does; one larger than that cannot be read whole.
 			if (ctx.length === 0) {
-				if (size([s], []) > hardBudget) throw new AtomTooLargeError(s.label, size([s], []), hardBudget);
-				calls.push(call([s], []));
+				// The symbol alone: its own call within the hard budget, or named.
+				for (const syms of packIntoBatches([s], x => size(x, []), b.soft, a => a.label, b.hard)) calls.push(call(syms, []));
 				continue;
 			}
 			// It does not fit beside the whole batch: meet the batch's atoms in smaller groups.
 			// (A context atom it cannot fit beside at all is the joint-fit case, S001/t6.)
-			for (const sub of packIntoBatches(ctx, b => size([s], b), hardBudget, a => `${a.label} beside ${s.label}`)) calls.push(call([s], sub));
+			for (const sub of packIntoBatches(ctx, c => size([s], c), b.soft, a => `${a.label} beside ${s.label}`, b.hard)) calls.push(call([s], sub));
 		}
 	}
 	return calls;
@@ -182,7 +197,7 @@ function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context:
 export function createReviewJob(strategy: DimensionStrategy, providerBudget: number | undefined): ReviewJob {
 	const budget = providerBudget !== undefined ? providerBudget - RETRY_NOTE_RESERVE_CHARS : undefined;
 	const empty: ReviewJob = {
-		dimension: strategy.dimension, providerBudget, budget, phase: 'whole', pending: [], findings: [], notes: [],
+		dimension: strategy.dimension, providerBudget, budget, hardBudget: providerBudget, phase: 'whole', pending: [], findings: [], notes: [],
 		counts: { whole: 0, map: 0 }, issued: [], seq: 0,
 	};
 	const whole = strategy.whole.messages(undefined);
@@ -191,11 +206,11 @@ export function createReviewJob(strategy: DimensionStrategy, providerBudget: num
 	if (providerBudget === undefined || budget === undefined || chars <= providerBudget) {
 		return issue(empty, [{ stage: 'whole', messages: whole, schema: strategy.whole.schema, symbolIds: strategy.symbols.map(a => a.id), contextIds: (strategy.context ?? []).map(a => a.id), chars }]);
 	}
-	return startMap({ ...empty, phase: 'map' }, strategy, budget);
+	return startMap({ ...empty, phase: 'map' }, strategy, { soft: budget, hard: providerBudget });
 }
 
-function startMap(job: ReviewJob, strategy: DimensionStrategy, budget: number): ReviewJob {
-	const planned = issue({ ...job, phase: 'map', budget }, planMap(strategy, strategy.symbols, strategy.context ?? [], budget, Math.max(budget, Math.min(job.providerBudget ?? budget, budget + RETRY_NOTE_RESERVE_CHARS))));
+function startMap(job: ReviewJob, strategy: DimensionStrategy, b: Budgets): ReviewJob {
+	const planned = issue({ ...job, phase: 'map', budget: b.soft, hardBudget: b.hard }, planMap(strategy, strategy.symbols, strategy.context ?? [], b));
 	return planned.pending.length > 0 ? planned : { ...planned, phase: 'done' };
 }
 
@@ -222,22 +237,27 @@ export function applyAnswer(job: ReviewJob, strategy: DimensionStrategy, callId:
 /**
  * The model refused `callId` for its size. The call is re-planned with the
  * size the model reported (`maxChars`, less the retry reserve), else with half
- * the refused prompt; it is never issued again. A whole call becomes a MAP plan.
+ * the refused prompt; it is never issued again. A unit that cannot be split
+ * further may still use up to `maxChars` (else less than the refused prompt).
+ * A whole call becomes a MAP plan.
  */
 export function applyRefusal(job: ReviewJob, strategy: DimensionStrategy, callId: string, maxChars: number | undefined): ReviewJob {
 	const call = job.pending.find(c => c.callId === callId);
 	if (call === undefined) throw new Error(`review job ${job.dimension}: no pending call ${callId}`);
+	// Both always below the refused prompt's size, so the re-plan splits it, and a
+	// refused single unit is named rather than sent again.
+	const hard = Math.min(maxChars ?? call.chars - 1, call.chars - 1, job.hardBudget ?? Number.POSITIVE_INFINITY);
 	const reported = maxChars !== undefined ? maxChars - RETRY_NOTE_RESERVE_CHARS : undefined;
-	// Always below the refused prompt's size, so the re-plan splits it.
-	const budget = Math.min(reported ?? Math.floor(call.chars / 2), call.chars - 1, job.budget ?? Number.POSITIVE_INFINITY);
-	const rest = { ...job, pending: job.pending.filter(c => c.callId !== callId), budget };
-	log.warn({ dimension: job.dimension, callId, chars: call.chars, budget }, 'review job: a call was refused for its size; re-planning it smaller');
-	if (call.stage === 'whole') return startMap(rest, strategy, budget);
+	const soft = Math.min(reported ?? Math.floor(call.chars / 2), hard, job.budget ?? Number.POSITIVE_INFINITY);
+	const b: Budgets = { soft, hard };
+	const rest = { ...job, pending: job.pending.filter(c => c.callId !== callId), budget: soft, hardBudget: hard };
+	log.warn({ dimension: job.dimension, callId, chars: call.chars, budget: soft, hardBudget: hard }, 'review job: a call was refused for its size; re-planning it smaller');
+	if (call.stage === 'whole') return startMap(rest, strategy, b);
 	// Re-plan the refused call's symbols AND context under the smaller budget.
 	const byId = new Map([...strategy.symbols, ...(strategy.context ?? [])].map(a => [a.id, a] as const));
 	const symbols = call.symbolIds.map(id => byId.get(id)!);
 	const context = call.contextIds.map(id => byId.get(id)!);
-	return issue(rest, planMap(strategy, symbols, context, budget));
+	return issue(rest, planMap(strategy, symbols, context, b));
 }
 
 /** A finding's identity: every field, in a fixed key order. */

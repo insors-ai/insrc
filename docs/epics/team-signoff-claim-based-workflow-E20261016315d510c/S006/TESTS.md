@@ -167,7 +167,7 @@ Run at 2026-10-18T18:18:11.224Z on commit `2ff7cd6b`. Tests check: **passed**. 2
 
 ## t9
 
-Run at 2026-10-18T19:23:14.697Z on commit `a6b121fa`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T19:25:08.076Z on commit `156fd131`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/team/__tests__/handoff-resume.test.ts: a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone**
 
@@ -185,4 +185,4 @@ Run at 2026-10-18T19:23:14.697Z on commit `a6b121fa`. Tests check: **passed**. 2
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/team/__tests__/handoff-resume.test.ts` | 0 | 2 | 3.1 s |  |
+| `src/workflow/team/__tests__/handoff-resume.test.ts` | 0 | 2 | 3.2 s |  |

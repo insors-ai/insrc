@@ -199,3 +199,13 @@ Repos without the policy file behave exactly as today (solo mode).
 
 - `AMD-315d510cb28100e2-10` (`findIssues`) approved and implemented: full pagination through `gh api --paginate`, pull requests left out, ascending order.
 - `AMD-315d510cb28100e2-11` proposed to s1, pending: `resolveIssueId(ref)`. With it, an issue adopted by its label after a timed-out create can be linked under its parent (today the link is retried only when the create returned the id).
+
+### s5 claim atomicity (known limitation, 2026-10-18)
+
+A claim is the assignee of the stage unit's issue, and **only an issue with no assignee can be claimed**. A claim never removes another assignee.
+
+- **No atomic claim on GitHub.** GitHub offers no "assign only if unassigned". Assigning an issue that already has an assignee does not fail: the issue simply gets two assignees (up to 10). A claim is therefore a read of the assignees followed by a separate add, with a window between them.
+- **The race.** Two developers can both read "no assignee" and both add themselves. Neither call fails, so both can believe they hold the claim until the next read.
+- **What insrc does about it.** A claim reads the assignee, refuses if there is one, adds the actor, and re-reads. If the re-read shows more than one assignee, the claim is reported as contested; nothing is removed. The gate reads an issue with several assignees as a failure, never as a holder, so neither developer can change the stage until an administrator releases it (release clears every assignee) and one of them claims again.
+- **Why `setAssignee` is not the claim primitive.** The port's `setAssignee` removes every other assignee before adding the requested one, which is right for release and wrong for a claim: a second claimant would remove the first. The claim needs an add-only port operation (`addAssignee`), proposed to s1 as an additive amendment.
+- **Residual risk, accepted.** The window is a few seconds between the read and the add. Detection after the fact, not prevention, is the guarantee. A tracker that offers an atomic claim can implement the same port method more strongly.

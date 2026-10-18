@@ -1,0 +1,941 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792328961670-l4q61w",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-18T13:13:05.439Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 223760,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicHash": "315d510cb28100e2",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1792177279312-j27596",
+    "hldEffectiveHash": "3746c66db3c67b78dc2e63c38b34e898b36a53d3cc6eee832575760863ea9813",
+    "hldAmendmentsApplied": [
+      "AMD-315d510cb28100e2-1",
+      "AMD-315d510cb28100e2-4",
+      "AMD-315d510cb28100e2-8",
+      "AMD-315d510cb28100e2-10"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The first author turn can proceed when its issue cannot yet be created.",
+          "evidence": "HLD §3 explicitly allows the first author step without an issue. ensureUnitIssueDetailed returns failure when a Story LLD does not exist: 'draft it before its issue'. The LLD returns no-issue with allowFirstAuthor:true but also instructs every entry point to throw for any non-allowed outcome. Implementing that rule blocks the draft required to create the issue. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, src/workflow/tracker/unit-issue.ts]",
+          "action": "Specify an explicit first-author exception in entry-point outcome handling and how successful draft creation subsequently triggers the implicit claim.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Approval is synchronous at approveArtifactByJsonPath, with ReviewBlockedError handled separately by batch approval and the terminal.",
+          "evidence": "approveArtifactByJsonPath returns ApprovalResult synchronously. approveWorkflowTarget catches ReviewBlockedError and pushes its summary into skipped[]. The terminal approve case formats errors named 'ReviewBlockedError' and rethrows other errors. [files: src/workflow/gates.ts, src/cli/command.ts]",
+          "action": "Preserve these signatures and extend both refusal handlers as proposed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both verdicts.ts and run-artifact.ts apply fixes and can write artifact content.",
+          "evidence": "Both functions call applyAutoFixes, persist fixed.body, and call writeArtifact with \"fixed.applied.length > 0 ? 'content' : 'meta-only'\". Both also rewrite the Markdown review report. [files: src/daemon/steps/review-step/phases/verdicts.ts, src/workflow/review/run-artifact.ts]",
+          "action": "Apply the fix decision at both persistence paths, including explicitly handling Markdown in report-only mode.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing tracker port supplies synchronous identity, assignee reads, and verified assignee writes.",
+          "evidence": "TrackerPort declares whoAmI(): PortResult<string>, readAssignee(issue): PortResult<string|null>, and setAssignee(issue, who): PortResult<void>. The adapter rejects multiple assignees and verifies a successful write by rereading the assignees. [files: src/workflow/tracker/port.ts, src/workflow/tracker/github-adapter.ts]",
+          "action": "Reuse these interfaces, subject to the separate concurrency finding.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Loading the tracker and then reading identity and assignee requires at most two live port reads.",
+          "evidence": "loadTracker already executes 'const who = tracker.whoAmI()'. The proposed gate then calls whoAmI and readAssignee again. That is three live reads even before setAssignee performs its own before/after reads or ensureUnitIssue performs lookups. [files: src/workflow/tracker/github-adapter.ts, src/workflow/tracker/unit-issue.ts]",
+          "action": "Clarify whether the bound excludes loader and mutation reads, or amend the loader contract to return the verified identity without a duplicate read.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The listed gate sites cover changes to held artifacts.",
+          "evidence": "The terminal's 'resolve' command calls resolveFinding. resolveReviewFinding's apply branch executes 'writeAtomic(mdPath, one.markdown)', assigns 'artifact.body = one.body', and persists a content write. This path is absent from the LLD's guarded inventory and bypasses both proposed review-fix sites. [files: src/cli/command.ts, src/workflow/review/resolve.ts]",
+          "action": "Inventory and guard explicit finding application and other content-changing resolution paths, not only automatic review fixes.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Guarding only approveArtifactByJsonPath prevents approval requests from changing state before refusal.",
+          "evidence": "approveWorkflowTarget invokes 'await ensureBuildRecordOnCompletion(req.repoPath, ref)' before approveOne for BUILD targets, including batch targets. Its comment explicitly says 'CREATE-or-MERGE' before approval. The proposed gate inside approveArtifactByJsonPath runs after that mutation. [files: src/workflow/gates.ts]",
+          "action": "Authorize the target before BUILD completion-record creation or merging, while retaining the guard inside the direct approval function.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Reusing sc3 supports older tracker references and artifacts without revisions without persisting claim state.",
+          "evidence": "resolveUnitIssueLocal checks units first, then legacy epicRef, storyRef/storyRefs, and taskRefs, and reconciles missing records. readRevision returns 0 when revision is absent or malformed. Claim reads can therefore reuse existing issue identities without introducing a stored claim schema. [files: src/workflow/tracker/unit-issue.ts, src/workflow/tracker/refs.ts, src/workflow/storage.ts]",
+          "action": "Retain this fallback behavior and include legacy-record fixtures in gate tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Restricting the completion hook to open-signoff, revise, and release preserves the HLD's signoff integration contract.",
+          "evidence": "HLD §3 says 'when a stage is attempted the hook reads the signoff request state' and produces awaiting-signoff. DEF ac31 requires refusal when anyone starts the next stage. The LLD's hook invocation list excludes author and build, so s7 cannot enforce that transition through this hook as specified. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md]",
+          "action": "Define hook invocation for downstream stage attempts and upstream-unit resolution. Also specify a nonrecursive completion-release path because the hook itself is expected to call release.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Shipping the hook unregistered and leaving signoff persistence and automatic completion release to s7 respects Story ownership.",
+          "evidence": "HLD §5.5 assigns s5 'declaration of the completion hook, shipped unregistered'; §5.7 assigns s7 registration, completion checks, automatic release, and signoff recording. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
+          "action": "Keep these responsibilities separate while repairing the hook invocation contract.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Reading before setAssignee and verifying afterward guarantees that concurrent claims never replace another holder.",
+          "evidence": "setAssignee calculates 'others = current.logins.filter(...)' and executes '--remove-assignee' before adding the requested actor. If A and B initially observe no holder, A can claim successfully, then B's setAssignee can read A, remove A, assign B, and verify B successfully. Neither reread must report a mismatch. [files: src/workflow/tracker/github-adapter.ts, src/workflow/tracker/port.ts]",
+          "action": "Amend sc1 with a concurrency-safe claim operation or explicitly resolve the unsupported exclusivity guarantee. Do not use replacement-style setAssignee as a safe claim primitive.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A refused gate call can perform local issue resolution first while guaranteeing that nothing is written.",
+          "evidence": "resolveUnitIssueLocal invokes 'reconcile(unit, hit, now())'. Reconciliation calls recordUnit, which calls patchTrackerMeta on artifact and sibling records. The proposed ordering resolves locally before loading the tracker, so a later missing-signin or unreachable failure can follow metadata writes. [files: src/workflow/tracker/unit-issue.ts]",
+          "action": "Either make preauthorization resolution read-only or narrow the guarantee to prohibit content and approval changes while explicitly permitting metadata reconciliation.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The ac24 test listed proves automatic claim release on completed signoff.",
+          "evidence": "DEF ac24 requires the claim to be released when completion is checked. The LLD maps it only to testing hook consultation and the unregistered-hook default. HLD §3 explicitly allocates the actual ac24 test to s7. Hook invocation alone does not prove release. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/LLD.md]",
+          "action": "Label this as an s5 hook-contract test and explicitly reference the deferred s7 ac24 integration test asserting that completion clears the assignee.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        }
+      ],
+      "counts": {
+        "high": 5,
+        "med": 3,
+        "low": 5,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-18T13:13:17.198Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Before a developer changes a stage (authors a step, builds, approves locally or opens a signoff request), the daemon asks one gate who holds the stage's tracker issue. The holder is the issue's assignee, read live; if nobody holds it the actor proceeds and becomes the holder, if someone else holds it the action is refused naming them. Holders and administrators release a stage; nobody can take it over, and analyze and review are never blocked.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-S001) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Team gate, claim state, gate outcome, refusal error and completion hook",
+          "purpose": "The single gate for guarded actions in the daemon-owned workflow library, the claim state read live from the tracker, the outcome type, the typed refusal error that leaves approval, the review-fix decision that both review paths (verdicts.ts and run-artifact.ts) consult, and a completion hook that s5 ships unregistered and s7 registers. The gate derives the acting user itself through the port, so no caller signature changes. Owned by s5; s4 supplies issue creation which the gate calls for the no-issue outcome.",
+          "interfaceSketch": "type GuardedAction = 'author' | 'build' | 'approve-local' | 'open-signoff' | 'revise' | 'release' | 'claim' | 'review-fix';\ntype GateOutcome =\n  | { kind: 'allowed'; implicitClaim: boolean }\n  | { kind: 'held-by-other'; holder: string; offerPark: boolean }\n  | { kind: 'awaiting-signoff'; request: SignoffRequestRef }\n  | { kind: 'no-issue'; allowFirstAuthor: boolean; creationFailure?: string }\n  | { kind: 'refused'; reason: string };\ninterface ClaimState { unit: UnitRef; holder: string | null; readAt: string; }\ninterface TeamGate { (repo: string, unit: UnitRef, action: GuardedAction): GateOutcome; } // who = port.whoAmI(), read inside\ninterface TeamGateRefusedError extends Error { readonly outcome: Exclude<GateOutcome, { kind: 'allowed' }>; readonly reason: string; }\ntype ReviewFixMode = 'apply-auto-fixes' | 'report-only';\ninterface ReviewFixDecision { (repo: string, unit: UnitRef): ReviewFixMode; }\ninterface CompletionHook { (repo: string, unit: UnitRef, port: TrackerPort): GateOutcome | 'continue'; }\ninterface RegisterCompletionHook { (hook: CompletionHook): void; }\ninterface ReleaseRule { holderMayRelease: true; administratorsMayRelease: true; othersRefused: true; }",
+          "ownedByStory": "s5",
+          "consumedByStories": [
+            "s6",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "TrackerPort and PortResult",
+          "purpose": "The only way the workflow library talks to a tracker. Declares capabilities, is checked against the capabilities the policy needs when loaded, returns structured results with a distinct error for a missing tool or sign-in, and can say who the signed-in user is so the gate knows who is acting. An issue reference is the existing owner/repo#N string. Owned by s1 because s1 is a root and every consumer depends on it.",
+          "interfaceSketch": "type TrackerKind = string;\ntype IssueRef = string; // 'owner/repo#N', as today\ntype Capability = 'claim' | 'issue-create' | 'signoff-request' | 'completion';\ntype PortResult<T> = { ok: true; value: T } | { ok: false; reason: string; kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected' };\ninterface TrackerPort {\n  readonly kind: TrackerKind;\n  readonly capabilities: ReadonlySet<Capability>;\n  whoAmI(): PortResult<string>; // the signed-in user's login\n  readAssignee(issue: IssueRef): PortResult<string | null>;\n  setAssignee(issue: IssueRef, who: string | null): PortResult<void>;\n  createIssue(spec: IssueSpec): PortResult<IssueRef>;\n  findIssue(labels: string[]): PortResult<IssueRef | null>;\n  openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>;\n  readSignoffState(ref: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'>;\n}\ninterface LoadTracker { (repo: string, needed: ReadonlySet<Capability>): PortResult<TrackerPort>; }\n  // + issueOps: IssueOps;  // Groups the issue operations that tracker-auto, the bugfix path and questions.ts need beyond the sketch (create returning the native id and typed flag, sub-issue link by native child id, close, comment, body read and write, label, milestone ensure and attach), all available under the issue-create capability. The sketch methods are unchanged. (amend:AMD-315d510cb28100e2-8)\n  // + findIssues(labels: string[]): PortResult<IssueRef[]>;  // Lists every issue, open or closed, that carries all the given labels, following every page of results, in ascending numeric issue-number order, so a creator can tell whether another issue for the same unit exists and keep the lowest. The GitHub adapter test that proves complete pagination, ordering and closed issues is s1's to add. (amend:AMD-315d510cb28100e2-10)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s7"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "TeamPolicy",
+          "purpose": "The central rules read from the remote default branch: team mode, signoff stages, claim enforcement, claim units, administrators, and the grandfathering anchor. Owned by s2.",
+          "interfaceSketch": "interface TeamPolicy {\n  teamMode: boolean;\n  signoffStages: Array<'DEF' | 'HLD' | 'LLD' | 'BUILD'>;\n  claimsEnforced: boolean;\n  claimUnits: { epic: ['DEF','HLD']; story: ['LLD','PLAN']; task: ['BUILD'] };\n  administrators: string[];\n  forceTaskIssues: true;\n  source: { ref: string; fetchedAt: string; firstCommit: string; firstCommitTime: string };\n}\ninterface PolicyReader { (repo: string): PolicyResult<TeamPolicy | 'none'>; }\ntype PolicyResult<T> = { ok: true; value: T } | { ok: false; reason: string };\n  // + source.anchorKnown: boolean;  // States whether firstCommit and firstCommitTime are the true date the policy file first appeared on the default branch; false when history is too shallow to show it, in which case s7 must grandfather no artifact. (amend:AMD-315d510cb28100e2-4)",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s7"
+          ],
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Per-unit tracker record and revision",
+          "purpose": "Adds data next to the artifact's existing meta.tracker without changing any existing field: a per-stage-unit issue map in a new key, and an optional meta.revision (default 0 when absent), minted on content writes and not on meta-only writes. A review that applies auto-fixes, whether through verdicts.ts or run-artifact.ts, is a content write; a report-only review is meta-only. Owned by s4, which also owns the inventory of artifact write paths and the shared issue-creation code.",
+          "interfaceSketch": "interface ExistingTrackerMeta { // unchanged; today's TrackerMeta\n  adapter?: TrackerKind; epicRef?: string; storyRef?: string; issueRef?: string;\n  storyRefs?: Readonly<Record<string, string>>; taskRefs?: Readonly<Record<string, string>>;\n  milestoneRef?: string; labelsCreated?: readonly string[];\n  epicStatus?: string; storyStatus?: Readonly<Record<string, string>>;\n  pushedAt?: string; lastSyncedAt?: string;\n}\ninterface UnitIssue { unit: 'epic' | 'story' | 'task'; unitId: string; issue: IssueRef; createdAtRevision: number; }\ninterface ArtifactTrackerRecord extends ExistingTrackerMeta { units?: Readonly<Record<string, UnitIssue>>; }\ninterface ArtifactMetaAdditions { revision?: number; /* absent reads as 0 */ tracker?: ArtifactTrackerRecord; }\ntype WriteKind = 'content' | 'meta-only';\ninterface ArtifactWriter { (path: string, next: unknown, kind: WriteKind): void; }\ninterface EnsureIssue { (unit: UnitRef, port: TrackerPort): PortResult<IssueRef>; }",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s7",
+            "s8"
+          ],
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "The team gate and its call sites (daemon step entry points and approveArtifactByJsonPath), the acting-user read through the port, claim and release commands, live assignee reads, the guarded-action list (code-review and analyze are never guarded; review is never refused), the report-only review for a non-holder through the review-fix decision on both review paths (verdicts.ts and run-artifact.ts), the typed TeamGateRefusedError, its handling beside ReviewBlockedError in approveWorkflowTarget and its formatting in the terminal client's approve case in src/cli/command.ts, the no-issue outcome handling, administrator release, and the declaration of the completion hook, shipped unregistered."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The GitHub adapter built by extracting src/workflow/tracker (including the existing signed-in-user read, ghCurrentLogin, behind whoAmI), the issue calls in tracker-auto.ts and the create and close calls in src/workflow/bugfix/tracker.ts behind the port; the gh command wrapper with its 10-second timeout; contract tests; detection of a missing tool or sign-in. The port receives the needed capabilities as an argument, so s1 does not read the policy. Reconciliation: the unbuilt tracker-tool design LLD-38436e90625a83a2-S001 (docs/standalone/add-add-items-tracker-setting-have-E2026100638436e90/S001/LLD.md) is not built as a second abstraction; sc1 is the one tracker abstraction and s1's LLD supersedes or amends that LLD, once its conflicting approval status is settled. Syncing tracker status on git pull and push, and an issue-status read on the port, are deferred to the define extend."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Reading the policy file from the remote default branch ref, the cached last-fetched copy and the offline rule, finding the first default-branch commit that carried the policy file, the starter policy and the team setup command."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "The repo-scoped kind of row in the shared settings catalog whose reads and writes go to the per-repo map in github.json read by resolveGithubConfig; its rendering in VS Code, JetBrains and the terminal client; read-only display of policy values. Shares the single store with s1's target resolution."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Shared issue-creation code refactored out of autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan, find-by-label dedupe for Story and Task issues, forcing Task issues on in team mode, daemon-side triggering when a draft is first written, the terminal approve path kept as manual fallback, the inventory and classification of artifact write paths (including the two writeFileSync writers, and both verdicts.ts and run-artifact.ts as content writes when auto-fixes change the body), the single content-write helper and the revision minting, the bypass test that also detects raw writeFileSync on artifact paths, and the rule that an artifact without meta.revision reads as revision 0."
+        },
+        {
+          "storyId": "s6",
+          "owns": [],
+          "depends": [
+            "sc4"
+          ],
+          "internal": "Parking a draft on a handoff branch, the issue note, resuming from committed files, and reconstructing in-flight workflow state from committed artifacts instead of the opaque token."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Opening the signoff request with the chosen artifacts, prerequisite checks for model review and local approval, registering the completion hook to produce the awaiting-signoff outcome, the on-demand completion check, automatic release of the claim on completion, recording sign-off together, grandfathering of artifacts approved before the policy anchor, and the separate display of signoff."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "Revision of an open request: re-run of local approval, push to the same request, discarding an earlier completion, refusing non-holders."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s9: Keep tracker issues and status in step with the work without a manual step"
+        }
+      ],
+      "rolloutPhase": "Phase C — claims and handoff",
+      "nonFunctional": {
+        "performance": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 10-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call.",
+        "security": "Policy is read only from the remote default branch ref and is not locally overridable; enforcement lives in the daemon-owned workflow library (k1); no tracker secrets are stored by insrc, sign-in stays with the tracker's CLI; administrators come only from the policy.",
+        "observability": "Every gate outcome other than allowed is logged with unit, action and reason; port failures carry their kind (missing-tool, missing-signin, unreachable, rejected).",
+        "durability": "Claim, issue and signoff state live in the tracker and in committed artifact files; the in-memory step state stores (100 entries, 1 hour) are not relied on for handoff. Artifact writes stay atomic through the existing helper."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TeamGate",
+          "signature": "(repo: string, unit: UnitRef, action: GuardedAction) => GateOutcome",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path; the policy and the tracker target are read for it",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The stage unit (Epic, Story or Task) the action changes",
+              "optional": false
+            },
+            {
+              "name": "action",
+              "type": "GuardedAction",
+              "purpose": "What the actor wants to do",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "GateOutcome",
+            "meaning": "allowed (with implicitClaim true when the actor became the holder), held-by-other (naming the holder), awaiting-signoff (from the registered completion hook), no-issue, or refused with a reason"
+          },
+          "errors": [
+            {
+              "type": "never throws",
+              "condition": "Every failure (policy unreadable, tracker missing or signed out, a multi-assignee issue, a timeout) is returned as a refused outcome with the reason"
+            }
+          ],
+          "preconditions": [
+            "action is one of the guarded actions; analyze and code-review have no GuardedAction value and never reach the gate"
+          ],
+          "postconditions": [
+            "A repo with no policy, teamMode false, or claimsEnforced false returns allowed with no tracker call",
+            "A non-allowed outcome is logged with unit, action and reason",
+            "At most two live port reads (whoAmI, readAssignee) per call"
+          ]
+        },
+        {
+          "name": "claim",
+          "signature": "(repo: string, unit: UnitRef) => GateOutcome",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The unit to claim",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "GateOutcome",
+            "meaning": "allowed when the actor now holds the unit (including when they already did); held-by-other when someone else does; refused on a port failure"
+          },
+          "errors": [
+            {
+              "type": "never throws",
+              "condition": "Failures return refused"
+            }
+          ],
+          "preconditions": [
+            "Team mode with claims enforced"
+          ],
+          "postconditions": [
+            "On allowed the unit's issue assignee is the actor, verified by the port's re-read",
+            "Never replaces another holder"
+          ]
+        },
+        {
+          "name": "release",
+          "signature": "(repo: string, unit: UnitRef) => GateOutcome",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The unit to release",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "GateOutcome",
+            "meaning": "allowed when the assignee is cleared; refused for anyone but the holder or a policy administrator"
+          },
+          "errors": [
+            {
+              "type": "never throws",
+              "condition": "Failures return refused"
+            }
+          ],
+          "preconditions": [
+            "Team mode with claims enforced"
+          ],
+          "postconditions": [
+            "On allowed the assignee is cleared and others can claim",
+            "Release by an administrator is allowed whoever the holder is"
+          ]
+        },
+        {
+          "name": "ReviewFixDecision",
+          "signature": "(repo: string, unit: UnitRef) => ReviewFixMode",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The unit whose artifact is being reviewed",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewFixMode",
+            "meaning": "apply-auto-fixes for the holder, or when no gate applies; report-only for a non-holder, so a review never writes content for someone who does not hold the stage"
+          },
+          "errors": [
+            {
+              "type": "never throws",
+              "condition": "A failed read yields report-only in team mode"
+            }
+          ],
+          "preconditions": [
+            "Called by both review paths before they apply fixes (verdicts.ts and run-artifact.ts)"
+          ],
+          "postconditions": [
+            "A review is never refused; only its fix mode changes"
+          ]
+        },
+        {
+          "name": "RegisterCompletionHook",
+          "signature": "(hook: CompletionHook) => void",
+          "parameters": [
+            {
+              "name": "hook",
+              "type": "CompletionHook",
+              "purpose": "Called by the gate for open-signoff, revise and release on a unit; s7 registers it",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "The hook is stored; none is registered by this Story"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "With no hook registered the gate behaves as if the hook returned continue"
+          ]
+        },
+        {
+          "name": "approveArtifactByJsonPath",
+          "signature": "(jsonPath: string, opts?: { readonly overrideReview?: string }) => ApprovalResult",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "The artifact to approve",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ readonly overrideReview?: string }",
+              "purpose": "Existing review override",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ApprovalResult",
+            "meaning": "Unchanged"
+          },
+          "errors": [
+            {
+              "type": "TeamGateRefusedError",
+              "condition": "In team mode the gate does not allow approve-local; thrown before any review check or stamp"
+            },
+            {
+              "type": "ReviewBlockedError",
+              "condition": "Unchanged"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The signature is unchanged; a repo with no policy behaves exactly as before"
+          ]
+        },
+        {
+          "name": "approveWorkflowTarget",
+          "signature": "(req: WorkflowApproveRequest, opts?: { readonly enforce?: boolean }) => Promise<WorkflowApproveResult>",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "WorkflowApproveRequest",
+              "purpose": "Unchanged",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ readonly enforce?: boolean }",
+              "purpose": "Unchanged",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowApproveResult>",
+            "meaning": "Unchanged; a TeamGateRefusedError puts the artifact in skipped[] with the refusal reason, as ReviewBlockedError does"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Other artifacts of a batch are still approved"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "GateOutcome",
+        "change": "new",
+        "details": "Tagged union returned by the gate: allowed {implicitClaim}, held-by-other {holder, offerPark}, awaiting-signoff {request}, no-issue {allowFirstAuthor, creationFailure?}, refused {reason}. Never persisted.",
+        "callSites": [
+          "src/workflow/gates.ts:587",
+          "src/daemon/steps/workflow-step/phases/start.ts",
+          "src/daemon/steps/build-step/phases/implement.ts"
+        ]
+      },
+      {
+        "entity": "ClaimState",
+        "change": "new",
+        "details": "{ unit, holder: string | null, readAt }: the assignee read live for one call. Held in memory for the call only; the tracker is the source of truth, so no claim data is stored in artifacts.",
+        "callSites": [
+          "src/workflow/tracker/github-adapter.ts:88"
+        ]
+      },
+      {
+        "entity": "TeamGateRefusedError",
+        "change": "new",
+        "details": "Error subclass carrying the non-allowed outcome and its reason; thrown by approveArtifactByJsonPath and by daemon step entry points, handled beside ReviewBlockedError.",
+        "callSites": [
+          "src/workflow/gates.ts:89",
+          "src/workflow/gates.ts:871",
+          "src/cli/command.ts:234"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Owns GuardedAction, GateOutcome, ClaimState, TeamGate, TeamGateRefusedError, ReviewFixDecision, CompletionHook and RegisterCompletionHook exactly as sketched; the completion hook is declared and left unregistered for s7."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Uses loadTracker with the claim capability, whoAmI, readAssignee and setAssignee only; a port failure kind becomes the refusal reason."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reads teamMode, claimsEnforced and administrators through policyReader; an unreadable policy refuses a guarded action in team repos only when a team policy was already seen, otherwise follows policyReader's own answer."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Finds the unit's issue with resolveUnitIssueLocal and creates a missing one with ensureUnitIssue for the no-issue outcome."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The tracker cannot be reached, gh is missing, or the user is signed out when a guarded action is attempted in a team repo.",
+          "detection": "loadTracker, whoAmI or readAssignee returns a PortResult failure with kind missing-tool, missing-signin or unreachable.",
+          "response": "The gate returns refused with the port's reason and kind; the action does not run. Nothing is written.",
+          "userImpact": "The author is told the stage cannot be changed until the tracker is reachable, with the reason; analyze and review still work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The stage unit's issue has two or more assignees.",
+          "detection": "readAssignee returns a rejected failure whose reason names the assignees (the GitHub adapter refuses a multi-assignee issue).",
+          "response": "The gate returns refused with that reason and never guesses a holder; release by an administrator (which clears every assignee through setAssignee) is the way out.",
+          "userImpact": "The author sees who is assigned and is told to ask an administrator to release.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Another developer holds the stage.",
+          "detection": "readAssignee returns a login that differs from whoAmI (compared case-insensitively).",
+          "response": "The gate returns held-by-other naming the holder; the entry point throws TeamGateRefusedError (daemon steps, approveArtifactByJsonPath) or maps it into skipped[] (approveWorkflowTarget). No time or inactivity is consulted, so a long-idle holder is still the holder.",
+          "userImpact": "The action is refused naming the holder; analyze and review of the stage still run (review in report-only mode).",
+          "recoverable": true
+        },
+        {
+          "scenario": "A non-holder who is not an administrator tries to release a stage.",
+          "detection": "release compares the actor with the live assignee and with policy.administrators.",
+          "response": "release returns refused or held-by-other and does not call setAssignee.",
+          "userImpact": "The actor is told only the holder or an administrator may release.",
+          "recoverable": true
+        },
+        {
+          "scenario": "claim finds the stage already held by someone else, or two developers claim at the same instant.",
+          "detection": "claim reads the assignee first and treats a non-empty other login as held-by-other; after setAssignee the port re-reads and compares, so a lost race shows as a rejected failure.",
+          "response": "claim returns held-by-other, or refused with the port's mismatch reason; it never removes another holder.",
+          "userImpact": "The second claimant is told who holds the stage.",
+          "recoverable": true
+        },
+        {
+          "scenario": "setAssignee fails or times out after changing nothing or part of the assignees.",
+          "detection": "setAssignee returns a PortResult failure (its own re-read does not match).",
+          "response": "claim and release return refused with the reason and say the resulting state is unknown; no retry is made inside the call.",
+          "userImpact": "The actor is told to re-read the claim before acting.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The stage unit has no issue recorded and none can be found or created.",
+          "detection": "resolveUnitIssueLocal returns null and ensureUnitIssue returns a failure.",
+          "response": "The gate returns no-issue with creationFailure and allowFirstAuthor true only for the first author turn of a stage that has no artifact yet; any other action is refused.",
+          "userImpact": "The author is told the stage cannot be claimed yet and why; the first draft can still be written and the issue is made right after (s4).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The team policy cannot be read for a repo that is known to carry one.",
+          "detection": "policyReader returns ok:false (it reports a known team repo as unreadable, never as none).",
+          "response": "A guarded action is refused with the reason; a repo that has never had a policy reads as none and is not affected.",
+          "userImpact": "The author is told the policy cannot be read and how to refresh it.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The review-fix decision cannot read the claim.",
+          "detection": "readAssignee or whoAmI fails inside ReviewFixDecision.",
+          "response": "It returns report-only: the review still runs and reports its findings but applies no auto-fix.",
+          "userImpact": "Findings are listed; the holder applies fixes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A registered completion hook throws.",
+          "detection": "The gate wraps the hook call in a try/catch.",
+          "response": "The gate returns refused with the hook's message; the action does not run.",
+          "userImpact": "The author sees the hook's error; the stage is not changed.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repo with no policy file, teamMode false, or claimsEnforced false.",
+          "expected": "allowed with implicitClaim false and no tracker call; behaviour is exactly as before this Story."
+        },
+        {
+          "input": "The actor already holds the stage and acts again.",
+          "expected": "allowed with implicitClaim false; no setAssignee call."
+        },
+        {
+          "input": "Nobody holds the stage and the actor authors or builds.",
+          "expected": "allowed with implicitClaim true; the gate assigns the actor with setAssignee before returning, and a failure of that assignment refuses the action."
+        },
+        {
+          "input": "Nobody holds the stage and the actor approves locally.",
+          "expected": "allowed with implicitClaim false and no assignment: approve does not take a claim."
+        },
+        {
+          "input": "A developer was assigned directly in the tracker and acts without claiming.",
+          "expected": "They are the holder because the assignee is read live; allowed with implicitClaim false."
+        },
+        {
+          "input": "Analyze or code review on a stage someone else holds.",
+          "expected": "Never reaches the gate; works as before."
+        },
+        {
+          "input": "Review of a stage someone else holds.",
+          "expected": "The review runs; ReviewFixDecision returns report-only, so it applies no auto-fix and writes only meta."
+        },
+        {
+          "input": "A signoff completion is checked (s7) and the request is complete.",
+          "expected": "The registered completion hook releases the claim through release; with no hook registered this Story does nothing."
+        },
+        {
+          "input": "A login differs only in case from the actor's.",
+          "expected": "They are the same person."
+        },
+        {
+          "input": "approveWorkflowTarget is given a batch where one artifact is held by someone else.",
+          "expected": "That artifact is in skipped[] with the refusal reason; the others are approved."
+        }
+      ],
+      "invariantsToPreserve": []
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx (npx tsx --test), co-located in __tests__ folders, using in-memory fake ports and injected policy and tracker loaders",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the gate's decisions, claim and release, and the review-fix decision against a fake tracker port and a fake policy, with no network.",
+          "subjects": [
+            "src/workflow/team/__tests__/gate.test.ts: teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false",
+            "src/workflow/team/__tests__/gate.test.ts: teamGate allows an unassigned stage for author and build and assigns the actor (implicitClaim true), and does not assign for approve-local",
+            "src/workflow/team/__tests__/gate.test.ts: teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively",
+            "src/workflow/team/__tests__/gate.test.ts: teamGate returns held-by-other naming the holder for author, build, approve-local and open-signoff, whatever the holder's idle time",
+            "src/workflow/team/__tests__/gate.test.ts: claim assigns the actor when nobody holds the stage, never replaces another holder, and reports a failed re-read as refused",
+            "src/workflow/team/__tests__/gate.test.ts: release clears the assignee for the holder and for an administrator and refuses anyone else without calling setAssignee",
+            "src/workflow/team/__tests__/gate.test.ts: each port failure kind, a multi-assignee issue, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw",
+            "src/workflow/team/__tests__/gate.test.ts: the registered completion hook is consulted for open-signoff, revise and release, and with none registered the gate behaves as continue",
+            "src/workflow/team/__tests__/review-fix-decision.test.ts: reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read"
+          ],
+          "fixturesNeeded": [
+            "a fake TrackerPort with whoAmI, readAssignee and setAssignee that records calls and can fail each",
+            "an injected PolicyReader returning none, a team policy with administrators, and ok:false",
+            "a temp repo with a Define, an LLD and a plan carrying unit records"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the call sites: each guarded entry point asks the gate and refuses before acting, approval maps the refusal like a review block, and analyze and code review are unguarded.",
+          "subjects": [
+            "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts: workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, while a repo without a policy behaves as before",
+            "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts: build implement and validate on a stage held by someone else are refused naming the holder",
+            "src/workflow/__tests__/gate-approve.test.ts: approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder before any review check or stamp, and approveWorkflowTarget puts that artifact in skipped[] with the reason while approving the others",
+            "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts: a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged",
+            "src/workflow/__tests__/gate-guarded-entry-points.test.ts: the list of guarded entry points matches the daemon steps and analyze and code-review steps are not on it",
+            "src/cli/__tests__/approve-gate-refusal.test.ts: the terminal approve case prints the refusal naming the holder, formatted beside the review-block message"
+          ],
+          "fixturesNeeded": [
+            "the same fake tracker port and policy injected through module-level test seams",
+            "a temp repo with draft artifacts for each stage"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac19",
+          "provingTests": [
+            "src/workflow/team/__tests__/gate.test.ts: claim assigns the actor when nobody holds the stage, never replaces another holder, and reports a failed re-read as refused",
+            "src/workflow/team/__tests__/gate.test.ts: teamGate allows an unassigned stage for author and build and assigns the actor (implicitClaim true), and does not assign for approve-local"
+          ]
+        },
+        {
+          "criterionId": "ac20",
+          "provingTests": [
+            "src/workflow/team/__tests__/gate.test.ts: teamGate returns held-by-other naming the holder for author, build, approve-local and open-signoff, whatever the holder's idle time",
+            "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts: workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, while a repo without a policy behaves as before",
+            "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts: build implement and validate on a stage held by someone else are refused naming the holder",
+            "src/workflow/__tests__/gate-approve.test.ts: approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder before any review check or stamp, and approveWorkflowTarget puts that artifact in skipped[] with the reason while approving the others",
+            "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts: a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac21",
+          "provingTests": [
+            "src/workflow/team/__tests__/gate.test.ts: teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively"
+          ]
+        },
+        {
+          "criterionId": "ac22",
+          "provingTests": [
+            "src/workflow/team/__tests__/gate.test.ts: release clears the assignee for the holder and for an administrator and refuses anyone else without calling setAssignee"
+          ]
+        },
+        {
+          "criterionId": "ac23",
+          "provingTests": [
+            "src/workflow/team/__tests__/gate.test.ts: teamGate returns held-by-other naming the holder for author, build, approve-local and open-signoff, whatever the holder's idle time",
+            "src/workflow/team/__tests__/gate.test.ts: claim assigns the actor when nobody holds the stage, never replaces another holder, and reports a failed re-read as refused"
+          ]
+        },
+        {
+          "criterionId": "ac24",
+          "provingTests": [
+            "src/workflow/team/__tests__/gate.test.ts: the registered completion hook is consulted for open-signoff, revise and release, and with none registered the gate behaves as continue"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One gate function, called explicitly at each guarded entry point",
+        "oneLineSummary": "A single teamGate(repo, unit, action) in the workflow library; each guarded daemon step and approveArtifactByJsonPath calls it first and turns a non-allowed outcome into a typed TeamGateRefusedError.",
+        "approach": "Add src/workflow/team/gate.ts exporting teamGate, claim, release, reviewFixDecision, registerCompletionHook and TeamGateRefusedError. teamGate reads the policy (policyReader) and returns 'allowed' with no tracker call for a repo with no policy, teamMode false, claimsEnforced false, or an action outside the guarded list. Otherwise it resolves the unit's issue locally (resolveUnitIssueLocal), loads the tracker (loadTracker with the 'claim' capability), reads whoAmI and readAssignee live, and decides: the assignee is the holder; no assignee lets the actor proceed with an implicit claim for author and build; another holder is held-by-other; a missing issue yields no-issue after trying ensureUnitIssue. Each entry point (workflow-step start/plan/step/synthesize, build-step implement/validate, review-step for the fix decision, approveArtifactByJsonPath) derives its UnitRef from the request it already holds and calls teamGate once per turn. claim and release are two new commands that call setAssignee after a gate check; release by an administrator is allowed, release by the holder is allowed, anyone else is refused.",
+        "pros": [
+          "Smallest change: no new layers, the call sites are the ones the HLD names",
+          "The refusal sits beside ReviewBlockedError and reuses its handling in approveWorkflowTarget and the terminal client",
+          "Each call site decides its own unit and action, so analyze and code review are untouched by construction"
+        ],
+        "cons": [
+          "A new guarded entry point added later can forget the call; needs a test that lists every guarded entry point",
+          "Each of about eight call sites repeats a few lines to derive its UnitRef"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Wrap the daemon step handlers in a gate middleware",
+        "oneLineSummary": "One wrapper around handleWorkflowStep, handleBuildStep and the review handlers derives the unit and action from the request and applies the gate before the handler runs.",
+        "approach": "Add a higher-order function guardHandler(handler, describe) where describe maps a request to { unit, action } or undefined for unguarded requests, and register the three handlers through it. The gate logic is the same as in a1, but the call sites are the handler registrations, not the phases. approveArtifactByJsonPath, which is not a daemon step, would still need its own explicit call.",
+        "pros": [
+          "One place to read when asking what is guarded in the daemon",
+          "A handler added later through the same registration is covered"
+        ],
+        "cons": [
+          "The unit must be derived from the request before the handler has parsed it: the opaque state token carries epic and story for phases after start, so the wrapper has to read the state store or duplicate parsing",
+          "Does not cover approveArtifactByJsonPath or the terminal client, so two mechanisms exist",
+          "Harder to leave a phase unguarded on purpose (analyze-like phases of a workflow)"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Unit derivation from the opaque state token before the handler runs duplicates parsing, and approve-local still needs an explicit call, so there would be two mechanisms."
+      },
+      {
+        "id": "a3",
+        "name": "Enforce in the artifact writer",
+        "oneLineSummary": "writeArtifact (kind content) asks the gate before it writes, so any content change by a non-holder is refused wherever it comes from.",
+        "approach": "Pass an optional action into writeArtifact and consult teamGate for kind 'content' writes. Every path that changes a stage artifact is covered because they all pass through the single writer s4 built. The gate would also need to know the actor and the unit from the artifact path.",
+        "pros": [
+          "Cannot be bypassed by a new caller that writes content",
+          "Reuses the s4 inventory test as the coverage proof"
+        ],
+        "cons": [
+          "Couples the storage layer to the tracker and policy, which breaks the layering and makes every storage test depend on gate seams",
+          "A write is the wrong moment to refuse: the draft has already been generated and the author loses work (the HLD wants the refusal before the action, with an offer to park)",
+          "Build and approve do not always write content (approve is meta-only), so they would still need explicit calls"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Violates ac20 for approve and build, and couples storage to the tracker."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:587"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:829"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/tracker/github-adapter.ts:88"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/tracker/unit-issue.ts"
+    }
+  ]
+}

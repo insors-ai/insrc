@@ -157,4 +157,11 @@ test('teamGate returns held-by-other naming the holder for author, build, approv
 	// a throwing policy reader never escapes
 	_setGateDepsForTests({ readPolicy: () => { throw new Error('boom'); } });
 	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /team gate failed: boom/);
+	// anything thrown, not only an Error, is a refusal and the gate itself does not throw
+	for (const thrown of [null, undefined, 'a string', 42, { code: 'x' }]) {
+		_setGateDepsForTests({ readPolicy: () => { throw thrown; } });
+		const o = teamGate('/repo', UNIT, 'author');
+		assert.equal(o.kind, 'refused', String(thrown));
+	}
+	assert.match(String((() => { _setGateDepsForTests({ readPolicy: () => { throw 'a string'; } }); return (teamGate('/repo', UNIT, 'author') as { reason?: string }).reason; })()), /team gate failed: a string/);
 });

@@ -92,6 +92,9 @@ const CLAIMING: ReadonlySet<string> = new Set<GuardedAction>(['author', 'build']
 
 const sameLogin = (a: string, b: string): boolean => a.toLowerCase() === b.toLowerCase();
 
+/** The message of anything that was thrown, including a non-Error value. */
+const errorText = (err: unknown): string => (err instanceof Error ? err.message : typeof err === 'string' ? err : String(err));
+
 const allowed = (implicitClaim = false): GateOutcome => ({ kind: 'allowed', implicitClaim });
 const refused = (reason: string): GateOutcome => ({ kind: 'refused', reason });
 
@@ -158,6 +161,6 @@ export function teamGate(repo: string, unit: UnitRef, action: GuardedAction): Ga
 		}
 		return allowed(true);
 	} catch (err) {
-		return logOutcome(unit, action, refused(`the team gate failed: ${(err as Error).message}`));
+		return logOutcome(unit, action, refused(`the team gate failed: ${errorText(err)}`));
 	}
 }

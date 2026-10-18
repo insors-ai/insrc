@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:24:07.223Z",
+    "updatedAt": "2026-10-18T14:27:16.123Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -111,6 +111,93 @@
               },
               {
                 "title": "ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "6b6b6657",
+        "ranAt": "2026-10-18T14:27:16.123Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/gate.test.ts: teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/gate.test.ts",
+                "title": "teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/gate.test.ts: teamGate allows an unassigned stage for author and build and adds the actor through addAssignee (implicitClaim true), and takes no claim for approve-local or applying a finding",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/gate.test.ts",
+                "title": "teamGate allows an unassigned stage for author and build and adds the actor through addAssignee (implicitClaim true), and takes no claim for approve-local or applying a finding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/gate.test.ts: teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/gate.test.ts",
+                "title": "teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/gate.test.ts: teamGate returns held-by-other naming the holder for author, build, approve-local, apply and open-signoff, whatever the holder's idle time",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/gate.test.ts",
+                "title": "teamGate returns held-by-other naming the holder for author, build, approve-local, apply and open-signoff, whatever the holder's idle time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1214,
+            "titles": [
+              {
+                "title": "teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false",
+                "result": "pass"
+              },
+              {
+                "title": "teamGate allows an unassigned stage for author and build and adds the actor through addAssignee (implicitClaim true), and takes no claim for approve-local or applying a finding",
+                "result": "pass"
+              },
+              {
+                "title": "teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively",
+                "result": "pass"
+              },
+              {
+                "title": "teamGate returns held-by-other naming the holder for author, build, approve-local, apply and open-signoff, whatever the holder's idle time",
                 "result": "pass"
               }
             ],

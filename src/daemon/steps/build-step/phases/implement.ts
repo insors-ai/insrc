@@ -169,7 +169,7 @@ function handleStandaloneImplement(
 	}
 
 	const prompt = renderStandaloneImplementPrompt({
-		storyId, sizeClass, producesLld, focus: specFocus,
+		epicHash, storyId, sizeClass, producesLld, focus: specFocus,
 		lldMdRel: lldMdRelPath, resolvedDecisions,
 	});
 	log.info({ storyId, sizeClass, standalone: true, producesLld }, 'insrc_build_step[implement]: emitting standalone prompt');

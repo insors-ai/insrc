@@ -30,6 +30,7 @@ this Task — do not exceed its scope.**
 3. Run the Task's named tests, then `{{typecheckCmd}}` and `{{testCmd}}`.
 4. If green, **commit** referencing the Task and its issue:
    `feat(build): {{storyId}}/{{taskId}} … ({{issueRef}})`.
+   {{storyTrailerRule}}
 5. If it cannot be made to pass after a genuine effort, **HALT** — report which
    acceptance check failed, why, and what you tried. Do not fabricate success.
 

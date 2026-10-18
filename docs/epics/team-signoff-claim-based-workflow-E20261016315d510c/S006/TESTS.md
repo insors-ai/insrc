@@ -40,7 +40,7 @@ Run at 2026-10-18T17:09:55.658Z on commit `71f2da1e`. Tests check: **passed**. 1
 
 ## t3
 
-Run at 2026-10-18T17:17:17.485Z on commit `fbb57f00`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T17:20:30.641Z on commit `53e59f21`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/team/__tests__/snapshot-upstream.test.ts: snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail**
 
@@ -58,5 +58,5 @@ Run at 2026-10-18T17:17:17.485Z on commit `fbb57f00`. Tests check: **passed**. 2
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` | 0 | 1 | 1.3 s |  |
-| `src/workflow/team/__tests__/snapshot-upstream.test.ts` | 0 | 2 | 1.1 s |  |
+| `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` | 0 | 1 | 1.2 s |  |
+| `src/workflow/team/__tests__/snapshot-upstream.test.ts` | 0 | 2 | 1 s |  |

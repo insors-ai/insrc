@@ -76,8 +76,9 @@ export const REPO_TRACKER_FIELDS: readonly RepoFieldDef[] = [
 	{ key: 'ghHost', label: 'GitHub host', type: 'string', default: 'github.com', description: 'The host gh signs in to.', group: 'Tracker', kind: 'local', note: NOT_USED_YET },
 	{
 		key: 'branchPattern', label: 'Branch pattern', type: 'string',
-		description: 'Branch name pattern with {id}, {slug} and {type}.',
-		group: 'Tracker', kind: 'local', note: NOT_USED_YET,
+		description: 'Branch name pattern with {id}, {slug} and {type}; a parked draft goes to this branch. {id} is required.',
+		default: 'insrc/handoff/{type}-{id}',
+		group: 'Tracker', kind: 'local',
 		grammar: {
 			placeholders: ['id', 'slug', 'type'], minLength: 1, maxLength: 200,
 			literalChars: { letters: true, digits: true, extra: '/-_.' },

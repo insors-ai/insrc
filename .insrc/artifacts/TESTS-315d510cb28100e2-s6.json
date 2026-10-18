@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T17:17:17.485Z",
+    "updatedAt": "2026-10-18T17:20:30.641Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -84,8 +84,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "fbb57f00",
-        "ranAt": "2026-10-18T17:17:17.485Z",
+        "commit": "53e59f21",
+        "ranAt": "2026-10-18T17:20:30.641Z",
         "testsPassed": true,
         "tests": [
           {
@@ -120,7 +120,7 @@
             "file": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1325,
+            "durationMs": 1220,
             "titles": [
               {
                 "title": "handleStart records the acting user and the upstream snapshot on the stored run, plan and step turns keep them, and a repo without a policy records neither and makes no tracker call",
@@ -133,7 +133,7 @@
             "file": "src/workflow/team/__tests__/snapshot-upstream.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1107,
+            "durationMs": 1026,
             "titles": [
               {
                 "title": "snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail",

@@ -10,7 +10,8 @@
  * (registration, identity, stage, branch, checkpoint, upstream, local changes) is `resumeCheck` in the handoff module.
  */
 
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, rmdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -49,7 +50,7 @@ function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps)
 		for (const f of done.reverse()) {
 			try { f.before === null ? rmSync(f.path, { force: true }) : writeFileSync(f.path, f.before, 'utf8'); } catch (err) { log.warn({ path: f.path, err: err instanceof Error ? err.message : String(err) }, 'resume: could not roll back a restored file'); }
 		}
-		for (const d of madeDirs.reverse()) { try { rmSync(d, { recursive: false }); } catch { /* not empty or already gone */ } }
+		for (const d of madeDirs.reverse()) { try { rmdirSync(d); } catch { /* not empty or already gone */ } }
 	};
 	for (const f of files) {
 		const abs = join(repo, f.path);

@@ -13,7 +13,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -220,6 +220,9 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		assert.equal(treeOf(w.recv), before, 'the working tree is as it was');
 		assert.equal(existsSync(here(draft)), false);
 		assert.equal(existsSync(here(mdDraft)), false);
+		assert.equal(existsSync(dirname(here(mdDraft))), false, 'the directories the restore made are removed');
+		assert.equal(existsSync(join(w.recv, 'docs')), false);
+		assert.equal(readdirSync(join(w.recv, '.insrc', 'artifacts')).some(n => n.includes('.resume-')), false, 'no temporary file is left');
 		assert.equal(listStates().length, 0, 'no state saved');
 
 		// without the fault the draft is restored and the stage restarts

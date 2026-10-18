@@ -134,14 +134,16 @@ export function applyResume(check: ResumeCheck, repo: string, deps: ApplyDeps = 
 	}
 
 	const checkpoint: RunCheckpoint = check.plan.checkpoint;
+	// the resumed run must be owned by the person resuming it, so who that is must be known before anything is written
+	const owner = actingUser(repo);
+	if (owner === undefined) return refusedWith('could not tell who you are on the tracker, so the run cannot be handed to you; nothing was changed');
 	const restored = restoreFiles(repo, check.plan.files, deps);
 	if ('failed' in restored) return refusedWith(restored.failed);
 	try {
 		const payload = rebindCheckpoint(checkpoint, { repoPath: repo, repoIndexedAt: null, now: Date.now() });
 		const turn = turnFor(payload);
 		if ('error' in turn) { restored.rollback(); return refusedWith(`${turn.error}; the working tree is as it was`); }
-		const owner = actingUser(repo);
-		const state = saveState(payload, { ...(owner !== undefined ? { owner } : {}), upstream: checkpoint.upstream });
+		const state = saveState(payload, { owner, upstream: checkpoint.upstream });
 		return { kind: 'resumed', turn: { ...turn, state } as WorkflowStepEmitPlan | WorkflowStepEmitStep | WorkflowStepEmitSynthesize };
 	} catch (err) {
 		restored.rollback();

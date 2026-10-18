@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 1 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -167,7 +167,9 @@ Run at 2026-10-18T18:18:11.224Z on commit `2ff7cd6b`. Tests check: **passed**. 2
 
 ## t9
 
-Run at 2026-10-18T18:27:55.335Z on commit `048fbc4a`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T18:31:21.277Z on commit `f6499f89`. Tests check: **failed**. 1 pass, 1 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+named test cases that did not pass: fail: 'a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state' in src/workflow/team/__tests__/handoff-resume.test.ts
 
 **integration: src/workflow/team/__tests__/handoff-resume.test.ts: a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone**
 
@@ -179,10 +181,10 @@ Run at 2026-10-18T18:27:55.335Z on commit `048fbc4a`. Tests check: **passed**. 2
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state | `src/workflow/team/__tests__/handoff-resume.test.ts` |
+| fail | a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state | `src/workflow/team/__tests__/handoff-resume.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/team/__tests__/handoff-resume.test.ts` | 0 | 2 | 2.2 s |  |
+| `src/workflow/team/__tests__/handoff-resume.test.ts` | 1 | 2 | 3.4 s |  |

@@ -230,10 +230,29 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		assert.equal(statSync(here(lldMd)).mode & 0o777, modeBefore, 'with its mode');
 		assert.equal(existsSync(here(draft)), false);
 		assert.equal(existsSync(here(mdDraft)), false);
-		assert.equal(existsSync(dirname(here(mdDraft))), false, 'the directories the restore made are removed');
-		assert.equal(existsSync(join(w.recv, 'docs')), false);
 		assert.equal(readdirSync(join(w.recv, '.insrc', 'artifacts')).some(n => n.includes('.resume-')), false, 'no temporary file is left');
 		assert.equal(listStates().length, 0, 'no state saved');
+
+		// with the directories absent too, a failure removes the ones the restore made
+		git(w.recv, 'rm', '-q', '-f', rel(lldMd)); git(w.recv, 'commit', '-qm', 'drop LLD.md here');
+		assert.equal(existsSync(join(w.recv, 'docs')), false);
+		const check2 = await resumeCheck(w.recv, unitOf(w.recv), { workflow: 'plan' }, resumeDeps(w));
+		assert.equal(check2.kind, 'restart', JSON.stringify(check2));
+		const seen2: string[] = [];
+		const failed2 = await applyResume(check2, w.recv, { failWrite: p => { seen2.push(p); return seen2.length === 3 ? 'disk full' : undefined; } });
+		assert.equal(failed2.kind, 'refused', JSON.stringify(failed2));
+		assert.equal(existsSync(join(w.recv, 'docs')), false, 'the directories the restore made are removed');
+		assert.equal(readdirSync(join(w.recv, '.insrc', 'artifacts')).some(n => n.includes(HASH) && n.startsWith('PLAN-')), false);
+
+		// when the tracker cannot say who is resuming, a run is not handed over and nothing is written
+		_setGateDepsForTests({ readPolicy: team, loadTracker: () => ({ ok: false, kind: 'unreachable', reason: 'offline' }) as never, resolveIssue: () => 'acme/demo#7', ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'x' }), artifactExists: () => true });
+		const anon = await applyResume({ kind: 'resume', plan: { checkpoint: { upstream: [] } as never, files: [{ path: 'x.txt', content: 'x' }] } } as never, w.recv);
+		assert.equal(anon.kind, 'refused', JSON.stringify(anon));
+		assert.match((anon as { reason: string }).reason, /who you are/);
+		assert.equal(existsSync(join(w.recv, 'x.txt')), false);
+		assert.equal(listStates().length, 0);
+		w.actor.who = 'bob';
+		_setGateDepsForTests({ readPolicy: team, loadTracker: () => ({ ok: true, value: { whoAmI: () => ({ ok: true, value: 'bob' }), readAssignee: () => ({ ok: true, value: 'bob' }), addAssignee: () => ({ ok: true, value: ['bob'] }), issueOps: { comment: () => ({ ok: true, value: undefined }) } } as never }), resolveIssue: () => 'acme/demo#7', ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'x' }), artifactExists: () => true });
 
 		// without the fault the draft is restored and the stage restarts
 		const ok: ResumeResult = await resumeStage(w.recv, unitOf(w.recv), { workflow: 'plan' }, resumeDeps(w));
@@ -244,7 +263,6 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		assert.equal(readFileSync(here(draft), 'utf8'), '{"plan":"draft"}\n');
 		assert.equal(readFileSync(here(mdDraft), 'utf8'), '# the plan draft\n');
 		assert.equal(readFileSync(here(lldMd), 'utf8'), '# newer\n');
-		assert.equal(statSync(here(lldMd)).mode & 0o777, modeBefore, 'the overwritten file keeps its mode');
 		assert.equal(listStates().length, 0, 'a restart stores no run');
 	} finally { rmSync(w.root, { recursive: true, force: true }); }
 });

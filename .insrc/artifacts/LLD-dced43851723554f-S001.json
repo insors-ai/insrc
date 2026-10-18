@@ -112,6 +112,13 @@
         "choice": "Adopt four grouped criteria",
         "rationale": "Stakeholder decision 2026-10-18: ac1-ac4 as stated; the approved LLD's test mapping already maps every proving test to them.",
         "resolvedAt": "2026-10-18T11:25:28.913Z"
+      },
+      "q6880ca99": {
+        "question": "cd1 partial: restoreCarriedDocSummaries, writeDocSummaryIfCurrentInTxn, markFullIndexUnfinished, restoreDocSummariesFromBackup (the store-level function behind the IPC handler) and the IPC method docSummary.restoreFromBackup are new names; there is no HLD to own them (standalone fix).",
+        "status": "resolved",
+        "choice": "Define contracts in S001 LLD",
+        "rationale": "Stakeholder decision 2026-10-18: the standalone S001 LLD is the authority for the four store functions and the docSummary.restoreFromBackup IPC method; its section 2 already gives their signatures, behaviour and errors.",
+        "resolvedAt": "2026-10-18T11:26:29.313Z"
       }
     }
   },

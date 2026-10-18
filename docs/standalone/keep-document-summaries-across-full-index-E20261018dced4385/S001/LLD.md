@@ -310,6 +310,8 @@ Re-key doc_summary and doc_summary_by_repo by the string id (a v6 layout step mi
 
 - `qd56b3f85` — Acceptance criteria (the Story carries none; derived from the ISSUE's fix intent, c1-c7): ac1 a full index keeps the summary of every document still stored with the same body, under its new entity number, and drops the rest; ac2 a full index interrupted after the delete loses no summary, and the next full index writes the carried ones back; ac3 docSummary.restoreFromBackup restores the backup's summaries for every document whose current body has the same content hash, by either model, never replaces a stored summary and is idempotent; ac4 writeDocSummaryIfCurrent without options and the summariser's skip rule are unchanged, and the summariser's error placeholder never replaces a stored summary with no errorCode for the same contentHash.
   - **resolved**: Adopt four grouped criteria — Stakeholder decision 2026-10-18: ac1-ac4 as stated; the approved LLD's test mapping already maps every proving test to them. _(2026-10-18T11:25:28.913Z)_
+- `q6880ca99` — cd1 partial: restoreCarriedDocSummaries, writeDocSummaryIfCurrentInTxn, markFullIndexUnfinished, restoreDocSummariesFromBackup (the store-level function behind the IPC handler) and the IPC method docSummary.restoreFromBackup are new names; there is no HLD to own them (standalone fix).
+  - **resolved**: Define contracts in S001 LLD — Stakeholder decision 2026-10-18: the standalone S001 LLD is the authority for the four store functions and the docSummary.restoreFromBackup IPC method; its section 2 already gives their signatures, behaviour and errors. _(2026-10-18T11:26:29.313Z)_
 
 ## Citations
 

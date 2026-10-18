@@ -100,7 +100,7 @@ export function handoffBranchName(pattern: string | undefined, unit: HandoffUnit
 	if (name.length === 0 || name.length > 200) return { ok: false, reason: `the branch name '${name}' must be 1 to 200 characters` };
 	if (!/^[A-Za-z0-9/_.-]+$/.test(name)) return { ok: false, reason: `the branch name '${name}' has characters a branch name cannot have` };
 	if (name.startsWith('/') || name.endsWith('/') || name.includes('//')) return { ok: false, reason: `the branch name '${name}' has a leading, trailing or doubled slash (an empty {slug}?)` };
-	if (name.includes('..') || name.endsWith('.lock') || name.endsWith('.') || name.split('/').some(part => part.startsWith('.'))) return { ok: false, reason: `the branch name '${name}' is not a valid branch name` };
+	if (name.includes('..') || name.endsWith('.') || name.split('/').some(part => part.startsWith('.') || part.endsWith('.lock'))) return { ok: false, reason: `the branch name '${name}' is not a valid branch name` };
 	return { ok: true, name };
 }
 
@@ -323,8 +323,8 @@ export function inferStageWorkflow(repoPath: string, unit: UnitRef | (HandoffUni
 // Parking: deciding what to hand over
 // ---------------------------------------------------------------------------
 
-/** Does a stored run change this unit (same repository, unit kind, epic and story)? */
-export function runIsForUnit(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>, unit: UnitRef): boolean {
+/** Does a stored run change this unit (same repository, unit kind, epic and story)? (park-offer.ts holds the same check; see docs/plans/s6-open-issues.md S6-1.) */
+function runIsForUnit(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>, unit: UnitRef): boolean {
 	const u = authorUnitOf(intent);
 	return u !== undefined
 		&& resolve(u.repoPath) === resolve(unit.repoPath)

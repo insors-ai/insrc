@@ -42,10 +42,10 @@ test('handoffBranchName fills placeholders, applies the default, rejects a gramm
 	assert.notEqual((handoffBranchName(undefined, STORY, 'x') as { name: string }).name, (handoffBranchName(undefined, { epicHash: HASH, storyId: 's2' }, 'x') as { name: string }).name, 'two Stories never share a branch');
 
 	// a pattern that breaks the grammar is refused with the rule's message
-	for (const bad of ['/lead-{id}', 'trail-{id}/', 'a//{id}', 'a..{id}', '{id}.lock', 'sp ace-{id}', '{nope}-{id}', 'open-{id']) {
+	for (const bad of ['/lead-{id}', 'trail-{id}/', 'a//{id}', 'a..{id}', '{id}.lock', 'foo.lock/{id}', 'team/x.lock/{id}', '{id}/.hidden', 'sp ace-{id}', '{nope}-{id}', 'open-{id']) {
 		const r = handoffBranchName(bad, STORY, 'x');
 		assert.equal(r.ok, false, bad);
-		if (!r.ok) assert.match(r.reason, /^the branch pattern /, bad);
+		if (!r.ok) assert.match(r.reason, /^the branch (pattern|name) /, bad);
 	}
 	// a pattern without {id} cannot tell two units apart
 	const noId = handoffBranchName('insrc/handoff/{type}-{slug}', STORY, 'x');

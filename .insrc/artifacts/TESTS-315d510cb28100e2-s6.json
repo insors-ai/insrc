@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T17:50:27.773Z",
+    "updatedAt": "2026-10-18T17:52:55.111Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -264,8 +264,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "d9cb210f",
-        "ranAt": "2026-10-18T17:50:27.773Z",
+        "commit": "f3252939",
+        "ranAt": "2026-10-18T17:52:55.111Z",
         "testsPassed": true,
         "tests": [
           {
@@ -287,7 +287,7 @@
             "file": "src/workflow/team/__tests__/handoff-park-plan.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1968,
+            "durationMs": 800,
             "titles": [
               {
                 "title": "parkPlan refuses when the actor holds the unit, for a Task, with no issue or holder, with nothing to park, and for a supplied token of another unit, actor or no owner, and assembles a run or draft-only checkpoint otherwise",

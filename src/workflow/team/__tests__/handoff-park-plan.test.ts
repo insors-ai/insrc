@@ -122,7 +122,7 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		assert.equal(plan(unit, { runToken: mine }).ok, true);
 
 		// the branch name must be valid
-		for (const bad of ['/lead-{id}', 'no-id-{type}', 'a..{id}']) {
+		for (const bad of ['/lead-{id}', 'no-id-{type}', 'a..{id}', 'foo.lock/{id}', 'x/y.lock/{id}']) {
 			assert.match(reasonOf(plan(unit, {}, deps({ branchPattern: () => bad }))), /branch pattern|branch name/, bad);
 		}
 

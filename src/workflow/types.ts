@@ -342,6 +342,9 @@ export interface ArtifactMetaBase {
 	 *  artifact type owns its version namespace. Bump on breaking
 	 *  changes to the payload shape. */
 	readonly schemaVersion: number;
+	/** Content revision (sc3): minted by `writeArtifact` on content writes only,
+	 *  never changed by a meta-only write. Absent reads as 0. */
+	readonly revision?:    number;
 	/** ISO 8601 timestamp set by `insrc workflow approve`. Absent
 	 *  until approved. */
 	readonly approvedAt?:  string;

@@ -18,11 +18,39 @@
 
 import { readFileSync } from 'node:fs';
 
-import { writeAtomic } from '../storage.js';
+import type { TrackerKind } from './port.js';
+import { writeArtifact } from '../storage.js';
+
+/** One stage unit and the issue that carries it (sc3). Stored under
+ *  `meta.tracker.units`, in team mode. */
+export interface UnitIssue {
+	readonly unit:      'epic' | 'story' | 'task';
+	readonly unitId:    string;
+	readonly issue:     string;
+	/** `meta.revision` of the artifact when the issue was recorded. */
+	readonly createdAtRevision: number;
+	/** Per approve-time extra, the ISO time it succeeded; absent = still to run. */
+	readonly extrasDone?: {
+		readonly milestone?:     string;
+		readonly taskList?:      string;
+		readonly designComment?: string;
+		readonly reviewComment?: string;
+	};
+}
+
+/** Which unit needs an issue (the argument of the HLD's EnsureIssue). */
+export interface UnitRef {
+	readonly unit:      'epic' | 'story' | 'task';
+	readonly repoPath:  string;
+	readonly epicHash:  string;
+	readonly storyId?:  string;
+	readonly taskId?:   string;
+}
 
 /** Nested tracker block stored on an artifact's `meta.tracker`. */
 export interface TrackerMeta {
-	readonly adapter?:       'github';
+	readonly adapter?:       TrackerKind;
+	readonly units?:         Readonly<Record<string, UnitIssue>>;
 	readonly epicRef?:       string;                        // on HLD / Define
 	readonly storyRef?:      string;                        // on LLD
 	readonly issueRef?:      string;                        // on a bugfix IssueArtifact — its OWN created GH issue (S005/sc-none)
@@ -91,8 +119,11 @@ export function patchTrackerMeta(jsonPath: string, patch: Readonly<Partial<Track
 		throw new Error(`artifact at ${jsonPath} has no meta`);
 	}
 	const prior = (artifact.meta['tracker'] as TrackerMeta | undefined) ?? {};
-	const next: TrackerMeta = { adapter: 'github', ...prior, ...patch };
+	const units = prior.units !== undefined || patch.units !== undefined
+		? { units: { ...(prior.units ?? {}), ...(patch.units ?? {}) } }
+		: {};
+	const next: TrackerMeta = { adapter: 'github', ...prior, ...patch, ...units };
 	artifact.meta['tracker'] = next;
-	writeAtomic(jsonPath, JSON.stringify(artifact, null, 2) + '\n');
+	writeArtifact(jsonPath, artifact, 'meta-only');
 	return next;
 }

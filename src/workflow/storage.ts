@@ -88,6 +88,81 @@ export function writeAtomic(absPath: string, content: string): void {
 }
 
 // ---------------------------------------------------------------------------
+// Artifact JSON writer (sc3): revision minting + tracker-block carry
+// ---------------------------------------------------------------------------
+
+/** `content` when the body, citations or anything a signoff covers changed;
+ *  `meta-only` for stamps, review stamps, tracker patches and resolutions. */
+export type WriteKind = 'content' | 'meta-only';
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+	return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/** `meta.revision` of a parsed artifact, or 0 when absent or malformed. */
+export function readRevision(artifact: unknown): number {
+	if (!isRecord(artifact) || !isRecord(artifact['meta'])) return 0;
+	const r = artifact['meta']['revision'];
+	return typeof r === 'number' && Number.isInteger(r) && r >= 0 ? r : 0;
+}
+
+function readPrior(path: string): Record<string, unknown> | undefined {
+	if (!existsSync(path)) return undefined;
+	try {
+		const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
+		return isRecord(parsed) ? parsed : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+/** The whole prior `meta.tracker` block carried into a replacement: every
+ *  key of `next` wins, `units` merge key by key. */
+function carryTracker(prior: unknown, next: unknown): Record<string, unknown> | undefined {
+	const p = isRecord(prior) ? prior : undefined;
+	const n = isRecord(next) ? next : undefined;
+	if (p === undefined && n === undefined) return undefined;
+	const merged: Record<string, unknown> = { ...(p ?? {}), ...(n ?? {}) };
+	const pu = isRecord(p?.['units']) ? p['units'] : undefined;
+	const nu = isRecord(n?.['units']) ? n['units'] : undefined;
+	if (pu !== undefined || nu !== undefined) merged['units'] = { ...(pu ?? {}), ...(nu ?? {}) };
+	return merged;
+}
+
+/**
+ * The single artifact JSON writer. Returns the `meta.revision` now on disk
+ * (0 when the file has none).
+ *
+ *  - `content`: revision = (revision of the file already at `path`, or 0) + 1;
+ *    the whole prior `meta.tracker` block is carried into `next`.
+ *  - `meta-only`: the on-disk revision is copied into `next` (or left absent
+ *    when the file has none), so a meta-only write never changes it.
+ *
+ * Throws `TypeError` (leaving the file untouched) when `next` is not an
+ * object with a `meta` object.
+ */
+export function writeArtifact(path: string, next: unknown, kind: WriteKind): number {
+	if (!isRecord(next) || !isRecord(next['meta'])) {
+		throw new TypeError(`writeArtifact: ${path}: the artifact must be an object with a meta object`);
+	}
+	const prior = readPrior(path);
+	const priorMeta = isRecord(prior?.['meta']) ? prior['meta'] : undefined;
+	const meta: Record<string, unknown> = { ...next['meta'] };
+	if (kind === 'content') {
+		meta['revision'] = readRevision(prior) + 1;
+		const tracker = carryTracker(priorMeta?.['tracker'], meta['tracker']);
+		if (tracker !== undefined) meta['tracker'] = tracker;
+	} else if (priorMeta !== undefined && 'revision' in priorMeta) {
+		meta['revision'] = priorMeta['revision'];
+	} else {
+		delete meta['revision'];
+	}
+	const out = { ...next, meta };
+	writeAtomic(path, JSON.stringify(out, null, 2) + '\n');
+	return readRevision(out);
+}
+
+// ---------------------------------------------------------------------------
 // Workflow-runs jsonl
 // ---------------------------------------------------------------------------
 

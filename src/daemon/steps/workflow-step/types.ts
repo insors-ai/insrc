@@ -9,6 +9,7 @@
  * See docs/plans/workflow-implementation.md §7.2 for the protocol.
  */
 
+import type { IssueReadiness } from '../../../workflow/draft-issues.js';
 import type { WorkflowName, WorkflowPlan } from '../../../workflow/types.js';
 
 // ---------------------------------------------------------------------------
@@ -116,6 +117,10 @@ export interface WorkflowStepEmitSynthesize {
 
 export interface WorkflowStepDone {
 	readonly next:     'done';
+	/** Team repos only: whether every unit of the draft has its tracker issue. */
+	readonly issueReadiness?: IssueReadiness;
+	/** Team repos only, and only when not ready: what the author is told (the stage cannot be claimed yet). */
+	readonly notice?:  string;
 	readonly path:     string;
 	readonly markdown: string;
 	readonly artifact: unknown;

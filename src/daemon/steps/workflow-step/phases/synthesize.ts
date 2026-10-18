@@ -15,6 +15,7 @@
  *   4. Release the state token + return `next: 'done'`.
  */
 
+import { ensureDraftIssues, readinessFields } from '../../../../workflow/draft-issues.js';
 import { getLogger } from '../../../../shared/logger.js';
 import { finalizeArtifact } from '../../../../workflow/orchestrator.js';
 import { unresolvedOpen } from '../../../../workflow/questions.js';
@@ -83,6 +84,8 @@ export async function handleSynthesize(
 	writeAtomic(paths.md,   result.finalized.renderedMd);
 	// content: a draft mints a revision and keeps a replaced draft's tracker block.
 	writeArtifact(paths.json, JSON.parse(result.finalized.renderedJson), 'content');
+	// Team mode: make sure every unit of the draft has its issue. Never throws; the draft stays whatever it returns.
+	const readiness = readinessFields(ensureDraftIssues(paths.json));
 	appendRunLog(state.epicKey, state.intent.workflow, state.runId, {
 		ts:    new Date().toISOString(),
 		event: 'artifact-written',
@@ -107,6 +110,7 @@ export async function handleSynthesize(
 		path:     paths.md,
 		markdown: result.finalized.renderedMd,
 		artifact: result.finalized.artifact,
+		...readiness,
 		...(stillOpen.length > 0 ? { openQuestions: stillOpen } : {}),
 		pendingApproval: {
 			artifactPath: paths.md,

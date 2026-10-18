@@ -25,6 +25,7 @@
  * the step JSON, but grounded on real paths (no hallucinated citations).
  */
 
+import { ensureDraftIssues, readinessFields, type IssueReadiness } from '../workflow/draft-issues.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMMessage, LLMProvider, StageProgressEvent, StructuredCompletionOpts, TokenProgressEvent } from '../shared/types.js';
 import type { ClassifiedIntent } from '../shared/analyze-types.js';
@@ -163,6 +164,10 @@ export interface RunWorkflowResult {
 	/** Never set: a daemon run does not review the artifact it authored. Kept so
 	 *  consumers of the result and of the `done` frame need no change. */
 	readonly review?:  ReviewReport | undefined;
+	/** Team repos only: whether every unit of the draft has its tracker issue. */
+	readonly issueReadiness?: IssueReadiness;
+	/** Team repos only, and only when not ready: what the author is told. */
+	readonly notice?:  string;
 }
 
 /** Drive one workflow to a persisted artifact via `provider`. Throws on a
@@ -334,6 +339,8 @@ export async function runWorkflowServerSide(
 	writeAtomic(paths.md,   finalized.renderedMd);
 	// content: a draft mints a revision and keeps a replaced draft's tracker block.
 	writeArtifact(paths.json, JSON.parse(finalized.renderedJson), 'content');
+	// Team mode: make sure every unit of the draft has its issue. Never throws; the draft stays whatever it returns.
+	const readiness = readinessFields(ensureDraftIssues(paths.json));
 	appendRunLog(epicKey, intent.workflow, runId, {
 		ts: new Date().toISOString(), event: 'artifact-written', md: paths.md, json: paths.json, model: opts.modelLabel,
 	});
@@ -351,7 +358,7 @@ export async function runWorkflowServerSide(
 
 	opts.onProgress?.({ phase: 'done' });
 	const model = modelSummary((finalized.artifact as { meta: ArtifactMetaBase }).meta);
-	return { path: paths.md, artifact: finalized.artifact, runId, model };
+	return { path: paths.md, artifact: finalized.artifact, runId, model, ...readiness };
 }
 
 // ---------------------------------------------------------------------------
@@ -433,6 +440,16 @@ export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 	return { intent, runId, epicKey, provider, modelLabel, clientDefault, review: p.review, router, cfg, repoPath };
 }
 
+/** The `data` of the terminal `done` frame. The readiness fields ride along only when the run produced them (a team repo). */
+export function workflowDoneData(out: RunWorkflowResult): Record<string, unknown> {
+	return {
+		path: out.path, runId: out.runId, model: out.model, artifact: out.artifact,
+		...(out.issueReadiness !== undefined ? { issueReadiness: out.issueReadiness } : {}),
+		...(out.notice !== undefined ? { notice: out.notice } : {}),
+		...(out.review !== undefined ? { review: { verdict: out.review.verdict, counts: out.review.counts } } : {}),
+	};
+}
+
 /** `workflow.run` stream handler. Emits `progress` frames per phase, then a
  *  terminal `done` (with the artifact path) or `error`. */
 export async function runStart(
@@ -474,7 +491,7 @@ export async function runStart(
 			: await driveWithSeam();
 		const tail = tokens.flush();   // emit any tokens left below the batch threshold
 		if (tail !== null) send({ id: 0, stream: 'delta', data: tail });
-		send({ id: 0, stream: 'done', data: { path: out.path, runId: out.runId, model: out.model, artifact: out.artifact, ...(out.review !== undefined ? { review: { verdict: out.review.verdict, counts: out.review.counts } } : {}) } });
+		send({ id: 0, stream: 'done', data: workflowDoneData(out) });
 	} catch (err) {
 		send({ id: 0, stream: 'error', data: { error: (err as Error).message, recoverable: false } });
 	}

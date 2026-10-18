@@ -142,6 +142,13 @@
         "choice": "400k default with job splitting",
         "rationale": "Stakeholder decision 2026-10-19: codeReview.controllerFrameChars defaults to 400,000 characters (catalog type number, validated as a positive integer where it is used).",
         "resolvedAt": "2026-10-18T19:32:59.069Z"
+      },
+      "q3f77168f": {
+        "question": "The claude CLI's refusal for an oversized prompt has not been observed; the design recognises its 'prompt is too long' result as an input-size refusal and, failing that, the error is handled as today. The smoke records what the claude path actually reports.",
+        "status": "resolved",
+        "choice": "Keep the narrow match",
+        "rationale": "Stakeholder decision 2026-10-19: codex (the daemon's reviewer today) is covered by its known budget (1,048,576 characters) and its observed input_too_large refusal. For a daemon configured with the claude CLI, a 'prompt is too long' result is recognised as a size refusal and any other error is handled as today; the smoke adds one oversized prompt through the claude CLI and records what it returns, so the phrase can be corrected.",
+        "resolvedAt": "2026-10-18T19:35:11.272Z"
       }
     }
   },

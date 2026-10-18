@@ -387,9 +387,7 @@ export function runUnitExtras(unit: UnitRef, steps: readonly ExtraStep[], deps: 
 	const out: ExtrasOutcome = { done: [], skipped: [], failed: [] };
 	for (const step of steps) {
 		if (marks[step.name] !== undefined) { out.skipped.push(step.name); continue; }
-		let r: PortResult<void>;
-		try { r = step.run(); }
-		catch (err) { r = { ok: false, reason: (err as Error).message, kind: 'rejected' }; }
+		const r = step.run();
 		if (!r.ok) {
 			log.warn({ unit: unitKey(unit), step: step.name, reason: r.reason }, 'unit-issue: approve-time extra failed (left unmarked; the next approve retries it)');
 			out.failed.push({ name: step.name, reason: r.reason });

@@ -18,7 +18,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan, type AutoPushDeps } from '../tracker-auto.js';
+import { _setAutoPushDepsForTests, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
 import type { CreatedIssue, IssueRef, IssueSpec, PortResult, TrackerPort } from '../tracker/port.js';
@@ -114,12 +114,14 @@ function seed(opts: { pushTasks?: boolean } = {}): Fx {
 	});
 	return {
 		repo, hld, lld, plan,
-		cleanup: () => { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; _setTrackerExecForTests(); rmSync(repo, { recursive: true, force: true }); },
+		cleanup: () => { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; _setTrackerExecForTests(); _setAutoPushDepsForTests(); rmSync(repo, { recursive: true, force: true }); },
 	};
 }
 
 const trackerOf = (path: string): Record<string, any> => JSON.parse(readFileSync(path, 'utf8')).meta.tracker ?? {};
-const deps = (t: ReturnType<typeof fakeTracker>, policy: PolicyReader = teamPolicy): AutoPushDeps => ({ policy, port: t.port });
+/** Runs one push with the tracker and policy injected (the exported push functions take only the path). */
+const via = (t: ReturnType<typeof fakeTracker>, policy: PolicyReader = teamPolicy) =>
+	<T>(run: () => T): T => { _setAutoPushDepsForTests({ policy, port: t.port }); try { return run(); } finally { _setAutoPushDepsForTests(); } };
 
 // ---------------------------------------------------------------------------
 
@@ -133,19 +135,19 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 		assert.equal(t.log.creates, 2);
 
 		// Epic approve: adopts, posts the HLD summary and the review once
-		const epic = autoPushEpicOnHld(fx.hld, deps(t));
+		const epic = via(t)(() => autoPushEpicOnHld(fx.hld));
 		assert.deepEqual(epic, { status: 'already-exists', epicRef: 'acme/demo#1' });
 		assert.equal(t.log.creates, 2, 'no second Epic issue');
 
 		// Story approve: the task-list splice, the design comment and the review comment run once and are marked
-		const story = autoPushStoryOnLld(fx.lld, deps(t));
+		const story = via(t)(() => autoPushStoryOnLld(fx.lld));
 		assert.deepEqual(story, { status: 'already-exists', storyRef: 'acme/demo#2' });
 		const storyPosts = t.log.comments.filter(([ref]) => ref === 'acme/demo#2').length;
 		assert.equal(storyPosts, 2, 'design comment and review comment');
 		assert.equal(t.log.writeBodies, 1, 'the Epic task list was spliced');
 		const before = { comments: t.log.comments.length, writes: t.log.writeBodies };
-		assert.equal(autoPushStoryOnLld(fx.lld, deps(t)).status, 'already-exists');
-		assert.equal(autoPushEpicOnHld(fx.hld, deps(t)).status, 'already-exists');
+		assert.equal(via(t)(() => autoPushStoryOnLld(fx.lld)).status, 'already-exists');
+		assert.equal(via(t)(() => autoPushEpicOnHld(fx.hld)).status, 'already-exists');
 		assert.deepEqual({ comments: t.log.comments.length, writes: t.log.writeBodies }, before, 'a second approve posts nothing');
 		assert.deepEqual(Object.keys(trackerOf(fx.lld).units['story:s1'].extrasDone).sort(), ['designComment', 'reviewComment', 'taskList']);
 
@@ -154,7 +156,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 			assert.equal(ensureUnitIssueDetailed({ unit: 'task', repoPath: fx.repo, epicHash: HASH, storyId: 's1', taskId }, t.port).ok, true);
 		}
 		assert.equal(t.log.creates, 4);
-		assert.deepEqual(autoPushTasksOnPlan(fx.plan, deps(t)), { status: 'already-exists', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
+		assert.deepEqual(via(t)(() => autoPushTasksOnPlan(fx.plan)), { status: 'already-exists', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
 		assert.equal(t.log.creates, 4, 'no second Task issue');
 	} finally { fx.cleanup(); }
 
@@ -162,8 +164,8 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	const forced = seed({ pushTasks: false });
 	try {
 		const t = fakeTracker();
-		assert.deepEqual(autoPushTasksOnPlan(forced.plan, deps(t)), { status: 'created', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
-		assert.equal(autoPushTasksOnPlan(forced.plan, deps(t)).status, 'already-exists');
+		assert.deepEqual(via(t)(() => autoPushTasksOnPlan(forced.plan)), { status: 'created', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
+		assert.equal(via(t)(() => autoPushTasksOnPlan(forced.plan)).status, 'already-exists');
 		assert.equal(t.log.creates, 4, 'the Epic, the Story and the two Tasks');
 	} finally { forced.cleanup(); }
 
@@ -171,7 +173,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	const lost = seed();
 	try {
 		const t = fakeTracker({ failFind: true });
-		const r = autoPushEpicOnHld(lost.hld, deps(t));
+		const r = via(t)(() => autoPushEpicOnHld(lost.hld));
 		assert.equal(r.status, 'failed');
 		assert.equal(t.log.creates, 0);
 	} finally { lost.cleanup(); }
@@ -180,7 +182,7 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	const bad = seed();
 	try {
 		const t = fakeTracker();
-		for (const r of [autoPushEpicOnHld(bad.hld, deps(t, brokenPolicy)), autoPushStoryOnLld(bad.lld, deps(t, brokenPolicy)), autoPushTasksOnPlan(bad.plan, deps(t, brokenPolicy))]) {
+		for (const r of [via(t, brokenPolicy)(() => autoPushEpicOnHld(bad.hld)), via(t, brokenPolicy)(() => autoPushStoryOnLld(bad.lld)), via(t, brokenPolicy)(() => autoPushTasksOnPlan(bad.plan))]) {
 			assert.equal(r.status, 'failed');
 			assert.match(r.status === 'failed' ? r.reason : '', /cannot be read/);
 		}
@@ -191,12 +193,12 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 	const part = seed();
 	try {
 		const t = fakeTracker({ failComment: '## LLD' });
-		autoPushEpicOnHld(part.hld, deps(t));
-		const first = autoPushStoryOnLld(part.lld, deps(t));
+		via(t)(() => autoPushEpicOnHld(part.hld));
+		const first = via(t)(() => autoPushStoryOnLld(part.lld));
 		assert.deepEqual(first.status === 'created' ? first.extrasFailed?.map(f => f.name) : null, ['designComment']);
 		const healed = fakeTracker();
 		healed.issues.push(...t.issues);
-		const second = autoPushStoryOnLld(part.lld, deps(healed));
+		const second = via(healed)(() => autoPushStoryOnLld(part.lld));
 		assert.equal(second.status, 'already-exists');
 		assert.deepEqual(healed.log.comments.map(([, b]) => b.split('\n')[0]), ['## LLD — Story s1']);
 		assert.equal(healed.log.writeBodies, 0, 'the marked task-list splice is not repeated');
@@ -217,8 +219,8 @@ test('with no policy the three pushes behave exactly as before', () => {
 		_setTrackerExecForTests(exec);
 		const fx = seed({ pushTasks: false });
 		try {
-			const d: AutoPushDeps = policy === undefined ? {} : { policy };
-			const results = [autoPushEpicOnHld(fx.hld, d), autoPushStoryOnLld(fx.lld, d), autoPushTasksOnPlan(fx.plan, d)];
+			_setAutoPushDepsForTests(policy === undefined ? {} : { policy });
+			const results = [autoPushEpicOnHld(fx.hld), autoPushStoryOnLld(fx.lld), autoPushTasksOnPlan(fx.plan)];
 			const masked = calls.map(c => c.map(a => a.replace(fx.repo, '<repo>')).join(' '));
 			return { results, masked, hld: trackerOf(fx.hld), lld: trackerOf(fx.lld) };
 		} finally { fx.cleanup(); }

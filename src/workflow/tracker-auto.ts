@@ -338,12 +338,17 @@ function legacyPushTasks(planJsonPath: string): AutoPushResult {
 // Mode: legacy (no policy, or teamMode false) or team
 // ---------------------------------------------------------------------------
 
-/** Seams for tests; the production call sites pass none. */
+/** Seams for tests; the production call sites set none (the three exported signatures take only the path). */
 export interface AutoPushDeps {
 	readonly policy?: PolicyReader;
 	/** A tracker port to use instead of the GitHub one (its auth check is skipped). */
 	readonly port?:   TrackerPort;
 }
+
+let testDeps: AutoPushDeps = {};
+
+/** Test seam: inject the policy reader and tracker port; call with no argument to reset. */
+export function _setAutoPushDepsForTests(deps: AutoPushDeps = {}): void { testDeps = deps; }
 
 type Mode = 'legacy' | 'team' | { readonly failed: string };
 
@@ -358,21 +363,24 @@ function modeFor(meta: MetaShape, deps: AutoPushDeps): Mode {
 	return typeof meta.repoPath === 'string' ? pickMode(meta.repoPath, deps) : 'legacy';
 }
 
-export function autoPushEpicOnHld(hldJsonPath: string, deps: AutoPushDeps = {}): AutoPushResult {
+export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
+	const deps = testDeps;
 	const meta = readMeta(hldJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
 	return mode === 'team' ? teamPushEpic(hldJsonPath, meta, deps) : legacyPushEpic(hldJsonPath);
 }
 
-export function autoPushStoryOnLld(lldJsonPath: string, deps: AutoPushDeps = {}): AutoPushResult {
+export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
+	const deps = testDeps;
 	const meta = readMeta(lldJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
 	return mode === 'team' ? teamPushStory(lldJsonPath, meta, deps) : legacyPushStory(lldJsonPath);
 }
 
-export function autoPushTasksOnPlan(planJsonPath: string, deps: AutoPushDeps = {}): AutoPushResult {
+export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
+	const deps = testDeps;
 	const meta = readMeta(planJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
@@ -408,6 +416,11 @@ function withExtras<T extends object>(base: T, failed: ExtrasFailed): T & { extr
 	return failed.length > 0 ? { ...base, extrasFailed: failed } : base;
 }
 
+/** A step whose runner throws (a summary renderer on a malformed body) fails as a step instead of escaping. */
+function guarded(step: ExtraStep): ExtraStep {
+	return { name: step.name, run: () => { try { return step.run(); } catch (err) { return { ok: false, reason: (err as Error).message, kind: 'rejected' }; } } };
+}
+
 /** The review comment step, only when the artifact carries a review. */
 function reviewStep(ops: IssueOps, ref: string, jsonPath: string): ExtraStep[] {
 	const review = readReview(jsonPath);
@@ -441,11 +454,11 @@ function teamPushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps):
 	relink(definePaths.md, () => { const a = readDefineArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderDefineMarkdown(a)); });
 
 	const ops = port.issueOps;
-	const out = runUnitExtras(unit, [
+	const out = runUnitExtras(unit, ([
 		...milestoneStep(ops, cfg, epicRef, epicSlug),
 		{ name: 'designComment', run: () => ops.comment(epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))) },
 		...reviewStep(ops, epicRef, hldJsonPath),
-	]);
+	] as ExtraStep[]).map(guarded));
 	return withExtras(ensured.value.created ? { status: 'created' as const, epicRef } : { status: 'already-exists' as const, epicRef }, out.failed);
 }
 
@@ -477,7 +490,7 @@ function teamPushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps)
 	relink(lldArtifactPaths(repoPath, epicHash, storyId, anchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
 
 	const ops = port.issueOps;
-	const out = runUnitExtras(unit, [
+	const out = runUnitExtras(unit, ([
 		...milestoneStep(ops, cfg, storyRef, epicSlug),
 		{
 			name: 'taskList',
@@ -490,7 +503,7 @@ function teamPushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps)
 		},
 		{ name: 'designComment', run: () => ops.comment(storyRef, renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))) },
 		...reviewStep(ops, storyRef, lldJsonPath),
-	]);
+	] as ExtraStep[]).map(guarded));
 	return withExtras(ensured.value.created ? { status: 'created' as const, storyRef } : { status: 'already-exists' as const, storyRef }, out.failed);
 }
 
@@ -525,9 +538,9 @@ function teamPushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps
 	// The plan's review lands on its parent Story issue, once (marked on the Story's record).
 	const review = readReview(planJsonPath);
 	const ops = port.issueOps;
-	const out = runUnitExtras(storyUnit, review === undefined ? [] : [
+	const out = runUnitExtras(storyUnit, (review === undefined ? [] : [
 		{ name: 'planComment', run: () => ops.comment(story.value.issue, `<!-- insrc:review -->\n${renderReviewReport(review)}`) },
-	]);
+	] as ExtraStep[]).map(guarded));
 	const taskRefs = readTrackerMeta(planJsonPath)?.taskRefs ?? {};
 	return withExtras(createdCount > 0 ? { status: 'created' as const, taskRefs } : { status: 'already-exists' as const, taskRefs }, out.failed);
 }

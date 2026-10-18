@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -83,3 +83,32 @@ Run at 2026-10-18T14:32:06.718Z on commit `cf59ff21`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/team/__tests__/gate.test.ts` | 0 | 7 | 3 s |  |
+
+## t4
+
+Run at 2026-10-18T14:34:47.859Z on commit `202cc695`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/team/__tests__/gate.test.ts: claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused | `src/workflow/team/__tests__/gate.test.ts` |
+
+**unit: src/workflow/team/__tests__/gate.test.ts: release clears the assignees for the holder and for an administrator, including a contested claim, and refuses anyone else without calling setAssignee**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | release clears the assignees for the holder and for an administrator, including a contested claim, and refuses anyone else without calling setAssignee | `src/workflow/team/__tests__/gate.test.ts` |
+
+**unit: src/workflow/team/__tests__/review-fix-decision.test.ts: reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read | `src/workflow/team/__tests__/review-fix-decision.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/team/__tests__/gate.test.ts` | 0 | 9 | 1.2 s |  |
+| `src/workflow/team/__tests__/review-fix-decision.test.ts` | 0 | 1 | 1.1 s |  |

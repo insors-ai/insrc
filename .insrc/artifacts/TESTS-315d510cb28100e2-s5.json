@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:32:06.718Z",
+    "updatedAt": "2026-10-18T14:34:47.859Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -284,6 +284,113 @@
               },
               {
                 "title": "each port failure kind, several assignees, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "202cc695",
+        "ranAt": "2026-10-18T14:34:47.859Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/gate.test.ts: claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/gate.test.ts",
+                "title": "claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/gate.test.ts: release clears the assignees for the holder and for an administrator, including a contested claim, and refuses anyone else without calling setAssignee",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/gate.test.ts",
+                "title": "release clears the assignees for the holder and for an administrator, including a contested claim, and refuses anyone else without calling setAssignee",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/review-fix-decision.test.ts: reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/review-fix-decision.test.ts",
+                "title": "reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1201,
+            "titles": [
+              {
+                "title": "teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false",
+                "result": "pass"
+              },
+              {
+                "title": "teamGate allows an unassigned stage for author and build and adds the actor through addAssignee (implicitClaim true), and takes no claim for approve-local or applying a finding",
+                "result": "pass"
+              },
+              {
+                "title": "teamGate recognises a developer assigned directly in the tracker as the holder with no separate claim, comparing logins case-insensitively",
+                "result": "pass"
+              },
+              {
+                "title": "teamGate returns held-by-other naming the holder for author, build, approve-local, apply and open-signoff, whatever the holder's idle time",
+                "result": "pass"
+              },
+              {
+                "title": "the first author turn of a stage with no issue and no artifact is allowed as an explicit exception and any other action on a stage with no issue is refused",
+                "result": "pass"
+              },
+              {
+                "title": "the registered completion hook is consulted for author and build on a next stage and for open-signoff, revise and release, a release called by the hook does not consult it again, and with none registered the gate behaves as continue (a hook-contract test; the completion-releases-the-claim integration test belongs to s7)",
+                "result": "pass"
+              },
+              {
+                "title": "each port failure kind, several assignees, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw",
+                "result": "pass"
+              },
+              {
+                "title": "claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused",
+                "result": "pass"
+              },
+              {
+                "title": "release clears the assignees for the holder and for an administrator, including a contested claim, and refuses anyone else without calling setAssignee",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/review-fix-decision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1130,
+            "titles": [
+              {
+                "title": "reviewFixDecision returns apply-auto-fixes for the holder or when no gate applies and report-only for a non-holder or a failed read",
                 "result": "pass"
               }
             ],

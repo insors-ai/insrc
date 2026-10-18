@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:32:06.718Z",
+    "updatedAt": "2026-10-18T14:34:47.859Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -22,9 +22,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": false
       }
     ],
-    "summary": "In gate.ts: CompletionHook and registerCompletionHook; consultHook is called after the tracker is loaded and before the holder is read for author, build, open-signoff, revise and release (a returned outcome is the answer, 'continue' lets the gate decide, none registered continues, a throw of any value refuses with 'the completion hook failed: ...'); a module-level insideHook flag makes a gate call made by the hook itself (its release) skip the hook, and it is reset in a finally. A stage with no recorded issue now tries ensureUnitIssue (seam: ensureIssue) with the loaded port: if it creates or finds one the gate then decides on the live assignee; if not it returns no-issue with creationFailure, and allowFirstAuthor is true only for action author when the unit's own artifact (Define, LLD or plan) does not exist yet (seam: artifactExists), false for every other action. Three new tests in gate.test.ts carry the named tests; the earlier t2 test's missing-issue assertion now expects no-issue.",
+    "summary": "gate.ts gains claim, release, reviewFixDecision and ReviewFixMode. claim reads the holder, refuses another holder naming them, takes an unassigned stage only through addAssignee (never setAssignee), and refuses a failed add (state unknown) or a result with more than one assignee as contested, removing nobody; contention is reported when observed. release consults the hook once (a hook-originated call skips it), lets the holder or a policy administrator clear the stage through setAssignee(null) (an administrator needs no read, so a contested multi-assignee stage can be cleared), refuses anyone else naming the holder with no write, treats an unassigned stage as nothing to release, and reports a failed clear as state unknown. reviewFixDecision returns apply-auto-fixes when the gate allows review-fix and report-only otherwise (non-holder, failed read, thrown dependency); a review takes no claim. Tests: two in gate.test.ts (including the interleaving where the earlier claimant returned allowed and only the later one sees contention, and the earlier one finds out on its next gate read) and review-fix-decision.test.ts.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/TESTS.md"
     },
@@ -34,58 +38,65 @@
           "file": ".insrc/artifacts/AMD-315d510cb28100e2-12.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:32:06.718Z"
+        "timestamp": "2026-10-18T14:34:47.859Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:32:06.718Z"
+        "timestamp": "2026-10-18T14:34:47.859Z"
       },
       {
         "target": {
           "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:32:06.718Z"
+        "timestamp": "2026-10-18T14:34:47.859Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/gate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:32:06.718Z"
+        "timestamp": "2026-10-18T14:34:47.859Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/review-fix-decision.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:34:47.859Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:32:06.718Z"
+        "timestamp": "2026-10-18T14:34:47.859Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:32:06.718Z"
+        "timestamp": "2026-10-18T14:34:47.859Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/github-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:32:06.718Z"
+        "timestamp": "2026-10-18T14:34:47.859Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:32:06.718Z"
+        "timestamp": "2026-10-18T14:34:47.859Z"
       }
     ],
-    "commit": "cf59ff21"
+    "commit": "202cc695"
   }
 }

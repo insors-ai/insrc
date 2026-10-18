@@ -31,7 +31,7 @@ const none: PolicyReader = () => ({ ok: true, value: 'none' });
 interface Fake { port: TrackerPort; assignees: string[]; calls: string[] }
 
 /** An in-memory port: `assignees` is the issue's live assignee list. */
-function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureKind; failRead?: PortFailureKind; failAdd?: PortFailureKind; raceWith?: string; staleRead?: boolean; shared?: string[]; failSet?: PortFailureKind } = {}): Fake {
+function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureKind; failRead?: PortFailureKind; failAdd?: PortFailureKind; raceWith?: string; staleRead?: boolean; shared?: string[]; failSet?: PortFailureKind; failReread?: PortFailureKind } = {}): Fake {
 	const assignees = over.shared ?? [...initial];
 	const calls: string[] = [];
 	const port = {
@@ -50,6 +50,11 @@ function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureK
 		addAssignee: (_issue: string, who: string): PortResult<string[]> => {
 			calls.push(`addAssignee:${who}`);
 			if (over.failAdd !== undefined) return { ok: false, kind: over.failAdd, reason: `add ${over.failAdd}` };
+			if (over.failReread !== undefined) {
+				// the add took effect, but reading the assignees back failed
+				if (!assignees.some(a => a.toLowerCase() === who.toLowerCase())) assignees.push(who);
+				return { ok: false, kind: over.failReread, reason: `re-read ${over.failReread}` };
+			}
 			if (over.raceWith !== undefined) assignees.push(over.raceWith);   // another claimant got in between
 			if (!assignees.some(a => a.toLowerCase() === who.toLowerCase())) assignees.push(who);
 			return { ok: true, value: [...assignees] };
@@ -295,6 +300,14 @@ test('claim takes only an unassigned stage, never removes another assignee, and 
 	inject(fakePort([], { failAdd: 'unreachable' }));
 	const failed = claim('/repo', UNIT);
 	assert.match(failed.kind === 'refused' ? failed.reason : '', /claim failed \(unreachable\).*unknown/);
+	// the add took effect but the re-read failed: refused, the state is unknown, and the next claim finds the stage already mine
+	const reread = fakePort([], { failReread: 'unreachable' });
+	inject(reread);
+	const rr = claim('/repo', UNIT);
+	assert.equal(rr.kind, 'refused');
+	assert.match(rr.kind === 'refused' ? rr.reason : '', /claim failed \(unreachable\): re-read unreachable; the stage state is unknown/);
+	assert.deepEqual(reread.assignees, ['alice'], 'the add happened and nobody else was touched');
+	assert.equal(claim('/repo', UNIT).kind, 'allowed', 'reading the stage again shows the claim is mine');
 	inject(fakePort([], { failRead: 'missing-signin' }));
 	assert.equal(claim('/repo', UNIT).kind, 'refused');
 	// outside team mode there is nothing to claim

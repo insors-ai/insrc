@@ -205,7 +205,7 @@ export interface StreamRunResult {
 	/** Team repos only: whether every unit of the draft has its tracker issue. */
 	readonly issueReadiness?: unknown;
 	/** Team repos only, when the draft is not ready: what the author is told. */
-	readonly notice?: string;
+	readonly notice?: string | undefined;
 }
 
 /** Render one live progress frame as a TUI log line. */

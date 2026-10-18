@@ -56,8 +56,8 @@ export type EnsureResult<T> =
 
 export interface EnsureIssueDeps {
 	/** Reads the repo's github config (default: resolveGithubConfig). */
-	readonly readConfig?: (repoPath: string) => ResolvedGithubConfig;
-	readonly now?:        () => string;
+	readonly readConfig?: ((repoPath: string) => ResolvedGithubConfig) | undefined;
+	readonly now?: (       () => string) | undefined;
 }
 
 const before = (reason: string, kind: PortFailureKind = 'rejected'): EnsureResult<never> => ({ ok: false, reason, kind, phase: 'before-create' });
@@ -135,7 +135,11 @@ function mapEntry(map: Readonly<Record<string, string>> | undefined, id: string 
 /** Record the unit's issue on its own artifact (units + the older ref) and on the siblings that read it. */
 function recordUnit(unit: UnitRef, issue: IssueRef, now: string): void {
 	const own = ownJson(unit);
-	const record: UnitIssue = { unit: unit.unit, unitId: unitId(unit), issue, createdAtRevision: revisionOfFile(own) };
+	const prior = readTrackerMeta(own)?.units?.[unitKey(unit)];
+	// The same issue again (a sibling ref repaired): keep the record's revision and extras marks.
+	const record: UnitIssue = prior !== undefined && prior.issue === issue
+		? prior
+		: { unit: unit.unit, unitId: unitId(unit), issue, createdAtRevision: revisionOfFile(own) };
 	const units = { [unitKey(unit)]: record };
 	const patches: Array<[string, Partial<TrackerMeta>]> = [];
 	if (unit.unit === 'epic') {
@@ -301,11 +305,11 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		if (!link.ok) log.warn({ unit: unitKey(unit), parent: parentRef, reason: link.reason }, 'unit-issue: could not link the issue under its parent');
 	}
 	recordUnit(unit, issue, now());
-	return { ok: true, value: tieBreak(unit, port, membership, label, issue, now) };
+	return { ok: true, value: tieBreak(unit, port, label, issue, now) };
 }
 
 /** The additive sc1 listing (AMD-315d510cb28100e2-10): every issue carrying the labels, open or closed. */
-type ListingPort = TrackerPort & { readonly findIssues?: (labels: readonly string[]) => PortResult<readonly IssueRef[]> };
+type ListingPort = TrackerPort & { readonly findIssues?: ((labels: readonly string[]) => PortResult<readonly IssueRef[]>) | undefined };
 
 const issueNumber = (ref: IssueRef): number => Number(/#(\d+)$/.exec(ref)?.[1] ?? Number.MAX_SAFE_INTEGER);
 
@@ -315,9 +319,9 @@ const issueNumber = (ref: IssueRef): number => Number(/#(\d+)$/.exec(ref)?.[1] ?
  * and close the own one as a duplicate. A port without the listing, or a failed
  * listing, keeps the created issue (`not-run`); the issue is already recorded.
  */
-function tieBreak(unit: UnitRef, port: TrackerPort, membership: string, label: string, own: IssueRef, now: () => string): EnsuredIssue {
+function tieBreak(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef, now: () => string): EnsuredIssue {
 	const kept: EnsuredIssue = { issue: own, created: true, duplicateCheck: 'not-run' };
-	const list = (port as ListingPort).findIssues?.([membership, label]);
+	const list = (port as ListingPort).findIssues?.([label]);
 	if (list === undefined) return kept;
 	if (!list.ok) {
 		log.warn({ unit: unitKey(unit), reason: list.reason }, 'unit-issue: the duplicate check could not list the unit label (the created issue is kept)');
@@ -391,9 +395,9 @@ export interface ExtrasOutcome {
 }
 
 export interface ExtrasDeps {
-	readonly now?:  () => string;
+	readonly now?: ( () => string) | undefined;
 	/** Writes the step's mark (default: onto the unit's record through patchTrackerMeta). */
-	readonly mark?: (unit: UnitRef, name: ExtraName, at: string) => void;
+	readonly mark?: ((unit: UnitRef, name: ExtraName, at: string) => void) | undefined;
 }
 
 function markExtra(unit: UnitRef, name: ExtraName, at: string): void {

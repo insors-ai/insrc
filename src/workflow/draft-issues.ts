@@ -53,16 +53,16 @@ export type IssueReadiness =
 	};
 
 export interface DraftHookDeps {
-	readonly readPolicy?:  PolicyReader;
-	readonly loadTracker?: (repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>;
-	readonly ensure?:      EnsureIssueDeps;
+	readonly readPolicy?:  PolicyReader | undefined;
+	readonly loadTracker?: ((repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>) | undefined;
+	readonly ensure?:      EnsureIssueDeps | undefined;
 }
 
 interface DraftMeta {
-	readonly workflow?: string;
-	readonly repoPath?: string;
-	readonly epicHash?: string;
-	readonly storyId?:  string;
+	readonly workflow?: string | undefined;
+	readonly repoPath?: string | undefined;
+	readonly epicHash?: string | undefined;
+	readonly storyId?:  string | undefined;
 }
 
 /** The units the draft covers, in the order they must exist. */
@@ -93,18 +93,22 @@ export function _setDraftHookForTests(hook?: (jsonPath: string) => IssueReadines
 export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): IssueReadiness {
 	if (hookOverride !== undefined) return hookOverride(jsonPath);
 	try {
-		const doc = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: DraftMeta; body?: { tasks?: Array<{ id?: unknown; order?: unknown }> } };
+		const doc = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta?: DraftMeta | undefined; body?: { tasks?: Array<{ id?: unknown; order?: unknown }> | undefined } | undefined };
 		const meta = doc.meta ?? {};
 		const tasksOf = (): string[] => [...(doc.body?.tasks ?? [])]
 			.sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0))
 			.map(t => t.id).filter((id): id is string => typeof id === 'string');
 		const units = unitsOf(meta, tasksOf);
 		if (units === null) return { status: 'not-applicable', reason: 'no-claim-unit' };
+		// A plan with no Tasks has no unit to claim: ready, with no units and no tracker call (policy permitting).
+		const noTasks = meta.workflow === 'plan' && tasksOf().length === 0;
 
 		const repoPath = meta.repoPath as string;
 		const policy = (deps.readPolicy ?? policyReader)(repoPath);
 		if (!policy.ok) return notReady(unitKey(units[0]!), 'policy-unreadable', true, `the team policy cannot be read: ${policy.reason}`, []);
 		if (policy.value === 'none' || !policy.value.teamMode) return { status: 'not-applicable', reason: 'no-team-policy' };
+
+		if (noTasks) return { status: 'ready', units: [] };
 
 		// Fast path: every unit is already recorded, so no tracker is loaded and no command runs.
 		const ready: ReadyUnit[] = [];
@@ -132,7 +136,7 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 }
 
 /** The two fields carried on the step result, the run result and the done frame: none for a repo without a team policy. */
-export function readinessFields(r: IssueReadiness): { issueReadiness?: IssueReadiness; notice?: string } {
+export function readinessFields(r: IssueReadiness): { issueReadiness?: IssueReadiness | undefined; notice?: string | undefined } {
 	if (r.status === 'not-applicable') return {};
 	return r.status === 'not-ready' ? { issueReadiness: r, notice: r.message } : { issueReadiness: r };
 }

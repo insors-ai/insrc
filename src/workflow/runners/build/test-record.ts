@@ -261,7 +261,7 @@ export function persistTestRecordTask(
 	// in BOTH files, and must not find this turn's mapping stored.
 	const priorJson = existsSync(paths.json) ? readFileSync(paths.json, 'utf8') : undefined;
 	// content: a regenerated TESTS record is signoff-covered, so each write mints a revision.
-	writeArtifact(paths.json, rec, 'content');
+	writeArtifact(paths.json, rec, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
 	try {
 		// raw-write: markdown render of the TESTS record.
 		writeAtomic(paths.md, `${artifactIdMarker(testsArtifactId(ident.epicHash, ident.storyId))}\n\n${renderTestRecordMd(rec)}`);

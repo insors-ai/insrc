@@ -340,9 +340,9 @@ function legacyPushTasks(planJsonPath: string): AutoPushResult {
 
 /** Seams for tests; the production call sites set none (the three exported signatures take only the path). */
 export interface AutoPushDeps {
-	readonly policy?: PolicyReader;
+	readonly policy?: PolicyReader | undefined;
 	/** A tracker port to use instead of the GitHub one (its auth check is skipped). */
-	readonly port?:   TrackerPort;
+	readonly port?:   TrackerPort | undefined;
 }
 
 let testDeps: AutoPushDeps = {};

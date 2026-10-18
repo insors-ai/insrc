@@ -320,7 +320,7 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// from the stamp itself, so a re-persist re-derives rather than echoes it.
 	const merged: BuildRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsForMerged(repoPath, unstamped)) } };
 	// content: a BUILD record is regenerated, so each persist mints a revision.
-	writeArtifact(jsonPath, merged, 'content');
+	writeArtifact(jsonPath, merged, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
 	const paths = pathsForMerged(repoPath, merged);
 	// ONE renderer, every route — the former `meta.standalone` ternary is gone.
 	// The id marker is prepended HERE, not in the renderer, so the renderer's

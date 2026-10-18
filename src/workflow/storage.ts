@@ -106,14 +106,16 @@ export function readRevision(artifact: unknown): number {
 	return typeof r === 'number' && Number.isInteger(r) && r >= 0 ? r : 0;
 }
 
-function readPrior(path: string): Record<string, unknown> | undefined {
+/** The artifact already on disk, or undefined when there is none. An existing file that
+ *  cannot be read or parsed throws and is left untouched: it must not restart its revision
+ *  history or lose its tracker refs. */
+function readPrior(path: string, replaceUnreadable: boolean): Record<string, unknown> | undefined {
 	if (!existsSync(path)) return undefined;
-	try {
-		const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
-		return isRecord(parsed) ? parsed : undefined;
-	} catch {
-		return undefined;
-	}
+	let parsed: unknown;
+	try { parsed = JSON.parse(readFileSync(path, 'utf8')); }
+	catch (err) { if (replaceUnreadable) return undefined; throw new Error(`writeArtifact: the existing artifact at ${path} cannot be read (${(err as Error).message}); it was left untouched`); }
+	if (!isRecord(parsed)) { if (replaceUnreadable) return undefined; throw new Error(`writeArtifact: the existing artifact at ${path} is not a JSON object; it was left untouched`); }
+	return parsed;
 }
 
 /** The whole prior `meta.tracker` block carried into a replacement: every
@@ -152,11 +154,11 @@ function sameApartFromRevision(a: Record<string, unknown>, b: Record<string, unk
  * Throws `TypeError` (leaving the file untouched) when `next` is not an
  * object with a `meta` object.
  */
-export function writeArtifact(path: string, next: unknown, kind: WriteKind): number {
+export function writeArtifact(path: string, next: unknown, kind: WriteKind, opts: { readonly replaceUnreadable?: boolean | undefined } = {}): number {
 	if (!isRecord(next) || !isRecord(next['meta'])) {
 		throw new TypeError(`writeArtifact: ${path}: the artifact must be an object with a meta object`);
 	}
-	const prior = readPrior(path);
+	const prior = readPrior(path, opts.replaceUnreadable === true);
 	const priorMeta = isRecord(prior?.['meta']) ? prior['meta'] : undefined;
 	const meta: Record<string, unknown> = { ...next['meta'] };
 	if (kind === 'content') {

@@ -31,11 +31,11 @@ export interface UnitIssue {
 	readonly createdAtRevision: number;
 	/** Per approve-time extra, the ISO time it succeeded; absent = still to run. */
 	readonly extrasDone?: {
-		readonly milestone?:     string;
-		readonly taskList?:      string;
-		readonly designComment?: string;
-		readonly reviewComment?: string;
-		readonly planComment?:   string;
+		readonly milestone?:     string | undefined;
+		readonly taskList?:      string | undefined;
+		readonly designComment?: string | undefined;
+		readonly reviewComment?: string | undefined;
+		readonly planComment?:   string | undefined;
 	};
 }
 
@@ -44,14 +44,14 @@ export interface UnitRef {
 	readonly unit:      'epic' | 'story' | 'task';
 	readonly repoPath:  string;
 	readonly epicHash:  string;
-	readonly storyId?:  string;
-	readonly taskId?:   string;
+	readonly storyId?:  string | undefined;
+	readonly taskId?:   string | undefined;
 }
 
 /** Nested tracker block stored on an artifact's `meta.tracker`. */
 export interface TrackerMeta {
-	readonly adapter?:       TrackerKind;
-	readonly units?:         Readonly<Record<string, UnitIssue>>;
+	readonly adapter?:       TrackerKind | undefined;
+	readonly units?:         Readonly<Record<string, UnitIssue>> | undefined;
 	readonly epicRef?:       string;                        // on HLD / Define
 	readonly storyRef?:      string;                        // on LLD
 	readonly issueRef?:      string;                        // on a bugfix IssueArtifact — its OWN created GH issue (S005/sc-none)

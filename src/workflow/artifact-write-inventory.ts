@@ -40,7 +40,7 @@ export interface InventoryEntry {
 	readonly class: WriteClass;
 	readonly via:   WriteVia;
 	/** A mixed entry names each site. */
-	readonly sites?: readonly WriteSite[];
+	readonly sites?: readonly WriteSite[] | undefined;
 	readonly note:  string;
 }
 

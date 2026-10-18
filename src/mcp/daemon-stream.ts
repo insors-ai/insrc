@@ -70,9 +70,9 @@ export interface RunWorkflowStreamResult {
 	readonly artifact: unknown;
 	readonly review?:  unknown;
 	/** Team repos only (draft hook): whether every unit of the draft has its tracker issue. */
-	readonly issueReadiness?: unknown;
+	readonly issueReadiness?: unknown | undefined;
 	/** Team repos only, when the draft is not ready: what the author is told. */
-	readonly notice?:  string;
+	readonly notice?:  string | undefined;
 }
 
 export interface RunWorkflowStreamOpts {

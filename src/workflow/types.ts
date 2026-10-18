@@ -344,7 +344,7 @@ export interface ArtifactMetaBase {
 	readonly schemaVersion: number;
 	/** Content revision (sc3): minted by `writeArtifact` on content writes only,
 	 *  never changed by a meta-only write. Absent reads as 0. */
-	readonly revision?:    number;
+	readonly revision?:    number | undefined;
 	/** ISO 8601 timestamp set by `insrc workflow approve`. Absent
 	 *  until approved. */
 	readonly approvedAt?:  string;

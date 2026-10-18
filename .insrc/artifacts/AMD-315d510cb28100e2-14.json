@@ -27,5 +27,7 @@
     "stepId": "s4"
   },
   "proposedAt": "2026-10-18T15:51:28.323Z",
-  "status": "pending"
+  "status": "rejected",
+  "rejectedAt": "2026-10-18T16:52:02.175Z",
+  "rejectedReason": "Duplicate of AMD-315d510cb28100e2-13, filed by a re-run of the s6 LLD"
 }

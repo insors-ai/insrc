@@ -172,7 +172,9 @@
     "reviewOverride": {
       "reason": "Approved past the daemon's block verdict after three review rounds (round 1: 6 HIGH, 1 MED; round 2: 5 HIGH; round 3: 2 HIGH, 0 MED, 8 LOW). The two open round-3 findings are recorded in docs/plans/team-workflow.md ('s6 LLD approval') as binding build requirements: (1) snapshotUpstream must cover every input the stage reads, including the Define and the effective HLD with its approved amendments for plan and design.story, preserving the standalone exception; (2) the MCP exposure sites for the new park and resume phases (src/mcp/server.ts phase enum, workflow-step types and dispatcher, schema-registry test, tool-surface golden fixture) belong to the change inventory, with a test that both phases pass MCP validation. ac28 is read at stage level per the user's decision. The sc4 amendment registerParkOfferProvider is proposed by this LLD.",
       "at": "2026-10-18T16:46:14.328Z"
-    }
+    },
+    "staleAckedAt": "2026-10-18T16:52:19.019Z",
+    "staleAckedReason": "The only HLD change since approval is AMD-315d510cb28100e2-13 (registerParkOfferProvider on sc4), the amendment this LLD itself proposed and which the user approved; the LLD already designs against it."
   },
   "body": {
     "summary": {

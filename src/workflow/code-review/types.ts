@@ -91,6 +91,16 @@ export interface ChangedSymbolSummary {
 	/** Test-file callers that reach this symbol, each `<test file>#<caller name>`
 	 *  (the file joins it to the Story's test record; ISSUE-1102dc71). */
 	readonly testsReaching: readonly string[];
+	/** Whether the coverage dimension judges this symbol (ISSUE-b47dadc7): a
+	 *  function, method or class in a non-test file. Absent on a diff-review row
+	 *  and on summaries built before the field existed. */
+	readonly coverageEligible?: boolean | undefined;
+}
+
+/** What every judge slot is told about the run (ISSUE-b47dadc7). */
+export interface JudgeContext {
+	/** 'degraded' when the grounding is the diff, not the graph. */
+	readonly groundingMode: 'full' | 'degraded';
 }
 
 /** The IPC-served grounding bundle — structured summaries only, never file text. */

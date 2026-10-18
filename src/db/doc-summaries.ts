@@ -216,8 +216,12 @@ export async function writeDocSummaryIfCurrent(
 	opts?: { readonly keepGoodSummary?: boolean | undefined },
 ): Promise<DocSummaryWriteOutcome | 'kept-good'> {
 	return withWriteTxn(s => {
-		if (lookupRepoIdInTxn(s, repo) === undefined) throw unregisteredRepo(repo);
-		const outcome = writeDocSummaryIfCurrentInTxn(s, entityId, summary, { keepGoodSummary: opts?.keepGoodSummary });
+		// The caller's repo is checked only when the row is about to be written, as before.
+		const outcome = writeIfCurrentInTxn(s, entityId, summary, { keepGoodSummary: opts?.keepGoodSummary }, () => {
+			const repoId = lookupRepoIdInTxn(s, repo);
+			if (repoId === undefined) throw unregisteredRepo(repo);
+			return repoId;
+		});
 		// No onlyIfAbsent here, so 'already-present' cannot come back.
 		return outcome as DocSummaryWriteOutcome | 'kept-good';
 	});
@@ -239,6 +243,17 @@ export function writeDocSummaryIfCurrentInTxn(
 	summary: DocSummary,
 	opts: { readonly onlyIfAbsent?: boolean | undefined; readonly keepGoodSummary?: boolean | undefined } = {},
 ): DocSummaryWriteOutcome | 'already-present' | 'kept-good' {
+	return writeIfCurrentInTxn(s, entityId, summary, opts, entityRepoId => entityRepoId);
+}
+
+/** The shared body: `indexRepoId` names the repo the by-repo index entry goes under, called only for a write. */
+function writeIfCurrentInTxn(
+	s: GraphStore,
+	entityId: string,
+	summary: DocSummary,
+	opts: { readonly onlyIfAbsent?: boolean | undefined; readonly keepGoodSummary?: boolean | undefined },
+	indexRepoId: (entityRepoId: number) => number,
+): DocSummaryWriteOutcome | 'already-present' | 'kept-good' {
 	// The id lookup is inside the transaction too, so a delete cannot land between it and the write.
 	const id = s.entityIdByString.get(entityId) as bigint | number | undefined;
 	if (id === undefined) return 'entity-gone';
@@ -256,8 +271,9 @@ export function writeDocSummaryIfCurrentInTxn(
 			if (stored.errorCode === undefined && stored.contentHash === summary.contentHash) return 'kept-good';
 		}
 	}
+	const repoId = indexRepoId(entity.repoId);
 	s.docSummary.put(encodeEntityKey(u64), encodeDocSummary(summary));
-	s.docSummaryByRepo.put(encodeByRepoKey(entity.repoId, u64), Buffer.alloc(0));
+	s.docSummaryByRepo.put(encodeByRepoKey(repoId, u64), Buffer.alloc(0));
 	return 'written';
 }
 

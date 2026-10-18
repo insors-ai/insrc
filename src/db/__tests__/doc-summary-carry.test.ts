@@ -26,7 +26,7 @@ import { encodeEntityKey } from '../graph/keys.js';
 import { addRepo, lookupRepoId } from '../repos.js';
 import { deleteEntitiesForFile, entityU64ForId, upsertEntities } from '../entities.js';
 import {
-	encodeCarryKey, getDocSummary, restoreCarriedDocSummaries, writeDocSummary,
+	encodeCarryKey, getDocSummary, listDocSummaryEntityIdsForRepo, restoreCarriedDocSummaries, writeDocSummary,
 	writeDocSummaryIfCurrent, writeDocSummaryIfCurrentInTxn,
 } from '../doc-summaries.js';
 import { makeEntityId } from '../../indexer/parser/base.js';
@@ -95,6 +95,14 @@ test('writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a st
 	assert.equal(await writeDocSummaryIfCurrent(null, a.id, REPO, fresh), 'written', 'without options it still replaces a stored summary');
 	assert.equal((await getDocSummary(null, a.id))?.summary, 'fresh');
 	await assert.rejects(writeDocSummaryIfCurrent(null, a.id, '/repo/unregistered', fresh), /not registered/);
+	// An unregistered repo is refused only for a write, after the entity and body checks, as before.
+	assert.equal(await writeDocSummaryIfCurrent(null, doc('gone', 'x').id, '/repo/unregistered', summaryOf('x')), 'entity-gone');
+	assert.equal(await writeDocSummaryIfCurrent(null, a.id, '/repo/unregistered', summaryOf('other body')), 'body-changed');
+	assert.equal((await getDocSummary(null, a.id))?.summary, 'fresh', 'the refused write stored nothing');
+	// The by-repo index entry goes under the caller's repo, as before.
+	await addRepo(null, { path: '/repo/caller', name: 'caller', addedAt: NOW, status: 'ready' });
+	assert.equal(await writeDocSummaryIfCurrent(null, a.id, '/repo/caller', fresh), 'written');
+	assert.equal((await listDocSummaryEntityIdsForRepo(null, '/repo/caller')).includes(a.id), true);
 
 	// onlyIfAbsent: the stored one stays.
 	assert.equal(await inTxn(a, summaryOf('body a', { summary: 'older' }), { onlyIfAbsent: true }), 'already-present');

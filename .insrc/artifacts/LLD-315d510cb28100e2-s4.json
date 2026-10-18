@@ -194,6 +194,15 @@
     "reviewOverride": {
       "reason": "Owner approved option B after three review cycles: remaining round-3 findings are implementation-level and recorded as binding build requirements in docs/plans/team-workflow.md (s4 LLD approval, 2026-10-18).",
       "at": "2026-10-18T04:32:31.624Z"
+    },
+    "questionResolutions": {
+      "q22fb8489": {
+        "question": "sg1: ensureDraftIssues runs inside the synthesize phase and the workflow.run path on the daemon's event loop and the gh commands are synchronous, so a draft with many Tasks can hold the daemon for tens of seconds (none when every unit is recorded). Options: (A) accept it, bounded by the ten-second port timeout and stop-at-first-failure; (B) run it off the event loop and return issueReadiness pending, which loses the immediate message ac18 asks for. Recommendation: A for now, and revisit if it shows in use.",
+        "status": "resolved",
+        "choice": "A — Keep synchronous creation",
+        "rationale": "Recommended in the approved LLD; preserves the immediate ac18 message.",
+        "resolvedAt": "2026-10-18T04:33:39.530Z"
+      }
     }
   },
   "body": {

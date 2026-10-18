@@ -670,25 +670,27 @@ Leave drafting alone and let the team gate treat a unit with no issue as 'create
 - sg4: Legacy mode keeps the old approve-time behaviour for a repo without a policy by design (k4), including its fail-open weaknesses: a failed Epic lookup still leads to a create and label failures are best-effort, so such a repo can still get a duplicate Epic. Options: (A) accept, since k4 requires an unchanged repo and the strict behaviour is team-only; (B) raise an HLD amendment to harden the solo path too. Recommendation: A.
 - sg5: The duplicate tie-break needs a new additive sc1 method, findIssues(labels), returning PortResult<IssueRef[]> with every matching issue open or closed, complete pagination and ascending numeric order, because findIssue returns only the first match and gh lists newest first. It is recorded as an amendment in docs/plans/team-workflow.md and proposed to s1 as a sharedContract.methodAdd; the GitHub adapter contract test is s1's. Options: (A) agree the amendment with s1 and gate the s4 build on it; (B) build without the tie-break and accept the duplicate window with no convergence. Recommendation: A.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q22fb8489` — sg1: ensureDraftIssues runs inside the synthesize phase and the workflow.run path on the daemon's event loop and the gh commands are synchronous, so a draft with many Tasks can hold the daemon for tens of seconds (none when every unit is recorded). Options: (A) accept it, bounded by the ten-second port timeout and stop-at-first-failure; (B) run it off the event loop and return issueReadiness pending, which loses the immediate message ac18 asks for. Recommendation: A for now, and revisit if it shows in use.
+  - **resolved**: A — Keep synchronous creation — Recommended in the approved LLD; preserves the immediate ac18 message. _(2026-10-18T04:33:39.530Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**4 do not hold · 0 could not be verified · 8 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-18T04:27:43.599Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| current-behaviour | HIGH | Legacy approve-time extras, including comments, run only when the push created the issue. | autoPushEpicOnHld calls 'postReviewComment(ops, epicRef, hldJsonPath)' outside the 'adopted === undefined' condition. autoPushTasksOnPlan calls 'postReviewComment(ops, storyRef, planJsonPath)' before its loop, including when every Task already has a ref. Applying the design's blanket created-only invariant would suppress existing review comments and violate solo compatibility. [files: src/workflow/tracker-auto.ts] | Specify legacy behavior per extra and per entry point. Preserve Epic review comments on label adoption and plan review comments on repeated pushes. |
-| change-sites | HIGH | Carrying readiness through WorkflowStepDone, RunWorkflowResult, and the workflow.run terminal frame is sufficient to tell the author. | The streaming client returns the frame data, but runWorkflowStreaming projects it into only 'path', 'runId', 'verdict', and 'counts'. The terminal run command then renders only '✓ ... done' and review information. The proposed notice would be discarded before reaching this author-facing path. RunWorkflowStreamResult also lacks the new fields. [files: src/mcp/daemon-stream.ts, src/cli/services/workflow.ts, src/cli/command.ts, src/daemon/workflow-rpc.ts] | Add readiness and notice to the streaming client and CLI service contracts, preserve them in runWorkflowStreaming, and display the failure notice in the terminal run handler. |
-| error-paths | HIGH | When the TESTS markdown write fails, the JSON bytes and revision are guaranteed to be exactly restored. | persistTestRecordTask attempts restoration inside a nested try/catch. If restoration fails, it logs 'the json could not be put back after the document failed to write' and throws the original error. Thus the new JSON, and its newly minted revision, can remain despite the caller seeing failure. [files: src/workflow/runners/build/test-record.ts, src/workflow/storage.ts] | Describe and surface rollback failure explicitly, including the possibly inconsistent record state. Add a test where both the markdown write and JSON restoration fail; do not promise unconditional restoration. |
-| data-compatibility | MED | Adding only units to TrackerMeta fully implements the HLD's sc3 tracker shape. | HLD §2 explicitly says 'Only the adapter literal "github" is widened to the port’s tracker kind'; §4.3 declares 'adapter?: TrackerKind'. Actual TrackerMeta still declares 'readonly adapter?: "github"', and this LLD specifies only a units field addition while keeping every existing field unchanged. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, src/workflow/tracker/refs.ts, src/workflow/tracker/port.ts] | Include the planned adapter widening and define how patchTrackerMeta preserves or receives the actual tracker kind. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `doc` `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md#5.4`
+- **[[c2]]** `doc` `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md`
+- **[[c3]]** `code` `src/workflow/tracker-auto.ts`
+- **[[c4]]** `code` `src/workflow/tracker/refs.ts:24-37`
+- **[[c5]]** `code` `src/daemon/steps/workflow-step/phases/synthesize.ts:60-85`
+- **[[c6]]** `code` `src/workflow/storage.ts:77-88`
+- **[[c7]]** `code` `src/workflow/tracker/port.ts:55-95`
+- **[[c8]]** `code` `src/workflow/team/policy-reader.ts:265`
+- **[[c9]]** `code` `src/workflow/tracker/sync.ts:27-52`
+- **[[c10]]** `code` `src/workflow/gates.ts:194-203`
+- **[[c11]]** `code` `src/workflow/tracker/github-adapter.ts:173-181`
+- **[[c12]]** `code` `src/workflow/tracker/github.ts:233-242`
+- **[[c13]]** `code` `src/workflow/code-review/runner.ts:154`
+- **[[c14]]** `code` `src/daemon/workflow-rpc.ts:154`
+- **[[c15]]** `code` `src/daemon/workflow-rpc.ts:475`
+- **[[c16]]** `doc` `docs/plans/team-workflow.md#known-limitations`
+- **[[c17]]** `step-output` `s3.winnerId`

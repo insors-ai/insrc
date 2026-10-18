@@ -218,6 +218,7 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		// a restore that fails on its second file puts the first back and saves nothing
 		const check = await resumeCheck(w.recv, unitOf(w.recv), { workflow: 'plan' }, resumeDeps(w));
 		assert.equal(check.kind, 'restart', JSON.stringify(check));
+		chmodSync(here(lldMd), 0o555); // read-only and executable: the rollback must still put it back
 		const before = treeOf(w.recv);
 		const modeBefore = statSync(here(lldMd)).mode & 0o777;
 		assert.notEqual(modeBefore & 0o100, 0, 'the clone has the file executable');

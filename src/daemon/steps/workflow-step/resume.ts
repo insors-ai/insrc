@@ -11,7 +11,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, mkdirSync, renameSync, rmSync, rmdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -39,19 +39,20 @@ export interface ApplyDeps { readonly failWrite?: ((path: string) => string | un
 const refusedWith = (reason: string): ResumeResult => ({ kind: 'refused', reason });
 
 /**
- * Put the parked files in the working tree. Each file is written beside its place and moved into it, and the file it replaces (or
- * its absence) is remembered: if any file fails, every file written so far is put back as it was, and the directories this call
- * made are removed. Returns undefined on success, or the reason (the tree is then as it was).
+ * Put the parked files in the working tree. Each file is written beside its place; the file it replaces is moved aside (not copied),
+ * so a rollback puts back the very same file, with its bytes, mode and owner, and the directories this call made are removed.
+ * Returns `rollback` (undo everything) and `finish` (drop the moved-aside originals once the caller no longer needs the rollback),
+ * or the reason the restore failed (the tree is then as it was, or the reason names the files that could not be put back).
  */
-function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps): { readonly rollback: () => void } | { readonly failed: string } {
-	const done: Array<{ path: string; before: { readonly bytes: Buffer; readonly mode: number } | null }> = [];
+function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps): { readonly rollback: () => void; readonly finish: () => void } | { readonly failed: string } {
+	const done: Array<{ path: string; aside: string | null }> = [];
 	const madeDirs: string[] = [];
 	const stuck: string[] = [];
 	const rollback = (): void => {
 		for (const f of done.reverse()) {
 			try {
-				if (f.before === null) rmSync(f.path, { force: true });
-				else { writeFileSync(f.path, f.before.bytes); chmodSync(f.path, f.before.mode); }
+				rmSync(f.path, { force: true });
+				if (f.aside !== null) renameSync(f.aside, f.path);
 			} catch (err) {
 				stuck.push(f.path);
 				log.warn({ path: f.path, err: err instanceof Error ? err.message : String(err) }, 'resume: could not roll back a restored file');
@@ -59,28 +60,34 @@ function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps)
 		}
 		for (const d of madeDirs.reverse()) { try { rmdirSync(d); } catch { /* not empty or already gone */ } }
 	};
+	const finish = (): void => {
+		for (const f of done) if (f.aside !== null) { try { rmSync(f.aside, { force: true }); } catch (err) { log.warn({ aside: f.aside, err: err instanceof Error ? err.message : String(err) }, 'resume: could not remove a moved-aside original'); } }
+	};
 	for (const f of files) {
 		const abs = join(repo, f.path);
 		let tmp: string | undefined;
 		try {
 			const injected = deps.failWrite?.(f.path);
 			if (injected !== undefined) throw new Error(injected);
-			// directories this call is about to make, so a rollback leaves none behind
+			// a symbolic link is left alone: the restore does not replace one
+			const existing = lstatSync(abs, { throwIfNoEntry: false });
+			if (existing?.isSymbolicLink() === true) throw new Error('it is a symbolic link');
+			// directories this call is about to make, recorded before they are made (shallowest first), so a rollback leaves none behind
 			const missing: string[] = [];
 			for (let d = dirname(abs); !existsSync(d) && d !== dirname(d); d = dirname(d)) missing.push(d);
-			// recorded before they are made, shallowest first, so the rollback removes the deepest first even after a partial mkdir
 			madeDirs.push(...missing.reverse());
 			mkdirSync(dirname(abs), { recursive: true });
-			// a symbolic link cannot be put back byte for byte, so a restore never replaces one
-			if (lstatSync(abs, { throwIfNoEntry: false })?.isSymbolicLink() === true) throw new Error('it is a symbolic link');
-			const before = existsSync(abs) ? { bytes: readFileSync(abs), mode: statSync(abs).mode & 0o7777 } : null;
-			tmp = `${abs}.resume-${randomBytes(6).toString('hex')}`;
+			const suffix = randomBytes(6).toString('hex');
+			tmp = `${abs}.resume-${suffix}`;
 			// raw-write: restores a parked file byte for byte (its meta.revision included); this is not a new content write
 			writeFileSync(tmp, f.content, 'utf8');
 			// the replaced file keeps its mode (an executable stays executable)
-			if (before !== null) chmodSync(tmp, before.mode);
+			if (existing !== undefined) chmodSync(tmp, existing.mode & 0o7777);
+			const aside = existing !== undefined ? `${abs}.resume-aside-${suffix}` : null;
+			if (aside !== null) renameSync(abs, aside);
+			done.push({ path: abs, aside });
 			renameSync(tmp, abs);
-			done.push({ path: abs, before });
+			tmp = undefined;
 		} catch (err) {
 			// only the temporary file this call made; a failure to remove it must not stop the rollback
 			if (tmp !== undefined) { try { rmSync(tmp, { force: true }); } catch { /* the rollback below still runs */ } }
@@ -89,7 +96,7 @@ function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps)
 			return { failed: stuck.length === 0 ? `restoring ${f.path} failed (${why}); the working tree is as it was` : `restoring ${f.path} failed (${why}), and these files could not be put back as they were: ${stuck.join(', ')}` };
 		}
 	}
-	return { rollback };
+	return { rollback, finish };
 }
 
 /** The turn the run's stage calls for, built from the rebound payload; the `state` token is filled in once the run is stored. */
@@ -132,6 +139,7 @@ export function applyResume(check: ResumeCheck, repo: string, deps: ApplyDeps = 
 		if (check.restore === undefined) return { kind: 'restart', workflow: check.workflow, params: check.params, reason: check.reason, draftRestored: false };
 		const restored = restoreFiles(repo, check.restore.files, deps);
 		if ('failed' in restored) return refusedWith(restored.failed);
+		restored.finish();
 		return { kind: 'restart', workflow: check.workflow, params: check.params, reason: check.reason, draftRestored: true };
 	}
 
@@ -146,6 +154,7 @@ export function applyResume(check: ResumeCheck, repo: string, deps: ApplyDeps = 
 		const turn = turnFor(payload);
 		if ('error' in turn) { restored.rollback(); return refusedWith(`${turn.error}; the working tree is as it was`); }
 		const state = saveState(payload, { owner, upstream: checkpoint.upstream });
+		restored.finish();
 		return { kind: 'resumed', turn: { ...turn, state } as WorkflowStepEmitPlan | WorkflowStepEmitStep | WorkflowStepEmitSynthesize };
 	} catch (err) {
 		restored.rollback();

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-18T06:18:25.328Z",
+    "updatedAt": "2026-10-18T14:03:16.565Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1727,6 +1727,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "46bc01b4",
+        "ranAt": "2026-10-18T14:03:16.565Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001/smoke.md on this repository: before/after counts, runGrepSearch 4 and stripReviewSection 4 outside test files, unwritable 0, doc summaries regenerated, completeness on all four surfaces",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/smoke.md (cc302f07, summaries section updated 46bc01b4): before/after counts, callers 4 and 4, unwritable 0, completeness on repo.stats, the CLI, JetBrains and the VS Code Daemon tab; summaries 11,412 before, 10,996 restored by ISSUE-dced4385 with the 416 difference explained; the sweep still running (not awaited, stakeholder decision 2026-10-18)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

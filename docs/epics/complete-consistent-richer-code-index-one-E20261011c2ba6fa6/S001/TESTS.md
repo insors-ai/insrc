@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 82 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 82 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -372,3 +372,13 @@ Run at 2026-10-18T06:18:25.328Z on commit `d899f265`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` | 0 | 12 | 2.8 s |  |
+
+## t17
+
+Run at 2026-10-18T14:03:16.565Z on commit `46bc01b4`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: S001/smoke.md on this repository: before/after counts, runGrepSearch 4 and stripReviewSection 4 outside test files, unwritable 0, doc summaries regenerated, completeness on all four surfaces**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/smoke.md (cc302f07, summaries section updated 46bc01b4): before/after counts, callers 4 and 4, unwritable 0, completeness on repo.stats, the CLI, JetBrains and the VS Code Daemon tab; summaries 11,412 before, 10,996 restored by ISSUE-dced4385 with the 416 difference explained; the sweep still running (not awaited, stakeholder decision 2026-10-18)

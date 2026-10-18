@@ -1,0 +1,1768 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "createdAt": "2026-10-18T05:01:29.552Z",
+    "updatedAt": "2026-10-18T07:01:40.457Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "006b18f4",
+        "ranAt": "2026-10-18T05:01:29.552Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/artifact-writer.test.ts: writeArtifact mints and keeps revisions, carries the whole tracker block, and rejects a value without meta",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-writer.test.ts",
+                "title": "writeArtifact mints and keeps revisions, carries the whole tracker block, and rejects a value without meta",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/artifact-writer.test.ts: readRevision reads 0 for bad values; patchTrackerMeta keeps every field, merges units and preserves the tracker kind",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-writer.test.ts",
+                "title": "readRevision reads 0 for bad values; patchTrackerMeta keeps every field, merges units and preserves the tracker kind",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-writer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 808,
+            "titles": [
+              {
+                "title": "writeArtifact mints and keeps revisions, carries the whole tracker block, and rejects a value without meta",
+                "result": "pass"
+              },
+              {
+                "title": "readRevision reads 0 for bad values; patchTrackerMeta keeps every field, merges units and preserves the tracker kind",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "9e26cf99",
+        "ranAt": "2026-10-18T05:07:10.187Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/gates-revision.test.ts: appendStoryToDefine mints a revision, approve reject and ack-stale leave revision and body unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/gates-revision.test.ts",
+                "title": "appendStoryToDefine mints a revision, approve reject and ack-stale leave revision and body unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "approveArtifactByJsonPath sets meta.approvedAt",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/gates.test.ts",
+                "title": "rejectArtifactByJsonPath sets meta.rejectedAt + reason",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/scope-extend.test.ts",
+                "title": "appendStoryToDefine appends the Story, re-renders md, and retains approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/meta-only-body-unchanged.test.ts: every meta-only writer leaves the body byte-identical and the revision unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/meta-only-body-unchanged.test.ts",
+                "title": "every meta-only writer leaves the body byte-identical and the revision unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/questions.test.ts",
+                "title": "recordResolution persists a resolved choice to HLD meta + renders section",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+                "title": "T13 the findings phase stamps the review and does not edit the design",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+                "title": "defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step-findings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2373,
+            "titles": [
+              {
+                "title": "T13 start on a design returns the review template with next emit_findings",
+                "result": "pass"
+              },
+              {
+                "title": "T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the findings phase stamps the review and does not edit the design",
+                "result": "pass"
+              },
+              {
+                "title": "T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is stamped",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the two paths do not cross: no claims on a design run, no findings on a non-design run",
+                "result": "pass"
+              },
+              {
+                "title": "T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt",
+                "result": "pass"
+              },
+              {
+                "title": "T4 the findings phase stamps the controller on an HLD too",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the registered tool accepts phase `findings` and its phase list names it",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the ISSUE template is validated against its own items",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/bugfix-orchestration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1699,
+            "titles": [
+              {
+                "title": "nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: the sized design.story spec carries the full defect body, not just the title",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)",
+                "result": "pass"
+              },
+              {
+                "title": "nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: approved + parentRef ABSENT -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "admitBugfixAdvance: not approved -> not admitted",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: standalone (null) -> writeParentRef(null)",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: readIssue null -> throws issue-not-found, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: not approved -> throws not-approved, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: locateParent rejects -> propagates, no write",
+                "result": "pass"
+              },
+              {
+                "title": "locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty",
+                "result": "pass"
+              },
+              {
+                "title": "defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed",
+                "result": "pass"
+              },
+              {
+                "title": "advanceBugfixAfterIssue: bugfixCategory flag off -> skipped",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/gates-revision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1424,
+            "titles": [
+              {
+                "title": "appendStoryToDefine mints a revision, approve reject and ack-stale leave revision and body unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/gates.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2315,
+            "titles": [
+              {
+                "title": "jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd leaves docs/stub layout untouched",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd returns json paths unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd rejects unknown extensions",
+                "result": "pass"
+              },
+              {
+                "title": "jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)",
+                "result": "pass"
+              },
+              {
+                "title": "approveArtifactByJsonPath sets meta.approvedAt",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath sets meta.rejectedAt + reason",
+                "result": "pass"
+              },
+              {
+                "title": "rejectArtifactByJsonPath refuses empty reason",
+                "result": "pass"
+              },
+              {
+                "title": "reject then approve clears the rejection",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactMissingError when no Define exists",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic throws ArtifactNotApprovedError when Define is not approved",
+                "result": "pass"
+              },
+              {
+                "title": "requireApprovedEpic returns the Define artifact after approval",
+                "result": "pass"
+              },
+              {
+                "title": "t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside meta.approvedAt",
+                "result": "pass"
+              },
+              {
+                "title": "t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once",
+                "result": "pass"
+              },
+              {
+                "title": "CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever",
+                "result": "pass"
+              },
+              {
+                "title": "t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/meta-only-body-unchanged.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1729,
+            "titles": [
+              {
+                "title": "every meta-only writer leaves the body byte-identical and the revision unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/questions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1469,
+            "titles": [
+              {
+                "title": "questionId: parses a leading [id / verdict] tag; falls back to a stable sha",
+                "result": "pass"
+              },
+              {
+                "title": "openQuestions / unresolvedOpen reflect recorded resolutions",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution persists a resolved choice to HLD meta + renders section",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution ignore + defer persist the right status to DEF meta",
+                "result": "pass"
+              },
+              {
+                "title": "recordResolution throws on an unknown questionId",
+                "result": "pass"
+              },
+              {
+                "title": "listDeferred enumerates deferred questions across DEF + HLD + LLDs",
+                "result": "pass"
+              },
+              {
+                "title": "the comment goes through the adapter with the same argv and a failure is logged in the existing catch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/scope-extend.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1564,
+            "titles": [
+              {
+                "title": "epicCatalog enumerates Epics with problem + stories + approved flag",
+                "result": "pass"
+              },
+              {
+                "title": "epicCatalog marks an un-approved Epic as not approved + returns [] for an empty repo",
+                "result": "pass"
+              },
+              {
+                "title": "nextStoryId returns s<max+1>",
+                "result": "pass"
+              },
+              {
+                "title": "appendStoryToDefine appends the Story, re-renders md, and retains approval",
+                "result": "pass"
+              },
+              {
+                "title": "appendStoryToDefine rejects a duplicate story id",
+                "result": "pass"
+              },
+              {
+                "title": "applyAddStory appends a new StoryBoundary to the effective HLD",
+                "result": "pass"
+              },
+              {
+                "title": "applyAddStory rejects a story id that already has a boundary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "c136b229",
+        "ranAt": "2026-10-18T05:19:02.957Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/__tests__/review-revision.test.ts: auto-fix review and apply resolution bump the revision, report-only review and accept override defer do not, through run-artifact and resolve",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/__tests__/review-revision.test.ts",
+                "title": "auto-fix review and apply resolution bump the revision, report-only review and accept override defer do not, through run-artifact and resolve",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/resolve.test.ts",
+                "title": "resolve apply mutates the artifact + records resolution; override clears the rest",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts: the verdicts path bumps the revision only when auto-fixes change the body",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts",
+                "title": "the verdicts path bumps the revision only when auto-fixes change the body",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+                "title": "review-step drives the full loop and stamps meta.review with model=client",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/draft-write-revision.test.ts: a first draft has revision 1 and a re-draft keeps the whole prior tracker block",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/draft-write-revision.test.ts",
+                "title": "a first draft has revision 1 and a re-draft keeps the whole prior tracker block",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/provenance/__tests__/writer.test.ts",
+                "title": "round-trip: append preserves meta + citations + other body keys byte-identical; only body.feedback grows",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+                "title": "persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/review-decision.test.ts",
+                "title": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1174,
+            "titles": [
+              {
+                "title": "review-step drives the full loop and stamps meta.review with model=client",
+                "result": "pass"
+              },
+              {
+                "title": "review-step verdicts with an unknown state token returns an error envelope",
+                "result": "pass"
+              },
+              {
+                "title": "buildExtractPrompt / EXTRACT_SCHEMA export the expected shape",
+                "result": "pass"
+              },
+              {
+                "title": "buildVerifyPrompt / VERIFY_SCHEMA export the expected shape",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1216,
+            "titles": [
+              {
+                "title": "the verdicts path bumps the revision only when auto-fixes change the body",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/draft-write-revision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1221,
+            "titles": [
+              {
+                "title": "a first draft has revision 1 and a re-draft keeps the whole prior tracker block",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/review-decision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1186,
+            "titles": [
+              {
+                "title": "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a decision with no comments writes no feedback entry",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a failing comment write after the decision took effect reports the outcome with commentsError",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: the author is the one resolveReviewer gives and is never taken from the request",
+                "result": "pass"
+              },
+              {
+                "title": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/provenance/__tests__/writer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1028,
+            "titles": [
+              {
+                "title": "round-trip: append preserves meta + citations + other body keys byte-identical; only body.feedback grows",
+                "result": "pass"
+              },
+              {
+                "title": "rejects an out-of-tree path (not under .insrc/artifacts or docs/)",
+                "result": "pass"
+              },
+              {
+                "title": "rejects a malformed / missing artifact JSON",
+                "result": "pass"
+              },
+              {
+                "title": "rejects a blank author or blank comment",
+                "result": "pass"
+              },
+              {
+                "title": "writeArtifactJson refuses an out-of-tree destination",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/resolve.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1055,
+            "titles": [
+              {
+                "title": "listPendingReviewFindings returns non-LOW unresolved findings; effective verdict blocks",
+                "result": "pass"
+              },
+              {
+                "title": "resolve apply mutates the artifact + records resolution; override clears the rest",
+                "result": "pass"
+              },
+              {
+                "title": "resolve apply refuses a finding with no edits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/review-revision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1138,
+            "titles": [
+              {
+                "title": "auto-fix review and apply resolution bump the revision, report-only review and accept override defer do not, through run-artifact and resolve",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1607,
+            "titles": [
+              {
+                "title": "persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists",
+                "result": "pass"
+              },
+              {
+                "title": "a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)",
+                "result": "pass"
+              },
+              {
+                "title": "re-validating the same task refreshes its passed without duplicating the row",
+                "result": "pass"
+              },
+              {
+                "title": "an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed prior record is treated as absent (fail-open fresh write), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)",
+                "result": "pass"
+              },
+              {
+                "title": "approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)",
+                "result": "pass"
+              },
+              {
+                "title": "a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)",
+                "result": "pass"
+              },
+              {
+                "title": "the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)",
+                "result": "pass"
+              },
+              {
+                "title": "the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write",
+                "result": "pass"
+              },
+              {
+                "title": "a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown",
+                "result": "pass"
+              },
+              {
+                "title": "BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved",
+                "result": "pass"
+              },
+              {
+                "title": "FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read",
+                "result": "pass"
+              },
+              {
+                "title": "t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD (the specified \"at persist time\" semantics)",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `## Summary`",
+                "result": "pass"
+              },
+              {
+                "title": "t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the TWO unconditional parts always render, even on a record carrying nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SEVEN omit-slots renders when populated — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title",
+                "result": "pass"
+              },
+              {
+                "title": "t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost",
+                "result": "pass"
+              },
+              {
+                "title": "t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7",
+                "result": "pass"
+              },
+              {
+                "title": "t8: an empty or absent changeLog still renders NO `## Changes` section",
+                "result": "pass"
+              },
+              {
+                "title": "t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation",
+                "result": "pass"
+              },
+              {
+                "title": "t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest \"Standalone:\" bit",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — a record carrying standalone true is placed under docs/standalone",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move",
+                "result": "pass"
+              },
+              {
+                "title": "t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — a standalone record renders the standalone heading and \"Standalone: yes\", not the plan-driven title",
+                "result": "pass"
+              },
+              {
+                "title": "t5 — the render keys on sizeClass, so it survives a record whose flag is absent",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/",
+                "result": "pass"
+              },
+              {
+                "title": "43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)",
+                "result": "pass"
+              },
+              {
+                "title": "a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before",
+                "result": "pass"
+              },
+              {
+                "title": "with a test record on disk and no build record, a first build record written by each of its three writers takes the test record's createdAt and lands in its folder",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "d0efd264",
+        "ranAt": "2026-10-18T05:51:23.687Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/__tests__/record-revision.test.ts: a second code review bumps the record revision through the default and the injected writer",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/record-revision.test.ts",
+                "title": "a second code review bumps the record revision through the default and the injected writer",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/runners/build/__tests__/test-record-revision.test.ts: a second persisted mapping bumps the revision, a rollback restores bytes and revision, and a failed restore is reported as inconsistent",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/test-record-revision.test.ts",
+                "title": "a second persisted mapping bumps the revision, a rollback restores bytes and revision, and a failed restore is reported as inconsistent",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/runners/build/__tests__/test-record.test.ts",
+                "title": "the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 642,
+            "titles": [
+              {
+                "title": "start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)",
+                "result": "pass"
+              },
+              {
+                "title": "fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "all-empty judgements => a written PASS record (vacuous but valid, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved",
+                "result": "pass"
+              },
+              {
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with isProcessing:true (empty staleFiles) => confirm_wait too",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt",
+                "result": "pass"
+              },
+              {
+                "title": "S001: the timeout auto-diff releases the confirm_wait token before the diff review",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error",
+                "result": "pass"
+              },
+              {
+                "title": "s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record",
+                "result": "pass"
+              },
+              {
+                "title": "T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler",
+                "result": "pass"
+              },
+              {
+                "title": "T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base",
+                "result": "pass"
+              },
+              {
+                "title": "s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the response says how many were dropped, per dimension, and against how large a set",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the markdown lists the dropped findings and says they are not counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature",
+                "result": "pass"
+              },
+              {
+                "title": "a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason",
+                "result": "pass"
+              },
+              {
+                "title": "on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/record-revision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 678,
+            "titles": [
+              {
+                "title": "a second code review bumps the record revision through the default and the injected writer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/test-record-revision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 798,
+            "titles": [
+              {
+                "title": "a second persisted mapping bumps the revision, a rollback restores bytes and revision, and a failed restore is reported as inconsistent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/test-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2806,
+            "titles": [
+              {
+                "title": "the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt",
+                "result": "pass"
+              },
+              {
+                "title": "the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)",
+                "result": "pass"
+              },
+              {
+                "title": "the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases",
+                "result": "pass"
+              },
+              {
+                "title": "the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping",
+                "result": "pass"
+              },
+              {
+                "title": "when the document cannot be written after the json was, the json is put back: a first write leaves no record, a later one leaves the earlier run",
+                "result": "pass"
+              },
+              {
+                "title": "text that came from the builder is rendered on one line, so it cannot add lines that read as the record's own; and an unreadable record is told from an absent one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "6fbe3b89",
+        "ranAt": "2026-10-18T05:57:00.830Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: every writer file is inventoried, annotated and classified as the design says",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the detector flags raw, aliased and injected writers and accepts the positive controls",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4666,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "56da3f38",
+        "ranAt": "2026-10-18T06:05:22.964Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: ensureUnitIssue takes a unit and a port and returns a PortResult without a phase",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "ensureUnitIssue takes a unit and a port and returns a PortResult without a phase",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: resolveUnitIssueLocal resolves from records and legacy refs, reconciles locally and runs no command",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "resolveUnitIssueLocal resolves from records and legacy refs, reconciles locally and runs no command",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: a legacy LLD with only storyRef creates no second Story issue",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "a legacy LLD with only storyRef creates no second Story issue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: team mode creates only when everything misses and reports phase before-create or create on failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "team mode creates only when everything misses and reports phase before-create or create on failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: a create that times out after the remote committed is adopted by its label on the next call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "a create that times out after the remote committed is adopted by its label on the next call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: unitLabel gives the three forms, lower-cases ids, stays within 50 characters and rejects a malformed id",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "unitLabel gives the three forms, lower-cases ids, stays within 50 characters and rejects a malformed id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 536,
+            "titles": [
+              {
+                "title": "ensureUnitIssue takes a unit and a port and returns a PortResult without a phase",
+                "result": "pass"
+              },
+              {
+                "title": "resolveUnitIssueLocal resolves from records and legacy refs, reconciles locally and runs no command",
+                "result": "pass"
+              },
+              {
+                "title": "a legacy LLD with only storyRef creates no second Story issue",
+                "result": "pass"
+              },
+              {
+                "title": "team mode creates only when everything misses and reports phase before-create or create on failure",
+                "result": "pass"
+              },
+              {
+                "title": "a create that times out after the remote committed is adopted by its label on the next call",
+                "result": "pass"
+              },
+              {
+                "title": "unitLabel gives the three forms, lower-cases ids, stays within 50 characters and rejects a malformed id",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "22cd5d6d",
+        "ranAt": "2026-10-18T06:07:19.480Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/unit-extras.test.ts: runUnitExtras marks, skips, reports failures, retries only missing steps and repeats only after a marker failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-extras.test.ts",
+                "title": "runUnitExtras marks, skips, reports failures, retries only missing steps and repeats only after a marker failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/unit-extras.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1097,
+            "titles": [
+              {
+                "title": "runUnitExtras marks, skips, reports failures, retries only missing steps and repeats only after a marker failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "d4beed8c",
+        "ranAt": "2026-10-18T06:16:32.006Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/approve-fallback-issues.test.ts: in team mode the three pushes adopt, force Task issues, fail on lookup or unreadable policy, and run extras once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/approve-fallback-issues.test.ts",
+                "title": "in team mode the three pushes adopt, force Task issues, fail on lookup or unreadable policy, and run extras once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/approve-fallback-issues.test.ts: with no policy the three pushes behave exactly as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/approve-fallback-issues.test.ts",
+                "title": "with no policy the three pushes behave exactly as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/tracker-auto.test.ts: the existing solo regression suite passes unedited",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "HLD approve creates the Epic issue, links docs, and writes nested meta.tracker",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "LLD approve creates the Story issue + aggregates into the Define; links the LLD doc",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "re-approving the HLD is idempotent (no second issue)",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "duplicate guard adopts an existing Epic issue instead of creating one",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "tracker disabled (no config) skips cleanly",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "missing required meta fields skip",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "R4: posts the review report as an issue comment when the artifact carries meta.review",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "a failing adoption lookup still leads to a create and does not throw",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/tracker-auto.test.ts",
+                "title": "a failing create is reported as a failed result, not thrown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/approve-fallback-issues.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3738,
+            "titles": [
+              {
+                "title": "in team mode the three pushes adopt, force Task issues, fail on lookup or unreadable policy, and run extras once",
+                "result": "pass"
+              },
+              {
+                "title": "with no policy the three pushes behave exactly as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/tracker-auto.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4167,
+            "titles": [
+              {
+                "title": "HLD approve creates the Epic issue, links docs, and writes nested meta.tracker",
+                "result": "pass"
+              },
+              {
+                "title": "LLD approve creates the Story issue + aggregates into the Define; links the LLD doc",
+                "result": "pass"
+              },
+              {
+                "title": "re-approving the HLD is idempotent (no second issue)",
+                "result": "pass"
+              },
+              {
+                "title": "duplicate guard adopts an existing Epic issue instead of creating one",
+                "result": "pass"
+              },
+              {
+                "title": "tracker disabled (no config) skips cleanly",
+                "result": "pass"
+              },
+              {
+                "title": "missing required meta fields skip",
+                "result": "pass"
+              },
+              {
+                "title": "R4: posts the review report as an issue comment when the artifact carries meta.review",
+                "result": "pass"
+              },
+              {
+                "title": "the three push functions keep their gh sequence, best-effort behaviour and TrackerMeta through the adapter",
+                "result": "pass"
+              },
+              {
+                "title": "a failing adoption lookup still leads to a create and does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "a failing create is reported as a failed result, not thrown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "d77a5d79",
+        "ranAt": "2026-10-18T06:45:09.766Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/draft-issues.test.ts: not-applicable without a team policy, policy-unreadable and sc1 failure kinds map to messages",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "ensureDraftIssues returns not-applicable without a team policy and maps policy and sc1 failures to messages",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/draft-issues.test.ts: Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/draft-issues.test.ts: outcomeKnown wording for a failed lookup and for a create that times out",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "outcomeKnown wording for a failed lookup and for a create that times out",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/redraft-preserves-tracker.test.ts: a re-draft keeps epicRef and storyRefs for sync, chain report and Task approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/redraft-preserves-tracker.test.ts",
+                "title": "a re-draft keeps epicRef and storyRefs for sync, chain report and Task approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/draft-issues-synthesize.test.ts: the synthesize result and the whole workflow.run path carry readiness at every hop",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/draft-issues-synthesize.test.ts",
+                "title": "the synthesize result carries readiness for a team repo, a notice when not ready, and nothing without a policy",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/draft-issues-synthesize.test.ts",
+                "title": "the whole workflow.run path carries readiness at every hop, including the emitted done frame",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/draft-issues-synthesize.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2459,
+            "titles": [
+              {
+                "title": "the synthesize result carries readiness for a team repo, a notice when not ready, and nothing without a policy",
+                "result": "pass"
+              },
+              {
+                "title": "the whole workflow.run path carries readiness at every hop, including the emitted done frame",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/draft-issues.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1524,
+            "titles": [
+              {
+                "title": "ensureDraftIssues returns not-applicable without a team policy and maps policy and sc1 failures to messages",
+                "result": "pass"
+              },
+              {
+                "title": "Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report",
+                "result": "pass"
+              },
+              {
+                "title": "outcomeKnown wording for a failed lookup and for a create that times out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/redraft-preserves-tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1573,
+            "titles": [
+              {
+                "title": "a re-draft keeps epicRef and storyRefs for sync, chain report and Task approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "8430da33",
+        "ranAt": "2026-10-18T06:47:16.556Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/cli/__tests__/run-readiness-notice.test.ts: runWorkflowStreaming preserves the fields and the run command prints the notice only when not ready",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/run-readiness-notice.test.ts",
+                "title": "runWorkflowStreaming preserves the fields and the run command prints the notice only when not ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/run-readiness-notice.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1872,
+            "titles": [
+              {
+                "title": "runWorkflowStreaming preserves the fields and the run command prints the notice only when not ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "f29c7197",
+        "ranAt": "2026-10-18T07:01:40.457Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: a lower-numbered issue is adopted and the call's own is commented on and closed, even when the close fails",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "a lower-numbered issue is adopted and the call's own is commented on and closed, even when the close fails",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: two simulated daemons that both create converge on the lowest issue",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "two simulated daemons that both create converge on the lowest issue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/unit-issue.test.ts: a failed findIssues listing keeps the recorded issue and a following call makes no tracker call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+                "title": "a failed findIssues listing keeps the recorded issue and a following call makes no tracker call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1135,
+            "titles": [
+              {
+                "title": "ensureUnitIssue takes a unit and a port and returns a PortResult without a phase",
+                "result": "pass"
+              },
+              {
+                "title": "resolveUnitIssueLocal resolves from records and legacy refs, reconciles locally and runs no command",
+                "result": "pass"
+              },
+              {
+                "title": "a legacy LLD with only storyRef creates no second Story issue",
+                "result": "pass"
+              },
+              {
+                "title": "team mode creates only when everything misses and reports phase before-create or create on failure",
+                "result": "pass"
+              },
+              {
+                "title": "a create that times out after the remote committed is adopted by its label on the next call",
+                "result": "pass"
+              },
+              {
+                "title": "unitLabel gives the three forms, lower-cases ids, stays within 50 characters and rejects a malformed id",
+                "result": "pass"
+              },
+              {
+                "title": "a lower-numbered issue is adopted and the call's own is commented on and closed, even when the close fails",
+                "result": "pass"
+              },
+              {
+                "title": "two simulated daemons that both create converge on the lowest issue",
+                "result": "pass"
+              },
+              {
+                "title": "a failed findIssues listing keeps the recorded issue and a following call makes no tracker call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,703 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792323155402-zsrjlr",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-18T11:32:38.416Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 175679,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s4",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "docs/plans/team-workflow.md",
+        "src/cli/__tests__/run-readiness-notice.test.ts",
+        "src/cli/command.ts",
+        "src/cli/services/workflow.ts",
+        "src/daemon/__tests__/draft-issues-synthesize.test.ts",
+        "src/daemon/steps/code-review-step/handler.ts",
+        "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts",
+        "src/daemon/steps/review-step/phases/findings.ts",
+        "src/daemon/steps/review-step/phases/verdicts.ts",
+        "src/daemon/steps/workflow-step/phases/synthesize.ts",
+        "src/daemon/steps/workflow-step/types.ts",
+        "src/daemon/workflow-rpc.ts",
+        "src/mcp/daemon-stream.ts",
+        "src/workflow/__tests__/approve-fallback-issues.test.ts",
+        "src/workflow/__tests__/artifact-write-inventory.test.ts",
+        "src/workflow/__tests__/artifact-writer.test.ts",
+        "src/workflow/__tests__/draft-issues.test.ts",
+        "src/workflow/__tests__/draft-write-revision.test.ts",
+        "src/workflow/__tests__/gates-revision.test.ts",
+        "src/workflow/__tests__/meta-only-body-unchanged.test.ts",
+        "src/workflow/__tests__/redraft-preserves-tracker.test.ts",
+        "src/workflow/artifact-write-inventory.ts",
+        "src/workflow/artifacts/provenance/writer.ts",
+        "src/workflow/bugfix/stamp.ts",
+        "src/workflow/code-review/__tests__/record-revision.test.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/draft-issues.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/orchestrator.ts",
+        "src/workflow/questions.ts",
+        "src/workflow/resolve-comment.ts",
+        "src/workflow/review/__tests__/review-revision.test.ts",
+        "src/workflow/review/resolve.ts",
+        "src/workflow/review/run-artifact.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/__tests__/test-record-revision.test.ts",
+        "src/workflow/runners/build/__tests__/test-record.test.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/runners/build/test-record.ts",
+        "src/workflow/storage.ts",
+        "src/workflow/tracker-auto.ts",
+        "src/workflow/tracker/__tests__/github-adapter.test.ts",
+        "src/workflow/tracker/__tests__/unit-extras.test.ts",
+        "src/workflow/tracker/__tests__/unit-issue.test.ts",
+        "src/workflow/tracker/github-adapter.ts",
+        "src/workflow/tracker/github.ts",
+        "src/workflow/tracker/port.ts",
+        "src/workflow/tracker/refs.ts",
+        "src/workflow/tracker/unit-issue.ts",
+        "src/workflow/types.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/storage.ts:167",
+            "message": "Identical content writes retain the previous revision, including leaving revision absent on a legacy artifact. The approved writer must increment on every content write, including record regeneration. Documenting this as a build deviation does not amend the supplied approval.",
+            "expectationRef": "PLAN t1 acceptance check 1; LLD writeArtifact postcondition: content writes set revision to prior revision + 1."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/artifacts/provenance/writer.ts:104",
+            "message": "The provenance writer uses 'meta-only', so feedback writes do not mint a revision. Both the implementation and its inventory classification contradict the explicitly approved content classification.",
+            "expectationRef": "PLAN t3 summary; LLD ARTIFACT_WRITE_INVENTORY classifies provenance/writer.ts as content."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/draft-issues.ts:119",
+            "message": "Readiness additionally requires isUnitSettled. Consequently, a recorded issue with a failed parent link triggers tracker loading and can become not-ready; a successful creation whose record cannot be saved also becomes not-ready. The approved behavior treats linking and recording failures as nonblocking, returns the known issue, and resolves local refs without tracker calls.",
+            "expectationRef": "LLD ensureDraftIssues local-record fast path; ensureUnitIssueDetailed steps 3–4; error case 'The issue is created but the record cannot be written' specifies no visible user impact."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/tracker-auto.ts:537",
+            "message": "The team Task loop only ensures issues. It never runs a body-comment extra for each Task; the subsequent extras call posts a plan review to the Story instead. Task body comments and their per-Task completion marks are therefore missing.",
+            "expectationRef": "LLD autoPushTasksOnPlan postcondition: each Task's body comment runs through runUnitExtras; runUnitExtras parameters specify that a Task gets its body comment."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/workflow/tracker/github.ts:309",
+            "message": "findIssues caps the listing at 1,000 and rejects results reaching that ceiling instead of completing pagination. At that size the duplicate check cannot select the lowest issue even when the tracker is available.",
+            "expectationRef": "LLD interactionWithShared sc1: findIssues returns every matching open or closed issue with complete pagination and ascending numeric order; PLAN t11 requires listing every issue carrying the unit label."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker-auto.ts:65",
+            "message": "The added `extrasFailed?` property on the `created` result omits the required explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker-auto.ts:66",
+            "message": "The added `extrasFailed?` property on the `already-exists` result omits the required explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/refs.ts:35",
+            "message": "The new optional `extrasDone` object property omits `| undefined` after its object type, although its nested optional properties include it.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/test-record.ts:236",
+            "message": "The optional `restore` property must declare `((absPath: string, content: string) => void) | undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/approve-fallback-issues.test.ts:41",
+            "message": "The optional `failFind` and `failComment` properties omit explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/approve-fallback-issues.test.ts:81",
+            "message": "The optional `pushTasks` property omits explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/draft-issues.test.ts:42",
+            "message": "The optional `failFind`, `failCreateAt`, and `loadFails` properties omit explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/unit-issue.test.ts:45",
+            "message": "The optional `failFind`, `failLabel`, `failCreate`, and `commitThenFail` properties omit explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/unit-issue.test.ts:47",
+            "message": "The optional `withListing`, `failList`, `failClose`, and `failLink` properties omit explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/unit-issue.test.ts:49",
+            "message": "The optional `staleFinds` property omits explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/unit-issue.test.ts:51",
+            "message": "The optional `racer` property omits explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/unit-issue.test.ts:53",
+            "message": "The optional `afterCreate` callback omits explicit `| undefined` on its function type.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/__tests__/unit-issue.test.ts:55",
+            "message": "The optional `shared` object property omits explicit `| undefined`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/team-workflow.md:179",
+            "message": "The supplied changed entity has empty testsReaching; under the required edge-based rule it is not exercised.",
+            "expectationRef": "docs/plans/team-workflow.md",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/run-readiness-notice.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/cli/__tests__/run-readiness-notice.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/command.ts:192",
+            "message": "Empty testsReaching: the changed notice-rendering behavior has no test-reaching edge.",
+            "expectationRef": "src/cli/command.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/workflow.ts:244",
+            "message": "Empty testsReaching: readiness and notice propagation has no test-reaching edge.",
+            "expectationRef": "src/cli/services/workflow.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/__tests__/draft-issues-synthesize.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its tests are recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/daemon/__tests__/draft-issues-synthesize.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/code-review-step/handler.ts:132",
+            "message": "Empty testsReaching: the changed record-writer wiring has no test-reaching edge.",
+            "expectationRef": "src/daemon/steps/code-review-step/handler.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/review-step/phases/findings.ts:91",
+            "message": "Empty testsReaching: the meta-only review write has no test-reaching edge.",
+            "expectationRef": "src/daemon/steps/review-step/phases/findings.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/review-step/phases/verdicts.ts:97",
+            "message": "Empty testsReaching: content versus meta-only revision handling has no test-reaching edge.",
+            "expectationRef": "src/daemon/steps/review-step/phases/verdicts.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/phases/synthesize.ts:86",
+            "message": "Empty testsReaching: draft revision writing and issue-readiness propagation have no test-reaching edge.",
+            "expectationRef": "src/daemon/steps/workflow-step/phases/synthesize.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/types.ts:120",
+            "message": "The supplied changed entity has empty testsReaching; no reaching test establishes coverage of the extended result contract.",
+            "expectationRef": "src/daemon/steps/workflow-step/types.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/workflow-rpc.ts:341",
+            "message": "Empty testsReaching: draft issue handling and readiness delivery through the done frame have no test-reaching edge.",
+            "expectationRef": "src/daemon/workflow-rpc.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/mcp/daemon-stream.ts:73",
+            "message": "The supplied changed entity has empty testsReaching; no reaching test establishes coverage of the extended stream contract.",
+            "expectationRef": "src/mcp/daemon-stream.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/approve-fallback-issues.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its tests are recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/approve-fallback-issues.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/artifact-write-inventory.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its tests are recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/artifact-writer.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its tests are recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/artifact-writer.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/draft-issues.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Recorded passing tests do not supply a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/draft-issues.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/draft-write-revision.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/draft-write-revision.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/gates-revision.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/gates-revision.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/meta-only-body-unchanged.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/meta-only-body-unchanged.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/redraft-preserves-tracker.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/__tests__/redraft-preserves-tracker.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-write-inventory.ts:1",
+            "message": "Empty testsReaching: the new writer inventory and bypass detector have no test-reaching edge.",
+            "expectationRef": "src/workflow/artifact-write-inventory.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifacts/provenance/writer.ts:104",
+            "message": "Empty testsReaching: feedback persistence through the meta-only artifact writer has no test-reaching edge.",
+            "expectationRef": "src/workflow/artifacts/provenance/writer.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/bugfix/stamp.ts:87",
+            "message": "Empty testsReaching: parent-reference stamping through the meta-only writer has no test-reaching edge.",
+            "expectationRef": "src/workflow/bugfix/stamp.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/__tests__/record-revision.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/code-review/__tests__/record-revision.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/code-review/runner.ts:155",
+            "message": "Empty testsReaching: the revision-minting code-review record writer has no test-reaching edge.",
+            "expectationRef": "src/workflow/code-review/runner.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/draft-issues.ts:1",
+            "message": "Empty testsReaching: draft issue creation, readiness reporting and local reuse have no test-reaching edge.",
+            "expectationRef": "src/workflow/draft-issues.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/gates.ts:204",
+            "message": "Empty testsReaching: content revision minting and meta-only gate writes have no test-reaching edge.",
+            "expectationRef": "src/workflow/gates.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/orchestrator.ts:2933",
+            "message": "Empty testsReaching: tracker push and sync persistence through the meta-only writer has no test-reaching edge.",
+            "expectationRef": "src/workflow/orchestrator.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/questions.ts:420",
+            "message": "Empty testsReaching: question-resolution persistence through the meta-only writer has no test-reaching edge.",
+            "expectationRef": "src/workflow/questions.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/resolve-comment.ts:251",
+            "message": "Empty testsReaching: appending a comment as a content write has no test-reaching edge.",
+            "expectationRef": "src/workflow/resolve-comment.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/review/__tests__/review-revision.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/review/__tests__/review-revision.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/review/resolve.ts:131",
+            "message": "Empty testsReaching: revision handling for apply versus accept, override and defer has no test-reaching edge.",
+            "expectationRef": "src/workflow/review/resolve.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/review/run-artifact.ts:120",
+            "message": "Empty testsReaching: revision handling for auto-fix versus report-only reviews has no test-reaching edge.",
+            "expectationRef": "src/workflow/review/run-artifact.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/runners/build/__tests__/build-record.test.ts:165",
+            "message": "Empty testsReaching for this changed entity. The test file is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/runners/build/__tests__/build-record.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/runners/build/__tests__/test-record-revision.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/runners/build/__tests__/test-record-revision.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/runners/build/__tests__/test-record.test.ts:63",
+            "message": "Empty testsReaching for this changed entity. The test file is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/runners/build/__tests__/test-record.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/runners/build/standalone-record.ts:323",
+            "message": "Empty testsReaching: BUILD record persistence through the revision-minting writer has no test-reaching edge.",
+            "expectationRef": "src/workflow/runners/build/standalone-record.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/runners/build/test-record.ts:264",
+            "message": "Empty testsReaching: TESTS revision writes, rollback and inconsistent-record errors have no test-reaching edge.",
+            "expectationRef": "src/workflow/runners/build/test-record.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/storage.ts:90",
+            "message": "Empty testsReaching: artifact revision handling and tracker-block preservation have no test-reaching edge.",
+            "expectationRef": "src/workflow/storage.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker-auto.ts:337",
+            "message": "Empty testsReaching: team-mode approval routing, issue adoption and retryable extras have no test-reaching edge.",
+            "expectationRef": "src/workflow/tracker-auto.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/github-adapter.test.ts:195",
+            "message": "Empty testsReaching for this changed entity; the new listing test also has no supplied run result.",
+            "expectationRef": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/unit-extras.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Its test is recorded passing, but that does not supply a reaching edge.",
+            "expectationRef": "src/workflow/tracker/__tests__/unit-extras.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/__tests__/unit-issue.test.ts:1",
+            "message": "Empty testsReaching for this changed entity. Recorded passing tests do not supply a reaching edge.",
+            "expectationRef": "src/workflow/tracker/__tests__/unit-issue.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/github-adapter.ts:166",
+            "message": "Empty testsReaching: the new findIssues adapter operation has no test-reaching edge.",
+            "expectationRef": "src/workflow/tracker/github-adapter.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/github.ts:308",
+            "message": "Empty testsReaching: strict issue listing and truncation rejection have no test-reaching edge.",
+            "expectationRef": "src/workflow/tracker/github.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/port.ts:78",
+            "message": "The supplied changed entity has empty testsReaching; no reaching test establishes coverage of the findIssues contract.",
+            "expectationRef": "src/workflow/tracker/port.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/refs.ts:125",
+            "message": "Empty testsReaching: unit-record merging, tracker-kind preservation and meta-only persistence have no test-reaching edge.",
+            "expectationRef": "src/workflow/tracker/refs.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/tracker/unit-issue.ts:1",
+            "message": "Empty testsReaching: unit issue resolution, creation, duplicate reconciliation and extras execution have no test-reaching edge.",
+            "expectationRef": "src/workflow/tracker/unit-issue.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/types.ts:345",
+            "message": "The supplied changed entity has empty testsReaching; no reaching test establishes coverage of the revision metadata contract.",
+            "expectationRef": "src/workflow/types.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/tracker/__tests__/github-adapter.test.ts:195",
+            "message": "The findIssues listing test is present but failing/unverified: this file has no supplied test-record result, so its pass-state is unverified.",
+            "expectationRef": "findIssues lists every open or closed match in ascending order, and a failure or a possibly truncated listing is not an answer",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/__tests__/draft-issues.test.ts:219",
+            "message": "This test is present but failing/unverified: its title is absent from the supplied latest-run results, so its pass-state is unverified.",
+            "expectationRef": "a plan whose Story is recorded needs no Epic, and an issue that cannot be recorded is not reported ready",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/tracker/__tests__/unit-issue.test.ts:389",
+            "message": "This test is present but failing/unverified: its title is absent from the supplied latest-run results, so its pass-state is unverified.",
+            "expectationRef": "a link under the parent that failed at creation is retried on the next ensure and then cleared",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/tracker/unit-issue.ts:291",
+            "message": "Correctness: after a Story or Task create commits remotely but times out, the retry adopts it by label and immediately records it as settled. This branch never links the adopted issue to its parent or records a pending link, so the child can remain permanently unlinked while readiness reports success.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/artifact-write-inventory.ts:239",
+            "message": "Avoidable complexity: inventory validation combines an AST writer detector with separate regex-based function and argument parsing. writeKindsIn searches through the next semicolon rather than inspecting the third argument, so a 'content' literal in artifact data or a comment can satisfy the check for a meta-only call. Reuse AST traversal for function boundaries and write-kind arguments to avoid false validation.",
+            "counterpartRef": "scanWriters",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/tracker/refs.ts:125",
+            "message": "Duplication: patchTrackerMeta independently implements the same tracker-block spread and per-unit merge as carryTracker. These two paths govern preservation of issue references during patches and replacements; changes to merge semantics can easily reach only one path. Share the merge implementation while preserving the adapter default.",
+            "counterpartRef": "carryTracker",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/tracker/unit-issue.ts:399",
+            "message": "Unhandled error path: buildSpec only catches reading/parsing the plan, then calls .find and t.id.toLowerCase on unchecked JSON. A malformed tasks value or missing task ID throws through ensureUnitIssueDetailed and ensureUnitIssue instead of returning their declared failure result. Validate the parsed task structure or convert construction errors into a before-create failure.",
+            "counterpartRef": "",
+            "confidence": "breach"
+          }
+        ]
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 50,
+      "med": 12,
+      "low": 13
+    }
+  }
+}

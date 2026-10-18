@@ -71,7 +71,7 @@ function summaryOf(body: string, extra: Partial<DocSummary> = {}): DocSummary {
 	} as DocSummary;
 }
 
-const inTxn = (e: Entity, s: DocSummary, opts?: { onlyIfAbsent?: boolean; keepGoodSummary?: boolean }) =>
+const inTxn = (e: Entity, s: DocSummary, opts?: { onlyIfAbsent?: boolean | undefined; keepGoodSummary?: boolean | undefined }) =>
 	withWriteTxn(st => writeDocSummaryIfCurrentInTxn(st, e.id, s, opts));
 
 /** Put a carry row for `e` by hand, as the repository delete writes it. */

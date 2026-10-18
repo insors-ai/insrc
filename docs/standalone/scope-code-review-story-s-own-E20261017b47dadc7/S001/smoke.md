@@ -65,3 +65,17 @@ built it). The index was still processing after the restart; the review waited 1
   with no trailered commit, and shows why the trailer is needed.
 - The re-review's record is kept at /tmp/CR-ae864466-rereview.json for this note; ISSUE-ae864466's
   committed review record was restored, since the re-review judged other Stories' code.
+
+## This Story's own review
+
+`insrc_code_review_step` start for `b47dadc7cf0cccb1/S001` on the updated daemon, routed to the
+daemon (the controller built it). Round 1, after t8 and the first smoke commit (16a22357):
+
+- `groundingMode: full`, `changeSetAttribution: story-trailer`, `sharedWithExcluded: []`.
+- `subject.changedFiles`: 26 files, exactly the files of t1–t8 (5 in build-step, 21 in
+  code-review, build runners and the code-review step), and nothing from the 87 other commits on
+  main since 2026-10-17. smoke.md itself is a ledger file (docs/standalone/**) and is left out.
+- Findings: 1 HIGH coverage (findingKind `promised-test`: the promised smoke test, this file, was
+  not yet in the test record, as t9 had not been through the validate gate), 3 LOW conventions
+  (optional properties without an explicit `| undefined`, fixed in 3b836723). No coverage finding
+  on a Markdown file or a test-file entity.

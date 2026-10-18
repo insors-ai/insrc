@@ -28,7 +28,7 @@ import { createHash } from 'node:crypto';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
 import { validateAgainstSchema, withStructuredRetry } from '../../agent/providers/structured-output.js';
-import { AtomTooLargeError, packIntoBatches } from './pack-into-batches.js';
+import { packIntoBatches } from './pack-into-batches.js';
 import type { DimensionFinding, DimensionResult, ReviewDimension } from './types.js';
 
 const log = getLogger('code-review:review-job');
@@ -94,6 +94,8 @@ export interface JobCall {
 
 export interface ReviewJob {
 	readonly dimension: ReviewDimension;
+	/** The provider's whole input budget; undefined = unknown. The whole call is judged against it, as today. */
+	readonly providerBudget: number | undefined;
 	/** Usable characters per call (the provider's budget less the retry reserve); undefined = unknown. */
 	readonly budget:    number | undefined;
 	readonly phase:     JobStage | 'done';
@@ -134,19 +136,32 @@ function issue(job: ReviewJob, calls: readonly Omit<JobCall, 'callId'>[]): Revie
 	return { ...job, seq, counts, issued, pending: [...job.pending, ...made] };
 }
 
-/** MAP calls over `symbols` x `context` within `budget` (see the module comment). */
+/**
+ * MAP calls over `symbols` x `context` within `budget` (see the module comment).
+ * Context batches leave room for the smallest symbol; a symbol that does not fit
+ * beside a batch is paired with that batch re-split around it, so every symbol
+ * meets every context atom while each fits beside the other.
+ */
 function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context: readonly Atom[], budget: number): Omit<JobCall, 'callId'>[] {
 	if (symbols.length === 0) return [];
+	const size = (syms: readonly Atom[], ctx: readonly Atom[]): number => promptChars(strategy.map.messages(syms, ctx, undefined));
+	const call = (syms: readonly Atom[], ctx: readonly Atom[]): Omit<JobCall, 'callId'> => {
+		const messages = strategy.map.messages(syms, ctx, undefined);
+		return { stage: 'map', messages, schema: strategy.map.schema, symbolIds: syms.map(a => a.id), contextIds: ctx.map(a => a.id), chars: promptChars(messages) };
+	};
+	const bare = size([], []);
+	const smallest = Math.min(...symbols.map(s => size([s], []) - bare));
 	const contextBatches = context.length === 0
 		? [[] as Atom[]]
-		// Half the budget at most for context, so symbols always have room beside it.
-		: packIntoBatches(context, b => promptChars(strategy.map.messages([], b, undefined)), Math.floor(budget / 2), a => a.label);
+		: packIntoBatches(context, b => size([], b) + smallest, budget, a => a.label);
 	const calls: Omit<JobCall, 'callId'>[] = [];
 	for (const ctx of contextBatches) {
-		const batches = packIntoBatches(symbols, b => promptChars(strategy.map.messages(b, ctx, undefined)), budget, a => a.label);
-		for (const syms of batches) {
-			const messages = strategy.map.messages(syms, ctx, undefined);
-			calls.push({ stage: 'map', messages, schema: strategy.map.schema, symbolIds: syms.map(a => a.id), contextIds: ctx.map(a => a.id), chars: promptChars(messages) });
+		const fit = symbols.filter(s => size([s], ctx) <= budget);
+		for (const syms of packIntoBatches(fit, b => size(b, ctx), budget, a => a.label)) calls.push(call(syms, ctx));
+		for (const s of symbols.filter(x => !fit.includes(x))) {
+			// This symbol does not fit beside the whole batch: meet the batch's atoms in smaller groups.
+			// (A context atom it cannot fit beside at all is the joint-fit case, S001/t6.)
+			for (const sub of packIntoBatches(ctx, b => size([s], b), budget, a => `${a.label} beside ${s.label}`)) calls.push(call([s], sub));
 		}
 	}
 	return calls;
@@ -160,12 +175,13 @@ function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context:
 export function createReviewJob(strategy: DimensionStrategy, providerBudget: number | undefined): ReviewJob {
 	const budget = providerBudget !== undefined ? providerBudget - RETRY_NOTE_RESERVE_CHARS : undefined;
 	const empty: ReviewJob = {
-		dimension: strategy.dimension, budget, phase: 'whole', pending: [], findings: [], notes: [],
+		dimension: strategy.dimension, providerBudget, budget, phase: 'whole', pending: [], findings: [], notes: [],
 		counts: { whole: 0, map: 0 }, issued: [], seq: 0,
 	};
 	const whole = strategy.whole.messages(undefined);
 	const chars = promptChars(whole);
-	if (budget === undefined || chars <= budget) {
+	// The whole call is today's call: it fits when it fits the provider's whole budget, as it always has.
+	if (providerBudget === undefined || budget === undefined || chars <= providerBudget) {
 		return issue(empty, [{ stage: 'whole', messages: whole, schema: strategy.whole.schema, symbolIds: strategy.symbols.map(a => a.id), contextIds: (strategy.context ?? []).map(a => a.id), chars }]);
 	}
 	return startMap({ ...empty, phase: 'map' }, strategy, budget);
@@ -210,18 +226,11 @@ export function applyRefusal(job: ReviewJob, strategy: DimensionStrategy, callId
 	const rest = { ...job, pending: job.pending.filter(c => c.callId !== callId), budget };
 	log.warn({ dimension: job.dimension, callId, chars: call.chars, budget }, 'review job: a call was refused for its size; re-planning it smaller');
 	if (call.stage === 'whole') return startMap(rest, strategy, budget);
+	// Re-plan the refused call's symbols AND context under the smaller budget.
 	const byId = new Map([...strategy.symbols, ...(strategy.context ?? [])].map(a => [a.id, a] as const));
 	const symbols = call.symbolIds.map(id => byId.get(id)!);
 	const context = call.contextIds.map(id => byId.get(id)!);
-	if (symbols.length === 1 && promptChars(strategy.map.messages(symbols, context, undefined)) > budget) {
-		throw new AtomTooLargeError(symbols[0]!.label, call.chars, budget);
-	}
-	const sizeOf = (b: readonly Atom[]): number => promptChars(strategy.map.messages(b, context, undefined));
-	const replanned = packIntoBatches(symbols, sizeOf, budget, a => a.label).map(syms => {
-		const messages = strategy.map.messages(syms, context, undefined);
-		return { stage: 'map' as const, messages, schema: strategy.map.schema, symbolIds: syms.map(a => a.id), contextIds: call.contextIds, chars: promptChars(messages) };
-	});
-	return issue(rest, replanned);
+	return issue(rest, planMap(strategy, symbols, context, budget));
 }
 
 /** A finding's identity: every field, in a fixed key order. */

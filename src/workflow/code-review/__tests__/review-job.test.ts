@@ -53,16 +53,21 @@ function strategy(symbols: readonly Atom[], context: readonly Atom[] = []): Dime
 	};
 }
 
-/** A provider that answers one finding per symbol id in the prompt, recording every prompt; refuses prompts over `refuseOver`. */
-function fakeProvider(budget: number | undefined, refuseOver?: number): { provider: LLMProvider; prompts: string[] } {
+/** The prompt exactly as the CLI receives it (cli-provider serialiseMessages). */
+const asSent = (messages: readonly LLMMessage[]): string =>
+	messages.map(m => (m.role === 'system' ? '## System\n' : '') + (m.content as string)).join('\n\n');
+
+/** A provider that answers one finding per symbol id in the prompt, recording every prompt as sent; refuses prompts over `refuseOver` (reporting it unless `silent`). */
+function fakeProvider(budget: number | undefined, refuseOver?: number, silent = false): { provider: LLMProvider; prompts: string[] } {
 	const prompts: string[] = [];
 	const provider = {
 		inputBudgetChars: budget,
 		completeStructured: async (messages: LLMMessage[]) => {
-			const text = messages.map(m => m.content as string).join('\n\n');
+			const text = asSent(messages);
+			assert.equal(text.length, promptChars(messages), 'promptChars measures what the CLI receives');
 			prompts.push(text);
-			if (refuseOver !== undefined && promptChars(messages) > refuseOver) {
-				throw new InputTooLargeError('codex exited with 1. too large', 'input_too_large', { maxChars: refuseOver, actualChars: promptChars(messages) });
+			if (refuseOver !== undefined && text.length > refuseOver) {
+				throw new InputTooLargeError('codex exited with 1. too large', 'input_too_large', silent ? {} : { maxChars: refuseOver, actualChars: text.length });
 			}
 			const ids = [...text.matchAll(/"id":"(sym\d+)"/g)].map(m => m[1]!);
 			return { findings: ids.map(id => ({ dimension: 'quality', severity: 'LOW', location: `src/${id}.ts:1`, message: `seen ${id}` })) };
@@ -90,6 +95,12 @@ test("a fitting dimension, or an unknown budget, is one call with today's prompt
 	assert.equal(prompts.length, 1);
 	assert.equal(result.findings.length, 2);
 	assert.equal(result.parts, undefined, 'one call records no parts');
+
+	// A whole prompt that fits the provider's budget but not the budget less the retry reserve: still today's one call.
+	const near = strategy(Array.from({ length: 50 }, (_, i) => symbol(i)));
+	const chars = promptChars(near.whole.messages(undefined));
+	const nearJob = createReviewJob(near, chars + RETRY_NOTE_RESERVE_CHARS - 1);
+	assert.deepEqual(nextCalls(nearJob).map(c => c.stage), ['whole']);
 });
 
 test('every call the job issues fits the budget at every stage, for a Story many times the budget', async () => {
@@ -105,7 +116,8 @@ test('every call the job issues fits the budget at every stage, for a Story many
 
 test('every original symbol summary and clause is read whole by some call', async () => {
 	const symbols = Array.from({ length: 120 }, (_, i) => symbol(i, 700));
-	const clauses = Array.from({ length: 30 }, (_, i) => clause(i, 500));
+	// One clause takes most of the budget: more than half of it, yet it fits beside a small symbol.
+	const clauses = [...Array.from({ length: 30 }, (_, i) => clause(i, 500)), clause(99, 14_000)];
 	const s = strategy(symbols, clauses);
 	const { provider, prompts } = fakeProvider(25_000);
 	await runReviewJob(s, provider);
@@ -113,9 +125,11 @@ test('every original symbol summary and clause is read whole by some call', asyn
 		const whole = JSON.stringify(a.data);
 		assert.ok(prompts.some(p => p.includes(whole)), `${a.label} is read whole by some call`);
 	}
-	// Every symbol is judged against every clause batch: each symbol appears in as many calls as there are clause batches.
-	const clauseBatches = new Set(prompts.map(p => p.slice(p.indexOf('"clauses"')))).size;
-	for (const a of symbols) assert.equal(prompts.filter(p => p.includes(JSON.stringify(a.data))).length, clauseBatches);
+	// Every symbol meets every clause: in some call, both are present.
+	for (const a of symbols) for (const c of clauses) {
+		assert.ok(prompts.some(p => p.includes(JSON.stringify(a.data)) && p.includes(JSON.stringify(c.data))), `${a.label} meets ${c.label}`);
+	}
+	for (const p of prompts) assert.ok(p.length <= 25_000 - RETRY_NOTE_RESERVE_CHARS);
 });
 
 test('a refused call is re-planned and the job completes, sending no prompt twice', async () => {
@@ -134,6 +148,15 @@ test('a refused call is re-planned and the job completes, sending no prompt twic
 	const again = await runReviewJob(s, lying.provider);
 	assert.equal(new Set(lying.prompts).size, lying.prompts.length);
 	assert.equal(new Set(again.findings.map(f => f.location)).size, symbols.length);
+
+	// A refusal that reports no size (halves), on calls whose clause batch itself must split.
+	const clauses = Array.from({ length: 40 }, (_, i) => clause(i, 600));
+	const withClauses = strategy(Array.from({ length: 30 }, (_, i) => symbol(i)), clauses);
+	const silent = fakeProvider(60_000, 15_000, true);
+	const halved = await runReviewJob(withClauses, silent.provider);
+	assert.equal(new Set(silent.prompts).size, silent.prompts.length, 'no prompt sent twice');
+	assert.equal(new Set(halved.findings.map(f => f.location)).size, 30, 'every symbol judged');
+	for (const c of clauses) assert.ok(silent.prompts.some(p => p.length <= 15_000 && p.includes(JSON.stringify(c.data))), `${c.label} read in an accepted call`);
 });
 
 test('identical findings merge once; findings differing in any field are all kept', () => {

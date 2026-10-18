@@ -26,6 +26,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { getLogger } from '../../shared/logger.js';
 import { writeArtifact, writeAtomic } from '../storage.js';
 import type { ReviewResolution } from '../types.js';
+import { authorizeFindingApply } from '../team/approval-gate.js';
+import { TeamGateRefusedError } from '../team/gate.js';
 import { applyOneFinding } from './apply.js';
 import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
 
@@ -100,6 +102,9 @@ export function resolveReviewFinding(
 	let resolvedNote = note;
 
 	if (action === 'apply') {
+		// Applying a finding changes the stage's content: in a team repo only the holder may, and the refusal comes before anything is written.
+		const teamRefusal = authorizeFindingApply(jsonPath);
+		if (teamRefusal !== undefined) throw new TeamGateRefusedError(teamRefusal.outcome, teamRefusal.subject);
 		if (!existsSync(mdPath)) throw new Error(`No artifact md at ${mdPath}`);
 		const edits = finding.proposedFix?.artifactEdits ?? [];
 		if (edits.length === 0) throw new Error(`finding '${findingId}' has no artifactEdits to apply — use accept/override/defer`);

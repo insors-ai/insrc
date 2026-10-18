@@ -27,6 +27,7 @@ import {
 } from '../../../../workflow/review/index.js';
 import type { Claim, Finding, RawFinding, ReviewReport } from '../../../../workflow/review/index.js';
 import { authorPartyOf, SamePartyReviewError } from '../../../../workflow/review/party.js';
+import { reviewFixModeFor } from '../../../../workflow/team/approval-gate.js';
 import { loadState, releaseState } from '../state-store.js';
 import type { ReviewStepDone, ReviewStepInputVerdicts } from '../types.js';
 
@@ -90,7 +91,10 @@ export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
-	const fixed = applyAutoFixes(md, artifact.body, report);
+	// A reviewer who does not hold the stage reports findings but writes no fix (the review is never refused).
+	const fixed = reviewFixModeFor(state.jsonPath) === 'apply-auto-fixes'
+		? applyAutoFixes(md, artifact.body, report)
+		: ({ body: artifact.body, markdown: md, applied: [], skipped: [] } as ReturnType<typeof applyAutoFixes>);
 
 	const nextJson = { ...artifact, meta: { ...artifact.meta, review: report }, body: fixed.body };
 	// auto-fixes change the body (content); a report-only review changes only meta.

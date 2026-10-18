@@ -37,3 +37,12 @@ test('the terminal approve command prints the refusal naming the holder, formatt
 	const out = await runCommand('workflow approve docs/plans/PLAN-x.md', ctxWith({ approve: () => { throw refused; } }));
 	assert.deepEqual(out, ['✗ not approved — the tracker cannot be used (unreachable): timed out']);
 });
+
+test('the terminal resolve command prints the refusal naming the holder when applying a finding is refused', async () => {
+	const held = new TeamGateRefusedError({ kind: 'held-by-other', holder: 'bob', offerPark: false });
+	const out = await runCommand('workflow resolve docs/plans/PLAN-x.md high1 apply', ctxWith({ resolveFinding: () => { throw held; } }));
+	assert.deepEqual(out, ['✗ not applied — held by bob']);
+	// accept, override and defer are not refused and keep their normal line
+	const fine = await runCommand('workflow resolve docs/plans/PLAN-x.md high1 accept', ctxWith({ resolveFinding: () => ({ findingId: 'high1', status: 'resolved', effectiveVerdict: 'pass', remainingBlocking: 0 }) }));
+	assert.match(fine[0] ?? '', /resolved high1 \(resolved\)/);
+});

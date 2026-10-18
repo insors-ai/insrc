@@ -18,7 +18,7 @@ import { basename, dirname } from 'node:path';
 import type { UnitRef } from '../tracker/refs.js';
 import { artifactJsonPath, inheritedStoryStandalone, planArtifactId } from '../storage.js';
 import { parseBuildArtifactRef } from '../gates.js';
-import { claimsEnforcedFor, teamGate, type RefusedOutcome } from './gate.js';
+import { claimsEnforcedFor, reviewFixDecision, teamGate, type GateOutcome, type GuardedAction, type RefusedOutcome, type ReviewFixMode } from './gate.js';
 
 export interface ApprovalRefusal {
 	readonly outcome: RefusedOutcome;
@@ -58,8 +58,37 @@ function taskIdsOf(repoPath: string, epicHash: string, storyId: string): { ok: t
 	}
 }
 
+/** How the gate is asked about one unit. */
+type Decide = (repo: string, unit: UnitRef) => GateOutcome;
+
+const asking = (action: GuardedAction): Decide => (repo, unit) => teamGate(repo, unit, action);
+
 /** The refusal for approving this artifact, or undefined when it may be approved (or is not guarded). Never throws. */
 export function authorizeApproval(jsonPath: string, metaOverride?: Meta): ApprovalRefusal | undefined {
+	return authorizeStageChange(jsonPath, asking('approve-local'), metaOverride);
+}
+
+/** The refusal for applying a review finding to this artifact (changes its content), or undefined. Never throws. */
+export function authorizeFindingApply(jsonPath: string): ApprovalRefusal | undefined {
+	return authorizeStageChange(jsonPath, asking('review-fix'));
+}
+
+/**
+ * Whether an automatic review may write fixes to this artifact: through reviewFixDecision for the
+ * stage unit(s) the artifact belongs to. A review is never refused; only its fix mode changes.
+ */
+export function reviewFixModeFor(jsonPath: string): ReviewFixMode {
+	const decide: Decide = (repo, unit) => (reviewFixDecision(repo, unit) === 'apply-auto-fixes' ? { kind: 'allowed', implicitClaim: false } : { kind: 'refused', reason: 'report-only' });
+	try { return authorizeStageChange(jsonPath, decide) === undefined ? 'apply-auto-fixes' : 'report-only'; }
+	catch { return 'report-only'; }
+}
+
+/** Map the artifact to its stage unit(s) and ask `decide` about each; the first refusal wins. */
+function authorizeStageChange(jsonPath: string, decide: Decide, metaOverride?: Meta): ApprovalRefusal | undefined {
+	const check = (repo: string, unit: UnitRef, subject: string | undefined): ApprovalRefusal | undefined => {
+		const o = decide(repo, unit);
+		return o.kind === 'allowed' ? undefined : { outcome: o, subject };
+	};
 	try {
 		const meta = metaOverride ?? readMeta(jsonPath);
 		const isBuild = basename(jsonPath).startsWith('BUILD-') || meta?.workflow === 'build';
@@ -104,9 +133,4 @@ export function authorizeApproval(jsonPath: string, metaOverride?: Meta): Approv
 	} catch (err) {
 		return { outcome: { kind: 'refused', reason: `cannot authorize this approval: ${err instanceof Error ? err.message : String(err)}` }, subject: undefined };
 	}
-}
-
-function check(repo: string, unit: UnitRef, subject: string | undefined): ApprovalRefusal | undefined {
-	const o = teamGate(repo, unit, 'approve-local');
-	return o.kind === 'allowed' ? undefined : { outcome: o, subject };
 }

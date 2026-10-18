@@ -20,6 +20,7 @@ import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
 import { writeArtifact, writeAtomic } from '../storage.js';
 import { applyAutoFixes, pendingUserFindings } from './apply.js';
+import { reviewFixModeFor } from '../team/approval-gate.js';
 import type { AppliedFix, SkippedFix } from './apply.js';
 import { authorPartyOf, SamePartyReviewError } from './party.js';
 import { renderReviewReport } from './report.js';
@@ -102,7 +103,10 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	};
 
 	const first = await runReview(md, base);
-	const fixed = applyAutoFixes(md, artifact.body, first);
+	// A reviewer who does not hold the stage reports findings but writes no fix (the review is never refused).
+	const fixed = reviewFixModeFor(opts.jsonPath) === 'apply-auto-fixes'
+		? applyAutoFixes(md, artifact.body, first)
+		: ({ body: artifact.body, markdown: md, applied: [], skipped: [] } as ReturnType<typeof applyAutoFixes>);
 
 	// Re-review the amended artifact so the persisted verdict reflects the
 	// auto-fixes (a HIGH that was auto-corrected should no longer block).

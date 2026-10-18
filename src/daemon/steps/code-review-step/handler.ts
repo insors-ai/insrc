@@ -38,8 +38,8 @@ import { buildAuthorParty } from '../../../workflow/code-review/author.js';
 import { SamePartyReviewError } from '../../../workflow/review/party.js';
 import type { PartyOrUnknown } from '../../../workflow/review/party.js';
 import { assembleDiffCodeReviewGrounding, DiffUnavailableError } from '../../../workflow/code-review/grounding.js';
-import { runCodeReview, type CodeReviewRunnerDeps } from '../../../workflow/code-review/runner.js';
-import { codeReviewArtifactPaths, writeAtomic } from '../../../workflow/storage.js';
+import { runCodeReview, writeRecordFile, type CodeReviewRunnerDeps } from '../../../workflow/code-review/runner.js';
+import { codeReviewArtifactPaths } from '../../../workflow/storage.js';
 import { codeReviewSubjectPathArgs } from '../../../workflow/code-review/subject-paths.js';
 import { LEDGER_EXCLUDE_GLOBS } from '../../../workflow/runners/build/changed-files.js';
 import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
@@ -129,7 +129,7 @@ export const DEFAULT_DEPS: CodeReviewStepDeps = {
 	fetchFreshness: (params) => stepDaemonClient().fetchCodeReviewFreshness(params),
 	assembleDiffGrounding: assembleDiffCodeReviewGrounding,
 	runReview:      runCodeReview,
-	write:          writeAtomic,
+	write:          writeRecordFile,
 	sleep:          (ms) => new Promise<void>((resolve) => { setTimeout(resolve, ms); }),
 	now:            () => Date.now(),
 	freshnessTimeoutMs: readFreshnessTimeoutMs,
@@ -519,7 +519,7 @@ async function handleJudgements(
 
 	// Drive the SAME sc5 runCodeReview with injected deps: each judge returns the
 	// matching (already scope-dropped) DimensionResult; grounding is replayed from
-	// state; write persists via writeAtomic. So the record is byte-identical to
+	// state; write persists via writeRecordFile. So the record is byte-identical to
 	// the daemon-driven path (ac3/k2).
 	const injected: CodeReviewRunnerDeps = {
 		judges: expectedDimensions(payload.subject).map((dimension) => ({

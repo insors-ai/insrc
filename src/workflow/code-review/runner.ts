@@ -31,6 +31,7 @@ import {
 	codeReviewArtifactId,
 	codeReviewArtifactPaths,
 	folderIdentityMeta,
+	writeArtifact,
 	writeAtomic,
 } from '../storage.js';
 import { codeReviewSubjectPathArgs } from './subject-paths.js';
@@ -145,13 +146,28 @@ export function effectiveJudges(judges: readonly JudgeSlot[], subject: CodeRevie
 	return judges.filter(s => want.has(s.dimension));
 }
 
+/**
+ * The default record writer. The code-review json is a signoff-covered record
+ * (sc3), so it is written as CONTENT through `writeArtifact`: each regeneration
+ * mints a revision. Its markdown stays a plain atomic render. Tests and the
+ * step handler inject their own writer in its place.
+ */
+export function writeRecordFile(absPath: string, content: string): void {
+	if (absPath.endsWith('.json')) {
+		writeArtifact(absPath, JSON.parse(content), 'content');
+		return;
+	}
+	// raw-write: markdown render of the record.
+	writeAtomic(absPath, content);
+}
+
 /** The real dependency wiring: the four shipped judges + S001's assembler
- *  (backed by the LMDB graph) + writeAtomic. */
+ *  (backed by the LMDB graph) + the revision-minting record writer. */
 export const DEFAULT_DEPS: CodeReviewRunnerDeps = {
 	judges: DEFAULT_JUDGES,
 	assembleGrounding: async (repoPath, changedFiles) =>
 		assembleCodeReviewGrounding(repoPath, changedFiles, await realGroundingDeps()),
-	write: writeAtomic,
+	write: writeRecordFile,
 };
 
 // ---------------------------------------------------------------------------

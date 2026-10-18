@@ -60,7 +60,7 @@ test('the first write creates the record with one Task; a second Task is added; 
 		let rec = readTestRecord(repo, HASH, 's1')!;
 		// Plus the folder anchor it is filed under (ISSUE-764b88ed): no head and no
 		// BUILD record, so its own createdAt.
-		assert.deepEqual(rec.meta, { workflow: 'tests', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0, epicCreatedAt: T0 });
+		assert.deepEqual(rec.meta, { workflow: 'tests', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0, epicCreatedAt: T0, revision: 1 });   // a first write is revision 1 (sc3)
 		assert.deepEqual(rec.body.tasks.map(t => t.taskId), ['t1']);
 		// Each Task's entry carries the commit and time of its run and testsPassed.
 		assert.deepEqual([rec.body.tasks[0]!.commit, rec.body.tasks[0]!.ranAt, rec.body.tasks[0]!.testsPassed], ['abc1234', T0, true]);

@@ -25,7 +25,7 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { relative } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
-import { artifactIdMarker, artifactJsonPath, folderIdentityMeta, storyRecordFolderArgs, testsArtifactId, testsArtifactPaths, writeAtomic } from '../../storage.js';
+import { artifactIdMarker, artifactJsonPath, folderIdentityMeta, storyRecordFolderArgs, testsArtifactId, testsArtifactPaths, writeArtifact, writeAtomic } from '../../storage.js';
 
 const log = getLogger('workflow:test-record');
 
@@ -233,6 +233,7 @@ export function persistTestRecordTask(
 	repoPath: string,
 	ident:    { readonly epicHash: string; readonly storyId: string; readonly now: string; readonly standalone?: boolean | undefined },
 	task:     TestRecordTask,
+	seams:    { readonly restore?: (absPath: string, content: string) => void } = {},
 ): { md: string; json: string } {
 	const prior = readTestRecord(repoPath, ident.epicHash, ident.storyId);
 	const standalone = prior !== null ? prior.meta.standalone === true : ident.standalone === true;
@@ -259,19 +260,38 @@ export function persistTestRecordTask(
 	// new): a caller told "the record was not written" must find the earlier run
 	// in BOTH files, and must not find this turn's mapping stored.
 	const priorJson = existsSync(paths.json) ? readFileSync(paths.json, 'utf8') : undefined;
-	writeAtomic(paths.json, JSON.stringify(rec, null, 2) + '\n');
+	// content: a regenerated TESTS record is signoff-covered, so each write mints a revision.
+	writeArtifact(paths.json, rec, 'content');
 	try {
+		// raw-write: markdown render of the TESTS record.
 		writeAtomic(paths.md, `${artifactIdMarker(testsArtifactId(ident.epicHash, ident.storyId))}\n\n${renderTestRecordMd(rec)}`);
 	} catch (err) {
 		try {
-			if (priorJson !== undefined) writeAtomic(paths.json, priorJson);
+			// raw-write: puts the earlier json bytes (and with them its revision) back.
+			if (priorJson !== undefined) (seams.restore ?? writeAtomic)(paths.json, priorJson);
 			else rmSync(paths.json, { force: true });
 		} catch (undoErr) {
 			log.warn({ json: paths.json, err: undoErr instanceof Error ? undoErr.message : String(undoErr) }, 'persistTestRecordTask: the json could not be put back after the document failed to write');
+			// Both writes failed: the record on disk may be this turn's json beside an
+			// earlier document. Say so instead of promising that nothing was stored.
+			throw new TestRecordInconsistentError(paths.json, err, undoErr);
 		}
 		throw err;
 	}
 	return paths;
+}
+
+/** The document write failed and the json could not be put back either, so the
+ *  TESTS record may hold this turn's json beside the earlier document. */
+export class TestRecordInconsistentError extends Error {
+	constructor(readonly jsonPath: string, readonly writeError: unknown, readonly restoreError: unknown) {
+		super(
+			`the TESTS record at ${jsonPath} may be inconsistent: the document could not be written ` +
+			`(${writeError instanceof Error ? writeError.message : String(writeError)}) and the earlier json ` +
+			`could not be put back (${restoreError instanceof Error ? restoreError.message : String(restoreError)})`,
+		);
+		this.name = 'TestRecordInconsistentError';
+	}
 }
 
 /** Repo-relative form of the record's md path, for the BUILD record's link. */

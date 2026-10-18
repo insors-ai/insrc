@@ -197,8 +197,11 @@ function authoredArtifactExists(unit: UnitRef, authoring: string | undefined): b
 	return existsSync(artifactJsonPath(unit.repoPath, id));
 }
 
-/** Read the policy, then (team mode with claims enforced only) the tracker, the actor and the unit's issue. */
-export function teamContext(repo: string, unit: UnitRef): TeamContext {
+/**
+ * Read the policy, then (team mode with claims enforced only) the tracker, the actor and the unit's issue. A missing issue is
+ * created (the gate's usual behaviour) unless `createIssue` is false, for a read that must not write to the tracker.
+ */
+export function teamContext(repo: string, unit: UnitRef, opts: { readonly createIssue?: boolean | undefined } = {}): TeamContext {
 	const policy = (testDeps.readPolicy ?? policyReader)(repo);
 	if (!policy.ok) return { ok: false, outcome: refused(`the team policy cannot be read: ${policy.reason}`) };
 	if (policy.value === 'none' || !policy.value.teamMode || !policy.value.claimsEnforced) return { ok: true, team: false };
@@ -211,7 +214,7 @@ export function teamContext(repo: string, unit: UnitRef): TeamContext {
 	// The unit's issue: recorded, found, or created now. If it cannot be had, the stage has no issue yet.
 	let issue = (testDeps.resolveIssue ?? ((u: UnitRef) => resolveUnitIssueLocal(u)))(unit);
 	let creationFailure: string | undefined;
-	if (issue === null) {
+	if (issue === null && opts.createIssue !== false) {
 		const ensured = (testDeps.ensureIssue ?? ensureUnitIssue)(unit, loaded.value);
 		if (ensured.ok) issue = ensured.value; else creationFailure = ensured.reason;
 	}

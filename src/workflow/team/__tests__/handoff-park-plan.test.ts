@@ -44,8 +44,9 @@ function mkRepo(): Env {
 }
 
 /** The gate sees `holder` as the holder of the issue (null: nobody) and alice as the actor. */
-function inject(holder: string | null, over: { readPolicy?: PolicyReader | undefined; issue?: IssueRef | null | undefined } = {}): { loads: () => number } {
+function inject(holder: string | null, over: { readPolicy?: PolicyReader | undefined; issue?: IssueRef | null | undefined } = {}): { loads: () => number; ensures: () => number } {
 	let loads = 0;
+	let ensures = 0;
 	const port = {
 		whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
 		readAssignee: (): PortResult<string | null> => ({ ok: true, value: holder }),
@@ -55,10 +56,10 @@ function inject(holder: string | null, over: { readPolicy?: PolicyReader | undef
 		readPolicy: over.readPolicy ?? team,
 		loadTracker: () => { loads += 1; return { ok: true, value: port }; },
 		resolveIssue: () => (over.issue === undefined ? 'acme/demo#7' : over.issue),
-		ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }),
+		ensureIssue: () => { ensures += 1; return { ok: true, value: 'acme/demo#99' }; },
 		artifactExists: () => true,
 	});
-	return { loads: () => loads };
+	return { loads: () => loads, ensures: () => ensures };
 }
 
 function payload(repo: string, runId: string, stage: WorkflowStepStatePayload['stage'] = 'awaiting_llm_step', storyId = 's1'): WorkflowStepStatePayload {
@@ -95,8 +96,9 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		// the tracker side
 		inject('bob', { readPolicy: none });
 		assert.match(reasonOf(plan()), /does not enforce claims/);
-		inject('bob', { issue: null });
+		const noIssue = inject('bob', { issue: null });
 		assert.match(reasonOf(plan()), /no tracker issue yet/);
+		assert.equal(noIssue.ensures(), 0, 'planning a park never creates an issue (the stubbed ensure would have succeeded)');
 		inject(null);
 		assert.match(reasonOf(plan()), /nobody holds this stage/);
 		inject('alice');
@@ -123,6 +125,18 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		for (const bad of ['/lead-{id}', 'no-id-{type}', 'a..{id}']) {
 			assert.match(reasonOf(plan(unit, {}, deps({ branchPattern: () => bad }))), /branch pattern|branch name/, bad);
 		}
+
+		// a bad branch pattern is refused before any git command runs: in a directory that is not a repository the answer is the pattern's,
+		// where a good pattern would have run on to fail reading the history
+		const bare = mkdtempSync(join(tmpdir(), 'insrc-park-plan-nogit-'));
+		try {
+			inject('bob');
+			saveState(payload(bare, 'wf-nogit'), owned('alice'));
+			const nogit: UnitRef = { ...unit, repoPath: bare };
+			assert.match(reasonOf(parkPlan(bare, nogit, {}, deps({ branchPattern: () => 'no-id-{type}' }))), /does not identify the unit/);
+			assert.match(reasonOf(parkPlan(bare, nogit, {}, deps())), /cannot read the repository's history/);
+		} finally { rmSync(bare, { recursive: true, force: true }); _clearWorkflowStateStoreForTests(); }
+		inject('bob');
 
 		// an owned live run becomes a run checkpoint carrying the owner, the upstream snapshot and the repository identity
 		_clearWorkflowStateStoreForTests();

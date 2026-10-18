@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -37,3 +37,26 @@ Run at 2026-10-18T17:09:55.658Z on commit `71f2da1e`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` | 0 | 1 | 1 s |  |
+
+## t3
+
+Run at 2026-10-18T17:17:17.485Z on commit `fbb57f00`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/team/__tests__/snapshot-upstream.test.ts: snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail | `src/workflow/team/__tests__/snapshot-upstream.test.ts` |
+
+**integration: src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts: handleStart records the acting user and the upstream snapshot on the stored run, plan and step turns keep them, and a repo without a policy records neither and makes no tracker call**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | handleStart records the acting user and the upstream snapshot on the stored run, plan and step turns keep them, and a repo without a policy records neither and makes no tracker call | `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` | 0 | 1 | 1.3 s |  |
+| `src/workflow/team/__tests__/snapshot-upstream.test.ts` | 0 | 2 | 1.1 s |  |

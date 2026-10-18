@@ -19,7 +19,10 @@ import { dirname, join } from 'node:path';
 import { handleWorkflowStep } from '../handler.js';
 import { _clearWorkflowStateStoreForTests, listStates } from '../state-store.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
-import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId } from '../../../../workflow/storage.js';
+import { approveArtifactByJsonPath } from '../../../../workflow/gates.js';
+import { computeHldEffectiveHash } from '../../../../workflow/artifacts/lld.js';
+import { stampOtherPartyReview } from '../../../../workflow/__tests__/helpers/other-party-review.js';
+import { defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths } from '../../../../workflow/storage.js';
 import { _setGateDepsForTests } from '../../../../workflow/team/gate.js';
 import type { PortResult, TrackerPort } from '../../../../workflow/tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../../../../workflow/team/types.js';
@@ -47,18 +50,66 @@ function inject(readPolicy: PolicyReader): { loads: () => number } {
 	return { loads: () => loads };
 }
 
-function seed(repo: string, id: string, doc: unknown): void {
-	const path = artifactJsonPath(repo, id);
-	mkdirSync(dirname(path), { recursive: true });
-	writeFileSync(path, JSON.stringify(doc));
+const CREATED = '2026-07-18T00:00:00.000Z';
+const HLD_RUN = 'hld-run-1';
+
+/** An approved Define, HLD and Story LLD, each carrying a non-zero revision, as the plan workflow reads them. */
+function seedChain(repo: string): void {
+	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
+	mkdirSync(dirname(dp.json), { recursive: true });
+	writeFileSync(dp.json, JSON.stringify({
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, revision: 3 },
+		body: {
+			flavor: 'enhancement', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
+			stories: [{ id: 's1', title: 'Filter by tag', userValue: 'v', acceptanceCriteria: [{ id: 'ac1', given: 'a', when: 'b', then: 'c', operationalizes: [] }], dependsOn: [] }],
+			openQuestions: [],
+		},
+		citations: [],
+	}));
+	stampOtherPartyReview(dp.json); approveArtifactByJsonPath(dp.json);
+
+	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
+	writeFileSync(hp.json, JSON.stringify({
+		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, revision: 5 },
+		body: {
+			frameworkSummary: 'x', architectureShape: 'x [[c1]]',
+			sharedContracts: [{ id: 'sc1', name: 'A', purpose: 'p', interfaceSketch: 'interface A {}', ownedByStory: 's1', consumedByStories: [], assumptions: [] }],
+			storyBoundaries: [{ storyId: 's1', owns: ['sc1'], depends: [], internal: 'x' }],
+			nonFunctional: {},
+			rolloutOverview: { phases: [{ name: 'A', includesStories: ['s1'], rationale: 'x', backwardCompat: '', featureFlag: null }], orderingRationale: 'x', riskyBits: [] },
+			alternativesConsidered: [{ id: 'a1', name: 'x', oneLineSummary: 'x', approach: 'x', pros: ['x'], cons: ['x'], costEstimate: 'S' }],
+			chosenAlternative: 'a1', openQuestions: [],
+		},
+		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
+	}));
+	stampOtherPartyReview(hp.json); approveArtifactByJsonPath(hp.json);
+
+	const lp = lldArtifactPaths(repo, HASH, 's1', CREATED, 'epic', 'tag-filtering');
+	writeFileSync(lp.json, JSON.stringify({
+		meta: {
+			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED, revision: 7,
+			hldBaseRunId: HLD_RUN, hldEffectiveHash: computeHldEffectiveHash(HLD_RUN, []), hldAmendmentsApplied: [],
+		},
+		body: {
+			hldContextSlice: {}, contractDetails: { surfaceLevel: 'internal', api: [] },
+			dataModelChanges: [], interactionWithShared: [],
+			errorPaths: { errorCases: [], edgeCases: [], invariantsToPreserve: [] },
+			testStrategy: { testLevels: [{ level: 'unit', purpose: 'x', subjects: ['unit: filter by tag'] }], acceptanceMapping: [{ criterionId: 'ac1', provingTests: ['unit: filter by tag'] }], testFramework: 'node:test' },
+			alternativesConsidered: [{ id: 'a1', name: 'x', oneLineSummary: 'x', approach: 'x', pros: [], cons: [], costEstimate: 'S' }],
+			chosenAlternative: 'a1', openQuestions: [],
+		},
+		citations: [],
+	}));
+	stampOtherPartyReview(lp.json); approveArtifactByJsonPath(lp.json);
 }
 
-function seedChain(repo: string): void {
-	const meta = (workflow: string, revision: number) => ({ workflow, runId: `${workflow}-1`, epicHash: HASH, epicSlug: 'e', storyId: 's1', approvedAt: '2026-10-18T00:00:00.000Z', revision });
-	seed(repo, defineArtifactId(HASH), { meta: meta('define', 3), body: { openQuestions: [] }, citations: [] });
-	seed(repo, hldArtifactId(HASH), { meta: meta('design.epic', 5), body: { openQuestions: [] }, citations: [] });
-	seed(repo, lldArtifactId(HASH, 's1'), { meta: meta('design.story', 7), body: { openQuestions: [] }, citations: [] });
-}
+const PLAN_STEPS = [
+	{ id: 's1', runner: 'context.assemble', params: {} }, { id: 's2', runner: 'tasks.enumerate', params: {} },
+	{ id: 's3', runner: 'tasks.critique', params: {} }, { id: 's4', runner: 'tasks.finalize', params: {} },
+	{ id: 's5', runner: 'test-strategy.write', params: {} }, { id: 's6', runner: 'checklist.verify', params: {} },
+];
+const taskCore = { id: 't1', title: 'Implement the tag filter', summary: 'Add the filter path.', size: 'M', order: 1, dependsOn: [], acceptanceChecks: ['filter returns tagged todos'], derivedFrom: ['c1'] };
+const s1Context = { analyzeBundles: [{ kind: 'symbol.locate', focus: 'filter', summary: 'new path', pathsCited: ['src/todos/filter.ts'] }] };
 
 const parse = (env: { content: readonly { text: string }[] }): { next: string; state: string; error?: { code: string; message: string } } => JSON.parse(env.content[0]!.text) as never;
 const entryOf = (token: string) => listStates().find(e => e.token === token);
@@ -70,24 +121,32 @@ test('handleStart records the acting user and the upstream snapshot on the store
 		seedChain(repo);
 		inject(team);
 
-		// a plan run: the owner and the snapshot of everything plan reads are on the stored entry
+		// the real plan workflow: start records the owner and the snapshot of everything plan reads
 		const started = parse(await handleWorkflowStep({ phase: 'start', workflow: 'plan', focus: 'f', repo, params: { epicHash: HASH, storyId: 's1' } }));
 		assert.equal(started.next, 'emit_plan', JSON.stringify(started));
-		const meta = entryOf(started.state)?.meta;
-		assert.equal(meta?.owner, 'alice');
-		const upstream = new Map((meta?.upstream ?? []).map(u => [u.artifactId.split('@')[0], u.revision]));
-		assert.deepEqual([...upstream.entries()], [[lldArtifactId(HASH, 's1'), 7], [hldArtifactId(HASH), 5], [defineArtifactId(HASH), 3]]);
+		const first = entryOf(started.state)?.meta;
+		assert.equal(first?.owner, 'alice');
+		const byId = new Map((first?.upstream ?? []).map(u => [u.artifactId.split('@')[0], u.revision]));
+		assert.deepEqual([...byId.entries()], [[lldArtifactId(HASH, 's1'), 7], [hldArtifactId(HASH), 5], [defineArtifactId(HASH), 3]]);
 
-		// the plan and step turns keep both: walk the stub workflow, which finishes in a few turns
-		const stub = parse(await handleWorkflowStep({ phase: 'start', workflow: 'stub', focus: 'demo', repo }));
-		assert.equal(entryOf(stub.state)?.meta?.owner, 'alice');
-		const planned = parse(await handleWorkflowStep({
-			phase: 'plan', state: stub.state,
-			plan: { workflow: 'stub', steps: [{ id: 's1', runner: 'echo.a', params: { seed: 'x' } }, { id: 's2', runner: 'echo.b', params: { fromA: '$s1.echoed' } }, { id: 's3', runner: 'echo.c', params: { fromA: '$s1.marker', fromB: '$s2.marker' } }] },
-		} as never));
-		assert.notEqual(planned.state, stub.state, 'the turn minted a new token');
-		assert.equal(entryOf(planned.state)?.meta?.owner, 'alice', 'the replacement keeps the owner');
-		assert.equal(entryOf(stub.state), undefined, 'the superseded token is gone');
+		// a plan turn and then step turns each mint a new token, and each keeps both the owner and the snapshot
+		const planned = parse(await handleWorkflowStep({ phase: 'plan', plan: { workflow: 'plan', steps: PLAN_STEPS }, state: started.state } as never));
+		assert.equal(planned.next, 'emit_step', JSON.stringify(planned));
+		const afterPlan = entryOf(planned.state)?.meta;
+		assert.equal(afterPlan?.owner, 'alice');
+		assert.deepEqual(afterPlan?.upstream, first?.upstream);
+		assert.equal(entryOf(started.state), undefined, 'the superseded token is gone');
+
+		const s1 = parse(await handleWorkflowStep({ phase: 'step', stepId: 's1', response: s1Context, state: planned.state } as never));
+		assert.equal(s1.next, 'emit_step', JSON.stringify(s1));
+		assert.equal(entryOf(s1.state)?.meta?.owner, 'alice');
+		assert.deepEqual(entryOf(s1.state)?.meta?.upstream, first?.upstream);
+		assert.equal(entryOf(planned.state), undefined, 'a step turn releases the token it decoded');
+		const s2 = parse(await handleWorkflowStep({ phase: 'step', stepId: 's2', response: { tasks: [taskCore] }, state: s1.state } as never));
+		assert.equal(s2.next, 'emit_step', JSON.stringify(s2));
+		assert.equal(entryOf(s2.state)?.meta?.owner, 'alice');
+		assert.deepEqual(entryOf(s2.state)?.meta?.upstream, first?.upstream);
+		assert.equal(entryOf(s1.state), undefined);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 
 	// no policy: neither owner nor snapshot, and the tracker is never loaded
@@ -98,6 +157,8 @@ test('handleStart records the acting user and the upstream snapshot on the store
 		const started = parse(await handleWorkflowStep({ phase: 'start', workflow: 'plan', focus: 'f', repo: free, params: { epicHash: HASH, storyId: 's1' } }));
 		assert.equal(started.next, 'emit_plan');
 		assert.equal(entryOf(started.state)?.meta, undefined);
+		const planned = parse(await handleWorkflowStep({ phase: 'plan', plan: { workflow: 'plan', steps: PLAN_STEPS }, state: started.state } as never));
+		assert.equal(entryOf(planned.state)?.meta, undefined);
 		assert.equal(seen.loads(), 0);
 	} finally { rmSync(free, { recursive: true, force: true }); }
 });

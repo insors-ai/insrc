@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T17:09:55.658Z",
+    "updatedAt": "2026-10-18T17:17:17.485Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -75,6 +75,72 @@
             "titles": [
               {
                 "title": "the state store keeps meta beside the payload, carries it through reencodeState and replaceState, lists entries newest first without touching expiry, and an entry saved without meta behaves as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "fbb57f00",
+        "ranAt": "2026-10-18T17:17:17.485Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/snapshot-upstream.test.ts: snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/snapshot-upstream.test.ts",
+                "title": "snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts: handleStart records the acting user and the upstream snapshot on the stored run, plan and step turns keep them, and a repo without a policy records neither and makes no tracker call",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts",
+                "title": "handleStart records the acting user and the upstream snapshot on the stored run, plan and step turns keep them, and a repo without a policy records neither and makes no tracker call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1325,
+            "titles": [
+              {
+                "title": "handleStart records the acting user and the upstream snapshot on the stored run, plan and step turns keep them, and a repo without a policy records neither and makes no tracker call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/snapshot-upstream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1107,
+            "titles": [
+              {
+                "title": "snapshotUpstream lists the artifacts each workflow reads, including the Define and the effective HLD with approved amendments, a missing revision reads as 0, and a standalone Story does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "actingUser and runMetaFor read the tracker only for a repo that enforces claims",
                 "result": "pass"
               }
             ],

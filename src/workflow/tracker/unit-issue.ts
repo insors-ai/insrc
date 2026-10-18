@@ -248,15 +248,24 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 	const membership = epicMembershipLabel(epicSlug);
 	const repo = { owner: cfg.owner, repo: cfg.repo };
 
-	// The parent issue first (a Story under its Epic, a Task under its Story).
+	// The parent issue must already exist (a Story under its Epic, a Task under its
+	// Story): it is found, never created here, so a failure below really means that
+	// nothing was created by this call. The caller ensures the parent first.
 	let parentRef: IssueRef | undefined;
 	if (unit.unit !== 'epic') {
 		const parentUnit: UnitRef = unit.unit === 'story'
 			? { unit: 'epic', repoPath: unit.repoPath, epicHash: unit.epicHash }
 			: { unit: 'story', repoPath: unit.repoPath, epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) };
-		const parent = ensureUnitIssueDetailed(parentUnit, port, deps);
-		if (!parent.ok) return before(`the ${parentUnit.unit} issue is not ready: ${parent.reason}`, parent.kind);
-		parentRef = parent.value.issue;
+		parentRef = resolveUnitIssueLocal(parentUnit, now) ?? undefined;
+		if (parentRef === undefined) {
+			let parentLabel: string;
+			try { parentLabel = unitLabel(parentUnit); } catch (err) { return before((err as Error).message); }
+			const parentFound = port.findIssue([membership, parentLabel]);
+			if (!parentFound.ok) return before(`cannot look up the ${parentUnit.unit} issue for ${unitKey(unit)}: ${parentFound.reason}`, parentFound.kind);
+			if (parentFound.value === null) return before(`the ${parentUnit.unit} issue does not exist yet; ensure it before the ${unit.unit}'s`);
+			parentRef = parentFound.value;
+			recordUnit(parentUnit, parentRef, now());
+		}
 	}
 
 	// Lookup by the per-unit label (a failed lookup is a failure, never "not found").

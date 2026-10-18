@@ -197,6 +197,16 @@ test('team mode creates only when everything misses and reports phase before-cre
 		const c = ensureUnitIssueDetailed(epic(fx.repo), bad.port, deps);
 		assert.deepEqual(c.ok ? null : [c.phase, c.kind], ['create', 'rejected']);
 
+		// a Story or Task whose parent has no issue yet creates nothing (the parent is not created for it)
+		const orphan = fakeTracker();
+		const o = ensureUnitIssueDetailed(story(fx.repo), orphan.port, deps);
+		assert.deepEqual(o.ok ? null : o.phase, 'before-create');
+		assert.match(o.ok ? '' : o.reason, /epic issue does not exist yet/);
+		assert.equal(orphan.calls.create, 0, 'no parent was created either');
+		const orphanTask = ensureUnitIssueDetailed(task(fx.repo), orphan.port, deps);
+		assert.match(orphanTask.ok ? '' : orphanTask.reason, /story issue does not exist yet/);
+		assert.equal(orphan.calls.create, 0);
+
 		// the happy path: Epic, then Story under it, then Task under the Story
 		const t = fakeTracker();
 		const e = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -55,3 +55,31 @@ Run at 2026-10-18T14:28:59.399Z on commit `af5faa3e`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/team/__tests__/gate.test.ts` | 0 | 4 | 1.2 s |  |
+
+## t3
+
+Run at 2026-10-18T14:32:06.718Z on commit `cf59ff21`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/team/__tests__/gate.test.ts: the first author turn of a stage with no issue and no artifact is allowed as an explicit exception and any other action on a stage with no issue is refused**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the first author turn of a stage with no issue and no artifact is allowed as an explicit exception and any other action on a stage with no issue is refused | `src/workflow/team/__tests__/gate.test.ts` |
+
+**unit: src/workflow/team/__tests__/gate.test.ts: the registered completion hook is consulted for author and build on a next stage and for open-signoff, revise and release, a release called by the hook does not consult it again, and with none registered the gate behaves as continue (a hook-contract test; the completion-releases-the-claim integration test belongs to s7)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the registered completion hook is consulted for author and build on a next stage and for open-signoff, revise and release, a release called by the hook does not consult it again, and with none registered the gate behaves as continue (a hook-contract test; the completion-releases-the-claim integration test belongs to s7) | `src/workflow/team/__tests__/gate.test.ts` |
+
+**unit: src/workflow/team/__tests__/gate.test.ts: each port failure kind, several assignees, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | each port failure kind, several assignees, an unreadable policy, a missing issue and a throwing completion hook map to refused or no-issue with the reason and never throw | `src/workflow/team/__tests__/gate.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/team/__tests__/gate.test.ts` | 0 | 7 | 3 s |  |

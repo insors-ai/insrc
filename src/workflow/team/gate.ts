@@ -219,3 +219,74 @@ export function teamGate(repo: string, unit: UnitRef, action: GuardedAction): Ga
 		return logOutcome(unit, action, refused(`the team gate failed: ${errorText(err)}`));
 	}
 }
+
+// ---------------------------------------------------------------------------
+// Claim, release and the review-fix decision
+// ---------------------------------------------------------------------------
+
+const notEnforced = (): GateOutcome => refused('this repository does not enforce claims (no team policy with claimsEnforced)');
+
+/**
+ * Take an unassigned stage. The actor is added through the add-only addAssignee, so no
+ * other assignee is ever removed; the assignees read back afterwards decide whether the
+ * claim is contested. GitHub cannot assign atomically: contention is reported when it is
+ * observed, so an earlier claimant may discover it on a later gate read.
+ */
+export function claim(repo: string, unit: UnitRef): GateOutcome {
+	try {
+		const ctx = teamContext(repo, unit);
+		if (!ctx.ok) return logOutcome(unit, 'claim', ctx.outcome);
+		if (!ctx.team) return logOutcome(unit, 'claim', notEnforced());
+		const read = readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
+		if (!read.ok) return logOutcome(unit, 'claim', read.outcome);
+		const holder = read.state.holder;
+		if (holder !== null) return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, 'claim', { kind: 'held-by-other', holder, offerPark: false });
+
+		const added = ctx.port.addAssignee(ctx.issue, ctx.who);
+		if (!added.ok) return logOutcome(unit, 'claim', refused(`the claim failed (${added.kind}): ${added.reason}; the stage state is unknown, read it again before acting`));
+		if (added.value.length > 1) {
+			return logOutcome(unit, 'claim', refused(`the claim is contested: ${added.value.join(', ')} are all assigned; nobody was removed, ask an administrator to release the stage`));
+		}
+		return allowed();
+	} catch (err) {
+		return logOutcome(unit, 'claim', refused(`the claim failed: ${errorText(err)}`));
+	}
+}
+
+/**
+ * Clear the stage's assignees so others can claim it. The holder or a policy administrator
+ * may release; an administrator may release whoever holds it, including a contested claim
+ * with several assignees. Anyone else is refused without a port write.
+ */
+export function release(repo: string, unit: UnitRef): GateOutcome {
+	try {
+		const ctx = teamContext(repo, unit);
+		if (!ctx.ok) return logOutcome(unit, 'release', ctx.outcome);
+		if (!ctx.team) return logOutcome(unit, 'release', notEnforced());
+
+		const hooked = consultHook(repo, unit, 'release', ctx.port);
+		if (hooked !== 'continue') return logOutcome(unit, 'release', hooked);
+
+		const admin = ctx.administrators.some(a => sameLogin(a, ctx.who));
+		if (!admin) {
+			const read = readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
+			if (!read.ok) return logOutcome(unit, 'release', read.outcome);
+			const holder = read.state.holder;
+			if (holder === null) return allowed();   // nothing to release
+			if (!sameLogin(holder, ctx.who)) return logOutcome(unit, 'release', refused(`only the holder (${holder}) or a policy administrator may release this stage`));
+		}
+		const cleared = ctx.port.setAssignee(ctx.issue, null);
+		if (!cleared.ok) return logOutcome(unit, 'release', refused(`the release failed (${cleared.kind}): ${cleared.reason}; the stage state is unknown, read it again before acting`));
+		return allowed();
+	} catch (err) {
+		return logOutcome(unit, 'release', refused(`the release failed: ${errorText(err)}`));
+	}
+}
+
+export type ReviewFixMode = 'apply-auto-fixes' | 'report-only';
+
+/** A review is never refused; only whether it may write fixes changes. Report-only for a non-holder or a failed read. */
+export function reviewFixDecision(repo: string, unit: UnitRef): ReviewFixMode {
+	try { return teamGate(repo, unit, 'review-fix').kind === 'allowed' ? 'apply-auto-fixes' : 'report-only'; }
+	catch { return 'report-only'; }
+}

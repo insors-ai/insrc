@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:28:59.399Z",
+    "updatedAt": "2026-10-18T14:32:06.718Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -18,9 +18,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "Fixed the never-throws finding: the catch in teamGate now builds its message with errorText, which handles an Error, a string and any other value (null, undefined, numbers, objects), so a policy reader or port that throws a non-Error cannot make the handler itself throw. The fourth test now throws null, undefined, a string, a number and an object from the policy reader and asserts each gives a refused outcome (and the string case keeps its text).",
+    "summary": "In gate.ts: CompletionHook and registerCompletionHook; consultHook is called after the tracker is loaded and before the holder is read for author, build, open-signoff, revise and release (a returned outcome is the answer, 'continue' lets the gate decide, none registered continues, a throw of any value refuses with 'the completion hook failed: ...'); a module-level insideHook flag makes a gate call made by the hook itself (its release) skip the hook, and it is reset in a finally. A stage with no recorded issue now tries ensureUnitIssue (seam: ensureIssue) with the loaded port: if it creates or finds one the gate then decides on the live assignee; if not it returns no-issue with creationFailure, and allowFirstAuthor is true only for action author when the unit's own artifact (Define, LLD or plan) does not exist yet (seam: artifactExists), false for every other action. Three new tests in gate.test.ts carry the named tests; the earlier t2 test's missing-issue assertion now expects no-issue.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/TESTS.md"
     },
@@ -30,58 +34,58 @@
           "file": ".insrc/artifacts/AMD-315d510cb28100e2-12.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:28:59.399Z"
+        "timestamp": "2026-10-18T14:32:06.718Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:28:59.399Z"
+        "timestamp": "2026-10-18T14:32:06.718Z"
       },
       {
         "target": {
           "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:28:59.399Z"
+        "timestamp": "2026-10-18T14:32:06.718Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/gate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:28:59.399Z"
+        "timestamp": "2026-10-18T14:32:06.718Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:28:59.399Z"
+        "timestamp": "2026-10-18T14:32:06.718Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:28:59.399Z"
+        "timestamp": "2026-10-18T14:32:06.718Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/github-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:28:59.399Z"
+        "timestamp": "2026-10-18T14:32:06.718Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:28:59.399Z"
+        "timestamp": "2026-10-18T14:32:06.718Z"
       }
     ],
-    "commit": "af5faa3e"
+    "commit": "cf59ff21"
   }
 }

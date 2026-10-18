@@ -13,7 +13,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { _setGateDepsForTests, registerCompletionHook, teamGate, type GateDeps, type GuardedAction } from '../gate.js';
+import { _setGateDepsForTests, claim, registerCompletionHook, release, teamGate, type GateDeps, type GuardedAction } from '../gate.js';
 import type { PortFailureKind, PortResult, TrackerPort } from '../../tracker/port.js';
 import type { UnitRef } from '../../tracker/refs.js';
 import type { PolicyReader, TeamPolicy } from '../types.js';
@@ -31,8 +31,8 @@ const none: PolicyReader = () => ({ ok: true, value: 'none' });
 interface Fake { port: TrackerPort; assignees: string[]; calls: string[] }
 
 /** An in-memory port: `assignees` is the issue's live assignee list. */
-function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureKind; failRead?: PortFailureKind; failAdd?: PortFailureKind; raceWith?: string } = {}): Fake {
-	const assignees = [...initial];
+function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureKind; failRead?: PortFailureKind; failAdd?: PortFailureKind; raceWith?: string; staleRead?: boolean; shared?: string[]; failSet?: PortFailureKind } = {}): Fake {
+	const assignees = over.shared ?? [...initial];
 	const calls: string[] = [];
 	const port = {
 		kind: 'github', capabilities: new Set(['claim']),
@@ -43,6 +43,7 @@ function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureK
 		readAssignee: (): PortResult<string | null> => {
 			calls.push('readAssignee');
 			if (over.failRead !== undefined) return { ok: false, kind: over.failRead, reason: `read ${over.failRead}` };
+			if (over.staleRead === true) return { ok: true, value: null };   // read before the other claimant's add
 			if (assignees.length > 1) return { ok: false, kind: 'rejected', reason: `${ISSUE} has more than one assignee (${assignees.join(', ')})` };
 			return { ok: true, value: assignees[0] ?? null };
 		},
@@ -53,7 +54,13 @@ function fakePort(initial: string[], over: { me?: string; failWho?: PortFailureK
 			if (!assignees.some(a => a.toLowerCase() === who.toLowerCase())) assignees.push(who);
 			return { ok: true, value: [...assignees] };
 		},
-		setAssignee: (): PortResult<void> => { calls.push('setAssignee'); return { ok: true, value: undefined }; },
+		setAssignee: (_issue: string, who: string | null): PortResult<void> => {
+			calls.push(`setAssignee:${who}`);
+			if (over.failSet !== undefined) return { ok: false, kind: over.failSet, reason: `set ${over.failSet}` };
+			assignees.length = 0;
+			if (who !== null) assignees.push(who);
+			return { ok: true, value: undefined };
+		},
 	} as unknown as TrackerPort;
 	return { port, assignees, calls };
 }
@@ -93,7 +100,7 @@ test('teamGate allows an unassigned stage for author and build and adds the acto
 		assert.deepEqual(teamGate('/repo', UNIT, action), { kind: 'allowed', implicitClaim: true }, action);
 		assert.deepEqual(f.assignees, ['alice']);
 		assert.ok(f.calls.includes('addAssignee:alice'));
-		assert.ok(!f.calls.includes('setAssignee'), 'a claim never uses the replacing setAssignee');
+		assert.ok(!f.calls.some(c => c.startsWith('setAssignee')), 'a claim never uses the replacing setAssignee');
 	}
 	// approve-local and applying a finding (review-fix) take no claim
 	for (const action of ['approve-local', 'review-fix'] as GuardedAction[]) {
@@ -134,7 +141,7 @@ test('teamGate returns held-by-other naming the holder for author, build, approv
 		assert.deepEqual(o, { kind: 'held-by-other', holder: 'bob', offerPark: false }, action);
 	}
 	assert.deepEqual(f.assignees, ['bob'], 'the holder is never replaced');
-	assert.ok(!f.calls.some(c => c.startsWith('addAssignee') || c === 'setAssignee'));
+	assert.ok(!f.calls.some(c => c.startsWith('addAssignee') || c.startsWith('setAssignee')));
 
 	// every refusal shape: several assignees, each port failure kind, an unreadable policy, a missing issue
 	const several = fakePort(['bob', 'carol']);
@@ -250,4 +257,97 @@ test('each port failure kind, several assignees, an unreadable policy, a missing
 	// the guard against recursion is reset after a throw
 	registerCompletionHook(() => 'continue');
 	assert.equal(teamGate('/repo', UNIT, 'author').kind, 'allowed');
+});
+
+test('claim takes only an unassigned stage, never removes another assignee, and reports a contested claim or a failed re-read as refused', () => {
+	// an unassigned stage is claimed through addAssignee only
+	const free = fakePort([]);
+	inject(free);
+	assert.deepEqual(claim('/repo', UNIT), { kind: 'allowed', implicitClaim: false });
+	assert.deepEqual(free.assignees, ['alice']);
+	assert.ok(!free.calls.some(c => c.startsWith('setAssignee')));
+
+	// already mine: allowed with no write; someone else's: refused naming them, nobody removed
+	const mine = fakePort(['ALICE']);
+	inject(mine);
+	assert.equal(claim('/repo', UNIT).kind, 'allowed');
+	assert.ok(!mine.calls.some(c => c.startsWith('addAssignee')));
+	const theirs = fakePort(['bob']);
+	inject(theirs);
+	assert.deepEqual(claim('/repo', UNIT), { kind: 'held-by-other', holder: 'bob', offerPark: false });
+	assert.deepEqual(theirs.assignees, ['bob']);
+
+	// two developers claim at the same moment: both read "nobody", both add. The earlier claimant has
+	// already returned allowed; only the later one observes the contention. Nobody is removed.
+	const shared: string[] = [];
+	inject(fakePort([], { me: 'alice', shared, staleRead: true }));
+	assert.deepEqual(claim('/repo', UNIT), { kind: 'allowed', implicitClaim: false }, 'the earlier claimant is told it holds the stage');
+	inject(fakePort([], { me: 'bob', shared, staleRead: true }));
+	const later = claim('/repo', UNIT);
+	assert.equal(later.kind, 'refused');
+	assert.match(later.kind === 'refused' ? later.reason : '', /contested: alice, bob are all assigned; nobody was removed/);
+	assert.deepEqual(shared, ['alice', 'bob']);
+	// the earlier claimant finds out on its next gate read: several assignees are never a holder
+	inject(fakePort([], { me: 'alice', shared }));
+	assert.match(String((teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /more than one assignee/);
+
+	// a failed add and a failed read are refused and say the state is unknown / the reason
+	inject(fakePort([], { failAdd: 'unreachable' }));
+	const failed = claim('/repo', UNIT);
+	assert.match(failed.kind === 'refused' ? failed.reason : '', /claim failed \(unreachable\).*unknown/);
+	inject(fakePort([], { failRead: 'missing-signin' }));
+	assert.equal(claim('/repo', UNIT).kind, 'refused');
+	// outside team mode there is nothing to claim
+	inject(fakePort([]), none);
+	assert.equal(claim('/repo', UNIT).kind, 'refused');
+});
+
+test('release clears the assignees for the holder and for an administrator, including a contested claim, and refuses anyone else without calling setAssignee', () => {
+	// the holder releases
+	const mine = fakePort(['alice']);
+	inject(mine);
+	assert.deepEqual(release('/repo', UNIT), { kind: 'allowed', implicitClaim: false });
+	assert.deepEqual(mine.assignees, []);
+	assert.ok(mine.calls.includes('setAssignee:null'));
+
+	// an administrator releases someone else's claim, and a contested one with several assignees
+	const theirs = fakePort(['bob'], { me: 'root' });
+	inject(theirs);
+	assert.equal(release('/repo', UNIT).kind, 'allowed');
+	assert.deepEqual(theirs.assignees, []);
+	const contested = fakePort(['bob', 'carol'], { me: 'root' });
+	inject(contested);
+	assert.equal(release('/repo', UNIT).kind, 'allowed');
+	assert.deepEqual(contested.assignees, []);
+
+	// anyone else is refused naming the holder, with no write; a non-administrator cannot clear a contested claim
+	const other = fakePort(['bob'], { me: 'alice' });
+	inject(other);
+	const r = release('/repo', UNIT);
+	assert.equal(r.kind, 'refused');
+	assert.match(r.kind === 'refused' ? r.reason : '', /only the holder \(bob\) or a policy administrator/);
+	assert.ok(!other.calls.some(c => c.startsWith('setAssignee')));
+	const both = fakePort(['bob', 'carol'], { me: 'alice' });
+	inject(both);
+	assert.equal(release('/repo', UNIT).kind, 'refused');
+	assert.ok(!both.calls.some(c => c.startsWith('setAssignee')));
+
+	// nothing held: nothing to release, no write; a failed clear says the state is unknown
+	const free = fakePort([]);
+	inject(free);
+	assert.equal(release('/repo', UNIT).kind, 'allowed');
+	assert.ok(!free.calls.some(c => c.startsWith('setAssignee')));
+	inject(fakePort(['alice'], { failSet: 'unreachable' }));
+	const failed = release('/repo', UNIT);
+	assert.match(failed.kind === 'refused' ? failed.reason : '', /release failed \(unreachable\).*unknown/);
+
+	// the hook is consulted for a release, and a release made by the hook itself does not consult it again
+	let consulted = 0;
+	inject(fakePort(['alice']));
+	registerCompletionHook(() => { consulted += 1; return 'continue'; });
+	release('/repo', UNIT);
+	assert.equal(consulted, 1);
+	registerCompletionHook(() => ({ kind: 'refused', reason: 'signoff pending' }));
+	inject(fakePort(['alice']));
+	assert.deepEqual(release('/repo', UNIT), { kind: 'refused', reason: 'signoff pending' });
 });

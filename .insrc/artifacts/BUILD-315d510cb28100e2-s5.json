@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s5",
+    "createdAt": "2026-10-18T14:16:36.004Z",
+    "updatedAt": "2026-10-18T14:16:36.004Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": false
+      }
+    ],
+    "summary": "Added addAssignee(issue, who): PortResult<string[]> to TrackerPort (port.ts) and implemented it in the GitHub adapter beside setAssignee: it reads the assignees, makes a single gh issue edit --add-assignee call only when who is not already assigned (case-insensitive), re-reads, returns the assignees read back, and reports a re-read without who as rejected; a failed or timed-out step is a classified PortResult failure with no retry and no re-read. It never removes anyone. setAssignee is untouched. The method is the additive sc1 amendment AMD-315d510cb28100e2-12, still pending with s1. One test in github-adapter.test.ts covers adding from none and beside another assignee (no remove call), the already-assigned case, a sticky add (rejected), a timeout (unreachable, no retry, no re-read) and a malformed reference (no gh call).",
+    "testRecord": {
+      "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:16:36.004Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:16:36.004Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:16:36.004Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/github-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:16:36.004Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/port.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:16:36.004Z"
+      }
+    ],
+    "commit": "0bf2fab3"
+  }
+}

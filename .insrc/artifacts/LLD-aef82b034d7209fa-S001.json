@@ -120,6 +120,15 @@
     "reviewOverride": {
       "reason": "Stakeholder decision 2026-10-19 (option A after cycle 4): approve after one more round if it raises only edge cases of the same kind. Round 13 raised one (an obligation with no evidence, and a diff review with no symbols, never reached adjudication) plus its test gap; both are fixed in the LLD text (REDUCE keys initialised from every obligation; context-only calls when there are no symbols; three new tests). All 30+ findings across 13 daemon review rounds were verified against the code and fixed in the design; the remaining proof is the mapped tests and the s1 smoke, which the build must deliver.",
       "at": "2026-10-18T19:23:48.104Z"
+    },
+    "questionResolutions": {
+      "q7150e00a": {
+        "question": "cd1: packIntoBatches, ReviewJob, DimensionStrategy, JobCall, InputTooLargeError, AtomTooLargeError and LLMProvider.inputBudgetChars are new names with no HLD to own them (standalone fix); this LLD's contract section is proposed as their authority.",
+        "status": "resolved",
+        "choice": "LLD as contract authority",
+        "rationale": "Stakeholder decision 2026-10-19: the standalone S001 LLD's contract section is the authority for packIntoBatches, ReviewJob, DimensionStrategy, JobCall, InputTooLargeError, AtomTooLargeError and LLMProvider.inputBudgetChars; this fix has no owning HLD.",
+        "resolvedAt": "2026-10-18T19:29:35.231Z"
+      }
     }
   },
   "body": {

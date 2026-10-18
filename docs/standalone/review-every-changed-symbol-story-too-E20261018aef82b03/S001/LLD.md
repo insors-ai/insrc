@@ -420,23 +420,28 @@ The helper of a1 is used inside the daemon judges only; the controller path keep
 - Default of codeReview.controllerFrameChars (the largest emit_judgements frame, and so the controller budget of every call in it): proposed 400,000 characters, about 100k tokens, so an ordinary review still fits one frame and an s1-sized one is run as jobs; a large frame today is already saved to a file by the client rather than lost.
 - The claude CLI's refusal for an oversized prompt has not been observed; the design recognises its 'prompt is too long' result as an input-size refusal and, failing that, the error is handled as today. The smoke records what the claude path actually reports.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q7150e00a` — cd1: packIntoBatches, ReviewJob, DimensionStrategy, JobCall, InputTooLargeError, AtomTooLargeError and LLMProvider.inputBudgetChars are new names with no HLD to own them (standalone fix); this LLD's contract section is proposed as their authority.
+  - **resolved**: LLD as contract authority — Stakeholder decision 2026-10-19: the standalone S001 LLD's contract section is the authority for packIntoBatches, ReviewJob, DimensionStrategy, JobCall, InputTooLargeError, AtomTooLargeError and LLMProvider.inputBudgetChars; this fix has no owning HLD. _(2026-10-18T19:29:35.231Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**2 do not hold · 0 could not be verified · 4 hold** · template `design-issue` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-18T19:21:59.624Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| fix-targets-defect | HIGH | The specified MAP cross product and note-key REDUCE adjudicate every obligation even when there are no symbols. | prepareCoverageGrounding explicitly returns 'if (groundingMode ===  27degraded 27) return { symbols: [] };'. buildCoveragePrompt then instructs 'Judge ONLY the promised tests against the test-record results'. The proposed MAP operates on symbol parts × context parts and REDUCE groups emitted notes; with zero symbol parts, neither supplies an adjudication for promised tests. The same problem affects obligations receiving no notes. No initialization of obligation keys or context-only calls is specified. [files: src/workflow/code-review/dimensions/coverage.ts, src/daemon/steps/code-review-step/handler.ts, docs/standalone/review-every-changed-symbol-story-too-E20261018aef82b03/S001/LLD.md] | Initialize adjudication keys from every clause, FR and promised test independently of MAP output. Define context-only calls for empty symbol sets and explicitly adjudicate keys with zero evidence. |
-| tests | MED | The acceptance tests establish complete obligation coverage for every supported grounding mode. | The proposed tests exercise evidence distributed across parts and oversized records, but none explicitly combines an over-budget record or contract with zero symbols, or requires an obligation with zero emitted notes to be adjudicated. Existing coverage tests include empty grounding, but use a fake provider that returns a scripted answer regardless of its prompt. Those tests cannot detect the missing MAP/REDUCE work described above. [files: docs/standalone/review-every-changed-symbol-story-too-E20261018aef82b03/S001/LLD.md, src/workflow/code-review/dimensions/__tests__/coverage.test.ts, src/workflow/code-review/dimensions/coverage.ts] | Add prompt-sensitive daemon and controller tests with empty prepared grounding, an oversized record, and both passing and missing promised tests. Also test clauses and FRs receiving no MAP notes. Assert that every obligation reaches adjudication and missing obligations produce findings. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `prior-artifact` `ISSUE-aef82b034d7209fa` — "The code review of a Story of any size completes and judges every changed symbol"
+- **[[c2]]** `code` `src/agent/providers/structured-output.ts:180-243`
+- **[[c3]]** `code` `src/agent/providers/cli-provider.ts:600-660`
+- **[[c4]]** `code` `src/workflow/code-review/dimensions/adherence.ts:74-155`
+- **[[c5]]** `code` `src/daemon/steps/code-review-step/handler.ts`
+- **[[c6]]** `doc` `/tmp/.insrc/agent.27.log` — "Input exceeds the maximum length of 1048576 characters. (code -32602), data: {"input_error_code":"input_too_large","max_chars":1048576,"actual_chars":1247701}"
+- **[[c7]]** `code` `src/workflow/code-review/runner.ts`
+- **[[c8]]** `code` `src/daemon/steps/code-review-step/types.ts:54-58`
+- **[[c9]]** `code` `src/agent/providers/cli-provider.ts:497-516`
+- **[[c10]]** `code` `src/mcp/server.ts:697-760`
+- **[[c11]]** `code` `src/workflow/code-review/dimensions/functional-coverage.ts:97-117`
+- **[[c12]]** `code` `src/workflow/code-review/dimensions/quality.ts:82-140`
+- **[[c13]]** `code` `src/workflow/code-review/dimensions/conventions.ts:105-164`
+- **[[c14]]** `stakeholder` `Subho Ghosh, 2026-10-19` — "A: Bounded at every stage"
+- **[[c15]]** `code` `src/workflow/code-review/dimensions/coverage.ts:212-271`
+- **[[c16]]** `code` `src/config/__tests__/config-catalog-contract.test.ts:89`
+- **[[c17]]** `code` `src/config/reconcile.ts`
+- **[[c18]]** `code` `src/workflow/code-review/dimensions/test-record-view.ts:96-120`

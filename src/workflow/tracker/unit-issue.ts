@@ -435,7 +435,12 @@ export function runUnitExtras(unit: UnitRef, steps: readonly ExtraStep[], deps: 
 			continue;
 		}
 		try { mark(unit, step.name, now()); }
-		catch (err) { log.warn({ unit: unitKey(unit), step: step.name, err: (err as Error).message }, 'unit-issue: extra posted but its mark was not written (the next approve may post it again)'); }
+		catch (err) {
+			// Posted, but unmarked: reported as failed so the author sees it, and the next run posts it again (the stated residual).
+			log.warn({ unit: unitKey(unit), step: step.name, err: (err as Error).message }, 'unit-issue: extra posted but its mark was not written (the next approve may post it again)');
+			out.failed.push({ name: step.name, reason: `posted, but its completion mark was not written (${(err as Error).message}); the next approve may post it again` });
+			continue;
+		}
 		out.done.push(step.name);
 	}
 	return out;

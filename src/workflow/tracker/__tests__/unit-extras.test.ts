@@ -76,7 +76,9 @@ test('runUnitExtras marks, skips, reports failures, retries only missing steps a
 		const posted: string[] = [];
 		const failMark = (): void => { throw new Error('disk full'); };
 		const one = runUnitExtras(unit, steps(posted), { now: () => AT, mark: failMark });
-		assert.deepEqual(one.done, ['taskList', 'designComment', 'reviewComment']);
+		assert.deepEqual(one.done, []);
+		assert.deepEqual(one.failed.map(f => f.name), ['taskList', 'designComment', 'reviewComment'], 'posted but unmarked is reported, not success');
+		assert.deepEqual(posted, ['taskList', 'designComment', 'reviewComment'], 'each was posted once');
 		assert.deepEqual(marks(), {});
 		const again: string[] = [];
 		runUnitExtras(unit, steps(again), { now: () => AT });

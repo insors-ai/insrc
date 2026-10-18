@@ -85,6 +85,8 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			teamRefresh: async (p, branch) => { spies.teamRefresh.push({ path: p, branch }); return `✓ fetched main @ abc1234 — team policy applied`; },
 			teamClaim:   () => '',
 			teamRelease: () => '',
+			teamPark:    async () => '',
+			teamResume:  async () => '',
 		},
 		debug: {
 			sections: [
@@ -343,7 +345,7 @@ test('team refresh --branch passes the name through and renders the refusal that
 
 	const refused = ctxWith({ team: {
 		teamInit: async () => '',
-		teamClaim: () => '', teamRelease: () => '',
+		teamClaim: () => '', teamRelease: () => '', teamPark: async () => '', teamResume: async () => '',
 		teamRefresh: async () => { throw new Error("remote 'origin' names no default branch and none is recorded; run 'team refresh --branch <default-branch-name>' to name the default branch of remote 'origin'"); },
 	} });
 	const out = await runCommand('team refresh', refused.ctx);
@@ -359,7 +361,7 @@ test('a thrown error from either team command renders as a cross-prefixed line',
 	const { ctx } = ctxWith({ team: {
 		teamInit: async () => { throw new Error('.insrc/policy.json already exists; it was left untouched'); },
 		teamRefresh: async () => { throw new Error('a refresh is already running for this repository'); },
-		teamClaim: () => '', teamRelease: () => '',
+		teamClaim: () => '', teamRelease: () => '', teamPark: async () => '', teamResume: async () => '',
 	} });
 	assert.deepEqual(await runCommand('team init', ctx), ['✗ .insrc/policy.json already exists; it was left untouched']);
 	assert.deepEqual(await runCommand('team refresh', ctx), ['✗ a refresh is already running for this repository']);

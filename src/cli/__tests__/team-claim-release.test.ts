@@ -87,7 +87,7 @@ test('team claim and team release resolve the unit, call the gate functions, pri
 	for (const bad of ['team claim', 'team release', 'team claim nothex', `team claim ${HASH} story1`, `team claim ${HASH} s1 task2`, `team claim ${HASH} s1 t1 extra`, `team release ${HASH} t1`]) {
 		const out = await runCommand(bad, ctx());
 		assert.equal(out.length, 1, bad);
-		assert.match(out[0] ?? '', /^usage: team init .*team claim\|release <epicHash> \[storyId \[taskId\]\]$/, bad);
+		assert.match(out[0] ?? '', /^usage: team init .*team claim\|release <epicHash> \[storyId \[taskId\]\] \| team park .*team resume .*$/, bad);
 	}
 	assert.deepEqual(idle.units, []);
 });

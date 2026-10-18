@@ -38,6 +38,8 @@ export const COMMAND_HELP: readonly string[] = [
 	'team     init [path]   ·   write a starter .insrc/policy.json for the team lead to review and commit',
 	'team     refresh [path] [--branch <name>]   ·   fetch the remote default branch and apply its policy (name the branch when it cannot be detected)',
 	'team     claim|release <epicHash> [storyId [taskId]]   ·   take an unassigned stage, or give up one you hold (a policy administrator may release any)',
+	'team     park <epicHash> [storyId]   ·   hand your unfinished work on a stage to its next owner (commits the drafts and a run checkpoint to a handoff branch)',
+	'team     resume <epicHash> [storyId] [--workflow <name>]   ·   take over work someone parked: restores it and shows where the run stopped',
 	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
 	'pane daemon|repos|workflows|setup   ·   help   ·   quit',
@@ -317,6 +319,9 @@ async function runTracker(sub: string | undefined, rest: readonly string[], svc:
 	}
 }
 
+/** The stage workflows a resume can be told to restart. */
+const HANDOFF_WORKFLOWS: readonly string[] = ['design.epic', 'design.story', 'plan'];
+
 /** The unit a `team claim` / `team release` names: an epic hash, plus a story id, plus a task id. */
 function parseClaimUnit(args: readonly string[]): Omit<UnitRef, 'repoPath'> | undefined {
 	const [epicHash, storyId, taskId, ...extra] = args;
@@ -329,15 +334,29 @@ function parseClaimUnit(args: readonly string[]): Omit<UnitRef, 'repoPath'> | un
 }
 
 /**
- * `team init [path]`, `team refresh [path] [--branch <name>]`, and `team claim|release <epicHash> [storyId [taskId]]`.
+ * `team init [path]`, `team refresh [path] [--branch <name>]`, `team claim|release <epicHash> [storyId [taskId]]`, and
+ * `team park <epicHash> [storyId]` / `team resume <epicHash> [storyId] [--workflow <name>]`.
  * The path defaults to the selected repo; claim and release act on the selected repo.
  */
 async function runTeam(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): Promise<string[]> {
-	const USAGE = 'usage: team init [path] | team refresh [path] [--branch <name>] | team claim|release <epicHash> [storyId [taskId]]';
+	const USAGE = 'usage: team init [path] | team refresh [path] [--branch <name>] | team claim|release <epicHash> [storyId [taskId]] | team park <epicHash> [storyId] | team resume <epicHash> [storyId] [--workflow <name>]';
 	if (sub === 'claim' || sub === 'release') {
 		const unit = parseClaimUnit(rest);
 		if (unit === undefined) return [USAGE];
 		return [sub === 'claim' ? svc.team.teamClaim(ctx.repoPath, unit) : svc.team.teamRelease(ctx.repoPath, unit)];
+	}
+	if (sub === 'park' || sub === 'resume') {
+		const args = [...rest];
+		let workflow: string | undefined;
+		const at = args.indexOf('--workflow');
+		if (at >= 0) {
+			workflow = args[at + 1];
+			if (sub === 'park' || workflow === undefined || !HANDOFF_WORKFLOWS.includes(workflow)) return [USAGE];
+			args.splice(at, 2);
+		}
+		const unit = parseClaimUnit(args);
+		if (unit === undefined || unit.unit === 'task') return [USAGE];
+		return [sub === 'park' ? await svc.team.teamPark(ctx.repoPath, unit) : await svc.team.teamResume(ctx.repoPath, unit, workflow)];
 	}
 	let path: string | undefined;
 	let branch: string | undefined;

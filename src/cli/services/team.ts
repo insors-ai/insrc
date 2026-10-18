@@ -14,6 +14,7 @@ import { claim, release, describeOutcome, type GateOutcome } from '../../workflo
 import type { UnitRef } from '../../workflow/tracker/refs.js';
 import { refreshPolicy } from '../../workflow/team/policy-refresh.js';
 import { writeStarterPolicy } from '../../workflow/team/starter-policy.js';
+import { rpc } from '../client.js';
 import { toAbsPath } from './repo.js';
 
 export async function teamInit(repoPath: string): Promise<string> {
@@ -52,4 +53,48 @@ export function teamClaim(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): st
 export function teamRelease(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): string {
 	const full = { ...unit, repoPath: toAbsPath(repoPath) } as UnitRef;
 	return outcomeLine(release(full.repoPath, full), full, 'released', 'released');
+}
+
+/** The daemon call a park or resume goes through; the real IPC rpc by default. */
+type DaemonCall = (method: string, params: Record<string, unknown>) => Promise<unknown>;
+const viaDaemon: DaemonCall = (method, params) => rpc<unknown>(method, params);
+
+/** What `team.park` and `team.resume` answer (the workflow-step outputs, as JSON). */
+interface HandoffReply {
+	readonly next: string;
+	readonly branch?: string; readonly variant?: string; readonly noted?: boolean; readonly noteFailure?: string; readonly cleanupWarning?: string;
+	readonly stepId?: string; readonly state?: string;
+	readonly workflow?: string; readonly reason?: string; readonly draftRestored?: boolean;
+	readonly error?: { readonly code: string; readonly message: string };
+}
+
+const unitArgs = (repoPath: string, unit: Omit<UnitRef, 'repoPath'>): Record<string, unknown> =>
+	({ repo: toAbsPath(repoPath), epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) });
+
+/** A refusal or failure of the daemon operation, as the terminal prints it. */
+const failureLine = (what: string, reply: HandoffReply): string => `✗ not ${what} — ${reply.error?.message ?? reply.reason ?? reply.next}`;
+
+/** Hand the unit's unfinished work to whoever takes it over (the daemon commits the drafts and a checkpoint to the handoff branch). */
+export async function teamPark(repoPath: string, unit: Omit<UnitRef, 'repoPath'>, call: DaemonCall = viaDaemon): Promise<string> {
+	const reply = await call('team.park', unitArgs(repoPath, unit)) as HandoffReply;
+	if (reply.next !== 'parked') return failureLine('parked', reply);
+	const warnings = [
+		reply.noted === false ? `the issue note was not added${reply.noteFailure !== undefined ? ` (${reply.noteFailure})` : ''}` : undefined,
+		reply.cleanupWarning,
+	].filter((w): w is string => w !== undefined);
+	return `✓ parked ${unitLabel(unit as UnitRef)} on ${reply.branch ?? '?'} (${reply.variant === 'run' ? 'the run and its drafts' : 'the drafts'}) — the next owner runs 'team resume ${unit.epicHash}${unit.storyId !== undefined ? ` ${unit.storyId}` : ''}'${warnings.length > 0 ? `  ⚠ ${warnings.join('; ')}` : ''}`;
+}
+
+/** Take over parked work: the daemon restores it and stores the run, and this prints where it stopped. */
+export async function teamResume(repoPath: string, unit: Omit<UnitRef, 'repoPath'>, workflow?: string, call: DaemonCall = viaDaemon): Promise<string> {
+	const reply = await call('team.resume', { ...unitArgs(repoPath, unit), ...(workflow !== undefined ? { workflow } : {}) }) as HandoffReply;
+	const label = unitLabel(unit as UnitRef);
+	switch (reply.next) {
+		case 'emit_plan':       return `✓ resumed ${label} at the plan turn — the run is stored in the daemon; continue it with insrc_workflow_step (state ${reply.state ?? '?'})`;
+		case 'emit_step':       return `✓ resumed ${label} at step ${reply.stepId ?? '?'} — the run is stored in the daemon; continue it with insrc_workflow_step (state ${reply.state ?? '?'})`;
+		case 'emit_synthesize': return `✓ resumed ${label} at the synthesis turn — the run is stored in the daemon; continue it with insrc_workflow_step (state ${reply.state ?? '?'})`;
+		case 'restart':         return `✓ ${label}: ${reply.reason ?? 'no run to continue'} — start ${reply.workflow ?? 'the stage'} afresh${reply.draftRestored === true ? ' (the parked draft is back in your working tree)' : ''}`;
+		case 'nothing_to_resume': return `• nothing to resume for ${label} — ${reply.reason ?? ''}`;
+		default:                return failureLine('resumed', reply);
+	}
 }

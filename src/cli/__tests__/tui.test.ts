@@ -105,6 +105,8 @@ function fakeServices(): Services {
 			teamRefresh: async () => '',
 			teamClaim:   () => '',
 			teamRelease: () => '',
+			teamPark:    async () => '',
+			teamResume:  async () => '',
 		},
 		debug: {
 			sections: [

@@ -54,22 +54,25 @@ function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps)
 	};
 	for (const f of files) {
 		const abs = join(repo, f.path);
+		let tmp: string | undefined;
 		try {
 			const injected = deps.failWrite?.(f.path);
 			if (injected !== undefined) throw new Error(injected);
 			// directories this call is about to make, so a rollback leaves none behind
 			const missing: string[] = [];
 			for (let d = dirname(abs); !existsSync(d) && d !== dirname(d); d = dirname(d)) missing.push(d);
+			// recorded before they are made, shallowest first, so the rollback removes the deepest first even after a partial mkdir
+			madeDirs.push(...missing.reverse());
 			mkdirSync(dirname(abs), { recursive: true });
-			madeDirs.push(...missing);
 			const before = existsSync(abs) ? readFileSync(abs, 'utf8') : null;
-			const tmp = `${abs}.resume-tmp`;
+			tmp = `${abs}.resume-${randomBytes(6).toString('hex')}`;
 			// raw-write: restores a parked file byte for byte (its meta.revision included); this is not a new content write
 			writeFileSync(tmp, f.content, 'utf8');
 			renameSync(tmp, abs);
 			done.push({ path: abs, before });
 		} catch (err) {
-			rmSync(`${abs}.resume-tmp`, { force: true });
+			// only the temporary file this call made; a failure to remove it must not stop the rollback
+			if (tmp !== undefined) { try { rmSync(tmp, { force: true }); } catch { /* the rollback below still runs */ } }
 			rollback();
 			return { failed: `restoring ${f.path} failed (${err instanceof Error ? err.message : String(err)}); the working tree is as it was` };
 		}

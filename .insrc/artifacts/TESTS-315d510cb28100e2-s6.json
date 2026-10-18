@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T18:24:44.304Z",
+    "updatedAt": "2026-10-18T18:26:28.539Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -406,8 +406,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "1ba17751",
-        "ranAt": "2026-10-18T18:24:44.304Z",
+        "commit": "131306a2",
+        "ranAt": "2026-10-18T18:26:28.539Z",
         "testsPassed": true,
         "tests": [
           {
@@ -442,7 +442,7 @@
             "file": "src/workflow/team/__tests__/handoff-resume.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3455,
+            "durationMs": 3136,
             "titles": [
               {
                 "title": "a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone",

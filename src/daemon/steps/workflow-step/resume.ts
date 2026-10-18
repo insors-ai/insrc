@@ -11,7 +11,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, rmdirSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -44,11 +44,18 @@ const refusedWith = (reason: string): ResumeResult => ({ kind: 'refused', reason
  * made are removed. Returns undefined on success, or the reason (the tree is then as it was).
  */
 function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps): { readonly rollback: () => void } | { readonly failed: string } {
-	const done: Array<{ path: string; before: string | null }> = [];
+	const done: Array<{ path: string; before: { readonly bytes: Buffer; readonly mode: number } | null }> = [];
 	const madeDirs: string[] = [];
+	const stuck: string[] = [];
 	const rollback = (): void => {
 		for (const f of done.reverse()) {
-			try { f.before === null ? rmSync(f.path, { force: true }) : writeFileSync(f.path, f.before, 'utf8'); } catch (err) { log.warn({ path: f.path, err: err instanceof Error ? err.message : String(err) }, 'resume: could not roll back a restored file'); }
+			try {
+				if (f.before === null) rmSync(f.path, { force: true });
+				else { writeFileSync(f.path, f.before.bytes); chmodSync(f.path, f.before.mode); }
+			} catch (err) {
+				stuck.push(f.path);
+				log.warn({ path: f.path, err: err instanceof Error ? err.message : String(err) }, 'resume: could not roll back a restored file');
+			}
 		}
 		for (const d of madeDirs.reverse()) { try { rmdirSync(d); } catch { /* not empty or already gone */ } }
 	};
@@ -64,17 +71,20 @@ function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps)
 			// recorded before they are made, shallowest first, so the rollback removes the deepest first even after a partial mkdir
 			madeDirs.push(...missing.reverse());
 			mkdirSync(dirname(abs), { recursive: true });
-			const before = existsSync(abs) ? readFileSync(abs, 'utf8') : null;
+			const before = existsSync(abs) ? { bytes: readFileSync(abs), mode: statSync(abs).mode & 0o7777 } : null;
 			tmp = `${abs}.resume-${randomBytes(6).toString('hex')}`;
 			// raw-write: restores a parked file byte for byte (its meta.revision included); this is not a new content write
 			writeFileSync(tmp, f.content, 'utf8');
+			// the replaced file keeps its mode (an executable stays executable)
+			if (before !== null) chmodSync(tmp, before.mode);
 			renameSync(tmp, abs);
 			done.push({ path: abs, before });
 		} catch (err) {
 			// only the temporary file this call made; a failure to remove it must not stop the rollback
 			if (tmp !== undefined) { try { rmSync(tmp, { force: true }); } catch { /* the rollback below still runs */ } }
 			rollback();
-			return { failed: `restoring ${f.path} failed (${err instanceof Error ? err.message : String(err)}); the working tree is as it was` };
+			const why = err instanceof Error ? err.message : String(err);
+			return { failed: stuck.length === 0 ? `restoring ${f.path} failed (${why}); the working tree is as it was` : `restoring ${f.path} failed (${why}), and these files could not be put back as they were: ${stuck.join(', ')}` };
 		}
 	}
 	return { rollback };

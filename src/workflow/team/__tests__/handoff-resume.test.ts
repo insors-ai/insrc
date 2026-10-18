@@ -13,7 +13,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -204,6 +204,11 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 	try {
 		const draft = join(w.parker, '.insrc', 'artifacts', `PLAN-${HASH}-s1.json`);
 		const mdDraft = join(w.parker, `docs/epics/tag-filtering-E20260718${HASH.slice(0, 8)}/S001/PLAN.md`);
+		const lldMd = join(w.parker, `docs/epics/tag-filtering-E20260718${HASH.slice(0, 8)}/S001/LLD.md`);
+		// an older, executable LLD.md is already committed on both clones, so the restore overwrites a file that exists
+		mkdirSync(dirname(lldMd), { recursive: true }); writeFileSync(lldMd, '# old\n'); chmodSync(lldMd, 0o755);
+		git(w.parker, 'add', '-A'); git(w.parker, 'commit', '-qm', 'old LLD.md'); git(w.parker, 'push', '-q', 'origin', 'main'); git(w.recv, 'pull', '-q', 'origin', 'main');
+		writeFileSync(lldMd, '# newer\n');
 		mkdirSync(dirname(draft), { recursive: true }); writeFileSync(draft, '{"plan":"draft"}\n');
 		mkdirSync(dirname(mdDraft), { recursive: true }); writeFileSync(mdDraft, '# the plan draft\n');
 		await park(w, unitOf(w.parker));
@@ -214,10 +219,13 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		const check = await resumeCheck(w.recv, unitOf(w.recv), { workflow: 'plan' }, resumeDeps(w));
 		assert.equal(check.kind, 'restart', JSON.stringify(check));
 		const before = treeOf(w.recv);
-		let writes = 0;
-		const failed = await applyResume(check, w.recv, { failWrite: () => (++writes === 2 ? 'disk full' : undefined) });
+		const seen: string[] = [];
+		const failed = await applyResume(check, w.recv, { failWrite: p => { seen.push(p); return seen.length === 3 ? 'disk full' : undefined; } });
+		assert.deepEqual(seen.map(p => p.split('/').pop()), ['LLD.md', `PLAN-${HASH}-s1.json`, 'PLAN.md'], 'the existing file is overwritten before the third fails');
 		assert.equal(failed.kind, 'refused', JSON.stringify(failed));
 		assert.equal(treeOf(w.recv), before, 'the working tree is as it was');
+		assert.equal(readFileSync(here(lldMd), 'utf8'), '# old\n', 'the file that was overwritten is back');
+		assert.equal(statSync(here(lldMd)).mode & 0o777, 0o755, 'with its mode');
 		assert.equal(existsSync(here(draft)), false);
 		assert.equal(existsSync(here(mdDraft)), false);
 		assert.equal(existsSync(dirname(here(mdDraft))), false, 'the directories the restore made are removed');
@@ -233,6 +241,8 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		assert.equal(ok.draftRestored, true);
 		assert.equal(readFileSync(here(draft), 'utf8'), '{"plan":"draft"}\n');
 		assert.equal(readFileSync(here(mdDraft), 'utf8'), '# the plan draft\n');
+		assert.equal(readFileSync(here(lldMd), 'utf8'), '# newer\n');
+		assert.equal(statSync(here(lldMd)).mode & 0o777, 0o755, 'the overwritten file keeps its mode');
 		assert.equal(listStates().length, 0, 'a restart stores no run');
 	} finally { rmSync(w.root, { recursive: true, force: true }); }
 });

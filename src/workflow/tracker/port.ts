@@ -72,6 +72,8 @@ export interface TrackerPort {
 	whoAmI(): PortResult<string>;
 	readAssignee(issue: IssueRef): PortResult<string | null>;
 	setAssignee(issue: IssueRef, who: string | null): PortResult<void>;
+	/** Adds `who` to the assignees without removing anyone, then returns the assignees read back (AMD-315d510cb28100e2-12). A claim uses it so it never removes another claimant. */
+	addAssignee(issue: IssueRef, who: string): PortResult<string[]>;
 	createIssue(spec: IssueSpec): PortResult<IssueRef>;
 	findIssue(labels: string[]): PortResult<IssueRef | null>;
 	/** Every issue, open or closed, carrying all the labels, complete across pages, in ascending issue-number order (AMD-315d510cb28100e2-10). */

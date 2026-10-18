@@ -113,6 +113,24 @@ function setAssignee(issue: IssueRef, who: string | null): PortResult<void> {
 	});
 }
 
+/** Add `who` to the assignees (nobody is removed), re-read, and return the assignees read back.
+ *  A failed or timed-out step is reported as it is and not retried; a re-read that does not
+ *  show `who` is reported as rejected. */
+function addAssignee(issue: IssueRef, who: string): PortResult<string[]> {
+	return attempt(() => {
+		const current = readAssignees(issue);
+		const repoArg = `${current.owner}/${current.repo}`;
+		if (!current.logins.some(l => sameLogin(l, who))) {
+			runGh(['issue', 'edit', current.number, '--repo', repoArg, '--add-assignee', who], { discardOutput: true });
+		}
+		const after = readAssignees(issue).logins;
+		if (!after.some(l => sameLogin(l, who))) {
+			throw new GhCommandError('rejected', `${issue} assignees are [${after.join(', ')}] after the add, expected ${who} among them`);
+		}
+		return after;
+	});
+}
+
 function createIssueOps(owner: string, repo: string): IssueOps {
 	return {
 		create: (spec: IssueSpec) => attempt((): CreatedIssue => ghCreateIssueTyped(owner, repo, spec.title, spec.body, spec.labels, spec.issueType)),
@@ -149,6 +167,7 @@ export function createGithubTracker(owner: string, repo: string): TrackerPort {
 
 		readAssignee,
 		setAssignee,
+		addAssignee,
 
 		createIssue: (spec: IssueSpec) => {
 			const created = issueOps.create(spec);

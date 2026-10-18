@@ -324,6 +324,41 @@ test('setAssignee reports rejected or unreachable without a retry when the re-re
 	assert.equal(readFails.calls.length, 1);
 });
 
+test('addAssignee adds without removing, returns the assignees read back and reports a failed step without a retry', () => {
+	const port = createGithubTracker('o', 'r');
+
+	// from none and beside another assignee: nobody is removed, the add is made once
+	const none = fakeAssigneeGh([]);
+	assert.deepEqual(port.addAssignee('o/r#5', 'alice'), { ok: true, value: ['alice'] });
+	assert.equal(none.calls.filter(isEdit).length, 1);
+	const beside = fakeAssigneeGh(['bob']);
+	assert.deepEqual(port.addAssignee('o/r#5', 'alice'), { ok: true, value: ['bob', 'alice'] });
+	assert.equal(beside.calls.some(c => c.includes('--remove-assignee')), false, 'no assignee is removed');
+
+	// already there (case-insensitive): no change call, still re-read
+	const same = fakeAssigneeGh(['Alice']);
+	assert.deepEqual(port.addAssignee('o/r#5', 'alice'), { ok: true, value: ['Alice'] });
+	assert.equal(same.calls.filter(isEdit).length, 0);
+
+	// the add did not take: rejected, naming the state; a timed-out add: unreachable; neither is retried
+	const sticky = fakeAssigneeGh(['bob'], { stickyAdd: true });
+	const differs = port.addAssignee('o/r#5', 'alice');
+	assert.equal(differs.ok, false);
+	if (!differs.ok) { assert.equal(differs.kind, 'rejected'); assert.match(differs.reason, /expected alice/); }
+	assert.equal(sticky.calls.filter(isEdit).length, 1, 'the add is not retried');
+	const timeout = fakeAssigneeGh(['bob'], { failOn: a => (a.includes('--add-assignee') ? execError({ code: 'ETIMEDOUT' }) : undefined) });
+	const timedOut = port.addAssignee('o/r#5', 'alice');
+	assert.equal(timedOut.ok, false);
+	if (!timedOut.ok) assert.equal(timedOut.kind, 'unreachable');
+	assert.equal(timeout.calls.filter(isEdit).length, 1);
+	assert.equal(timeout.calls.filter(c => c[1] === 'view').length, 1, 'no re-read after a failed step');
+
+	// a malformed reference never reaches gh
+	const bad = fakeAssigneeGh([]);
+	assert.equal(port.addAssignee('not-a-ref', 'alice').ok, false);
+	assert.equal(bad.calls.length, 0);
+});
+
 // ---------------------------------------------------------------------------
 // issueOps parity with the wrappers
 // ---------------------------------------------------------------------------

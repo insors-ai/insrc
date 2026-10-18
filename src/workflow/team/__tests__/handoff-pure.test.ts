@@ -16,9 +16,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import type { WorkflowStepStatePayload } from '../../../daemon/steps/workflow-step/state.js';
 import { artifactJsonPath, hldArtifactId, lldArtifactId, planArtifactId } from '../../storage.js';
 import {
-	CHECKPOINT_SCHEMA_VERSION, DEFAULT_BRANCH_PATTERN, REPO_ROOT_TOKEN, handoffBranchName, inferStageWorkflow, isUnitArtifactPath, portablePaths, rebindCheckpoint, validateCheckpoint,
+	CHECKPOINT_SCHEMA_VERSION, DEFAULT_BRANCH_PATTERN, REPO_ROOT_TOKEN, buildRunCheckpoint, handoffBranchName, inferStageWorkflow, isUnitArtifactPath, portablePaths, rebindCheckpoint, validateCheckpoint,
 	type HandoffUnit, type RunCheckpoint,
 } from '../handoff.js';
 
@@ -60,7 +61,7 @@ test('handoffBranchName fills placeholders, applies the default, rejects a gramm
 
 function runCheckpoint(over: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
 	return {
-		schemaVersion: CHECKPOINT_SCHEMA_VERSION, kind: 'run', unit: { epicHash: HASH, storyId: 's1' },
+		schemaVersion: CHECKPOINT_SCHEMA_VERSION, kind: 'run', portable: true, unit: { epicHash: HASH, storyId: 's1' },
 		parkedBy: 'alice', parkedAt: '2026-10-18T10:00:00.000Z', sourceHead: 'abc123', repositoryId: 'root1',
 		artifactPaths: [`.insrc/artifacts/${lldArtifactId(HASH, 's1')}.json`, `${WORK_ITEM}/S001/LLD.md`],
 		runId: 'wf-1', epicKey: HASH, stage: 'awaiting_llm_step',
@@ -74,7 +75,7 @@ function runCheckpoint(over: Partial<Record<string, unknown>> = {}): Record<stri
 test("checkpoint validation rejects an unknown schemaVersion or kind, a unit mismatch and a path outside the unit's artifact paths, for the run and draft variants", () => {
 	const ok = validateCheckpoint(runCheckpoint(), STORY);
 	assert.equal(ok.ok, true);
-	const draft = { schemaVersion: 1, kind: 'draft', unit: { epicHash: HASH, storyId: 's1' }, parkedBy: 'alice', parkedAt: 't', sourceHead: 'h', repositoryId: 'r', artifactPaths: [`.insrc/artifacts/${planArtifactId(HASH, 's1')}.json`] };
+	const draft = { schemaVersion: 1, kind: 'draft', portable: true, unit: { epicHash: HASH, storyId: 's1' }, parkedBy: 'alice', parkedAt: 't', sourceHead: 'h', repositoryId: 'r', artifactPaths: [`.insrc/artifacts/${planArtifactId(HASH, 's1')}.json`] };
 	assert.equal(validateCheckpoint(draft, STORY).ok, true);
 
 	const reason = (raw: unknown, unit: HandoffUnit = STORY): string => { const r = validateCheckpoint(raw, unit); return r.ok ? 'OK' : r.reason; };
@@ -86,6 +87,10 @@ test("checkpoint validation rejects an unknown schemaVersion or kind, a unit mis
 	assert.match(reason(runCheckpoint(), EPIC), /different unit/);
 	assert.match(reason(runCheckpoint({ unit: { epicHash: 'ffffffffffffffff', storyId: 's1' } })), /different unit/);
 	assert.match(reason('nope'), /not an object/);
+
+	// a checkpoint that was not made portable is refused, whatever else it holds
+	assert.match(reason(runCheckpoint({ portable: undefined })), /not made portable/);
+	assert.match(reason({ ...draft, portable: false }), /not made portable/);
 
 	// the draft variant is held to the same checks
 	assert.match(reason({ ...draft, kind: 'weird' }), /unknown checkpoint kind/);
@@ -169,6 +174,36 @@ test('rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, rese
 	const lateWithPaths = rebindCheckpoint(asRun({ stage: 'awaiting_synthesize', executor: undefined, stepOutputs: { s1: scrubbed } }), binding);
 	assert.deepEqual((lateWithPaths.stepOutputs?.['s1'] as { note: string }).note, 'see /Users/bob/clone.');
 	assert.equal(JSON.stringify(lateWithPaths).includes(`"${PARKER}/`), false);
+
+	// end to end: a live run whose params, executor state and step outputs quote the parker's full path is built into a checkpoint,
+	// validated, and rebound; the parker's path survives nowhere and the receiving path is in its place
+	const live: WorkflowStepStatePayload = {
+		version: 1, runId: 'wf-9', epicKey: HASH, startedAtMs: 111, stage: 'awaiting_llm_step',
+		intent: { workflow: 'design.story', focus: `read ${PARKER}/docs`, repoPath: PARKER, repoIndexedAt: 777, params: { epicHash: HASH, storyId: 's1', root: PARKER, files: [`${PARKER}/a.ts`] } },
+		executor: {
+			runId: 'wf-9', nextStepIndex: 1, plan: { workflow: 'design.story', steps: [{ id: 's1', runner: 'context.assemble', params: { dir: PARKER } }] },
+			stepOutputs: { s1: { summary: `found in ${PARKER}/src`, [`${PARKER}/key`]: 1 } },
+			intent: { workflow: 'design.story', focus: 'x', repoPath: PARKER, repoIndexedAt: 777, params: {} },
+		},
+	};
+	const built = buildRunCheckpoint({
+		unit: STORY, parkedBy: 'alice', parkedAt: 't', sourceHead: 'h', repositoryId: 'r', artifactPaths: [], payload: live, owner: 'alice', upstream: [],
+	});
+	assert.equal(built.portable, true);
+	assert.equal(JSON.stringify(built).includes(PARKER), false, 'the built checkpoint carries no parker path');
+	assert.equal('repoPath' in built.intent || 'repoIndexedAt' in built.intent, false);
+	assert.equal(built.executor !== undefined && 'intent' in built.executor, false);
+	const checked = validateCheckpoint(JSON.parse(JSON.stringify(built)), STORY);
+	assert.equal(checked.ok, true, checked.ok ? '' : checked.reason);
+	const landed = rebindCheckpoint((checked as { ok: true; checkpoint: RunCheckpoint }).checkpoint, binding);
+	assert.equal(JSON.stringify(landed).includes(PARKER), false, 'no parker path after rebinding');
+	assert.equal(JSON.stringify(landed).includes(REPO_ROOT_TOKEN), false, 'no token left after rebinding');
+	assert.equal(landed.intent.params['root'], '/Users/bob/clone');
+	assert.deepEqual(landed.intent.params['files'], ['/Users/bob/clone/a.ts']);
+	assert.equal((landed.executor?.stepOutputs['s1'] as Record<string, unknown>)['summary'], 'found in /Users/bob/clone/src');
+	assert.equal((landed.executor?.stepOutputs['s1'] as Record<string, unknown>)['/Users/bob/clone/key'], 1, 'keys are rebound too');
+	assert.equal(landed.intent.repoPath, '/Users/bob/clone');
+	assert.equal(landed.executor?.intent.repoIndexedAt, 12345);
 
 	// a different indexing state on the receiving side is respected as given
 	assert.equal(rebindCheckpoint(asRun({}), { ...binding, repoIndexedAt: null }).intent.repoIndexedAt, null);

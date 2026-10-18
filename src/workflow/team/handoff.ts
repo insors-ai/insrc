@@ -45,6 +45,8 @@ interface CheckpointCommon {
 	readonly repositoryId:  string;
 	/** Repo-relative files parked with the checkpoint. */
 	readonly artifactPaths: readonly string[];
+	/** Set by buildRunCheckpoint / the draft builder once the parker's repository path has been replaced by REPO_ROOT_TOKEN everywhere. */
+	readonly portable:      true;
 }
 
 /** A run's whole state, minus what belongs to the parker's machine (repoPath, repoIndexedAt, the clock). */
@@ -149,6 +151,7 @@ export function validateCheckpoint(raw: unknown, unit: HandoffUnit): CheckpointC
 	const u = raw['unit'];
 	if (!isObject(u) || u['epicHash'] !== unit.epicHash || (u['storyId'] ?? undefined) !== (unit.storyId ?? undefined)) return no('the checkpoint is for a different unit');
 	for (const f of ['parkedBy', 'parkedAt', 'sourceHead', 'repositoryId'] as const) if (!isString(raw[f])) return no(`the checkpoint has no ${f}`);
+	if (raw['portable'] !== true) return no('the checkpoint was not made portable (it may still carry the parker\'s machine paths)');
 	const paths = raw['artifactPaths'];
 	if (!Array.isArray(paths) || !paths.every(isString)) return no('the checkpoint has no artifactPaths list');
 	for (const p of paths as string[]) if (!isUnitArtifactPath(unit, p)) return no(`the checkpoint lists a file outside the unit's own artifacts: ${p}`);
@@ -187,7 +190,7 @@ const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/
 function mapStrings<T>(value: T, fn: (text: string) => string): T {
 	if (typeof value === 'string') return fn(value) as T;
 	if (Array.isArray(value)) return value.map(v => mapStrings(v, fn)) as T;
-	if (isObject(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, mapStrings(v, fn)])) as T;
+	if (isObject(value)) return Object.fromEntries(Object.entries(value).map(([k, v]) => [fn(k), mapStrings(v, fn)])) as T;
 	return value;
 }
 
@@ -220,6 +223,46 @@ export function rebindCheckpoint(checkpoint: RunCheckpoint, binding: { readonly 
 		stage:       checkpoint.stage,
 		...(checkpoint.stage === 'awaiting_llm_step' && checkpoint.executor !== undefined ? { executor: { ...local(checkpoint.executor), intent } } : {}),
 		...(checkpoint.stage === 'awaiting_synthesize' && checkpoint.stepOutputs !== undefined ? { stepOutputs: local(checkpoint.stepOutputs) } : {}),
+	};
+}
+
+/** What park knows when it turns a live run into a checkpoint. */
+export interface RunCheckpointInput {
+	readonly unit:          HandoffUnit;
+	readonly parkedBy:      string;
+	readonly parkedAt:      string;
+	readonly sourceHead:    string;
+	readonly repositoryId:  string;
+	readonly artifactPaths: readonly string[];
+	/** The live run, as the daemon holds it (carrying the parker's repoPath and repoIndexedAt). */
+	readonly payload:       WorkflowStepStatePayload;
+	readonly owner:         string;
+	readonly upstream:      readonly UpstreamRevision[];
+}
+
+/**
+ * The run checkpoint for a live run: the machine-local fields (repoPath, repoIndexedAt, the executor's own intent, the clock) are
+ * dropped, and the parker's repository path is replaced by REPO_ROOT_TOKEN everywhere else (params, executor state, step
+ * outputs), so what is committed to the handoff branch carries nothing from the parker's machine. This is the only builder of a
+ * run checkpoint, and it sets `portable`, which validation requires.
+ */
+export function buildRunCheckpoint(input: RunCheckpointInput): RunCheckpoint {
+	const { payload } = input;
+	const parker = payload.intent.repoPath;
+	const portable = <V>(v: V): V => portablePaths(v, parker);
+	const { repoPath: _repoPath, repoIndexedAt: _indexedAt, ...intent } = payload.intent;
+	void _repoPath; void _indexedAt;
+	const { intent: _executorIntent, ...executor } = payload.executor ?? ({} as ExecutorState);
+	void _executorIntent;
+	return {
+		schemaVersion: CHECKPOINT_SCHEMA_VERSION, kind: 'run', portable: true,
+		unit: input.unit, parkedBy: input.parkedBy, parkedAt: input.parkedAt, sourceHead: input.sourceHead, repositoryId: input.repositoryId,
+		artifactPaths: input.artifactPaths,
+		runId: payload.runId, epicKey: payload.epicKey, stage: payload.stage,
+		intent: portable(intent),
+		...(payload.stage === 'awaiting_llm_step' && payload.executor !== undefined ? { executor: portable(executor) } : {}),
+		...(payload.stage === 'awaiting_synthesize' && payload.stepOutputs !== undefined ? { stepOutputs: portable(payload.stepOutputs) } : {}),
+		owner: input.owner, upstream: input.upstream,
 	};
 }
 

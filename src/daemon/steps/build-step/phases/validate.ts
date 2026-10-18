@@ -22,6 +22,7 @@ import { relative } from 'node:path';
 
 import { getLogger } from '../../../../shared/logger.js';
 import type { StructuredSchema } from '../../../../shared/types.js';
+import { assertMayBuild } from '../../../../workflow/team/author-gate.js';
 import { mergeInProgressError, renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import { storyWorkflowFiles } from '../../../../workflow/runners/build/own-files.js';
 import { headShortSha, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../../workflow/runners/build/standalone-record.js';
@@ -214,6 +215,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 
 	const ref = resolved.ref;
+	assertMayBuild(repoPath, ref);   // team gate: before any check runs or record is written
 	const mapping = resolveMapping(repoPath, input.tests, ref.task.tests, { epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId });
 	if (!mapping.ok) return mapping.error;
 	return runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence), {
@@ -318,6 +320,7 @@ async function handleStandaloneValidate(
 		return err('no-identity', `insrc_build_step[validate]: a standalone Small validate requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`);
 	}
 	const storyId = ctx.storyId ?? 'S001';
+	assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before any check runs or record is written
 
 	// Point the verdict gate at the standalone LLD when one exists (Small), and take
 	// its test strategy as the tests to run. A missing / unreadable LLD omits the

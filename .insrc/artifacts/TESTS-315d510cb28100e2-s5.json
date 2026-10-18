@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T15:00:11.605Z",
+    "updatedAt": "2026-10-18T15:04:41.660Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -538,8 +538,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "c8b901a0",
-        "ranAt": "2026-10-18T15:00:11.605Z",
+        "commit": "bbcf17b1",
+        "ranAt": "2026-10-18T15:04:41.660Z",
         "testsPassed": true,
         "tests": [
           {
@@ -556,6 +556,11 @@
                 "file": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
                 "title": "the team gate comes before the upstream-question gate: a held stage whose upstream has open questions is refused naming the holder",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+                "title": "plan: synthesize asks the team gate again after finalizing, so a claim that moved meanwhile refuses the write",
+                "result": "pass"
               }
             ],
             "files": []
@@ -566,7 +571,7 @@
             "file": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4491,
+            "durationMs": 1656,
             "titles": [
               {
                 "title": "workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before",
@@ -574,6 +579,35 @@
               },
               {
                 "title": "the team gate comes before the upstream-question gate: a held stage whose upstream has open questions is refused naming the holder",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1665,
+            "titles": [
+              {
+                "title": "plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>/PLAN.md",
+                "result": "pass"
+              },
+              {
+                "title": "plan: refuses when the Story LLD is unapproved (gate)",
+                "result": "pass"
+              },
+              {
+                "title": "plan: refuses when the Story LLD is stale with no ack (gate)",
+                "result": "pass"
+              },
+              {
+                "title": "plan: finalize rejects a task graph with a dangling dependsOn",
+                "result": "pass"
+              },
+              {
+                "title": "plan: synthesize asks the team gate again after finalizing, so a claim that moved meanwhile refuses the write",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -158,7 +158,7 @@ Run at 2026-10-18T14:53:33.952Z on commit `404fb77f`. Tests check: **passed**. 3
 
 ## t7
 
-Run at 2026-10-18T15:00:11.605Z on commit `c8b901a0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T15:04:41.660Z on commit `bbcf17b1`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts: workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before**
 
@@ -166,9 +166,11 @@ Run at 2026-10-18T15:00:11.605Z on commit `c8b901a0`. Tests check: **passed**. 2
 | :--- | :--- | :--- |
 | pass | workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before | `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` |
 | pass | the team gate comes before the upstream-question gate: a held stage whose upstream has open questions is refused naming the holder | `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` |
+| pass | plan: synthesize asks the team gate again after finalizing, so a claim that moved meanwhile refuses the write | `src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` | 0 | 2 | 4.5 s |  |
+| `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` | 0 | 2 | 1.7 s |  |
+| `src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts` | 0 | 5 | 1.7 s |  |

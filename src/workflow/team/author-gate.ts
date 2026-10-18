@@ -42,3 +42,16 @@ export function assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoP
 	if (outcome.kind === 'no-issue' && outcome.allowFirstAuthor) return;   // the first draft is what creates the issue
 	throw new TeamGateRefusedError(outcome);
 }
+
+/**
+ * The build route's call into the team gate (sc4, action build): the Task of a planned build,
+ * or the Story of a standalone one. Throws TeamGateRefusedError for anyone but the holder;
+ * a stage with no issue is refused as the gate says (only the first author turn is let through).
+ */
+export function assertMayBuild(repoPath: string, ref: { readonly epicHash: string; readonly storyId: string; readonly taskId?: string | undefined }): void {
+	const unit: UnitRef = ref.taskId !== undefined
+		? { unit: 'task', repoPath, epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId }
+		: { unit: 'story', repoPath, epicHash: ref.epicHash, storyId: ref.storyId };
+	const outcome = teamGate(repoPath, unit, 'build');
+	if (outcome.kind !== 'allowed') throw new TeamGateRefusedError(outcome);
+}

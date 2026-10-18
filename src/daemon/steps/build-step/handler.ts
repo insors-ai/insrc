@@ -12,6 +12,7 @@
 import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
+import { TeamGateRefusedError } from '../../../workflow/team/gate.js';
 import { handleImplement } from './phases/implement.js';
 import { handleValidate } from './phases/validate.js';
 import type { BuildStepInput, BuildStepMcpEnvelope, BuildStepOutput, BuildStepError } from './types.js';
@@ -50,6 +51,8 @@ async function dispatch(input: unknown): Promise<BuildStepOutput> {
 				);
 		}
 	} catch (err) {
+		// The team gate refused the action: say so with its own code and the reason (it names the holder).
+		if (err instanceof TeamGateRefusedError) return errorResult('team-gate-refused', err.reason);
 		const msg = err instanceof Error ? err.message : String(err);
 		log.warn({ phase: step.phase, err: msg }, 'insrc_build_step: uncaught error');
 		return errorResult('internal', msg);

@@ -29,6 +29,7 @@ import {
 	persistStandaloneBuildRecord,
 	standaloneEpicHashFromFocus,
 } from '../../../../workflow/runners/build/standalone-record.js';
+import { assertMayBuild } from '../../../../workflow/team/author-gate.js';
 import { mergeInProgressError, renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type {
 	BuildStandaloneContext,
@@ -61,6 +62,7 @@ export async function handleImplement(
 	const resolved = resolveTaskRef(repoPath, input.target, input.epicHash);
 	if (!resolved.ok) return err('unresolved-target', resolved.message);
 	const ref = resolved.ref;
+	assertMayBuild(repoPath, ref);   // team gate: before admission or any build-start stamp
 
 	// Admission gate — refuse when the Story's plan is missing / unapproved /
 	// stale. Read-only; the tree is untouched.
@@ -133,6 +135,7 @@ function handleStandaloneImplement(
 		return err('no-identity', `insrc_build_step[implement]: a standalone Small build requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`);
 	}
 	const storyId = ctx.storyId ?? 'S001';
+	assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before admission, the stamp or the Trivial record
 
 	const verdict = admitStandaloneBuild(repoPath, epicHash, storyId, producesLld);
 	if (!verdict.admitted) {

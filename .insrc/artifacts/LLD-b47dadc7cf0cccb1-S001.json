@@ -143,6 +143,13 @@
         "choice": "Adopt ac1–ac5 as written",
         "rationale": "Stakeholder decision 2026-10-18: ac1-ac5 as stated; the approved LLD's test mapping already maps every proving test to them.",
         "resolvedAt": "2026-10-18T14:32:37.165Z"
+      },
+      "q13ce9029": {
+        "question": "cd1: prepareCoverageGrounding, normalizeCoverageFindings and JudgeContext are new names (no HLD to own them; standalone fix).",
+        "status": "resolved",
+        "choice": "Define names in S001 LLD",
+        "rationale": "Stakeholder decision 2026-10-18: the standalone S001 LLD is the authority for prepareCoverageGrounding, normalizeCoverageFindings and JudgeContext; its contract section gives their signatures and behaviour.",
+        "resolvedAt": "2026-10-18T14:33:46.990Z"
       }
     }
   },

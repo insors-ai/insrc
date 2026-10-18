@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "11e2b8a74bdff8c8",
+    "storyId": "S001",
+    "createdAt": "2026-10-18T16:49:19.050Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-18T16:46:30.180Z",
+    "epicSlug": "show-builder-reported-smoke-live-results",
+    "updatedAt": "2026-10-18T16:50:54.330Z"
+  },
+  "body": {
+    "focus": "ISSUE-11e2b8a7: testRecordView (src/workflow/code-review/dimensions/test-record-view.ts) also lists each named test with a builder-reported result (name, result, evidence, marked reported by the builder, from the latest run that reported it); the coverage prompt (src/workflow/code-review/dimensions/coverage.ts) tells the judge to grade a promised smoke/live test against it. With no reported results the view and prompt are unchanged. Tests for the view and the prompt.",
+    "producesLld": false,
+    "commit": "bf6c8922",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "testRecordView lists reportedTests (latest per name, a fail winning a tie, malformed entries skipped, key omitted when none) and the coverage prompt grades a promised smoke/live test against it only when one is listed. New reported-tests-view.test.ts; code-review suites 294 pass, 1 live-gated skip.",
+    "testRecord": {
+      "md": "docs/standalone/show-builder-reported-smoke-live-results-E2026101811e2b8a7/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/reported-tests-view.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T16:50:54.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T16:50:54.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/test-record-view.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T16:50:54.330Z"
+      }
+    ]
+  }
+}

@@ -186,6 +186,9 @@ export interface LLMProvider {
   /** Embed text into a vector. Returns empty array if not supported. */
   embed(text: string): Promise<number[]>;
   readonly supportsTools: boolean;
+  /** The largest prompt, in characters, the provider accepts; undefined when not
+   *  known in advance (a size refusal then tells the caller). ISSUE-aef82b03. */
+  readonly inputBudgetChars?: number | undefined;
   /**
    * Schema-enforced structured completion (plans/structured-output.md
    * Phase A). The provider's wire layer guarantees the response

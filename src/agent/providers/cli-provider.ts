@@ -150,8 +150,14 @@ export interface CliProviderOpts {
 }
 
 
+/** codex's input limit in characters, as its own refusal states it (input_too_large, max_chars). */
+export const CODEX_INPUT_BUDGET_CHARS = 1_048_576;
+
 export class CliProvider implements LLMProvider {
 	readonly supportsTools = false;
+	/** codex states its limit (CODEX_INPUT_BUDGET_CHARS); claude's is not known in
+	 *  advance, so its size refusal decides (ISSUE-aef82b03). */
+	readonly inputBudgetChars: number | undefined;
 
 	private readonly kind: CliKind;
 	/** The `--model` id this provider forwards to the CLI, or undefined when it
@@ -165,6 +171,7 @@ export class CliProvider implements LLMProvider {
 
 	constructor(opts: CliProviderOpts) {
 		this.kind = opts.kind;
+		this.inputBudgetChars = opts.kind === 'codex' ? CODEX_INPUT_BUDGET_CHARS : undefined;
 		this.defaultModel = opts.model;
 		this.binPath = opts.binPath ?? opts.kind;
 		// 10 min default: agentic `claude`/`codex --print` calls that generate a

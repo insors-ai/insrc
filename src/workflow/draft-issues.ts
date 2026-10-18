@@ -98,7 +98,7 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 		const tasksOf = (): string[] => [...(doc.body?.tasks ?? [])]
 			.sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0))
 			.map(t => t.id).filter((id): id is string => typeof id === 'string');
-		const units = unitsOf(meta, tasksOf);
+		let units = unitsOf(meta, tasksOf);
 		if (units === null) return { status: 'not-applicable', reason: 'no-claim-unit' };
 		// A plan with no Tasks has no unit to claim: ready, with no units and no tracker call (policy permitting).
 		const noTasks = meta.workflow === 'plan' && tasksOf().length === 0;
@@ -109,6 +109,8 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 		if (policy.value === 'none' || !policy.value.teamMode) return { status: 'not-applicable', reason: 'no-team-policy' };
 
 		if (noTasks) return { status: 'ready', units: [] };
+		// A plan whose Story already has its issue needs no Epic check: the Tasks hang under the Story (team repos only: this may reconcile records).
+		if (meta.workflow === 'plan' && resolveUnitIssueLocal(units[1]!, deps.ensure?.now) !== null) units = units.slice(1);
 
 		// Fast path: every unit is already recorded, so no tracker is loaded and no command runs.
 		const ready: ReadyUnit[] = [];
@@ -126,6 +128,10 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 		for (const unit of units) {
 			const r = ensureUnitIssueDetailed(unit, loaded.value, deps.ensure);
 			if (!r.ok) return notReady(unitKey(unit), r.kind, r.phase === 'before-create', r.reason, ready);
+			// The issue exists, but if its record could not be saved the next call would not find it locally: say so.
+			if (resolveUnitIssueLocal(unit, deps.ensure?.now) === null) {
+				return notReady(unitKey(unit), 'rejected', true, `the issue ${r.value.issue} exists but could not be recorded in the artifact`, ready);
+			}
 			ready.push({ unit: unitKey(unit), issue: r.value.issue, created: r.value.created });
 		}
 		return { status: 'ready', units: ready };

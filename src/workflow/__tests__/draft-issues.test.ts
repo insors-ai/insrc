@@ -13,7 +13,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -218,4 +218,34 @@ test('outcomeKnown wording for a failed lookup and for a create that times out',
 		assert.doesNotMatch(timeout.message, /no issue (was created|exists)/, 'never says that no issue exists');
 		assert.equal(readinessFields(timeout).notice, timeout.message);
 	} finally { fx.cleanup(); }
+});
+
+test('a plan whose Story is recorded needs no Epic, and an issue that cannot be recorded is not reported ready', () => {
+	const fx = seed();
+	try {
+		// the Story (and its record) exist, the Epic ref is nowhere: the plan still resolves with no tracker load
+		const lld = JSON.parse(readFileSync(fx.lld, 'utf8'));
+		lld.meta.tracker = { adapter: 'github', storyRef: 'acme/demo#2', units: { 'story:s1': { unit: 'story', unitId: 's1', issue: 'acme/demo#2', createdAtRevision: 1 } } };
+		writeFileSync(fx.lld, JSON.stringify(lld));
+		const plan = JSON.parse(readFileSync(fx.plan, 'utf8'));
+		plan.meta.tracker = { adapter: 'github', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } };
+		writeFileSync(fx.plan, JSON.stringify(plan));
+		const h = harness();
+		const r = ensureDraftIssues(fx.plan, h.deps());
+		assert.equal(r.status, 'ready');
+		assert.equal(h.seen.loads, 0);
+		assert.equal(h.seen.creates, 0);
+	} finally { fx.cleanup(); }
+
+	// the record cannot be written (read-only artifacts folder): the issue is created, and the result says it was not recorded
+	const fy = seed();
+	try {
+		const h = harness();
+		chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o555);
+		const r = ensureDraftIssues(fy.define, h.deps());
+		chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o755);
+		if (process.getuid?.() === 0) return;   // root ignores the mode
+		assert.equal(r.status, 'not-ready');
+		assert.match(r.status === 'not-ready' ? r.message : '', /exists but could not be recorded/);
+	} finally { chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o755); fy.cleanup(); }
 });

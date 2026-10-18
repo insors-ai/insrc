@@ -210,6 +210,34 @@ test('a git failure cleans up the worktree and local branch, a failed note retur
 		assert.equal(env.ogit('log', '--format=%s', '-3', `refs/heads/${BRANCH}`).split('\n')[1], 'carol parks');
 		assert.equal(existsSync(env.draft), true);
 
+		// a deleted draft is deleted on the branch; if git cannot remove it the park fails at that step and cleans up
+		writeFileSync(env.draft, '{"draft":4}\n');
+		env.git('add', '.insrc'); env.git('commit', '-qm', 'commit the draft locally');
+		rmSync(env.draft);
+		const brokenRm = await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: args => (args[0] === 'rm' ? 'rm exploded' : undefined) }));
+		assert.equal(brokenRm.ok, false);
+		assert.match(brokenRm.ok ? '' : brokenRm.reason, /^park failed at removing a deleted draft file: rm exploded$/);
+		assertClean(env);
+		const deleted = must(await parkDraft(env.repo, env.unit, {}, deps(env)));
+		assert.equal(env.ogit('ls-tree', '-r', '--name-only', `${deleted.commit}~1`).split('\n').includes(`.insrc/artifacts/${lldArtifactId(HASH, 's1')}.json`), true, 'the file is on the base the branch grew from');
+		assert.equal(env.ogit('diff', '--name-status', `${deleted.commit}~1`, deleted.commit).includes(`D\t.insrc/artifacts/${lldArtifactId(HASH, 's1')}.json`), true, 'but this park deleted it');
+		assert.equal(env.ogit('ls-tree', '-r', '--name-only', deleted.commit).split('\n').includes(`.insrc/artifacts/${lldArtifactId(HASH, 's1')}.json`), false, 'and it is gone from the parked tree');
+		assertClean(env);
+
+		// cleanup that cannot finish is reported, never silent: on a park that worked, and added to the reason of one that did not
+		const keepBranch = (args: readonly string[]): string | undefined => (args[0] === 'branch' && args[1] === '-D' ? 'cannot delete the branch' : undefined);
+		writeFileSync(env.draft, '{"draft":5}\n');
+		const dirty = must(await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: keepBranch })));
+		assert.match(dirty.cleanupWarning ?? '', /the temporary branch insrc-park-tmp-\w+ could not be removed; remove it by hand/);
+		env.git('branch', '-D', env.git('branch', '--list', 'insrc-park-tmp-*').replace(/^[*+ ]+/, ''));
+		assertClean(env);
+		writeFileSync(env.draft, '{"draft":6}\n');
+		const both = await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: args => (args[0] === 'push' ? 'push exploded' : keepBranch(args)) }));
+		assert.equal(both.ok, false);
+		assert.match(both.ok ? '' : both.reason, /park failed at pushing the handoff branch: push exploded; cleanup also failed: the temporary branch insrc-park-tmp-\w+ could not be removed/);
+		env.git('branch', '-D', env.git('branch', '--list', 'insrc-park-tmp-*').replace(/^[*+ ]+/, ''));
+		assertClean(env);
+
 		// a repository with no remote cannot park
 		git(env.repo, 'remote', 'remove', 'origin');
 		const lonely = await parkDraft(env.repo, env.unit, {}, deps(env));

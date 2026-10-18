@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s6
 
-**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T18:03:23.785Z
+**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T18:04:56.321Z
 
-**Commit:** 2a8d1d61
+**Commit:** a0943606
 
 ## Summary
 
-handoff.ts gains ParkResult, checkpointPath(unit) ('.insrc/handoff/story-<hash>-<id>.json' or 'epic-<hash>.json'), executePark(plan, deps) and parkDraft(repo, unit, opts, deps) (= parkPlan then executePark), both async; git runs through a small async helper over runGitAsync (60 s deadline, GIT_TERMINAL_PROMPT=0) so a slow remote never blocks the daemon. executePark: finds the remote (pickRemote; none gives a clear refusal); ls-remote the deterministic branch, and when it exists fetches it and builds on its head, otherwise on the plan's sourceHead; makes a temporary worktree in deps.tmpRoot (system temp by default) on a unique local branch 'insrc-park-tmp-<rand>'; copies the plan's draft files from the working tree into it (a deleted draft is deleted there), writes the checkpoint JSON, stages them (-f for the checkpoint), commits (--allow-empty so a repeat park with no change still records itself) and pushes 'tmp:refs/heads/<branch>'; a push rejected as non-fast-forward is reported as 'someone else parked first', any other git failure as 'park failed at <step>: <git message>'; after the push it adds ONE note through port.issueOps.comment (marker '<!-- insrc:handoff -->', branch, commit, what was parked, the team resume command) and a failed note returns ok:true with noted:false and noteFailure, the push standing. In a finally it always removes the worktree, the temporary local branch and the temp directory (and prunes), so the user's checked-out branch, index and working tree are never touched (the handoff branch is not even created locally) and the run stays in the daemon's store. Tests (real repo plus a real bare origin): test 1 parks an owned awaiting_llm_step run with an uncommitted JSON and markdown draft and checks the remote branch ref equals the returned commit, the tree holds the checkpoint and both draft files with the right contents, the checkpoint validates and carries no parker path, exactly one note naming the branch and commit, and that HEAD, branch name, status, index (ls-files -s) and both draft files are byte-identical to before, no local handoff branch, no extra worktree, no temp branch, the temp directory empty, the run still stored; test 2 covers a pre-receive hook declining the push (reason names the step and the hook message, not 'someone else', full cleanup, checkout unchanged, run kept, no note), a failed note (ok, noted false, failure kind and reason, push stands, one note tried), a second park (new draft content) whose commit is the child of the first with exactly two park commits on the base and the new content on the branch, a lost race (another clone pushes between our fetch and our push via the beforePush seam) reported as 'someone else parked first' with the other commit intact, cleanup and no extra note, a following park built directly on the other owner's commit, and a repo with no remote refusing. Team suite 84 passes; tsc clean.
+The finding was right: cleanup was gated on flags set after 'git worktree add' succeeded, but git can fail that command after it made the branch and directory (I confirmed with a failing post-checkout hook: exit 1 and both the worktree and the branch remain). executePark's finally now always runs, with no flags: 'git worktree remove --force <dir>', then remove the directory, then 'git worktree prune' (after the directory is gone), then 'git branch -D <tmp branch>'; each step is harmless when there is nothing to remove, so a half-made worktree is cleaned like any other. The second named test now installs a post-checkout hook that exits 1 in the parker's repo and parks: the result is 'park failed at making the temporary worktree', and assertClean shows only the main worktree in 'git worktree list', no 'insrc-park-tmp-*' branch, an empty temp directory, with the checkout snapshot (HEAD, branch, status, index, draft files) unchanged and the run still in the store; the hook is then removed and the rest of that test (failed note, second park on top, lost race, no remote) runs as before. Both named tests pass; team suite passes; tsc clean.
 
 ## Tasks validated
 
@@ -24,26 +24,26 @@ handoff.ts gains ParkResult, checkpointPath(unit) ('.insrc/handoff/story-<hash>-
 
 ## Changes
 
-- `docs/plans/s6-open-issues.md` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/cli/services/index.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/daemon/index.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/daemon/steps/host.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/config/github.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/team/__tests__/handoff-park-plan.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/team/__tests__/handoff-park.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
-- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T18:03:23.785Z)
+- `docs/plans/s6-open-issues.md` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/cli/services/index.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/daemon/index.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/daemon/steps/host.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/config/github.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/team/__tests__/handoff-park-plan.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/team/__tests__/handoff-park.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)
+- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T18:04:56.321Z)

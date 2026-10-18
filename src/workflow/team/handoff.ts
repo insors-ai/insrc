@@ -345,6 +345,8 @@ export interface ParkDeps {
 	readonly tmpRoot?:       string | undefined;
 	/** Called after the commit is made and before it is pushed. */
 	readonly beforePush?:    (() => void) | undefined;
+	/** Test seam: makes a git command of a park fail with this text when it returns one (it is given the command's arguments). */
+	readonly failGit?:       ((args: readonly string[]) => string | undefined) | undefined;
 }
 
 /** Everything park has decided, ready to be carried out. Nothing has been changed yet. */
@@ -448,6 +450,8 @@ export type ParkResult =
 		/** Whether the note was added to the issue; a failed note does not undo the push. */
 		readonly noted:     boolean;
 		readonly noteFailure?: string | undefined;
+		/** Set when the park succeeded but the temporary worktree or branch could not all be removed. */
+		readonly cleanupWarning?: string | undefined;
 		readonly variant:   'run' | 'draft';
 		readonly runId?:    string | undefined;
 	}
@@ -460,7 +464,9 @@ export const checkpointPath = (unit: HandoffUnit): string => `.insrc/handoff/${u
 const PARK_GIT_MS = 60_000;
 
 /** Run git without blocking the daemon: the same {ok, stdout} / {ok:false, stderr} shape as runGit. */
-async function git(cwd: string, args: readonly string[]): Promise<{ ok: true; stdout: string } | { ok: false; stderr: string }> {
+async function git(cwd: string, args: readonly string[], deps: ParkDeps = {}): Promise<{ ok: true; stdout: string } | { ok: false; stderr: string }> {
+	const injected = deps.failGit?.(args);
+	if (injected !== undefined) return { ok: false, stderr: injected };
 	const r = await runGitAsync(cwd, args, createDeadline(PARK_GIT_MS));
 	return r.ok ? r : { ok: false, stderr: r.timedOut ? `git ${args[0] ?? ''} did not finish within ${PARK_GIT_MS / 1000} s` : r.stderr };
 }
@@ -493,20 +499,20 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 	const fail = (step: string, detail: string): ParkResult => ({ ok: false, reason: `park failed at ${step}: ${detail}` });
 
 	const base = await (async (): Promise<{ ok: true; sha: string } | { ok: false; result: ParkResult }> => {
-		const listed = await git(repo, ['ls-remote', '--heads', remote, `refs/heads/${branch}`]);
+		const listed = await git(repo, ['ls-remote', '--heads', remote, `refs/heads/${branch}`], deps);
 		if (!listed.ok) return { ok: false, result: fail('looking for the handoff branch', `remote '${remote}' could not be reached: ${listed.stderr}`) };
 		if (listed.stdout.trim().length === 0) return { ok: true, sha: plan.checkpoint.sourceHead };
-		const fetched = await git(repo, ['fetch', '--quiet', remote, `refs/heads/${branch}`]);
+		const fetched = await git(repo, ['fetch', '--quiet', remote, `refs/heads/${branch}`], deps);
 		if (!fetched.ok) return { ok: false, result: fail('fetching the handoff branch', fetched.stderr) };
-		const sha = await git(repo, ['rev-parse', 'FETCH_HEAD']);
+		const sha = await git(repo, ['rev-parse', 'FETCH_HEAD'], deps);
 		return sha.ok ? { ok: true, sha: sha.stdout.trim() } : { ok: false, result: fail('reading the handoff branch', sha.stderr) };
 	})();
 	if (!base.ok) return base.result;
 
 	const dir = mkdtempSync(join(deps.tmpRoot ?? tmpdir(), 'insrc-park-'));
 	const tmpBranch = `insrc-park-tmp-${Math.random().toString(36).slice(2, 10)}`;
-	try {
-		const added = await git(repo, ['worktree', 'add', '-q', '-b', tmpBranch, dir, base.sha]);
+	const attempt = async (): Promise<ParkResult> => {
+		const added = await git(repo, ['worktree', 'add', '-q', '-b', tmpBranch, dir, base.sha], deps);
 		if (!added.ok) return fail('making the temporary worktree', added.stderr);   // the finally below removes whatever git did make
 
 		// the draft files, copied as they are in the working tree (a deleted draft is deleted on the branch)
@@ -514,21 +520,24 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 		for (const f of plan.files) {
 			const src = join(repo, f);
 			if (existsSync(src)) { mkdirSync(dirname(join(dir, f)), { recursive: true }); copyFileSync(src, join(dir, f)); paths.push(f); }
-			else { await git(dir, ['rm', '-q', '--ignore-unmatch', '--', f]); }
+			else {
+				const removed = await git(dir, ['rm', '-q', '--ignore-unmatch', '--', f], deps);
+				if (!removed.ok) return fail('removing a deleted draft file', removed.stderr);
+			}
 		}
 		const cp = checkpointPath(plan.unit);
 		mkdirSync(dirname(join(dir, cp)), { recursive: true });
 		writeFileSync(join(dir, cp), JSON.stringify(plan.checkpoint, null, 2) + '\n', 'utf8');
-		const staged = await git(dir, ['add', '-f', '--', cp, ...paths]);
+		const staged = await git(dir, ['add', '-f', '--', cp, ...paths], deps);
 		if (!staged.ok) return fail('staging the draft', staged.stderr);
-		const committed = await git(dir, ['commit', '-q', '--allow-empty', '-m', `park: ${plan.variant === 'run' ? 'run and draft' : 'draft'} of ${plan.unit.unit} ${plan.unit.epicHash}${plan.unit.storyId !== undefined ? `/${plan.unit.storyId}` : ''} from ${plan.actor} (now held by ${plan.holder})`]);
+		const committed = await git(dir, ['commit', '-q', '--allow-empty', '-m', `park: ${plan.variant === 'run' ? 'run and draft' : 'draft'} of ${plan.unit.unit} ${plan.unit.epicHash}${plan.unit.storyId !== undefined ? `/${plan.unit.storyId}` : ''} from ${plan.actor} (now held by ${plan.holder})`], deps);
 		if (!committed.ok) return fail('committing the draft', committed.stderr);
-		const head = await git(dir, ['rev-parse', 'HEAD']);
+		const head = await git(dir, ['rev-parse', 'HEAD'], deps);
 		if (!head.ok) return fail('reading the commit', head.stderr);
 		const commit = head.stdout.trim();
 
 		deps.beforePush?.();
-		const pushed = await git(dir, ['push', '-q', remote, `${tmpBranch}:refs/heads/${branch}`]);
+		const pushed = await git(dir, ['push', '-q', remote, `${tmpBranch}:refs/heads/${branch}`], deps);
 		if (!pushed.ok) {
 			return /non-fast-forward|fetch first|\(already exists\)|stale info/.test(pushed.stderr)
 				? { ok: false, reason: `park failed at pushing: someone else parked first: the handoff branch '${branch}' moved while you were parking; resume from it or park again` }
@@ -542,16 +551,29 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 			...(note.ok ? {} : { noteFailure: `${note.kind}: ${note.reason}` }),
 			...(plan.runId !== undefined ? { runId: plan.runId } : {}),
 		};
-	} catch (err) {
-		return fail('parking', err instanceof Error ? err.message : String(err));
-	} finally {
-		// Always, and in this order: even a worktree that git half-made (a hook failed after the branch and directory existed) is
-		// removed. Each step is harmless when there is nothing to remove.
-		await git(repo, ['worktree', 'remove', '--force', dir]);
-		rmSync(dir, { recursive: true, force: true });
-		await git(repo, ['worktree', 'prune']);
-		await git(repo, ['branch', '-D', tmpBranch]);
+	};
+
+	let result: ParkResult;
+	try { result = await attempt(); }
+	catch (err) { result = fail('parking', err instanceof Error ? err.message : String(err)); }
+
+	// Always, and in this order: even a worktree that git half-made (a hook failed after the branch and directory existed) is removed.
+	// Each step is harmless when there is nothing to remove; afterwards what is still there is reported, never silently left.
+	await git(repo, ['worktree', 'remove', '--force', dir], deps);
+	rmSync(dir, { recursive: true, force: true });
+	await git(repo, ['worktree', 'prune'], deps);
+	await git(repo, ['branch', '-D', tmpBranch], deps);
+	const left: string[] = [];
+	const worktrees = await git(repo, ['worktree', 'list', '--porcelain']);
+	if (!worktrees.ok || worktrees.stdout.includes(dir)) left.push(`the temporary worktree ${dir}`);
+	const branches = await git(repo, ['branch', '--list', tmpBranch]);
+	if (!branches.ok || branches.stdout.trim().length > 0) left.push(`the temporary branch ${tmpBranch}`);
+	if (existsSync(dir)) left.push(`the directory ${dir}`);
+	if (left.length > 0) {
+		const warning = `${left.join(' and ')} could not be removed; remove ${left.length > 1 ? 'them' : 'it'} by hand (git worktree remove --force, git branch -D)`;
+		result = result.ok ? { ...result, cleanupWarning: warning } : { ok: false, reason: `${result.reason}; cleanup also failed: ${warning}` };
 	}
+	return result;
 }
 
 /** Plan a park and, when it is allowed, carry it out. */

@@ -123,7 +123,7 @@ Run at 2026-10-18T17:58:42.749Z on commit `dbaaaf5c`. Tests check: **passed**. 1
 
 ## t7
 
-Run at 2026-10-18T18:03:23.785Z on commit `2a8d1d61`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T18:04:56.321Z on commit `a0943606`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/team/__tests__/handoff-park.test.ts: parking commits the draft and checkpoint to the handoff branch, pushes it, notes the branch on the issue through issueOps.comment and leaves the user's branch, index and working tree untouched**
 
@@ -141,4 +141,4 @@ Run at 2026-10-18T18:03:23.785Z on commit `2a8d1d61`. Tests check: **passed**. 2
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/team/__tests__/handoff-park.test.ts` | 0 | 2 | 1.9 s |  |
+| `src/workflow/team/__tests__/handoff-park.test.ts` | 0 | 2 | 3.9 s |  |

@@ -51,6 +51,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/resolve-comment.ts', class: 'content', via: 'writeArtifact', note: 'appends the comment to body.openQuestions' },
 	{ file: 'src/workflow/runners/build/standalone-record.ts', class: 'content', via: 'both', note: 'the BUILD record is regenerated on each persist' },
 	{ file: 'src/workflow/runners/build/test-record.ts', class: 'content', via: 'both', note: 'the TESTS record replaces body.tasks; its rollback restores the earlier bytes and revision' },
+	{ file: 'src/daemon/steps/code-review-step/handler.ts', class: 'content', via: 'injected', note: 'injects the runner\'s revision-minting writer (writeRecordFile) into the runner; it has no raw writer of its own' },
 	{ file: 'src/workflow/code-review/runner.ts', class: 'content', via: 'both', note: 'the code-review record is signoff-covered: its default writer (writeRecordFile) writes the json as content; the step handler uses the same writer' },
 
 	// --- meta-only: stamps, review stamps, tracker patches, resolutions -------------
@@ -117,7 +118,8 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 // Detector
 // ---------------------------------------------------------------------------
 
-const WRITER_NAMES = ['writeArtifact', 'writeAtomic', 'writeFileSync', 'renameSync'] as const;
+// writeRecordFile is the code-review runner's revision-minting writer (it calls writeArtifact).
+const WRITER_NAMES = ['writeArtifact', 'writeRecordFile', 'writeAtomic', 'writeFileSync', 'renameSync'] as const;
 type WriterName = (typeof WRITER_NAMES)[number];
 
 export interface WriterCall  { readonly name: WriterName; readonly line: number; readonly annotated: boolean }
@@ -165,8 +167,9 @@ export function scanWriters(source: string): WriterScan {
 			}
 		}
 	});
-	const rawCalls = calls.filter(c => c.name !== 'writeArtifact');
-	const usesWriteArtifact = calls.some(c => c.name === 'writeArtifact') || values.some(v => v.name === 'writeArtifact');
+	const mints = (n: WriterName): boolean => n === 'writeArtifact' || n === 'writeRecordFile';
+	const rawCalls = calls.filter(c => !mints(c.name));
+	const usesWriteArtifact = calls.some(c => mints(c.name)) || values.some(v => mints(v.name));
 	return { calls, values, usesWriteArtifact, rawCalls };
 }
 

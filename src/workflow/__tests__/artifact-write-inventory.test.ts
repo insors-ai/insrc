@@ -18,7 +18,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ARTIFACT_WRITE_INVENTORY, checkInventoryEntry, scanWriters, writesAnything, type InventoryEntry } from '../artifact-write-inventory.js';
+import { ARTIFACT_WRITE_INVENTORY, checkInventoryEntry, scanWriters, type InventoryEntry } from '../artifact-write-inventory.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -57,7 +57,7 @@ test('every writer file is inventoried, annotated and classified as the design s
 	for (const f of ['src/workflow/questions.ts', 'src/daemon/steps/review-step/phases/findings.ts', 'src/workflow/tracker/refs.ts', 'src/workflow/bugfix/stamp.ts', 'src/workflow/orchestrator.ts']) assert.equal(classOf(f), 'meta-only', f);
 	for (const f of [
 		'src/daemon/steps/workflow-step/phases/synthesize.ts', 'src/daemon/workflow-rpc.ts', 'src/workflow/resolve-comment.ts',
-		'src/workflow/runners/build/standalone-record.ts', 'src/workflow/code-review/runner.ts', 'src/workflow/runners/build/test-record.ts',
+		'src/workflow/runners/build/standalone-record.ts', 'src/workflow/code-review/runner.ts', 'src/workflow/runners/build/test-record.ts', 'src/daemon/steps/code-review-step/handler.ts',
 	]) assert.equal(classOf(f), 'content', f);
 	for (const f of ['src/workflow/gates.ts', 'src/workflow/review/resolve.ts', 'src/workflow/review/run-artifact.ts', 'src/daemon/steps/review-step/phases/verdicts.ts']) assert.equal(classOf(f), 'mixed', f);
 	assert.equal(classOf('src/workflow/amendments/store.ts'), 'record');
@@ -68,7 +68,8 @@ test('every writer file is inventoried, annotated and classified as the design s
 	// the code-review step handler injects the runner's revision-minting writer and holds no raw writer
 	const handler = read('src/daemon/steps/code-review-step/handler.ts');
 	assert.match(handler, /write:\s+writeRecordFile/);
-	assert.equal(writesAnything(scanWriters(handler)), false, 'the handler has no raw writer of its own');
+	assert.equal(scanWriters(handler).rawCalls.length, 0, 'the handler has no raw writer of its own');
+	assert.equal(classOf('src/daemon/steps/code-review-step/handler.ts'), 'content');
 	assert.match(read('src/workflow/code-review/runner.ts'), /write:\s+writeRecordFile/);
 });
 

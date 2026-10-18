@@ -25,7 +25,7 @@ const PROMISED = "src/a.test.ts: 'alpha works'";
 
 const run = (file: string, result: 'pass' | 'fail') => ({ file, exitCode: result === 'pass' ? 0 : 1, timedOut: false, durationMs: 1, otherFailures: [], titles: [{ title: 't', result }] });
 
-function subject(opts: { files?: readonly ReturnType<typeof run>[] | 'none' | 'malformed'; plan?: boolean } = {}): CodeReviewSubject {
+function subject(opts: { files?: readonly ReturnType<typeof run>[] | 'none' | 'malformed' | undefined; plan?: boolean | undefined } = {}): CodeReviewSubject {
 	const files = opts.files ?? 'none';
 	const testRecord = files === 'none' ? null
 		: files === 'malformed' ? { meta: {}, body: { tasks: [{ taskId: 't1', ranAt: '2026-10-18T00:00:00.000Z', tests: [], files: [{ file: 'src/a.test.ts', titles: 'garbage' }] }] } }

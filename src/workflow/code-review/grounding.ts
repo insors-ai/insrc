@@ -395,7 +395,7 @@ async function runDiff(repoPath: string, input: Record<string, unknown>): Promis
 
 /** The `exclude` input for `git_diff`, or nothing at all when there are no
  *  globs — so a call without them sends exactly the input it always sent. */
-function excludeInput(globs: readonly string[] | undefined): { exclude?: string[] } {
+function excludeInput(globs: readonly string[] | undefined): { exclude?: string[] | undefined } {
 	return globs !== undefined && globs.length > 0 ? { exclude: [...globs] } : {};
 }
 

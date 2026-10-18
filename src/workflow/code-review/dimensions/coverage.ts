@@ -97,13 +97,13 @@ export const COVERAGE_FINDINGS_SCHEMA: StructuredSchema = {
 
 /** Flatten the approved plan's promised per-task tests into a flat list the
  *  prompt can name (ac1). Tolerates a plan stub whose tasks/tests are absent. */
-export function promisedTestsOf(subject: CodeReviewSubject): { level?: string; name: string }[] {
+export function promisedTestsOf(subject: CodeReviewSubject): { level?: string | undefined; name: string }[] {
 	// A null approvedPlan (mode B/C) has no promised tests. Guard the null
 	// BEFORE the cast — the cast only tolerated a missing body.tasks, not a
 	// genuinely absent plan.
 	if (subject.approvedPlan === null) return [];
-	const tasks = (subject.approvedPlan as { body?: { tasks?: readonly { tests?: readonly { level?: string; name: string }[] }[] } }).body?.tasks ?? [];
-	const out: { level?: string; name: string }[] = [];
+	const tasks = (subject.approvedPlan as { body?: { tasks?: readonly { tests?: readonly { level?: string | undefined; name: string }[] }[] } }).body?.tasks ?? [];
+	const out: { level?: string | undefined; name: string }[] = [];
 	for (const t of tasks) {
 		for (const tr of t.tests ?? []) out.push(tr);
 	}

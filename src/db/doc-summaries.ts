@@ -335,11 +335,17 @@ const CARRY_BATCH = 500;
  * hashes to its contentHash. Each carry row is removed in the same write
  * transaction as its outcome, CARRY_BATCH rows per transaction, so a failed
  * batch leaves its rows carried for the next full index.
+ *
+ * A summary already stored for the document with no errorCode and the same
+ * contentHash is kept ('keptGood', ISSUE-b5a62f28): it was written after the
+ * rebuild (a summary that was running when the full index started, or a backup
+ * restore), so it is at least as new as the carried one, which may be an error
+ * placeholder. A stored placeholder is still replaced.
  */
 export async function restoreCarriedDocSummaries(
 	repo: string,
-): Promise<{ written: number; entityGone: number; bodyChanged: number }> {
-	const counts = { written: 0, entityGone: 0, bodyChanged: 0 };
+): Promise<{ written: number; keptGood: number; entityGone: number; bodyChanged: number }> {
+	const counts = { written: 0, keptGood: 0, entityGone: 0, bodyChanged: 0 };
 	for (;;) {
 		const done = await withWriteTxn(s => {
 			const repoId = lookupRepoIdInTxn(s, repo);
@@ -348,8 +354,9 @@ export async function restoreCarriedDocSummaries(
 			const batch = [...s.docSummaryCarry.getRange({ start: prefix, end: prefixSuccessor(prefix), limit: CARRY_BATCH })];
 			for (const { key, value } of batch) {
 				const k = key as Buffer;
-				const outcome = writeDocSummaryIfCurrentInTxn(s, k.subarray(4).toString('utf8'), decodeDocSummary(value as Buffer));
+				const outcome = writeDocSummaryIfCurrentInTxn(s, k.subarray(4).toString('utf8'), decodeDocSummary(value as Buffer), { keepGoodSummary: true });
 				if (outcome === 'written') counts.written++;
+				else if (outcome === 'kept-good') counts.keptGood++;
 				else if (outcome === 'entity-gone') counts.entityGone++;
 				else counts.bodyChanged++;
 				s.docSummaryCarry.remove(k);

@@ -154,12 +154,31 @@ test('restoreCarriedDocSummaries writes a current carried summary under the new 
 	const newU64 = (await entityU64ForId(kept.id))!;
 	assert.notEqual(newU64, oldU64, 'the rebuild gave the document a new entity number');
 
-	assert.deepEqual(await restoreCarriedDocSummaries(REPO), { written: 1, entityGone: 1, bodyChanged: 1 });
+	assert.deepEqual(await restoreCarriedDocSummaries(REPO), { written: 1, keptGood: 0, entityGone: 1, bodyChanged: 1 });
 	assert.equal((await getDocSummary(null, kept.id))?.summary, 'carried kept');
 	const s = await getGraphStore();
 	assert.notEqual(s.docSummary.get(encodeEntityKey(newU64)), undefined, 'stored under the new number');
 	assert.equal(s.docSummary.get(encodeEntityKey(oldU64)), undefined, 'not under the old one');
 	assert.equal(await getDocSummary(null, changed.id), null);
+	assert.equal(await carryRows(), 0, 'no carry row is left');
+});
+
+test('restoreCarriedDocSummaries keeps a good summary stored after the rebuild and replaces a stored error placeholder', async () => {
+	const fresh = doc('fresh', 'fresh body'), placeholder = doc('placeholder', 'placeholder body');
+	await upsertEntities(null, [fresh, placeholder]);
+	await carry(fresh, summaryOf('fresh body', { summary: 'carried placeholder', errorCode: 'schema-invalid' }));
+	await carry(placeholder, summaryOf('placeholder body', { summary: 'carried good' }));
+
+	// The rebuild, then a write that lands before the write-back: a good summary
+	// for one document (a summary that was running), a placeholder for the other.
+	for (const e of [fresh, placeholder]) await deleteEntitiesForFile(null, e.file);
+	await upsertEntities(null, [fresh, placeholder]);
+	await writeDocSummary(null, fresh.id, REPO, summaryOf('fresh body', { summary: 'written after the rebuild' }));
+	await writeDocSummary(null, placeholder.id, REPO, summaryOf('placeholder body', { summary: 'stored placeholder', errorCode: 'timeout' }));
+
+	assert.deepEqual(await restoreCarriedDocSummaries(REPO), { written: 1, keptGood: 1, entityGone: 0, bodyChanged: 0 });
+	assert.equal((await getDocSummary(null, fresh.id))?.summary, 'written after the rebuild', 'the good summary is kept');
+	assert.equal((await getDocSummary(null, placeholder.id))?.summary, 'carried good', 'the stored placeholder is replaced');
 	assert.equal(await carryRows(), 0, 'no carry row is left');
 });
 
@@ -171,7 +190,7 @@ test('restoreCarriedDocSummaries works through more carry rows than one batch, a
 	const otherId = (await lookupRepoId('/repo/other'))!;
 	await withWriteTxn(st => { st.docSummaryCarry.put(encodeCarryKey(otherId, 'some-id'), Buffer.from([0x90])); });
 
-	assert.deepEqual(await restoreCarriedDocSummaries(REPO), { written: 1203, entityGone: 0, bodyChanged: 0 });
+	assert.deepEqual(await restoreCarriedDocSummaries(REPO), { written: 1203, keptGood: 0, entityGone: 0, bodyChanged: 0 });
 	assert.equal(await carryRows(), 1, 'only the other repository\'s row is left');
 });
 

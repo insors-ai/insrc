@@ -10,7 +10,9 @@
  * committed artifact chain. Nothing in this module touches git, the tracker or the daemon's run store.
  */
 
-import { posix, relative, resolve } from 'node:path';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, posix, relative, resolve } from 'node:path';
 
 import { validateBranchPattern } from '../../config/repo-fields.js';
 import { resolveBranchPattern } from '../config/github.js';
@@ -22,7 +24,9 @@ import type { UnitRef } from '../tracker/refs.js';
 import type { ExecutorState, WorkflowIntent } from '../types.js';
 import { authorUnitOf } from './author-gate.js';
 import { describeOutcome, readHolder, teamContext, type GateOutcome } from './gate.js';
+import { createDeadline, runGitAsync } from './git-async.js';
 import { runGit } from './git.js';
+import { pickRemote } from './policy-reader.js';
 import type { UpstreamRevision } from './run-meta.js';
 
 /** The branch pattern used when the repo sets none. */
@@ -337,6 +341,10 @@ function runIsForUnit(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'pa
 export interface ParkDeps {
 	readonly branchPattern?: ((repo: string) => string | undefined) | undefined;
 	readonly now?:           (() => string) | undefined;
+	/** Where the temporary worktree is made (the system temp directory by default). */
+	readonly tmpRoot?:       string | undefined;
+	/** Called after the commit is made and before it is pushed. */
+	readonly beforePush?:    (() => void) | undefined;
 }
 
 /** Everything park has decided, ready to be carried out. Nothing has been changed yet. */
@@ -426,4 +434,129 @@ export function parkPlan(repo: string, unit: UnitRef, opts: { readonly runToken?
 	} catch (err) {
 		return refuse(`park could not be planned: ${err instanceof Error ? err.message : String(err)}`);
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Parking: carrying it out
+// ---------------------------------------------------------------------------
+
+export type ParkResult =
+	| {
+		readonly ok:        true;
+		readonly branch:    string;
+		readonly commit:    string;
+		/** Whether the note was added to the issue; a failed note does not undo the push. */
+		readonly noted:     boolean;
+		readonly noteFailure?: string | undefined;
+		readonly variant:   'run' | 'draft';
+		readonly runId?:    string | undefined;
+	}
+	| { readonly ok: false; readonly reason: string };
+
+/** The checkpoint's path on the handoff branch. */
+export const checkpointPath = (unit: HandoffUnit): string => `.insrc/handoff/${unit.storyId !== undefined ? `story-${unit.epicHash}-${unit.storyId}` : `epic-${unit.epicHash}`}.json`;
+
+/** The time one git call of a park may take; the commands that talk to the remote can be slow, so none of them blocks the daemon. */
+const PARK_GIT_MS = 60_000;
+
+/** Run git without blocking the daemon: the same {ok, stdout} / {ok:false, stderr} shape as runGit. */
+async function git(cwd: string, args: readonly string[]): Promise<{ ok: true; stdout: string } | { ok: false; stderr: string }> {
+	const r = await runGitAsync(cwd, args, createDeadline(PARK_GIT_MS));
+	return r.ok ? r : { ok: false, stderr: r.timedOut ? `git ${args[0] ?? ''} did not finish within ${PARK_GIT_MS / 1000} s` : r.stderr };
+}
+
+/** The note added to the unit's issue, with a marker so it can be told from other comments. */
+function handoffNote(plan: ParkPlan, commit: string): string {
+	return [
+		'<!-- insrc:handoff -->',
+		`**Handoff:** ${plan.actor} parked unfinished work on this ${plan.unit.unit === 'epic' ? 'Epic' : 'Story'} before ${plan.holder} took it over.`,
+		'',
+		`- Branch: \`${plan.branch}\``,
+		`- Commit: \`${commit}\``,
+		`- What was parked: ${plan.variant === 'run' ? `the run \`${plan.runId ?? ''}\` (stage \`${(plan.checkpoint as RunCheckpoint).stage}\`) and its draft files` : 'the draft files'}`,
+		'',
+		`Continue with \`team resume ${plan.unit.epicHash}${plan.unit.storyId !== undefined ? ` ${plan.unit.storyId}` : ''}\`.`,
+	].join('\n');
+}
+
+/**
+ * Carry out a park plan: commit the unit's draft files and the checkpoint to the handoff branch through a temporary worktree
+ * (so the checked-out branch, the index and the working tree are never touched), push it, and add one note to the issue. A second
+ * park builds on the branch as the remote has it. Whatever goes wrong, the temporary worktree and its local branch are removed
+ * and the run stays in the daemon. A push that loses a race is reported as another owner having parked first; a note that fails
+ * is reported in the result and does not undo the push.
+ */
+export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<ParkResult> {
+	const { repo, branch } = plan;
+	const remote = pickRemote(repo);
+	if (remote === undefined) return { ok: false, reason: 'park failed: the repository has no git remote to push the handoff branch to' };
+	const fail = (step: string, detail: string): ParkResult => ({ ok: false, reason: `park failed at ${step}: ${detail}` });
+
+	const base = await (async (): Promise<{ ok: true; sha: string } | { ok: false; result: ParkResult }> => {
+		const listed = await git(repo, ['ls-remote', '--heads', remote, `refs/heads/${branch}`]);
+		if (!listed.ok) return { ok: false, result: fail('looking for the handoff branch', `remote '${remote}' could not be reached: ${listed.stderr}`) };
+		if (listed.stdout.trim().length === 0) return { ok: true, sha: plan.checkpoint.sourceHead };
+		const fetched = await git(repo, ['fetch', '--quiet', remote, `refs/heads/${branch}`]);
+		if (!fetched.ok) return { ok: false, result: fail('fetching the handoff branch', fetched.stderr) };
+		const sha = await git(repo, ['rev-parse', 'FETCH_HEAD']);
+		return sha.ok ? { ok: true, sha: sha.stdout.trim() } : { ok: false, result: fail('reading the handoff branch', sha.stderr) };
+	})();
+	if (!base.ok) return base.result;
+
+	const dir = mkdtempSync(join(deps.tmpRoot ?? tmpdir(), 'insrc-park-'));
+	const tmpBranch = `insrc-park-tmp-${Math.random().toString(36).slice(2, 10)}`;
+	let worktreeMade = false;
+	let branchMade = false;
+	try {
+		const added = await git(repo, ['worktree', 'add', '-q', '-b', tmpBranch, dir, base.sha]);
+		if (!added.ok) return fail('making the temporary worktree', added.stderr);
+		worktreeMade = true; branchMade = true;
+
+		// the draft files, copied as they are in the working tree (a deleted draft is deleted on the branch)
+		const paths: string[] = [];
+		for (const f of plan.files) {
+			const src = join(repo, f);
+			if (existsSync(src)) { mkdirSync(dirname(join(dir, f)), { recursive: true }); copyFileSync(src, join(dir, f)); paths.push(f); }
+			else { await git(dir, ['rm', '-q', '--ignore-unmatch', '--', f]); }
+		}
+		const cp = checkpointPath(plan.unit);
+		mkdirSync(dirname(join(dir, cp)), { recursive: true });
+		writeFileSync(join(dir, cp), JSON.stringify(plan.checkpoint, null, 2) + '\n', 'utf8');
+		const staged = await git(dir, ['add', '-f', '--', cp, ...paths]);
+		if (!staged.ok) return fail('staging the draft', staged.stderr);
+		const committed = await git(dir, ['commit', '-q', '--allow-empty', '-m', `park: ${plan.variant === 'run' ? 'run and draft' : 'draft'} of ${plan.unit.unit} ${plan.unit.epicHash}${plan.unit.storyId !== undefined ? `/${plan.unit.storyId}` : ''} from ${plan.actor} (now held by ${plan.holder})`]);
+		if (!committed.ok) return fail('committing the draft', committed.stderr);
+		const head = await git(dir, ['rev-parse', 'HEAD']);
+		if (!head.ok) return fail('reading the commit', head.stderr);
+		const commit = head.stdout.trim();
+
+		deps.beforePush?.();
+		const pushed = await git(dir, ['push', '-q', remote, `${tmpBranch}:refs/heads/${branch}`]);
+		if (!pushed.ok) {
+			return /non-fast-forward|fetch first|\(already exists\)|stale info/.test(pushed.stderr)
+				? { ok: false, reason: `park failed at pushing: someone else parked first: the handoff branch '${branch}' moved while you were parking; resume from it or park again` }
+				: fail('pushing the handoff branch', pushed.stderr);
+		}
+
+		// the note: one comment; its failure is reported, the push stands
+		const note = plan.port.issueOps.comment(plan.issue, handoffNote(plan, commit));
+		return {
+			ok: true, branch, commit, noted: note.ok, variant: plan.variant,
+			...(note.ok ? {} : { noteFailure: `${note.kind}: ${note.reason}` }),
+			...(plan.runId !== undefined ? { runId: plan.runId } : {}),
+		};
+	} catch (err) {
+		return fail('parking', err instanceof Error ? err.message : String(err));
+	} finally {
+		if (worktreeMade) await git(repo, ['worktree', 'remove', '--force', dir]);
+		if (branchMade) await git(repo, ['branch', '-D', tmpBranch]);
+		await git(repo, ['worktree', 'prune']);
+		rmSync(dir, { recursive: true, force: true });
+	}
+}
+
+/** Plan a park and, when it is allowed, carry it out. */
+export async function parkDraft(repo: string, unit: UnitRef, opts: { readonly runToken?: string | undefined } = {}, deps: ParkDeps = {}): Promise<ParkResult> {
+	const plan = parkPlan(repo, unit, opts, deps);
+	return plan.ok ? await executePark(plan, deps) : { ok: false, reason: plan.reason };
 }

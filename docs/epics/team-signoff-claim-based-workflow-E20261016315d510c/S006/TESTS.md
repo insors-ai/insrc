@@ -107,7 +107,7 @@ Run at 2026-10-18T17:46:56.854Z on commit `bb85e188`. Tests check: **passed**. 1
 
 ## t6
 
-Run at 2026-10-18T17:56:43.986Z on commit `168e7b85`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T17:58:42.749Z on commit `dbaaaf5c`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/team/__tests__/handoff-park-plan.test.ts: parkPlan refuses when the actor holds the unit, for a Task, with no issue or holder, with nothing to park, and for a supplied token of another unit, actor or no owner, and assembles a run or draft-only checkpoint otherwise**
 
@@ -119,4 +119,4 @@ Run at 2026-10-18T17:56:43.986Z on commit `168e7b85`. Tests check: **passed**. 1
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/team/__tests__/handoff-park-plan.test.ts` | 0 | 1 | 0.6 s |  |
+| `src/workflow/team/__tests__/handoff-park-plan.test.ts` | 0 | 1 | 1.9 s |  |

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -155,3 +155,19 @@ Run at 2026-10-18T14:53:33.952Z on commit `404fb77f`. Tests check: **passed**. 3
 | `src/cli/__tests__/gate-refusal-output.test.ts` | 0 | 2 | 1.1 s |  |
 | `src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts` | 0 | 1 | 1.3 s |  |
 | `src/workflow/review/__tests__/gate-resolve-finding.test.ts` | 0 | 1 | 1.2 s |  |
+
+## t7
+
+Run at 2026-10-18T14:57:12.036Z on commit `01766e6a`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts: workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before | `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` | 0 | 1 | 0.9 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:53:33.952Z",
+    "updatedAt": "2026-10-18T14:57:12.036Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -529,6 +529,42 @@
             "titles": [
               {
                 "title": "resolveReviewFinding with action apply by a non-holder throws TeamGateRefusedError before writing the markdown or the artifact, while accept, override and defer still run",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "01766e6a",
+        "ranAt": "2026-10-18T14:57:12.036Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts: workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
+                "title": "workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 915,
+            "titles": [
+              {
+                "title": "workflow-step start, plan, step and synthesize on a stage held by someone else are refused naming the holder before any state changes, the first author turn with no issue is let through, and a repo without a policy behaves as before",
                 "result": "pass"
               }
             ],

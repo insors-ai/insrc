@@ -55,6 +55,10 @@ export async function handleStart(
 	// a default storyId through params so the runner + storage key identically.
 	augmentStandaloneParams(params, runId);
 
+	// Team gate first, before even the upstream-question gate: a stage held by someone else is refused
+	// naming the holder, not answered with questions to resolve.
+	assertMayAuthor({ workflow: input.workflow, repoPath, params });
+
 	// Mandatory start gate: resolve the IMMEDIATE-UPSTREAM artifact's open
 	// questions before this consuming stage runs. Pre-run — no state token yet.
 	const gate = await preflightUpstreamQuestions(input.workflow, repoPath, params);
@@ -75,9 +79,6 @@ export async function handleStart(
 		repoIndexedAt: null,
 		params,
 	};
-
-	// Team gate: refuse before anything is prepared or saved when someone else holds the stage.
-	assertMayAuthor(intent);
 
 	const prepared = prepareDecompose(intent);
 

@@ -13,17 +13,20 @@
  */
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, test } from 'node:test';
 
 import { handleWorkflowStep } from '../handler.js';
 import { encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../state.js';
-import { _clearWorkflowStateStoreForTests } from '../state-store.js';
+import { _clearWorkflowStateStoreForTests, _workflowStateStoreSize } from '../state-store.js';
 import { runStart, runWorkflowServerSide } from '../../../workflow-rpc.js';
 import { _setGateDepsForTests, TeamGateRefusedError } from '../../../../workflow/team/gate.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
+import { _setQuestionProviderForTests } from '../../../../workflow/questions.js';
+import { hldArtifactPaths } from '../../../../workflow/storage.js';
 import type { PortResult, TrackerPort } from '../../../../workflow/tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../../../../workflow/team/types.js';
 import type { LLMProvider } from '../../../../shared/types.js';
@@ -97,11 +100,12 @@ test('workflow-step start, plan, step and synthesize on a stage held by someone 
 			assert.match(out.error?.message ?? '', /held by bob/, phase);
 		}
 		assert.deepEqual(readdirSync(repo), [], 'nothing was written under the repo');
+		assert.equal(_workflowStateStoreSize(), 3, 'no run state was saved by the refused start (only the three states this test built)');
 
 		// the first author turn of a stage with no issue and no artifact is let through the gate
 		inject(null, { issue: null, artifact: false });
 		const first = parse(await handleWorkflowStep({ phase: 'start', workflow: 'plan', focus: 'f', repo, params: { epicHash: HASH, storyId: 's1' } }));
-		assert.notEqual(first.error?.code, 'team-gate-refused', 'the first draft is not blocked by the gate');
+		assert.equal(first.next, 'emit_plan', 'the first draft is not blocked by the gate');
 		// but not once the artifact exists
 		inject(null, { issue: null, artifact: true });
 		const later = parse(await handleWorkflowStep({ phase: 'start', workflow: 'plan', focus: 'f', repo, params: { epicHash: HASH, storyId: 's1' } }));
@@ -110,7 +114,7 @@ test('workflow-step start, plan, step and synthesize on a stage held by someone 
 		// no policy: the gate is not consulted beyond the policy read, and the run goes on as before
 		const free = inject('bob', { readPolicy: none });
 		const ok = parse(await handleWorkflowStep({ phase: 'start', workflow: 'plan', focus: 'f', repo, params: { epicHash: HASH, storyId: 's1' } }));
-		assert.notEqual(ok.error?.code, 'team-gate-refused');
+		assert.equal(ok.next, 'emit_plan', 'a repo with no policy runs as before');
 		assert.equal(free.loads, 0);
 		assert.equal(free.reads, 0);
 
@@ -138,4 +142,34 @@ test('workflow-step start, plan, step and synthesize on a stage held by someone 
 		assert.ok(frames.some(f => f.stream === 'error' && /held by bob/.test(String(f.data?.['error']))), JSON.stringify(frames));
 		assert.ok(!frames.some(f => f.stream === 'done'));
 	} finally { rmSync(repo2, { recursive: true, force: true }); }
+});
+
+test('the team gate comes before the upstream-question gate: a held stage whose upstream has open questions is refused naming the holder', async () => {
+	registerWorkflowRunners();
+	_setQuestionProviderForTests({
+		capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
+		async complete() { return { text: '', stopReason: 'end_turn' as const }; },
+		async completeStructured<T>() { return { options: [{ label: 'Option A', detail: 'A way.' }, { label: 'Option B', detail: 'B way.' }], recommendation: 'Prefer Option A.' } as unknown as T; },
+		stream() { return (async function* () { /* empty */ })(); },
+		async embed() { return []; },
+	} as unknown as LLMProvider);
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-gate-oq-'));
+	try {
+		const hp = hldArtifactPaths(repo, HASH, '2026-07-18T00:00:00.000Z', 'epic', 'tag-filtering');
+		mkdirSync(dirname(hp.json), { recursive: true });
+		writeFileSync(hp.json, JSON.stringify({
+			meta: { workflow: 'design.epic', runId: 'h1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: '2026-07-18T00:00:00.000Z' },
+			body: { frameworkSummary: 'x', openQuestions: ['[hq1 / missed] Should tags be case-insensitive?'] }, citations: [],
+		}));
+		const start = async (): Promise<{ next: string; error?: { code: string; message: string } }> =>
+			parse(await handleWorkflowStep({ phase: 'start', workflow: 'design.story', focus: 'LLD for s1', repo, params: { epicHash: HASH, storyId: 's1' } }));
+
+		inject('alice');
+		assert.equal((await start()).next, 'resolve_questions', 'the holder meets the question gate as before');
+		inject('bob');
+		const held = await start();
+		assert.equal(held.next, 'error');
+		assert.equal(held.error?.code, 'team-gate-refused');
+		assert.match(held.error?.message ?? '', /held by bob/);
+	} finally { _setQuestionProviderForTests(undefined as never); rmSync(repo, { recursive: true, force: true }); }
 });

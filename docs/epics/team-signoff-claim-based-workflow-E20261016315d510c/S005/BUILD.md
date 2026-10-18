@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-18T14:16:36.004Z  ·  **Updated:** 2026-10-18T14:53:33.952Z
+**Standalone:** no  ·  **Created:** 2026-10-18T14:16:36.004Z  ·  **Updated:** 2026-10-18T14:57:12.036Z
 
-**Commit:** 404fb77f
+**Commit:** 01766e6a
 
 ## Summary
 
-approval-gate.ts is generalized: authorizeStageChange maps an artifact to its stage unit(s) and asks a decide function; authorizeApproval (approve-local) is unchanged in behaviour, authorizeFindingApply asks review-fix, and reviewFixModeFor decides through reviewFixDecision (apply-auto-fixes only when every unit allows). resolveReviewFinding (resolve.ts) calls authorizeFindingApply for action apply before reading the markdown or writing anything and throws TeamGateRefusedError for a non-holder; accept, override and defer are untouched. Both automatic review paths consult reviewFixModeFor before applyAutoFixes (verdicts.ts and run-artifact.ts) and, when report-only, skip the fixes so the review still runs, stamps its findings, writes meta only and keeps the revision. The terminal resolve case prints '✗ not applied — <reason>'. Tests: gate-resolve-finding.test.ts (apply refused with markdown and artifact byte-identical, accept/override/defer still run, holder and no-policy apply work), gate-review-fix.test.ts (verdicts phase and reviewArtifactFile: non-holder reports findings, applies no fix and keeps revision 2; holder applies and mints revision 3), and a resolve test in gate-refusal-output.test.ts. The review, cli, workflow and review-step suites pass apart from the known TUI poll-interval timing flake.
+New src/workflow/team/author-gate.ts: authorUnitOf(intent) maps a design.epic run to the Epic and a design.story or plan run to its Story from params.epicHash and params.storyId (define mints a fresh Epic, and build, tracker, brainstorm and stub runs have no stage unit, so they are unguarded), and assertMayAuthor(intent) asks teamGate with action author and throws TeamGateRefusedError unless the outcome is allowed or the no-issue first-author exception. It is called at the start of the workflow-step start, plan, step and synthesize phases (after the state is decoded, before the prompt is prepared, the executor runs or the draft is finalized) and in runWorkflowServerSide at its start and again right before the draft pair is written, so workflow.run's runStart sends an error frame naming the holder and never a done frame. handleWorkflowStep maps TeamGateRefusedError to the error code team-gate-refused with the reason. Analyze and code review get no call. The integration test gate-call-sites.test.ts covers: each phase refused with 'held by bob' and nothing written under the repo; the first author turn (no issue, no artifact) not blocked by the gate and blocked once the artifact exists; no policy: gate not consulted past the policy read; stub unguarded; runWorkflowServerSide refused with zero provider calls and no draft; runStart error frame without a done frame. The workflow-step, workflow-rpc, draft, mcp and team suites pass (285 tests).
 
 ## Tasks validated
 
@@ -18,27 +18,36 @@ approval-gate.ts is generalized: authorizeStageChange maps an artifact to its st
 - ✓ `t4`
 - ✗ `t5`
 - ✓ `t6`
+- ✗ `t7`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/AMD-315d510cb28100e2-12.json` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `.insrc/artifacts/PLAN-315d510cb28100e2-s5.json` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/cli/__tests__/gate-refusal-output.test.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/cli/command.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/daemon/steps/review-step/phases/verdicts.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/__tests__/gate-approve.test.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/gates.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/review/__tests__/gate-resolve-finding.test.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/review/resolve.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/review/run-artifact.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/team/__tests__/gate.test.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/team/__tests__/review-fix-decision.test.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/team/approval-gate.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/tracker/__tests__/github-adapter.test.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/tracker/github-adapter.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
-- `src/workflow/tracker/port.ts` — **insrc-build** (2026-10-18T14:53:33.952Z)
+- `.insrc/artifacts/AMD-315d510cb28100e2-12.json` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `.insrc/artifacts/PLAN-315d510cb28100e2-s5.json` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/cli/__tests__/gate-refusal-output.test.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/cli/command.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/steps/review-step/phases/verdicts.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/steps/workflow-step/handler.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/steps/workflow-step/phases/plan.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/steps/workflow-step/phases/step.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/steps/workflow-step/phases/synthesize.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/daemon/workflow-rpc.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/__tests__/gate-approve.test.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/gates.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/review/__tests__/gate-resolve-finding.test.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/review/resolve.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/review/run-artifact.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/team/__tests__/gate.test.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/team/__tests__/review-fix-decision.test.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/team/approval-gate.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/team/author-gate.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/tracker/__tests__/github-adapter.test.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/tracker/github-adapter.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)
+- `src/workflow/tracker/port.ts` — **insrc-build** (2026-10-18T14:57:12.036Z)

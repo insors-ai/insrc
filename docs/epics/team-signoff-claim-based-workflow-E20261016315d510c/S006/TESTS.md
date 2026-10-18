@@ -205,7 +205,7 @@ Run at 2026-10-18T19:41:34.369Z on commit `e4928c76`. Tests check: **passed**. 1
 
 ## t11
 
-Run at 2026-10-18T19:43:54.346Z on commit `1aaa00f4`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T19:45:10.509Z on commit `45667a0c`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/mcp/__tests__/park-resume-phases.test.ts: an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases**
 
@@ -217,4 +217,4 @@ Run at 2026-10-18T19:43:54.346Z on commit `1aaa00f4`. Tests check: **passed**. 1
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/mcp/__tests__/park-resume-phases.test.ts` | 0 | 1 | 2 s |  |
+| `src/mcp/__tests__/park-resume-phases.test.ts` | 0 | 1 | 2.8 s |  |

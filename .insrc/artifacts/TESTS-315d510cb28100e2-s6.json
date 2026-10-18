@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T19:43:54.346Z",
+    "updatedAt": "2026-10-18T19:45:10.509Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -495,8 +495,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "1aaa00f4",
-        "ranAt": "2026-10-18T19:43:54.346Z",
+        "commit": "45667a0c",
+        "ranAt": "2026-10-18T19:45:10.509Z",
         "testsPassed": true,
         "tests": [
           {
@@ -518,7 +518,7 @@
             "file": "src/mcp/__tests__/park-resume-phases.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1998,
+            "durationMs": 2752,
             "titles": [
               {
                 "title": "an MCP call with phase park and with phase resume passes validation and reaches the workflow-step handler, and the schema registry and the tool-surface fixture list both phases",

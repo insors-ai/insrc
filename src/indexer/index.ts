@@ -13,7 +13,8 @@ import {
   deleteUnresolvedForRepoFile,
   deleteUnresolvedForRepo,
 } from '../db/relations.js';
-import { beginFullIndexState, finishFullIndexState, readIndexState, setUncommittedFiles } from '../db/index-state.js';
+import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, readIndexState, setUncommittedFiles } from '../db/index-state.js';
+import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
 import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
@@ -574,6 +575,9 @@ export class IndexerService {
     while (this.settlePasses.size > 0) await Promise.all([...this.settlePasses]);
   }
 
+  /** Test seam: runs right after a full index's repository delete (a test makes it throw). */
+  protected async _afterRepositoryDeleteForTest(_repoPath: string): Promise<void> {}
+
   /** The registry status writes of a full index, in one place (a test counts them). */
   protected async writeIndexStatus(
     repoPath: string,
@@ -612,12 +616,19 @@ export class IndexerService {
       // A full index rebuilds the repository from scratch (Epic c2ba6fa6 s1):
       // the relationships other repositories hold into it go back to pending
       // (the cross-file pass completes them), then every row it holds in both
-      // stores goes -- document summaries and cached explorations included;
-      // the doc-summarise-repo job queued at the end regenerates the summaries.
-      const { returnedToPending } = await deleteEntitiesForRepo(this.db, repoPath, { returnIncomingToPending: true });
+      // stores goes, cached explorations included. Its document summaries are
+      // carried across (ISSUE-dced4385) and written back below for every
+      // document whose body is unchanged; the doc-summarise-repo job queued
+      // at the end summarises only the changed and new ones. Marked unfinished
+      // first, so a crash after the delete is redone at start-up.
+      await markFullIndexUnfinished(repoPath);
+      const { returnedToPending, carriedDocSummaries } = await deleteEntitiesForRepo(
+        this.db, repoPath, { returnIncomingToPending: true, carryDocSummaries: true },
+      );
+      await this._afterRepositoryDeleteForTest(repoPath);
       await deleteUnresolvedForRepo(this.db, repoPath);
       await beginFullIndexState(repoPath);
-      log.info({ repo: repoPath, returnedToPending }, 'full index: repository rows deleted');
+      log.info({ repo: repoPath, returnedToPending, carriedDocSummaries }, 'full index: repository rows deleted');
 
       const ignore = resolveRepoIgnore(repoPath);
       const files = listRepoFiles(repoPath, ignore);
@@ -730,6 +741,9 @@ export class IndexerService {
           'messaging-endpoint pass failed (non-fatal)',
         );
       }
+      // Every document the rebuild stores is stored by now (after the index clean-up).
+      const summaries = await restoreCarriedDocSummaries(repoPath);
+      log.info({ repo: repoPath, ...summaries }, 'full index: carried document summaries written back');
       await finishFullIndexState(repoPath, endpointPassFailed);
 
       // Build the entity_vec HNSW index now that the bulk-insert

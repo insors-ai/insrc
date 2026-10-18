@@ -132,6 +132,16 @@ export function beginFullIndexState(repoPath: string): Promise<void> {
 	});
 }
 
+/**
+ * A full index is about to delete the repository (ISSUE-dced4385): only the
+ * flag, so a crash at any point after the delete leaves the repository
+ * unfinished and start-up redoes it. beginFullIndexState resets the counters
+ * after the delete.
+ */
+export function markFullIndexUnfinished(repoPath: string): Promise<void> {
+	return updateState(repoPath, row => { row.fullIndexFinished = false; });
+}
+
 /** The selected files the full index could not store. */
 export function setUncommittedFiles(repoPath: string, files: readonly string[]): Promise<void> {
 	return updateState(repoPath, row => { row.uncommittedFiles = [...files]; });

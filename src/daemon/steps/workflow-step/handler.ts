@@ -12,7 +12,11 @@ import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
 import { TeamGateRefusedError } from '../../../workflow/team/gate.js';
+import type { ResumeDeps } from '../../../workflow/team/handoff.js';
+import type { ApplyDeps } from './resume.js';
+import { handlePark } from './phases/park.js';
 import { handlePlan } from './phases/plan.js';
+import { handleResume } from './phases/resume.js';
 import { handleResolveQuestion } from './phases/resolve-question.js';
 import { handleReviewDeferred } from './phases/review-deferred.js';
 import { handleStart } from './phases/start.js';
@@ -28,6 +32,10 @@ import type {
 const TRACE_PATH = process.env['INSRC_WORKFLOW_STEP_TRACE'];
 
 const log = getLogger('mcp:workflow-step:handler');
+
+/** Test seam: the git, registry and write dependencies the park and resume phases run with. */
+let handoffDeps: ResumeDeps & ApplyDeps = {};
+export function _setHandoffDepsForTests(deps: ResumeDeps & ApplyDeps = {}): void { handoffDeps = deps; }
 
 export async function handleWorkflowStep(input: unknown): Promise<WorkflowStepMcpEnvelope> {
 	const result = await dispatch(input);
@@ -63,11 +71,13 @@ async function dispatch(input: unknown): Promise<WorkflowStepOutput> {
 			case 'synthesize':       return await handleSynthesize(step);
 			case 'resolve_question': return await handleResolveQuestion(step);
 			case 'review_deferred':  return await handleReviewDeferred(step);
+			case 'park':             return await handlePark(step, handoffDeps);
+			case 'resume':           return await handleResume(step, handoffDeps);
 			default:
 				return errorResult(
 					'bad-phase',
 					`insrc_workflow_step: unknown phase '${(step as { phase: string }).phase}'. ` +
-					`Expected 'start' | 'plan' | 'step' | 'synthesize' | 'resolve_question' | 'review_deferred'.`,
+					`Expected 'start' | 'plan' | 'step' | 'synthesize' | 'resolve_question' | 'review_deferred' | 'park' | 'resume'.`,
 					false,
 				);
 		}

@@ -64,6 +64,7 @@ import {
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-client.js';
+import { handoffRpcHandlers } from './steps/workflow-step/handoff-rpc.js';
 import { registerParkOffer } from './steps/workflow-step/park-offer.js';
 import { listModels } from './list-models.js';
 import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
@@ -502,6 +503,7 @@ async function main(): Promise<void> {
 	// socket, and the step handlers call the same functions in-process through
 	// the in-daemon client (Epic c2ba6fa6, Story s11), never over a loopback.
 	const rpcHandlers: RpcHandlers = {
+		...handoffRpcHandlers(),
 		'repo.add': async (params) => {
 			const rawPath = (params as { path?: unknown })?.path;
 			let normalisedPath: string;

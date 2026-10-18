@@ -22,7 +22,9 @@ export type WorkflowStepPhase =
 	| 'step'
 	| 'synthesize'
 	| 'resolve_question'
-	| 'review_deferred';
+	| 'review_deferred'
+	| 'park'
+	| 'resume';
 
 export interface WorkflowStepInputStart {
 	readonly phase:    'start';
@@ -74,13 +76,35 @@ export interface WorkflowStepInputReviewDeferred {
 	readonly repo?:   string;
 }
 
+/** Hand the unit's unfinished work to whoever takes it over: commit the drafts and a checkpoint of the run to the handoff branch. */
+export interface WorkflowStepInputPark {
+	readonly phase:     'park';
+	readonly epicHash:  string;
+	readonly storyId?:  string | undefined;
+	readonly repo?:     string | undefined;
+	/** The state token of the run to park; omitted, the owner's run for the unit is found. */
+	readonly runToken?: string | undefined;
+}
+
+/** Take over parked work: restore it and return the turn the run stopped at (or tell the controller to start the stage afresh). */
+export interface WorkflowStepInputResume {
+	readonly phase:     'resume';
+	readonly epicHash:  string;
+	readonly storyId?:  string | undefined;
+	readonly repo?:     string | undefined;
+	/** The stage's workflow, when it cannot be told from the committed artifacts. */
+	readonly workflow?: string | undefined;
+}
+
 export type WorkflowStepInput =
 	| WorkflowStepInputStart
 	| WorkflowStepInputPlan
 	| WorkflowStepInputStep
 	| WorkflowStepInputSynthesize
 	| WorkflowStepInputResolveQuestion
-	| WorkflowStepInputReviewDeferred;
+	| WorkflowStepInputReviewDeferred
+	| WorkflowStepInputPark
+	| WorkflowStepInputResume;
 
 // ---------------------------------------------------------------------------
 // Outputs
@@ -181,6 +205,33 @@ export interface WorkflowStepError {
 	};
 }
 
+/** The park went through: the branch the work is on and what else happened. */
+export interface WorkflowStepParked {
+	readonly next:           'parked';
+	readonly branch:         string;
+	readonly commit:         string;
+	/** 'run': the checkpoint carries a run of the stage; 'draft': only the draft files travelled. */
+	readonly variant:        'run' | 'draft';
+	readonly noted:          boolean;
+	readonly noteFailure?:   string | undefined;
+	readonly cleanupWarning?: string | undefined;
+}
+
+/** The parked stage has no run to continue: start it afresh with `workflow` and `params` (`draftRestored`: its draft is back in the tree). */
+export interface WorkflowStepRestart {
+	readonly next:          'restart';
+	readonly workflow:      string;
+	readonly params:        Record<string, unknown>;
+	readonly reason:        string;
+	readonly draftRestored: boolean;
+}
+
+/** Nothing parked is left to take over. */
+export interface WorkflowStepNothingToResume {
+	readonly next:   'nothing_to_resume';
+	readonly reason: string;
+}
+
 export type WorkflowStepOutput =
 	| WorkflowStepEmitPlan
 	| WorkflowStepEmitStep
@@ -189,6 +240,9 @@ export type WorkflowStepOutput =
 	| WorkflowStepResolveQuestions
 	| WorkflowStepReady
 	| WorkflowStepDeferred
+	| WorkflowStepParked
+	| WorkflowStepRestart
+	| WorkflowStepNothingToResume
 	| WorkflowStepError;
 
 // ---------------------------------------------------------------------------

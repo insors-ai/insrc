@@ -115,7 +115,7 @@ Run at 2026-10-18T14:36:33.618Z on commit `c5e1e766`. Tests check: **passed**. 3
 
 ## t5
 
-Run at 2026-10-18T14:42:11.194Z on commit `eeaada81`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T14:44:01.249Z on commit `0fac73a9`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/__tests__/gate-approve.test.ts: approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder before any review check or stamp, and approveWorkflowTarget authorizes a BUILD target before ensureBuildRecordOnCompletion so a refused target creates no BUILD record, puts it in skipped[] with the reason and approves the others**
 
@@ -129,4 +129,4 @@ Run at 2026-10-18T14:42:11.194Z on commit `eeaada81`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/__tests__/gate-refusal-output.test.ts` | 0 | 1 | 1.6 s |  |
-| `src/workflow/__tests__/gate-approve.test.ts` | 0 | 1 | 1.6 s |  |
+| `src/workflow/__tests__/gate-approve.test.ts` | 0 | 1 | 1.8 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:42:11.194Z",
+    "updatedAt": "2026-10-18T14:44:01.249Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -400,8 +400,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "eeaada81",
-        "ranAt": "2026-10-18T14:42:11.194Z",
+        "commit": "0fac73a9",
+        "ranAt": "2026-10-18T14:44:01.249Z",
         "testsPassed": true,
         "tests": [
           {
@@ -428,7 +428,7 @@
             "file": "src/cli/__tests__/gate-refusal-output.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1622,
+            "durationMs": 1587,
             "titles": [
               {
                 "title": "the terminal approve and resolve commands print the refusal naming the holder, formatted beside the review-block message",
@@ -441,7 +441,7 @@
             "file": "src/workflow/__tests__/gate-approve.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1646,
+            "durationMs": 1776,
             "titles": [
               {
                 "title": "approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder before any review check or stamp, and approveWorkflowTarget authorizes a BUILD target before ensureBuildRecordOnCompletion so a refused target creates no BUILD record, puts it in skipped[] with the reason and approves the others",

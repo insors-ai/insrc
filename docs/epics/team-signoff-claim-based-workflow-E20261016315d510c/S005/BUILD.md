@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s5
 
-**Standalone:** no  ·  **Created:** 2026-10-18T14:16:36.004Z  ·  **Updated:** 2026-10-18T14:42:11.194Z
+**Standalone:** no  ·  **Created:** 2026-10-18T14:16:36.004Z  ·  **Updated:** 2026-10-18T14:44:01.249Z
 
-**Commit:** eeaada81
+**Commit:** 0fac73a9
 
 ## Summary
 
-New src/workflow/team/approval-gate.ts: authorizeApproval(jsonPath) maps an artifact to its stage unit (Define and HLD to the Epic, LLD and plan to the Story, BUILD to the Story's Task units from its plan, or the Story when it has none or is standalone), asks teamGate for approve-local, and returns the first refusal with a subject such as 'task t2'; non-claim artifacts are unguarded; a BUILD record that does not exist yet is identified from its file name; the repo is recovered from the artifact path when the meta lacks it; an artifact whose stage cannot be told is refused only in a repo that enforces claims (or whose policy cannot be read). gates.ts: approveArtifactByJsonPath calls it right after the meta check, before any review check or stamp, and throws TeamGateRefusedError; approveWorkflowTarget authorizes each BUILD target before ensureBuildRecordOnCompletion (single and batch) and puts a refused target in skipped[] with the reason, and a TeamGateRefusedError from approveOne is also mapped into skipped[]; signatures unchanged. TeamGateRefusedError takes an optional subject. command.ts: the approve case prints '✗ not approved — <reason>' beside the review-block message. gate-approve.test.ts (integration) and gate-refusal-output.test.ts (approve part; resolve, claim and release are added by t6 and t9) carry the tests; the full workflow and cli suites pass (2183 tests).
+Addressed the three findings. (1) taskIdsOf in approval-gate.ts no longer fails open: a plan file that is missing means no Tasks, but one that exists and cannot be read or has a malformed task list returns an error, and where claims are enforced (or the policy is unreadable) the BUILD is refused with that reason instead of being authorized against the Story alone; with no policy nothing changes. Test: an unreadable plan gives a skipped[] entry 'plan of Story s1 cannot be read' and no BUILD record. (2) The integration test now proves the order: a PLAN with an unresolved HIGH review and a stage held by bob gives TeamGateRefusedError (not ReviewBlockedError), and the same plan for the holder then meets ReviewBlockedError. (3) The terminal test now also exercises workflow resolve: the resolve case in command.ts prints '✗ not applied — <reason>' for a TeamGateRefusedError (the guard inside resolveReviewFinding itself is t6), and accept still prints its normal line. command.test.ts passes.
 
 ## Tasks validated
 
@@ -22,17 +22,17 @@ New src/workflow/team/approval-gate.ts: authorizeApproval(jsonPath) maps an arti
 
 ## Changes
 
-- `.insrc/artifacts/AMD-315d510cb28100e2-12.json` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `.insrc/artifacts/PLAN-315d510cb28100e2-s5.json` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/cli/__tests__/gate-refusal-output.test.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/cli/command.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/__tests__/gate-approve.test.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/gates.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/team/__tests__/gate.test.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/team/__tests__/review-fix-decision.test.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/team/approval-gate.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/tracker/__tests__/github-adapter.test.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/tracker/github-adapter.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
-- `src/workflow/tracker/port.ts` — **insrc-build** (2026-10-18T14:42:11.194Z)
+- `.insrc/artifacts/AMD-315d510cb28100e2-12.json` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `.insrc/artifacts/PLAN-315d510cb28100e2-s5.json` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/cli/__tests__/gate-refusal-output.test.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/cli/command.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/__tests__/gate-approve.test.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/gates.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/team/__tests__/gate.test.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/team/__tests__/review-fix-decision.test.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/team/approval-gate.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/tracker/__tests__/github-adapter.test.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/tracker/github-adapter.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)
+- `src/workflow/tracker/port.ts` — **insrc-build** (2026-10-18T14:44:01.249Z)

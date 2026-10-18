@@ -213,14 +213,7 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 				return ['usage: workflow resolve <path> <findingId> apply|accept|override|defer [note]'];
 			}
 			const note = noteParts.join(' ');
-			let res: ReturnType<typeof svc.workflow.resolveFinding>;
-			try {
-				res = svc.workflow.resolveFinding(path, id, action as 'apply' | 'accept' | 'override' | 'defer', note.length > 0 ? note : undefined);
-			} catch (err) {
-				// Applying a finding changes the stage: a team repo refuses it for anyone but the holder.
-				if (err instanceof Error && err.name === 'TeamGateRefusedError') return [`✗ not applied — ${(err as { reason?: string }).reason ?? err.message}`];
-				throw err;
-			}
+			const res = svc.workflow.resolveFinding(path, id, action as 'apply' | 'accept' | 'override' | 'defer', note.length > 0 ? note : undefined);
 			const tail = res.effectiveVerdict === 'block'
 				? ` · still blocked (${res.remainingBlocking} left)`
 				: ` · ✓ review clears — ready to approve`;

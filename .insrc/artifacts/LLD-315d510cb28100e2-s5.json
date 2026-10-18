@@ -190,6 +190,11 @@
       "reviewedAt": "2026-10-18T13:53:13.343Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-18T13:59:37.172Z",
+    "reviewOverride": {
+      "reason": "Approved past a block verdict from design review round 2 (3 HIGH, 1 MED, 1 could-not-verify; round 1's 5 HIGH and 3 MED were fixed in the revised LLD). The five open findings (user-facing claim and release commands, a second whoAmI call, guarding the daemon workflow driver, contested-claim wording, BUILD approval target mapping) are build-level details that do not change the chosen design; they are recorded as binding build requirements in docs/plans/team-workflow.md (\"s5 LLD approval\"). The add-only addAssignee amendment AMD-315d510cb28100e2-12 is a pending build prerequisite with s1.",
+      "at": "2026-10-18T13:59:37.172Z"
     }
   },
   "body": {

@@ -61,7 +61,7 @@ export class TeamGateRefusedError extends Error {
 /** One sentence for a non-allowed outcome, naming the holder when there is one. */
 export function describeOutcome(o: RefusedOutcome): string {
 	switch (o.kind) {
-		case 'held-by-other':    return `held by ${o.holder}`;
+		case 'held-by-other':    return o.offerPark ? `held by ${o.holder}; you have unfinished work here, run 'team park <epicHash> [storyId]' to hand it over` : `held by ${o.holder}`;
 		case 'awaiting-signoff': return `awaiting signoff (${o.request.ref})`;
 		case 'no-issue':         return o.creationFailure !== undefined ? `no tracker issue for this stage yet: ${o.creationFailure}` : 'no tracker issue for this stage yet';
 		case 'refused':          return o.reason;
@@ -98,6 +98,21 @@ let registeredHook: CompletionHook | undefined;
 let insideHook = false;
 
 export function registerCompletionHook(hook: CompletionHook | undefined): void { registeredHook = hook; }
+
+/** Says whether the acting user has unparked work for a unit (a live run or an uncommitted draft), so a refusal can offer to park it. */
+export type ParkOfferProvider = (repo: string, unit: UnitRef, actor: string) => boolean;
+
+let parkOfferProvider: ParkOfferProvider | undefined;
+/** Register the park-offer provider (sc4 amendment AMD-315d510cb28100e2-13); none registered means offerPark is always false. */
+export function registerParkOfferProvider(provider: ParkOfferProvider | undefined): void { parkOfferProvider = provider; }
+
+/** The held-by-other outcome, with offerPark from the provider; a provider that throws counts as false. */
+function heldByOther(repo: string, unit: UnitRef, holder: string, actor: string): GateOutcome {
+	let offerPark = false;
+	try { offerPark = parkOfferProvider?.(repo, unit, actor) === true; }
+	catch (err) { log.warn({ unit: unitKey(unit), err: errorText(err) }, 'park-offer provider failed; no offer'); }
+	return { kind: 'held-by-other', holder, offerPark };
+}
 
 const HOOKED: ReadonlySet<string> = new Set<GuardedAction>(['author', 'build', 'open-signoff', 'revise', 'release']);
 
@@ -225,7 +240,7 @@ export function teamGate(repo: string, unit: UnitRef, action: GuardedAction, aut
 		const holder = read.state.holder;
 
 		if (holder !== null) {
-			return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, action, { kind: 'held-by-other', holder, offerPark: false });
+			return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, action, heldByOther(repo, unit, holder, ctx.who));
 		}
 		if (!CLAIMING.has(action)) return allowed();
 
@@ -261,7 +276,7 @@ export function claim(repo: string, unit: UnitRef): GateOutcome {
 		const read = readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
 		if (!read.ok) return logOutcome(unit, 'claim', read.outcome);
 		const holder = read.state.holder;
-		if (holder !== null) return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, 'claim', { kind: 'held-by-other', holder, offerPark: false });
+		if (holder !== null) return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, 'claim', heldByOther(repo, unit, holder, ctx.who));
 
 		const added = ctx.port.addAssignee(ctx.issue, ctx.who);
 		if (!added.ok) return logOutcome(unit, 'claim', refused(`the claim failed (${added.kind}): ${added.reason}; the stage state is unknown, read it again before acting`));

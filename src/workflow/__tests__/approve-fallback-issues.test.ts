@@ -46,6 +46,7 @@ function fakeTracker(over: { failFind?: boolean; failComment?: string } = {}) {
 	const log = { creates: 0, comments: [] as Array<[string, string]>, writeBodies: 0 };
 	const port = {
 		kind: 'github', capabilities: new Set(['issue-create']),
+		findIssues: (labels: string[]): PortResult<IssueRef[]> => ({ ok: true, value: issues.filter(i => labels.every(l => i.spec.labels.includes(l))).map(i => i.ref) }),
 		findIssue: (labels: string[]): PortResult<IssueRef | null> => {
 			if (over.failFind === true) return { ok: false, reason: 'gh timed out', kind: 'unreachable' };
 			return { ok: true, value: issues.find(i => labels.every(l => i.spec.labels.includes(l)))?.ref ?? null };

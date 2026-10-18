@@ -192,6 +192,28 @@ test('findIssue returns the first of several matches and separates failure from 
 	if (!failed.ok) assert.equal(failed.kind, 'unreachable');
 });
 
+test('findIssues lists every open or closed match in ascending order, and a failure or a possibly truncated listing is not an answer', () => {
+	const port = createGithubTracker('o', 'r');
+	const argv: string[][] = [];
+	_setTrackerExecForTests((_c, args) => { argv.push([...args]); return '5\n17\n31\n'; });
+	assert.deepEqual(port.findIssues(['insrc:unit:x']), { ok: true, value: ['o/r#5', 'o/r#17', 'o/r#31'] });
+	assert.deepEqual(argv[0], ['issue', 'list', '--repo', 'o/r', '--state', 'all', '--limit', '1000', '--json', 'number', '-q', 'sort_by(.number) | .[].number', '--label', 'insrc:unit:x'], 'closed issues included, sorted by gh');
+
+	_setTrackerExecForTests(() => '');
+	assert.deepEqual(port.findIssues(['a']), { ok: true, value: [] });
+
+	failWith(execError({ code: 'ETIMEDOUT' }));
+	const failed = port.findIssues(['a']);
+	assert.equal(failed.ok, false);
+	if (!failed.ok) assert.equal(failed.kind, 'unreachable');
+
+	// a listing that reaches the ceiling may be incomplete: refused
+	_setTrackerExecForTests(() => Array.from({ length: 1000 }, (_v, i) => String(i + 1)).join('\n'));
+	const tooMany = port.findIssues(['a']);
+	assert.equal(tooMany.ok, false);
+	if (!tooMany.ok) assert.match(tooMany.reason, /may be incomplete/);
+});
+
 test('signoff methods return rejected without running gh', () => {
 	const port = createGithubTracker('o', 'r');
 	let ran = 0;

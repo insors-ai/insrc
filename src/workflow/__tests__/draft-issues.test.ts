@@ -47,6 +47,7 @@ function harness(over: Over = {}) {
 	const seen = { loads: 0, creates: 0, finds: 0 };
 	const port = {
 		kind: 'github', capabilities: new Set(['issue-create']),
+		findIssues: (labels: string[]): PortResult<IssueRef[]> => ({ ok: true, value: issues.filter(i => labels.every(l => i.spec.labels.includes(l))).map(i => i.ref) }),
 		findIssue: (labels: string[]): PortResult<IssueRef | null> => {
 			seen.finds += 1;
 			if (over.failFind === true) return { ok: false, reason: 'gh timed out', kind: 'unreachable' };

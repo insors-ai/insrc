@@ -98,7 +98,7 @@ function fakeTracker(over: {
 				return { ok: true, value: undefined };
 			},
 		},
-		...(over.withListing === true ? {
+		...(over.withListing !== false ? {
 			findIssues: (labels: string[]): PortResult<IssueRef[]> => {
 				calls.list += 1;
 				if (over.failList === true) return { ok: false, reason: 'listing timed out', kind: 'unreachable' };
@@ -257,7 +257,7 @@ test('team mode creates only when everything misses and reports phase before-cre
 		// the happy path: Epic, then Story under it, then Task under the Story
 		const t = fakeTracker();
 		const e = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
-		assert.deepEqual(e, { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'not-run' } });
+		assert.deepEqual(e, { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'clean' } });
 		assert.deepEqual(t.issues[0]!.spec.labels, ['epic', MEMBERSHIP, unitLabel(epic(fx.repo))], 'kind, membership and per-unit labels');
 		assert.equal(t.issues[0]!.spec.issueType, 'Epic');
 		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.epicRef, 'acme/demo#1');

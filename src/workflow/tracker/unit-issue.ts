@@ -343,21 +343,17 @@ function retryPendingLink(unit: UnitRef, port: TrackerPort, issue: IssueRef): vo
 	} catch (err) { log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: could not retry the pending link'); }
 }
 
-/** The additive sc1 listing (AMD-315d510cb28100e2-10): every issue carrying the labels, open or closed. */
-type ListingPort = TrackerPort & { readonly findIssues?: ((labels: readonly string[]) => PortResult<readonly IssueRef[]>) | undefined };
-
 const issueNumber = (ref: IssueRef): number => Number(/#(\d+)$/.exec(ref)?.[1] ?? Number.MAX_SAFE_INTEGER);
 
 /**
  * Step 5, after the created issue is recorded: when two daemons both created, keep
  * the lowest-numbered issue, record it in place of this call's own, and comment on
- * and close the own one as a duplicate. A port without the listing, or a failed
+ * and close the own one as a duplicate. A failed
  * listing, keeps the created issue (`not-run`); the issue is already recorded.
  */
 function tieBreak(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef, now: () => string): EnsuredIssue {
 	const kept: EnsuredIssue = { issue: own, created: true, duplicateCheck: 'not-run' };
-	const list = (port as ListingPort).findIssues?.([label]);
-	if (list === undefined) return kept;
+	const list = port.findIssues([label]);
 	if (!list.ok) {
 		log.warn({ unit: unitKey(unit), reason: list.reason }, 'unit-issue: the duplicate check could not list the unit label (the created issue is kept)');
 		return kept;

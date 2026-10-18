@@ -301,6 +301,19 @@ export function ghFindIssueByLabelsStrict(owner: string, repo: string, labels: r
 	return /^\d+$/.test(num) ? buildRef(owner, repo, num) : undefined;
 }
 
+/** Every issue (open or closed) carrying all the labels, ascending by number. A failed or
+ *  timed-out listing throws a classified {@link GhCommandError}; a listing that reaches the
+ *  1000-issue ceiling is refused rather than returned incomplete. */
+export const GH_LIST_LIMIT = 1000;
+export function ghListIssuesByLabelsStrict(owner: string, repo: string, labels: readonly string[]): string[] {
+	const args = ['issue', 'list', '--repo', `${owner}/${repo}`, '--state', 'all', '--limit', String(GH_LIST_LIMIT), '--json', 'number', '-q', 'sort_by(.number) | .[].number'];
+	for (const l of labels) args.push('--label', l);
+	const numbers = runGh(args).split('\n').map(l => l.trim()).filter(l => l.length > 0);
+	if (numbers.some(n => !/^\d+$/.test(n))) throw new GhCommandError('rejected', 'gh issue list returned an unexpected answer');
+	if (numbers.length >= GH_LIST_LIMIT) throw new GhCommandError('rejected', `more than ${GH_LIST_LIMIT - 1} issues carry these labels; the listing may be incomplete`);
+	return numbers.map(n => buildRef(owner, repo, n));
+}
+
 /** Ensure a milestone exists (idempotent) then attach an issue to it.
  *  Best-effort: milestone plumbing failures don't block issue creation. */
 export function ghEnsureMilestone(owner: string, repo: string, title: string): void {

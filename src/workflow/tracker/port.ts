@@ -74,6 +74,8 @@ export interface TrackerPort {
 	setAssignee(issue: IssueRef, who: string | null): PortResult<void>;
 	createIssue(spec: IssueSpec): PortResult<IssueRef>;
 	findIssue(labels: string[]): PortResult<IssueRef | null>;
+	/** Every issue, open or closed, carrying all the labels, complete across pages, in ascending issue-number order (AMD-315d510cb28100e2-10). */
+	findIssues(labels: string[]): PortResult<IssueRef[]>;
 	openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>;
 	readSignoffState(ref: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'>;
 }

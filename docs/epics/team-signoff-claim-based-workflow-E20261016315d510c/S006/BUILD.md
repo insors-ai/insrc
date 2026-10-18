@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s6
 
-**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T17:52:55.111Z
+**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T17:55:03.121Z
 
-**Commit:** f3252939
+**Commit:** b76ab903
 
 ## Summary
 
-Fixes for the two refusal-path findings. (1) teamContext(repo, unit, opts) in gate.ts gains opts.createIssue (default true, so every existing caller is unchanged); parkPlan calls it with createIssue: false, so a unit with no issue is reported ('no tracker issue yet') without ensureUnitIssue running, which could have created labels, recorded artifacts or created an issue. The test now stubs ensureIssue to SUCCEED and counts calls: planning a no-issue park leaves the count at 0. (2) The branch name is now resolved and validated before unitDraftFiles runs git status, so a bad pattern refuses with no git command at all: a new test case uses a directory that is not a git repository with an owned run, where a bad pattern gives 'does not identify the unit' and a good pattern runs on to fail with 'cannot read the repository's history' (proving the order). On scope: resolveBranchPattern in config/github.ts is the only way to read the repo's branchPattern (the resolved config type does not carry it) and runIsForUnit is moved, not copied, so that the offer provider and parkPlan decide 'is this run for this unit' with the same code; both are required by this task's behaviour (the branch check and run selection). All other behaviour and the earlier assertions are unchanged; handoff-park-plan passes, team suite passes, tsc clean.
+Both findings addressed. (1) handoffBranchName now refuses a branch name in which ANY slash-separated component ends in .lock (or starts with a dot), as git does, not just a name that ends in .lock: 'foo.lock/{id}', 'x/y.lock/{id}', '{id}.lock' and '{id}/.hidden' are refused; the pure branch-name test lists them, and the parkPlan test's invalid-pattern loop now includes 'foo.lock/{id}' and 'x/y.lock/{id}' and expects ok:false with the branch reason. (2) Scope: I reverted src/daemon/steps/workflow-step/park-offer.ts to exactly its t5 content (git diff against t5's commit is empty), so this task no longer touches the sibling. parkPlan therefore has its own non-exported copy of the 'is this run for this unit' check, and the duplication is logged as open issue S6-1 in docs/plans/s6-open-issues.md (to be merged once the Story is built). The earlier t6 fixes stand: the planner reads the tracker context with createIssue false so it never creates an issue, and the branch is validated before any git command. config/github.ts's resolveBranchPattern remains, as the only way to read the repo's branchPattern. Pure, park-plan and park-offer tests pass; tsc clean.
 
 ## Tasks validated
 
@@ -23,24 +23,25 @@ Fixes for the two refusal-path findings. (1) teamContext(repo, unit, opts) in ga
 
 ## Changes
 
-- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/cli/services/index.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/daemon/index.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/daemon/steps/host.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/workflow/config/github.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/workflow/team/__tests__/handoff-park-plan.test.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
-- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T17:52:55.111Z)
+- `docs/plans/s6-open-issues.md` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/cli/services/index.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/daemon/index.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/daemon/steps/host.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/workflow/config/github.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/workflow/team/__tests__/handoff-park-plan.test.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)
+- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T17:55:03.121Z)

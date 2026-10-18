@@ -372,6 +372,13 @@ export function parkPlan(repo: string, unit: UnitRef, opts: { readonly runToken?
 	try {
 		if (unit.unit === 'task') return refuse('a Task has no run to hand over: commit your code on a branch as usual');
 
+		// the branch first: it needs no git and no tracker, so a bad pattern refuses before either is touched
+		const slug = readEpicDefinitionCore(repo, unit.epicHash).epicSlug ?? unit.epicHash;
+		const pattern = (deps.branchPattern ?? resolveBranchPattern)(repo);
+		const named = handoffBranchName(pattern, unit, slug);
+		if (!named.ok) return refuse(named.reason);
+
+
 		// the tracker side: who acts, which issue, who holds it
 		// a read: a missing issue is reported, never created
 		const ctx = teamContext(repo, unit, { createIssue: false });
@@ -397,12 +404,6 @@ export function parkPlan(repo: string, unit: UnitRef, opts: { readonly runToken?
 		} else {
 			chosen = listStates().find(mine);   // newest touch first
 		}
-		// the branch
-		const slug = readEpicDefinitionCore(repo, unit.epicHash).epicSlug ?? unit.epicHash;
-		const pattern = (deps.branchPattern ?? resolveBranchPattern)(repo);
-		const named = handoffBranchName(pattern, unit, slug);
-		if (!named.ok) return refuse(named.reason);
-
 		const files = unitDraftFiles(repo, unit);
 		if (chosen === undefined && files.length === 0) return refuse('no draft or run to hand over');
 

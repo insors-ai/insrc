@@ -44,13 +44,17 @@ function mkRepo(): Env {
 }
 
 /** The gate sees `holder` as the holder of the issue (null: nobody) and alice as the actor. */
+const WRITES: string[] = [];
+
 function inject(holder: string | null, over: { readPolicy?: PolicyReader | undefined; issue?: IssueRef | null | undefined } = {}): { loads: () => number; ensures: () => number } {
 	let loads = 0;
 	let ensures = 0;
 	const port = {
 		whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
 		readAssignee: (): PortResult<string | null> => ({ ok: true, value: holder }),
-		addAssignee: (): PortResult<string[]> => ({ ok: true, value: ['alice'] }),
+		addAssignee: (): PortResult<string[]> => { WRITES.push('addAssignee'); return { ok: true, value: ['alice'] }; },
+		setAssignee: (): PortResult<void> => { WRITES.push('setAssignee'); return { ok: true, value: undefined }; },
+		get issueOps(): never { WRITES.push('issueOps'); throw new Error('park planning must not touch issueOps'); },
 	} as unknown as TrackerPort;
 	_setGateDepsForTests({
 		readPolicy: over.readPolicy ?? team,
@@ -85,8 +89,14 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 	const env = mkRepo();
 	try {
 		const { repo, unit } = env;
+		WRITES.length = 0;
 		const before = { status: env.git('status', '--porcelain'), branches: env.git('branch', '--list'), refs: env.git('for-each-ref'), runs: listStates().length };
 		const plan = (u: UnitRef = unit, opts: { runToken?: string } = {}, d: ParkDeps = deps()) => parkPlan(repo, u, opts, d);
+
+		// a bad branch pattern is refused before the tracker or git is touched
+		const early = inject('bob');
+		assert.match(reasonOf(plan(unit, {}, deps({ branchPattern: () => 'no-id-{type}' }))), /does not identify the unit/);
+		assert.equal(early.loads(), 0, 'no tracker context was built');
 
 		// a Task has no run: refused before the tracker is even asked
 		const seen = inject('bob');
@@ -198,7 +208,8 @@ test('parkPlan refuses when the actor holds the unit, for a Task, with no issue 
 		assert.equal(both.ok && both.variant, 'run');
 		assert.deepEqual(both.ok && both.checkpoint.artifactPaths, [`.insrc/artifacts/${lldArtifactId(HASH, 's1')}.json`]);
 
-		// planning changed nothing: no file, no branch, no ref, no stored run
+		// planning changed nothing: no tracker write, no file, no branch, no ref, no stored run
+		assert.deepEqual(WRITES, [], 'no assignee change, no issue operation');
 		rmSync(json);
 		assert.equal(env.git('status', '--porcelain'), before.status);
 		assert.equal(env.git('branch', '--list'), before.branches);

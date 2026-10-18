@@ -144,7 +144,7 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 	assert.equal(byKey['target']?.value, 'acme/widgets (per-repo-config)');
 	assert.equal(byKey['signoffStages']?.value, 'DEF, HLD');
 	assert.equal(byKey['claimUnits']?.value, 'epic: DEF, HLD · story: LLD, PLAN · task: BUILD');
-	assert.equal(byKey['branchPattern']?.note, 'saved; not used yet');
+	assert.equal(byKey['branchPattern']?.note, undefined, 'the branch pattern is used by the handoff, so it carries no unused note');
 
 	const f = fixture();
 	const { lastFrame, stdin, unmount } = await openModal(f);

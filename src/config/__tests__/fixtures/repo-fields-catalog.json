@@ -52,10 +52,10 @@
       "key": "branchPattern",
       "label": "Branch pattern",
       "type": "string",
-      "description": "Branch name pattern with {id}, {slug} and {type}.",
+      "description": "Branch name pattern with {id}, {slug} and {type}; a parked draft goes to this branch. {id} is required.",
+      "default": "insrc/handoff/{type}-{id}",
       "group": "Tracker",
       "kind": "local",
-      "note": "saved; not used yet",
       "grammar": {
         "placeholders": [
           "id",

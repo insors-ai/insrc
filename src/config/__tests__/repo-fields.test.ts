@@ -35,9 +35,13 @@ test('table keys, kinds, GithubEntry fields and one policy row per TeamPolicy ru
 	assert.deepEqual(policyRows, rules);
 
 	assert.deepEqual(REPO_TRACKER_FIELDS.filter(r => r.kind === 'status').map(r => r.key), ['signin', 'target']);
-	for (const k of ['ghPath', 'ghHost', 'branchPattern']) {
+	for (const k of ['ghPath', 'ghHost']) {
 		assert.equal(REPO_TRACKER_FIELDS.find(r => r.key === k)?.note, 'saved; not used yet');
 	}
+	// the handoff story uses the branch pattern: it has a default and is no longer marked unused
+	const branch = REPO_TRACKER_FIELDS.find(r => r.key === 'branchPattern');
+	assert.equal(branch?.note, undefined);
+	assert.equal(branch?.default, 'insrc/handoff/{type}-{id}');
 	assert.equal(REPO_TRACKER_FIELDS.find(r => r.key === 'ghHost')?.default, 'github.com');
 });
 

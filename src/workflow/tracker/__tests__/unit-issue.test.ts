@@ -153,6 +153,17 @@ test('resolveUnitIssueLocal resolves from records and legacy refs, reconciles lo
 		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#9');
 		assert.equal(fx.read(planArtifactId(HASH, 's1')).meta.tracker.units['task:s1/t1'].issue, 'acme/demo#9');
 
+		// the units records alone (legacy refs removed) resolve all three units
+		const d3 = fx.read(defineArtifactId(HASH)); delete d3.meta.tracker.epicRef; delete d3.meta.tracker.storyRefs;
+		writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(d3));
+		const l3 = fx.read(lldArtifactId(HASH, 's1')); delete l3.meta.tracker.storyRef;
+		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(l3));
+		const p3 = fx.read(planArtifactId(HASH, 's1')); delete p3.meta.tracker.taskRefs;
+		writeFileSync(fx.json(planArtifactId(HASH, 's1')), JSON.stringify(p3));
+		assert.equal(resolveUnitIssueLocal(epic(fx.repo), deps.now), 'acme/demo#7');
+		assert.equal(resolveUnitIssueLocal(story(fx.repo), deps.now), 'acme/demo#8');
+		assert.equal(resolveUnitIssueLocal(task(fx.repo), deps.now), 'acme/demo#9');
+
 		// a unit with nothing recorded, and an unreadable repo, resolve to null without throwing
 		const bare = seed();
 		try { assert.equal(resolveUnitIssueLocal(story(bare.repo), deps.now), null); } finally { bare.cleanup(); }

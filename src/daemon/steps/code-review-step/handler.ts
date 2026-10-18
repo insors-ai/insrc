@@ -394,6 +394,7 @@ async function beginDiffOnlyReview(
 
 	let grounding: CodeReviewGrounding;
 	let changedFiles: readonly string[];
+	let scoped: Pick<CodeReviewSubject, 'changeSetAttribution' | 'sharedWithExcluded'>;
 	try {
 		// The same base and the same ledger exclusion the graph path's subject uses
 		// (ISSUE-5f7a7cb9), so the two paths review the same Story range. `undefined`
@@ -401,9 +402,11 @@ async function beginDiffOnlyReview(
 		const diff = await deps.assembleDiffGrounding(repo, undefined, {
 			base:         resolveStoryRangeBase(repo, subject.epicHash, subject.storyId),
 			excludeGlobs: LEDGER_EXCLUDE_GLOBS,
+			storyKey:     `${subject.epicHash}/${subject.storyId}`,
 		});
 		grounding = diff.grounding;
 		changedFiles = diff.changedFiles;
+		scoped = { changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded };
 	} catch (err) {
 		if (err instanceof DiffUnavailableError) {
 			return errorResult('diff-unavailable', `insrc_code_review_step: could not read the changed-file diff — ${err.message}.`, true);
@@ -412,8 +415,9 @@ async function beginDiffOnlyReview(
 	}
 
 	// Re-key the subject to the diff-derived changed set (post-commit the s9
-	// working-tree set is empty; the diff path recovers it from the last commit).
-	const diffSubject: CodeReviewSubject = { ...subject, changedFiles };
+	// working-tree set is empty; the diff path recovers it from the last commit),
+	// and to how the diff scoped it (ISSUE-b47dadc7).
+	const diffSubject: CodeReviewSubject = { ...subject, changedFiles, ...scoped };
 
 	const token = saveState({
 		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

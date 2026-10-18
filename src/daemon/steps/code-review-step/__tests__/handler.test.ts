@@ -492,7 +492,7 @@ test('T48: the degraded review passes the Story\'s resolved range base and LEDGE
 		assert.ok(declined.next === 'emit_judgements');
 
 		assert.equal(seen.length, 1);
-		assert.deepEqual(seen[0], [repo, undefined, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS }]);
+		assert.deepEqual(seen[0], [repo, undefined, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: `${EPIC}/${STORY}` }]);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -504,7 +504,7 @@ test('T48: with no resolvable base the degraded review still passes the ledger g
 		assembleDiffGrounding: async (...a: unknown[]) => { seen.push(a); return { grounding: diffGrounding, changedFiles: DIFF_CHANGED }; },
 	});
 	await declineTo(deps);
-	assert.deepEqual(seen, [['/repo', undefined, { base: undefined, excludeGlobs: LEDGER_EXCLUDE_GLOBS }]]);
+	assert.deepEqual(seen, [['/repo', undefined, { base: undefined, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: `${EPIC}/${STORY}` }]]);
 });
 
 // error: the diff cannot be read => diff-unavailable, nothing written.

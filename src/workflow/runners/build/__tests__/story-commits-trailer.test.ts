@@ -17,6 +17,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import { assembleDiffCodeReviewGrounding, realDiffGroundingDeps } from '../../../code-review/grounding.js';
 import { changedFiles } from '../changed-files.js';
 import { storyChangeSet } from '../story-commits.js';
 
@@ -123,5 +124,10 @@ test("a file one Story changed and another Story reverted stays in the first Sto
 		const files = await changedFiles(r, { base, storyKey: STORY, onAttribution: a => { attribution = a.attribution; } });
 		assert.deepEqual([...files].sort(), ['src/flip.ts', 'src/keep.ts']);
 		assert.equal(attribution, 'story-trailer');
+
+		// The diff review shows the Story's own hunk for flip.ts too (t5).
+		const diff = await assembleDiffCodeReviewGrounding(r, realDiffGroundingDeps(), { base, storyKey: STORY });
+		assert.deepEqual([...diff.changedFiles].sort(), ['src/flip.ts', 'src/keep.ts']);
+		assert.match(diff.grounding.symbols.find(s => s.file === 'src/flip.ts')?.signature ?? '', /^\+mine$/m);
 	} finally { cleanup(); }
 });

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T19:25:08.076Z",
+    "updatedAt": "2026-10-18T19:40:26.901Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -450,6 +450,42 @@
               },
               {
                 "title": "a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "913c183b",
+        "ranAt": "2026-10-18T19:40:26.901Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts: the park and resume phases and the team.park and team.resume operations reach the run store, return the park result or the next turn, and map a gate refusal to team-gate-refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts",
+                "title": "the park and resume phases and the team.park and team.resume operations reach the run store, return the park result or the next turn, and map a gate refusal to team-gate-refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2338,
+            "titles": [
+              {
+                "title": "the park and resume phases and the team.park and team.resume operations reach the run store, return the park result or the next turn, and map a gate refusal to team-gate-refused",
                 "result": "pass"
               }
             ],

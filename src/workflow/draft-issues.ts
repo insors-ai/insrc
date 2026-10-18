@@ -78,11 +78,11 @@ function unitsOf(meta: DraftMeta, tasksOf: () => readonly string[]): UnitRef[] |
 	return null;
 }
 
-const notReady = (unit: string, kind: PortFailureKind | 'policy-unreadable', outcomeKnown: boolean, reason: string, readyUnits: readonly ReadyUnit[]): IssueReadiness => ({
+const notReady = (unit: string, kind: PortFailureKind | 'policy-unreadable', outcomeKnown: boolean, reason: string, readyUnits: readonly ReadyUnit[], message?: string): IssueReadiness => ({
 	status: 'not-ready', unit, kind, outcomeKnown, reason, readyUnits,
-	message: outcomeKnown
+	message: message ?? (outcomeKnown
 		? `cannot be claimed yet: no issue was created for ${unit} because ${reason}`
-		: `readiness could not be confirmed for ${unit}: the issue may or may not exist; ${reason}`,
+		: `readiness could not be confirmed for ${unit}: the issue may or may not exist; ${reason}`),
 });
 
 let hookOverride: ((jsonPath: string) => IssueReadiness) | undefined;
@@ -130,7 +130,8 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 			if (!r.ok) return notReady(unitKey(unit), r.kind, r.phase === 'before-create', r.reason, ready);
 			// The issue exists, but if its record could not be saved the next call would not find it locally: say so.
 			if (resolveUnitIssueLocal(unit, deps.ensure?.now) === null) {
-				return notReady(unitKey(unit), 'rejected', true, `the issue ${r.value.issue} exists but could not be recorded in the artifact`, ready);
+				return notReady(unitKey(unit), 'rejected', true, `the issue ${r.value.issue} exists but could not be recorded in the artifact`, ready,
+					`${r.value.issue} exists for ${unitKey(unit)} but could not be recorded in the artifact, so it cannot be claimed yet; write the draft again`);
 			}
 			ready.push({ unit: unitKey(unit), issue: r.value.issue, created: r.value.created });
 		}

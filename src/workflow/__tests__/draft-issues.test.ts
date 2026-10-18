@@ -246,6 +246,7 @@ test('a plan whose Story is recorded needs no Epic, and an issue that cannot be 
 		chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o755);
 		if (process.getuid?.() === 0) return;   // root ignores the mode
 		assert.equal(r.status, 'not-ready');
-		assert.match(r.status === 'not-ready' ? r.message : '', /exists but could not be recorded/);
+		assert.match(r.status === 'not-ready' ? r.message : '', /exists for epic but could not be recorded/);
+		assert.doesNotMatch(r.status === 'not-ready' ? r.message : '', /no issue was created/);
 	} finally { chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o755); fy.cleanup(); }
 });

@@ -42,13 +42,23 @@ interface Issue { number: number; ref: IssueRef; spec: IssueSpec; state: 'open' 
 
 function fakeTracker(over: {
 	failFind?: boolean; failLabel?: string; failCreate?: boolean; commitThenFail?: boolean;
+	/** The additive sc1 listing (findIssues); off by default, as on today's real port. */
+	withListing?: boolean; failList?: boolean; failClose?: boolean;
+	/** Answer this many findIssue calls with "not found" whatever exists (a stale read of two daemons). */
+	staleFinds?: number;
+	/** Another daemon's issue, created just before this call's own, so it has the lower number. */
+	racer?: boolean;
+	/** Share the numbering and issues of another fake (two daemons, one tracker). */
+	shared?: { issues: Issue[]; next: { n: number } };
 } = {}) {
-	const issues: Issue[] = [];
-	const calls = { find: 0, create: 0, label: [] as string[], link: [] as Array<[string, number]> };
-	let next = 1;
+	const issues: Issue[] = over.shared?.issues ?? [];
+	const calls = { find: 0, create: 0, list: 0, label: [] as string[], link: [] as Array<[string, number]>, comments: [] as Array<[string, string]>, closed: [] as string[] };
+	const counter = over.shared?.next ?? { n: 1 };
+	let stale = over.staleFinds ?? 0;
 	const find = (labels: string[]): PortResult<IssueRef | null> => {
 		calls.find += 1;
 		if (over.failFind === true) return { ok: false, reason: 'gh timed out', kind: 'unreachable' };
+		if (stale > 0) { stale -= 1; return { ok: true, value: null }; }
 		const hit = issues.find(i => labels.every(l => i.spec.labels.includes(l)));
 		return { ok: true, value: hit?.ref ?? null };
 	};
@@ -61,16 +71,35 @@ function fakeTracker(over: {
 			create: (spec: IssueSpec): PortResult<CreatedIssue> => {
 				calls.create += 1;
 				if (over.failCreate === true && over.commitThenFail !== true) return { ok: false, reason: 'gh rejected the create', kind: 'rejected' };
-				const number = next++;
+				if (over.racer === true) {
+					over.racer = false;
+					const rn = counter.n++;
+					issues.push({ number: rn, ref: `acme/demo#${rn}`, spec: { ...spec, labels: [...spec.labels] }, state: 'open' });
+				}
+				const number = counter.n++;
 				const ref = `acme/demo#${number}`;
 				issues.push({ number, ref, spec, state: 'open' });
 				if (over.commitThenFail === true) { over.commitThenFail = false; over.failCreate = false; return { ok: false, reason: 'timed out after the issue was committed', kind: 'unreachable' }; }
 				return { ok: true, value: { ref, id: 1000 + number, typed: true } };
 			},
 			linkSubIssue: (parent: IssueRef, childId: number): PortResult<void> => { calls.link.push([parent, childId]); return { ok: true, value: undefined }; },
+			comment: (ref: IssueRef, body: string): PortResult<void> => { calls.comments.push([ref, body]); return { ok: true, value: undefined }; },
+			close: (ref: IssueRef): PortResult<void> => {
+				if (over.failClose === true) return { ok: false, reason: 'close rejected', kind: 'rejected' };
+				calls.closed.push(ref);
+				const hit = issues.find(i => i.ref === ref); if (hit !== undefined) hit.state = 'closed';
+				return { ok: true, value: undefined };
+			},
 		},
+		...(over.withListing === true ? {
+			findIssues: (labels: string[]): PortResult<IssueRef[]> => {
+				calls.list += 1;
+				if (over.failList === true) return { ok: false, reason: 'listing timed out', kind: 'unreachable' };
+				return { ok: true, value: issues.filter(i => labels.every(l => i.spec.labels.includes(l))).sort((a, b) => a.number - b.number).map(i => i.ref) };
+			},
+		} : {}),
 	} as unknown as TrackerPort;
-	return { port, issues, calls };
+	return { port, issues, calls, shared: { issues, next: counter } };
 }
 
 // ---------------------------------------------------------------------------
@@ -288,4 +317,64 @@ test('unitLabel gives the three forms, lower-cases ids, stays within 50 characte
 	assert.throws(() => unitLabel({ ...e, unit: 'story', storyId: 's1:x' }), /not a valid id/);
 	assert.throws(() => unitLabel({ ...e, unit: 'story' }), /needs a storyId/);
 	assert.throws(() => unitLabel({ ...e, unit: 'task', storyId: 's1', taskId: 'a-very-long-task-identifier-that-overflows' }), /over the 50-character limit/);
+});
+
+// ---------------------------------------------------------------------------
+// The duplicate tie-break (step 5; needs the additive findIssues listing)
+// ---------------------------------------------------------------------------
+
+test('a lower-numbered issue is adopted and the call\'s own is commented on and closed, even when the close fails', () => {
+	for (const failClose of [false, true]) {
+		const fx = seed();
+		try {
+			const t = fakeTracker({ withListing: true, racer: true, failClose });
+			const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+			assert.deepEqual(r, { ok: true, value: { issue: 'acme/demo#1', created: false, duplicateCheck: 'adopted-other' } });
+			assert.equal(t.calls.create, 1);
+			assert.deepEqual(t.calls.comments.map(([ref]) => ref), ['acme/demo#2'], 'the call\'s own issue is commented on');
+			assert.match(t.calls.comments[0]![1], /Duplicate of acme\/demo#1/);
+			assert.deepEqual(t.calls.closed, failClose ? [] : ['acme/demo#2']);
+			assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1', 'the record names the lowest');
+			assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.epicRef, 'acme/demo#1');
+
+			// the listing's own issue first: kept, nothing commented
+			const clean = fakeTracker({ withListing: true });
+			const fy = seed();
+			try {
+				assert.deepEqual(ensureUnitIssueDetailed(epic(fy.repo), clean.port, deps), { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'clean' } });
+				assert.equal(clean.calls.comments.length, 0);
+			} finally { fy.cleanup(); }
+		} finally { fx.cleanup(); }
+	}
+});
+
+test('two simulated daemons that both create converge on the lowest issue', () => {
+	const a = seed();
+	const b = seed();
+	try {
+		const first = fakeTracker({ withListing: true, staleFinds: 1 });
+		const second = fakeTracker({ withListing: true, staleFinds: 1, shared: first.shared });
+		// both look up before either creates (each lookup is a stale "not found"), then both create and list
+		const ra = ensureUnitIssueDetailed(epic(a.repo), first.port, deps);
+		const rb = ensureUnitIssueDetailed(epic(b.repo), second.port, deps);
+		assert.equal(ra.ok && rb.ok, true);
+		const open = first.issues.filter(i => i.state === 'open').map(i => i.ref);
+		assert.deepEqual(open, ['acme/demo#1'], 'one open issue: the lowest');
+		assert.equal(a.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1');
+		assert.equal(b.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1', 'both records name it');
+	} finally { a.cleanup(); b.cleanup(); }
+});
+
+test('a failed findIssues listing keeps the recorded issue and a following call makes no tracker call', () => {
+	const fx = seed();
+	try {
+		const t = fakeTracker({ withListing: true, failList: true });
+		const r = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		assert.deepEqual(r, { ok: true, value: { issue: 'acme/demo#1', created: true, duplicateCheck: 'not-run' } });
+		assert.equal(fx.read(defineArtifactId(HASH)).meta.tracker.units.epic.issue, 'acme/demo#1');
+		const before = { ...t.calls };
+		const again = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
+		assert.deepEqual(again, { ok: true, value: { issue: 'acme/demo#1', created: false, duplicateCheck: 'clean' } });
+		assert.deepEqual([t.calls.find, t.calls.create, t.calls.list], [before.find, before.create, before.list], 'no tracker call');
+	} finally { fx.cleanup(); }
 });

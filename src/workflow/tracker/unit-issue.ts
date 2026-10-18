@@ -301,7 +301,38 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		if (!link.ok) log.warn({ unit: unitKey(unit), parent: parentRef, reason: link.reason }, 'unit-issue: could not link the issue under its parent');
 	}
 	recordUnit(unit, issue, now());
-	return { ok: true, value: { issue, created: true, duplicateCheck: 'not-run' } };
+	return { ok: true, value: tieBreak(unit, port, membership, label, issue, now) };
+}
+
+/** The additive sc1 listing (AMD-315d510cb28100e2-10): every issue carrying the labels, open or closed. */
+type ListingPort = TrackerPort & { readonly findIssues?: (labels: readonly string[]) => PortResult<readonly IssueRef[]> };
+
+const issueNumber = (ref: IssueRef): number => Number(/#(\d+)$/.exec(ref)?.[1] ?? Number.MAX_SAFE_INTEGER);
+
+/**
+ * Step 5, after the created issue is recorded: when two daemons both created, keep
+ * the lowest-numbered issue, record it in place of this call's own, and comment on
+ * and close the own one as a duplicate. A port without the listing, or a failed
+ * listing, keeps the created issue (`not-run`); the issue is already recorded.
+ */
+function tieBreak(unit: UnitRef, port: TrackerPort, membership: string, label: string, own: IssueRef, now: () => string): EnsuredIssue {
+	const kept: EnsuredIssue = { issue: own, created: true, duplicateCheck: 'not-run' };
+	const list = (port as ListingPort).findIssues?.([membership, label]);
+	if (list === undefined) return kept;
+	if (!list.ok) {
+		log.warn({ unit: unitKey(unit), reason: list.reason }, 'unit-issue: the duplicate check could not list the unit label (the created issue is kept)');
+		return kept;
+	}
+	const lowest = [...list.value].sort((a, b) => issueNumber(a) - issueNumber(b))[0];
+	if (lowest === undefined || lowest === own || issueNumber(lowest) > issueNumber(own)) return { ...kept, duplicateCheck: 'clean' };
+
+	log.warn({ unit: unitKey(unit), own, lowest }, 'unit-issue: another daemon created this unit issue first; adopting the lowest and closing this call\'s own');
+	recordUnit(unit, lowest, now());
+	const said = port.issueOps.comment(own, `Duplicate of ${lowest}: the same unit (${label}) was created twice at once; ${lowest} is the one kept.`);
+	if (!said.ok) log.warn({ own, reason: said.reason }, 'unit-issue: could not comment on the duplicate');
+	const closed = port.issueOps.close(own);
+	if (!closed.ok) log.warn({ own, reason: closed.reason }, 'unit-issue: could not close the duplicate (it is adopted away from regardless)');
+	return { issue: lowest, created: false, duplicateCheck: 'adopted-other' };
 }
 
 function buildSpec(

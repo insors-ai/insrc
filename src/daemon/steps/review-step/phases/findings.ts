@@ -18,7 +18,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../../../shared/logger.js';
-import { writeAtomic } from '../../../../workflow/storage.js';
+import { writeArtifact, writeAtomic } from '../../../../workflow/storage.js';
 import {
 	computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, pendingUserFindings, renderReviewReport, REVIEW_SECTION,
 	reviewTemplateFor, stripReviewSection, tallyFindings, validateTemplateAnswer,
@@ -88,7 +88,8 @@ export function handleFindings(input: ReviewStepInputFindings): ReviewStepDone |
 		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
-	writeAtomic(state.jsonPath, JSON.stringify({ ...artifact, meta: { ...artifact.meta, review: report } }, null, 2) + '\n');
+	writeArtifact(state.jsonPath, { ...artifact, meta: { ...artifact.meta, review: report } }, 'meta-only');
+	// raw-write: markdown render of the review section.
 	writeAtomic(state.mdPath, `${md.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`);
 
 	const pending = pendingUserFindings(report).length;

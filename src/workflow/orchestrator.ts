@@ -113,7 +113,7 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
 import { basename, dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
@@ -2929,7 +2929,7 @@ function mutateEpicTrackerMeta(
 			labelsCreated: push.labelsCreated,
 			pushedAt:  new Date().toISOString(),
 		};
-		writeAtomic(defineJson, JSON.stringify(artifact, null, 2) + '\n');
+		writeArtifact(defineJson, artifact, 'meta-only');
 		// Framework-owned doc↔issue linkage (same as the deterministic path):
 		// re-render each doc's markdown with a `**Tracker:**` link.
 		linkDocsToIssues(repoPath, epicHash, epicSlug, { epicRef: push.epicRef, storyRefs: push.storyRefs });
@@ -2953,8 +2953,10 @@ function mutateEpicTrackerMeta(
 			lastSyncedAt: sync.syncedAt,
 		};
 	}
-	writeAtomic(defineJson, JSON.stringify(artifact, null, 2) + '\n');
+	writeArtifact(defineJson, artifact, 'meta-only');
 }
 
 // Kept as silences — referenced above for JSDoc navigation.
 export { readDefineArtifact as _readDefineArtifact };
+// Test seam: the Epic tracker-meta patch (push / sync) is meta-only.
+export { mutateEpicTrackerMeta as _mutateEpicTrackerMeta };

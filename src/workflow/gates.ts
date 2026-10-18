@@ -59,6 +59,7 @@ import {
 	TESTS_ID_PREFIX,
 	workItemAnchorCreatedAt,
 	workItemKindOf,
+	writeArtifact,
 	writeAtomic,
 } from './storage.js';
 import { ensureBuildRecordOnCompletion } from './runners/build/completion-record.js';
@@ -199,9 +200,11 @@ export function appendStoryToDefine(repoPath: string, epicHash: string, story: D
 		throw new Error(`Story '${story.id}' already exists in Epic '${epicHash}'`);
 	}
 	const next: DefineArtifact = { ...define, body: { ...define.body, stories: [...define.body.stories, story] } };
-	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
+	// content: the extend path changes body.stories of a Define a signoff may cover.
+	const revision = writeArtifact(jsonPath, next, 'content');
+	// raw-write: markdown render of the Define just written.
 	writeAtomic(defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(next.meta), workItemKindOf(next.meta), next.meta.epicSlug).md, renderDefineMarkdown(next));
-	return next;
+	return { ...next, meta: { ...next.meta, revision } };
 }
 
 /** Same as `readDefineArtifact` but refuses when the artifact is
@@ -503,7 +506,7 @@ export function ackStaleArtifact(jsonPath: string, reason: string): { readonly p
 	}
 	const ack = makeStaleAck(reason);
 	const next = { ...artifact, meta: { ...artifact.meta, ...ack } };
-	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
+	writeArtifact(jsonPath, next, 'meta-only');
 	return { path: jsonPath, ackedAt: ack.staleAckedAt, reason: ack.staleAckedReason };
 }
 
@@ -651,7 +654,7 @@ export function approveArtifactByJsonPath(jsonPath: string, opts?: { readonly ov
 	delete nextMeta.rejectedAt;
 	delete nextMeta.rejectReason;
 	const next = { ...artifact, meta: nextMeta };
-	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
+	writeArtifact(jsonPath, next, 'meta-only');
 	return { workflow: (nextMeta['workflow'] as string | undefined) ?? 'unknown', path: jsonPath, approvedAt };
 }
 
@@ -985,7 +988,7 @@ export function rejectArtifactByJsonPath(jsonPath: string, reason: string): Reje
 	const nextMeta = { ...artifact.meta, rejectedAt, rejectReason: reason };
 	delete nextMeta.approvedAt;
 	const next = { ...artifact, meta: nextMeta };
-	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
+	writeArtifact(jsonPath, next, 'meta-only');
 	return { workflow: nextMeta.workflow ?? 'unknown', path: jsonPath, rejectedAt, rejectReason: reason };
 }
 

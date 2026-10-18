@@ -54,6 +54,7 @@ import {
 	lldFilenamePrefix,
 	workItemAnchorCreatedAt,
 	workItemKindOf,
+	writeArtifact,
 	writeAtomic,
 } from './storage.js';
 import { GhCommandError, commitAndPushArtifacts } from './tracker/github.js';
@@ -416,7 +417,8 @@ export function recordResolution(
 		...loc.artifact,
 		meta: { ...loc.artifact.meta, questionResolutions: nextResolutions },
 	};
-	writeAtomic(loc.jsonPath, JSON.stringify(next, null, 2) + '\n');
+	writeArtifact(loc.jsonPath, next, 'meta-only');
+	// raw-write: markdown render of the artifact just written.
 	writeAtomic(loc.mdPath, loc.renderMd(next, nextResolutions));
 
 	// A batched caller (e.g. workflow.resolveComment recording N comments at once)

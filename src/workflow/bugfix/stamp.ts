@@ -14,7 +14,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import type { IssueArtifact } from '../artifacts/issue.js';
 import type { ParentLocation } from '../locate/index.js';
-import { artifactJsonPath, issueArtifactId, writeAtomic } from '../storage.js';
+import { artifactJsonPath, issueArtifactId, writeArtifact } from '../storage.js';
 import type { WorkItemRef } from '../types.js';
 import type { StampDeps } from './types.js';
 
@@ -58,7 +58,7 @@ export async function locateAndStampParent(
 /**
  * Default fs-backed `StampDeps` — `readIssue`/`writeParentRef` round-trip the
  * canonical ISSUE-<hash>.json through the existing storage helpers (a
- * single-field meta patch via `writeAtomic`, never a re-finalize). The caller
+ * single-field meta patch via `writeArtifact`, never a re-finalize). The caller
  * supplies `locate`, the pre-bound sc3 entry point (wired with its own DB-bound
  * deps daemon-side), keeping this module free of DB imports (rule 1).
  */
@@ -84,7 +84,7 @@ export function defaultStampDeps(
 				...artifact,
 				meta: { ...artifact.meta, parentRef: ref },
 			};
-			writeAtomic(json, `${JSON.stringify(patched, null, 2)}\n`);
+			writeArtifact(json, patched, 'meta-only');
 		},
 	};
 }

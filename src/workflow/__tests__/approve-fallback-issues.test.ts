@@ -149,12 +149,23 @@ test('in team mode the three pushes adopt, force Task issues, fail on lookup or 
 		assert.deepEqual({ comments: t.log.comments.length, writes: t.log.writeBodies }, before, 'a second approve posts nothing');
 		assert.deepEqual(Object.keys(trackerOf(fx.lld).units['story:s1'].extrasDone).sort(), ['designComment', 'reviewComment', 'taskList']);
 
-		// Plan approve with pushTasks off: both Task issues are created, in plan order, and a second run creates none
-		const plan = autoPushTasksOnPlan(fx.plan, deps(t));
-		assert.deepEqual(plan, { status: 'created', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
-		assert.equal(autoPushTasksOnPlan(fx.plan, deps(t)).status, 'already-exists');
+		// the draft hook also made both Task issues: the plan approve adopts them and creates none
+		for (const taskId of ['t1', 't2']) {
+			assert.equal(ensureUnitIssueDetailed({ unit: 'task', repoPath: fx.repo, epicHash: HASH, storyId: 's1', taskId }, t.port).ok, true);
+		}
 		assert.equal(t.log.creates, 4);
+		assert.deepEqual(autoPushTasksOnPlan(fx.plan, deps(t)), { status: 'already-exists', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
+		assert.equal(t.log.creates, 4, 'no second Task issue');
 	} finally { fx.cleanup(); }
+
+	// pushTasks off: the plan approve still creates a Task issue per Task, in plan order, and a second one creates none
+	const forced = seed({ pushTasks: false });
+	try {
+		const t = fakeTracker();
+		assert.deepEqual(autoPushTasksOnPlan(forced.plan, deps(t)), { status: 'created', taskRefs: { t1: 'acme/demo#3', t2: 'acme/demo#4' } });
+		assert.equal(autoPushTasksOnPlan(forced.plan, deps(t)).status, 'already-exists');
+		assert.equal(t.log.creates, 4, 'the Epic, the Story and the two Tasks');
+	} finally { forced.cleanup(); }
 
 	// a failed Epic lookup is a failure and creates nothing
 	const lost = seed();

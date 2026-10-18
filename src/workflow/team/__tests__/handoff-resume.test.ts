@@ -219,13 +219,15 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		const check = await resumeCheck(w.recv, unitOf(w.recv), { workflow: 'plan' }, resumeDeps(w));
 		assert.equal(check.kind, 'restart', JSON.stringify(check));
 		const before = treeOf(w.recv);
+		const modeBefore = statSync(here(lldMd)).mode & 0o777;
+		assert.notEqual(modeBefore & 0o100, 0, 'the clone has the file executable');
 		const seen: string[] = [];
 		const failed = await applyResume(check, w.recv, { failWrite: p => { seen.push(p); return seen.length === 3 ? 'disk full' : undefined; } });
 		assert.deepEqual(seen.map(p => p.split('/').pop()), ['LLD.md', `PLAN-${HASH}-s1.json`, 'PLAN.md'], 'the existing file is overwritten before the third fails');
 		assert.equal(failed.kind, 'refused', JSON.stringify(failed));
 		assert.equal(treeOf(w.recv), before, 'the working tree is as it was');
 		assert.equal(readFileSync(here(lldMd), 'utf8'), '# old\n', 'the file that was overwritten is back');
-		assert.equal(statSync(here(lldMd)).mode & 0o777, 0o755, 'with its mode');
+		assert.equal(statSync(here(lldMd)).mode & 0o777, modeBefore, 'with its mode');
 		assert.equal(existsSync(here(draft)), false);
 		assert.equal(existsSync(here(mdDraft)), false);
 		assert.equal(existsSync(dirname(here(mdDraft))), false, 'the directories the restore made are removed');
@@ -242,7 +244,7 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		assert.equal(readFileSync(here(draft), 'utf8'), '{"plan":"draft"}\n');
 		assert.equal(readFileSync(here(mdDraft), 'utf8'), '# the plan draft\n');
 		assert.equal(readFileSync(here(lldMd), 'utf8'), '# newer\n');
-		assert.equal(statSync(here(lldMd)).mode & 0o777, 0o755, 'the overwritten file keeps its mode');
+		assert.equal(statSync(here(lldMd)).mode & 0o777, modeBefore, 'the overwritten file keeps its mode');
 		assert.equal(listStates().length, 0, 'a restart stores no run');
 	} finally { rmSync(w.root, { recursive: true, force: true }); }
 });

@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "dced43851723554f",
+    "storyId": "S001",
+    "createdAt": "2026-10-18T11:35:11.055Z",
+    "updatedAt": "2026-10-18T11:37:51.234Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-18T10:54:00.951Z",
+    "epicSlug": "keep-document-summaries-across-full-index"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Added doc_summary_carry, writeDocSummaryIfCurrentInTxn (onlyIfAbsent, keepGoodSummary) behind an overloaded writeDocSummaryIfCurrent, and restoreCarriedDocSummaries (batches of 500, carry row removed with its outcome). Commits 5b706f19 and de2915cb; the second restores the no-options order (repo checked only for a write, index under the caller's repo), pinned by tests that fail under each mutation.",
+    "testRecord": {
+      "md": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/db/__tests__/doc-summary-carry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T11:37:51.234Z"
+      },
+      {
+        "target": {
+          "file": "src/db/doc-summaries.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T11:37:51.234Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T11:37:51.234Z"
+      }
+    ],
+    "commit": "de2915cb"
+  }
+}

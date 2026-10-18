@@ -1,0 +1,112 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "dced43851723554f",
+    "storyId": "S001",
+    "createdAt": "2026-10-18T11:35:11.055Z",
+    "updatedAt": "2026-10-18T11:37:51.234Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-18T10:54:00.951Z",
+    "epicSlug": "keep-document-summaries-across-full-index"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "de2915cb",
+        "ranAt": "2026-10-18T11:37:51.234Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts: 'writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts: 'keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts: 'restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "restoreCarriedDocSummaries works through more carry rows than one batch, and touches no other repository's carry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts: 'a v5 store opened with this build has an empty doc_summary_carry and schema version 5'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "a v5 store opened with this build has an empty doc_summary_carry and schema version 5",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/doc-summary-carry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6009,
+            "titles": [
+              {
+                "title": "writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary",
+                "result": "pass"
+              },
+              {
+                "title": "keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries works through more carry rows than one batch, and touches no other repository's carry",
+                "result": "pass"
+              },
+              {
+                "title": "a v5 store opened with this build has an empty doc_summary_carry and schema version 5",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

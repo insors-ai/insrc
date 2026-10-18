@@ -209,3 +209,17 @@ A claim is the assignee of the stage unit's issue, and **only an issue with no a
 - **What insrc does about it.** A claim reads the assignee, refuses if there is one, adds the actor, and re-reads. If the re-read shows more than one assignee, the claim is reported as contested; nothing is removed. The gate reads an issue with several assignees as a failure, never as a holder, so neither developer can change the stage until an administrator releases it (release clears every assignee) and one of them claims again.
 - **Why `setAssignee` is not the claim primitive.** The port's `setAssignee` removes every other assignee before adding the requested one, which is right for release and wrong for a claim: a second claimant would remove the first. The claim needs an add-only port operation (`addAssignee`), proposed to s1 as an additive amendment.
 - **Residual risk, accepted.** The window is a few seconds between the read and the add. Detection after the fact, not prevention, is the guarantee. A tracker that offers an atomic claim can implement the same port method more strongly.
+
+### s5 LLD design review, round 2 (2026-10-18) — open findings
+
+The s5 LLD (`docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/LLD.md`) was reviewed twice by the daemon; the verdict is still `block` (round 1: 5 HIGH, 3 MED; round 2: 3 HIGH, 1 MED, 1 could-not-verify). Round 1 findings were fixed in the revised LLD. These five remain **open**; no decision has been taken on how to settle them.
+
+| # | Severity | Finding | What it needs |
+| :--- | :--- | :--- | :--- |
+| s5-R2-1 | HIGH | No user-facing `claim` and `release` commands: the LLD defines library functions only. The `team` command handles `init` and `refresh` only. | Command syntax, target resolution, dispatch and refusal output (for example `team claim` and `team release`). |
+| s5-R2-2 | HIGH | The gate cannot reuse the identity `loadTracker` verified: the loader discards it and `whoAmI` calls `gh` every time. | Budget a second `whoAmI` call, or an sc1 change that exposes the verified identity. |
+| s5-R2-3 | HIGH | The terminal's `workflow.run` runs through the daemon's own workflow driver (`src/daemon/workflow-rpc.ts`), not the workflow-step phases, so guarding the phases leaves that route open. | Guard the driver at its turns and before it writes a draft; add the route to the guarded entry-point inventory and the refusal tests. |
+| s5-R2-4 | MED | The LLD says both simultaneous claimants are told the claim is contested. Only the later one necessarily observes it; the earlier one may discover it on its next gate read. | Correct the wording; add the interleaving to the tests. |
+| s5-R2-5 | could not verify | BUILD claims belong to Tasks, but `approveWorkflowTarget` sees a Story-wide BUILD record. | A rule mapping a BUILD approval (and the standalone implement and validate routes) to the Task claims it needs, including what happens when Tasks have different holders. |
+
+Also still pending: amendment `AMD-315d510cb28100e2-12` (`addAssignee`, s1), a build prerequisite for the claim.

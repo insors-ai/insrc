@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T19:40:26.901Z",
+    "updatedAt": "2026-10-18T19:41:34.369Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -459,8 +459,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "913c183b",
-        "ranAt": "2026-10-18T19:40:26.901Z",
+        "commit": "e4928c76",
+        "ranAt": "2026-10-18T19:41:34.369Z",
         "testsPassed": true,
         "tests": [
           {
@@ -482,7 +482,7 @@
             "file": "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2338,
+            "durationMs": 918,
             "titles": [
               {
                 "title": "the park and resume phases and the team.park and team.resume operations reach the run store, return the park result or the next turn, and map a gate refusal to team-gate-refused",

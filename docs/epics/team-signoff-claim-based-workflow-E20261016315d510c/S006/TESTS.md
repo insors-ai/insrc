@@ -189,7 +189,7 @@ Run at 2026-10-18T19:25:08.076Z on commit `156fd131`. Tests check: **passed**. 2
 
 ## t10
 
-Run at 2026-10-18T19:40:26.901Z on commit `913c183b`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T19:41:34.369Z on commit `e4928c76`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts: the park and resume phases and the team.park and team.resume operations reach the run store, return the park result or the next turn, and map a gate refusal to team-gate-refused**
 
@@ -201,4 +201,4 @@ Run at 2026-10-18T19:40:26.901Z on commit `913c183b`. Tests check: **passed**. 1
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts` | 0 | 1 | 2.3 s |  |
+| `src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts` | 0 | 1 | 0.9 s |  |

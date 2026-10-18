@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T19:40:26.901Z",
+    "updatedAt": "2026-10-18T19:41:34.369Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -49,7 +49,7 @@
       },
       {
         "id": "t10",
-        "passed": false
+        "passed": true
       }
     ],
     "summary": "The one open check was the ordering of the identity check against the fetch. What can be known before the fetch is whether the receiving path HAS an identity; what it must equal (the checkpoint's repositoryId) is written inside the checkpoint on the handoff branch, so the comparison cannot precede reading the checkpoint, and no design that keeps the identity in the checkpoint can do otherwise. verifyReceivingRepo now enforces everything that can be done up front: it is the first step after the Task check, before the claims check, the stage, the gate and any remote access, and it now always requires the repository to have an identity of its own (a git repository with history, from rev-list --max-parents=0 HEAD), refusing 'is not a git repository with history' even when it is called without an id; the comparison with the checkpoint's id happens right after the checkpoint is read, which is before any file is restored and after only a fetch into a temporary ref that is always dropped (fetched by URL with --no-write-fetch-head, so no remote-tracking ref, FETCH_HEAD or working file changes; the tests assert refs, status and FETCH_HEAD are identical afterwards, including for the different-repository clone). The first named test gains a registered but history-less repository (git init with an origin remote) and a plain directory, both refused before the remote is touched (refs, status and FETCH_HEAD unchanged), in addition to the unregistered, registry-down, different-repository, moved-upstream cases it already had. The docstring of resumeCheck states this order. Team suite passes; tsc clean.",
@@ -62,240 +62,240 @@
           "file": "docs/plans/s6-open-issues.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/settings-modal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/cli/services/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/fixtures/repo-fields-catalog.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/repo-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/config/repo-fields.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/handoff-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/park-offer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/park.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/resume.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/resume.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-write-inventory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/config/github.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-park-plan.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-park.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-pure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-resume-check.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-resume.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/helpers/handoff-world.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/park-offer.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/snapshot-upstream.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/handoff.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       },
       {
         "target": {
           "file": "src/workflow/team/run-meta.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T19:40:26.901Z"
+        "timestamp": "2026-10-18T19:41:34.369Z"
       }
     ],
-    "commit": "913c183b"
+    "commit": "e4928c76"
   }
 }

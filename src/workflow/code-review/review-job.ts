@@ -149,6 +149,19 @@ interface Budgets {
 }
 
 /**
+ * packIntoBatches within `b.soft`, except that one item too large for it but
+ * within `b.hard` is a batch of its own (nothing added to it could fit `b.soft`);
+ * one over `b.hard` is named with AtomTooLargeError.
+ */
+function packWithin<I>(items: readonly I[], sizeOf: (batch: readonly I[]) => number, b: Budgets, describe: (item: I) => string): I[][] {
+	for (const item of items) {
+		const alone = sizeOf([item]);
+		if (alone > b.hard) throw new AtomTooLargeError(describe(item), alone, b.hard);
+	}
+	return packIntoBatches(items, x => (x.length === 1 ? Math.min(sizeOf(x), b.soft) : sizeOf(x)), b.soft, describe);
+}
+
+/**
  * MAP calls over `symbols` x `context` (see the module comment), packed within
  * `b.soft`. Context batches leave room for the smallest symbol; a symbol that
  * does not fit beside a batch is paired with that batch re-split around it, so
@@ -168,22 +181,22 @@ function planMap(strategy: DimensionStrategy, symbols: readonly Atom[], context:
 	const smallest = Math.min(...symbols.map(s => size([s], []) - bare));
 	const contextBatches = context.length === 0
 		? [[] as Atom[]]
-		: packIntoBatches(context, c => size([], c) + smallest, b.soft, a => a.label, b.hard);
+		: packWithin(context, c => size([], c) + smallest, b, a => a.label);
 	const calls: Omit<JobCall, 'callId'>[] = [];
 	for (const ctx of contextBatches) {
 		// A batch that is one context atom too large for the soft budget is read at the hard one.
 		const within = size([], ctx) + smallest <= b.soft ? b.soft : b.hard;
 		const fit = symbols.filter(s => size([s], ctx) <= within);
-		for (const syms of packIntoBatches(fit, x => size(x, ctx), within, a => a.label, b.hard)) calls.push(call(syms, ctx));
+		for (const syms of packWithin(fit, x => size(x, ctx), { soft: within, hard: b.hard }, a => a.label)) calls.push(call(syms, ctx));
 		for (const s of symbols.filter(x => !fit.includes(x))) {
 			if (ctx.length === 0) {
 				// The symbol alone: its own call within the hard budget, or named.
-				for (const syms of packIntoBatches([s], x => size(x, []), b.soft, a => a.label, b.hard)) calls.push(call(syms, []));
+				for (const syms of packWithin([s], x => size(x, []), b, a => a.label)) calls.push(call(syms, []));
 				continue;
 			}
 			// It does not fit beside the whole batch: meet the batch's atoms in smaller groups.
 			// (A context atom it cannot fit beside at all is the joint-fit case, S001/t6.)
-			for (const sub of packIntoBatches(ctx, c => size([s], c), b.soft, a => `${a.label} beside ${s.label}`, b.hard)) calls.push(call([s], sub));
+			for (const sub of packWithin(ctx, c => size([s], c), b, a => `${a.label} beside ${s.label}`)) calls.push(call([s], sub));
 		}
 	}
 	return calls;
@@ -288,9 +301,22 @@ function withNote(messages: readonly LLMMessage[], note: string | undefined): LL
 const MAX_ATTEMPTS = 3;
 
 /**
+ * A call's prompt for a validation retry: the planned prompt with the
+ * correction note (a whole call keeps the strategy's own note handling), when
+ * that still fits the job's hard budget; otherwise the planned prompt as it
+ * was, retried as today, so a retry never exceeds the budget its call was
+ * planned within.
+ */
+export function retryMessages(job: ReviewJob, strategy: DimensionStrategy, call: JobCall, note: string | undefined): LLMMessage[] {
+	if (note === undefined) return [...call.messages];
+	const noted = call.stage === 'whole' ? strategy.whole.messages(note) : withNote(call.messages, note);
+	return job.hardBudget === undefined || promptChars(noted) <= job.hardBudget ? noted : [...call.messages];
+}
+
+/**
  * The daemon driver: runs the dimension's job against `provider`, one call at a
- * time, and returns its one result. A whole call keeps today's retry prompt
- * (the strategy's own note handling); a refused call is re-planned.
+ * time, and returns its one result. A failed answer is retried as today, with
+ * the correction note when it fits (retryMessages); a refused call is re-planned.
  */
 export async function runReviewJob(strategy: DimensionStrategy, provider: LLMProvider, opts: { readonly cwd?: string | undefined } = {}): Promise<DimensionResult> {
 	let job = createReviewJob(strategy, provider.inputBudgetChars);
@@ -299,9 +325,7 @@ export async function runReviewJob(strategy: DimensionStrategy, provider: LLMPro
 		if (call === undefined) break;
 		try {
 			const output = await withStructuredRetry(
-				note => provider.completeStructured<unknown>(
-					call.stage === 'whole' ? strategy.whole.messages(note) : withNote(call.messages, note),
-					call.schema, { cwd: opts.cwd }),
+				note => provider.completeStructured<unknown>(retryMessages(job, strategy, call, note), call.schema, { cwd: opts.cwd }),
 				raw => validateAgainstSchema<unknown>(call.schema, raw),
 				MAX_ATTEMPTS,
 			);

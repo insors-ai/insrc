@@ -112,6 +112,27 @@ test('every call the job issues fits the budget at every stage, for a Story many
 	assert.ok(prompts.length > 4);
 	for (const p of prompts) assert.ok(p.length <= providerBudget - RETRY_NOTE_RESERVE_CHARS, `a ${p.length}-character prompt`);
 	assert.ok(result.parts !== undefined && result.parts.map === prompts.length);
+
+	// A validation retry of a call planned near the hard budget: the correction note is sent
+	// only when it still fits; otherwise the planned prompt is retried as today.
+	const nearHard = strategy([...Array.from({ length: 20 }, (_, i) => symbol(i)), symbol(700, providerBudget - 200)]);
+	const seen = new Set<string>();
+	const retried: string[] = [];
+	const flaky = {
+		inputBudgetChars: providerBudget,
+		completeStructured: async (messages: LLMMessage[]) => {
+			const text = asSent(messages);
+			retried.push(text);
+			// The first answer to each distinct prompt fails validation.
+			if (!seen.has(text)) { seen.add(text); return { notFindings: true }; }
+			const ids = [...text.matchAll(/"id":"(sym\d+)"/g)].map(m => m[1]!);
+			return { findings: ids.map(id => ({ dimension: 'quality', severity: 'LOW', location: `src/${id}.ts:1`, message: `seen ${id}` })) };
+		},
+	} as unknown as LLMProvider;
+	const flakyResult = await runReviewJob(nearHard, flaky);
+	assert.ok(flakyResult.findings.some(f => f.location === 'src/sym700.ts:1'), 'the near-hard symbol is judged after a retry');
+	for (const p of retried) assert.ok(p.length <= providerBudget, `a ${p.length}-character retry`);
+	assert.ok(retried.some(p => p.includes('could not be parsed')), 'a call with room for it gets the correction note');
 });
 
 test('every original symbol summary and clause is read whole by some call', async () => {

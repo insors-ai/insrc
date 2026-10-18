@@ -28,17 +28,14 @@ export class AtomTooLargeError extends Error {
 /**
  * Greedy batches of `items`, in order: every item is in exactly one batch and
  * every batch's prompt (`sizeOf`, the whole built prompt, fixed text included)
- * fits `budget`. An item too large for `budget` but within `hard` (the model's
- * whole input; default `budget`) is a batch of its own: the reserve below `hard`
- * is a preference, never a reason to drop an item. Throws AtomTooLargeError,
- * naming the item with `describe`, when one item's prompt alone exceeds `hard`.
+ * fits `budget`. Throws AtomTooLargeError, naming the item with `describe`, when
+ * one item's prompt alone exceeds the budget.
  */
 export function packIntoBatches<I>(
 	items:    readonly I[],
 	sizeOf:   (batch: readonly I[]) => number,
 	budget:   number,
 	describe: (item: I) => string = item => String(item),
-	hard:     number = budget,
 ): I[][] {
 	const batches: I[][] = [];
 	let current: I[] = [];
@@ -48,9 +45,8 @@ export function packIntoBatches<I>(
 			continue;
 		}
 		const alone = sizeOf([item]);
-		if (alone > Math.max(budget, hard)) throw new AtomTooLargeError(describe(item), alone, Math.max(budget, hard));
+		if (alone > budget) throw new AtomTooLargeError(describe(item), alone, budget);
 		if (current.length > 0) batches.push(current);
-		// One over `budget` stays alone: nothing added to it can fit `budget`.
 		current = [item];
 	}
 	if (current.length > 0) batches.push(current);

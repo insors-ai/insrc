@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -192,3 +192,21 @@ Run at 2026-10-18T04:22:33.616Z on commit `9eca857a`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/cross-file-modes.test.ts` | 0 | 4 | 1.5 s |  |
 | `src/indexer/__tests__/first-index-order.test.ts` | 0 | 1 | 0.8 s |  |
+
+## t9
+
+Run at 2026-10-18T04:33:11.743Z on commit `f60569df`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/__tests__/reexport-callers.test.ts: ac3 fixture with alias, nested, star and cyclic re-exports; empty EXPORTS edge value; stale target ignored (mutation: export_names lookup removed fails the alias case)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac3: calls through `export { f } from`, an aliased re-export (g() is a call of f), a barrel of a barrel and `export *` resolve to f; a re-export cycle (named or `export *`) ends with the name no-candidate | `src/indexer/__tests__/reexport-callers.test.ts` |
+| pass | the stored EXPORTS edge value is empty and export_names holds (barrel, g) -> f and the star entries | `src/indexer/__tests__/reexport-callers.test.ts` |
+| pass | an export_names entry pointing at a target that is not stored is ignored by the call matcher | `src/indexer/__tests__/reexport-callers.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/reexport-callers.test.ts` | 0 | 3 | 1.9 s |  |

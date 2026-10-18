@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-18T04:22:33.616Z",
+    "updatedAt": "2026-10-18T04:33:11.743Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -954,6 +954,60 @@
             "titles": [
               {
                 "title": "ac1: a file sorting earlier imports and calls into a later one; after a first full index the IMPORTS and the CALLS are stored and findCallers returns the call site",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "f60569df",
+        "ranAt": "2026-10-18T04:33:11.743Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/reexport-callers.test.ts: ac3 fixture with alias, nested, star and cyclic re-exports; empty EXPORTS edge value; stale target ignored (mutation: export_names lookup removed fails the alias case)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/reexport-callers.test.ts",
+                "title": "ac3: calls through `export { f } from`, an aliased re-export (g() is a call of f), a barrel of a barrel and `export *` resolve to f; a re-export cycle (named or `export *`) ends with the name no-candidate",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/reexport-callers.test.ts",
+                "title": "the stored EXPORTS edge value is empty and export_names holds (barrel, g) -> f and the star entries",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/reexport-callers.test.ts",
+                "title": "an export_names entry pointing at a target that is not stored is ignored by the call matcher",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/reexport-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1923,
+            "titles": [
+              {
+                "title": "ac3: calls through `export { f } from`, an aliased re-export (g() is a call of f), a barrel of a barrel and `export *` resolve to f; a re-export cycle (named or `export *`) ends with the name no-candidate",
+                "result": "pass"
+              },
+              {
+                "title": "the stored EXPORTS edge value is empty and export_names holds (barrel, g) -> f and the star entries",
+                "result": "pass"
+              },
+              {
+                "title": "an export_names entry pointing at a target that is not stored is ignored by the call matcher",
                 "result": "pass"
               }
             ],

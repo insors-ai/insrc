@@ -631,9 +631,10 @@ export async function verifyReceivingRepo(repoPath: string, repositoryId: string
 	try { registered = await (deps.listRepos ?? (async () => (await import('../../db/repos.js')).listRepos(null as never)))(); }
 	catch (err) { return { ok: false, reason: `the daemon's repository registry could not be read: ${err instanceof Error ? err.message : String(err)}` }; }
 	if (!registered.some(r => resolve(r.path) === resolve(repoPath))) return { ok: false, reason: `${repoPath} is not a repository registered with the daemon: register it first (insrc repo add)` };
-	if (repositoryId === undefined) return { ok: true };
+	// the repository must have an identity at all (history), whatever it is compared with
 	const mine = repositoryIdOf(repoPath);
-	if (mine === undefined) return { ok: false, reason: `${repoPath} is not a git repository with history, so it cannot be the repository the draft was parked from` };
+	if (mine === undefined) return { ok: false, reason: `${repoPath} is not a git repository with history, so it cannot be the repository a draft was parked from` };
+	if (repositoryId === undefined) return { ok: true };
 	return mine === repositoryId ? { ok: true } : { ok: false, reason: `${repoPath} is a different repository from the one the draft was parked from (its first commit is ${mine.slice(0, 12)}, the checkpoint's is ${repositoryId.slice(0, 12)})` };
 }
 
@@ -651,7 +652,9 @@ function stageArtifactCommitted(repoPath: string, unit: HandoffUnit, workflow: S
 }
 
 /**
- * Everything resume checks before it changes anything (it writes no working file): that the receiving path is a registered repository,
+ * Everything resume checks before it changes anything (it writes no working file): that the receiving path is a registered repository
+ * with an identity of its own (a git repository with history, checked before the remote is asked anything; it is compared with the
+ * checkpoint's identity as soon as the checkpoint has been read, which is before any file is restored),
  * that this is a repo enforcing claims and the actor may author the stage (the author gate, which claims an unassigned unit), which
  * stage is next (the given workflow or the one inferred from the committed artifacts), whether the stage is already done, whether
  * a handoff branch exists (a missing branch is told apart from a failure to reach the remote), that the checkpoint on it is valid

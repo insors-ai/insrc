@@ -121,6 +121,16 @@ test('resumeCheck refuses an unregistered receiving path and a clone of a differ
 		assert.match(reason(noRegistry), /registry could not be read: registry down/);
 		assert.deepEqual(await verifyReceivingRepo(w.recv, undefined, { listRepos: async () => [{ path: w.recv + '/' }] }), { ok: true }, 'a trailing slash is the same path');
 
+		// a registered path that is not a repository with history has no identity at all: refused before the remote is asked anything
+		const empty = join(w.root, 'empty'); mkdirSync(empty); git(empty, 'init', '-q', '-b', 'main'); git(empty, 'remote', 'add', 'origin', w.origin);
+		const emptyBefore = untouched(empty);
+		const noHistory = await check(w, { repo: empty, deps: depsFor(w, [empty]) });
+		assert.equal(noHistory.kind, 'refused');
+		assert.match(reason(noHistory), /is not a git repository with history/);
+		assert.deepEqual(untouched(empty), emptyBefore, 'the remote was not even fetched from');
+		const notGit = join(w.root, 'plain-dir'); mkdirSync(notGit);
+		assert.match(reason(await check(w, { repo: notGit, deps: depsFor(w, [notGit]) })), /is not a git repository with history/);
+
 		// a clone of a different repository (unrelated history that can fetch the same branch) is refused after the fetch and before any restore
 		const other = join(w.root, 'other');
 		mkdirSync(other); git(other, 'init', '-q', '-b', 'main'); git(other, 'config', 'user.email', 'o@t'); git(other, 'config', 'user.name', 'o'); git(other, 'config', 'commit.gpgsign', 'false');

@@ -194,3 +194,8 @@ Repos without the policy file behave exactly as today (solo mode).
 - Jira: approval semantics and mapping (see decision 3).
 - Rendering `signoffs[]` and the completion event into the artifact meta, and
   gating `gates.ts` on it alongside the existing other-party review gate.
+
+### s4 follow-ups (2026-10-18)
+
+- `AMD-315d510cb28100e2-10` (`findIssues`) approved and implemented: full pagination through `gh api --paginate`, pull requests left out, ascending order.
+- `AMD-315d510cb28100e2-11` proposed to s1, pending: `resolveIssueId(ref)`. With it, an issue adopted by its label after a timed-out create can be linked under its parent (today the link is retried only when the create returned the id).

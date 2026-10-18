@@ -192,26 +192,24 @@ test('findIssue returns the first of several matches and separates failure from 
 	if (!failed.ok) assert.equal(failed.kind, 'unreachable');
 });
 
-test('findIssues lists every open or closed match in ascending order, and a failure or a possibly truncated listing is not an answer', () => {
+test('findIssues lists every open or closed match across all pages in ascending order, and a failure is not an answer', () => {
 	const port = createGithubTracker('o', 'r');
 	const argv: string[][] = [];
-	_setTrackerExecForTests((_c, args) => { argv.push([...args]); return '5\n17\n31\n'; });
-	assert.deepEqual(port.findIssues(['insrc:unit:x']), { ok: true, value: ['o/r#5', 'o/r#17', 'o/r#31'] });
-	assert.deepEqual(argv[0], ['issue', 'list', '--repo', 'o/r', '--state', 'all', '--limit', '1000', '--json', 'number', '-q', 'sort_by(.number) | .[].number', '--label', 'insrc:unit:x'], 'closed issues included, sorted by gh');
+	// two pages, as `gh api --paginate` prints them, out of order
+	_setTrackerExecForTests((_c, args) => { argv.push([...args]); return '31\n5\n\n17\n'; });
+	assert.deepEqual(port.findIssues(['insrc:unit:x', 'epic:a b']), { ok: true, value: ['o/r#5', 'o/r#17', 'o/r#31'] });
+	assert.deepEqual(argv[0], ['api', '--paginate', 'repos/o/r/issues?state=all&per_page=100&labels=insrc%3Aunit%3Ax,epic%3Aa%20b', '-q', '.[] | select(.pull_request | not) | .number'], 'closed issues included, pull requests left out');
 
 	_setTrackerExecForTests(() => '');
 	assert.deepEqual(port.findIssues(['a']), { ok: true, value: [] });
+
+	_setTrackerExecForTests(() => 'not a number\n');
+	assert.equal(port.findIssues(['a']).ok, false);
 
 	failWith(execError({ code: 'ETIMEDOUT' }));
 	const failed = port.findIssues(['a']);
 	assert.equal(failed.ok, false);
 	if (!failed.ok) assert.equal(failed.kind, 'unreachable');
-
-	// a listing that reaches the ceiling may be incomplete: refused
-	_setTrackerExecForTests(() => Array.from({ length: 1000 }, (_v, i) => String(i + 1)).join('\n'));
-	const tooMany = port.findIssues(['a']);
-	assert.equal(tooMany.ok, false);
-	if (!tooMany.ok) assert.match(tooMany.reason, /may be incomplete/);
 });
 
 test('signoff methods return rejected without running gh', () => {

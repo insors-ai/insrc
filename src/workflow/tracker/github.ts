@@ -301,17 +301,15 @@ export function ghFindIssueByLabelsStrict(owner: string, repo: string, labels: r
 	return /^\d+$/.test(num) ? buildRef(owner, repo, num) : undefined;
 }
 
-/** Every issue (open or closed) carrying all the labels, ascending by number. A failed or
- *  timed-out listing throws a classified {@link GhCommandError}; a listing that reaches the
- *  1000-issue ceiling is refused rather than returned incomplete. */
-export const GH_LIST_LIMIT = 1000;
+/** Every issue (open or closed) carrying all the labels, ascending by number, across every
+ *  page (`gh api --paginate`; pull requests, which the issues endpoint also returns, are
+ *  left out). A failed or timed-out listing throws a classified {@link GhCommandError}. */
 export function ghListIssuesByLabelsStrict(owner: string, repo: string, labels: readonly string[]): string[] {
-	const args = ['issue', 'list', '--repo', `${owner}/${repo}`, '--state', 'all', '--limit', String(GH_LIST_LIMIT), '--json', 'number', '-q', 'sort_by(.number) | .[].number'];
-	for (const l of labels) args.push('--label', l);
-	const numbers = runGh(args).split('\n').map(l => l.trim()).filter(l => l.length > 0);
-	if (numbers.some(n => !/^\d+$/.test(n))) throw new GhCommandError('rejected', 'gh issue list returned an unexpected answer');
-	if (numbers.length >= GH_LIST_LIMIT) throw new GhCommandError('rejected', `more than ${GH_LIST_LIMIT - 1} issues carry these labels; the listing may be incomplete`);
-	return numbers.map(n => buildRef(owner, repo, n));
+	const query = `state=all&per_page=100&labels=${labels.map(encodeURIComponent).join(',')}`;
+	const out = runGh(['api', '--paginate', `repos/${owner}/${repo}/issues?${query}`, '-q', '.[] | select(.pull_request | not) | .number']);
+	const numbers = out.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+	if (numbers.some(n => !/^\d+$/.test(n))) throw new GhCommandError('rejected', 'gh api returned an unexpected answer for the issue listing');
+	return numbers.map(Number).sort((x, y) => x - y).map(n => buildRef(owner, repo, String(n)));
 }
 
 /** Ensure a milestone exists (idempotent) then attach an issue to it.

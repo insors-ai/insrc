@@ -19,7 +19,7 @@
 import { readFileSync } from 'node:fs';
 
 import type { TrackerKind } from './port.js';
-import { writeArtifact } from '../storage.js';
+import { carryTracker, writeArtifact } from '../storage.js';
 
 /** One stage unit and the issue that carries it (sc3). Stored under
  *  `meta.tracker.units`, in team mode. */
@@ -121,11 +121,8 @@ export function patchTrackerMeta(jsonPath: string, patch: Readonly<Partial<Track
 	if (typeof artifact.meta !== 'object' || artifact.meta === null) {
 		throw new Error(`artifact at ${jsonPath} has no meta`);
 	}
-	const prior = (artifact.meta['tracker'] as TrackerMeta | undefined) ?? {};
-	const units = prior.units !== undefined || patch.units !== undefined
-		? { units: { ...(prior.units ?? {}), ...(patch.units ?? {}) } }
-		: {};
-	const next: TrackerMeta = { adapter: 'github', ...prior, ...patch, ...units };
+	// the same merge a content write uses: every key of the patch wins, `units` merge key by key
+	const next = { adapter: 'github', ...(carryTracker(artifact.meta['tracker'], patch) ?? {}) } as TrackerMeta;
 	artifact.meta['tracker'] = next;
 	writeArtifact(jsonPath, artifact, 'meta-only');
 	return next;

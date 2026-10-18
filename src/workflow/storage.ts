@@ -120,7 +120,7 @@ function readPrior(path: string, replaceUnreadable: boolean): Record<string, unk
 
 /** The whole prior `meta.tracker` block carried into a replacement: every
  *  key of `next` wins, `units` merge key by key. */
-function carryTracker(prior: unknown, next: unknown): Record<string, unknown> | undefined {
+export function carryTracker(prior: unknown, next: unknown): Record<string, unknown> | undefined {
 	const p = isRecord(prior) ? prior : undefined;
 	const n = isRecord(next) ? next : undefined;
 	if (p === undefined && n === undefined) return undefined;

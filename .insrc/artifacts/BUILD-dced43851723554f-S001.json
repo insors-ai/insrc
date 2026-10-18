@@ -4,7 +4,7 @@
     "epicHash": "dced43851723554f",
     "storyId": "S001",
     "createdAt": "2026-10-18T11:35:11.055Z",
-    "updatedAt": "2026-10-18T11:59:48.678Z",
+    "updatedAt": "2026-10-18T12:02:07.434Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-18T10:54:00.951Z",
@@ -23,9 +23,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "fullIndex marks the repository unfinished before the delete, carries its summaries through it and writes them back after the index clean-up, before finishFullIndexState (commit 8ec5a00b); test seam _afterRepositoryDeleteForTest. Three falsifying mutations each fail a test. The full sweep also showed t1's new database broke the understanding inventory count, fixed in 1908b7ba.",
+    "summary": "summariseDoc writes its error placeholder with keepGoodSummary and reports skipped 'kept-good' (with the model error) when a good summary of the same body was stored meanwhile; SummariseDocResult.skipped gains 'kept-good'; the sweep counts it as skipped through its existing branch. Commit a2681288; three falsifying mutations each fail a test.",
     "testRecord": {
       "md": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/TESTS.md"
     },
@@ -35,86 +39,107 @@
           "file": ".insrc/artifacts/PLAN-dced43851723554f-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/er-model.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:02:07.434Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/summariser/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/doc-summary-carry.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/entities-return-to-pending.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/db/doc-summaries.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/db/index-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/doc-summary-sweep.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/full-index-rebuild.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       },
       {
         "target": {
           "file": "src/understanding/__tests__/storage.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T11:59:48.678Z"
+        "timestamp": "2026-10-18T12:02:07.434Z"
       }
     ],
-    "commit": "8ec5a00b"
+    "commit": "a2681288"
   }
 }

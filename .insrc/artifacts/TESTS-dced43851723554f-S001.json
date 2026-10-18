@@ -4,7 +4,7 @@
     "epicHash": "dced43851723554f",
     "storyId": "S001",
     "createdAt": "2026-10-18T11:35:11.055Z",
-    "updatedAt": "2026-10-18T11:59:48.678Z",
+    "updatedAt": "2026-10-18T12:02:07.434Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-18T10:54:00.951Z",
     "epicSlug": "keep-document-summaries-across-full-index"
@@ -379,6 +379,135 @@
               },
               {
                 "title": "after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "a2681288",
+        "ranAt": "2026-10-18T12:02:07.434Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts: 'a summary stored while the model runs is kept when the model then fails (the placeholder is not written)'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "a summary stored while the model runs is kept when the model then fails (the placeholder is not written)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts (existing, unchanged, still passes)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "a summary of a document rewritten or deleted while it was summarised is not stored, and is reported as skipped body-changed or entity-gone",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "a summary write that throws is reported as persistence-failed",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "when the model fails, a placeholder write that throws keeps the model error, and one that finds the document gone or rewritten reports that instead",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/indexer/__tests__/doc-summary-sweep.test.ts: 'a kept-good result is counted as skipped, not failed'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "a kept-good result is counted as skipped, not failed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1257,
+            "titles": [
+              {
+                "title": "a summary of a document rewritten or deleted while it was summarised is not stored, and is reported as skipped body-changed or entity-gone",
+                "result": "pass"
+              },
+              {
+                "title": "a summary write that throws is reported as persistence-failed",
+                "result": "pass"
+              },
+              {
+                "title": "when the model fails, a placeholder write that throws keeps the model error, and one that finds the document gone or rewritten reports that instead",
+                "result": "pass"
+              },
+              {
+                "title": "a summary stored while the model runs is kept when the model then fails (the placeholder is not written)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 562,
+            "titles": [
+              {
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "title": "a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues",
+                "result": "pass"
+              },
+              {
+                "title": "every result kind is classified as summarised, skipped, gone or failed",
+                "result": "pass"
+              },
+              {
+                "title": "progress is reported after each document, with the total",
+                "result": "pass"
+              },
+              {
+                "title": "once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs",
+                "result": "pass"
+              },
+              {
+                "title": "the sweep waits for code work before each single-document job and each document, runs an edit queued during the wait before the next document, and ends with stopped when shutdown comes during the wait",
+                "result": "pass"
+              },
+              {
+                "title": "code work arriving while a document is read pauses the sweep again: an edit queued in that pause runs first, and shutdown in it ends the sweep without summarising",
+                "result": "pass"
+              },
+              {
+                "title": "shutdown that comes while a document is read ends the sweep without summarising it",
+                "result": "pass"
+              },
+              {
+                "title": "a kept-good result is counted as skipped, not failed",
                 "result": "pass"
               }
             ],

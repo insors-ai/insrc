@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -123,3 +123,34 @@ Run at 2026-10-18T11:59:48.678Z on commit `8ec5a00b`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/full-index-rebuild.test.ts` | 0 | 11 | 3.8 s |  |
+
+## t4
+
+Run at 2026-10-18T12:02:07.434Z on commit `a2681288`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/analyze/summariser/__tests__/summarise-doc-current.test.ts: 'a summary stored while the model runs is kept when the model then fails (the placeholder is not written)'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a summary stored while the model runs is kept when the model then fails (the placeholder is not written) | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` |
+
+**unit: src/analyze/summariser/__tests__/summarise-doc-current.test.ts (existing, unchanged, still passes)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a summary of a document rewritten or deleted while it was summarised is not stored, and is reported as skipped body-changed or entity-gone | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` |
+| pass | a summary write that throws is reported as persistence-failed | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` |
+| pass | when the model fails, a placeholder write that throws keeps the model error, and one that finds the document gone or rewritten reports that instead | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` |
+
+**unit: src/indexer/__tests__/doc-summary-sweep.test.ts: 'a kept-good result is counted as skipped, not failed'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a kept-good result is counted as skipped, not failed | `src/indexer/__tests__/doc-summary-sweep.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` | 0 | 4 | 1.3 s |  |
+| `src/indexer/__tests__/doc-summary-sweep.test.ts` | 0 | 9 | 0.6 s |  |

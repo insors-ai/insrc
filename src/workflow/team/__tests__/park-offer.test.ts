@@ -12,14 +12,19 @@
 
 import { afterEach, test } from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 import assert from 'node:assert/strict';
 
 import { _setGateDepsForTests, claim, describeOutcome, registerParkOfferProvider, teamGate, type GateOutcome } from '../gate.js';
 import { handleWorkflowStep } from '../../../daemon/steps/workflow-step/handler.js';
 import { stepToolTable } from '../../../daemon/steps/host.js';
+import { runCommand, type CommandCtx } from '../../../cli/command.js';
+import { makeServices } from '../../../cli/services/index.js';
 import { _clearWorkflowStateStoreForTests, saveState } from '../../../daemon/steps/workflow-step/state-store.js';
 import { STATE_VERSION, type WorkflowStepStatePayload } from '../../../daemon/steps/workflow-step/state.js';
 import { artifactJsonPath, lldArtifactId } from '../../storage.js';
@@ -164,6 +169,18 @@ test('a held-by-other refusal carries offerPark when the actor owns a live run i
 		writeFileSync(join(repo, 'docs', 'notes.md'), 'n');
 		assert.equal(offered(), false);
 
+		// the terminal runs the gate in its own process (no run store): its refusals offer to park an uncommitted draft
+		registerParkOfferProvider(undefined);
+		const services = makeServices();   // registers the terminal's provider
+		const term = { repoPath: repo, onLog: () => undefined, services } as unknown as CommandCtx;
+		const draft = join(repo, `docs/epics/tag-filtering-E20260718${HASH.slice(0, 8)}/S001/LLD.md`);
+		assert.deepEqual(await runCommand(`team claim ${HASH} s1`, term), ['✗ not claimed — held by bob'], 'no draft: no offer');
+		writeFileSync(draft, '# lld');
+		const claimed = await runCommand(`team claim ${HASH} s1`, term);
+		assert.match(claimed[0] ?? '', /^✗ not claimed — held by bob; .*team park <epicHash> \[storyId\]/, 'an uncommitted draft: the terminal names the park command');
+		rmSync(draft);
+		stepToolTable();   // back to the daemon's provider for the rest
+
 		// the workflow-step refusal text names the park command when an offer exists, and not otherwise
 		saveState(runPayload(repo, 'awaiting_plan'), { owner: 'alice' });
 		const refused = JSON.parse((await handleWorkflowStep({ phase: 'start', workflow: 'plan', focus: 'f', repo, params: { epicHash: HASH, storyId: 's1' } })).content[0]!.text) as { error?: { code: string; message: string } };
@@ -173,4 +190,10 @@ test('a held-by-other refusal carries offerPark when the actor owns a live run i
 		const plain = JSON.parse((await handleWorkflowStep({ phase: 'start', workflow: 'plan', focus: 'f', repo, params: { epicHash: HASH, storyId: 's1' } })).content[0]!.text) as { error?: { message: string } };
 		assert.equal(plain.error?.message, 'held by bob');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('the daemon registers the park-offer provider at startup, not only when its step tools are first used', () => {
+	const main = readFileSync(join(__dirname, '..', '..', '..', 'daemon', 'index.ts'), 'utf8');
+	assert.match(main, /installStepDaemonClient\(createInDaemonClient\(rpcHandlers, streamHandlers\)\);\s*\n\s*\/\/[^\n]*\n\s*registerParkOffer\(\);/, 'main() calls registerParkOffer() when the daemon starts');
+	assert.match(main, /import \{ registerParkOffer \} from '\.\/steps\/workflow-step\/park-offer\.js'/);
 });

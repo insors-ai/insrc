@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T17:39:37.745Z",
+    "updatedAt": "2026-10-18T17:43:59.622Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -211,6 +211,46 @@
               },
               {
                 "title": "rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, resets startedAtMs and leaves no parker path, for all three stages, and inferStageWorkflow follows the committed artifact chain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "e36c49ef",
+        "ranAt": "2026-10-18T17:43:59.622Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/park-offer.test.ts: a held-by-other refusal carries offerPark when the actor owns a live run in any stage or has an uncommitted draft for the unit, never for an unowned run, and the workflow-step refusal text names the park command",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/park-offer.test.ts",
+                "title": "a held-by-other refusal carries offerPark when the actor owns a live run in any stage or has an uncommitted draft for the unit, never for an unowned run, and the workflow-step refusal text names the park command",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/park-offer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1864,
+            "titles": [
+              {
+                "title": "teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then",
+                "result": "pass"
+              },
+              {
+                "title": "a held-by-other refusal carries offerPark when the actor owns a live run in any stage or has an uncommitted draft for the unit, never for an unowned run, and the workflow-step refusal text names the park command",
                 "result": "pass"
               }
             ],

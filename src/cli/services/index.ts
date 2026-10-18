@@ -26,6 +26,8 @@ import * as setup from './setup.js';
 import * as config from './config.js';
 import * as maintenance from './maintenance.js';
 import * as team from './team.js';
+import { registerParkOfferProvider } from '../../workflow/team/gate.js';
+import { draftParkOffer } from '../../workflow/team/handoff.js';
 import * as debug from './debug.js';
 import { isRunning } from './lifecycle.js';
 import type { EpicSummary, ApproveOutcome } from './workflow.js';
@@ -94,6 +96,8 @@ export interface Services {
 }
 
 export function makeServices(): Services {
+	// The terminal runs the team gate in its own process, which has no run store: its refusals offer to park an uncommitted draft.
+	registerParkOfferProvider((repo, unit) => draftParkOffer(repo, unit));
 	return {
 		daemon: {
 			isRunning,

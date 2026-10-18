@@ -64,6 +64,7 @@ import {
 
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { createInDaemonClient, installStepDaemonClient } from './steps/daemon-client.js';
+import { registerParkOffer } from './steps/workflow-step/park-offer.js';
 import { listModels } from './list-models.js';
 import { makeUpdateHandlers, launchUpdate, readUpdateOutcome } from './update-runner.js';
 import { readInstalledCommit } from './installed-commit.js';
@@ -1970,6 +1971,8 @@ async function main(): Promise<void> {
 		},
 	};
 	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers));
+	// The team gate offers a refused holder to park their work; the daemon is where the runs and drafts it asks about live.
+	registerParkOffer();
 	const server = new IpcServer(rpcHandlers, streamHandlers);
 
 	// Initialize chat session pool

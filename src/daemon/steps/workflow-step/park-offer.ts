@@ -14,7 +14,7 @@ import { resolve } from 'node:path';
 
 import { authorUnitOf } from '../../../workflow/team/author-gate.js';
 import { registerParkOfferProvider } from '../../../workflow/team/gate.js';
-import { unitDraftFiles } from '../../../workflow/team/handoff.js';
+import { draftParkOffer } from '../../../workflow/team/handoff.js';
 import type { UnitRef } from '../../../workflow/tracker/refs.js';
 import type { WorkflowIntent } from '../../../workflow/types.js';
 import { listStates } from './state-store.js';
@@ -35,7 +35,7 @@ function runIsForUnit(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'pa
 export function hasUnparkedWork(repo: string, unit: UnitRef, actor: string): boolean {
 	try {
 		if (listStates().some(e => sameLogin(e.meta?.owner, actor) && runIsForUnit(e.payload.intent, { ...unit, repoPath: repo }))) return true;
-		return unit.unit !== 'task' && unitDraftFiles(repo, unit).length > 0;
+		return draftParkOffer(repo, unit);
 	} catch { return false; }
 }
 

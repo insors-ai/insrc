@@ -289,6 +289,14 @@ export function unitDraftFiles(repoPath: string, unit: HandoffUnit): readonly st
 	return files;
 }
 
+/**
+ * The park offer a process can make from the working tree alone: the unit (an Epic or a Story) has a draft artifact that is not
+ * committed. The daemon adds the live runs it holds; the terminal, which has no run store, uses this. Never throws.
+ */
+export function draftParkOffer(repoPath: string, unit: { readonly unit: string } & HandoffUnit): boolean {
+	try { return unit.unit !== 'task' && unitDraftFiles(repoPath, unit).length > 0; } catch { return false; }
+}
+
 /** Is this file committed at HEAD? (A file only in the working tree, such as a local draft, is not.) */
 function committedAtHead(repoPath: string, artifactId: string): boolean {
 	return runGit(repoPath, ['cat-file', '-e', `HEAD:${relative(repoPath, artifactJsonPath(repoPath, artifactId)).split('\\').join('/')}`]).ok;

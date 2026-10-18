@@ -27,19 +27,35 @@ const log = getLogger('mcp:workflow-step:state-store');
 const MAX_ENTRIES = 100;
 const TTL_MS      = 60 * 60 * 1_000;
 
+/** An upstream artifact and the revision a run read from it when it was created. */
+export interface UpstreamRevision {
+	readonly artifactId: string;
+	readonly revision:   number;
+}
+
+/**
+ * What a run's store entry carries beside its payload: the acting user when the run was created and the
+ * upstream revisions it started from. Absent for a run created when claims are not enforced.
+ */
+export interface RunEntryMeta {
+	readonly owner?:    string | undefined;
+	readonly upstream?: readonly UpstreamRevision[] | undefined;
+}
+
 interface Entry {
 	readonly payload:   WorkflowStepStatePayload;
+	readonly meta:      RunEntryMeta | undefined;
 	readonly createdAt: number;
 	touchedAt:          number;
 }
 
 const store = new Map<string, Entry>();
 
-export function saveState(payload: WorkflowStepStatePayload): string {
+export function saveState(payload: WorkflowStepStatePayload, meta?: RunEntryMeta): string {
 	sweep();
 	const now = Date.now();
 	const token = mintToken();
-	store.set(token, { payload, createdAt: now, touchedAt: now });
+	store.set(token, { payload, meta, createdAt: now, touchedAt: now });
 	if (store.size >= MAX_ENTRIES / 2) {
 		log.warn(
 			{ size: store.size, cap: MAX_ENTRIES, stage: payload.stage, runId: payload.runId },
@@ -76,11 +92,25 @@ export function releaseState(token: string): void {
  * `previousToken === undefined` (the first save) behaves exactly like saveState.
  */
 export function replaceState(previousToken: string | undefined, payload: WorkflowStepStatePayload): string {
-	const token = saveState(payload);
+	// The replacement keeps the run's meta (its owner and upstream snapshot): read it before the save can sweep the old entry out.
+	const meta = previousToken !== undefined ? store.get(previousToken)?.meta : undefined;
+	const token = saveState(payload, meta);
 	if (previousToken !== undefined && previousToken !== token) {
 		releaseState(previousToken);
 	}
 	return token;
+}
+
+/**
+ * Every live entry, most recently touched first. Reading the list changes nothing: no entry's expiry moves,
+ * and an entry past its time to live is left out (not swept, so the next save does the sweeping as before).
+ */
+export function listStates(): readonly { token: string; payload: WorkflowStepStatePayload; meta: RunEntryMeta | undefined; touchedAt: number }[] {
+	const now = Date.now();
+	return [...store.entries()]
+		.filter(([, e]) => now - e.touchedAt <= TTL_MS)
+		.sort((a, b) => b[1].touchedAt - a[1].touchedAt || b[1].createdAt - a[1].createdAt)
+		.map(([token, e]) => ({ token, payload: e.payload, meta: e.meta, touchedAt: e.touchedAt }));
 }
 
 export function _clearWorkflowStateStoreForTests(): void {

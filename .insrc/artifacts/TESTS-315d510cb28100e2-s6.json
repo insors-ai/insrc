@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "createdAt": "2026-10-18T17:06:54.425Z",
+    "updatedAt": "2026-10-18T17:06:54.425Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "dd063c03",
+        "ranAt": "2026-10-18T17:06:54.425Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/park-offer.test.ts: teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/park-offer.test.ts",
+                "title": "teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/park-offer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1034,
+            "titles": [
+              {
+                "title": "teamGate sets offerPark only on held-by-other and only through a registered provider, a throwing provider counts as false, a repo with no policy makes no provider call, and describeOutcome appends the park command only then",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

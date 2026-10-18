@@ -17,7 +17,7 @@ import type {
 	WorkflowIntent,
 } from '../../../workflow/types.js';
 
-import { loadState, replaceState, saveState, StateTokenNotFound } from './state-store.js';
+import { loadState, replaceState, saveState, StateTokenNotFound, type RunEntryMeta } from './state-store.js';
 
 export const STATE_VERSION = 1 as const;
 
@@ -78,14 +78,14 @@ export class WorkflowStateDecodeError extends Error {
 	}
 }
 
-export function encodeState(payload: WorkflowStepStatePayload): string {
+export function encodeState(payload: WorkflowStepStatePayload, meta?: RunEntryMeta): string {
 	if (payload.version !== STATE_VERSION) {
 		throw new WorkflowStateDecodeError(
 			'wrong-version',
 			`encodeState: payload version ${String(payload.version)} != expected ${STATE_VERSION}`,
 		);
 	}
-	return saveState(payload);
+	return saveState(payload, meta);
 }
 
 /**

@@ -24,7 +24,8 @@ import { join } from 'node:path';
 import { closeGraphStore, getGraphStore, setGraphStorePath, SCHEMA_VERSION, withWriteTxn } from '../graph/store.js';
 import { encodeEntityKey } from '../graph/keys.js';
 import { addRepo, lookupRepoId } from '../repos.js';
-import { deleteEntitiesForFile, entityU64ForId, upsertEntities } from '../entities.js';
+import { deleteEntitiesForFile, deleteEntitiesForRepo, entityU64ForId, getEntity, upsertEntities } from '../entities.js';
+import { upsertRelations } from '../relations.js';
 import {
 	encodeCarryKey, getDocSummary, listDocSummaryEntityIdsForRepo, restoreCarriedDocSummaries, writeDocSummary,
 	writeDocSummaryIfCurrent, writeDocSummaryIfCurrentInTxn,
@@ -33,7 +34,7 @@ import { makeEntityId } from '../../indexer/parser/base.js';
 import type { DocSummary } from '../../shared/analyze-types.js';
 import type { Entity } from '../../shared/types.js';
 import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
-import { Packr } from 'msgpackr';
+import { Packr, Unpackr } from 'msgpackr';
 
 useTemporaryLance();
 
@@ -185,5 +186,79 @@ test('a v5 store opened with this build has an empty doc_summary_carry and schem
 	assert.equal(SCHEMA_VERSION, 5);
 	assert.equal(reopened.meta.get('schema_version'), 5);
 	assert.ok(reopened.root.getKeys({}).asArray.includes('doc_summary_carry'), 'opened again');
+	assert.equal(await carryRows(), 0);
+});
+
+/** The carried summary of `e`, decoded, or undefined. */
+async function carried(e: Entity): Promise<DocSummary | undefined> {
+	const repoId = (await lookupRepoId(REPO))!;
+	const buf = (await getGraphStore()).docSummaryCarry.get(encodeCarryKey(repoId, e.id)) as Buffer | undefined;
+	return buf === undefined ? undefined : new Unpackr({ useRecords: false }).unpack(buf) as DocSummary;
+}
+
+test('the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row', async () => {
+	const a = doc('a', 'body a'), b = doc('b', 'body b'), plain = doc('plain', 'no summary'), old = doc('old', 'body old');
+	await upsertEntities(null, [a, b, plain]);
+	await writeDocSummary(null, a.id, REPO, summaryOf('body a', { summary: 'live a' }));
+	await writeDocSummary(null, b.id, REPO, summaryOf('body b', { summary: 'live b' }));
+	// Carry rows from an interrupted full index: one for an id that has a live summary again, one with none.
+	await carry(a, summaryOf('body a', { summary: 'older a' }));
+	await carry(old, summaryOf('body old', { summary: 'carried old' }));
+
+	const result = await deleteEntitiesForRepo(null, REPO, { carryDocSummaries: true });
+
+	assert.deepEqual(result, { returnedToPending: 0, carriedDocSummaries: 2 });
+	assert.equal(await getEntity(null, a.id), null, 'the entities are deleted');
+	assert.equal((await getGraphStore()).docSummary.getKeys({}).asArray.length, 0, 'and their summaries');
+	assert.equal((await carried(a))?.summary, 'live a', 'the live value wins over the older carry row');
+	assert.equal((await carried(b))?.summary, 'live b');
+	assert.equal((await carried(old))?.summary, 'carried old', 'a carry row with no live summary is kept');
+	assert.equal(await carried(plain), undefined, 'an entity with no summary carries nothing');
+	assert.equal(await carryRows(), 3);
+});
+
+test('a failure inside the delete transaction rolls back the carry with the delete', async () => {
+	const a = doc('a', 'body a');
+	await upsertEntities(null, [a]);
+	await writeDocSummary(null, a.id, REPO, summaryOf('body a', { summary: 'live a' }));
+	// A holder in another repository whose row cannot be read: the delete's transaction
+	// throws while returning that holder's edge to pending, after the carry was written in it.
+	const other = '/repo/holder';
+	await addRepo(null, { path: other, name: 'holder', addedAt: NOW, status: 'ready' });
+	const holder: Entity = { ...doc('h', 'h'), id: makeEntityId(other, `${other}/h.ts`, 'function', 'h'), kind: 'function', repo: other, file: `${other}/h.ts` };
+	await upsertEntities(null, [holder]);
+	await upsertRelations(null, [{ kind: 'CALLS', from: holder.id, to: a.id, resolved: true, meta: { repo: other, file: holder.file } }]);
+	const holderU64 = (await entityU64ForId(holder.id))!;
+	await withWriteTxn(st => { st.entity.put(encodeEntityKey(holderU64), Buffer.from([0xc1])); });
+
+	await assert.rejects(deleteEntitiesForRepo(null, REPO, { carryDocSummaries: true, returnIncomingToPending: true }));
+
+	assert.notEqual(await getEntity(null, a.id), null, 'the entity is still stored');
+	assert.equal((await getDocSummary(null, a.id))?.summary, 'live a', 'and its summary');
+	assert.equal(await carryRows(), 0, 'the carry written in the transaction was rolled back');
+});
+
+test('without carryDocSummaries the repository\'s carry rows are deleted', async () => {
+	await addRepo(null, { path: '/repo/other', name: 'other', addedAt: NOW, status: 'ready' });
+	const a = doc('a', 'body a');
+	await upsertEntities(null, [a]);
+	await writeDocSummary(null, a.id, REPO, summaryOf('body a'));
+	await carry(doc('old', 'body old'), summaryOf('body old'));
+	const otherId = (await lookupRepoId('/repo/other'))!;
+	await withWriteTxn(st => { st.docSummaryCarry.put(encodeCarryKey(otherId, 'some-id'), Buffer.from([0x90])); });
+
+	assert.deepEqual(await deleteEntitiesForRepo(null, REPO), { returnedToPending: 0, carriedDocSummaries: 0 });
+	assert.equal(await carried(doc('old', 'body old')), undefined);
+	assert.equal(await carried(a), undefined, 'the live summary is not carried either');
+	assert.equal(await carryRows(), 1, 'only the other repository\'s row is left');
+});
+
+test('repo removal of a repository with carry rows and no entities deletes the carry rows', async () => {
+	await carry(doc('a', 'body a'), summaryOf('body a'));
+	await carry(doc('b', 'body b'), summaryOf('body b'));
+	assert.equal(await carryRows(), 2);
+
+	// As repo.remove calls it: no options, and the repository has no entity left.
+	await deleteEntitiesForRepo(null, REPO);
 	assert.equal(await carryRows(), 0);
 });

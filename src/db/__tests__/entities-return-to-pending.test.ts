@@ -77,7 +77,7 @@ test('with returnIncomingToPending, a hand-written edge from repository A into B
 	const { a, b } = await fixture();
 	const result = await deleteEntitiesForRepo(null, repoB, { returnIncomingToPending: true });
 
-	assert.deepEqual(result, { returnedToPending: 1 });
+	assert.deepEqual(result, { returnedToPending: 1, carriedDocSummaries: 0 });
 	assert.equal(await getEntity(null, b.id), null, 'B\'s entities are deleted');
 	assert.deepEqual(await outOf(a), [], 'the edge is gone');
 	const pending = await listUnresolvedRelations(null, repoA);
@@ -112,7 +112,7 @@ test('without the option the delete is as before: the edge is removed and nothin
 	const { a, b } = await fixture();
 	const result = await deleteEntitiesForRepo(null, repoB);
 
-	assert.deepEqual(result, { returnedToPending: 0 });
+	assert.deepEqual(result, { returnedToPending: 0, carriedDocSummaries: 0 });
 	assert.equal(await getEntity(null, b.id), null);
 	assert.deepEqual(await outOf(a), []);
 	assert.deepEqual(await listUnresolvedRelations(null, repoA), []);

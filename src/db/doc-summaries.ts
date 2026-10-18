@@ -394,7 +394,8 @@ export async function restoreDocSummariesFromBackup(backupPath: string): Promise
 		throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' is the live store`);
 	}
 
-	const backup = open({ path: backupPath, readOnly: true, maxDbs: 64 });
+	// noSubdir: lmdb-js otherwise guesses from the extension, and a backup's name may have none.
+	const backup = open({ path: backupPath, readOnly: true, noSubdir: true, maxDbs: 64 });
 	try {
 		const names = new Set([...backup.getKeys({})].map(String));
 		for (const name of ['doc_summary', 'entity_string_by_u64']) {

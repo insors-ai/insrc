@@ -72,9 +72,9 @@ function summaryOf(body: string, extra: Partial<DocSummary> = {}): DocSummary {
 interface BackupRow { readonly u64: bigint; readonly entityId?: string | undefined; readonly value: Buffer }
 
 /** Write a single-file backup store holding `rows` (omit `databases` entries to leave one out). */
-async function writeBackup(rows: readonly BackupRow[], databases = ['doc_summary', 'entity_string_by_u64']): Promise<string> {
-	const path = join(dir, `backup-${Math.random().toString(36).slice(2)}.lmdb`);
-	const env = open({ path, maxDbs: 8 });
+async function writeBackup(rows: readonly BackupRow[], databases = ['doc_summary', 'entity_string_by_u64'], name = `backup-${Math.random().toString(36).slice(2)}.lmdb`): Promise<string> {
+	const path = join(dir, name);
+	const env = open({ path, noSubdir: true, maxDbs: 8 });
 	const summaries = databases.includes('doc_summary') ? env.openDB({ name: 'doc_summary', keyEncoding: 'binary', encoding: 'binary' }) : undefined;
 	const ids = databases.includes('entity_string_by_u64') ? env.openDB({ name: 'entity_string_by_u64', keyEncoding: 'binary', encoding: 'ordered-binary' }) : undefined;
 	await env.transaction(() => {
@@ -143,7 +143,7 @@ test('a backup lacking entity_string_by_u64 is rejected, nothing is written and 
 	assert.equal(await getDocSummary(null, current.id), null, 'nothing written');
 
 	// Closed: the file opens for writing again, and once it has the database the restore runs.
-	const env = open({ path: backup, maxDbs: 8 });
+	const env = open({ path: backup, noSubdir: true, maxDbs: 8 });
 	const ids = env.openDB({ name: 'entity_string_by_u64', keyEncoding: 'binary', encoding: 'ordered-binary' });
 	await ids.put(encodeEntityKey(101n), current.id);
 	await env.close();
@@ -156,4 +156,13 @@ test('restore refuses a relative path, a missing file, a directory and the live 
 	await assert.rejects(restoreDocSummariesFromBackup(dir), /is not a file/);
 	await getDocSummary(null, 'any');   // the live store file exists once opened
 	await assert.rejects(restoreDocSummariesFromBackup(getGraphStorePath()), /is the live store/);
+});
+
+test('a backup file whose name has no extension is read as a single-file store', async () => {
+	const current = doc('current', 'current body');
+	await upsertEntities(null, [current]);
+	const backup = await writeBackup([{ u64: 101n, entityId: current.id, value: packed(summaryOf('current body')) }], undefined, 'graphbackup');
+
+	assert.equal((await restoreDocSummariesFromBackup(backup)).written, 1);
+	assert.equal((await getDocSummary(null, current.id))?.contentHash, hash('current body'));
 });

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 70 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 73 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -291,3 +291,21 @@ Run at 2026-10-18T05:32:58.124Z on commit `249df2d8`. Tests check: **passed**. 1
 | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` | 0 | 4 | 0.6 s |  |
 | `src/daemon/__tests__/repo-stats.test.ts` | 0 | 7 | 0.6 s |  |
 | `src/daemon/__tests__/status-store-failure.test.ts` | 0 | 2 | 0.6 s |  |
+
+## t13
+
+Run at 2026-10-18T05:45:00.291Z on commit `52fb8228`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/cli/panes/__tests__/ReposPane-completeness.test.ts: ink render of complete, incomplete and field-less rows**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | an incomplete repository shows incomplete beside its unchanged status, with the number of causes and the first cause on the line below | `src/cli/panes/__tests__/ReposPane-completeness.test.ts` |
+| pass | a complete repository shows its status and nothing extra | `src/cli/panes/__tests__/ReposPane-completeness.test.ts` |
+| pass | a repository with no completeness field (unknown) shows the status alone | `src/cli/panes/__tests__/ReposPane-completeness.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/panes/__tests__/ReposPane-completeness.test.ts` | 0 | 3 | 0.7 s |  |

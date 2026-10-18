@@ -144,6 +144,39 @@ Repos without the policy file behave exactly as today (solo mode).
   under JDK 21 (`jetbrains-plugin/test-bridge/kotlin-suite.test.ts`; `INSRC_JDK21` or
   `~/.local/jdk21`).
 
+- **s4 issue uniqueness (accepted 2026-10-18, owner decision on the s4 LLD):** DEF
+  S004:FR001 ("the same stage unit never gets two issues, however often its draft is
+  written") is read as: one author per unit never gets two issues from repeated or
+  interrupted drafts; two simultaneous first drafts of the same unit by different
+  authors converge to one issue (the lowest-numbered issue carrying the unit's label is
+  kept and the other is closed as a duplicate) except in a narrow race, in which each
+  daemon's duplicate check runs before the other's issue exists and two issues remain
+  until a person closes one. GitHub gives no atomic uniqueness, so this cannot be
+  closed from our side. The convergence needs an additive sc1 method,
+  `findIssues(labels)` (every matching issue, open or closed, complete pagination,
+  ascending numeric order), proposed to s1 as a `sharedContract.methodAdd` amendment
+  and to be agreed before the s4 build.
+
+- **s4 LLD approval (2026-10-18):** approved with a review override after three review
+  cycles (nine rounds). The last round's findings are implementation-level and are binding
+  build requirements for s4, to be checked by its code review:
+  1. Legacy mode keeps every approve-time extra exactly as today, per entry point: the Epic
+     review comment (`postReviewComment` on `autoPushEpicOnHld`) is posted even when the
+     Epic was adopted, and the plan review comment in `autoPushTasksOnPlan` is posted
+     before its loop on every push; only the design comment, the Epic task-list splice and
+     the HLD summary comment are created-only. The unedited `tracker-auto.test.ts` is the
+     proof.
+  2. The readiness notice must reach the author on the daemon-side path: add
+     `issueReadiness` and `notice` to `runWorkflowStreaming` and `RunWorkflowStreamResult`
+     (`src/mcp/daemon-stream.ts`), the CLI service (`src/cli/services/workflow.ts`) and
+     print it in the `run` handler (`src/cli/command.ts`), with a test of the printed output.
+  3. The TESTS record rollback is best-effort: if both the document write and the json
+     restore fail, the possibly inconsistent record state (and its newly minted revision)
+     is reported to the caller, and a test covers both writes failing.
+  4. The `TrackerMeta.adapter` widening from `'github'` to the port's `TrackerKind` (HLD
+     §2, §4.3) is included, and `patchTrackerMeta` preserves the actual tracker kind.
+  Also pending before the s4 build: the `findIssues` amendment agreed with s1 (see above).
+
 ## Open items for design
 
 - Offline rule for the policy file (last fetched policy, refuse if none; see

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:16:36.004Z",
+    "updatedAt": "2026-10-18T14:24:07.223Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -12,8 +12,8 @@
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "0bf2fab3",
-        "ranAt": "2026-10-18T14:16:36.004Z",
+        "commit": "ecac83d1",
+        "ranAt": "2026-10-18T14:24:07.223Z",
         "testsPassed": true,
         "tests": [
           {
@@ -35,7 +35,7 @@
             "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1086,
+            "durationMs": 1060,
             "titles": [
               {
                 "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",

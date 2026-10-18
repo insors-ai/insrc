@@ -2,7 +2,7 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-18T16:49:19.050Z  ·  **Updated:** 2026-10-18T16:50:54.330Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-18T16:49:19.050Z  ·  **Updated:** 2026-10-18T17:02:40.350Z
 
 **Commit:** bf6c8922
 
@@ -22,6 +22,7 @@ testRecordView lists reportedTests (latest per name, a fail winning a tie, malfo
 
 ## Changes
 
-- `src/workflow/code-review/dimensions/__tests__/reported-tests-view.test.ts` — **insrc-build** (2026-10-18T16:50:54.330Z)
-- `src/workflow/code-review/dimensions/coverage.ts` — **insrc-build** (2026-10-18T16:50:54.330Z)
-- `src/workflow/code-review/dimensions/test-record-view.ts` — **insrc-build** (2026-10-18T16:50:54.330Z)
+- `.insrc/artifacts/BUILD-b47dadc7cf0cccb1-S001.json` — **insrc-build** (2026-10-18T17:02:40.350Z)
+- `.insrc/artifacts/BUILD-b5a62f289cbcdaee-S001.json` — **insrc-build** (2026-10-18T17:02:40.350Z)
+- `docs/standalone/keep-stored-good-summary-when-full-E20261018b5a62f28/S001/BUILD.md` — **insrc-build** (2026-10-18T17:02:40.350Z)
+- `docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/BUILD.md` — **insrc-build** (2026-10-18T17:02:40.350Z)

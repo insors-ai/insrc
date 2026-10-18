@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-18T16:46:42.113Z  ·  **Updated:** 2026-10-18T16:48:50.296Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-18T16:46:42.113Z  ·  **Updated:** 2026-10-18T16:59:40.908Z
 
-**Commit:** dc95953f
+**Commit:** d1fb60c9
 
 ## Scope
 
@@ -22,5 +22,5 @@ restoreCarriedDocSummaries now writes back with keepGoodSummary, so a good summa
 
 ## Changes
 
-- `src/db/__tests__/doc-summary-carry.test.ts` — **insrc-build** (2026-10-18T16:48:50.296Z)
-- `src/db/doc-summaries.ts` — **insrc-build** (2026-10-18T16:48:50.296Z)
+- `.insrc/artifacts/BUILD-b47dadc7cf0cccb1-S001.json` — **insrc-build** (2026-10-18T16:59:40.908Z)
+- `docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/BUILD.md` — **insrc-build** (2026-10-18T16:59:40.908Z)

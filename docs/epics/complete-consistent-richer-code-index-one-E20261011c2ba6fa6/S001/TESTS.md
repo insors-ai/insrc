@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -210,3 +210,28 @@ Run at 2026-10-18T04:33:11.743Z on commit `f60569df`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/reexport-callers.test.ts` | 0 | 3 | 1.9 s |  |
+
+## t10
+
+Run at 2026-10-18T04:44:37.079Z on commit `47285fc2`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/db/__tests__/delete-entities-by-id.test.ts: barrel re-index and delete leave no export_names entry under the old u64 (mutation: cleanup removed)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s1/t10: re-indexing a barrel and then deleting it leave no export_names entry under its old u64 | `src/db/__tests__/delete-entities-by-id.test.ts` |
+
+**integration: src/db/__tests__/entities-return-to-pending.test.ts: hand-written cross-repository edge returned to pending; forced failure leaves both sides**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | with returnIncomingToPending, a hand-written edge from repository A into B is a pending row of A awaiting the entity after B is deleted, counted in A's state; B's own edge is not returned | `src/db/__tests__/entities-return-to-pending.test.ts` |
+| pass | a failure inside the delete transaction leaves both B's rows and A's edge untouched | `src/db/__tests__/entities-return-to-pending.test.ts` |
+| pass | without the option the delete is as before: the edge is removed and nothing is returned to pending | `src/db/__tests__/entities-return-to-pending.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/delete-entities-by-id.test.ts` | 0 | 3 | 1.2 s |  |
+| `src/db/__tests__/entities-return-to-pending.test.ts` | 0 | 3 | 0.9 s |  |

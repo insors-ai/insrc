@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-18T04:33:11.743Z",
+    "updatedAt": "2026-10-18T04:44:37.079Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1008,6 +1008,94 @@
               },
               {
                 "title": "an export_names entry pointing at a target that is not stored is ignored by the call matcher",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "47285fc2",
+        "ranAt": "2026-10-18T04:44:37.079Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/delete-entities-by-id.test.ts: barrel re-index and delete leave no export_names entry under the old u64 (mutation: cleanup removed)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/delete-entities-by-id.test.ts",
+                "title": "s1/t10: re-indexing a barrel and then deleting it leave no export_names entry under its old u64",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/entities-return-to-pending.test.ts: hand-written cross-repository edge returned to pending; forced failure leaves both sides",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entities-return-to-pending.test.ts",
+                "title": "with returnIncomingToPending, a hand-written edge from repository A into B is a pending row of A awaiting the entity after B is deleted, counted in A's state; B's own edge is not returned",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entities-return-to-pending.test.ts",
+                "title": "a failure inside the delete transaction leaves both B's rows and A's edge untouched",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entities-return-to-pending.test.ts",
+                "title": "without the option the delete is as before: the edge is removed and nothing is returned to pending",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/delete-entities-by-id.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1206,
+            "titles": [
+              {
+                "title": "t1: deleteEntitiesById removes the entity + cascades its CALLS_HTTP in/out edges; others untouched",
+                "result": "pass"
+              },
+              {
+                "title": "t1: deleting an absent/stale id is a no-op; a mixed batch deletes present, skips absent",
+                "result": "pass"
+              },
+              {
+                "title": "s1/t10: re-indexing a barrel and then deleting it leave no export_names entry under its old u64",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/entities-return-to-pending.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 931,
+            "titles": [
+              {
+                "title": "with returnIncomingToPending, a hand-written edge from repository A into B is a pending row of A awaiting the entity after B is deleted, counted in A's state; B's own edge is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "a failure inside the delete transaction leaves both B's rows and A's edge untouched",
+                "result": "pass"
+              },
+              {
+                "title": "without the option the delete is as before: the edge is removed and nothing is returned to pending",
                 "result": "pass"
               }
             ],

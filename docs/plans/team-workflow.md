@@ -235,3 +235,14 @@ The s5 LLD was approved with a recorded review override of the daemon's `block` 
 5. **BUILD approval target (s5-R2-5).** A Story-wide BUILD approval is authorized against every Task claim of the Story and is refused naming the first Task held by someone else; a standalone BUILD authorizes against the standalone unit. An approval that cannot resolve a unit is refused with the reason.
 
 Still pending: `AMD-315d510cb28100e2-12` (`addAssignee`), a build prerequisite; until it is agreed the build uses a fake port that implements it.
+
+## s6 decision on ac28 (2026-10-18)
+
+ac28 reads "they resume from the latest committed artifact files and redo only the unfinished step".
+Step outputs live only in the daemon's memory and artifacts are written only when a stage finishes,
+so committed files cannot carry step-level progress. **Decision (user, option A): ac28 is read at
+stage level.** After a lost machine the new owner redoes the half-run stage from its first step on the
+committed upstream artifacts; completed stages are never redone. Step-level recovery is only available
+when the previous owner parked (the checkpoint carries the step outputs). Continuous per-step
+checkpointing (a commit and push on every step of every team run) was rejected for its cost. The
+approved Define keeps its original wording; the s6 LLD and its tests state the stage-level reading.

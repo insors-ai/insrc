@@ -508,23 +508,19 @@ Intersect the range's changed files with the files cited by the approved LLD's c
 - cd1: prepareCoverageGrounding, normalizeCoverageFindings and JudgeContext are new names (no HLD to own them; standalone fix).
 - Stated limit (stakeholder decision 2026-10-18, option A): in a full (graph) review a file that another Story's commit in the same window also changed is judged whole, so its symbol summaries may include that Story's symbols; the review records such files as sharedWithExcluded. Scoping symbols to the Story's own changed lines is left out of this fix.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q6a577664` — Stated limit (stakeholder decision 2026-10-18, option A): in a full (graph) review a file that another Story's commit in the same window also changed is judged whole, so its symbol summaries may include that Story's symbols; the review records such files as sharedWithExcluded. Scoping symbols to the Story's own changed lines is left out of this fix.
+  - **resolved**: Accept whole-file review — Stakeholder decision 2026-10-18 (option A at the end of the first review cycle): shared files are judged whole and listed as sharedWithExcluded; changed-line scoping is out of this fix. _(2026-10-18T14:30:59.107Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 2 could not be verified · 5 hold** · template `design-issue` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-18T14:25:28.143Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| preserved-behaviour | The proposed four evidence classes preserve defined behavior when the Story has no usable test record. | testRecordView explicitly returns null for an absent record and produces unverified states for malformed file entries. The current prompt treats pass-states as unverified. Section 4 permits no-edge-no-tests only when a record exists, but the design supplies no alternative class for an edge-free symbol with a null record, while requiring every prepared symbol to have a class. [files: src/workflow/code-review/dimensions/test-record-view.ts, src/workflow/code-review/dimensions/coverage.ts] | Specify the null-record and malformed-record classification and normalization outcomes explicitly, and add assertions for both. |
-| tests | Every acceptance criterion has an executable regression test that fails without this fix. | The acceptance table specifies relevant future scenarios for ac1–ac5, but repository searches found none of the named new attribution, eligibility, normalization or trailer suites. Existing story-commits and coverage tests exercise current behavior, including accepting scripted HIGH findings without normalization. Their bodies do not establish the proposed regressions, and no tests were executed. [files: src/workflow/runners/build/__tests__/story-commits.test.ts, src/workflow/runners/build/__tests__/build-record.test.ts, src/workflow/code-review/dimensions/__tests__/coverage.test.ts] | Implement the mapped suites and demonstrate their failure against the old behavior, including both execution paths, null records, reverted Story files and explicit BUILD commit overrides. |
+- **[[c1]]** `code` `src/workflow/code-review/subject.ts:119-175` — "const base = (deps.resolveRangeBase ?? resolveStoryRangeBase)(repoPath, epicHash, storyId);"
+- **[[c2]]** `code` `src/workflow/runners/build/standalone-record.ts:300-316` — "const commit = rec.body.commit ?? headShortSha(repoPath);"
+- **[[c3]]** `code` `src/workflow/code-review/grounding.ts:74-104` — "for (const file of changedFiles) {"
+- **[[c4]]** `code` `src/workflow/runners/build/story-commits.ts:25-27` — "ordinary commits on the first-parent line, so those commits are counted as Story work."
+- **[[c5]]** `code` `src/workflow/code-review/dimensions/coverage.ts:113-135` — "a changed symbol with an EMPTY testsReaching is a not-exercised gap — report it HIGH"
+- **[[c6]]** `prior-artifact` `docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/ISSUE.md` — "The reviewed change set holds only the Story's own commits"
+- **[[c7]]** `prior-artifact` `docs/standalone/review-every-changed-symbol-story-too-E20261018aef82b03/ISSUE.md` — "the review covers it in parts that each fit"
+- **[[c8]]** `code` `src/prompts/build/implement-task.md:31-32` — "`feat(build): {{storyId}}/{{taskId}} … ({{issueRef}})`"
+- **[[c9]]** `step-output` `s3` — "a1 is the only alternative that satisfies fix-intent 1: a2 violates it on the issue's own reproduction (another Story's commits between two validate turns) and a3 violates it both ways. All three shar"

@@ -126,6 +126,17 @@
       "reviewedAt": "2026-10-18T14:25:28.143Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-18T14:30:03.957Z",
+    "rangeBase": "fc0c65f64ced1dd1e3ded6b3d6204c7730335cb5",
+    "questionResolutions": {
+      "q6a577664": {
+        "question": "Stated limit (stakeholder decision 2026-10-18, option A): in a full (graph) review a file that another Story's commit in the same window also changed is judged whole, so its symbol summaries may include that Story's symbols; the review records such files as sharedWithExcluded. Scoping symbols to the Story's own changed lines is left out of this fix.",
+        "status": "resolved",
+        "choice": "Accept whole-file review",
+        "rationale": "Stakeholder decision 2026-10-18 (option A at the end of the first review cycle): shared files are judged whole and listed as sharedWithExcluded; changed-line scoping is out of this fix.",
+        "resolvedAt": "2026-10-18T14:30:59.107Z"
+      }
     }
   },
   "body": {

@@ -45,7 +45,11 @@ test('a fake codex emitting an input_too_large error event, or exiting non-zero 
 		const event = fakeCli(dir, 'codex-event', `${JSON.stringify({ type: 'thread.started' })}\n${JSON.stringify({ type: 'error', message: CODEX_REFUSAL })}\n`, '', 1);
 		const exit = fakeCli(dir, 'codex-exit', JSON.stringify({ type: 'thread.started' }), CODEX_REFUSAL, 1);
 		const claude = fakeCli(dir, 'claude-envelope', JSON.stringify({ type: 'result', is_error: true, result: 'Prompt is too long' }), '', 0);
-		for (const [fake, kind] of [[event, 'codex'], [exit, 'codex'], [claude, 'claude']] as const) {
+		// A generic first error event does not hide the refusal in a later event, or on stderr.
+		const generic = JSON.stringify({ type: 'error', message: 'turn/start failed' });
+		const later = fakeCli(dir, 'codex-later-event', `${generic}\n${JSON.stringify({ type: 'turn.failed', error: { message: CODEX_REFUSAL } })}\n`, '', 1);
+		const behind = fakeCli(dir, 'codex-event-and-stderr', `${generic}\n`, CODEX_REFUSAL, 1);
+		for (const [fake, kind] of [[event, 'codex'], [exit, 'codex'], [claude, 'claude'], [later, 'codex'], [behind, 'codex']] as const) {
 			const err = await refusalOf(new CliProvider({ kind, model: 'm', binPath: fake.bin }));
 			assert.ok(err instanceof InputTooLargeError, `${fake.bin}: got ${String(err)}`);
 			assert.equal(fake.runs(), 1, `${fake.bin}: the CLI ran once`);

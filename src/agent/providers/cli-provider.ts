@@ -507,10 +507,13 @@ export class CliProvider implements LLMProvider {
 			try { events.push(JSON.parse(trimmed) as CodexEvent); }
 			catch { /* skip non-JSON lines (codex sometimes emits prologue) */ }
 		}
-		const errorEvent = events.find(e => e.type === 'error' || e.type === 'turn.failed');
+		const errorEvents = events.filter(e => e.type === 'error' || e.type === 'turn.failed');
+		const errorEvent = errorEvents[0];
 		if (errorEvent !== undefined) {
-			const said = JSON.stringify(errorEvent);
-			const message = `codex emitted error event: ${said}`;
+			const message = `codex emitted error event: ${JSON.stringify(errorEvent)}`;
+			// Classified on every error event and the error output, not only the first
+			// event: a generic first event must not hide a size refusal behind it.
+			const said = [...errorEvents.map(e => JSON.stringify(e)), out.stderr].join('\n');
 			throw sizeRefusalOr(message, said, () => new Error(message));
 		}
 		if (out.exitCode !== 0) {

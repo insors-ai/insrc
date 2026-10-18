@@ -674,6 +674,8 @@ Leave drafting alone and let the team gate treat a unit with no issue as 'create
 
 - `q22fb8489` — sg1: ensureDraftIssues runs inside the synthesize phase and the workflow.run path on the daemon's event loop and the gh commands are synchronous, so a draft with many Tasks can hold the daemon for tens of seconds (none when every unit is recorded). Options: (A) accept it, bounded by the ten-second port timeout and stop-at-first-failure; (B) run it off the event loop and return issueReadiness pending, which loses the immediate message ac18 asks for. Recommendation: A for now, and revisit if it shows in use.
   - **resolved**: A — Keep synchronous creation — Recommended in the approved LLD; preserves the immediate ac18 message. _(2026-10-18T04:33:39.530Z)_
+- `q071506f5` — sg2: Story and Task issues created before this change carry no per-unit label. They are adopted from the LLD storyRef, the Define storyRefs and the plan taskRefs and recorded, but not relabelled; if every local ref is lost, a Story or Task (unlike the Epic, which has the old two-label search) would get a second issue. Options: (A) accept, since the refs live in committed files; (B) add a relabel or a title search to the port. Recommendation: A; B needs a new port method owned by s1.
+  - **resolved**: A — Accept the legacy recovery gap — Recommended in the approved LLD. _(2026-10-18T04:34:09.975Z)_
 
 ## Citations
 

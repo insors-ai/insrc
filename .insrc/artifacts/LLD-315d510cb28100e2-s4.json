@@ -202,6 +202,13 @@
         "choice": "A — Keep synchronous creation",
         "rationale": "Recommended in the approved LLD; preserves the immediate ac18 message.",
         "resolvedAt": "2026-10-18T04:33:39.530Z"
+      },
+      "q071506f5": {
+        "question": "sg2: Story and Task issues created before this change carry no per-unit label. They are adopted from the LLD storyRef, the Define storyRefs and the plan taskRefs and recorded, but not relabelled; if every local ref is lost, a Story or Task (unlike the Epic, which has the old two-label search) would get a second issue. Options: (A) accept, since the refs live in committed files; (B) add a relabel or a title search to the port. Recommendation: A; B needs a new port method owned by s1.",
+        "status": "resolved",
+        "choice": "A — Accept the legacy recovery gap",
+        "rationale": "Recommended in the approved LLD.",
+        "resolvedAt": "2026-10-18T04:34:09.975Z"
       }
     }
   },

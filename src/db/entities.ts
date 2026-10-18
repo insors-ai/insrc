@@ -557,12 +557,37 @@ export async function deleteEntitiesById(_db: DbClient, ids: readonly string[]):
 	await detachDeleteEntities(store, u64s);
 }
 
-export async function deleteEntitiesForRepo(_db: DbClient, repo: string): Promise<void> {
+/**
+ * Delete every entity of the repository, with its edges and derived rows.
+ * With `returnIncomingToPending`, every relationship ANOTHER repository holds
+ * into these entities is first written back, in the same transaction as the
+ * delete and with its counts, as a pending row of the holder awaiting the
+ * entity's id (Epic c2ba6fa6 s1), so a reindex can restore it.
+ */
+export async function deleteEntitiesForRepo(
+	_db: DbClient,
+	repo: string,
+	opts?: { readonly returnIncomingToPending?: boolean | undefined },
+): Promise<{ returnedToPending: number }> {
 	const store = await getGraphStore();
 	const repoId = await withReadTxn(store, () => lookupRepoIdInTxn(store, repo));
-	if (repoId === undefined) return;
+	if (repoId === undefined) return { returnedToPending: 0 };
 	const ids = await collectEntityU64sByRepo(store, repoId);
-	await detachDeleteEntities(store, ids);
+	let returnedToPending = 0;
+	if (opts?.returnIncomingToPending === true) {
+		const { returnEdgeToPendingInTxn } = await import('./relations.js');
+		await detachDeleteEntities(store, ids, s => {
+			for (const u64 of ids) {
+				for (const { kind, from } of incomingEdgesInTxn(s, u64)) {
+					const holder = s.entity.get(encodeEntityKey(from));
+					if (holder === undefined || decodeEntityRow(holder as Buffer).repoId === repoId) continue;
+					if (returnEdgeToPendingInTxn(s, from, kind, u64)) returnedToPending++;
+				}
+			}
+		});
+	} else {
+		await detachDeleteEntities(store, ids);
+	}
 	// Repo-scoped Lance cleanup: belt-and-suspenders alongside the
 	// per-id cleanup detachDeleteEntities does. Catches any rows whose
 	// LMDB string-id mapping was already missing (e.g. corruption-
@@ -580,6 +605,7 @@ export async function deleteEntitiesForRepo(_db: DbClient, repo: string): Promis
 	// output for this repo. See db/exploration-cache.ts.
 	const { deleteCachedExplorationsForRepo } = await import('./exploration-cache.js');
 	await deleteCachedExplorationsForRepo(repo);
+	return { returnedToPending };
 }
 
 export async function getEntity(_db: DbClient, id: string): Promise<Entity | null> {
@@ -1074,7 +1100,7 @@ async function collectEntityU64sByRepo(store: GraphStore, repoId: number): Promi
  * Phase 2.3 edge API; for Phase 2.2 we do raw key-range scans on the
  * out_edge / in_edge sub-DBs.
  */
-async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[]): Promise<void> {
+async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], before?: (s: GraphStore) => void): Promise<void> {
 	if (u64s.length === 0) return;
 	// Capture string IDs BEFORE the delete (we lose the entity_id_by_string
 	// mapping inside the txn). After LMDB commits, drop the corresponding
@@ -1084,7 +1110,7 @@ async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[]):
 		const sid = lookupStringIdByU64(store, u64);
 		if (sid !== undefined) stringIds.push(sid);
 	}
-	await withWriteTxn(s => detachDeleteEntitiesInTxn(s, u64s));
+	await withWriteTxn(s => { before?.(s); detachDeleteEntitiesInTxn(s, u64s); });
 	if (stringIds.length > 0) {
 		const { deleteEntityVecsByIds } = await import('./lance/entity-vec.js');
 		await deleteEntityVecsByIds(stringIds);
@@ -1111,6 +1137,12 @@ function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[]): void
 		// drop any DocSummary row + its secondary index entry keyed
 		// on this u64. Cheap no-op when the entity isn't a doc.
 		deleteDocSummaryInTxn(s, u64);
+		// The names this entity (a file) re-exports (Epic c2ba6fa6 s1): every
+		// export_names entry keyed by its u64, before the u64 mapping goes.
+		const exportPrefix = encodeEntityKey(u64);
+		for (const key of [...s.exportNames.getKeys({ start: exportPrefix, end: prefixSuccessor(exportPrefix) })]) {
+			s.exportNames.remove(key);
+		}
 		// Drop derived indices BEFORE the row itself so we have the
 		// row's (repoId, kind, name) available for the name_index
 		// lookup. Reverse-lookup via entityStringByU64 is O(1).
@@ -1157,15 +1189,19 @@ function sweepOutgoingEdges(s: GraphStore, u64: bigint): void {
 	}
 }
 
-function sweepIncomingEdges(s: GraphStore, u64: bigint): void {
+/** The (kind byte, source u64) of every edge into `u64`. */
+function incomingEdgesInTxn(s: GraphStore, u64: bigint): Array<{ kind: number; from: bigint }> {
 	const prefix = encodeInEdgePrefix(u64);
-	const succ = prefixSuccessor(prefix);
 	const collected: Array<{ kind: number; from: bigint }> = [];
-	for (const { key } of s.inEdge.getRange({ start: prefix, end: succ })) {
+	for (const { key } of s.inEdge.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
 		const k = key as Buffer;
 		collected.push({ kind: k.readUInt8(8), from: k.readBigUInt64BE(9) });
 	}
-	for (const { kind, from } of collected) {
+	return collected;
+}
+
+function sweepIncomingEdges(s: GraphStore, u64: bigint): void {
+	for (const { kind, from } of incomingEdgesInTxn(s, u64)) {
 		const inKey = Buffer.alloc(17);
 		inKey.writeBigUInt64BE(u64, 0);
 		inKey.writeUInt8(kind, 8);

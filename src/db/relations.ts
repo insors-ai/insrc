@@ -528,6 +528,27 @@ export async function updateUnresolvedMetaBatch(
 	});
 }
 
+/** The relationship kind of an edge-key kind byte. */
+const KIND_OF_BYTE: ReadonlyMap<number, RelationKind> = new Map(
+	Object.entries(RELATION_KIND_BYTE).map(([kind, byte]) => [byte as number, kind as RelationKind]),
+);
+
+/**
+ * Inside a write transaction: write the edge (fromU64, kind byte, toU64) back as
+ * a pending row of the source awaiting the target's id, with its count (Epic
+ * c2ba6fa6 s1: a repository's delete returns the edges other repositories hold
+ * into it). The edge itself is left to the caller's delete. Returns false when
+ * an endpoint has no string id or the kind byte is unknown.
+ */
+export function returnEdgeToPendingInTxn(s: GraphStore, fromU64: bigint, kindByte: number, toU64: bigint): boolean {
+	const kind = KIND_OF_BYTE.get(kindByte);
+	const fromEntity = s.entityStringByU64.get(encodeEntityKey(fromU64)) as string | undefined;
+	const target = s.entityStringByU64.get(encodeEntityKey(toU64)) as string | undefined;
+	if (kind === undefined || fromEntity === undefined || target === undefined) return false;
+	writePendingRowInTxn(s, awaitingRowFor(s, fromU64, fromEntity, kind, target, undefined, Date.now()));
+	return true;
+}
+
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------

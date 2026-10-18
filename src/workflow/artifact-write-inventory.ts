@@ -3,6 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import ts from 'typescript';
+
+
 /**
  * The inventory of artifact write paths (sc3) and the detector that checks it.
  *
@@ -90,7 +93,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---
 	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact' },
-	{ file: 'src/workflow/artifact-write-inventory.ts', class: 'non-artifact', via: 'writeArtifact', note: 'this inventory and its detector name the writers in patterns; it writes nothing' },
 	{ file: 'src/agent/providers/cli-provider.ts', class: 'non-artifact', via: 'raw', note: 'temporary prompt and schema files for the CLI subprocess' },
 	{ file: 'src/analyze/context/cache.ts', class: 'non-artifact', via: 'raw', note: 'analyze context cache' },
 	{ file: 'src/analyze/context/driver.ts', class: 'non-artifact', via: 'raw', note: 'analyze context scratch output' },
@@ -131,42 +133,87 @@ export interface WriterScan {
 	readonly rawCalls: readonly WriterCall[];
 }
 
-/** Blank out block comments, line comments and string contents, keeping line numbers. */
-function neutralise(source: string): string {
-	let s = source.replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ' '));
-	s = s.replace(/(^|[^:'"`\\])\/\/[^\n]*/g, (_m, pre: string) => pre);
-	s = s.replace(/(['"`])(?:\\.|(?!\1)[^\\\n])*\1/g, m => m[0] + ' '.repeat(Math.max(0, m.length - 2)) + m[m.length - 1]);
-	return s;
-}
-
-/** Remove import statements (multi-line included), keeping line numbers. */
-function withoutImports(s: string): string {
-	return s.replace(/(^|\n)\s*import\s+(?:type\s+)?[^;]*?from\s*['"][^'"]+['"]\s*;?/g, m => m.replace(/[^\n]/g, ' '));
-}
-
-/** Find the writers a source file calls, passes on as a value, or defines. */
+/** Find the writers a source file calls, passes on as a value, or aliases. Syntax-aware:
+ *  it follows `import { writeAtomic as save }`, `const w = writeAtomic`, namespace
+ *  imports (`fs.writeFileSync`) and writers passed as arguments or defaults. */
 export function scanWriters(source: string): WriterScan {
+	const sf = ts.createSourceFile('scan.ts', source, ts.ScriptTarget.Latest, true);
 	const original = source.split('\n');
-	const code = withoutImports(neutralise(source)).split('\n');
-	const calls: WriterCall[] = [];
-	const values: WriterValue[] = [];
-	code.forEach((text, i) => {
-		for (const name of WRITER_NAMES) {
-			const re = new RegExp(`\\b${name}\\b(\\s*\\()?`, 'g');
-			let m: RegExpExecArray | null;
-			while ((m = re.exec(text)) !== null) {
-				const before = text.slice(0, m.index);
-				if (/\bfunction\s+$/.test(before) || /\.\s*$/.test(before)) continue;   // a definition, or a member of another object
-				if (/\bexport\s*\{[^}]*$/.test(before)) continue;                         // a re-export list
-				if (m[1] !== undefined) {
-					const noted = /raw-write:/.test(original[i] ?? '') || /raw-write:/.test(original[i - 1] ?? '');
-					calls.push({ name, line: i + 1, annotated: noted });
-				} else {
-					values.push({ name, line: i + 1 });
+	const lineOf = (node: ts.Node): number => sf.getLineAndCharacterOfPosition(node.getStart(sf)).line;
+	const names = new Map<string, WriterName>();          // local name -> the writer it stands for
+	const namespaces = new Set<string>();                 // `import * as fs` / `import fs from`, for fs.writeFileSync
+	const isWriter = (n: string): n is WriterName => (WRITER_NAMES as readonly string[]).includes(n);
+
+	for (const o of WRITER_NAMES) names.set(o, o);
+	// imports: a renamed writer keeps its meaning, and the original name stops standing for it
+	sf.forEachChild(function visitImports(node) {
+		if (ts.isImportDeclaration(node)) {
+			const clause = node.importClause;
+			if (clause?.name !== undefined) namespaces.add(clause.name.text);
+			const nb = clause?.namedBindings;
+			if (nb !== undefined && ts.isNamespaceImport(nb)) namespaces.add(nb.name.text);
+			if (nb !== undefined && ts.isNamedImports(nb)) {
+				for (const el of nb.elements) {
+					const imported = (el.propertyName ?? el.name).text;
+					if (el.propertyName !== undefined && isWriter(imported)) {
+						names.delete(imported);
+						names.set(el.name.text, imported);
+					}
 				}
 			}
 		}
 	});
+	// aliases: `const w = writeAtomic` (repeat until stable so chains are followed)
+	for (let changed = true; changed;) {
+		changed = false;
+		const walk = (node: ts.Node): void => {
+			if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer !== undefined && ts.isIdentifier(node.initializer)) {
+				const target = names.get(node.initializer.text);
+				if (target !== undefined && !names.has(node.name.text)) { names.set(node.name.text, target); changed = true; }
+			}
+			ts.forEachChild(node, walk);
+		};
+		walk(sf);
+	}
+
+	const calls: WriterCall[] = [];
+	const values: WriterValue[] = [];
+	const noted = (line: number): boolean => /raw-write:/.test(original[line] ?? '') || /raw-write:/.test(original[line - 1] ?? '');
+	const seenCallees = new Set<ts.Node>();
+
+	const walk = (node: ts.Node): void => {
+		if (ts.isImportDeclaration(node) || ts.isTypeNode(node)) return;
+		if (ts.isCallExpression(node)) {
+			const callee = node.expression;
+			let name: WriterName | undefined;
+			if (ts.isIdentifier(callee)) name = names.get(callee.text);
+			else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression) && namespaces.has(callee.expression.text) && isWriter(callee.name.text)) name = callee.name.text;
+			if (name !== undefined) {
+				seenCallees.add(callee);
+				const line = lineOf(node);
+				calls.push({ name, line: line + 1, annotated: noted(line) });
+			}
+		}
+		if (ts.isIdentifier(node) && !seenCallees.has(node)) {
+			const name = names.get(node.text);
+			const parent = node.parent;
+			const definesIt = (ts.isFunctionDeclaration(parent) && parent.name === node)
+				|| (ts.isVariableDeclaration(parent) && parent.name === node)
+				|| (ts.isPropertyAccessExpression(parent) && parent.name === node)
+				|| (ts.isPropertyAssignment(parent) && parent.name === node)
+				|| ts.isExportSpecifier(parent) || ts.isImportSpecifier(parent) || ts.isImportClause(parent);
+			if (name !== undefined && !definesIt && !(ts.isCallExpression(parent) && parent.expression === node)) {
+				values.push({ name, line: lineOf(node) + 1 });
+			}
+		}
+		if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && namespaces.has(node.expression.text) && isWriter(node.name.text)
+			&& !(ts.isCallExpression(node.parent) && node.parent.expression === node)) {
+			values.push({ name: node.name.text, line: lineOf(node) + 1 });
+		}
+		ts.forEachChild(node, walk);
+	};
+	walk(sf);
+
 	const mints = (n: WriterName): boolean => n === 'writeArtifact' || n === 'writeRecordFile';
 	const rawCalls = calls.filter(c => !mints(c.name));
 	const usesWriteArtifact = calls.some(c => mints(c.name)) || values.some(v => mints(v.name));

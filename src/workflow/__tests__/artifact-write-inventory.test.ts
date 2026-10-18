@@ -83,6 +83,16 @@ test('the detector flags raw, aliased and injected writers and accepts the posit
 	assert.match(checkInventoryEntry(injected, undefined).join(), /no inventory entry/, "the injected default 'write: writeAtomic'");
 	const aliased = "import { writeAtomic } from './storage.js';\nconst w = writeAtomic;\nexport function save(p: string) { w(p, ''); }\n";
 	assert.match(checkInventoryEntry(aliased, undefined).join(), /no inventory entry/, "the alias 'const w = writeAtomic'");
+	// a raw write through an alias, a renamed import and a namespace import in an already inventoried content file is flagged
+	const aliasEntry = { file: 'x.ts', class: 'content', via: 'both' } as InventoryEntry;
+	const throughAlias = "import { writeArtifact, writeAtomic } from './storage.js';\nconst w = writeAtomic;\nexport function a(p: string) { writeArtifact(p, {meta:{}}, 'content'); w(p, 'x'); }\n";
+	assert.match(checkInventoryEntry(throughAlias, aliasEntry).join(), /raw writeAtomic without a 'raw-write/, 'a call through an alias');
+	const renamed = "import { writeArtifact } from './storage.js';\nimport { writeFileSync as save } from 'node:fs';\nexport function a(p: string) { writeArtifact(p, {meta:{}}, 'content'); save(p, 'x'); }\n";
+	assert.match(checkInventoryEntry(renamed, aliasEntry).join(), /raw writeFileSync without a 'raw-write/, 'a renamed import');
+	const namespaced = "import * as fs from 'node:fs';\nimport { writeArtifact } from './storage.js';\nexport function a(p: string) { writeArtifact(p, {meta:{}}, 'content'); fs.writeFileSync(p, 'x'); }\n";
+	assert.match(checkInventoryEntry(namespaced, aliasEntry).join(), /raw writeFileSync without a 'raw-write/, 'a namespace call');
+	const annotatedRename = "import { writeArtifact } from './storage.js';\nimport { writeFileSync as save } from 'node:fs';\nexport function a(p: string) { writeArtifact(p, {meta:{}}, 'content');\n// raw-write: markdown\nsave(p, 'x'); }\n";
+	assert.deepEqual(checkInventoryEntry(annotatedRename, aliasEntry), [], 'an annotated renamed write is accepted');
 	const passed = "import { writeFileSync } from 'node:fs';\nrun(writeFileSync);\n";
 	assert.match(checkInventoryEntry(passed, undefined).join(), /no inventory entry/, 'a writer passed as an argument');
 	// comments and strings alone do not count

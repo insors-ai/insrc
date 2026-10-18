@@ -2,22 +2,28 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-10-18T11:35:11.055Z  ·  **Updated:** 2026-10-18T11:37:51.234Z
+**Standalone:** yes  ·  **Created:** 2026-10-18T11:35:11.055Z  ·  **Updated:** 2026-10-18T11:42:35.906Z
 
-**Commit:** de2915cb
+**Commit:** 6cf6945e
 
 ## Summary
 
-Added doc_summary_carry, writeDocSummaryIfCurrentInTxn (onlyIfAbsent, keepGoodSummary) behind an overloaded writeDocSummaryIfCurrent, and restoreCarriedDocSummaries (batches of 500, carry row removed with its outcome). Commits 5b706f19 and de2915cb; the second restores the no-options order (repo checked only for a write, index under the caller's repo), pinned by tests that fail under each mutation.
+deleteEntitiesForRepo gained carryDocSummaries (carry written first in the delete's own transaction hook) and, without it, clears the repository's carry rows in a transaction of its own that runs with no entities left; the result gains carriedDocSummaries. Commit 6cf6945e; five falsifying mutations each fail a test.
 
 ## Tasks validated
 
 - ✓ `t1`
+- ✓ `t2`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/db/__tests__/doc-summary-carry.test.ts` — **insrc-build** (2026-10-18T11:37:51.234Z)
-- `src/db/doc-summaries.ts` — **insrc-build** (2026-10-18T11:37:51.234Z)
-- `src/db/graph/store.ts` — **insrc-build** (2026-10-18T11:37:51.234Z)
+- `.insrc/artifacts/PLAN-dced43851723554f-S001.json` — **insrc-build** (2026-10-18T11:42:35.906Z)
+- `docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/PLAN.md` — **insrc-build** (2026-10-18T11:42:35.906Z)
+- `docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/er-model.html` — **insrc-build** (2026-10-18T11:42:35.906Z)
+- `src/db/__tests__/doc-summary-carry.test.ts` — **insrc-build** (2026-10-18T11:42:35.906Z)
+- `src/db/__tests__/entities-return-to-pending.test.ts` — **insrc-build** (2026-10-18T11:42:35.906Z)
+- `src/db/doc-summaries.ts` — **insrc-build** (2026-10-18T11:42:35.906Z)
+- `src/db/entities.ts` — **insrc-build** (2026-10-18T11:42:35.906Z)
+- `src/db/graph/store.ts` — **insrc-build** (2026-10-18T11:42:35.906Z)

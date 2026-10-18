@@ -4,7 +4,7 @@
     "epicHash": "dced43851723554f",
     "storyId": "S001",
     "createdAt": "2026-10-18T11:35:11.055Z",
-    "updatedAt": "2026-10-18T11:37:51.234Z",
+    "updatedAt": "2026-10-18T11:42:35.906Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-18T10:54:00.951Z",
     "epicSlug": "keep-document-summaries-across-full-index"
@@ -100,6 +100,157 @@
               },
               {
                 "title": "a v5 store opened with this build has an empty doc_summary_carry and schema version 5",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "6cf6945e",
+        "ranAt": "2026-10-18T11:42:35.906Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts: 'the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts: 'a failure inside the delete transaction rolls back the carry with the delete'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "a failure inside the delete transaction rolls back the carry with the delete",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts: 'without carryDocSummaries the repository's carry rows are deleted'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "without carryDocSummaries the repository's carry rows are deleted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/doc-summary-carry.test.ts: 'repo removal of a repository with carry rows and no entities deletes the carry rows'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-carry.test.ts",
+                "title": "repo removal of a repository with carry rows and no entities deletes the carry rows",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/entities-return-to-pending.test.ts (existing, expectations gain carriedDocSummaries: 0)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entities-return-to-pending.test.ts",
+                "title": "with returnIncomingToPending, a hand-written edge from repository A into B is a pending row of A awaiting the entity after B is deleted, counted in A's state; B's own edge is not returned",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entities-return-to-pending.test.ts",
+                "title": "a failure inside the delete transaction leaves both B's rows and A's edge untouched",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entities-return-to-pending.test.ts",
+                "title": "without the option the delete is as before: the edge is removed and nothing is returned to pending",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/doc-summary-carry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6673,
+            "titles": [
+              {
+                "title": "writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary",
+                "result": "pass"
+              },
+              {
+                "title": "keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row",
+                "result": "pass"
+              },
+              {
+                "title": "restoreCarriedDocSummaries works through more carry rows than one batch, and touches no other repository's carry",
+                "result": "pass"
+              },
+              {
+                "title": "a v5 store opened with this build has an empty doc_summary_carry and schema version 5",
+                "result": "pass"
+              },
+              {
+                "title": "the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row",
+                "result": "pass"
+              },
+              {
+                "title": "a failure inside the delete transaction rolls back the carry with the delete",
+                "result": "pass"
+              },
+              {
+                "title": "without carryDocSummaries the repository's carry rows are deleted",
+                "result": "pass"
+              },
+              {
+                "title": "repo removal of a repository with carry rows and no entities deletes the carry rows",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/entities-return-to-pending.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 958,
+            "titles": [
+              {
+                "title": "with returnIncomingToPending, a hand-written edge from repository A into B is a pending row of A awaiting the entity after B is deleted, counted in A's state; B's own edge is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "a failure inside the delete transaction leaves both B's rows and A's edge untouched",
+                "result": "pass"
+              },
+              {
+                "title": "without the option the delete is as before: the edge is removed and nothing is returned to pending",
                 "result": "pass"
               }
             ],

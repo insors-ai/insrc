@@ -678,6 +678,8 @@ Leave drafting alone and let the team gate treat a unit with no issue as 'create
   - **resolved**: A — Accept the legacy recovery gap — Recommended in the approved LLD. _(2026-10-18T04:34:09.975Z)_
 - `q40802bd9` — sg4: Legacy mode keeps the old approve-time behaviour for a repo without a policy by design (k4), including its fail-open weaknesses: a failed Epic lookup still leads to a create and label failures are best-effort, so such a repo can still get a duplicate Epic. Options: (A) accept, since k4 requires an unchanged repo and the strict behaviour is team-only; (B) raise an HLD amendment to harden the solo path too. Recommendation: A.
   - **resolved**: A — Preserve legacy behavior — k4 requires an unchanged repo without a policy. _(2026-10-18T04:34:35.273Z)_
+- `q702698e7` — sg5: The duplicate tie-break needs a new additive sc1 method, findIssues(labels), returning PortResult<IssueRef[]> with every matching issue open or closed, complete pagination and ascending numeric order, because findIssue returns only the first match and gh lists newest first. It is recorded as an amendment in docs/plans/team-workflow.md and proposed to s1 as a sharedContract.methodAdd; the GitHub adapter contract test is s1's. Options: (A) agree the amendment with s1 and gate the s4 build on it; (B) build without the tie-break and accept the duplicate window with no convergence. Recommendation: A.
+  - **resolved**: A — Amend contract and gate s4 — Recorded in docs/plans/team-workflow.md; tie-break task is gated on AMD-315d510cb28100e2-10, fake port until then. _(2026-10-18T04:34:49.379Z)_
 
 ## Citations
 

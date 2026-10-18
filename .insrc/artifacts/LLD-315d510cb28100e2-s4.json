@@ -216,6 +216,13 @@
         "choice": "A — Preserve legacy behavior",
         "rationale": "k4 requires an unchanged repo without a policy.",
         "resolvedAt": "2026-10-18T04:34:35.273Z"
+      },
+      "q702698e7": {
+        "question": "sg5: The duplicate tie-break needs a new additive sc1 method, findIssues(labels), returning PortResult<IssueRef[]> with every matching issue open or closed, complete pagination and ascending numeric order, because findIssue returns only the first match and gh lists newest first. It is recorded as an amendment in docs/plans/team-workflow.md and proposed to s1 as a sharedContract.methodAdd; the GitHub adapter contract test is s1's. Options: (A) agree the amendment with s1 and gate the s4 build on it; (B) build without the tie-break and accept the duplicate window with no convergence. Recommendation: A.",
+        "status": "resolved",
+        "choice": "A — Amend contract and gate s4",
+        "rationale": "Recorded in docs/plans/team-workflow.md; tie-break task is gated on AMD-315d510cb28100e2-10, fake port until then.",
+        "resolvedAt": "2026-10-18T04:34:49.379Z"
       }
     }
   },

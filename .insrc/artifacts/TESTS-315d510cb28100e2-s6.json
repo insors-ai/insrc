@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T18:31:21.277Z",
+    "updatedAt": "2026-10-18T19:21:49.151Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -406,9 +406,9 @@
       },
       {
         "taskId": "t9",
-        "commit": "f6499f89",
-        "ranAt": "2026-10-18T18:31:21.277Z",
-        "testsPassed": false,
+        "commit": "b6d0c4f5",
+        "ranAt": "2026-10-18T19:21:49.151Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "src/workflow/team/__tests__/handoff-resume.test.ts: a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone",
@@ -431,7 +431,7 @@
               {
                 "file": "src/workflow/team/__tests__/handoff-resume.test.ts",
                 "title": "a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state",
-                "result": "fail"
+                "result": "pass"
               }
             ],
             "files": []
@@ -440,9 +440,9 @@
         "files": [
           {
             "file": "src/workflow/team/__tests__/handoff-resume.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3375,
+            "durationMs": 8846,
             "titles": [
               {
                 "title": "a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone",
@@ -450,13 +450,12 @@
               },
               {
                 "title": "a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state",
-                "result": "fail"
+                "result": "pass"
               }
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named test cases that did not pass: fail: 'a draft-only checkpoint restores the draft and returns restart, and a restore that fails part way leaves the working tree as it was and saves no state' in src/workflow/team/__tests__/handoff-resume.test.ts"
+        ]
       }
     ]
   }

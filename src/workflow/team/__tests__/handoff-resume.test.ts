@@ -13,7 +13,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, symlinkSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -253,6 +253,18 @@ test('a draft-only checkpoint restores the draft and returns restart, and a rest
 		assert.equal(listStates().length, 0);
 		w.actor.who = 'bob';
 		_setGateDepsForTests({ readPolicy: team, loadTracker: () => ({ ok: true, value: { whoAmI: () => ({ ok: true, value: 'bob' }), readAssignee: () => ({ ok: true, value: 'bob' }), addAssignee: () => ({ ok: true, value: ['bob'] }), issueOps: { comment: () => ({ ok: true, value: undefined }) } } as never }), resolveIssue: () => 'acme/demo#7', ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'x' }), artifactExists: () => true });
+
+		// an existing symbolic link at a target is never replaced: the restore fails and the link is still there
+		const linkTarget = join(w.recv, 'elsewhere.txt'); writeFileSync(linkTarget, 'keep\n');
+		mkdirSync(dirname(here(mdDraft)), { recursive: true }); symlinkSync(linkTarget, here(mdDraft));
+		const linked = await applyResume(check2, w.recv);
+		assert.equal(linked.kind, 'refused', JSON.stringify(linked));
+		assert.match((linked as { reason: string }).reason, /symbolic link/);
+		assert.equal(lstatSync(here(mdDraft)).isSymbolicLink(), true);
+		assert.equal(readFileSync(linkTarget, 'utf8'), 'keep\n');
+		assert.equal(existsSync(here(draft)), false, 'files written before it are rolled back');
+		rmSync(here(mdDraft)); rmSync(linkTarget);
+		rmSync(join(w.recv, 'docs'), { recursive: true, force: true });
 
 		// without the fault the draft is restored and the stage restarts
 		const ok: ResumeResult = await resumeStage(w.recv, unitOf(w.recv), { workflow: 'plan' }, resumeDeps(w));

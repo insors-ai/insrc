@@ -11,7 +11,7 @@
  */
 
 import { randomBytes } from 'node:crypto';
-import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -71,6 +71,8 @@ function restoreFiles(repo: string, files: ResumePlan['files'], deps: ApplyDeps)
 			// recorded before they are made, shallowest first, so the rollback removes the deepest first even after a partial mkdir
 			madeDirs.push(...missing.reverse());
 			mkdirSync(dirname(abs), { recursive: true });
+			// a symbolic link cannot be put back byte for byte, so a restore never replaces one
+			if (lstatSync(abs, { throwIfNoEntry: false })?.isSymbolicLink() === true) throw new Error('it is a symbolic link');
 			const before = existsSync(abs) ? { bytes: readFileSync(abs), mode: statSync(abs).mode & 0o7777 } : null;
 			tmp = `${abs}.resume-${randomBytes(6).toString('hex')}`;
 			// raw-write: restores a parked file byte for byte (its meta.revision included); this is not a new content write

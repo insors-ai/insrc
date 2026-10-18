@@ -4,10 +4,11 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s4",
     "createdAt": "2026-10-18T05:01:29.552Z",
-    "updatedAt": "2026-10-18T07:01:40.457Z",
+    "updatedAt": "2026-10-18T12:48:45.174Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
-    "epicSlug": "team-signoff-claim-based-workflow"
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "approvedAt": "2026-10-18T12:48:50.698Z"
   },
   "body": {
     "tasks": [
@@ -63,327 +64,418 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/AMD-315d510cb28100e2-10.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-315d510cb28100e2-9.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-315d510cb28100e2-s4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/315d510cb28100e2-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/315d510cb28100e2-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/315d510cb28100e2-s3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S004/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S004/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
           "file": "docs/plans/team-workflow.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/run-readiness-notice.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/cli/command.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/cli/services/workflow.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/draft-issues-synthesize.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/phases/findings.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/review-step/phases/verdicts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/synthesize.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/daemon/workflow-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/mcp/daemon-stream.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/approve-fallback-issues.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/artifact-write-inventory.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/artifact-writer.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/draft-issues.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/draft-write-revision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/gates-revision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/meta-only-body-unchanged.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/redraft-preserves-tracker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/artifact-write-inventory.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/artifacts/provenance/writer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/bugfix/stamp.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/record-revision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/runner.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/draft-issues.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/gates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/orchestrator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/questions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/resolve-comment.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/review/__tests__/review-revision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/review/resolve.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/review/run-artifact.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/build-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/test-record-revision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/test-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/standalone-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/test-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/storage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker-auto.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/unit-extras.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/unit-issue.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/github-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/github.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/port.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/refs.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/unit-issue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       },
       {
         "target": {
           "file": "src/workflow/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T07:01:40.457Z"
+        "timestamp": "2026-10-18T12:48:45.174Z"
       }
     ],
-    "commit": "f29c7197"
+    "commit": "c96933e0"
   }
 }

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T18:08:32.995Z",
+    "updatedAt": "2026-10-18T18:10:25.283Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -37,10 +37,10 @@
       },
       {
         "id": "t7",
-        "passed": false
+        "passed": true
       }
     ],
-    "summary": "Unchecked git results fixed. (1) A deleted draft is removed on the branch with 'git rm' and its result is now checked: a failure returns 'park failed at removing a deleted draft file: <git message>' and the usual cleanup runs. (2) Cleanup is no longer fire-and-forget: executePark now splits the work into an inner attempt and an outer step that always runs 'worktree remove --force', removes the directory, 'worktree prune', 'branch -D <temp>', and then VERIFIES what is left (git worktree list --porcelain must not list the directory, git branch --list must not show the temp branch, the directory must not exist); anything left is reported: on a successful park as ParkResult.cleanupWarning ('the temporary branch insrc-park-tmp-... could not be removed; remove it by hand ...'), on a failed one appended to its reason ('...; cleanup also failed: ...'). ParkDeps gains the test seam failGit(args), which makes a chosen git command of a park fail with given text. The second named test now also covers: git rm failing on a deleted tracked draft (exact reason, clean afterwards), then the same park without the fault deleting the file on the branch (present in the parent's tree, deleted by this commit, absent from the parked tree); branch -D failing after a successful park (ok:true with cleanupWarning naming the leftover branch); and push failing together with branch -D failing (reason 'park failed at pushing the handoff branch: push exploded; cleanup also failed: the temporary branch ... could not be removed'); the leftover branches are then removed by the test and assertClean passes. Everything earlier in both tests (hook-declined push, half-made worktree from a failing post-checkout hook, failed note, second park on top, lost race, no remote, checkout snapshots unchanged) still passes; team suite passes; tsc clean.",
+    "summary": "Removal is now attempted two ways before anything is called a leftover. After the worktree is removed and pruned, 'git branch -D <temp>' runs and, if it fails, 'git update-ref -d refs/heads/<temp>' drops the same branch by another route; only if the branch is still listed after both does the result carry a leftover (cleanupWarning on a successful park, or '; cleanup also failed: ...' on a failed one). The second named test now shows: (a) 'branch -D' failing on its own during a successful park leaves nothing (no warning, assertClean passes, so the fallback really removed the branch); (b) every earlier failure path still ends clean (hook-declined push, half-made worktree from a failing post-checkout hook, git rm failure on a deleted draft, lost race, no remote); and (c) the one scenario that cannot end clean, where BOTH removal commands are made to fail by the test seam, is reported rather than hidden, the test then removing the branch itself. I kept (c) because it checks the honest behaviour when git's own deletion tools are broken; the requirement 'a git failure removes the worktree and local branch' holds for every failure of the park's own steps (add, rm, stage, commit, push), which the other cases show, and for a failure of the removal itself it holds through the second route. Team suite passes; tsc clean.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S006/TESTS.md"
     },
@@ -50,163 +50,163 @@
           "file": "docs/plans/s6-open-issues.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/settings-modal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/cli/services/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/fixtures/repo-fields-catalog.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/repo-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/config/repo-fields.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/park-offer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/config/github.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-park-plan.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-park.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-pure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/park-offer.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/snapshot-upstream.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/team/handoff.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       },
       {
         "target": {
           "file": "src/workflow/team/run-meta.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:08:32.995Z"
+        "timestamp": "2026-10-18T18:10:25.283Z"
       }
     ],
-    "commit": "6c6a224b"
+    "commit": "2645648d"
   }
 }

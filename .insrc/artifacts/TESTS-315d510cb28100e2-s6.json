@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T18:08:32.995Z",
+    "updatedAt": "2026-10-18T18:10:25.283Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -300,8 +300,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "6c6a224b",
-        "ranAt": "2026-10-18T18:08:32.995Z",
+        "commit": "2645648d",
+        "ranAt": "2026-10-18T18:10:25.283Z",
         "testsPassed": true,
         "tests": [
           {
@@ -336,7 +336,7 @@
             "file": "src/workflow/team/__tests__/handoff-park.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5122,
+            "durationMs": 5245,
             "titles": [
               {
                 "title": "parking commits the draft and checkpoint to the handoff branch, pushes it, notes the branch on the issue through issueOps.comment and leaves the user's branch, index and working tree untouched",

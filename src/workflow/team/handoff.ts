@@ -18,12 +18,13 @@ import { validateBranchPattern } from '../../config/repo-fields.js';
 import { resolveBranchPattern } from '../config/github.js';
 import type { WorkflowStepStatePayload } from '../../daemon/steps/workflow-step/state.js';
 import { listStates, type RunEntryMeta } from '../../daemon/steps/workflow-step/state-store.js';
+import { snapshotUpstream } from './run-meta.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, readEpicDefinitionCore } from '../storage.js';
 import type { IssueRef, TrackerPort } from '../tracker/port.js';
 import type { UnitRef } from '../tracker/refs.js';
 import type { ExecutorState, WorkflowIntent } from '../types.js';
 import { authorUnitOf } from './author-gate.js';
-import { describeOutcome, readHolder, teamContext, type GateOutcome } from './gate.js';
+import { claimsEnforcedFor, describeOutcome, readHolder, teamContext, teamGate, TeamGateRefusedError, type GateOutcome } from './gate.js';
 import { createDeadline, runGitAsync } from './git-async.js';
 import { runGit } from './git.js';
 import { pickRemote } from './policy-reader.js';
@@ -581,4 +582,167 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 export async function parkDraft(repo: string, unit: UnitRef, opts: { readonly runToken?: string | undefined } = {}, deps: ParkDeps = {}): Promise<ParkResult> {
 	const plan = parkPlan(repo, unit, opts, deps);
 	return plan.ok ? await executePark(plan, deps) : { ok: false, reason: plan.reason };
+}
+
+// ---------------------------------------------------------------------------
+// Resuming: verifying before anything is restored
+// ---------------------------------------------------------------------------
+
+/** The stages a unit can be resumed at. */
+export type StageWorkflow = 'design.epic' | 'design.story' | 'plan';
+
+/** What resume would do, verified and ready to be carried out. Nothing in the working tree has been changed. */
+export interface ResumePlan {
+	readonly repo:       string;
+	readonly unit:       UnitRef;
+	readonly workflow:   StageWorkflow;
+	readonly branch:     string;
+	readonly checkpoint: HandoffCheckpoint;
+	/** The parked files as the branch holds them, to be written to the working tree. */
+	readonly files:      readonly { readonly path: string; readonly content: string }[];
+}
+
+export type ResumeCheck =
+	/** A parked run to restore into the daemon's store and continue. */
+	| { readonly kind: 'resume'; readonly plan: ResumePlan & { readonly checkpoint: RunCheckpoint } }
+	/** Start the stage afresh on the committed artifacts; `restore` is set when a draft-only checkpoint's files are to be put back first. */
+	| { readonly kind: 'restart'; readonly workflow: StageWorkflow; readonly params: { readonly epicHash: string; readonly storyId?: string | undefined }; readonly reason: string; readonly restore?: ResumePlan | undefined }
+	| { readonly kind: 'nothing-to-resume'; readonly reason: string }
+	| { readonly kind: 'refused'; readonly reason: string };
+
+export interface ResumeDeps extends ParkDeps {
+	/** The repos registered with the daemon; the real registry by default. */
+	readonly listRepos?: (() => Promise<readonly { readonly path: string }[]>) | undefined;
+}
+
+const refused = (reason: string): ResumeCheck => ({ kind: 'refused', reason });
+
+const STAGE_WORKFLOWS: ReadonlySet<string> = new Set<StageWorkflow>(['design.epic', 'design.story', 'plan']);
+
+/** The root commit id of a repository (the first when there are several), or undefined when git cannot say. */
+function repositoryIdOf(repoPath: string): string | undefined {
+	const roots = runGit(repoPath, ['rev-list', '--max-parents=0', 'HEAD']);
+	return roots.ok ? roots.stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0).sort()[0] : undefined;
+}
+
+/** Is the path registered with the daemon, and (when an id is given) is it the same repository? */
+export async function verifyReceivingRepo(repoPath: string, repositoryId: string | undefined, deps: Pick<ResumeDeps, 'listRepos'> = {}): Promise<{ ok: true } | { ok: false; reason: string }> {
+	let registered: readonly { readonly path: string }[];
+	try { registered = await (deps.listRepos ?? (async () => (await import('../../db/repos.js')).listRepos(null as never)))(); }
+	catch (err) { return { ok: false, reason: `the daemon's repository registry could not be read: ${err instanceof Error ? err.message : String(err)}` }; }
+	if (!registered.some(r => resolve(r.path) === resolve(repoPath))) return { ok: false, reason: `${repoPath} is not a repository registered with the daemon: register it first (insrc repo add)` };
+	if (repositoryId === undefined) return { ok: true };
+	const mine = repositoryIdOf(repoPath);
+	if (mine === undefined) return { ok: false, reason: `${repoPath} is not a git repository with history, so it cannot be the repository the draft was parked from` };
+	return mine === repositoryId ? { ok: true } : { ok: false, reason: `${repoPath} is a different repository from the one the draft was parked from (its first commit is ${mine.slice(0, 12)}, the checkpoint's is ${repositoryId.slice(0, 12)})` };
+}
+
+const sameSnapshot = (a: readonly UpstreamRevision[], b: readonly UpstreamRevision[]): string[] => {
+	const key = (u: UpstreamRevision): string => `${u.artifactId} @ revision ${u.revision}`;
+	const left = new Set(a.map(key));
+	const right = new Set(b.map(key));
+	return [...[...left].filter(k => !right.has(k)).map(k => `${k} (parked)`), ...[...right].filter(k => !left.has(k)).map(k => `${k} (now)`)];
+};
+
+/** Is this file committed (and so on the clone) already as the unit's stage artifact? */
+function stageArtifactCommitted(repoPath: string, unit: HandoffUnit, workflow: StageWorkflow): boolean {
+	const id = workflow === 'design.epic' ? hldArtifactId(unit.epicHash) : workflow === 'design.story' ? lldArtifactId(unit.epicHash, unit.storyId ?? '') : planArtifactId(unit.epicHash, unit.storyId ?? '');
+	return committedAtHead(repoPath, id);
+}
+
+/**
+ * Everything resume checks before it changes anything (it writes no working file): that the receiving path is a registered repository,
+ * that this is a repo enforcing claims and the actor may author the stage (the author gate, which claims an unassigned unit), which
+ * stage is next (the given workflow or the one inferred from the committed artifacts), whether the stage is already done, whether
+ * a handoff branch exists (a missing branch is told apart from a failure to reach the remote), that the checkpoint on it is valid
+ * and for this unit and for this repository, that the upstream artifacts still have the revisions the run started from, and that
+ * no file to be restored has local changes. Throws TeamGateRefusedError when the gate refuses; every other refusal is a value.
+ */
+export async function resumeCheck(repo: string, unit: UnitRef, opts: { readonly workflow?: string | undefined } = {}, deps: ResumeDeps = {}): Promise<ResumeCheck> {
+	try {
+		if (unit.unit === 'task') return refused('a Task has no run to resume: continue its build as usual');
+
+		const registered = await verifyReceivingRepo(repo, undefined, deps);
+		if (!registered.ok) return refused(registered.reason);
+		const enforced = claimsEnforcedFor(repo);
+		if (enforced !== 'yes') return refused(enforced === 'no' ? 'this repository does not enforce claims, so there is nothing to take over' : enforced);
+
+		// the stage: the one asked for (it must fit the unit) or the one the committed artifacts say is next
+		let workflow: StageWorkflow;
+		if (opts.workflow !== undefined) {
+			if (!STAGE_WORKFLOWS.has(opts.workflow)) return refused(`'${opts.workflow}' is not a stage that can be resumed: use design.epic, design.story or plan`);
+			workflow = opts.workflow as StageWorkflow;
+			if ((workflow === 'design.epic') !== (unit.storyId === undefined)) return refused(`the stage ${workflow} does not belong to this ${unit.unit}`);
+			if (workflow === 'plan' && !stageArtifactCommitted(repo, unit, 'design.story')) return refused('the plan cannot be resumed: the Story has no committed LLD yet, so design.story comes first');
+			if (stageArtifactCommitted(repo, unit, workflow)) return { kind: 'nothing-to-resume', reason: `the ${workflow} stage of this ${unit.unit} is already committed` };
+		} else {
+			const inferred = inferStageWorkflow(repo, unit);
+			if (inferred === 'complete') return { kind: 'nothing-to-resume', reason: `every stage of this ${unit.unit} that can be resumed is already committed` };
+			workflow = inferred;
+		}
+
+		// may this actor author it? (An unassigned stage is claimed; a held one throws.)
+		const outcome = teamGate(repo, unit, 'author', workflow);
+		if (outcome.kind !== 'allowed' && !(outcome.kind === 'no-issue' && outcome.allowFirstAuthor)) throw new TeamGateRefusedError(outcome);
+
+		const handoff: HandoffUnit = { epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) };
+		const restart = (reason: string, restore?: ResumePlan): ResumeCheck => ({ kind: 'restart', workflow, params: handoff, reason, ...(restore !== undefined ? { restore } : {}) });
+
+		// the branch
+		const slug = readEpicDefinitionCore(repo, unit.epicHash).epicSlug ?? unit.epicHash;
+		const named = handoffBranchName((deps.branchPattern ?? resolveBranchPattern)(repo), unit, slug);
+		if (!named.ok) return refused(named.reason);
+		const branch = named.name;
+		const remote = pickRemote(repo);
+		if (remote === undefined) return restart('this repository has no git remote, so there is no parked branch: start the stage afresh on the committed artifacts');
+		const listed = await git(repo, ['ls-remote', '--heads', remote, `refs/heads/${branch}`], deps);
+		if (!listed.ok) return refused(`the remote '${remote}' could not be reached to look for the handoff branch: ${listed.stderr}`);
+		if (listed.stdout.trim().length === 0) return restart(`nothing was parked: there is no branch '${branch}' on '${remote}'; start the stage afresh on the committed artifacts`);
+
+		// fetch it to a temporary ref, read and check the checkpoint, then drop the ref
+		const tmpRef = `refs/insrc/resume/${Math.random().toString(36).slice(2, 10)}`;
+		// fetched by URL with no FETCH_HEAD, so no remote-tracking ref is created or moved besides the temporary one
+		const url = runGit(repo, ['remote', 'get-url', remote]);
+		if (!url.ok) return refused(`the URL of remote '${remote}' could not be read: ${url.stderr}`);
+		const fetched = await git(repo, ['fetch', '--quiet', '--no-write-fetch-head', url.stdout.trim(), `refs/heads/${branch}:${tmpRef}`], deps);
+		if (!fetched.ok) return refused(`the handoff branch '${branch}' could not be fetched: ${fetched.stderr}`);
+		try {
+			const cpPath = checkpointPath(handoff);
+			const shown = await git(repo, ['show', `${tmpRef}:${cpPath}`], deps);
+			if (!shown.ok) return refused(`the handoff branch '${branch}' has no checkpoint at ${cpPath}: ${shown.stderr}`);
+			let raw: unknown;
+			try { raw = JSON.parse(shown.stdout); } catch { return refused(`the checkpoint at ${cpPath} on '${branch}' is not valid JSON`); }
+			const valid = validateCheckpoint(raw, handoff);
+			if (!valid.ok) return refused(valid.reason);
+			const checkpoint = valid.checkpoint;
+
+			const same = await verifyReceivingRepo(repo, checkpoint.repositoryId, deps);
+			if (!same.ok) return refused(same.reason);
+
+			if (checkpoint.kind === 'run') {
+				if (checkpoint.intent.workflow !== workflow) return refused(`the parked run is for ${checkpoint.intent.workflow}, but the next stage of this ${unit.unit} is ${workflow}`);
+				const moved = sameSnapshot(checkpoint.upstream, snapshotUpstream(repo, checkpoint.intent.workflow, checkpoint.intent.params));
+				if (moved.length > 0) return refused(`the upstream moved since this run started: ${moved.join('; ')}; start the stage afresh instead`);
+			}
+
+			// the files to put back: none may have local changes, and their content is read from the branch now
+			const dirty = checkpoint.artifactPaths.length === 0 ? { ok: true as const, stdout: '' } : runGit(repo, ['status', '--porcelain', '--untracked-files=all', '--', ...checkpoint.artifactPaths]);
+			if (!dirty.ok) return refused(`the working tree could not be checked: ${dirty.stderr}`);
+			if (dirty.stdout.trim().length > 0) return refused(`these files have local changes that a resume would overwrite: ${dirty.stdout.split('\n').filter(l => l.length > 3).map(l => l.slice(3)).join(', ')}; commit or stash them first`);
+			const files: { path: string; content: string }[] = [];
+			for (const path of checkpoint.artifactPaths) {
+				const file = await git(repo, ['show', `${tmpRef}:${path}`], deps);
+				if (file.ok) files.push({ path, content: file.stdout });   // a path the parker deleted is not on the branch: nothing to restore
+			}
+
+			const plan: ResumePlan = { repo, unit, workflow, branch, checkpoint, files };
+			if (checkpoint.kind === 'run') return { kind: 'resume', plan: plan as ResumePlan & { checkpoint: RunCheckpoint } };
+			return restart(`the parked draft carries no run: its files are restored and the stage restarts on them`, plan);
+		} finally {
+			await git(repo, ['update-ref', '-d', tmpRef], deps);
+		}
+	} catch (err) {
+		if (err instanceof TeamGateRefusedError) throw err;
+		return refused(`resume could not be checked: ${err instanceof Error ? err.message : String(err)}`);
+	}
 }

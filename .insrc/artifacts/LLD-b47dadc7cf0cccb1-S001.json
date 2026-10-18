@@ -136,6 +136,13 @@
         "choice": "Accept whole-file review",
         "rationale": "Stakeholder decision 2026-10-18 (option A at the end of the first review cycle): shared files are judged whole and listed as sharedWithExcluded; changed-line scoping is out of this fix.",
         "resolvedAt": "2026-10-18T14:30:59.107Z"
+      },
+      "qe025d6d0": {
+        "question": "Acceptance criteria (the Story carries none; derived from the ISSUE's fix intent, c1-c6): ac1 a review's change set holds only the Story's own (trailer-carrying) commits, two Stories committing on main in the same window and two standalone S001 Stories are told apart, and the BUILD record names the Story's newest trailered commit; ac2 with no trailered commit, or when trailers cannot be read, the change set is today's and the review records how it was scoped, and the step-down order is unchanged; ac3 the coverage judge sees only functions, methods and classes in non-test files; ac4 coverage severity follows the evidence class on every execution path (only no-edge-no-tests may be a HIGH breach; any other is lowered to LOW and the verdict does not block on it), and a diff review states that symbol coverage cannot be graded; ac5 both build prompts ask for the Insrc-Story trailer, and the live smoke shows a trailered Story's review scoped to its own commits.",
+        "status": "resolved",
+        "choice": "Adopt ac1–ac5 as written",
+        "rationale": "Stakeholder decision 2026-10-18: ac1-ac5 as stated; the approved LLD's test mapping already maps every proving test to them.",
+        "resolvedAt": "2026-10-18T14:32:37.165Z"
       }
     }
   },

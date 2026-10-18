@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s6
 
-**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T19:48:13.964Z
+**Standalone:** no  ·  **Created:** 2026-10-18T17:06:54.425Z  ·  **Updated:** 2026-10-18T19:50:02.281Z
 
-**Commit:** 3a897e46
+**Commit:** 9314fa8e
 
 ## Summary
 
@@ -24,52 +24,55 @@ The one open check was the ordering of the identity check against the fetch. Wha
 - ✓ `t10`
 - ✓ `t11`
 - ✓ `t12`
+- ✓ `t13`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `docs/plans/s6-open-issues.md` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/cli/__tests__/command.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/cli/__tests__/team-claim-release.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/cli/__tests__/team-park-resume.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/cli/__tests__/tui.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/cli/command.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/cli/services/index.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/cli/services/team.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/index.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/host.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/handler.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/handoff-rpc.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/phases/park.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/phases/resume.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/resume.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/daemon/steps/workflow-step/types.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/mcp/__tests__/fixtures/tool-surface.golden.json` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/mcp/__tests__/park-resume-phases.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/mcp/__tests__/schema-registry.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/mcp/server.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/artifact-write-inventory.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/config/github.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/__tests__/handoff-park-plan.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/__tests__/handoff-park.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/__tests__/handoff-resume-check.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/__tests__/handoff-resume.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/__tests__/helpers/handoff-world.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
-- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T19:48:13.964Z)
+- `docs/plans/s6-open-issues.md` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/cli/__tests__/command.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/cli/__tests__/settings-modal.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/cli/__tests__/team-claim-release.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/cli/__tests__/team-park-resume.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/cli/__tests__/tui.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/cli/command.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/cli/services/index.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/cli/services/team.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/config/__tests__/fixtures/repo-fields-catalog.json` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/config/__tests__/repo-fields.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/config/repo-fields.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/index.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/host.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/handler.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/handoff-rpc.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/phases/park.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/phases/resume.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/resume.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/daemon/steps/workflow-step/types.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/mcp/__tests__/fixtures/tool-surface.golden.json` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/mcp/__tests__/park-resume-phases.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/mcp/__tests__/schema-registry.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/mcp/server.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/__tests__/gate-guarded-entry-points.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/artifact-write-inventory.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/config/github.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/handoff-e2e.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/handoff-park-plan.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/handoff-park.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/handoff-pure.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/handoff-resume-check.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/handoff-resume.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/helpers/handoff-world.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/park-offer.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/__tests__/snapshot-upstream.test.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)
+- `src/workflow/team/run-meta.ts` — **insrc-build** (2026-10-18T19:50:02.281Z)

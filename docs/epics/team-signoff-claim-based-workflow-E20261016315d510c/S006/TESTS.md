@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -234,3 +234,26 @@ Run at 2026-10-18T19:48:13.964Z on commit `3a897e46`. Tests check: **passed**. 1
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/__tests__/team-park-resume.test.ts` | 0 | 1 | 1.2 s |  |
+
+## t13
+
+Run at 2026-10-18T19:50:02.281Z on commit `9314fa8e`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/__tests__/gate-guarded-entry-points.test.ts: the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget, resolveReviewFinding apply) is complete, and the analyze and code-review steps are not on it**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the inventory of guarded entry points (daemon step phases, approveArtifactByJsonPath, approveWorkflowTarget, resolveReviewFinding apply) is complete, and the analyze and code-review steps are not on it | `src/workflow/__tests__/gate-guarded-entry-points.test.ts` |
+
+**integration: src/workflow/team/__tests__/handoff-e2e.test.ts: from a reassignment refusal with an offer through park to resume on a second clone, and after a lost machine with no parked branch only the stage that has no artifact restarts, a committed LLD leaving the plan to do**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | from a reassignment refusal with an offer through park to resume on a second clone, and after a lost machine with no parked branch only the stage that has no artifact restarts, a committed LLD leaving the plan to do | `src/workflow/team/__tests__/handoff-e2e.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/__tests__/gate-guarded-entry-points.test.ts` | 0 | 1 | 1.6 s |  |
+| `src/workflow/team/__tests__/handoff-e2e.test.ts` | 0 | 1 | 2.1 s |  |

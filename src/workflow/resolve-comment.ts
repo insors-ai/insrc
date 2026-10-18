@@ -35,7 +35,7 @@
 import { readFileSync } from 'node:fs';
 
 import { questionId, recordResolution, type QuestionArtifactKind } from './questions.js';
-import { artifactJsonPath, writeAtomic } from './storage.js';
+import { artifactJsonPath, writeArtifact } from './storage.js';
 import { commitAndPushArtifacts } from './tracker/github.js';
 
 /** The recordResolution seam — injectable so the a1 mapping logic is testable
@@ -247,7 +247,8 @@ function resolveTargetQuestion(jsonPath: string, c: ReviewComment): string {
 	if (currentIds.has(id)) return id;
 	const nextBody: Record<string, unknown> = { ...(art.body ?? {}), openQuestions: [...texts, text] };
 	const next = { ...art, body: nextBody };
-	writeAtomic(jsonPath, JSON.stringify(next, null, 2) + '\n');
+	// content: the comment is appended to body.openQuestions.
+	writeArtifact(jsonPath, next, 'content');
 	return id;
 }
 

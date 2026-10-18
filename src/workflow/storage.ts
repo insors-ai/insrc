@@ -129,12 +129,23 @@ function carryTracker(prior: unknown, next: unknown): Record<string, unknown> | 
 	return merged;
 }
 
+function withoutRevision(artifact: Record<string, unknown>): string {
+	const meta = isRecord(artifact['meta']) ? { ...artifact['meta'] } : {};
+	delete meta['revision'];
+	return JSON.stringify({ ...artifact, meta });
+}
+
+function sameApartFromRevision(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+	return withoutRevision(a) === withoutRevision(b);
+}
+
 /**
  * The single artifact JSON writer. Returns the `meta.revision` now on disk
  * (0 when the file has none).
  *
- *  - `content`: revision = (revision of the file already at `path`, or 0) + 1;
- *    the whole prior `meta.tracker` block is carried into `next`.
+ *  - `content`: revision = (revision of the file already at `path`, or 0) + 1,
+ *    unless the write changes nothing (then the revision is kept); the whole
+ *    prior `meta.tracker` block is carried into `next`.
  *  - `meta-only`: the on-disk revision is copied into `next` (or left absent
  *    when the file has none), so a meta-only write never changes it.
  *
@@ -149,9 +160,18 @@ export function writeArtifact(path: string, next: unknown, kind: WriteKind): num
 	const priorMeta = isRecord(prior?.['meta']) ? prior['meta'] : undefined;
 	const meta: Record<string, unknown> = { ...next['meta'] };
 	if (kind === 'content') {
-		meta['revision'] = readRevision(prior) + 1;
 		const tracker = carryTracker(priorMeta?.['tracker'], meta['tracker']);
 		if (tracker !== undefined) meta['tracker'] = tracker;
+		// A content write that changes nothing keeps the revision: the revision
+		// names the content, so rewriting identical content must not invalidate
+		// anything bound to it.
+		const unchanged = prior !== undefined && sameApartFromRevision(prior, { ...next, meta });
+		if (unchanged) {
+			if (priorMeta !== undefined && 'revision' in priorMeta) meta['revision'] = priorMeta['revision'];
+			else delete meta['revision'];
+		} else {
+			meta['revision'] = readRevision(prior) + 1;
+		}
 	} else if (priorMeta !== undefined && 'revision' in priorMeta) {
 		meta['revision'] = priorMeta['revision'];
 	} else {

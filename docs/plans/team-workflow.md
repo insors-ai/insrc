@@ -176,6 +176,12 @@ Repos without the policy file behave exactly as today (solo mode).
   4. The `TrackerMeta.adapter` widening from `'github'` to the port's `TrackerKind` (HLD
      §2, §4.3) is included, and `patchTrackerMeta` preserves the actual tracker kind.
   Also pending before the s4 build: the `findIssues` amendment agreed with s1 (see above).
+  Build deviations from the approved LLD, found while building (2026-10-18): (a)
+  `writeArtifact` keeps the revision when a content write changes nothing (the revision
+  names the content, so rewriting identical content must not invalidate anything bound to
+  it); (b) appending reviewer feedback (`provenance/writer.ts`) is a meta-only write, not a
+  content write: feedback is human provenance and existing behaviour (`review-decision`
+  "feedback changes no state") must hold, and a comment must not invalidate a signoff.
 
 ## Open items for design
 

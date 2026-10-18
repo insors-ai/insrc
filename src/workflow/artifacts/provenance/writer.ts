@@ -20,10 +20,11 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
+import { writeArtifact } from '../../storage.js';
 import type { FeedbackEntry } from './types.js';
 
 const log = getLogger('artifacts:provenance:writer');
@@ -98,7 +99,9 @@ function assertUnderArtifactRoot(absPath: string): void {
 export function writeArtifactJson(path: string, artifact: ArtifactShape): void {
 	const abs = resolve(path);
 	assertUnderArtifactRoot(abs);
-	writeFileSync(abs, JSON.stringify(artifact, null, 2));
+	// meta-only: feedback is human provenance, not the stage's content, so appending it
+	// never mints a revision (a reviewer's comment must not invalidate a signoff).
+	writeArtifact(abs, artifact, 'meta-only');
 }
 
 function readArtifact(absPath: string): ArtifactShape {

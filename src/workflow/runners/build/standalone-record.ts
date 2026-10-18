@@ -25,7 +25,7 @@ import { dirname } from 'node:path';
 import { getLogger } from '../../../shared/logger.js';
 import { execFileSync } from 'node:child_process';
 
-import { writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, folderIdentityMeta, inheritedStoryStandalone } from '../../storage.js';
+import { writeArtifact, writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, folderIdentityMeta, inheritedStoryStandalone } from '../../storage.js';
 import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bindings.js';
 import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
@@ -319,7 +319,8 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// location agree (ISSUE-764b88ed). It is resolved from the work item, never
 	// from the stamp itself, so a re-persist re-derives rather than echoes it.
 	const merged: BuildRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsForMerged(repoPath, unstamped)) } };
-	writeAtomic(jsonPath, JSON.stringify(merged, null, 2) + '\n');
+	// content: a BUILD record is regenerated, so each persist mints a revision.
+	writeArtifact(jsonPath, merged, 'content');
 	const paths = pathsForMerged(repoPath, merged);
 	// ONE renderer, every route — the former `meta.standalone` ternary is gone.
 	// The id marker is prepended HERE, not in the renderer, so the renderer's
@@ -329,6 +330,7 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// BUILD was the one artifact that could not be approved by its md path
 	// (ISSUE-43d72766).
 	const md = `${artifactIdMarker(buildArtifactId(merged.meta.epicHash, merged.meta.storyId))}\n\n${renderBuildRecordMd(merged)}`;
+	// raw-write: markdown render of the BUILD record.
 	writeAtomic(paths.md, md);
 	return paths;
 }

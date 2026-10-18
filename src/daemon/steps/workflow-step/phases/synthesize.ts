@@ -18,7 +18,7 @@
 import { getLogger } from '../../../../shared/logger.js';
 import { finalizeArtifact } from '../../../../workflow/orchestrator.js';
 import { unresolvedOpen } from '../../../../workflow/questions.js';
-import { appendRunLog, pathsForWorkflow, writeAtomic } from '../../../../workflow/storage.js';
+import { appendRunLog, pathsForWorkflow, writeArtifact, writeAtomic } from '../../../../workflow/storage.js';
 import { assertStage, decodeState } from '../state.js';
 import { releaseState } from '../state-store.js';
 import type {
@@ -79,8 +79,10 @@ export async function handleSynthesize(
 		storyId: finalizedMeta.storyId, storyIdParam,
 		standalone: finalizedMeta.standalone,
 	});
+	// raw-write: markdown render of the draft.
 	writeAtomic(paths.md,   result.finalized.renderedMd);
-	writeAtomic(paths.json, result.finalized.renderedJson);
+	// content: a draft mints a revision and keeps a replaced draft's tracker block.
+	writeArtifact(paths.json, JSON.parse(result.finalized.renderedJson), 'content');
 	appendRunLog(state.epicKey, state.intent.workflow, state.runId, {
 		ts:    new Date().toISOString(),
 		event: 'artifact-written',

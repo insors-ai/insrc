@@ -39,7 +39,7 @@ import { prepareDecompose, prepareSynthesize, finalizeArtifact, type FinalizedAr
 import { startRun, resumeRun } from '../workflow/executor.js';
 import { resolveDraftDeps } from '../workflow/draft-deps.js';
 import type { BoundaryFinding } from '../workflow/synthesizer.js';
-import { appendProgressLog, appendRunLog, pathsForWorkflow, writeAtomic } from '../workflow/storage.js';
+import { appendProgressLog, appendRunLog, pathsForWorkflow, writeArtifact, writeAtomic } from '../workflow/storage.js';
 import type { ReviewReport } from '../workflow/review/types.js';
 import { WORKFLOW_NAMES, type ArtifactMetaBase, type ArtifactModelAttribution, type OutputModelStamp, type WorkflowIntent, type WorkflowName, type WorkflowPlan } from '../workflow/types.js';
 import { modelSummary } from '../workflow/attribution.js';
@@ -330,8 +330,10 @@ export async function runWorkflowServerSide(
 		issueHash: meta.issueHash,
 		storyId: meta.storyId, storyIdParam, standalone: meta.standalone,
 	});
+	// raw-write: markdown render of the draft.
 	writeAtomic(paths.md,   finalized.renderedMd);
-	writeAtomic(paths.json, finalized.renderedJson);
+	// content: a draft mints a revision and keeps a replaced draft's tracker block.
+	writeArtifact(paths.json, JSON.parse(finalized.renderedJson), 'content');
 	appendRunLog(epicKey, intent.workflow, runId, {
 		ts: new Date().toISOString(), event: 'artifact-written', md: paths.md, json: paths.json, model: opts.modelLabel,
 	});

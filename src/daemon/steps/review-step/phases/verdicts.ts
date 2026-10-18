@@ -20,7 +20,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../../../shared/logger.js';
-import { writeAtomic } from '../../../../workflow/storage.js';
+import { writeArtifact, writeAtomic } from '../../../../workflow/storage.js';
 import {
 	applyAutoFixes, computeReviewVerdict, DEFAULT_BLOCK_ON_SEVERITIES, normalizeFinding,
 	pendingUserFindings, renderReviewReport, REVIEW_SECTION, stripReviewSection, tallyFindings,
@@ -93,8 +93,10 @@ export function handleVerdicts(input: ReviewStepInputVerdicts): ReviewStepDone {
 	const fixed = applyAutoFixes(md, artifact.body, report);
 
 	const nextJson = { ...artifact, meta: { ...artifact.meta, review: report }, body: fixed.body };
-	writeAtomic(state.jsonPath, JSON.stringify(nextJson, null, 2) + '\n');
+	// auto-fixes change the body (content); a report-only review changes only meta.
+	writeArtifact(state.jsonPath, nextJson, fixed.applied.length > 0 ? 'content' : 'meta-only');
 	const nextMd = `${fixed.markdown.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`;
+	// raw-write: markdown render of the review.
 	writeAtomic(state.mdPath, nextMd);
 
 	const pending = pendingUserFindings(report).length;

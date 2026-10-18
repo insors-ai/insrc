@@ -18,7 +18,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
-import { writeAtomic } from '../storage.js';
+import { writeArtifact, writeAtomic } from '../storage.js';
 import { applyAutoFixes, pendingUserFindings } from './apply.js';
 import type { AppliedFix, SkippedFix } from './apply.js';
 import { authorPartyOf, SamePartyReviewError } from './party.js';
@@ -116,8 +116,10 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	// for a DEF and the one-session template review for a design).
 	const stamped: ReviewReport = { ...report, reviewedBy: 'daemon' };
 	const nextJson = { ...artifact, meta: { ...artifact.meta, review: stamped }, body: fixed.body };
-	writeAtomic(opts.jsonPath, JSON.stringify(nextJson, null, 2) + '\n');
+	// auto-fixes change the body (content); a report-only review changes only meta.
+	writeArtifact(opts.jsonPath, nextJson, fixed.applied.length > 0 ? 'content' : 'meta-only');
 	const nextMd = `${fixed.markdown.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`;
+	// raw-write: markdown render of the review.
 	writeAtomic(opts.mdPath, nextMd);
 
 	log.info(

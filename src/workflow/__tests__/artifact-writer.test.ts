@@ -40,7 +40,8 @@ test('writeArtifact mints and keeps revisions, carries the whole tracker block, 
 	withDir(dir => {
 		const p = join(dir, 'A.json');
 		assert.equal(writeArtifact(p, art(), 'content'), 1, 'a first draft is revision 1');
-		assert.equal(writeArtifact(p, art(), 'content'), 2);
+		assert.equal(writeArtifact(p, art(), 'content'), 1, 'rewriting identical content keeps the revision');
+		assert.equal(writeArtifact(p, art({}, { v: 2 }), 'content'), 2, 'changed content mints the next revision');
 		assert.equal(read(p).meta.revision, 2);
 
 		// meta-only keeps the on-disk revision, even if next claims another

@@ -161,7 +161,8 @@ test('persistStandaloneBuildRecord writes standalone:true json + the SAME md via
 		// json is byte-identical to a plain stringify of the record (no prior, no merge
 		// additions) plus the folder anchor it is filed under (ISSUE-764b88ed: a
 		// Trivial build with no LLD anchors on its own createdAt and has no label).
-		const stamped = { ...rec, meta: { ...rec.meta, epicCreatedAt: '2026-01-01T00:00:00.000Z' } };
+		// a first write is revision 1 (sc3)
+		const stamped = { ...rec, meta: { ...rec.meta, epicCreatedAt: '2026-01-01T00:00:00.000Z', revision: 1 } };
 		assert.equal(readFileSync(json, 'utf8'), JSON.stringify(stamped, null, 2) + '\n');
 		// md is byte-identical to a FROZEN expectation.
 		//

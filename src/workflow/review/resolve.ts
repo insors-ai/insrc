@@ -24,7 +24,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import { getLogger } from '../../shared/logger.js';
-import { writeAtomic } from '../storage.js';
+import { writeArtifact, writeAtomic } from '../storage.js';
 import type { ReviewResolution } from '../types.js';
 import { applyOneFinding } from './apply.js';
 import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
@@ -106,6 +106,7 @@ export function resolveReviewFinding(
 		const md = readFileSync(mdPath, 'utf8');
 		const one = applyOneFinding(md, artifact.body, finding.claimId, finding.ref, edits);
 		if (one.applied === undefined) throw new Error(`finding '${findingId}' edits did not match the artifact (stale) — use accept/override/defer`);
+		// raw-write: markdown render of the applied edit.
 		writeAtomic(mdPath, one.markdown);
 		artifact.body = one.body;
 		appliedEdits = one.applied.edits.length;
@@ -126,7 +127,8 @@ export function resolveReviewFinding(
 	};
 	const reviewResolutions = { ...(artifact.meta.reviewResolutions ?? {}), [findingId]: resolution };
 	artifact.meta = { ...artifact.meta, reviewResolutions };
-	writeAtomic(jsonPath, JSON.stringify(artifact, null, 2) + '\n');
+	// apply changes the body (content); accept, override and defer change only meta.
+	writeArtifact(jsonPath, artifact, action === 'apply' ? 'content' : 'meta-only');
 
 	const effectiveVerdict = effectiveReviewVerdict(review, reviewResolutions);
 	const remainingBlocking = review.findings.filter(

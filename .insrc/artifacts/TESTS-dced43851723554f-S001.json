@@ -4,7 +4,7 @@
     "epicHash": "dced43851723554f",
     "storyId": "S001",
     "createdAt": "2026-10-18T11:35:11.055Z",
-    "updatedAt": "2026-10-18T12:02:07.434Z",
+    "updatedAt": "2026-10-18T12:11:49.431Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-18T10:54:00.951Z",
     "epicSlug": "keep-document-summaries-across-full-index"
@@ -508,6 +508,120 @@
               },
               {
                 "title": "a kept-good result is counted as skipped, not failed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "75e62369",
+        "ranAt": "2026-10-18T12:11:49.431Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/doc-summary-restore.test.ts: 'restore writes a backup summary whose document is stored with the same body, by either model, and counts already-present, gone, changed and undecodable rows'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-restore.test.ts",
+                "title": "restore writes a backup summary whose document is stored with the same body, by either model, and counts already-present, gone, changed and undecodable rows",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summary-restore.test.ts",
+                "title": "a backup file whose name has no extension is read as a single-file store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/doc-summary-restore.test.ts: 'a second restore writes nothing and the backup file is unchanged'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-restore.test.ts",
+                "title": "a second restore writes nothing and the backup file is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/db/__tests__/doc-summary-restore.test.ts: 'a backup lacking entity_string_by_u64 is rejected, nothing is written and the backup is closed'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summary-restore.test.ts",
+                "title": "a backup lacking entity_string_by_u64 is rejected, nothing is written and the backup is closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/doc-summary-restore-ipc.test.ts: 'docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/doc-summary-restore-ipc.test.ts",
+                "title": "docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summary-restore.test.ts",
+                "title": "restore refuses a relative path, a missing file, a directory and the live store, before opening anything",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/doc-summary-restore-ipc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2824,
+            "titles": [
+              {
+                "title": "docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/doc-summary-restore.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1251,
+            "titles": [
+              {
+                "title": "restore writes a backup summary whose document is stored with the same body, by either model, and counts already-present, gone, changed and undecodable rows",
+                "result": "pass"
+              },
+              {
+                "title": "a second restore writes nothing and the backup file is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a backup lacking entity_string_by_u64 is rejected, nothing is written and the backup is closed",
+                "result": "pass"
+              },
+              {
+                "title": "restore refuses a relative path, a missing file, a directory and the live store, before opening anything",
+                "result": "pass"
+              },
+              {
+                "title": "a backup file whose name has no extension is read as a single-file store",
                 "result": "pass"
               }
             ],

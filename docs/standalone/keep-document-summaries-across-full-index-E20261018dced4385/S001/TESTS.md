@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -154,3 +154,40 @@ Run at 2026-10-18T12:02:07.434Z on commit `a2681288`. Tests check: **passed**. 5
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/summariser/__tests__/summarise-doc-current.test.ts` | 0 | 4 | 1.3 s |  |
 | `src/indexer/__tests__/doc-summary-sweep.test.ts` | 0 | 9 | 0.6 s |  |
+
+## t5
+
+Run at 2026-10-18T12:11:49.431Z on commit `75e62369`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/db/__tests__/doc-summary-restore.test.ts: 'restore writes a backup summary whose document is stored with the same body, by either model, and counts already-present, gone, changed and undecodable rows'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | restore writes a backup summary whose document is stored with the same body, by either model, and counts already-present, gone, changed and undecodable rows | `src/db/__tests__/doc-summary-restore.test.ts` |
+| pass | a backup file whose name has no extension is read as a single-file store | `src/db/__tests__/doc-summary-restore.test.ts` |
+
+**integration: src/db/__tests__/doc-summary-restore.test.ts: 'a second restore writes nothing and the backup file is unchanged'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a second restore writes nothing and the backup file is unchanged | `src/db/__tests__/doc-summary-restore.test.ts` |
+
+**integration: src/db/__tests__/doc-summary-restore.test.ts: 'a backup lacking entity_string_by_u64 is rejected, nothing is written and the backup is closed'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a backup lacking entity_string_by_u64 is rejected, nothing is written and the backup is closed | `src/db/__tests__/doc-summary-restore.test.ts` |
+
+**integration: src/daemon/__tests__/doc-summary-restore-ipc.test.ts: 'docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path | `src/daemon/__tests__/doc-summary-restore-ipc.test.ts` |
+| pass | restore refuses a relative path, a missing file, a directory and the live store, before opening anything | `src/db/__tests__/doc-summary-restore.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/doc-summary-restore-ipc.test.ts` | 0 | 1 | 2.8 s |  |
+| `src/db/__tests__/doc-summary-restore.test.ts` | 0 | 5 | 1.3 s |  |

@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:36:33.618Z",
+    "updatedAt": "2026-10-18T14:42:11.194Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -26,9 +26,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": false
       }
     ],
-    "summary": "Added the missing failed-re-read scenario to the claim test: a fake whose addAssignee takes effect and then fails reading the assignees back (failReread). The test asserts the claim is refused with 'claim failed (unreachable): re-read unreachable; the stage state is unknown', that the assignee list is exactly ['alice'] (the add happened, nobody else touched), and that a following claim, reading the stage again, finds it already mine and is allowed. The earlier failed-add, failed-initial-read and contested cases remain.",
+    "summary": "New src/workflow/team/approval-gate.ts: authorizeApproval(jsonPath) maps an artifact to its stage unit (Define and HLD to the Epic, LLD and plan to the Story, BUILD to the Story's Task units from its plan, or the Story when it has none or is standalone), asks teamGate for approve-local, and returns the first refusal with a subject such as 'task t2'; non-claim artifacts are unguarded; a BUILD record that does not exist yet is identified from its file name; the repo is recovered from the artifact path when the meta lacks it; an artifact whose stage cannot be told is refused only in a repo that enforces claims (or whose policy cannot be read). gates.ts: approveArtifactByJsonPath calls it right after the meta check, before any review check or stamp, and throws TeamGateRefusedError; approveWorkflowTarget authorizes each BUILD target before ensureBuildRecordOnCompletion (single and batch) and puts a refused target in skipped[] with the reason, and a TeamGateRefusedError from approveOne is also mapped into skipped[]; signatures unchanged. TeamGateRefusedError takes an optional subject. command.ts: the approve case prints '✗ not approved — <reason>' beside the review-block message. gate-approve.test.ts (integration) and gate-refusal-output.test.ts (approve part; resolve, claim and release are added by t6 and t9) carry the tests; the full workflow and cli suites pass (2183 tests).",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/TESTS.md"
     },
@@ -38,65 +42,100 @@
           "file": ".insrc/artifacts/AMD-315d510cb28100e2-12.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
       },
       {
         "target": {
           "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/gate-refusal-output.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:42:11.194Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/command.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:42:11.194Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/gate-approve.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:42:11.194Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:42:11.194Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/gate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/review-fix-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/approval-gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T14:42:11.194Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/github-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:36:33.618Z"
+        "timestamp": "2026-10-18T14:42:11.194Z"
       }
     ],
-    "commit": "c5e1e766"
+    "commit": "eeaada81"
   }
 }

@@ -32,6 +32,12 @@ test('the terminal approve and resolve commands print the refusal naming the hol
 	const review = await runCommand('workflow approve docs/plans/PLAN-x.md', ctxWith({ approve: () => { throw blocked; } }));
 	assert.match(review[0] ?? '', /blocked by review \(2 HIGH · 1 MED\)/);
 
+	// resolve: applying a finding is refused the same way, and the other actions are not affected
+	const resolve = await runCommand('workflow resolve docs/plans/PLAN-x.md high1 apply', ctxWith({ resolveFinding: () => { throw held; } }));
+	assert.deepEqual(resolve, ['✗ not applied — task t2: held by bob']);
+	const fine = await runCommand('workflow resolve docs/plans/PLAN-x.md high1 accept', ctxWith({ resolveFinding: () => ({ findingId: 'high1', status: 'accepted', effectiveVerdict: 'pass', remainingBlocking: 0 }) }));
+	assert.match(fine[0] ?? '', /resolved high1 \(accepted\)/);
+
 	// a refusal with no holder prints its reason
 	const refused = new TeamGateRefusedError({ kind: 'refused', reason: 'the tracker cannot be used (unreachable): timed out' });
 	const out = await runCommand('workflow approve docs/plans/PLAN-x.md', ctxWith({ approve: () => { throw refused; } }));

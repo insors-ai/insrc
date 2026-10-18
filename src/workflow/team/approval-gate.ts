@@ -38,16 +38,21 @@ function readMeta(jsonPath: string): Meta | undefined {
 	} catch { return undefined; }
 }
 
-/** The Story's Task ids from its plan artifact, in plan order; empty when there is no plan or no Tasks. */
-function taskIdsOf(repoPath: string, epicHash: string, storyId: string): string[] {
+/**
+ * The Story's Task ids from its plan artifact, in plan order. No plan file means no Tasks; a plan
+ * that exists but cannot be read is an error, never "no Tasks" (that would skip the Task claims).
+ */
+function taskIdsOf(repoPath: string, epicHash: string, storyId: string): { ok: true; ids: string[] } | { ok: false; reason: string } {
+	const path = artifactJsonPath(repoPath, planArtifactId(epicHash, storyId));
+	if (!existsSync(path)) return { ok: true, ids: [] };
 	try {
-		const path = artifactJsonPath(repoPath, planArtifactId(epicHash, storyId));
-		if (!existsSync(path)) return [];
 		const tasks = (JSON.parse(readFileSync(path, 'utf8')) as { body?: { tasks?: Array<{ id?: unknown; order?: unknown }> } }).body?.tasks;
-		return Array.isArray(tasks)
-			? [...tasks].sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)).map(t => t.id).filter((id): id is string => typeof id === 'string')
-			: [];
-	} catch { return []; }
+		if (tasks === undefined) return { ok: true, ids: [] };
+		if (!Array.isArray(tasks)) return { ok: false, reason: `the plan of Story ${storyId} has a malformed task list` };
+		return { ok: true, ids: [...tasks].sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)).map(t => t.id).filter((id): id is string => typeof id === 'string') };
+	} catch (err) {
+		return { ok: false, reason: `the plan of Story ${storyId} cannot be read: ${err instanceof Error ? err.message : String(err)}` };
+	}
 }
 
 /** The refusal for approving this artifact, or undefined when it may be approved (or is not guarded). Never throws. */
@@ -76,9 +81,15 @@ export function authorizeApproval(jsonPath: string, metaOverride?: Meta): Approv
 		if (!isBuild) return check(repoPath, story, undefined);
 
 		// BUILD: the Story's Tasks, or the Story itself when it has none (a standalone BUILD is such a Story)
-		const taskIds = meta?.standalone === true ? [] : taskIdsOf(repoPath, epicHash, storyId as string);
-		if (taskIds.length === 0) return check(repoPath, story, undefined);
-		for (const taskId of taskIds) {
+		const tasks = meta?.standalone === true ? { ok: true as const, ids: [] as string[] } : taskIdsOf(repoPath, epicHash, storyId as string);
+		if (!tasks.ok) {
+			// Cannot tell which Tasks the Story has: refuse where claims are enforced, so a Task claim is never skipped
+			const enforced = claimsEnforcedFor(repoPath);
+			if (enforced === 'no') return undefined;
+			return { outcome: { kind: 'refused', reason: enforced === 'yes' ? tasks.reason : enforced }, subject: undefined };
+		}
+		if (tasks.ids.length === 0) return check(repoPath, story, undefined);
+		for (const taskId of tasks.ids) {
 			const refusal = check(repoPath, { unit: 'task', repoPath, epicHash, storyId: storyId as string, taskId }, `task ${taskId}`);
 			if (refusal !== undefined) return refusal;
 		}

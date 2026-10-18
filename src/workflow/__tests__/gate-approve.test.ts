@@ -74,6 +74,15 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		assert.ok(!isApproved(plan), 'nothing stamped');
 		assert.equal(JSON.stringify(JSON.parse(readFileSync(plan, 'utf8'))), JSON.stringify(planDoc(repo, ['t1', 't2'])), 'the artifact is unchanged');
 
+		// the refusal comes BEFORE the review check: a blocking review and a stage held by someone else give the team refusal
+		const blocked = planDoc(repo, ['t1']);
+		(blocked.meta as Record<string, unknown>)['review'] = { verdict: 'block', findings: [{ severity: 'HIGH', claimId: 'c1', summary: 'x' }], counts: { high: 1, med: 0, low: 0 } };
+		const blockedPath = put(dir, `PLAN-${HASH}-s2.json`, { ...blocked, meta: { ...blocked.meta, storyId: 's2' } });
+		inject({ 'story:s2': 'bob' });
+		assert.throws(() => approveArtifactByJsonPath(blockedPath), (err: unknown) => err instanceof TeamGateRefusedError);
+		inject({ 'story:s2': 'alice' });
+		assert.throws(() => approveArtifactByJsonPath(blockedPath), (err: unknown) => err instanceof Error && err.name === 'ReviewBlockedError', 'the holder then meets the review check');
+
 		// the holder approves; so does a repo with no policy
 		inject({ 'story:s1': 'alice' });
 		assert.doesNotThrow(() => approveArtifactByJsonPath(plan));
@@ -106,6 +115,20 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		assert.deepEqual(batch.approved.map(a => a.path), [plan]);
 		assert.ok(batch.skipped.some(s => s.path === buildPath && /task t2: held by bob/.test(s.reason)));
 		assert.ok(isApproved(plan) && !isApproved(buildPath));
+	});
+
+	// a plan that exists but cannot be read is never "no Tasks": the BUILD is refused, not authorized against the Story alone
+	await withRepo(async (repo, dir) => {
+		writeFileSync(join(dir, `PLAN-${HASH}-s1.json`), '{ not json');
+		const buildPath = join(dir, `BUILD-${HASH}-s1.json`);
+		inject({ 'story:s1': 'alice' });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath });
+		assert.match(out.skipped[0]?.reason ?? '', /plan of Story s1 cannot be read/);
+		assert.ok(!existsSync(buildPath));
+		// and with no policy the unreadable plan changes nothing
+		inject({}, none);
+		const free = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath }).catch((e: Error) => e);
+		assert.ok(!(free instanceof Error && /plan of Story/.test(free.message)), 'no policy: the plan is not even looked at');
 	});
 
 	// a Story with no Tasks is authorized against the Story unit

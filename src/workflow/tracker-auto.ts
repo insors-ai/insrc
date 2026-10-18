@@ -368,7 +368,7 @@ export function autoPushEpicOnHld(hldJsonPath: string): AutoPushResult {
 	const meta = readMeta(hldJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
-	return mode === 'team' ? teamPushEpic(hldJsonPath, meta, deps) : legacyPushEpic(hldJsonPath);
+	return mode === 'team' ? guardedPush(() => teamPushEpic(hldJsonPath, meta, deps)) : legacyPushEpic(hldJsonPath);
 }
 
 export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
@@ -376,7 +376,7 @@ export function autoPushStoryOnLld(lldJsonPath: string): AutoPushResult {
 	const meta = readMeta(lldJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
-	return mode === 'team' ? teamPushStory(lldJsonPath, meta, deps) : legacyPushStory(lldJsonPath);
+	return mode === 'team' ? guardedPush(() => teamPushStory(lldJsonPath, meta, deps)) : legacyPushStory(lldJsonPath);
 }
 
 export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
@@ -384,7 +384,7 @@ export function autoPushTasksOnPlan(planJsonPath: string): AutoPushResult {
 	const meta = readMeta(planJsonPath);
 	const mode = modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
-	return mode === 'team' ? teamPushTasks(planJsonPath, meta, deps) : legacyPushTasks(planJsonPath);
+	return mode === 'team' ? guardedPush(() => teamPushTasks(planJsonPath, meta, deps)) : legacyPushTasks(planJsonPath);
 }
 
 // ---------------------------------------------------------------------------
@@ -411,6 +411,12 @@ function gateNoAuth(repoPath: string): { cfg: GithubCfg } | { skip: AutoPushResu
 }
 
 const failedResult = (reason: string): AutoPushResult => ({ status: 'failed', reason });
+
+/** A local write that fails after the remote issue exists is a failed result, not an escaping error. */
+function guardedPush(run: () => AutoPushResult): AutoPushResult {
+	try { return run(); }
+	catch (err) { return failedResult(`the issue exists but a local step failed: ${(err as Error).message}`); }
+}
 
 function withExtras<T extends object>(base: T, failed: ExtrasFailed): T & { extrasFailed?: ExtrasFailed } {
 	return failed.length > 0 ? { ...base, extrasFailed: failed } : base;

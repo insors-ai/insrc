@@ -133,7 +133,8 @@ function mapEntry(map: Readonly<Record<string, string>> | undefined, id: string 
 }
 
 /** Record the unit's issue on its own artifact (units + the older ref) and on the siblings that read it. */
-function recordUnit(unit: UnitRef, issue: IssueRef, now: string): void {
+function recordUnit(unit: UnitRef, issue: IssueRef, now: string): boolean {
+	let ok = true;
 	const own = ownJson(unit);
 	const prior = readTrackerMeta(own)?.units?.[unitKey(unit)];
 	// The same issue again (a sibling ref repaired): keep the record's revision and extras marks.
@@ -156,8 +157,9 @@ function recordUnit(unit: UnitRef, issue: IssueRef, now: string): void {
 	for (const [path, patch] of patches) {
 		if (!fileHas(path)) { log.debug({ path }, 'unit-issue: no artifact to record on'); continue; }
 		try { patchTrackerMeta(path, patch); }
-		catch (err) { log.warn({ path, err: (err as Error).message }, 'unit-issue: could not record the unit issue (its label finds it next time)'); }
+		catch (err) { ok = false; log.warn({ path, err: (err as Error).message }, 'unit-issue: could not record the unit issue (its label finds it next time)'); }
 	}
+	return ok;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +246,9 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 	}
 	if (cfg.type === 'none') return before(`tracker disabled via config (source: ${cfg.source})`);
 
+	// A Story's issue is recorded on its LLD: without that file nothing could be recorded, so create nothing.
+	if (unit.unit === 'story' && !fileHas(lldJson(unit))) return before(`the LLD of Story '${unit.storyId ?? ''}' does not exist yet; draft it before its issue`);
+
 	// What the issue is about, read from the unit's own artifact.
 	let define: DefineArtifact;
 	try { define = readDefineArtifact(unit.repoPath, unit.epicHash); }
@@ -304,8 +309,9 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		const link = port.issueOps.linkSubIssue(parentRef, created.value.id);
 		if (!link.ok) log.warn({ unit: unitKey(unit), parent: parentRef, reason: link.reason }, 'unit-issue: could not link the issue under its parent');
 	}
-	recordUnit(unit, issue, now());
-	return { ok: true, value: tieBreak(unit, port, label, issue, now) };
+	const recorded = recordUnit(unit, issue, now());
+	// Without the record, adopting another issue could leave a local ref on a closed duplicate: keep this one.
+	return { ok: true, value: recorded ? tieBreak(unit, port, label, issue, now) : { issue, created: true, duplicateCheck: 'not-run' } };
 }
 
 /** The additive sc1 listing (AMD-315d510cb28100e2-10): every issue carrying the labels, open or closed. */
@@ -331,7 +337,7 @@ function tieBreak(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef
 	if (lowest === undefined || lowest === own || issueNumber(lowest) > issueNumber(own)) return { ...kept, duplicateCheck: 'clean' };
 
 	log.warn({ unit: unitKey(unit), own, lowest }, 'unit-issue: another daemon created this unit issue first; adopting the lowest and closing this call\'s own');
-	recordUnit(unit, lowest, now());
+	if (!recordUnit(unit, lowest, now())) return kept;
 	const said = port.issueOps.comment(own, `Duplicate of ${lowest}: the same unit (${label}) was created twice at once; ${lowest} is the one kept.`);
 	if (!said.ok) log.warn({ own, reason: said.reason }, 'unit-issue: could not comment on the duplicate');
 	const closed = port.issueOps.close(own);

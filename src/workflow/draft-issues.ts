@@ -25,7 +25,7 @@ import { getLogger } from '../shared/logger.js';
 import { loadTracker } from './tracker/github-adapter.js';
 import type { Capability, IssueRef, PortFailureKind, PortResult, TrackerPort } from './tracker/port.js';
 import type { UnitRef } from './tracker/refs.js';
-import { ensureUnitIssueDetailed, resolveUnitIssueLocal, unitKey, type EnsureIssueDeps } from './tracker/unit-issue.js';
+import { ensureUnitIssueDetailed, isUnitSettled, resolveUnitIssueLocal, unitKey, type EnsureIssueDeps } from './tracker/unit-issue.js';
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
 
@@ -114,7 +114,8 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 
 		// Fast path: every unit is already recorded, so no tracker is loaded and no command runs.
 		const ready: ReadyUnit[] = [];
-		const local = units.map(u => resolveUnitIssueLocal(u, deps.ensure?.now));
+		// settled = recorded on disk with nothing left to retry; a ref whose record could not be saved, or a pending link, goes through the tracker path
+		const local = units.map(u => { const ref = resolveUnitIssueLocal(u, deps.ensure?.now); return ref !== null && isUnitSettled(u) ? ref : null; });
 		if (local.every(ref => ref !== null)) {
 			return { status: 'ready', units: units.map((u, i) => ({ unit: unitKey(u), issue: local[i] as IssueRef, created: false })) };
 		}
@@ -129,7 +130,7 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 			const r = ensureUnitIssueDetailed(unit, loaded.value, deps.ensure);
 			if (!r.ok) return notReady(unitKey(unit), r.kind, r.phase === 'before-create', r.reason, ready);
 			// The issue exists, but if its record could not be saved the next call would not find it locally: say so.
-			if (resolveUnitIssueLocal(unit, deps.ensure?.now) === null) {
+			if (!isUnitSettled(unit)) {
 				return notReady(unitKey(unit), 'rejected', true, `the issue ${r.value.issue} exists but could not be recorded in the artifact`, ready,
 					`${r.value.issue} exists for ${unitKey(unit)} but could not be recorded in the artifact, so it cannot be claimed yet; write the draft again`);
 			}

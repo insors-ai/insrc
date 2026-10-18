@@ -21,7 +21,7 @@ import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planA
 import type { ResolvedGithubConfig } from '../../config/github.js';
 import type { CreatedIssue, IssueRef, IssueSpec, PortResult, TrackerPort } from '../port.js';
 import type { UnitRef } from '../refs.js';
-import { ensureUnitIssue, ensureUnitIssueDetailed, resolveUnitIssueLocal, unitKey, unitLabel } from '../unit-issue.js';
+import { ensureUnitIssue, ensureUnitIssueDetailed, isUnitSettled, resolveUnitIssueLocal, unitKey, unitLabel } from '../unit-issue.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';
@@ -43,7 +43,7 @@ interface Issue { number: number; ref: IssueRef; spec: IssueSpec; state: 'open' 
 function fakeTracker(over: {
 	failFind?: boolean; failLabel?: string; failCreate?: boolean; commitThenFail?: boolean;
 	/** The additive sc1 listing (findIssues); off by default, as on today's real port. */
-	withListing?: boolean; failList?: boolean; failClose?: boolean;
+	withListing?: boolean; failList?: boolean; failClose?: boolean; failLink?: number;
 	/** Answer this many findIssue calls with "not found" whatever exists (a stale read of two daemons). */
 	staleFinds?: number;
 	/** Another daemon's issue, created just before this call's own, so it has the lower number. */
@@ -85,7 +85,11 @@ function fakeTracker(over: {
 				over.afterCreate?.();
 				return { ok: true, value: { ref, id: 1000 + number, typed: true } };
 			},
-			linkSubIssue: (parent: IssueRef, childId: number): PortResult<void> => { calls.link.push([parent, childId]); return { ok: true, value: undefined }; },
+			linkSubIssue: (parent: IssueRef, childId: number): PortResult<void> => {
+				calls.link.push([parent, childId]);
+				if (over.failLink !== undefined && over.failLink > 0) { over.failLink -= 1; return { ok: false, reason: 'link rejected', kind: 'rejected' }; }
+				return { ok: true, value: undefined };
+			},
 			comment: (ref: IssueRef, body: string): PortResult<void> => { calls.comments.push([ref, body]); return { ok: true, value: undefined }; },
 			close: (ref: IssueRef): PortResult<void> => {
 				if (over.failClose === true) return { ok: false, reason: 'close rejected', kind: 'rejected' };
@@ -382,5 +386,32 @@ test('a failed findIssues listing keeps the recorded issue and a following call 
 		const again = ensureUnitIssueDetailed(epic(fx.repo), t.port, deps);
 		assert.deepEqual(again, { ok: true, value: { issue: 'acme/demo#1', created: false, duplicateCheck: 'clean' } });
 		assert.deepEqual([t.calls.find, t.calls.create, t.calls.list], [before.find, before.create, before.list], 'no tracker call');
+	} finally { fx.cleanup(); }
+});
+
+test('a link under the parent that failed at creation is retried on the next ensure and then cleared', () => {
+	const fx = seed();
+	try {
+		const t = fakeTracker({ failLink: 1 });
+		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
+		const first = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		assert.equal(first.ok, true, 'the Story issue is still returned');
+		const pending = fx.read(lldArtifactId(HASH, 's1')).meta.tracker.units['story:s1'].pendingLink;
+		assert.deepEqual(pending, { parent: 'acme/demo#1', childId: 1002 }, 'the failed link is recorded');
+		assert.equal(isUnitSettled(story(fx.repo)), false);
+
+		// the next ensure retries the link (no new issue) and clears it
+		const linksBefore = t.calls.link.length;
+		const createsBefore = t.calls.create;
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal(t.calls.link.length, linksBefore + 1);
+		assert.equal(t.calls.create, createsBefore);
+		assert.equal(fx.read(lldArtifactId(HASH, 's1')).meta.tracker.units['story:s1'].pendingLink, undefined);
+		assert.equal(isUnitSettled(story(fx.repo)), true);
+
+		// settled: a further ensure makes no tracker call at all
+		const settledLinks = t.calls.link.length;
+		ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		assert.equal(t.calls.link.length, settledLinks);
 	} finally { fx.cleanup(); }
 });

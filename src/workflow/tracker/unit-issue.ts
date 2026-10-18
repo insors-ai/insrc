@@ -133,14 +133,14 @@ function mapEntry(map: Readonly<Record<string, string>> | undefined, id: string 
 }
 
 /** Record the unit's issue on its own artifact (units + the older ref) and on the siblings that read it. */
-function recordUnit(unit: UnitRef, issue: IssueRef, now: string): boolean {
+function recordUnit(unit: UnitRef, issue: IssueRef, now: string, pendingLink?: UnitIssue['pendingLink']): boolean {
 	let ok = true;
 	const own = ownJson(unit);
 	const prior = readTrackerMeta(own)?.units?.[unitKey(unit)];
 	// The same issue again (a sibling ref repaired): keep the record's revision and extras marks.
 	const record: UnitIssue = prior !== undefined && prior.issue === issue
 		? prior
-		: { unit: unit.unit, unitId: unitId(unit), issue, createdAtRevision: revisionOfFile(own) };
+		: { unit: unit.unit, unitId: unitId(unit), issue, createdAtRevision: revisionOfFile(own), ...(pendingLink !== undefined ? { pendingLink } : {}) };
 	const units = { [unitKey(unit)]: record };
 	const patches: Array<[string, Partial<TrackerMeta>]> = [];
 	if (unit.unit === 'epic') {
@@ -233,7 +233,10 @@ type GithubCfg = Extract<ResolvedGithubConfig, { type: 'github' }>;
 export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: EnsureIssueDeps = {}): EnsureResult<EnsuredIssue> {
 	const now = deps.now ?? (() => new Date().toISOString());
 	const local = resolveUnitIssueLocal(unit, now);
-	if (local !== null) return { ok: true, value: { issue: local, created: false, duplicateCheck: 'clean' } };
+	if (local !== null) {
+		retryPendingLink(unit, port, local);
+		return { ok: true, value: { issue: local, created: false, duplicateCheck: 'clean' } };
+	}
 
 	let label: string;
 	try { label = unitLabel(unit); }
@@ -305,13 +308,39 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		return { ok: false, reason: created.reason, kind: created.kind, phase: 'create' };
 	}
 	const issue = created.value.ref;
+	let pendingLink: UnitIssue['pendingLink'];
 	if (parentRef !== undefined) {
 		const link = port.issueOps.linkSubIssue(parentRef, created.value.id);
-		if (!link.ok) log.warn({ unit: unitKey(unit), parent: parentRef, reason: link.reason }, 'unit-issue: could not link the issue under its parent');
+		if (!link.ok) {
+			log.warn({ unit: unitKey(unit), parent: parentRef, reason: link.reason }, 'unit-issue: could not link the issue under its parent (retried next time)');
+			pendingLink = { parent: parentRef, childId: created.value.id };
+		}
 	}
-	const recorded = recordUnit(unit, issue, now());
+	const recorded = recordUnit(unit, issue, now(), pendingLink);
 	// Without the record, adopting another issue could leave a local ref on a closed duplicate: keep this one.
 	return { ok: true, value: recorded ? tieBreak(unit, port, label, issue, now) : { issue, created: true, duplicateCheck: 'not-run' } };
+}
+
+/** True when the unit's record is on disk and nothing is left to retry (a pending link). */
+export function isUnitSettled(unit: UnitRef): boolean {
+	try {
+		const record = readTrackerMeta(ownJson(unit))?.units?.[unitKey(unit)];
+		return record !== undefined && record.pendingLink === undefined;
+	} catch { return false; }
+}
+
+/** A link under the parent that failed at creation is retried; on success the record is cleared of it. */
+function retryPendingLink(unit: UnitRef, port: TrackerPort, issue: IssueRef): void {
+	try {
+		const path = ownJson(unit);
+		const record = readTrackerMeta(path)?.units?.[unitKey(unit)];
+		const pending = record?.pendingLink;
+		if (record === undefined || pending === undefined) return;
+		const link = port.issueOps.linkSubIssue(pending.parent, pending.childId);
+		if (!link.ok) { log.warn({ unit: unitKey(unit), issue, reason: link.reason }, 'unit-issue: the pending link under the parent failed again'); return; }
+		const { pendingLink: _done, ...settled } = record;
+		patchTrackerMeta(path, { units: { [unitKey(unit)]: settled } });
+	} catch (err) { log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: could not retry the pending link'); }
 }
 
 /** The additive sc1 listing (AMD-315d510cb28100e2-10): every issue carrying the labels, open or closed. */

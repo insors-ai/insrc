@@ -188,7 +188,8 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 			const review = res.verdict !== undefined
 				? ` · review ${res.verdict}${res.counts !== undefined ? ` (H${res.counts.high}/M${res.counts.med}/L${res.counts.low})` : ''}`
 				: '';
-			return [`✓ ${workflow} done · ${res.path}${review}`];
+			// Team repos: the draft is written, but its issues are not all ready (the stage cannot be claimed yet).
+			return [`✓ ${workflow} done · ${res.path}${review}`, ...(res.notice !== undefined ? [`⚠ ${res.notice}`] : [])];
 		}
 		case 'review': {
 			if (rest[0] === undefined) return ['usage: workflow review <path>'];

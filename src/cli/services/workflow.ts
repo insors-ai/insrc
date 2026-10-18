@@ -67,7 +67,7 @@ import { reviewArtifactFile, type ReviewArtifactResult } from '../../workflow/re
 import { rpc } from '../client.js';
 import type { Socket } from 'node:net';
 import type { Entity } from '../../shared/types.js';
-import { runWorkflowStream } from '../../mcp/daemon-stream.js';
+import { runWorkflowStream, type RunWorkflowStreamDeps } from '../../mcp/daemon-stream.js';
 import type { ProgressEvent } from '../../shared/types.js';
 import {
 	effectiveReviewVerdict, listPendingReviewFindings, resolveReviewFinding,
@@ -202,6 +202,10 @@ export interface StreamRunResult {
 	readonly runId:   string;
 	readonly verdict?: string;
 	readonly counts?: { readonly high: number; readonly med: number; readonly low: number };
+	/** Team repos only: whether every unit of the draft has its tracker issue. */
+	readonly issueReadiness?: unknown;
+	/** Team repos only, when the draft is not ready: what the author is told. */
+	readonly notice?: string;
 }
 
 /** Render one live progress frame as a TUI log line. */
@@ -224,10 +228,12 @@ export async function runWorkflowStreaming(
 	focus: string,
 	params: Record<string, unknown>,
 	onLine: (line: string) => void,
+	deps?: RunWorkflowStreamDeps,
 ): Promise<StreamRunResult> {
 	const out = await runWorkflowStream(
 		{ repo: repoPath, workflow, focus, params },
 		{ onFrame: (stream, data) => onLine(progressLine(stream, data)) },
+		deps,
 	);
 	const review = out.review as { verdict?: string; counts?: { high: number; med: number; low: number } } | undefined;
 	return {
@@ -235,6 +241,8 @@ export async function runWorkflowStreaming(
 		runId: out.runId,
 		...(typeof review?.verdict === 'string' ? { verdict: review.verdict } : {}),
 		...(review?.counts !== undefined ? { counts: review.counts } : {}),
+		...(out.issueReadiness !== undefined ? { issueReadiness: out.issueReadiness } : {}),
+		...(typeof out.notice === 'string' ? { notice: out.notice } : {}),
 	};
 }
 

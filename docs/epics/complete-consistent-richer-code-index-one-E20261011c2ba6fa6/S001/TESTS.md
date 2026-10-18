@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 70 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -256,3 +256,38 @@ Run at 2026-10-18T05:19:48.564Z on commit `2b1c6d7b`. Tests check: **passed**. 6
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/full-index-rebuild.test.ts` | 0 | 6 | 2 s |  |
+
+## t12
+
+Run at 2026-10-18T05:32:58.124Z on commit `249df2d8`. Tests check: **passed**. 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/__tests__/repo-completeness.test.ts: repo.list, repo.stats and daemon.status carry completeness beside the unchanged status; unattributedUnwritable**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable | `src/daemon/__tests__/repo-completeness.test.ts` |
+| pass | buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present) | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress | `src/daemon/__tests__/daemon-status-lanes.test.ts` |
+| pass | with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes | `src/daemon/__tests__/daemon-status-lanes.test.ts` |
+| pass | daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost | `src/daemon/__tests__/status-store-failure.test.ts` |
+| pass | status handler with the store failed returns an empty repository list and storeFailure and does not throw | `src/daemon/__tests__/status-store-failure.test.ts` |
+| pass | index.ts registers a 'repo.stats' handler that delegates to collectRepoStats | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | the handler returns { error } (not throw) for an unregistered repoPath and returns the array when omitted | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/config) | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/daemon-status-lanes.test.ts` | 0 | 2 | 1.5 s |  |
+| `src/daemon/__tests__/repo-completeness.test.ts` | 0 | 1 | 24.7 s |  |
+| `src/daemon/__tests__/repo-stats-handler-contract.test.ts` | 0 | 4 | 0.6 s |  |
+| `src/daemon/__tests__/repo-stats.test.ts` | 0 | 7 | 0.6 s |  |
+| `src/daemon/__tests__/status-store-failure.test.ts` | 0 | 2 | 0.6 s |  |

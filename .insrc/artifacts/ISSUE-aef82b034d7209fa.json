@@ -21,7 +21,11 @@
     "epicSlug": "review-every-changed-symbol-story-too",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-18T17:09:49.078Z",
+    "parentRef": {
+      "slug": "review-every-changed-symbol-story-too"
+    }
   },
   "body": {
     "title": "Review every changed symbol of a Story too large for one review prompt",

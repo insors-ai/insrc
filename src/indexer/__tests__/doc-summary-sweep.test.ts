@@ -160,3 +160,12 @@ test('shutdown that comes while a document is read ends the sweep without summar
 	assert.deepEqual(counts, { summarised: 0, skipped: 0, failed: 0, gone: 0, stopped: true });
 	assert.deepEqual(w.events.filter(e => e !== 'wait'), []);
 });
+
+test('a kept-good result is counted as skipped, not failed', async () => {
+	const results: Record<string, SummariseDocResult> = {
+		kept:  { ok: false, skipped: 'kept-good', errorCode: 'other', errorMessage: 'the model timed out' },
+		model: { ok: false, errorCode: 'other', errorMessage: 'the model timed out' },
+	};
+	const counts = await runDocSummarySweep(Object.keys(results), world({ results }).deps);
+	assert.deepEqual(counts, { summarised: 0, skipped: 1, failed: 1, gone: 0, stopped: false });
+});

@@ -22,7 +22,9 @@ import { join } from 'node:path';
 
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { useTemporaryLance } from '../../../db/lance/__tests__/helpers/temp-lance.js';
-import { getDocSummary } from '../../../db/doc-summaries.js';
+import { getDocSummary, writeDocSummaryIfCurrent } from '../../../db/doc-summaries.js';
+import { createHash } from 'node:crypto';
+import type { DocSummary } from '../../../shared/analyze-types.js';
 import { deleteEntitiesForFile, upsertEntities } from '../../../db/entities.js';
 import { addRepo } from '../../../db/repos.js';
 import { makeEntityId } from '../../../indexer/parser/base.js';
@@ -116,4 +118,23 @@ test('when the model fails, a placeholder write that throws keeps the model erro
 	assert.deepEqual(await summariseDoc({ db: null, entity: e, provider: model(rewrite, failure) }), { ok: false, skipped: 'body-changed' });
 	const gone = docEntity('# Design\n\nRewritten while summarising.');
 	assert.deepEqual(await summariseDoc({ db: null, entity: gone, provider: model(remove, failure) }), { ok: false, skipped: 'entity-gone' });
+});
+
+test('a summary stored while the model runs is kept when the model then fails (the placeholder is not written)', async () => {
+	const e = docEntity();
+	await upsertEntities(null, [e]);
+	const good = {
+		title: 'Design', family: 'design', kind: 'design', subjects: [], summary: 'restored meanwhile',
+		keyDecisions: [], keyConstraints: [], relatedEntities: [], status: 'current', summarisedAt: '2026-10-16T00:00:00.000Z',
+		modelId: 'an-earlier-model', contentHash: createHash('sha256').update(e.body ?? '', 'utf8').digest('hex'),
+	} as DocSummary;
+	// While the model "thinks", a backup restore or a carry write-back stores a good summary of the same body.
+	const restore = async (): Promise<void> => { assert.equal(await writeDocSummaryIfCurrent(null, e.id, e.repo, good), 'written'); };
+
+	const r = await summariseDoc({ db: null, entity: e, provider: model(restore, new Error('the model timed out')) });
+
+	assert.deepEqual(r, { ok: false, skipped: 'kept-good', errorCode: 'other', errorMessage: 'the model timed out' });
+	const stored = await getDocSummary(null, e.id);
+	assert.equal(stored?.summary, 'restored meanwhile', 'the good summary is kept');
+	assert.equal(stored?.errorCode, undefined, 'no placeholder replaced it');
 });

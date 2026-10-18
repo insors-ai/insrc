@@ -153,8 +153,10 @@ export interface SummariseDocArgs {
 export interface SummariseDocResult {
 	readonly ok:        boolean;
 	/** `entity-gone` / `body-changed`: the document was deleted or rewritten while it was
-	 *  being summarised, so nothing was stored (Story b94cf2c9 S001). */
-	readonly skipped?:  'unchanged' | 'not-a-doc' | 'body-empty' | 'entity-gone' | 'body-changed';
+	 *  being summarised, so nothing was stored (Story b94cf2c9 S001).
+	 *  `kept-good`: the model failed but a good summary of the same body was stored
+	 *  meanwhile (a carry write-back or a backup restore) and kept (ISSUE-dced4385). */
+	readonly skipped?:  'unchanged' | 'not-a-doc' | 'body-empty' | 'entity-gone' | 'body-changed' | 'kept-good';
 	readonly summary?:  DocSummary;
 	readonly errorCode?: string;
 	readonly errorMessage?: string;
@@ -237,7 +239,9 @@ export async function summariseDoc(args: SummariseDocArgs): Promise<SummariseDoc
 		);
 		const placeholder = buildPlaceholder(family, entity, modelId, contentHash, errorCode);
 		try {
-			const outcome = await writeDocSummaryIfCurrent(db, entity.id, entity.repo, placeholder);
+			// A good summary stored while the model ran is never replaced by the placeholder.
+			const outcome = await writeDocSummaryIfCurrent(db, entity.id, entity.repo, placeholder, { keepGoodSummary: true });
+			if (outcome === 'kept-good') return { ok: false, skipped: 'kept-good', errorCode, errorMessage };
 			// The document is no longer current: that, not the model error, is the result.
 			if (outcome !== 'written') return { ok: false, skipped: outcome };
 		} catch (writeErr) {

@@ -22,7 +22,7 @@ import ts from 'typescript';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
 /** The gate calls an entry point may make. */
-const GATE_CALLS = ['assertMayAuthor', 'assertMayBuild', 'authorizeApproval', 'authorizeFindingApply', 'reviewFixModeFor', 'reviewFixDecision', 'teamGate'] as const;
+const GATE_CALLS = ['assertMayAuthor', 'assertMayBuild', 'authorizeApproval', 'authorizeFindingApply', 'reviewFixModeFor', 'reviewFixDecision', 'teamGate', 'readHolder', 'parkPlan', 'resumeCheck'] as const;
 
 interface EntryPoint {
 	readonly file: string;
@@ -48,6 +48,11 @@ export const GUARDED_ENTRY_POINTS: readonly EntryPoint[] = [
 	{ file: 'src/workflow/review/resolve.ts',                      fn: 'resolveReviewFinding',   calls: ['authorizeFindingApply'], min: 1 },
 	{ file: 'src/daemon/steps/review-step/phases/verdicts.ts',     fn: 'handleVerdicts',         calls: ['reviewFixModeFor'], min: 1 },
 	{ file: 'src/workflow/review/run-artifact.ts',                 fn: 'reviewArtifactFile',     calls: ['reviewFixModeFor'], min: 1 },
+	// handing a stage over: parking reads the holder through the gate, and resuming asks the author gate
+	{ file: 'src/workflow/team/handoff.ts',                        fn: 'parkPlan',               calls: ['readHolder'],      min: 1 },
+	{ file: 'src/workflow/team/handoff.ts',                        fn: 'parkDraft',              calls: ['parkPlan'],        min: 1 },
+	{ file: 'src/workflow/team/handoff.ts',                        fn: 'resumeCheck',            calls: ['teamGate'],        min: 1 },
+	{ file: 'src/daemon/steps/workflow-step/resume.ts',            fn: 'resumeStage',            calls: ['resumeCheck'],     min: 1 },
 ];
 
 /** Routes that change no stage and must make no gate call. */
@@ -114,6 +119,9 @@ test('the inventory of guarded entry points (daemon step phases, approveArtifact
 	for (const phase of ['implement', 'validate']) {
 		assert.ok(listed.has(`src/daemon/steps/build-step/phases/${phase}.ts`), `build-step ${phase} is on the inventory`);
 	}
+
+	// the handoff entry points are on it, so removing their gate call (or the delegation to it) fails the test above
+	for (const fn of ['parkPlan', 'parkDraft', 'resumeCheck', 'resumeStage']) assert.ok(GUARDED_ENTRY_POINTS.some(e => e.fn === fn), `${fn} is on the inventory`);
 
 	// the analyze and code-review steps change no stage: no gate call, no import of the team gate
 	for (const rel of OFF_THE_GATE) {

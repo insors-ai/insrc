@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T14:45:21.213Z",
+    "updatedAt": "2026-10-18T14:47:27.006Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -32,7 +32,7 @@
         "passed": false
       }
     ],
-    "summary": "Scope fix: the terminal resolve command and its test are back out of t5 (they belong to t6, which guards resolveReviewFinding and shows its refusal in the resolve case). command.ts now differs from before the Story only in the approve case's TeamGateRefusedError line; the CLI test is retitled 'the terminal approve command prints the refusal naming the holder, formatted beside the review-block message' and covers approve and the unchanged review-block format. The tests mapping for t5 now lists the integration test plus that approve test. All earlier fixes stand (an unreadable plan is never no Tasks, the review-order proof).",
+    "summary": "Fixed the standalone gap: authorizeApproval now decides standalone-ness the way ensureBuildRecordOnCompletion will, using inheritedStoryStandalone(repo, epicHash, storyId) (the epic definition head, then the Story's LLD) in addition to the record's own meta, so a BUILD that does not exist yet and is standalone is authorized against the Story unit, not the plan's Tasks. The integration test adds that case: a standalone LLD, a plan whose Task is mine and a Story held by bob; the target goes to skipped[] with 'held by bob', only the Story unit is read, and no BUILD record is created.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/TESTS.md"
     },
@@ -42,100 +42,100 @@
           "file": ".insrc/artifacts/AMD-315d510cb28100e2-12.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-315d510cb28100e2-s5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S005/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/gate-refusal-output.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/cli/command.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/gate-approve.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/gates.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/gate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/review-fix-decision.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/team/approval-gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/github-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T14:45:21.213Z"
+        "timestamp": "2026-10-18T14:47:27.006Z"
       }
     ],
-    "commit": "7d0ef76d"
+    "commit": "df93e3ac"
   }
 }

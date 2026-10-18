@@ -28,6 +28,9 @@ export interface ApprovalRefusal {
 
 interface Meta { workflow?: string; repoPath?: string; epicHash?: string; storyId?: string; standalone?: boolean }
 
+/** The workflow a claim-unit artifact belongs to, from its file name, for an artifact whose meta does not say. */
+const WORKFLOW_BY_PREFIX: Readonly<Record<string, string>> = { 'DEF-': 'define', 'HLD-': 'design.epic', 'LLD-': 'design.story', 'PLAN-': 'plan' };
+
 const EPIC_WORKFLOWS: ReadonlySet<string> = new Set(['define', 'design.epic']);
 const STORY_WORKFLOWS: ReadonlySet<string> = new Set(['design.story', 'plan']);
 
@@ -60,7 +63,9 @@ export function authorizeApproval(jsonPath: string, metaOverride?: Meta): Approv
 	try {
 		const meta = metaOverride ?? readMeta(jsonPath);
 		const isBuild = basename(jsonPath).startsWith('BUILD-') || meta?.workflow === 'build';
-		const workflow = meta?.workflow;
+		const prefix = Object.keys(WORKFLOW_BY_PREFIX).find(p => basename(jsonPath).startsWith(p));
+		// meta.workflow wins; an artifact whose meta does not say is read from its file name, never waved through
+		const workflow = meta?.workflow ?? (prefix !== undefined ? WORKFLOW_BY_PREFIX[prefix] : undefined);
 		if (!isBuild && (workflow === undefined || !(EPIC_WORKFLOWS.has(workflow) || STORY_WORKFLOWS.has(workflow)))) return undefined;   // not a claim unit
 
 		// Artifacts live at <repo>/.insrc/artifacts/<id>.json, so the repo can be recovered when the meta lacks it

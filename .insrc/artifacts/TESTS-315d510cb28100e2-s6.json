@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T17:37:49.980Z",
+    "updatedAt": "2026-10-18T17:39:37.745Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -150,8 +150,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "3796d634",
-        "ranAt": "2026-10-18T17:37:49.980Z",
+        "commit": "35e5c249",
+        "ranAt": "2026-10-18T17:39:37.745Z",
         "testsPassed": true,
         "tests": [
           {
@@ -199,7 +199,7 @@
             "file": "src/workflow/team/__tests__/handoff-pure.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 501,
+            "durationMs": 1051,
             "titles": [
               {
                 "title": "handoffBranchName fills placeholders, applies the default, rejects a grammar break and a pattern without {id}",

@@ -270,6 +270,25 @@ export function buildRunCheckpoint(input: RunCheckpointInput): RunCheckpoint {
 // Stage inference
 // ---------------------------------------------------------------------------
 
+/**
+ * The unit's own artifact files that differ from HEAD in the working tree (changed, staged or untracked): its draft, as
+ * repo-relative paths. A repo that is not a git repository, or a git failure, has none.
+ */
+export function unitDraftFiles(repoPath: string, unit: HandoffUnit): readonly string[] {
+	const status = runGit(repoPath, ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--', '.insrc/artifacts', 'docs']);
+	if (!status.ok) return [];
+	const files: string[] = [];
+	const entries = status.stdout.split('\0').filter(e => e.length > 3);
+	for (let i = 0; i < entries.length; i++) {
+		const entry = entries[i] as string;
+		const code = entry.slice(0, 2);
+		const path = entry.slice(3);
+		if (code[0] === 'R' || code[0] === 'C') i += 1;   // a rename or copy entry is followed by its source path
+		if (isUnitArtifactPath(unit, path)) files.push(path);
+	}
+	return files;
+}
+
 /** Is this file committed at HEAD? (A file only in the working tree, such as a local draft, is not.) */
 function committedAtHead(repoPath: string, artifactId: string): boolean {
 	return runGit(repoPath, ['cat-file', '-e', `HEAD:${relative(repoPath, artifactJsonPath(repoPath, artifactId)).split('\\').join('/')}`]).ok;

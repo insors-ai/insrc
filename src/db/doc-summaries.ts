@@ -194,41 +194,151 @@ export type DocSummaryWriteOutcome = 'written' | 'entity-gone' | 'body-changed';
  *     written, 'body-changed';
  *   - otherwise the row is written exactly as `writeDocSummary` writes it.
  *
+ * With `keepGoodSummary` (the summariser's error placeholder, ISSUE-dced4385)
+ * a stored summary with no errorCode for the same contentHash is kept:
+ * 'kept-good'.
+ *
  * Throws as `writeDocSummary` does for an unregistered repo or a failed write.
  * `writeDocSummary` itself is unchanged for its other callers.
  */
+export function writeDocSummaryIfCurrent(
+	db: DbClient, entityId: string, repo: string, summary: DocSummary,
+): Promise<DocSummaryWriteOutcome>;
+export function writeDocSummaryIfCurrent(
+	db: DbClient, entityId: string, repo: string, summary: DocSummary,
+	opts: { readonly keepGoodSummary: true },
+): Promise<DocSummaryWriteOutcome | 'kept-good'>;
 export async function writeDocSummaryIfCurrent(
 	_db: DbClient,
 	entityId: string,
 	repo: string,
 	summary: DocSummary,
-): Promise<DocSummaryWriteOutcome> {
+	opts?: { readonly keepGoodSummary?: boolean | undefined },
+): Promise<DocSummaryWriteOutcome | 'kept-good'> {
 	return withWriteTxn(s => {
-		// The id lookup is inside the transaction too, so a delete cannot land between it and the write.
-		const id = s.entityIdByString.get(entityId) as bigint | number | undefined;
-		if (id === undefined) return 'entity-gone';
-		const u64 = BigInt(id);
-		// Deleted with its id mapping in one transaction; read here for the body.
-		const row = s.entity.get(encodeEntityKey(u64)) as Buffer | undefined;
-		if (row === undefined) return 'entity-gone';
-		const body = decodeEntityRow(row).body;
-		if (createHash('sha256').update(body, 'utf8').digest('hex') !== summary.contentHash) return 'body-changed';
-		putDocSummaryInTxn(s, u64, repo, summary);
-		return 'written';
+		if (lookupRepoIdInTxn(s, repo) === undefined) throw unregisteredRepo(repo);
+		const outcome = writeDocSummaryIfCurrentInTxn(s, entityId, summary, { keepGoodSummary: opts?.keepGoodSummary });
+		// No onlyIfAbsent here, so 'already-present' cannot come back.
+		return outcome as DocSummaryWriteOutcome | 'kept-good';
 	});
 }
 
-/** The rows `writeDocSummary` writes (primary + by-repo index), inside the caller's write transaction. */
-function putDocSummaryInTxn(s: GraphStore, u64: bigint, repo: string, summary: DocSummary): void {
-	const repoId = lookupRepoIdInTxn(s, repo);
-	if (repoId === undefined) {
-		throw new Error(
-			`writeDocSummary: repo '${repo}' is not registered -- ` +
-			'cannot summarise a doc in an unregistered repo',
-		);
+/**
+ * `writeDocSummaryIfCurrent` inside the caller's write transaction. The
+ * repository is the stored entity row's own (the backup restore and the
+ * carry write-back have no caller-supplied path).
+ *
+ *   - `onlyIfAbsent`: a document that already has a summary is left as it
+ *     is, 'already-present' (the backup restore never replaces one);
+ *   - `keepGoodSummary`: a stored summary with no errorCode and the same
+ *     contentHash is left as it is, 'kept-good'.
+ */
+export function writeDocSummaryIfCurrentInTxn(
+	s: GraphStore,
+	entityId: string,
+	summary: DocSummary,
+	opts: { readonly onlyIfAbsent?: boolean | undefined; readonly keepGoodSummary?: boolean | undefined } = {},
+): DocSummaryWriteOutcome | 'already-present' | 'kept-good' {
+	// The id lookup is inside the transaction too, so a delete cannot land between it and the write.
+	const id = s.entityIdByString.get(entityId) as bigint | number | undefined;
+	if (id === undefined) return 'entity-gone';
+	const u64 = BigInt(id);
+	// Deleted with its id mapping in one transaction; read here for the body.
+	const row = s.entity.get(encodeEntityKey(u64)) as Buffer | undefined;
+	if (row === undefined) return 'entity-gone';
+	const entity = decodeEntityRow(row);
+	if (createHash('sha256').update(entity.body, 'utf8').digest('hex') !== summary.contentHash) return 'body-changed';
+	const storedBuf = s.docSummary.get(encodeEntityKey(u64)) as Buffer | undefined;
+	if (storedBuf !== undefined) {
+		if (opts.onlyIfAbsent === true) return 'already-present';
+		if (opts.keepGoodSummary === true) {
+			const stored = decodeDocSummary(storedBuf);
+			if (stored.errorCode === undefined && stored.contentHash === summary.contentHash) return 'kept-good';
+		}
 	}
 	s.docSummary.put(encodeEntityKey(u64), encodeDocSummary(summary));
-	s.docSummaryByRepo.put(encodeByRepoKey(repoId, u64), Buffer.alloc(0));
+	s.docSummaryByRepo.put(encodeByRepoKey(entity.repoId, u64), Buffer.alloc(0));
+	return 'written';
+}
+
+function unregisteredRepo(repo: string): Error {
+	return new Error(
+		`writeDocSummary: repo '${repo}' is not registered -- ` +
+		'cannot summarise a doc in an unregistered repo',
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Carry across a full index (ISSUE-dced4385)
+// ---------------------------------------------------------------------------
+
+/** (repoId u32 BE || UTF-8 string entity id): the document's id survives the rebuild, its u64 does not. */
+export function encodeCarryKey(repoId: number, entityId: string): Buffer {
+	const id = Buffer.from(entityId, 'utf8');
+	const buf = Buffer.alloc(4 + id.length);
+	buf.writeUInt32BE(repoId, 0);
+	id.copy(buf, 4);
+	return buf;
+}
+
+/**
+ * Copy the summary of every entity in `u64s` into the carry, inside the
+ * caller's write transaction (the repository delete's, before its cascade
+ * removes the summaries). A carry row already present for the id is
+ * overwritten: the live summary is the newer one. Returns how many were carried.
+ */
+export function carryDocSummariesInTxn(s: GraphStore, repoId: number, u64s: readonly bigint[]): number {
+	let carried = 0;
+	for (const u64 of u64s) {
+		const buf = s.docSummary.get(encodeEntityKey(u64)) as Buffer | undefined;
+		if (buf === undefined) continue;
+		const entityId = s.entityStringByU64.get(encodeEntityKey(u64)) as string | undefined;
+		if (entityId === undefined) continue;
+		s.docSummaryCarry.put(encodeCarryKey(repoId, entityId), buf);
+		carried++;
+	}
+	return carried;
+}
+
+/** Delete every carry row of the repository, inside the caller's write transaction. */
+export function deleteCarriedDocSummariesInTxn(s: GraphStore, repoId: number): void {
+	const prefix = encodeByRepoPrefix(repoId);
+	const keys = [...s.docSummaryCarry.getKeys({ start: prefix, end: prefixSuccessor(prefix) })] as Buffer[];
+	for (const k of keys) s.docSummaryCarry.remove(k);
+}
+
+const CARRY_BATCH = 500;
+
+/**
+ * Write back the repository's carried summaries once the rebuild has stored
+ * its documents: each one goes through `writeDocSummaryIfCurrentInTxn`, so it
+ * lands under the document's current entity number only if the body still
+ * hashes to its contentHash. Each carry row is removed in the same write
+ * transaction as its outcome, CARRY_BATCH rows per transaction, so a failed
+ * batch leaves its rows carried for the next full index.
+ */
+export async function restoreCarriedDocSummaries(
+	repo: string,
+): Promise<{ written: number; entityGone: number; bodyChanged: number }> {
+	const counts = { written: 0, entityGone: 0, bodyChanged: 0 };
+	for (;;) {
+		const done = await withWriteTxn(s => {
+			const repoId = lookupRepoIdInTxn(s, repo);
+			if (repoId === undefined) return true;
+			const prefix = encodeByRepoPrefix(repoId);
+			const batch = [...s.docSummaryCarry.getRange({ start: prefix, end: prefixSuccessor(prefix), limit: CARRY_BATCH })];
+			for (const { key, value } of batch) {
+				const k = key as Buffer;
+				const outcome = writeDocSummaryIfCurrentInTxn(s, k.subarray(4).toString('utf8'), decodeDocSummary(value as Buffer));
+				if (outcome === 'written') counts.written++;
+				else if (outcome === 'entity-gone') counts.entityGone++;
+				else counts.bodyChanged++;
+				s.docSummaryCarry.remove(k);
+			}
+			return batch.length < CARRY_BATCH;
+		});
+		if (done) return counts;
+	}
 }
 
 /**

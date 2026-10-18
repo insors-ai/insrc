@@ -299,6 +299,11 @@ export interface GraphStore {
 	// summary rows; enables per-repo sweeps without scanning the whole
 	// docSummary sub-DB.
 	docSummaryByRepo:    AnyDb;
+	// Summaries held across a full index (ISSUE-dced4385): (repoId u32 ||
+	// UTF-8 string entity id) -> msgpack(DocSummary). Written in the
+	// repository delete's transaction, written back once the rebuild has
+	// stored the documents again.
+	docSummaryCarry:     AnyDb;
 
 	// Exploration cache -- one row per successful exploration
 	// invocation (concept.resolve / module.profile / etc.). Keyed by
@@ -623,6 +628,7 @@ export async function getGraphStore(): Promise<GraphStore> {
 			// live-project-context assembly.
 			docSummary:         open_('doc_summary'),
 			docSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),
+			docSummaryCarry:    open_('doc_summary_carry'),
 
 			// Exploration cache -- 20-byte composite key
 			// (repoId u32 || lastIndexedAt u64 || paramHash u64). See

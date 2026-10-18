@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T17:06:54.425Z",
+    "updatedAt": "2026-10-18T17:09:55.658Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -14,28 +14,53 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "src/workflow/team/gate.ts now declares ParkOfferProvider and registerParkOfferProvider (shaped like registerCompletionHook; none registered means offerPark is false). A new heldByOther helper builds the held-by-other outcome in both teamGate and claim: it asks the provider with (repo, unit, actor), only on that outcome, and a throwing provider is logged and counts as false. describeOutcome appends \"; you have unfinished work here, run 'team park <epicHash> [storyId]' to hand it over\" only when offerPark is true. A repo with no policy returns before any provider call or tracker call, as before. The new park-offer.test.ts test shows: no provider gives false; the provider is asked with (repo, story id, actor) and its true/false decides, on teamGate and on claim; a throwing provider gives false; allowed outcomes never ask the provider (call count 0); a no-policy repo makes zero tracker loads and zero provider calls; and the text contains the park command only for offerPark true. The existing team suite (77 tests) and the gate refusal output test pass; tsc is clean.",
+    "summary": "state-store.ts: Entry gains meta (RunEntryMeta { owner?, upstream?: UpstreamRevision[] }, both exported); saveState(payload, meta?) stores it beside payload, createdAt and touchedAt; replaceState reads the previous entry's meta before saving (so a sweep cannot lose it) and passes it to the replacement; new listStates() returns live entries newest touch first (ties by createdAt), leaves out entries past the TTL without deleting them, and does not modify any touchedAt. state.ts: encodeState(payload, meta?) passes meta to saveState; reencodeState is unchanged and goes through replaceState, so it preserves meta. Token format and payload shape are unchanged. The new test shows meta stored by encodeState and returned by listStates, carried through reencodeState and replaceState (and the superseded token released), an entry saved without meta has meta undefined and no owner before and after replaceState, listStates orders a, c, b by touch with a fake clock, repeated listing changes no touchedAt, and a stale entry is not listed but is still loadable (not swept). The whole workflow-step suite (73 tests) passes; tsc clean.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S006/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:09:55.658Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/state-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:09:55.658Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T17:09:55.658Z"
+      },
+      {
+        "target": {
           "file": "src/workflow/team/__tests__/park-offer.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:06:54.425Z"
+        "timestamp": "2026-10-18T17:09:55.658Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T17:06:54.425Z"
+        "timestamp": "2026-10-18T17:09:55.658Z"
       }
     ],
-    "commit": "dd063c03"
+    "commit": "71f2da1e"
   }
 }

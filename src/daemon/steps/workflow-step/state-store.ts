@@ -21,26 +21,14 @@ import { randomBytes } from 'node:crypto';
 
 import { getLogger } from '../../../shared/logger.js';
 import type { WorkflowStepStatePayload } from './state.js';
+import type { RunEntryMeta, UpstreamRevision } from '../../../workflow/team/run-meta.js';
 
 const log = getLogger('mcp:workflow-step:state-store');
 
 const MAX_ENTRIES = 100;
 const TTL_MS      = 60 * 60 * 1_000;
 
-/** An upstream artifact and the revision a run read from it when it was created. */
-export interface UpstreamRevision {
-	readonly artifactId: string;
-	readonly revision:   number;
-}
-
-/**
- * What a run's store entry carries beside its payload: the acting user when the run was created and the
- * upstream revisions it started from. Absent for a run created when claims are not enforced.
- */
-export interface RunEntryMeta {
-	readonly owner?:    string | undefined;
-	readonly upstream?: readonly UpstreamRevision[] | undefined;
-}
+export type { RunEntryMeta, UpstreamRevision };
 
 interface Entry {
 	readonly payload:   WorkflowStepStatePayload;

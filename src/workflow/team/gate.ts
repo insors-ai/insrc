@@ -166,6 +166,20 @@ export function claimsEnforcedFor(repo: string): 'yes' | 'no' | string {
 }
 
 /**
+ * The signed-in tracker login when claims are enforced for the repo, otherwise undefined with no tracker call.
+ * Never throws: any failure reading the user is undefined.
+ */
+export function actingUser(repo: string): string | undefined {
+	try {
+		if (claimsEnforcedFor(repo) !== 'yes') return undefined;
+		const loaded = (testDeps.loadTracker ?? loadTracker)(repo, new Set<Capability>(['claim']));
+		if (!loaded.ok) return undefined;
+		const who = loaded.value.whoAmI();
+		return who.ok ? who.value : undefined;
+	} catch { return undefined; }
+}
+
+/**
  * The artifact being authored is on disk. `authoring` names the workflow that writes it (an HLD is
  * written against the Epic unit, a plan against the Story unit, so the unit's own artifact is the wrong
  * one to look for); without it the unit's own artifact (Define, LLD or plan) is looked for.

@@ -34,6 +34,7 @@ import { encodeState, STATE_VERSION, type WorkflowStepStatePayload } from '../st
 import type { WorkflowStepEmitPlan, WorkflowStepInputStart, WorkflowStepResolveQuestions } from '../types.js';
 
 import { assertMayAuthor } from '../../../../workflow/team/author-gate.js';
+import { runMetaFor } from '../../../../workflow/team/run-meta.js';
 
 const log = getLogger('mcp:workflow-step:start');
 
@@ -105,7 +106,8 @@ export async function handleStart(
 		prompt:   prepared.systemPrompt,
 		userTurn: prepared.userTurn,
 		schema:   prepared.schema,
-		state:    encodeState(state),
+		// The run records its owner and the upstream revisions it starts from (a repo without a team policy records neither)
+		state:    encodeState(state, runMetaFor(repoPath, input.workflow, params)),
 	};
 }
 

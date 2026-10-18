@@ -117,6 +117,18 @@ test('approveArtifactByJsonPath throws TeamGateRefusedError for a non-holder bef
 		assert.ok(isApproved(plan) && !isApproved(buildPath));
 	});
 
+	// a standalone BUILD that does not exist yet is judged as the record would be (the Story unit), so a refusal creates no record
+	await withRepo(async (repo, dir) => {
+		put(dir, `LLD-${HASH}-s1.json`, { meta: { workflow: 'design.story', repoPath: repo, epicHash: HASH, storyId: 's1', standalone: true }, body: {}, citations: [] });
+		put(dir, `PLAN-${HASH}-s1.json`, planDoc(repo, ['t1']));
+		const buildPath = join(dir, `BUILD-${HASH}-s1.json`);
+		const seen = inject({ 'story:s1': 'bob', 'task:s1/t1': 'alice' });
+		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: buildPath });
+		assert.match(out.skipped[0]?.reason ?? '', /held by bob/);
+		assert.deepEqual(seen.reads, ['story:s1'], 'the Story unit was checked, not the Tasks');
+		assert.ok(!existsSync(buildPath), 'a refused standalone BUILD leaves no record');
+	});
+
 	// a plan that exists but cannot be read is never "no Tasks": the BUILD is refused, not authorized against the Story alone
 	await withRepo(async (repo, dir) => {
 		writeFileSync(join(dir, `PLAN-${HASH}-s1.json`), '{ not json');

@@ -16,7 +16,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { basename, dirname } from 'node:path';
 
 import type { UnitRef } from '../tracker/refs.js';
-import { artifactJsonPath, planArtifactId } from '../storage.js';
+import { artifactJsonPath, inheritedStoryStandalone, planArtifactId } from '../storage.js';
 import { parseBuildArtifactRef } from '../gates.js';
 import { claimsEnforcedFor, teamGate, type RefusedOutcome } from './gate.js';
 
@@ -81,7 +81,9 @@ export function authorizeApproval(jsonPath: string, metaOverride?: Meta): Approv
 		if (!isBuild) return check(repoPath, story, undefined);
 
 		// BUILD: the Story's Tasks, or the Story itself when it has none (a standalone BUILD is such a Story)
-		const tasks = meta?.standalone === true ? { ok: true as const, ids: [] as string[] } : taskIdsOf(repoPath, epicHash, storyId as string);
+		// Standalone-ness is what the BUILD record will inherit from its upstream (the record may not exist yet)
+		const standalone = meta?.standalone === true || inheritedStoryStandalone(repoPath, epicHash, storyId as string) === true;
+		const tasks = standalone ? { ok: true as const, ids: [] as string[] } : taskIdsOf(repoPath, epicHash, storyId as string);
 		if (!tasks.ok) {
 			// Cannot tell which Tasks the Story has: refuse where claims are enforced, so a Task claim is never skipped
 			const enforced = claimsEnforcedFor(repoPath);

@@ -225,7 +225,13 @@ test('a git failure cleans up the worktree and local branch, a failed note retur
 		assertClean(env);
 
 		// cleanup that cannot finish is reported, never silent: on a park that worked, and added to the reason of one that did not
-		const keepBranch = (args: readonly string[]): string | undefined => (args[0] === 'branch' && args[1] === '-D' ? 'cannot delete the branch' : undefined);
+		// 'branch -D' failing alone is not a leftover: the branch is dropped another way
+		writeFileSync(env.draft, '{"draft":4.5}\n');
+		const fallback = must(await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: args => (args[0] === 'branch' && args[1] === '-D' ? 'cannot delete the branch' : undefined) })));
+		assert.equal(fallback.cleanupWarning, undefined);
+		assertClean(env);
+		// both ways failing leaves it, and says so
+		const keepBranch = (args: readonly string[]): string | undefined => ((args[0] === 'branch' && args[1] === '-D') || args[0] === 'update-ref' ? 'cannot delete the branch' : undefined);
 		writeFileSync(env.draft, '{"draft":5}\n');
 		const dirty = must(await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: keepBranch })));
 		assert.match(dirty.cleanupWarning ?? '', /the temporary branch insrc-park-tmp-\w+ could not be removed; remove it by hand/);

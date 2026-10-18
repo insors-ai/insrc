@@ -562,7 +562,8 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 	await git(repo, ['worktree', 'remove', '--force', dir], deps);
 	rmSync(dir, { recursive: true, force: true });
 	await git(repo, ['worktree', 'prune'], deps);
-	await git(repo, ['branch', '-D', tmpBranch], deps);
+	const deleted = await git(repo, ['branch', '-D', tmpBranch], deps);
+	if (!deleted.ok) await git(repo, ['update-ref', '-d', `refs/heads/${tmpBranch}`], deps);   // a second way to drop the branch
 	const left: string[] = [];
 	const worktrees = await git(repo, ['worktree', 'list', '--porcelain']);
 	if (!worktrees.ok || worktrees.stdout.includes(dir)) left.push(`the temporary worktree ${dir}`);

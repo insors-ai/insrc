@@ -4,7 +4,7 @@
     "epicHash": "dced43851723554f",
     "storyId": "S001",
     "createdAt": "2026-10-18T11:35:11.055Z",
-    "updatedAt": "2026-10-18T12:11:49.431Z",
+    "updatedAt": "2026-10-18T13:45:33.333Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-18T10:54:00.951Z",
     "epicSlug": "keep-document-summaries-across-full-index"
@@ -628,6 +628,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "52162130",
+        "ranAt": "2026-10-18T13:45:33.333Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md (commit 52162130): restore counts for both runs, per-repository summary counts before and after, backup SHA-256 before and after, and the reindex's carried (10,996) and written-back (10,996) figures from the daemon log"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

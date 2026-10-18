@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -191,3 +191,13 @@ Run at 2026-10-18T12:11:49.431Z on commit `75e62369`. Tests check: **passed**. 6
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/doc-summary-restore-ipc.test.ts` | 0 | 1 | 2.8 s |  |
 | `src/db/__tests__/doc-summary-restore.test.ts` | 0 | 5 | 1.3 s |  |
+
+## t6
+
+Run at 2026-10-18T13:45:33.333Z on commit `52162130`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md (commit 52162130): restore counts for both runs, per-repository summary counts before and after, backup SHA-256 before and after, and the reindex's carried (10,996) and written-back (10,996) figures from the daemon log

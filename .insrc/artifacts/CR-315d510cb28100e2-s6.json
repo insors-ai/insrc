@@ -1,0 +1,587 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792353919133-xx6o57",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-18T20:05:19.133Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 131254,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s6",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "docs/plans/s6-open-issues.md",
+        "src/cli/__tests__/command.test.ts",
+        "src/cli/__tests__/settings-modal.test.ts",
+        "src/cli/__tests__/team-claim-release.test.ts",
+        "src/cli/__tests__/team-park-resume.test.ts",
+        "src/cli/__tests__/tui.test.ts",
+        "src/cli/command.ts",
+        "src/cli/services/index.ts",
+        "src/cli/services/team.ts",
+        "src/config/__tests__/fixtures/repo-fields-catalog.json",
+        "src/config/__tests__/repo-fields.test.ts",
+        "src/config/repo-fields.ts",
+        "src/daemon/index.ts",
+        "src/daemon/steps/host.ts",
+        "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts",
+        "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts",
+        "src/daemon/steps/workflow-step/handler.ts",
+        "src/daemon/steps/workflow-step/handoff-rpc.ts",
+        "src/daemon/steps/workflow-step/park-offer.ts",
+        "src/daemon/steps/workflow-step/phases/park.ts",
+        "src/daemon/steps/workflow-step/phases/resume.ts",
+        "src/daemon/steps/workflow-step/phases/start.ts",
+        "src/daemon/steps/workflow-step/resume.ts",
+        "src/daemon/steps/workflow-step/state-store.ts",
+        "src/daemon/steps/workflow-step/state.ts",
+        "src/daemon/steps/workflow-step/types.ts",
+        "src/mcp/__tests__/fixtures/tool-surface.golden.json",
+        "src/mcp/__tests__/park-resume-phases.test.ts",
+        "src/mcp/__tests__/schema-registry.test.ts",
+        "src/mcp/server.ts",
+        "src/workflow/__tests__/gate-guarded-entry-points.test.ts",
+        "src/workflow/artifact-write-inventory.ts",
+        "src/workflow/config/github.ts",
+        "src/workflow/team/__tests__/handoff-e2e.test.ts",
+        "src/workflow/team/__tests__/handoff-park-plan.test.ts",
+        "src/workflow/team/__tests__/handoff-park.test.ts",
+        "src/workflow/team/__tests__/handoff-pure.test.ts",
+        "src/workflow/team/__tests__/handoff-resume-check.test.ts",
+        "src/workflow/team/__tests__/handoff-resume.test.ts",
+        "src/workflow/team/__tests__/helpers/handoff-world.ts",
+        "src/workflow/team/__tests__/park-offer.test.ts",
+        "src/workflow/team/__tests__/snapshot-upstream.test.ts",
+        "src/workflow/team/gate.ts",
+        "src/workflow/team/handoff.ts",
+        "src/workflow/team/run-meta.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts:unknown",
+            "message": "parse declares the optional error property without an explicit `| undefined`. The supplied summary does not include line numbers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/server.ts:unknown",
+            "message": "handleWorkflowApprove declares the optional return property `isError?: boolean` without an explicit `| undefined`. The supplied summary does not include line numbers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/mcp/server.ts:unknown",
+            "message": "handleInsrcPresent declares the optional return property `isError?: boolean` without an explicit `| undefined`. The supplied summary does not include line numbers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/__tests__/handoff-park-plan.test.ts:unknown",
+            "message": "plan declares `opts.runToken?: string` without an explicit `| undefined`. The supplied summary does not include line numbers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/__tests__/handoff-resume-check.test.ts:unknown",
+            "message": "parkRun declares `opts.run?: boolean` without an explicit `| undefined`. The supplied summary does not include line numbers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/__tests__/handoff-resume-check.test.ts:unknown",
+            "message": "check declares optional override properties repo, unit, workflow, and deps without explicit `| undefined` unions. The supplied summary does not include line numbers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/__tests__/park-offer.test.ts:unknown",
+            "message": "runPayload declares optional override properties workflow and storyId without explicit `| undefined` unions. The supplied summary does not include line numbers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/team/__tests__/snapshot-upstream.test.ts:unknown",
+            "message": "seedChain declares optional revision properties def, hld, and lld without explicit `| undefined` unions. The supplied summary does not include line numbers.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "docs/plans/s6-open-issues.md",
+            "message": "These changed symbols have empty testsReaching and therefore are not exercised under the supplied coverage contract.",
+            "expectationRef": "s6-open-issues.md; S6 open issues; S6-2: handoff test world duplicated",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/command.test.ts",
+            "message": "The file symbol and Spies have empty testsReaching.",
+            "expectationRef": "src/cli/__tests__/command.test.ts; Spies",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/command.test.ts",
+            "message": "ctxWith has reaching tests present but failing/unverified: command.test.ts is absent from the test record, so its pass-state is unverified.",
+            "expectationRef": "ctxWith",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/settings-modal.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/cli/__tests__/settings-modal.test.ts; Fixture",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/settings-modal.test.ts",
+            "message": "Reaching tests are present but failing/unverified: settings-modal.test.ts is absent from the test record, so passing coverage cannot be confirmed.",
+            "expectationRef": "settle; status; fixture; openModal; typecheck",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/team-claim-release.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/cli/__tests__/team-claim-release.test.ts; Seen",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/team-claim-release.test.ts",
+            "message": "Reaching tests are present but failing/unverified: team-claim-release.test.ts is absent from the test record.",
+            "expectationRef": "policy; ctx; inject",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/team-park-resume.test.ts",
+            "message": "These changed symbols have empty testsReaching. The passing test file does not supply reaching edges for them.",
+            "expectationRef": "src/cli/__tests__/team-park-resume.test.ts; Call; call; policy",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/tui.test.ts",
+            "message": "The changed file symbol has empty testsReaching.",
+            "expectationRef": "src/cli/__tests__/tui.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/__tests__/tui.test.ts",
+            "message": "Reaching tests are present but failing/unverified: tui.test.ts is absent from the test record.",
+            "expectationRef": "settle; status; repo; fakeServices",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/command.ts",
+            "message": "These changed symbols have empty testsReaching. Passing coverage of runCommand cannot substitute for their missing edges.",
+            "expectationRef": "src/cli/command.ts; CommandCtx; switchPane; runDaemon; runRepo; parseSteeringFlag; runWorkflow; renderReviewSummary; runTracker; parseClaimUnit; runTeam; renderTrackerStep; runSetup; runConfig; flattenEntries; getPath; parseValue; render",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/index.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/cli/services/index.ts; Services",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/cli/services/team.ts",
+            "message": "These changed symbols have empty testsReaching. teamPark and teamResume have passing reaching tests, but those do not establish edges for these symbols.",
+            "expectationRef": "src/cli/services/team.ts; teamInit; teamRefresh; unitLabel; outcomeLine; teamClaim; teamRelease; DaemonCall; viaDaemon; HandoffReply; unitArgs; failureLine",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/config/__tests__/fixtures/repo-fields-catalog.json",
+            "message": "Both changed file and config symbols have empty testsReaching.",
+            "expectationRef": "repo-fields-catalog.json (file and config)",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/config/__tests__/repo-fields.test.ts",
+            "message": "The changed file symbol has empty testsReaching.",
+            "expectationRef": "src/config/__tests__/repo-fields.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/config/__tests__/repo-fields.test.ts",
+            "message": "codeOf has reaching tests present but failing/unverified: repo-fields.test.ts is absent from the test record.",
+            "expectationRef": "codeOf",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/config/repo-fields.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/config/repo-fields.ts; RepoFieldKind; BranchPatternGrammar; RepoFieldDef; BranchPatternRule; PatternCheck; isAllowedLiteral; rowOf; fail; RepoSettingCheck; hasControlChar; bad",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/config/repo-fields.ts",
+            "message": "Reaching tests are present but failing/unverified: the only reaching file, repo-fields.test.ts, is absent from the test record.",
+            "expectationRef": "validateBranchPattern; validateRepoSetting",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/index.ts",
+            "message": "These changed symbols have empty testsReaching, including startup registration in main.",
+            "expectationRef": "src/daemon/index.ts; getStepCallHandler; offlineRpc; offlineStream; main; purgeSession",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/host.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/daemon/steps/host.ts; StepEnvelope; StepToolRunner; StepHostOptions; contextOf; fail",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts",
+            "message": "These changed symbols have empty testsReaching despite the file's passing promised test.",
+            "expectationRef": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts; team; none; parse",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts",
+            "message": "These changed symbols have empty testsReaching despite the file's passing promised test.",
+            "expectationRef": "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts; Out; Way; viaRpc; call",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts",
+            "message": "The changed file symbol has empty testsReaching.",
+            "expectationRef": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/handler.ts",
+            "message": "These changed symbols have empty testsReaching. Passing tests reaching handleWorkflowStep do not supply coverage edges for dispatch or errorResult.",
+            "expectationRef": "src/daemon/steps/workflow-step/handler.ts; dispatch; errorResult",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/handoff-rpc.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/daemon/steps/workflow-step/handoff-rpc.ts; Params",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/park-offer.ts",
+            "message": "These changed symbols have empty testsReaching, including the live-run eligibility checks.",
+            "expectationRef": "src/daemon/steps/workflow-step/park-offer.ts; sameLogin; runIsForUnit; hasUnparkedWork",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/phases/park.ts",
+            "message": "These changed symbols have empty testsReaching. The promised park-phase test is present and passing, but no reaching edge establishes coverage of these symbols.",
+            "expectationRef": "src/daemon/steps/workflow-step/phases/park.ts; failure; handoffUnit; handlePark",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/phases/resume.ts",
+            "message": "These changed symbols have empty testsReaching. The promised resume-phase test is present and passing, but no reaching edge establishes coverage of these symbols.",
+            "expectationRef": "src/daemon/steps/workflow-step/phases/resume.ts; failure; handleResume",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/phases/start.ts",
+            "message": "These changed symbols have empty testsReaching, including handleStart's ownership and upstream metadata behavior.",
+            "expectationRef": "src/daemon/steps/workflow-step/phases/start.ts; handleStart; epicKeyFor; augmentStandaloneParams",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/resume.ts",
+            "message": "Every listed changed symbol has empty testsReaching, including restoration, rollback, state creation and resumed-turn selection. Passing promised resume tests do not override these missing edges.",
+            "expectationRef": "src/daemon/steps/workflow-step/resume.ts; ResumeResult; ApplyDeps; refusedWith; restoreFiles; rollback; finish; turnFor; applyResume; resumeStage",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/state-store.ts",
+            "message": "These changed symbols have empty testsReaching, including replacement, release and expiry handling.",
+            "expectationRef": "src/daemon/steps/workflow-step/state-store.ts; Entry; releaseState; replaceState; _workflowStateStoreSize; StateTokenNotFound; mintToken; sweep",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/state.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/daemon/steps/workflow-step/state.ts; WorkflowStepStage; BrainstormElicitState; WorkflowStepStatePayload; WorkflowStateDecodeError; decodeState; assertStage",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/daemon/steps/workflow-step/types.ts",
+            "message": "Every listed changed symbol in this file has empty testsReaching.",
+            "expectationRef": "src/daemon/steps/workflow-step/types.ts; WorkflowStepPhase; WorkflowStepInputStart; WorkflowStepInputPlan; WorkflowStepInputStep; WorkflowStepInputSynthesize; WorkflowStepInputResolveQuestion; WorkflowStepInputReviewDeferred; WorkflowStepInputPark; WorkflowStepInputResume; WorkflowStepInput; WorkflowStepEmitPlan; WorkflowStepEmitStep; WorkflowStepEmitSynthesize; WorkflowStepDone; WorkflowStepQuestion; WorkflowStepResolveQuestions; WorkflowStepReady; WorkflowStepDeferred; WorkflowStepError; WorkflowStepParked; WorkflowStepRestart; WorkflowStepNothingToResume; WorkflowStepOutput; WorkflowStepMcpEnvelope",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/mcp/__tests__/fixtures/tool-surface.golden.json",
+            "message": "Both changed file and config symbols have empty testsReaching.",
+            "expectationRef": "tool-surface.golden.json (file and config)",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/mcp/__tests__/park-resume-phases.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/mcp/__tests__/park-resume-phases.test.ts; spy",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/mcp/__tests__/schema-registry.test.ts",
+            "message": "The changed file symbol has empty testsReaching.",
+            "expectationRef": "src/mcp/__tests__/schema-registry.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/mcp/server.ts",
+            "message": "Every listed changed symbol in this file has empty testsReaching. Passing MCP phase tests do not establish symbol coverage without reaching edges.",
+            "expectationRef": "src/mcp/server.ts; buildInsrcMcpServerWithRegistry; forward; buildInsrcMcpServer; WorkflowApproveArgs; handleWorkflowApprove; err; InsrcPresentArgs; InsrcPresentDeps; namesPending; handleInsrcPresent; WorkflowRunArgs; WorkflowRunEnvelope; renderFrame; handleWorkflowRun; dispatchWorkflowRun; runInsrcMcpStdio; progressEventOf; detectClientProvider; errorResult",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/__tests__/gate-guarded-entry-points.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/__tests__/gate-guarded-entry-points.test.ts; EntryPoint; visit",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/artifact-write-inventory.ts",
+            "message": "Every listed changed symbol in this file has empty testsReaching.",
+            "expectationRef": "src/workflow/artifact-write-inventory.ts; WriteClass; WriteVia; WriteSite; InventoryEntry; WriterName; WriterCall; WriterValue; WriterScan; scanWriters; lineOf; isWriter; walk; noted; mints; writesAnything; functionBody; writeKindsIn; checkInventoryEntry",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/config/github.ts",
+            "message": "Every listed changed symbol in this file has empty testsReaching.",
+            "expectationRef": "src/workflow/config/github.ts; TrackerAdapter; GithubEntry; GithubConfigFile; ResolvedGithubConfigSource; ResolvedGithubConfig; githubConfigPath; loadGithubConfigFile; GithubConfigError; resolveGithubConfig; resolveBranchPattern; resolveGithubConfigFromFile; resolveEntry; StrictTrackerTarget; strictRefuse; strictTarget; strictOrigin; resolveStrictTrackerTarget; strictEntry",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/handoff-e2e.test.ts",
+            "message": "The changed file symbol has empty testsReaching. Its promised test is present and passing.",
+            "expectationRef": "src/workflow/team/__tests__/handoff-e2e.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/handoff-park-plan.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/team/__tests__/handoff-park-plan.test.ts; team; none; Env",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/handoff-park.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/team/__tests__/handoff-park.test.ts; team; Env",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/handoff-pure.test.ts",
+            "message": "The changed file symbol has empty testsReaching. All three promised tests in this file are present and passing.",
+            "expectationRef": "src/workflow/team/__tests__/handoff-pure.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/handoff-resume-check.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/team/__tests__/handoff-resume-check.test.ts; team; none; World",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/handoff-resume.test.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/team/__tests__/handoff-resume.test.ts; team; World; parse",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/helpers/handoff-world.ts",
+            "message": "These changed symbols have empty testsReaching.",
+            "expectationRef": "src/workflow/team/__tests__/helpers/handoff-world.ts; team; World; unitOf; parse; treeOf",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/helpers/handoff-world.ts",
+            "message": "Reaching tests are present but failing/unverified: these symbols are reached only from helpers/handoff-world.ts, which is absent from the test record. Passing files that use other helpers cannot establish their pass-state under the supplied rule.",
+            "expectationRef": "seedChain; parkDeps; handOver",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/park-offer.test.ts",
+            "message": "These changed symbols have empty testsReaching. Both promised tests in this file are present and passing.",
+            "expectationRef": "src/workflow/team/__tests__/park-offer.test.ts; team; none; Seen",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/__tests__/snapshot-upstream.test.ts",
+            "message": "The changed file symbol has empty testsReaching. Its promised test is present and passing.",
+            "expectationRef": "src/workflow/team/__tests__/snapshot-upstream.test.ts",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/gate.ts",
+            "message": "These changed symbols have empty testsReaching, including teamGate, park-offer refusal rendering and actor resolution. The passing promised tests do not override missing symbol-level edges.",
+            "expectationRef": "src/workflow/team/gate.ts; GuardedAction; GateOutcome; ClaimState; RefusedOutcome; TeamGateRefusedError; describeOutcome; GateDeps; CompletionHook; registerCompletionHook; ParkOfferProvider; heldByOther; consultHook; sameLogin; errorText; allowed; refused; logOutcome; TeamContext; claimsEnforcedFor; actingUser; authoredArtifactExists; teamContext; readHolder; teamGate; notEnforced; claim; release; ReviewFixMode; reviewFixDecision",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/handoff.ts",
+            "message": "These changed symbols have empty testsReaching, including checkpoint validation, portability, branch naming, park planning/execution and resume checks' supporting logic. All 20 promised tests are present with passing results; nevertheless, those test titles cannot replace the required symbol-level reaching edges.",
+            "expectationRef": "src/workflow/team/handoff.ts; HandoffStage; HandoffUnit; CheckpointCommon; RunCheckpoint; DraftCheckpoint; HandoffCheckpoint; unitId; unitType; slugOf; handoffBranchName; unitArtifactIds; isUnitArtifactPath; CheckpointCheck; isObject; isString; no; validateCheckpoint; escapeRegExp; mapStrings; portablePaths; rebindCheckpoint; local; RunCheckpointInput; buildRunCheckpoint; portable; unitDraftFiles; draftParkOffer; committedAtHead; inferStageWorkflow; has; runIsForUnit; ParkDeps; ParkPlan; ParkPlanResult; refuse; reasonOf; parkPlan; mine; ParkResult; checkpointPath; git; handoffNote; executePark; fail; attempt; StageWorkflow; ResumePlan; ResumeCheck; ResumeDeps; refused; repositoryIdOf; sameSnapshot; key; stageArtifactCommitted; restart",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/team/run-meta.ts",
+            "message": "These changed symbols have empty testsReaching. snapshotUpstream and runMetaFor have passing reaching tests, but the listed symbols do not.",
+            "expectationRef": "src/workflow/team/run-meta.ts; UpstreamRevision; RunEntryMeta; revisionOf; add; effectiveHld",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 53,
+      "med": 0,
+      "low": 8
+    }
+  }
+}

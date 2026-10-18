@@ -340,3 +340,62 @@ export function ensureUnitIssue(unit: UnitRef, port: TrackerPort): PortResult<Is
 	const r = ensureUnitIssueDetailed(unit, port);
 	return r.ok ? { ok: true, value: r.value.issue } : { ok: false, reason: r.reason, kind: r.kind };
 }
+
+// ---------------------------------------------------------------------------
+// Approve-time extras (team mode)
+// ---------------------------------------------------------------------------
+
+export type ExtraName = 'milestone' | 'taskList' | 'designComment' | 'reviewComment';
+
+export interface ExtraStep {
+	readonly name: ExtraName;
+	readonly run:  () => PortResult<void>;
+}
+
+/** A partial result is a normal outcome, not an exception. */
+export interface ExtrasOutcome {
+	readonly done:    string[];
+	readonly skipped: string[];
+	readonly failed:  Array<{ name: string; reason: string }>;
+}
+
+export interface ExtrasDeps {
+	readonly now?:  () => string;
+	/** Writes the step's mark (default: onto the unit's record through patchTrackerMeta). */
+	readonly mark?: (unit: UnitRef, name: ExtraName, at: string) => void;
+}
+
+function markExtra(unit: UnitRef, name: ExtraName, at: string): void {
+	const path = ownJson(unit);
+	const key = unitKey(unit);
+	const record = readTrackerMeta(path)?.units?.[key];
+	if (record === undefined) throw new Error(`no unit record for ${key} to mark`);
+	patchTrackerMeta(path, { units: { [key]: { ...record, extrasDone: { ...(record.extrasDone ?? {}), [name]: at } } } });
+}
+
+/**
+ * Run each approve-time extra on its own. A step already marked in the unit's
+ * `extrasDone` is skipped; a step that succeeds is marked before the next runs; a
+ * step that fails is left unmarked and reported. Nothing goes through
+ * `bestEffort`, so a failure is seen. The one residual repeat: the mark write
+ * fails after a successful post, so the next run posts that step again.
+ */
+export function runUnitExtras(unit: UnitRef, steps: readonly ExtraStep[], deps: ExtrasDeps = {}): ExtrasOutcome {
+	const now = deps.now ?? (() => new Date().toISOString());
+	const mark = deps.mark ?? markExtra;
+	const marks = readTrackerMeta(ownJson(unit))?.units?.[unitKey(unit)]?.extrasDone ?? {};
+	const out: ExtrasOutcome = { done: [], skipped: [], failed: [] };
+	for (const step of steps) {
+		if (marks[step.name] !== undefined) { out.skipped.push(step.name); continue; }
+		const r = step.run();
+		if (!r.ok) {
+			log.warn({ unit: unitKey(unit), step: step.name, reason: r.reason }, 'unit-issue: approve-time extra failed (left unmarked; the next approve retries it)');
+			out.failed.push({ name: step.name, reason: r.reason });
+			continue;
+		}
+		try { mark(unit, step.name, now()); }
+		catch (err) { log.warn({ unit: unitKey(unit), step: step.name, err: (err as Error).message }, 'unit-issue: extra posted but its mark was not written (the next approve may post it again)'); }
+		out.done.push(step.name);
+	}
+	return out;
+}

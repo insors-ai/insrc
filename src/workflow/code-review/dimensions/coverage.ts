@@ -249,6 +249,10 @@ export function buildCoveragePrompt(
 		hasPlan
 			? 'Do NOT report pre-existing gaps in touched-but-unchanged neighbours — coverage is scoped to THIS Story\'s changed behaviour only. If every changed symbol is exercised and every promised test is present and passing, return an EMPTY findings array. Never manufacture findings.'
 			: 'Do NOT report pre-existing gaps in touched-but-unchanged neighbours — coverage is scoped to THIS Story\'s changed behaviour only. If every changed symbol is exercised, return an EMPTY findings array. Never manufacture findings.',
+		// ISSUE-11e2b8a7: a smoke or live test cannot be run by the gate; its result is the builder's report.
+		...((testRecordView(subject)?.reportedTests?.length ?? 0) > 0
+			? ['The test-record results also list `reportedTests`: named tests the gate cannot run (smoke / live), each with the result and evidence the BUILDER reported. Grade a promised test that appears there against that entry: a reported pass means the test is present and passed as reported by the builder (no missing-promised-test finding); a reported fail is present-but-failing. Name the source as "reported by the builder" in any finding about it.']
+			: []),
 		'Reason only over the structured symbol summaries + testsReaching edges, the promised-tests list and the test-record results provided — you are not given raw file contents and you cannot run any test.',
 		extraNote ? `\nCorrection from a previous attempt:\n${extraNote}` : '',
 	].filter(s => s.length > 0).join('\n');

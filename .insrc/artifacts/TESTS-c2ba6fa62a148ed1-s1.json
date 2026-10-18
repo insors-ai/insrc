@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s1",
     "createdAt": "2026-10-16T13:00:16.421Z",
-    "updatedAt": "2026-10-18T04:44:37.079Z",
+    "updatedAt": "2026-10-18T05:19:48.564Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1096,6 +1096,87 @@
               },
               {
                 "title": "without the option the delete is as before: the edge is removed and nothing is returned to pending",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "2b1c6d7b",
+        "ranAt": "2026-10-18T05:19:48.564Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/full-index-rebuild.test.ts: hand-deleted edge restored by repo.reindex (mutation: unchanged-hash skip kept), unreadable file in uncommittedFiles, repository entity and DEPENDS_ON stored, interruption leaves fullIndexFinished false and start-up queues it, cross-repository restore without reindexing A, no export_names under old u64s after reindex",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "ac2: a cross-file edge deleted by hand from a store whose file hashes are unchanged is restored by repo.reindex",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "a file whose read fails during a full index is an uncommitted file and the repository reads not complete",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "the repository entity is stored before the manifest step, so the manifest's DEPENDS_ON edges are stored",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "a full index made to throw part-way leaves fullIndexFinished false, and start-up queues that repository for a full index",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "repository B's reindex restores repository A's hand-written edge into B through Pass 0, without reindexing A",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "after a reindex of the ac3 fixture no export_names entry remains under an old u64 and calls through the barrel still resolve",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2022,
+            "titles": [
+              {
+                "title": "ac2: a cross-file edge deleted by hand from a store whose file hashes are unchanged is restored by repo.reindex",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose read fails during a full index is an uncommitted file and the repository reads not complete",
+                "result": "pass"
+              },
+              {
+                "title": "the repository entity is stored before the manifest step, so the manifest's DEPENDS_ON edges are stored",
+                "result": "pass"
+              },
+              {
+                "title": "a full index made to throw part-way leaves fullIndexFinished false, and start-up queues that repository for a full index",
+                "result": "pass"
+              },
+              {
+                "title": "repository B's reindex restores repository A's hand-written edge into B through Pass 0, without reindexing A",
+                "result": "pass"
+              },
+              {
+                "title": "after a reindex of the ac3 fixture no export_names entry remains under an old u64 and calls through the barrel still resolve",
                 "result": "pass"
               }
             ],

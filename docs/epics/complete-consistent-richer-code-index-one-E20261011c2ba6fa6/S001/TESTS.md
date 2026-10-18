@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -235,3 +235,24 @@ Run at 2026-10-18T04:44:37.079Z on commit `47285fc2`. Tests check: **passed**. 4
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/delete-entities-by-id.test.ts` | 0 | 3 | 1.2 s |  |
 | `src/db/__tests__/entities-return-to-pending.test.ts` | 0 | 3 | 0.9 s |  |
+
+## t11
+
+Run at 2026-10-18T05:19:48.564Z on commit `2b1c6d7b`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/__tests__/full-index-rebuild.test.ts: hand-deleted edge restored by repo.reindex (mutation: unchanged-hash skip kept), unreadable file in uncommittedFiles, repository entity and DEPENDS_ON stored, interruption leaves fullIndexFinished false and start-up queues it, cross-repository restore without reindexing A, no export_names under old u64s after reindex**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac2: a cross-file edge deleted by hand from a store whose file hashes are unchanged is restored by repo.reindex | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+| pass | a file whose read fails during a full index is an uncommitted file and the repository reads not complete | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+| pass | the repository entity is stored before the manifest step, so the manifest's DEPENDS_ON edges are stored | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+| pass | a full index made to throw part-way leaves fullIndexFinished false, and start-up queues that repository for a full index | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+| pass | repository B's reindex restores repository A's hand-written edge into B through Pass 0, without reindexing A | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+| pass | after a reindex of the ac3 fixture no export_names entry remains under an old u64 and calls through the barrel still resolve | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/full-index-rebuild.test.ts` | 0 | 6 | 2 s |  |

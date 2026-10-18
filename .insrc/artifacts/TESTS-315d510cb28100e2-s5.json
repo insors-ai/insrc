@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s5",
     "createdAt": "2026-10-18T14:16:36.004Z",
-    "updatedAt": "2026-10-18T15:04:41.660Z",
+    "updatedAt": "2026-10-18T15:08:22.267Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -608,6 +608,51 @@
               },
               {
                 "title": "plan: synthesize asks the team gate again after finalizing, so a claim that moved meanwhile refuses the write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "847e35d8",
+        "ranAt": "2026-10-18T15:08:22.267Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts: build implement and validate on a stage held by someone else are refused naming the holder",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts",
+                "title": "build implement and validate on a stage held by someone else are refused naming the holder",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts",
+                "title": "build with no policy behaves as before and never touches the tracker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4673,
+            "titles": [
+              {
+                "title": "build implement and validate on a stage held by someone else are refused naming the holder",
+                "result": "pass"
+              },
+              {
+                "title": "build with no policy behaves as before and never touches the tracker",
                 "result": "pass"
               }
             ],

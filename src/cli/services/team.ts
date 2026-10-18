@@ -10,6 +10,8 @@
  * the command bar renders as a cross-prefixed line.
  */
 
+import { claim, release, describeOutcome, type GateOutcome } from '../../workflow/team/gate.js';
+import type { UnitRef } from '../../workflow/tracker/refs.js';
 import { refreshPolicy } from '../../workflow/team/policy-refresh.js';
 import { writeStarterPolicy } from '../../workflow/team/starter-policy.js';
 import { toAbsPath } from './repo.js';
@@ -30,4 +32,24 @@ export async function teamRefresh(repoPath: string, branch?: string): Promise<st
 		case 'absent':  return `• no policy file on ${out.branch} — this repository is treated as solo${warn}`;
 		case 'invalid': return `⚠ the policy file on ${out.branch} is invalid and team actions will be refused until it is fixed: ${out.reason}${warn}`;
 	}
+}
+
+/** Printable name of a claim unit: "epic <hash>", "story <hash>/s1" or "task <hash>/s1/t2". */
+export function unitLabel(unit: UnitRef): string {
+	return [unit.unit, [unit.epicHash, unit.storyId, unit.taskId].filter(x => x !== undefined).join('/')].join(' ');
+}
+
+/** The claim and release outcome as the terminal prints it: a tick line, or a cross line naming the reason (the holder for a held stage). */
+function outcomeLine(outcome: GateOutcome, unit: UnitRef, done: string, failed: string): string {
+	return outcome.kind === 'allowed' ? `✓ ${done} ${unitLabel(unit)}` : `✗ not ${failed} — ${describeOutcome(outcome)}`;
+}
+
+export function teamClaim(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): string {
+	const full = { ...unit, repoPath: toAbsPath(repoPath) } as UnitRef;
+	return outcomeLine(claim(full.repoPath, full), full, 'claimed', 'claimed');
+}
+
+export function teamRelease(repoPath: string, unit: Omit<UnitRef, 'repoPath'>): string {
+	const full = { ...unit, repoPath: toAbsPath(repoPath) } as UnitRef;
+	return outcomeLine(release(full.repoPath, full), full, 'released', 'released');
 }

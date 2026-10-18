@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -174,3 +174,20 @@ Run at 2026-10-18T15:04:41.660Z on commit `bbcf17b1`. Tests check: **passed**. 3
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts` | 0 | 2 | 1.7 s |  |
 | `src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts` | 0 | 5 | 1.7 s |  |
+
+## t8
+
+Run at 2026-10-18T15:08:22.267Z on commit `847e35d8`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts: build implement and validate on a stage held by someone else are refused naming the holder**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | build implement and validate on a stage held by someone else are refused naming the holder | `src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts` |
+| pass | build with no policy behaves as before and never touches the tracker | `src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts` | 0 | 2 | 4.7 s |  |

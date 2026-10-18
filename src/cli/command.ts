@@ -12,6 +12,7 @@
 
 import type { Services } from './services/index.js';
 import type { SteeringSelection } from '../shared/types.js';
+import type { UnitRef } from '../workflow/tracker/refs.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
 import type { ReviewArtifactResult } from '../workflow/review/index.js';
 import { formatMcpOutcome } from './services/repo.js';
@@ -36,6 +37,7 @@ export const COMMAND_HELP: readonly string[] = [
 	'tracker  setup [--project]   ·   bootstrap the GitHub tracker (config, labels, issue types, project)',
 	'team     init [path]   ·   write a starter .insrc/policy.json for the team lead to review and commit',
 	'team     refresh [path] [--branch <name>]   ·   fetch the remote default branch and apply its policy (name the branch when it cannot be detected)',
+	'team     claim|release <epicHash> [storyId [taskId]]   ·   take an unassigned stage, or give up one you hold (a policy administrator may release any)',
 	'config   list [search] | get <key> | set <key> <value> | unset <key> | reload   (dot-path keys)',
 	'setup    show | apply | pull',
 	'pane daemon|repos|workflows|setup   ·   help   ·   quit',
@@ -315,9 +317,28 @@ async function runTracker(sub: string | undefined, rest: readonly string[], svc:
 	}
 }
 
-/** `team init [path]` and `team refresh [path] [--branch <name>]`; the path defaults to the selected repo. */
+/** The unit a `team claim` / `team release` names: an epic hash, plus a story id, plus a task id. */
+function parseClaimUnit(args: readonly string[]): Omit<UnitRef, 'repoPath'> | undefined {
+	const [epicHash, storyId, taskId, ...extra] = args;
+	if (extra.length > 0 || epicHash === undefined || !/^[0-9a-f]{16}$/.test(epicHash)) return undefined;
+	if (storyId === undefined) return { unit: 'epic', epicHash };
+	if (!/^s\d+$/i.test(storyId)) return undefined;
+	if (taskId === undefined) return { unit: 'story', epicHash, storyId: storyId.toLowerCase() };
+	if (!/^t\d+$/i.test(taskId)) return undefined;
+	return { unit: 'task', epicHash, storyId: storyId.toLowerCase(), taskId: taskId.toLowerCase() };
+}
+
+/**
+ * `team init [path]`, `team refresh [path] [--branch <name>]`, and `team claim|release <epicHash> [storyId [taskId]]`.
+ * The path defaults to the selected repo; claim and release act on the selected repo.
+ */
 async function runTeam(sub: string | undefined, rest: readonly string[], svc: Services, ctx: CommandCtx): Promise<string[]> {
-	const USAGE = 'usage: team init [path] | team refresh [path] [--branch <name>]';
+	const USAGE = 'usage: team init [path] | team refresh [path] [--branch <name>] | team claim|release <epicHash> [storyId [taskId]]';
+	if (sub === 'claim' || sub === 'release') {
+		const unit = parseClaimUnit(rest);
+		if (unit === undefined) return [USAGE];
+		return [sub === 'claim' ? svc.team.teamClaim(ctx.repoPath, unit) : svc.team.teamRelease(ctx.repoPath, unit)];
+	}
 	let path: string | undefined;
 	let branch: string | undefined;
 	for (let i = 0; i < rest.length; i++) {

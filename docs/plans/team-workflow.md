@@ -246,3 +246,12 @@ committed upstream artifacts; completed stages are never redone. Step-level reco
 when the previous owner parked (the checkpoint carries the step outputs). Continuous per-step
 checkpointing (a commit and push on every step of every team run) was rejected for its cost. The
 approved Define keeps its original wording; the s6 LLD and its tests state the stage-level reading.
+
+## s6 LLD approval (2026-10-18)
+
+The s6 LLD was approved with a recorded review override of the daemon's `block` verdict after three review rounds (6 HIGH + 1 MED, then 5 HIGH, then 2 HIGH + 0 MED). The two open findings of round 3 are settled as **binding build requirements**:
+
+1. **Upstream snapshot covers every input the stage reads (s6-R3-1).** `snapshotUpstream` records the revisions of everything the workflow actually consumes, not only the artifact the LLD named: `design.epic` the Define; `design.story` the Define and the *effective* HLD (the base HLD plus its approved amendments, as `requireApprovedHld` returns it through `getEffectiveHld`); `plan` the Story LLD, the effective HLD and the Define dependency edges (`readPlanUpstream` reads `requireApprovedLld`, `requireApprovedHld` and `requireApprovedEpic`). The snapshot therefore also carries the approved-amendment state for HLD consumers. The standalone exception (a standalone Story has no HLD or Epic) is preserved. Resume compares the whole snapshot and refuses on any difference.
+2. **MCP exposure sites are part of the change inventory (s6-R3-2).** The `park` and `resume` phases are added everywhere the tool surface is declared: the phase `z.enum` in `src/mcp/server.ts`, the workflow-step input and output unions in `src/daemon/steps/workflow-step/types.ts`, the dispatcher in `src/daemon/steps/workflow-step/handler.ts`, the schema-registry expectations in `src/mcp/__tests__/schema-registry.test.ts` and the tool-surface fixture `src/mcp/__tests__/fixtures/tool-surface.golden.json`. A test proves an MCP call with `phase: 'park'` and `phase: 'resume'` passes validation and reaches the handler.
+
+Also recorded for the build: `registerParkOfferProvider` is an sc4 amendment proposed by this LLD; and ac28 is read at stage level (decision above).

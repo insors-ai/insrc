@@ -1,0 +1,31 @@
+{
+  "id": "AMD-315d510cb28100e2-15",
+  "epicHash": "315d510cb28100e2",
+  "epicSlug": "team-signoff-claim-based-workflow",
+  "hldBaseRunId": "wf-1792177279312-j27596",
+  "amendment": {
+    "type": "sharedContract.methodAdd",
+    "contractId": "sc4",
+    "method": {
+      "name": "registerParkOfferProvider",
+      "signature": "registerParkOfferProvider(provider: (repo: string, unit: UnitRef, actor: string) => boolean): void",
+      "purpose": "Lets the handoff module say whether the acting user has unparked work for a unit, so the gate can set offerPark on a held-by-other outcome without importing the handoff module (same shape as registerCompletionHook; shipped with no provider, so offerPark stays false)."
+    }
+  },
+  "rationale": "offerPark exists on GateOutcome but nothing can set it: the gate cannot know about runs or drafts, and importing the handoff module from the gate would create a cycle. A provider registration declared by sc4 and registered by s6 is additive and mirrors the completion hook s5 already ships unregistered.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/team/gate.ts:228"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1792338834491-rpu44e",
+    "storyId": "s6",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-18T15:57:42.666Z",
+  "status": "pending"
+}

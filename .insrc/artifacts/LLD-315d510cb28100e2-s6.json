@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792338027656-x6ds2e",
+    "runId": "wf-1792338834491-rpu44e",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-18T15:44:20.898Z",
+    "createdAt": "2026-10-18T15:57:42.565Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 233197,
+    "elapsedMs": 228053,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
@@ -41,12 +41,12 @@
           "ref": "coverage-of-intent",
           "item": "coverage-of-intent",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The artifact-only fallback satisfies ac28.",
-          "evidence": "DEF ac28 requires 'redo only the unfinished step'. The design instead restarts the whole unfinished stage and leaves acceptance of that change open. state-store.ts keeps progress in 'const store = new Map<string, Entry>()'; synthesize.ts writes artifacts only after execution completes. Committed artifacts therefore cannot recover earlier completed steps within the lost run. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, src/daemon/steps/workflow-step/state-store.ts, src/daemon/steps/workflow-step/phases/synthesize.ts]",
-          "action": "Resolve the upstream acceptance criterion explicitly before approval, or design durable progress sufficient to meet its existing wording.",
+          "severity": "LOW",
+          "premise": "Lost-machine recovery may restart the unfinished stage rather than recover individual steps.",
+          "evidence": "docs/plans/team-workflow.md explicitly records: 'Decision (user, option A): ac28 is read at stage level' and rejects continuous per-step checkpointing. The proposed branch-less restart follows that decision. [files: docs/plans/team-workflow.md]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "current-behaviour.1",
@@ -54,23 +54,35 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Changing workflow actions already refuse a non-holder, and held-by-other currently always carries offerPark false.",
-          "evidence": "handleStep calls 'assertMayAuthor(state.intent)' before resumeRun. assertMayAuthor throws TeamGateRefusedError for a held-by-other outcome. Both teamGate and claim construct held-by-other with 'offerPark: false'; the dispatcher returns err.reason as team-gate-refused. [files: src/workflow/team/gate.ts, src/workflow/team/author-gate.ts, src/daemon/steps/workflow-step/phases/step.ts, src/daemon/steps/workflow-step/handler.ts]",
-          "action": "Preserve these guards while adding the offer provider.",
+          "premise": "Changing workflow turns already refuse another holder, and held-by-other currently has offerPark false.",
+          "evidence": "handleStart, handlePlan and handleStep call assertMayAuthor before execution. assertMayAuthor throws TeamGateRefusedError for a disallowed outcome. teamGate returns '{ kind: held-by-other, holder, offerPark: false }' for another holder. [files: src/workflow/team/gate.ts, src/workflow/team/author-gate.ts, src/daemon/steps/workflow-step/phases/start.ts, src/daemon/steps/workflow-step/phases/plan.ts, src/daemon/steps/workflow-step/phases/step.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "snapshotUpstream's listed artifacts cover the inputs consumed by plan and design.story.",
+          "evidence": "readPlanUpstream reads 'requireApprovedLld', 'requireApprovedHld' and 'requireApprovedEpic', returning both HLD context and Define dependency edges. The design snapshots only LLD for plan. Furthermore, requireApprovedHld returns getEffectiveHld, which applies approved amendments while retaining base metadata. Comparing only the base HLD revision misses changes to the effective HLD used by design.story. [files: src/workflow/gates.ts, src/workflow/amendments/effective.ts, src/workflow/runners/plan/index.ts, src/workflow/runners/design-story/index.ts]",
+          "action": "Snapshot all actual upstream inputs, including Define and effective HLD state for Epic-scoped plans and approved amendment state for HLD consumers. Preserve the standalone exception.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "new-versus-reuse.1",
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The reused tracker port exposes port.comment and a comment capability.",
-          "evidence": "TrackerPort exposes 'readonly issueOps: IssueOps'; comment is declared on IssueOps as 'comment(issue: IssueRef, body: string): PortResult<void>'. Capability is 'claim' | 'issue-create' | 'signoff-request' | 'completion', with no comment member. The proposed error handling and fake TrackerPort use the wrong shape. [files: src/workflow/tracker/port.ts]",
-          "action": "Use port.issueOps.comment and document the existing capability requirements; update fixtures accordingly.",
+          "severity": "LOW",
+          "premise": "The tracker port already supports the identity, assignee and comment operations needed for handoff.",
+          "evidence": "TrackerPort declares 'whoAmI(): PortResult<string>' and 'readAssignee(issue: IssueRef): PortResult<string | null>'; IssueOps declares 'comment(issue: IssueRef, body: string): PortResult<void>'. These match the proposed reuse. [files: src/workflow/tracker/port.ts]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.1",
@@ -78,35 +90,35 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "HIGH",
-          "premise": "The inventory is sufficient to expose park/resume commands that operate on the daemon's run store.",
-          "evidence": "runTeam handles claim/release, init and refresh only. services/team.ts invokes claim/release directly in the CLI process. The workflow store is a module-local Map in the daemon. The design names command tests but specifies no command arguments, service additions, daemon RPC endpoints or registration that would reach that Map. [files: src/cli/command.ts, src/cli/services/team.ts, src/cli/services/index.ts, src/daemon/index.ts, src/daemon/steps/workflow-step/state-store.ts]",
-          "action": "Specify the CLI-to-daemon request/response contracts, command parsing, service interface changes and daemon handlers, including delivery of the resumed workflow turn.",
+          "premise": "The listed change sites are sufficient to expose park and resume to MCP clients.",
+          "evidence": "src/mcp/server.ts independently validates phase with 'z.enum([start, plan, step, synthesize, resolve_question, review_deferred])'. The design's change-site inventory omits this registration and the workflow-step input/output types. Adding daemon handlers alone leaves park and resume rejected at the MCP boundary. [files: src/mcp/server.ts, src/daemon/steps/workflow-step/types.ts, src/daemon/steps/workflow-step/handler.ts, src/mcp/__tests__/schema-registry.test.ts, src/mcp/__tests__/fixtures/tool-surface.golden.json]",
+          "action": "Include the MCP registration, workflow-step input/output unions, dispatcher, schema-registry expectations and tool-surface fixture in the implementation inventory.",
           "fixability": "manual",
           "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Carrying metadata through encodeState and replaceState covers the existing plan and step token replacements.",
+          "evidence": "Both paused and completed branches of handlePlan and handleStep call reencodeState. reencodeState delegates to replaceState, which currently saves the replacement and releases the previous token. The proposed metadata propagation targets the common replacement seam. [files: src/daemon/steps/workflow-step/state.ts, src/daemon/steps/workflow-step/state-store.ts, src/daemon/steps/workflow-step/phases/plan.ts, src/daemon/steps/workflow-step/phases/step.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
         },
         {
           "claimId": "data-compatibility.1",
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The specified checkpoint can restore an executable run on another machine.",
-          "evidence": "ExecutorState contains 'readonly intent: WorkflowIntent', including an absolute repoPath and repoIndexedAt, beyond the four executor fields listed in the design. resumeRun uses 'intent: state.intent' to construct runner context; design-story runners read upstream artifacts through ctx.intent.repoPath. WorkflowStepStatePayload additionally requires version and startedAtMs. The design specifies neither reconstruction of omitted fields nor rebinding the nested executor intent to the receiving clone. [files: src/workflow/types.ts, src/workflow/executor.ts, src/workflow/runners/design-story/index.ts, src/daemon/steps/workflow-step/state.ts, src/daemon/steps/workflow-step/phases/step.ts]",
-          "action": "Define a complete checkpoint-to-payload conversion, rebind both intents to the receiving repository, establish local timestamp/index-watermark semantics, and test clones at different absolute paths.",
+          "severity": "LOW",
+          "premise": "Older artifacts without meta.revision can be read as revision 0 using the existing helper.",
+          "evidence": "readRevision returns 0 when the artifact or meta is not a record, and otherwise accepts only a nonnegative integer revision. Existing artifact-writer tests explicitly cover absent metadata and malformed revisions. [files: src/workflow/storage.ts, src/workflow/__tests__/artifact-writer.test.ts]",
+          "action": "Pass parsed artifacts to readRevision; it does not accept a filename as an artifact lookup.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The existing store can identify the actor's most recently touched run using the proposed data model.",
-          "evidence": "Entry records payload, createdAt and touchedAt; WorkflowStepStatePayload and WorkflowIntent contain no acting-user identity. listLiveRuns(unit) can filter by intent and sort by touchedAt, but cannot establish the promised actor ownership. parkedBy records the parker, not who authored the selected run. [files: src/daemon/steps/workflow-step/state-store.ts, src/daemon/steps/workflow-step/state.ts, src/workflow/types.ts]",
-          "action": "Specify run ownership capture and filtering, plus safe behavior for existing runs without ownership metadata and supplied tokens belonging to another unit or actor.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "boundaries.1",
@@ -114,9 +126,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The park-offer extension preserves the existing sc4 outcome shape and leaves signoff completion with s7.",
-          "evidence": "HLD sc4 already declares held-by-other with 'offerPark: boolean' and assigns completion-hook registration to s7. gate.ts implements that same outcome and a separate registerCompletionHook. The proposed park provider fills an existing field and explicitly proposes its registration API as an amendment. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, src/workflow/team/gate.ts]",
-          "action": "Record the proposed sc4 amendment and keep the provider synchronous to preserve teamGate's synchronous contract.",
+          "premise": "The park-offer extension has an established place in sc4 without changing GateOutcome's shape or taking over signoff.",
+          "evidence": "HLD §4.4 assigns sc4 to s5 and names s6 as a consumer; its held-by-other variant already contains 'offerPark: boolean'. HLD §5.6 assigns parking, issue notes and state reconstruction to s6. The proposed provider fills that existing field and leaves the completion hook with s7. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md, src/workflow/team/gate.ts]",
+          "action": "Record registerParkOfferProvider as the proposed sc4 amendment.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -125,41 +137,41 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The proposed checkpoint supports the promised stale-upstream detection.",
-          "evidence": "The error path requires comparing upstream revisions 'recorded at park time', but HandoffCheckpoint lists no upstream revision bindings. Existing ExecutorState and WorkflowStepStatePayload have none either. design-story readUpstream reads both approved Epic and HLD; the HLD explicitly says missing meta.revision means revision 0. sourceHead alone does not record the working-tree revisions used by the run. [files: src/workflow/types.ts, src/daemon/steps/workflow-step/state.ts, src/workflow/runners/design-story/index.ts, docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md]",
-          "action": "Add explicit upstream artifact identities and revision bindings, define legacy revision-0 handling, and capture the inputs actually used by the run.",
+          "severity": "LOW",
+          "premise": "Existing git and tracker interfaces expose detectable failures for parking and issue-note handling.",
+          "evidence": "runGit catches subprocess failures and returns '{ ok: false, stderr, quiet }'; successful calls return stdout. IssueOps.comment returns PortResult<void>. These support the stated stop-on-git-failure and noted:false-after-comment-failure branches. [files: src/workflow/team/git.ts, src/workflow/tracker/port.ts]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "tests.1",
           "ref": "tests",
           "item": "tests",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The acceptance mapping proves every upstream criterion as written.",
-          "evidence": "The proposed ac28 test checks 'restarts only the stage that has no artifact', whereas DEF requires 'redo only the unfinished step'. The in-memory store and synthesize-only artifact write confirm these are different behaviors. The proposed assertion could pass while repeating completed steps. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, src/daemon/steps/workflow-step/state-store.ts, src/daemon/steps/workflow-step/phases/synthesize.ts]",
-          "action": "After resolving ac28, align its test with the accepted wording and include a lost run with at least one completed step and one unfinished step.",
+          "severity": "LOW",
+          "premise": "Each upstream acceptance criterion has a proposed proving test.",
+          "evidence": "DEF §6.6 lists ac25–ac28. The design maps these respectively to refusal/offer and ownership tests, park/push/comment tests, cross-clone progress restoration tests, and branch-less stage restart tests. The latter follows the documented ac28 decision. This verifies the test plan, not implemented test results. [files: docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/DEF.md, docs/plans/team-workflow.md, src/workflow/gates.ts, src/workflow/amendments/effective.ts]",
+          "action": "Extend upstream-drift cases to include changed Define dependencies and approved HLD amendments.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 6,
-        "med": 1,
-        "low": 2,
+        "high": 2,
+        "med": 0,
+        "low": 8,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-18T15:44:38.727Z",
+      "reviewedAt": "2026-10-18T15:57:46.910Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     }
   },
   "body": {
     "summary": {
-      "prose": "When a stage is reassigned in the tracker, the previous owner's next changing action is refused as today and now also offers to park: the draft artifacts and a checkpoint of the run (plan, step outputs, next step) are committed to a handoff branch named from the repo's branch pattern, pushed, and noted on the stage's issue. The new assignee resumes with one command: the daemon fetches the branch, restores the files and rebuilds the run on their machine, continuing at the next unfinished step. If no checkpoint exists, for instance after a lost machine, resume rebuilds from the committed artifact files and restarts only the stage that has no artifact.",
+      "prose": "When a stage is reassigned in the tracker, the previous owner's next changing action is refused as today and now also offers to park: the draft artifacts and a checkpoint of the run (its complete state, who owned it and which upstream artifact revisions it started from) are committed to a handoff branch named from the repo's branch pattern, pushed, and noted on the stage's issue. The new assignee resumes with one command: the daemon checks the repository is registered and is the same one, fetches the branch, restores the files, rebinds the run to their clone and returns the next workflow turn, whichever stage the run was in. If there is no parked branch, for instance after a lost machine, resume tells them which stage to start afresh on the committed artifacts, so finished stages are never redone.",
       "audience": "product"
     },
     "hldContextSlice": {
@@ -308,7 +320,7 @@
           ],
           "returns": {
             "type": "GateOutcome",
-            "meaning": "Unchanged, except that held-by-other carries offerPark true when a registered park-offer provider says the actor has unparked work for the unit"
+            "meaning": "Unchanged, except that held-by-other carries offerPark true when the registered park-offer provider says the actor has unparked work for the unit"
           },
           "errors": [
             {
@@ -317,11 +329,148 @@
             }
           ],
           "preconditions": [
-            "A park-offer provider may be registered; none registered means offerPark false"
+            "None registered means offerPark false"
           ],
           "postconditions": [
-            "offerPark is true only on held-by-other, never on other outcomes",
+            "offerPark is true only on held-by-other",
             "A repo with no policy makes no provider call and no tracker call (k4)"
+          ]
+        },
+        {
+          "name": "encodeState",
+          "signature": "encodeState(payload: WorkflowStepStatePayload, meta?: RunEntryMeta): string",
+          "parameters": [
+            {
+              "name": "payload",
+              "type": "WorkflowStepStatePayload",
+              "purpose": "The run state to store",
+              "optional": false
+            },
+            {
+              "name": "meta",
+              "type": "RunEntryMeta",
+              "purpose": "{ owner?: string; upstream?: UpstreamRevision[] }: the acting user and the upstream revisions captured when the run was created",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The opaque state token"
+          },
+          "errors": [
+            {
+              "type": "WorkflowStateDecodeError",
+              "condition": "The payload version is not the current one (unchanged)"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "meta is kept on the store entry beside payload, createdAt and touchedAt; the payload shape and token format are unchanged",
+            "reencodeState and replaceState carry the previous entry's meta onto the replacement, so ownership and the snapshot survive every plan and step turn"
+          ]
+        },
+        {
+          "name": "handleStart",
+          "signature": "handleStart(input: WorkflowStepInputStart): Promise<WorkflowStepOutput>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "WorkflowStepInputStart",
+              "purpose": "The start request",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "WorkflowStepOutput",
+            "meaning": "Unchanged turn (emit_plan or the question gate); the run it stores now carries meta"
+          },
+          "errors": [
+            {
+              "type": "TeamGateRefusedError",
+              "condition": "Unchanged: the author gate"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Before encodeState it sets meta.owner from actingUser(repo) and meta.upstream from snapshotUpstream(repo, workflow, params); a repo without a team policy gets neither and makes no tracker call (k4)"
+          ]
+        },
+        {
+          "name": "snapshotUpstream",
+          "signature": "snapshotUpstream(repo: string, workflow: string, params: Record<string, unknown>): readonly UpstreamRevision[]",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repository path",
+              "optional": false
+            },
+            {
+              "name": "workflow",
+              "type": "string",
+              "purpose": "design.epic, design.story or plan",
+              "optional": false
+            },
+            {
+              "name": "params",
+              "type": "Record<string, unknown>",
+              "purpose": "epicHash and storyId",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly UpstreamRevision[]",
+            "meaning": "{ artifactId, revision } for each artifact the workflow reads (design.epic: the Define; design.story: the Define and HLD; plan: the Story LLD), revision from readRevision so a missing one is 0"
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "A missing or unreadable artifact is listed with revision 0; never throws"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Read once when the run is created, which is the baseline every step output of the run is computed against"
+          ]
+        },
+        {
+          "name": "listStates",
+          "signature": "listStates(): readonly { token: string; payload: WorkflowStepStatePayload; meta: RunEntryMeta | undefined; touchedAt: number }[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly { token: string; payload: WorkflowStepStatePayload; meta: RunEntryMeta | undefined; touchedAt: number }[]",
+            "meaning": "Every live entry, newest touch first"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Reading the list does not touch any entry's expiry"
+          ]
+        },
+        {
+          "name": "actingUser",
+          "signature": "actingUser(repo: string): string | undefined",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repository path",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | undefined",
+            "meaning": "The signed-in tracker login when claims are enforced for the repo, otherwise undefined with no tracker call"
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Never throws; any failure reading the user returns undefined"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "A repo without a team policy makes no tracker call (k4)"
           ]
         },
         {
@@ -337,39 +486,39 @@
             {
               "name": "unit",
               "type": "UnitRef",
-              "purpose": "The stage unit being handed over",
+              "purpose": "The Epic or Story unit being handed over",
               "optional": false
             },
             {
               "name": "opts.runToken",
               "type": "string",
-              "purpose": "State token of the live run to checkpoint; when omitted the daemon's store is searched for the actor's run on this unit",
+              "purpose": "State token of the run to checkpoint; when omitted the actor's most recently touched run for the unit is used",
               "optional": true
             }
           ],
           "returns": {
             "type": "ParkResult",
-            "meaning": "{ ok: true, branch, commit, noted } or { ok: false, reason } with the reason naming the first step that failed"
+            "meaning": "{ ok: true, branch, commit, noted, variant: 'run' | 'draft' } or { ok: false, reason } naming the first step that failed"
           },
           "errors": [
             {
               "type": "ParkResult ok:false",
-              "condition": "The actor is the current holder, the working tree has unrelated changes under the unit's paths, git fails, the push is rejected, or the branch pattern is invalid"
+              "condition": "The actor holds the unit, the unit is a Task, the supplied token belongs to another unit, another actor or no owner, git fails, the push is rejected or the branch pattern is invalid"
             }
           ],
           "preconditions": [
-            "The tracker shows someone else as holder of the unit (parking while holding is refused)",
-            "The acting user has a live run or a draft artifact for the unit"
+            "The tracker shows someone else as holder of the unit",
+            "The actor owns a live run for the unit (any stage, including awaiting_plan) or has an uncommitted draft artifact for it"
           ],
           "postconditions": [
-            "The handoff branch holds the unit's draft artifacts and .insrc/handoff/<unit-key>.json and is pushed",
-            "One comment on the unit's issue names the branch and commit; a failed comment is reported in noted:false and does not undo the push",
-            "The user's checked-out branch and index are unchanged"
+            "A run checkpoint is written when the actor owns a live run, otherwise a draft-only checkpoint when only a draft exists; both are committed with the draft artifacts to the pushed handoff branch",
+            "One note is added through port.issueOps.comment; a failed note is reported as noted:false and does not undo the push",
+            "The user's checked-out branch, index and working tree are unchanged"
           ]
         },
         {
-          "name": "resumeStage",
-          "signature": "resumeStage(repo: string, unit: UnitRef): Promise<ResumeResult>",
+          "name": "inferStageWorkflow",
+          "signature": "inferStageWorkflow(repo: string, unit: UnitRef): 'design.epic' | 'design.story' | 'plan' | 'complete'",
           "parameters": [
             {
               "name": "repo",
@@ -380,13 +529,83 @@
             {
               "name": "unit",
               "type": "UnitRef",
-              "purpose": "The stage unit being taken over",
+              "purpose": "The Epic or Story unit",
               "optional": false
             }
           ],
           "returns": {
+            "type": "'design.epic' | 'design.story' | 'plan' | 'complete'",
+            "meaning": "From the committed artifact chain: an Epic unit with no HLD is design.epic and otherwise complete; a Story unit with no LLD is design.story, with an LLD and no PLAN is plan, with both is complete"
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "Never throws"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "A committed LLD never hides an unfinished plan, and a committed PLAN means complete"
+          ]
+        },
+        {
+          "name": "verifyReceivingRepo",
+          "signature": "verifyReceivingRepo(repoPath: string, repositoryId: string | undefined): Promise<{ ok: true } | { ok: false; reason: string }>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The receiving clone's path",
+              "optional": false
+            },
+            {
+              "name": "repositoryId",
+              "type": "string",
+              "purpose": "The checkpoint's repository identity (the root commit id); undefined for a branch-less restart",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "{ ok: true } | { ok: false; reason: string }",
+            "meaning": "ok only when listRepos shows repoPath registered with the daemon and, when an id is given, git rev-list --max-parents=0 HEAD in repoPath yields that id"
+          },
+          "errors": [
+            {
+              "type": "reason",
+              "condition": "Not registered, not a git repository, or a different repository"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Called by both resume entry points before any file is restored or fetched into the working tree"
+          ]
+        },
+        {
+          "name": "resumeStage",
+          "signature": "resumeStage(repo: string, unit: UnitRef, opts?: { workflow?: string }): Promise<ResumeResult>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repository path of the receiving clone",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The Epic or Story unit being taken over",
+              "optional": false
+            },
+            {
+              "name": "opts.workflow",
+              "type": "string",
+              "purpose": "design.epic, design.story or plan; inferred from the artifact chain by inferStageWorkflow when omitted",
+              "optional": true
+            }
+          ],
+          "returns": {
             "type": "ResumeResult",
-            "meaning": "{ kind: 'resumed', state, next } when a checkpoint was restored into the daemon's store; { kind: 'restart', workflow, params, reason } when only committed artifacts exist; { kind: 'nothing-to-resume', reason } when the stage's artifact is complete; or { kind: 'refused', reason }"
+            "meaning": "{ kind: 'resumed', turn } where turn is the next workflow-step turn (emit_plan, emit_step or emit_synthesize) with a fresh state token; { kind: 'restart', workflow, params, draftRestored } when there is no branch or only a draft-only checkpoint; { kind: 'nothing-to-resume', reason } when the stage is complete; or { kind: 'refused', reason }"
           },
           "errors": [
             {
@@ -395,15 +614,45 @@
             },
             {
               "type": "ResumeResult refused",
-              "condition": "Checkpoint schema version unknown, unit mismatch, restore would overwrite uncommitted local changes to the same files, or the fetch fails"
+              "condition": "Receiving repo not registered or not the same repository, unknown schema version, unit mismatch, path outside the unit's artifact paths, upstream revisions differ from the checkpoint's snapshot, uncommitted local changes to files to restore, or a fetch failure that is not a missing branch"
             }
           ],
           "preconditions": [
             "The actor holds or can claim the unit through the author gate"
           ],
           "postconditions": [
-            "On resumed: the draft artifacts from the branch are in the working tree and the run state is saved under a new token whose stage and nextStepIndex equal the checkpoint's",
-            "Nothing outside the unit's own paths and the daemon's store is written"
+            "On resumed: the draft files are in the working tree, both intents are rebound to the receiving clone, and the run is stored with the actor as owner and the checkpoint's snapshot",
+            "On restart with draftRestored true the draft files are restored; if restoring any file fails every file restored by this call is removed again and the result is refused",
+            "On any other kind nothing is written outside the daemon's memory"
+          ]
+        },
+        {
+          "name": "rebindCheckpoint",
+          "signature": "rebindCheckpoint(checkpoint: RunCheckpoint, binding: { repoPath: string; repoIndexedAt: number | null; now: number }): WorkflowStepStatePayload",
+          "parameters": [
+            {
+              "name": "checkpoint",
+              "type": "RunCheckpoint",
+              "purpose": "A validated run checkpoint",
+              "optional": false
+            },
+            {
+              "name": "binding",
+              "type": "{ repoPath: string; repoIndexedAt: number | null; now: number }",
+              "purpose": "The receiving clone's absolute path, its index watermark and the clock",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "WorkflowStepStatePayload",
+            "meaning": "A complete payload with version, runId, epicKey, startedAtMs, stage and intent and, by stage, the executor or stepOutputs, with repoPath and repoIndexedAt replaced in both the payload intent and the executor intent"
+          },
+          "errors": [],
+          "preconditions": [
+            "The checkpoint passed validation"
+          ],
+          "postconditions": [
+            "No absolute path from the parker's machine remains in the payload"
           ]
         },
         {
@@ -436,33 +685,102 @@
           "errors": [
             {
               "type": "reason",
-              "condition": "The filled name breaks the grammar (length, characters, slashes, '..', '.lock')"
+              "condition": "The name breaks the grammar, or the pattern omits {id} so it does not identify the unit"
             }
           ],
           "preconditions": [],
           "postconditions": [
-            "The name is deterministic for a unit, so a second park lands on the same branch and resume needs no tracker read to find it"
+            "Deterministic for a unit, so resume finds the branch without reading the tracker"
           ]
         },
         {
-          "name": "listLiveRuns",
-          "signature": "listLiveRuns(unit: UnitRef): readonly { token: string; payload: WorkflowStepStatePayload }[]",
+          "name": "insrc_workflow_step",
+          "signature": "insrc_workflow_step({ phase: 'park' | 'resume', repo?: string, params: { epicHash: string; storyId?: string; runToken?: string; workflow?: string } }): WorkflowStepOutput",
           "parameters": [
             {
-              "name": "unit",
-              "type": "UnitRef",
-              "purpose": "The stage unit",
+              "name": "phase",
+              "type": "'park' | 'resume'",
+              "purpose": "Two new phases beside start, plan, step and synthesize",
+              "optional": false
+            },
+            {
+              "name": "params",
+              "type": "{ epicHash: string; storyId?: string; runToken?: string; workflow?: string }",
+              "purpose": "Identifies the unit (epic when storyId is absent); runToken applies to park, workflow to resume",
               "optional": false
             }
           ],
           "returns": {
-            "type": "readonly { token: string; payload: WorkflowStepStatePayload }[]",
-            "meaning": "The runs in the daemon's state store whose intent maps to the unit, newest first"
+            "type": "WorkflowStepOutput",
+            "meaning": "park returns a done-style result with branch, commit, noted and variant; resume returns the next turn (emit_plan, emit_step or emit_synthesize with state) or a restart, nothing-to-resume or error result"
           },
-          "errors": [],
+          "errors": [
+            {
+              "type": "team-gate-refused",
+              "condition": "Mapped from TeamGateRefusedError exactly as the other phases"
+            }
+          ],
           "preconditions": [],
           "postconditions": [
-            "Does not touch the entries' expiry"
+            "Served by the daemon-hosted handler, so it reaches the run store from an MCP client"
+          ]
+        },
+        {
+          "name": "team.park / team.resume",
+          "signature": "daemon RPC: 'team.park' | 'team.resume' (params: { repoPath: string; epicHash: string; storyId?: string; workflow?: string }) => Promise<ParkResult | ResumeResult>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "{ repoPath: string; epicHash: string; storyId?: string; workflow?: string }",
+              "purpose": "The unit to hand over or take over",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ParkResult | ResumeResult",
+            "meaning": "The same results as parkDraft and resumeStage"
+          },
+          "errors": [
+            {
+              "type": "rpc error",
+              "condition": "Bad parameters"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Registered in the daemon handler map beside repo.add, so the terminal reaches the run store"
+          ]
+        },
+        {
+          "name": "teamPark / teamResume",
+          "signature": "teamPark(repoPath: string, unit: { epicHash: string; storyId?: string }): Promise<string>; teamResume(repoPath: string, unit: { epicHash: string; storyId?: string }, workflow?: string): Promise<string>",
+          "parameters": [
+            {
+              "name": "unit",
+              "type": "{ epicHash: string; storyId?: string }",
+              "purpose": "Parsed from 'team park <epicHash> [storyId]' and 'team resume <epicHash> [storyId] [--workflow <name>]'",
+              "optional": false
+            },
+            {
+              "name": "workflow",
+              "type": "string",
+              "purpose": "Optional design.epic, design.story or plan",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "One printable line: the branch parked, or the resume outcome with the next workflow turn; refusals print as a cross line naming the reason or the holder"
+          },
+          "errors": [
+            {
+              "type": "Error",
+              "condition": "The daemon is not running or the rpc fails; rendered as a cross line"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "Bad or missing arguments print the usage line and call nothing"
           ]
         }
       ]
@@ -471,16 +789,32 @@
       {
         "entity": "HandoffCheckpoint",
         "change": "new",
-        "details": "Written to .insrc/handoff/<unit-key>.json on the handoff branch only. Fields: schemaVersion (1), unit (UnitRef without repoPath), parkedBy, parkedAt, sourceHead (commit the parker was on), stage (WorkflowStepStage), runId, epicKey, intent (workflow, focus, params), executor (ExecutorState: plan, nextStepIndex, stepOutputs, pause) when stage is awaiting_llm_step, stepOutputs when awaiting_synthesize, artifactPaths (repo-relative files parked with it). Restoring it never trusts paths: each must be a file under the unit's own artifact paths.",
+        "details": "Written to .insrc/handoff/<unit-key>.json on the handoff branch only, as one of two variants. Common: schemaVersion (1), kind ('run' | 'draft'), unit (epicHash, storyId), parkedBy, parkedAt, sourceHead, repositoryId (the root commit id), artifactPaths (repo-relative files parked with it). RunCheckpoint adds: runId, epicKey, stage (awaiting_plan, awaiting_llm_step or awaiting_synthesize), intent (workflow, focus, params; repoPath and repoIndexedAt are not stored), executor (plan, nextStepIndex, stepOutputs, pause; its own intent is not stored) when stage is awaiting_llm_step, stepOutputs when awaiting_synthesize, owner, upstream (the { artifactId, revision } snapshot captured when the run was created). A DraftCheckpoint carries only the common fields: it is for a daemon that restarted or a draft with no live run. Restoring checks every path lies under the unit's own artifact paths.",
         "callSites": [
-          "src/daemon/steps/workflow-step/state.ts",
-          "src/workflow/types.ts:216-228"
+          "src/daemon/steps/workflow-step/state.ts:60-107",
+          "src/workflow/types.ts:45-60",
+          "src/workflow/types.ts:216-228",
+          "src/workflow/storage.ts:102-110"
+        ]
+      },
+      {
+        "entity": "Workflow state store entry",
+        "change": "field-add",
+        "details": "Each entry gains optional meta { owner, upstream } beside payload, createdAt and touchedAt, and the module gains listStates. meta is set by handleStart through encodeState and carried by reencodeState and replaceState. Runs created when claims are not enforced, or before this change, have no meta.owner and are never treated as the actor's: they make offerPark false and park refuses them.",
+        "callSites": [
+          "src/daemon/steps/workflow-step/state-store.ts:28-90",
+          "src/daemon/steps/workflow-step/state.ts:60-107",
+          "src/daemon/steps/workflow-step/phases/start.ts:108",
+          "src/daemon/steps/workflow-step/phases/plan.ts:85",
+          "src/daemon/steps/workflow-step/phases/plan.ts:108",
+          "src/daemon/steps/workflow-step/phases/step.ts:87",
+          "src/daemon/steps/workflow-step/phases/step.ts:110"
         ]
       },
       {
         "entity": "GateOutcome.held-by-other.offerPark",
         "change": "invariant-change",
-        "details": "offerPark was always false. It is now true when the registered park-offer provider returns true for (repo, unit, actor). The type is unchanged.",
+        "details": "offerPark was always false. It is now true when the registered park-offer provider returns true for (repo, unit, actor): the actor owns a live run for the unit in any stage or has an uncommitted draft artifact for it. The type is unchanged.",
         "callSites": [
           "src/workflow/team/gate.ts:34",
           "src/workflow/team/gate.ts:228",
@@ -490,7 +824,7 @@
       {
         "entity": "describeOutcome",
         "change": "invariant-change",
-        "details": "A held-by-other outcome with offerPark true appends the park command to the reason, so every client that prints the refusal also prints the offer.",
+        "details": "A held-by-other outcome with offerPark true appends the park command, so every client that prints the refusal also prints the offer.",
         "callSites": [
           "src/workflow/team/gate.ts:62-69",
           "src/daemon/steps/workflow-step/handler.ts:75",
@@ -498,9 +832,9 @@
         ]
       },
       {
-        "entity": "branchPattern row grammar",
+        "entity": "branchPattern row",
         "change": "field-modify",
-        "details": "The row in the shared settings catalog gains a default (insrc/handoff/{type}-{id}) and loses its not-used-yet note; the grammar's placeholders stay id, slug, type. The validator and the settings clients pick the change up from the one row (k6).",
+        "details": "The catalog row gains the default insrc/handoff/{type}-{id} and loses its not-used-yet note; the grammar's placeholders stay id, slug and type.",
         "callSites": [
           "src/config/repo-fields.ts:77-87",
           "src/workflow/config/github.ts:95"
@@ -509,9 +843,9 @@
       {
         "entity": "Issue handoff note",
         "change": "new",
-        "details": "One comment body: a marker line '<!-- insrc:handoff -->', the branch name, the checkpoint commit, who parked and the stage. Posted through the port's comment capability; nothing reads it back.",
+        "details": "One comment: the marker '<!-- insrc:handoff -->', the branch, the checkpoint commit, who parked, the stage and the variant. Posted with port.issueOps.comment; nothing reads it back.",
         "callSites": [
-          "src/workflow/tracker/port.ts:59"
+          "src/workflow/tracker/port.ts:55-70"
         ]
       }
     ],
@@ -519,7 +853,7 @@
       {
         "contractId": "sc4",
         "role": "consumes",
-        "howDetails": "Reads GateOutcome and TeamGateRefusedError unchanged. resumeStage asks teamGate with action 'author' (which claims an unassigned unit through the add-only assignment). parkDraft reads the holder through the same gate read and refuses when the actor holds the unit. The only addition to sc4 is registerParkOfferProvider, proposed as an amendment, so offerPark can be set without a cycle."
+        "howDetails": "Reads GateOutcome and TeamGateRefusedError unchanged. resumeStage asks teamGate with action 'author' and the workflow, which claims an unassigned unit through the add-only assignment. parkDraft reads the holder through the same gate read and refuses when the actor holds the unit. The only addition to sc4 is registerParkOfferProvider, proposed as an amendment so offerPark can be set without an import cycle."
       }
     ],
     "errorPaths": {
@@ -527,71 +861,99 @@
         {
           "scenario": "Park is requested while the actor holds the unit",
           "detection": "parkDraft reads the holder through the gate and finds the actor's own login",
-          "response": "Return ok:false with 'you hold this stage; there is nothing to hand over'. Nothing is written",
+          "response": "Return ok:false 'you hold this stage; there is nothing to hand over'. Nothing is written",
           "userImpact": "A clear refusal instead of a branch for work the user still owns",
           "recoverable": true
         },
         {
-          "scenario": "The unit has no issue or no holder (nobody to hand over to)",
-          "detection": "The gate outcome for the read is no-issue or the holder is null",
-          "response": "Return ok:false naming the reason; an unassigned unit is claimed and continued, not parked",
-          "userImpact": "The user is told to claim rather than park",
+          "scenario": "The unit is a Task, or has no issue, or has no holder",
+          "detection": "parkDraft checks unit.unit and the gate read: a Task unit, a no-issue outcome or a null holder",
+          "response": "Return ok:false naming the reason; a Task has no run to checkpoint and an unassigned unit is claimed and continued, not parked",
+          "userImpact": "The user is told to claim or to commit their code normally",
           "recoverable": true
         },
         {
-          "scenario": "Nothing to park: no live run and no draft artifact for the unit",
-          "detection": "listLiveRuns returns empty and the unit's artifact paths are absent or unchanged from HEAD",
+          "scenario": "Nothing to park: the actor owns no run for the unit and has no uncommitted draft artifact",
+          "detection": "listStates has no entry whose meta.owner is the actor and whose intent maps to the unit, and git status --porcelain on the unit's artifact paths is empty",
           "response": "Return ok:false 'no draft or run to hand over'",
           "userImpact": "No empty branch is created",
           "recoverable": true
         },
         {
-          "scenario": "Branch name breaks the grammar after filling placeholders",
-          "detection": "handoffBranchName validates against the branchPattern row grammar",
-          "response": "Return ok:false with the grammar rule broken; no git command runs",
+          "scenario": "A supplied run token belongs to another unit, another actor, or a run with no owner",
+          "detection": "The store entry's intent unit, meta.owner and the actor are compared before anything is read from git",
+          "response": "Return ok:false naming which comparison failed; nothing is written",
+          "userImpact": "A user cannot park someone else's run or a run from another stage",
+          "recoverable": true
+        },
+        {
+          "scenario": "Branch name breaks the grammar or does not identify the unit",
+          "detection": "handoffBranchName validates the filled name against the branchPattern row grammar and requires {id} in the pattern",
+          "response": "Return ok:false with the rule broken; no git command runs",
           "userImpact": "The user fixes the pattern in settings",
           "recoverable": true
         },
         {
-          "scenario": "Git fails while parking (not a repository, detached HEAD, hook rejects the commit, push rejected, remote unreachable)",
+          "scenario": "Git fails while parking (not a repository, hook rejects the commit, push rejected, remote unreachable)",
           "detection": "runGit returns ok:false for the failing step",
-          "response": "Stop at that step, remove the local handoff branch and temporary worktree it created, keep the live run state untouched, and report the git message with the step name. A rejected push because the branch moved reports that someone else parked first",
-          "userImpact": "The draft is not lost: the run stays in the daemon and the working files stay where they are",
+          "response": "Stop at that step, remove the temporary worktree and the local branch this call created, leave the run in the store untouched, and report the git message with the step name. A rejected push because the branch moved reports that someone else parked first",
+          "userImpact": "Nothing is lost: the run stays in the daemon and the working files stay where they are",
           "recoverable": true
         },
         {
           "scenario": "The issue note cannot be posted",
-          "detection": "port.comment returns ok:false",
+          "detection": "port.issueOps.comment returns ok:false",
           "response": "Keep the pushed branch, return ok:true with noted:false and the failure kind, and print the branch name so the user can tell the new owner",
-          "userImpact": "Handoff works but the issue lacks the pointer until the user retries or says it",
+          "userImpact": "Handoff works but the issue lacks the pointer until the user says it",
           "recoverable": true
         },
         {
-          "scenario": "Resume finds a checkpoint with an unknown schemaVersion, a unit that does not match, or a path outside the unit's artifact paths",
+          "scenario": "The receiving path is not registered with the daemon, or is a different repository from the checkpoint's",
+          "detection": "verifyReceivingRepo compares the path with listRepos and the checkpoint's repositoryId with git rev-list --max-parents=0 HEAD, before the branch is fetched into the working tree or any file is restored; resolveRepoPath alone would accept any non-empty path",
+          "response": "Return refused naming whether it is unregistered, not a git repository or another repository; nothing is restored and no state is saved",
+          "userImpact": "The new owner registers the repository, or opens the right clone",
+          "recoverable": true
+        },
+        {
+          "scenario": "Resume finds a checkpoint with an unknown schemaVersion, an unknown kind, a unit that does not match, or a path outside the unit's artifact paths",
           "detection": "Parsing and validating the checkpoint before anything is written",
-          "response": "Return refused with the specific field; no file is restored and no run state is saved",
-          "userImpact": "The new owner is told the checkpoint is unusable and may restart the stage from the committed artifacts",
+          "response": "Return refused with the specific field; no file is restored and no state is saved",
+          "userImpact": "The new owner is told the checkpoint is unusable and may start the stage afresh",
           "recoverable": true
         },
         {
-          "scenario": "Resume would overwrite uncommitted local changes to the same artifact files",
+          "scenario": "Resume would overwrite uncommitted local changes to the files it restores",
           "detection": "git status --porcelain on the files to restore is non-empty",
           "response": "Return refused naming the files; nothing is touched",
           "userImpact": "The new owner commits or stashes first",
           "recoverable": true
         },
         {
-          "scenario": "Resume cannot fetch the handoff branch",
-          "detection": "git fetch of the deterministic branch name fails",
-          "response": "Distinguish a missing branch (no checkpoint: fall back to restart from committed artifacts) from a network or permission failure (refused with the git message)",
-          "userImpact": "A lost-machine takeover works without the branch; a network failure is not mistaken for a missing branch",
+          "scenario": "Restoring the draft files fails part way (disk full, permission)",
+          "detection": "A write or rename in the restore loop throws or returns an error",
+          "response": "Remove every file this call already restored, restore any file it replaced from the pre-restore copy kept in memory, save no state, and return refused naming the failing file",
+          "userImpact": "The working tree is exactly as it was before the resume",
           "recoverable": true
         },
         {
-          "scenario": "Restoring a checkpoint whose upstream artifacts changed since it was parked",
-          "detection": "Compare the upstream artifact revisions recorded at park time with the current files",
-          "response": "Return refused with 'the upstream moved since this draft was parked' and the restart option, because step outputs were computed against older input",
+          "scenario": "Resume cannot fetch the handoff branch",
+          "detection": "git ls-remote distinguishes a missing ref (empty result) from a failed command (ok:false)",
+          "response": "A missing branch falls back to restart on the committed artifacts; a network or permission failure is refused with the git message",
+          "userImpact": "A lost-machine takeover works without a branch; a network failure is not mistaken for a missing branch",
+          "recoverable": true
+        },
+        {
+          "scenario": "The upstream artifacts moved since the run was created",
+          "detection": "The run checkpoint's upstream snapshot of { artifactId, revision } (captured by snapshotUpstream when the run was created) is compared with readRevision of each file on the receiving clone, a missing revision reading as 0 on both sides",
+          "response": "Return refused 'the upstream moved since this run started' naming the artifacts, and offer the restart",
           "userImpact": "The new owner redoes the stage on current input instead of resuming a stale one",
+          "recoverable": true
+        },
+        {
+          "scenario": "The workflow named for a resume does not match the unit or the artifact chain",
+          "detection": "resumeStage compares opts.workflow with authorUnitOf for the unit and with inferStageWorkflow",
+          "response": "Return refused naming the mismatch, for example a plan requested while the LLD is missing",
+          "userImpact": "The new owner is told which stage is actually next",
           "recoverable": true
         }
       ],
@@ -601,28 +963,40 @@
           "expected": "The deterministic branch name is reused and the new checkpoint is committed on top; a non-fast-forward push is reported as someone else having parked first"
         },
         {
-          "input": "A stage parked after synthesize (draft artifact written, no run left)",
-          "expected": "The checkpoint stage is awaiting_synthesize or absent; with only the artifact the resume returns nothing-to-resume or restart as the artifact state dictates"
+          "input": "A run parked at stage awaiting_plan, before the decomposer plan was submitted",
+          "expected": "The run checkpoint has no executor state; resume rebinds the intents and returns the emit_plan turn with a fresh token"
         },
         {
-          "input": "Two live runs for the same unit in the actor's daemon",
-          "expected": "Park checkpoints the most recently touched run and names the run id in the note; the other is left alone"
+          "input": "A run parked at stage awaiting_synthesize",
+          "expected": "The run checkpoint carries stepOutputs; resume returns the emit_synthesize turn"
         },
         {
-          "input": "The daemon restarted after the user was reassigned, so the run state is gone",
-          "expected": "offerPark is still true when the draft artifact has uncommitted changes; park commits the artifact and writes a checkpoint with stage absent, so the resume restarts the stage with the draft as context"
+          "input": "The daemon restarted after the user was reassigned, so the run is gone but the draft artifact has uncommitted changes",
+          "expected": "offerPark is still true from the uncommitted draft; park writes a draft-only checkpoint with the artifacts; resume restores the draft files and returns restart for the inferred workflow with draftRestored true"
+        },
+        {
+          "input": "The actor owns two live runs for the same unit",
+          "expected": "Park checkpoints the most recently touched one and names its run id in the note; the other is left alone"
+        },
+        {
+          "input": "A run created while claims were not enforced (no owner)",
+          "expected": "It is never treated as the actor's: offerPark is false for it and park refuses it by token"
         },
         {
           "input": "Resume on a repo with no policy or with claims not enforced",
           "expected": "Refused as 'this repository does not enforce claims'; k4 behaviour is unchanged"
         },
         {
-          "input": "Resume when the stage's own artifact is already committed and complete",
-          "expected": "nothing-to-resume with the artifact id, so nobody re-authors a finished stage by accident"
+          "input": "Story whose LLD is committed and whose PLAN is not",
+          "expected": "inferStageWorkflow returns plan, so resume restarts the plan and a committed LLD does not report the stage as complete; with both committed it is nothing-to-resume"
         },
         {
-          "input": "A branch pattern that renders the same name for two different units",
-          "expected": "The default pattern includes the unit key; for a custom pattern that omits {id}, parkDraft refuses with 'the pattern does not identify the unit'"
+          "input": "Receiving clones at different absolute paths and with different index watermarks",
+          "expected": "rebindCheckpoint replaces repoPath and repoIndexedAt in both intents and resets startedAtMs, so the run executes against the receiving clone"
+        },
+        {
+          "input": "Lost machine: no branch, the stage has no artifact",
+          "expected": "resume returns restart naming the workflow and params to start fresh on the committed upstream artifacts; completed stages are not redone (ac28 at stage level, decided 2026-10-18)"
         }
       ],
       "invariantsToPreserve": []
@@ -633,29 +1007,41 @@
           "level": "unit",
           "purpose": "Pure logic with no git, tracker or daemon store",
           "subjects": [
-            "handoffBranchName: placeholder filling, default pattern, grammar rejection, a pattern that omits {id}",
-            "HandoffCheckpoint parse and validate: schema version, unit match, path containment",
+            "handoffBranchName: placeholder filling, the default pattern, grammar rejection, a pattern that omits {id}",
+            "HandoffCheckpoint validation: schema version, kind, unit match, path containment under the unit's artifact paths, run and draft variants",
+            "rebindCheckpoint: repoPath and repoIndexedAt replaced in both the payload intent and the executor intent, startedAtMs reset, no parker path left, for stages awaiting_plan, awaiting_llm_step and awaiting_synthesize",
+            "inferStageWorkflow: Epic without HLD, Story with no LLD, with an LLD and no PLAN (plan), with both (complete)",
+            "snapshotUpstream: the artifacts each workflow reads, a missing revision reading as 0",
             "describeOutcome appends the park command only for held-by-other with offerPark true",
-            "teamGate sets offerPark only on held-by-other and only through a registered provider; a throwing provider counts as false"
+            "teamGate sets offerPark only on held-by-other and only through a registered provider; a throwing provider counts as false",
+            "state store: encodeState keeps meta beside the payload, reencodeState and replaceState carry it, listStates is newest-first and does not touch expiry"
           ],
           "fixturesNeeded": [
-            "Injected gate dependencies (_setGateDepsForTests)"
+            "Injected gate dependencies (_setGateDepsForTests)",
+            "_clearWorkflowStateStoreForTests"
           ]
         },
         {
           "level": "integration",
-          "purpose": "The park and resume flows against a real temporary git repository with a bare remote and a faked tracker port",
+          "purpose": "The park and resume flows against real temporary git repositories (a bare origin and two clones at different absolute paths) with a faked tracker port",
           "subjects": [
-            "parkDraft from a refused holder to a pushed branch, a checkpoint file and one issue comment, leaving the checked-out branch and index unchanged",
-            "resumeStage on a second clone restores the draft and saves a run state that continues at nextStepIndex",
-            "resumeStage with no branch rebuilds from committed artifacts and returns restart naming the first stage without an artifact",
-            "park and resume error paths: push rejected, comment fails, unknown schema, stale upstream, dirty target files, network failure versus missing branch",
-            "workflow-step handler returns the offer in the refusal message; the terminal prints it"
+            "handleStart records the acting user and the upstream snapshot on the stored run, and the plan and step turns keep them; a repo without a policy records neither and makes no tracker call",
+            "parkDraft from a refused holder to a pushed branch, a checkpoint and one issue note through issueOps.comment, leaving the checked-out branch, index and working tree unchanged",
+            "reassignment before the plan: a run parked at awaiting_plan resumes on the second clone and returns the emit_plan turn",
+            "a run parked mid-steps resumes on the second clone at nextStepIndex with its earlier step outputs, rebound to that clone",
+            "a daemon restart leaves a draft-only checkpoint; resume restores the draft and returns restart with draftRestored, and a restore that fails part way leaves the working tree as it was",
+            "resumeStage refuses an unregistered receiving path and a clone of a different repository before restoring anything",
+            "a Story whose LLD is committed and whose PLAN is not resumes as plan, and a Story with both committed returns nothing-to-resume",
+            "resumeStage with no branch returns restart naming the stage to start fresh",
+            "park and resume error paths: supplied token of another unit, actor or no owner, push rejected, comment fails, unknown schema, upstream revision moved (including revision 0 on both sides), dirty target files, network failure versus missing branch",
+            "the workflow-step park and resume phases and the team.park and team.resume daemon operations reach the run store and return the next turn",
+            "the terminal team park and team resume commands parse the unit and --workflow, print the outcome or the holder, and print the usage line for bad arguments"
           ],
           "fixturesNeeded": [
-            "Temporary repo plus bare origin plus second clone",
-            "Fake TrackerPort with whoAmI, readAssignee, comment",
-            "Seeded DEF, HLD, LLD and PLAN artifacts"
+            "Temporary repo plus bare origin plus a second clone at another absolute path",
+            "Fake TrackerPort with whoAmI, readAssignee and issueOps.comment",
+            "Seeded DEF, HLD, LLD and PLAN artifacts with and without meta.revision",
+            "A fake repo registry (listRepos)"
           ]
         }
       ],
@@ -663,26 +1049,28 @@
         {
           "criterionId": "ac25",
           "provingTests": [
-            "src/workflow/team/__tests__/park-offer.test.ts: a held-by-other refusal carries offerPark when the actor has a live run or an uncommitted draft for the unit, and the refusal text names the park command",
-            "src/cli/__tests__/team-park-resume.test.ts: team park and team resume print the offer, the outcome and the usage line"
+            "src/workflow/team/__tests__/park-offer.test.ts: a held-by-other refusal carries offerPark when the actor owns a live run in any stage or has an uncommitted draft for the unit, never for an unowned run, and the refusal text names the park command",
+            "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts: handleStart records the acting user and the upstream snapshot on the stored run, plan and step turns keep them, and a repo without a policy records neither",
+            "src/cli/__tests__/team-park-resume.test.ts: team park and team resume print the offer, the outcome or the holder, and the usage line for bad arguments",
+            "src/daemon/steps/workflow-step/__tests__/handoff-phases.test.ts: the park and resume phases and the team.park and team.resume operations reach the run store"
           ]
         },
         {
           "criterionId": "ac26",
           "provingTests": [
-            "src/workflow/team/__tests__/handoff-park.test.ts: parking commits the draft and checkpoint to the handoff branch, pushes it, notes the branch on the issue and leaves the user's branch untouched"
+            "src/workflow/team/__tests__/handoff-park.test.ts: parking commits the draft and checkpoint to the handoff branch, pushes it, notes the branch on the issue through issueOps.comment and leaves the user's branch, index and working tree untouched"
           ]
         },
         {
           "criterionId": "ac27",
           "provingTests": [
-            "src/workflow/team/__tests__/handoff-resume.test.ts: a new assignee on another clone resumes the parked run at its next step with its earlier step outputs"
+            "src/workflow/team/__tests__/handoff-resume.test.ts: a new assignee on a clone at another absolute path resumes a run parked before the plan, and one parked mid-steps at its next step with its earlier step outputs, rebound to that clone after the registration and repository checks"
           ]
         },
         {
           "criterionId": "ac28",
           "provingTests": [
-            "src/workflow/team/__tests__/handoff-resume.test.ts: with no checkpoint, resume rebuilds from the committed artifacts and restarts only the stage that has no artifact"
+            "src/workflow/team/__tests__/handoff-resume.test.ts: after a lost machine with no parked branch, or with only a draft-only checkpoint, resume restarts only the stage that has no artifact on the committed upstream artifacts, treats a committed LLD as leaving the plan to do, and never offers to redo a committed stage"
           ]
         }
       ],
@@ -691,34 +1079,33 @@
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Park-time checkpoint on a handoff branch",
-        "oneLineSummary": "Parking writes the run's executor state to a checkpoint file, commits it with the draft artifacts to a handoff branch, pushes it, and notes it on the issue; resuming loads the checkpoint into a fresh run.",
-        "approach": "Add a handoff module under src/workflow/team that owns a HandoffCheckpoint record written to .insrc/handoff/<unit-key>.json. Park names the branch from branchPattern, creates it from the current HEAD, writes the checkpoint and the unit's draft artifacts, commits, pushes, and adds one comment to the unit's issue naming the branch and the checkpoint commit. The gate sets offerPark true on held-by-other when the acting user has a live run for the unit or an uncommitted draft artifact for it. Resume fetches the branch, validates the checkpoint, saves its executor state into the daemon's store and returns the next step turn. With no checkpoint, resume falls back to the committed artifacts alone.",
+        "name": "Park-time checkpoint (run or draft-only) on a handoff branch, delivered through daemon-hosted park and resume",
+        "oneLineSummary": "Parking writes a run checkpoint or a draft-only checkpoint, with the draft artifacts, to a handoff branch, pushes it and notes it on the issue; resume validates the registration and repository identity, restores it on the new owner's daemon, rebound to that clone.",
+        "approach": "A handoff module under src/workflow/team owns two checkpoint variants written to .insrc/handoff/<unit-key>.json: a run checkpoint (the run's complete state at stage awaiting_plan, awaiting_llm_step or awaiting_synthesize, plus the owner, the upstream revisions captured when the run was created, and the repository identity) and a draft-only checkpoint (artifact files and identity, no run). The state store entry gains an owner and an upstream snapshot, set in handleStart through encodeState and carried through reencodeState and replaceState, and a listing function. Park commits through a temporary worktree so the user's checkout never changes, pushes, and adds one note through port.issueOps.comment. Resume takes the unit and, optionally, the workflow (inferred from the artifact chain when absent); it checks the repo is registered and is the checkpoint's repository, fetches the deterministic branch, validates the checkpoint, compares the stored upstream snapshot with current revisions, restores the files (rolling them back on failure), rebinds both intents, saves the run and returns the next turn (emit_plan, emit_step or emit_synthesize). With no branch, or a draft-only checkpoint, it returns restart (with the draft restored for draft-only). Park and resume are two new phases of insrc_workflow_step and two daemon RPC operations used by the terminal's team park and team resume.",
         "pros": [
-          "Meets ac26 and ac27 literally",
-          "No per-step network traffic; one push at park time",
-          "Reuses ExecutorState, runGit and the port's comment capability"
+          "Meets ac25 to ac27, and ac28 at stage level, with one push at park time",
+          "Handles every stage a refused run can be in, including awaiting_plan",
+          "Reuses ExecutorState, runGit and issueOps.comment; no tracker abstraction change; park never touches the user's checkout"
         ],
         "cons": [
-          "Does not help when the machine is lost before parking",
-          "Creates and pushes a branch from the user's checkout",
-          "A checkpoint needs a schema version and a refusal on mismatch"
+          "Ownership and an upstream snapshot are captured on every run creation, and the codec and start handler change",
+          "Two checkpoint variants and a rollback path add test surface",
+          "Two new workflow-step phases and two daemon RPC operations"
         ],
         "costEstimate": "L"
       },
       {
         "id": "a2",
         "name": "Artifacts-only park, restart the stage on resume",
-        "oneLineSummary": "Parking commits whatever artifact files exist and notes the branch; resuming always restarts the stage from its first step, seeded with the parked draft as context.",
-        "approach": "Park commits the unit's draft artifact files to the handoff branch, pushes, and comments the branch on the issue. No executor state is stored. Resume checks out the files and starts the stage again from step one with the existing artifact as the starting draft.",
+        "oneLineSummary": "Parking commits whatever artifact files exist and notes the branch; resuming always restarts the stage from its first step with the parked draft as context.",
+        "approach": "Park commits the unit's draft artifact files to the handoff branch, pushes, and comments the branch on the issue. No run state is stored, so there is no ownership capture, snapshot, checkpoint schema or rebinding. Resume restores the files and starts the stage again from step one.",
         "pros": [
-          "Smallest change: no new on-disk schema",
-          "One resume path for both parked and lost-machine cases"
+          "Smallest change: no checkpoint schema and no state-store changes",
+          "One resume path for parked and lost-machine cases"
         ],
         "cons": [
-          "Fails ac27 for a stage parked mid-run",
-          "Redoes completed model steps",
-          "Gives the new owner no signal of what was done"
+          "Fails ac27 for a stage parked before synthesize: none of the first developer's step outputs travel",
+          "Redoes completed model steps the first developer already paid for"
         ],
         "costEstimate": "M",
         "reasonRejected": "Smallest, but it violates ac27 for the common mid-run case, which is the point of the Story."
@@ -726,26 +1113,23 @@
       {
         "id": "a3",
         "name": "Continuous checkpoint to a per-unit handoff branch",
-        "oneLineSummary": "Every completed step of a claimed unit writes the checkpoint and pushes it to the unit's handoff branch, so parking is only a note and a lost machine loses at most one step.",
-        "approach": "Extend a1 so the workflow-step phases, after each step output is stored, write the checkpoint file and the draft artifacts and commit them to a dedicated handoff branch through a separate worktree, pushing in the background with a short deadline. Parking then adds the issue note and a final push.",
+        "oneLineSummary": "Every completed step of a claimed unit commits and pushes its checkpoint, so a lost machine loses at most one step.",
+        "approach": "Extend a1 so each completed step writes the checkpoint and draft artifacts to the handoff branch through a managed second worktree, pushing in the background with a short deadline. Parking then only adds the note and a final push.",
         "pros": [
-          "Satisfies ac28 in its strongest reading",
+          "Satisfies ac28 at step level",
           "Parking is cheap and cannot fail on a dirty working tree"
         ],
         "cons": [
-          "Adds a commit and a network push to every step of every team run",
-          "Needs a managed worktree, background pushes and branch rights for every developer",
-          "Largest surface: changes the hot path of all four workflow-step phases"
+          "A commit and network push on every step of every team run, rejected by the user for its cost",
+          "Needs a managed worktree, background push failure reporting and branch rights for every developer",
+          "Changes the hot path of all four workflow-step phases"
         ],
         "costEstimate": "L",
-        "reasonRejected": "Strongest on ac28, but it commits and pushes on every step of every team run and needs a managed worktree and branch rights for all developers, beyond this Story's boundary."
+        "reasonRejected": "Meets ac28 at step level, which the user decided is not needed (docs/plans/team-workflow.md, s6 decision on ac28), at the cost of a commit and push on every step of every team run."
       }
     ],
     "chosenAlternative": "a1",
-    "openQuestions": [
-      "ac28 says the new assignee 'redoes only the unfinished step'. Committed artifact files exist only per finished stage, so after a lost machine a half-run stage restarts from its first step (completed stages are never redone). Accept stage-level redo, or adopt continuous checkpointing (a3), which commits and pushes on every step of every team run?",
-      "sbdry check dm1 (partial): callSites gate.ts:62-69 and src/cli/command.ts:244 were read during discovery but are not cited by an s1 analyze bundle."
-    ]
+    "openQuestions": []
   },
   "citations": [
     {
@@ -760,31 +1144,51 @@
     },
     {
       "id": "c3",
-      "kind": "code",
-      "ref": "src/workflow/team/gate.ts:34"
+      "kind": "doc",
+      "ref": "docs/plans/team-workflow.md"
     },
     {
       "id": "c4",
       "kind": "code",
-      "ref": "src/daemon/steps/workflow-step/state-store.ts:28-60"
+      "ref": "src/workflow/team/gate.ts:34"
     },
     {
       "id": "c5",
       "kind": "code",
-      "ref": "src/workflow/types.ts:216-228"
+      "ref": "src/daemon/steps/workflow-step/state-store.ts:28-90"
     },
     {
       "id": "c6",
       "kind": "code",
-      "ref": "src/workflow/team/git.ts:16-33"
+      "ref": "src/daemon/steps/workflow-step/phases/start.ts:108"
     },
     {
       "id": "c7",
       "kind": "code",
-      "ref": "src/workflow/tracker/port.ts:59"
+      "ref": "src/workflow/types.ts:216-228"
     },
     {
       "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/team/git.ts:16-33"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/tracker/port.ts:55-70"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts:102-110"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/db/repos.ts:214"
+    },
+    {
+      "id": "c12",
       "kind": "code",
       "ref": "src/config/repo-fields.ts:77-87"
     }

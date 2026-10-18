@@ -1,0 +1,333 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * One tracker issue per stage unit (sc3): the Epic on the Define, a Story on its
+ * LLD, a build Task on the plan. This is the team-mode owner of "does this unit
+ * have an issue"; the approve-time pushes in `tracker-auto.ts` keep their own
+ * (legacy) path for a repo without a team policy.
+ *
+ *   resolveUnitIssueLocal   the record, then the older refs; no tracker call
+ *   ensureUnitIssueDetailed local resolve -> lookup by the per-unit label ->
+ *                           labels -> create -> link -> record at once
+ *   ensureUnitIssue         the HLD's EnsureIssue (unit, port) -> PortResult<IssueRef>
+ *
+ * A failed lookup is a failure, never "not found". A failure before the create
+ * call means nothing was created; a failed create call is unconfirmed (the issue
+ * may have been committed), and the next call finds it by its per-unit label.
+ */
+
+import { readFileSync } from 'node:fs';
+
+import { getLogger } from '../../shared/logger.js';
+import { readDefineArtifact } from '../gates.js';
+import type { DefineArtifact } from '../artifacts/define.js';
+import type { PlanArtifact } from '../artifacts/plan.js';
+import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from '../config/github.js';
+import { epicWorkflowId, safeCanonical, storyWorkflowId, taskWorkflowId } from '../id.js';
+import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, readRevision } from '../storage.js';
+import { epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody } from './conventions.js';
+import type { IssueRef, PortFailureKind, PortResult, TrackerPort } from './port.js';
+import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitIssue, type UnitRef } from './refs.js';
+
+const log = getLogger('workflow:unit-issue');
+
+/** GitHub allows at most 50 characters in a label. */
+const MAX_LABEL_LEN = 50;
+
+// ---------------------------------------------------------------------------
+// Result types (module-local: the sc1 failure branch has no phase)
+// ---------------------------------------------------------------------------
+
+export type DuplicateCheck = 'clean' | 'adopted-other' | 'not-run';
+
+export interface EnsuredIssue {
+	readonly issue:          IssueRef;
+	/** True only when this call created the issue. */
+	readonly created:        boolean;
+	readonly duplicateCheck: DuplicateCheck;
+}
+
+export type EnsureResult<T> =
+	| { readonly ok: true; readonly value: T }
+	| { readonly ok: false; readonly reason: string; readonly kind: PortFailureKind; readonly phase: 'before-create' | 'create' };
+
+export interface EnsureIssueDeps {
+	/** Reads the repo's github config (default: resolveGithubConfig). */
+	readonly readConfig?: (repoPath: string) => ResolvedGithubConfig;
+	readonly now?:        () => string;
+}
+
+const before = (reason: string, kind: PortFailureKind = 'rejected'): EnsureResult<never> => ({ ok: false, reason, kind, phase: 'before-create' });
+
+// ---------------------------------------------------------------------------
+// Labels and record keys
+// ---------------------------------------------------------------------------
+
+const ID_RE = /^[A-Za-z0-9_-]+$/;
+
+function lc(unit: UnitRef): { story: string | undefined; task: string | undefined } {
+	return { story: unit.storyId?.toLowerCase(), task: unit.taskId?.toLowerCase() };
+}
+
+/**
+ * `insrc:unit:<epicHash>[:<storyId>[:<taskId>]]`, ids lower-cased, at most 50
+ * characters. Pure: the same unit always gets the same label, so a lookup after
+ * a crash or a re-draft finds the issue. Throws when an id is malformed or the
+ * label would be too long.
+ */
+export function unitLabel(unit: UnitRef): string {
+	const { story, task } = lc(unit);
+	const parts = ['insrc', 'unit', unit.epicHash.toLowerCase()];
+	if (unit.unit !== 'epic') {
+		if (story === undefined) throw new Error(`unit label: a ${unit.unit} unit needs a storyId`);
+		parts.push(story);
+	}
+	if (unit.unit === 'task') {
+		if (task === undefined) throw new Error('unit label: a task unit needs a taskId');
+		parts.push(task);
+	}
+	for (const p of parts.slice(2)) if (!ID_RE.test(p)) throw new Error(`unit label: '${p}' is not a valid id (letters, digits, hyphen and underscore only)`);
+	const label = parts.join(':');
+	if (label.length > MAX_LABEL_LEN) throw new Error(`unit label '${label}' is ${label.length} characters, over the ${MAX_LABEL_LEN}-character limit`);
+	return label;
+}
+
+/** The record key under `meta.tracker.units`: 'epic', 'story:<id>' or 'task:<story>/<task>'. */
+export function unitKey(unit: UnitRef): string {
+	const { story, task } = lc(unit);
+	if (unit.unit === 'epic') return 'epic';
+	if (unit.unit === 'story') return `story:${story ?? ''}`;
+	return `task:${story ?? ''}/${task ?? ''}`;
+}
+
+function unitId(unit: UnitRef): string {
+	return unit.unit === 'epic' ? unit.epicHash : unit.unit === 'story' ? (unit.storyId ?? '') : (unit.taskId ?? '');
+}
+
+// ---------------------------------------------------------------------------
+// Where each unit's record lives
+// ---------------------------------------------------------------------------
+
+const defineJson = (u: UnitRef): string => artifactJsonPath(u.repoPath, defineArtifactId(u.epicHash));
+const hldJson    = (u: UnitRef): string => artifactJsonPath(u.repoPath, hldArtifactId(u.epicHash));
+const lldJson    = (u: UnitRef): string => artifactJsonPath(u.repoPath, lldArtifactId(u.epicHash, u.storyId ?? ''));
+const planJson   = (u: UnitRef): string => artifactJsonPath(u.repoPath, planArtifactId(u.epicHash, u.storyId ?? ''));
+
+/** The artifact that carries the unit's own record. */
+function ownJson(unit: UnitRef): string {
+	return unit.unit === 'epic' ? defineJson(unit) : unit.unit === 'story' ? lldJson(unit) : planJson(unit);
+}
+
+const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
+
+function revisionOfFile(path: string): number {
+	try { return readRevision(JSON.parse(readFileSync(path, 'utf8'))); } catch { return 0; }
+}
+
+function mapEntry(map: Readonly<Record<string, string>> | undefined, id: string | undefined): string | undefined {
+	if (map === undefined || id === undefined) return undefined;
+	return map[id] ?? map[id.toLowerCase()] ?? Object.entries(map).find(([k]) => k.toLowerCase() === id.toLowerCase())?.[1];
+}
+
+/** Record the unit's issue on its own artifact (units + the older ref) and on the siblings that read it. */
+function recordUnit(unit: UnitRef, issue: IssueRef, now: string): void {
+	const own = ownJson(unit);
+	const record: UnitIssue = { unit: unit.unit, unitId: unitId(unit), issue, createdAtRevision: revisionOfFile(own) };
+	const units = { [unitKey(unit)]: record };
+	const patches: Array<[string, Partial<TrackerMeta>]> = [];
+	if (unit.unit === 'epic') {
+		patches.push([defineJson(unit), { epicRef: issue, units, pushedAt: now }]);
+		patches.push([hldJson(unit), { epicRef: issue }]);
+	} else if (unit.unit === 'story') {
+		patches.push([lldJson(unit), { storyRef: issue, units, pushedAt: now }]);
+		const prior = readTrackerMeta(defineJson(unit))?.storyRefs ?? {};
+		patches.push([defineJson(unit), { storyRefs: { ...prior, [unit.storyId ?? '']: issue } }]);
+	} else {
+		const prior = readTrackerMeta(own)?.taskRefs ?? {};
+		patches.push([own, { taskRefs: { ...prior, [unit.taskId ?? '']: issue }, units, pushedAt: now }]);
+	}
+	for (const [path, patch] of patches) {
+		if (!fileHas(path)) { log.debug({ path }, 'unit-issue: no artifact to record on'); continue; }
+		try { patchTrackerMeta(path, patch); }
+		catch (err) { log.warn({ path, err: (err as Error).message }, 'unit-issue: could not record the unit issue (its label finds it next time)'); }
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Local resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * The unit's issue if any local record or older ref names it, else null. Makes
+ * no tracker call and never throws. Order: the units record, then the older refs
+ * (Epic: Define epicRef, HLD epicRef; Story: the LLD's own storyRef, then the
+ * Define's storyRefs entry; Task: the plan's taskRefs entry). A hit writes the
+ * missing record and sibling refs locally.
+ */
+export function resolveUnitIssueLocal(unit: UnitRef, now: () => string = () => new Date().toISOString()): IssueRef | null {
+	let hit: string | undefined;
+	try {
+		const key = unitKey(unit);
+		const own = readTrackerMeta(ownJson(unit));
+		const recorded = own?.units?.[key]?.issue;
+		if (nonEmpty(recorded)) hit = recorded;
+		else if (unit.unit === 'epic') {
+			hit = [own?.epicRef, readTrackerMeta(hldJson(unit))?.epicRef].find(nonEmpty);
+		} else if (unit.unit === 'story') {
+			hit = [own?.storyRef, mapEntry(readTrackerMeta(defineJson(unit))?.storyRefs, unit.storyId)].find(nonEmpty);
+		} else {
+			hit = mapEntry(own?.taskRefs, unit.taskId);
+		}
+		if (hit === undefined) return null;
+		reconcile(unit, hit, now());
+		return hit;
+	} catch (err) {
+		log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: local resolution failed');
+		return hit ?? null;
+	}
+}
+
+/** Write whatever of the record and sibling refs is missing; never changes a ref that is present. */
+function reconcile(unit: UnitRef, issue: IssueRef, now: string): void {
+	const key = unitKey(unit);
+	const own = readTrackerMeta(ownJson(unit));
+	const siblings: boolean =
+		unit.unit === 'epic'  ? nonEmpty(readTrackerMeta(defineJson(unit))?.epicRef) && (!fileHas(hldJson(unit)) || nonEmpty(readTrackerMeta(hldJson(unit))?.epicRef)) :
+		unit.unit === 'story' ? nonEmpty(own?.storyRef) && nonEmpty(mapEntry(readTrackerMeta(defineJson(unit))?.storyRefs, unit.storyId)) :
+		nonEmpty(mapEntry(own?.taskRefs, unit.taskId));
+	if (own?.units?.[key] !== undefined && siblings) return;
+	recordUnit(unit, issue, now);
+}
+
+function fileHas(path: string): boolean {
+	try { readFileSync(path, 'utf8'); return true; } catch { return false; }
+}
+
+// ---------------------------------------------------------------------------
+// Creation
+// ---------------------------------------------------------------------------
+
+function firstSentence(s: string): string {
+	const m = /^(.+?[.!?])\s/.exec(s);
+	return m !== null ? m[1]! : s.split('\n')[0]!.slice(0, 120);
+}
+
+type GithubCfg = Extract<ResolvedGithubConfig, { type: 'github' }>;
+
+/**
+ * The unit's single issue, found or created, in team mode. Order: the local
+ * record and older refs (no tracker call); a lookup by the epic membership label
+ * and the per-unit label (for the Epic, then the old two-label search); and only
+ * when everything misses, the labels, the create call and the link to the
+ * parent. The created ref is recorded at once.
+ */
+export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: EnsureIssueDeps = {}): EnsureResult<EnsuredIssue> {
+	const now = deps.now ?? (() => new Date().toISOString());
+	const local = resolveUnitIssueLocal(unit, now);
+	if (local !== null) return { ok: true, value: { issue: local, created: false, duplicateCheck: 'clean' } };
+
+	let label: string;
+	try { label = unitLabel(unit); }
+	catch (err) { return before((err as Error).message); }
+
+	let cfg: ResolvedGithubConfig;
+	try { cfg = (deps.readConfig ?? resolveGithubConfig)(unit.repoPath); }
+	catch (err) {
+		return before(err instanceof GithubConfigError ? err.message : `cannot read the tracker configuration: ${(err as Error).message}`);
+	}
+	if (cfg.type === 'none') return before(`tracker disabled via config (source: ${cfg.source})`);
+
+	// What the issue is about, read from the unit's own artifact.
+	let define: DefineArtifact;
+	try { define = readDefineArtifact(unit.repoPath, unit.epicHash); }
+	catch (err) { return before(`cannot read the Define: ${(err as Error).message}`); }
+	const epicSlug = define.meta.epicSlug ?? unit.epicHash;
+	const membership = epicMembershipLabel(epicSlug);
+	const repo = { owner: cfg.owner, repo: cfg.repo };
+
+	// The parent issue first (a Story under its Epic, a Task under its Story).
+	let parentRef: IssueRef | undefined;
+	if (unit.unit !== 'epic') {
+		const parentUnit: UnitRef = unit.unit === 'story'
+			? { unit: 'epic', repoPath: unit.repoPath, epicHash: unit.epicHash }
+			: { unit: 'story', repoPath: unit.repoPath, epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) };
+		const parent = ensureUnitIssueDetailed(parentUnit, port, deps);
+		if (!parent.ok) return before(`the ${parentUnit.unit} issue is not ready: ${parent.reason}`, parent.kind);
+		parentRef = parent.value.issue;
+	}
+
+	// Lookup by the per-unit label (a failed lookup is a failure, never "not found").
+	const found = port.findIssue([membership, label]);
+	if (!found.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${found.reason}`, found.kind);
+	let adopted: string | undefined = found.value ?? undefined;
+	if (adopted === undefined && unit.unit === 'epic') {
+		const old = port.findIssue([cfg.epicLabel, membership]);
+		if (!old.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${old.reason}`, old.kind);
+		adopted = old.value ?? undefined;
+	}
+	if (adopted !== undefined) {
+		recordUnit(unit, adopted, now());
+		return { ok: true, value: { issue: adopted, created: false, duplicateCheck: 'clean' } };
+	}
+
+	// Labels: an issue created without its unit label could not be found again.
+	const kindLabel = unit.unit === 'epic' ? cfg.epicLabel : unit.unit === 'story' ? cfg.storyLabel : cfg.taskLabel;
+	for (const l of [kindLabel, membership, label]) {
+		if (!port.issueOps.ensureLabel(l)) return before(`the label '${l}' could not be created`);
+	}
+
+	const spec = buildSpec(unit, cfg, define, epicSlug, membership, label, kindLabel, parentRef, repo);
+	if ('error' in spec) return before(spec.error);
+
+	const created = port.issueOps.create(spec.value);
+	if (!created.ok) {
+		return { ok: false, reason: created.reason, kind: created.kind, phase: 'create' };
+	}
+	const issue = created.value.ref;
+	if (parentRef !== undefined) {
+		const link = port.issueOps.linkSubIssue(parentRef, created.value.id);
+		if (!link.ok) log.warn({ unit: unitKey(unit), parent: parentRef, reason: link.reason }, 'unit-issue: could not link the issue under its parent');
+	}
+	recordUnit(unit, issue, now());
+	return { ok: true, value: { issue, created: true, duplicateCheck: 'not-run' } };
+}
+
+function buildSpec(
+	unit: UnitRef, cfg: GithubCfg, define: DefineArtifact, epicSlug: string, membership: string, label: string,
+	kindLabel: string, parentRef: IssueRef | undefined, repo: { owner: string; repo: string },
+): { value: Parameters<TrackerPort['issueOps']['create']>[0] } | { error: string } {
+	const labels = [kindLabel, membership, label];
+	const createdAt = define.meta.createdAt;
+	if (unit.unit === 'epic') {
+		const wid = safeCanonical(() => epicWorkflowId(unit.epicHash, createdAt));
+		const problem = firstSentence(define.body.problem);
+		return { value: { title: wid !== undefined ? `${wid} — ${problem}` : `Epic: ${problem}`, body: renderEpicBody(define, epicSlug, repo, wid), labels, issueType: cfg.epicIssueType } };
+	}
+	const storyId = unit.storyId ?? '';
+	const story = define.body.stories.find(s => s.id === storyId || s.id.toLowerCase() === storyId.toLowerCase());
+	if (story === undefined) return { error: `Story '${storyId}' is not in the Define body` };
+	if (unit.unit === 'story') {
+		const wid = safeCanonical(() => storyWorkflowId(unit.epicHash, createdAt, story.id));
+		return { value: { title: wid !== undefined ? `${wid} — ${story.title}` : `${story.id}: ${story.title}`, body: renderStoryBody(parentRef ?? '', story, epicSlug, unit.epicHash, createdAt, repo, wid), labels, issueType: cfg.storyIssueType } };
+	}
+	let plan: PlanArtifact;
+	try { plan = JSON.parse(readFileSync(planJson(unit), 'utf8')) as PlanArtifact; }
+	catch (err) { return { error: `cannot read the plan: ${(err as Error).message}` }; }
+	const taskId = unit.taskId ?? '';
+	const task = (plan.body?.tasks ?? []).find(t => t.id === taskId || t.id.toLowerCase() === taskId.toLowerCase());
+	if (task === undefined) return { error: `Task '${taskId}' is not in the plan of Story '${storyId}'` };
+	const wid = safeCanonical(() => taskWorkflowId(unit.epicHash, createdAt, story.id, task.id));
+	return { value: { title: wid !== undefined ? `${wid} — ${task.title}` : `${story.id}/${task.id}: ${task.title}`, body: renderTaskBody(parentRef ?? '', story.id, task, epicSlug, unit.epicHash, createdAt, repo, wid), labels, issueType: cfg.taskIssueType } };
+}
+
+/**
+ * The HLD's EnsureIssue: the unit's single issue, found or created. A failure
+ * carries the sc1 kind and reason; the creation phase stays inside this module.
+ */
+export function ensureUnitIssue(unit: UnitRef, port: TrackerPort): PortResult<IssueRef> {
+	const r = ensureUnitIssueDetailed(unit, port);
+	return r.ok ? { ok: true, value: r.value.issue } : { ok: false, reason: r.reason, kind: r.kind };
+}

@@ -4,7 +4,7 @@
     "epicHash": "dced43851723554f",
     "storyId": "S001",
     "createdAt": "2026-10-18T11:35:11.055Z",
-    "updatedAt": "2026-10-18T11:42:35.906Z",
+    "updatedAt": "2026-10-18T11:59:48.678Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-18T10:54:00.951Z",
     "epicSlug": "keep-document-summaries-across-full-index"
@@ -251,6 +251,134 @@
               },
               {
                 "title": "without the option the delete is as before: the edge is removed and nothing is returned to pending",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "8ec5a00b",
+        "ranAt": "2026-10-18T11:59:48.678Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'a reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "a reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'after a reindex no doc_summary row is keyed by an entity number that is not stored'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "after a reindex no doc_summary row is keyed by an entity number that is not stored",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'a full index of a previously complete repository interrupted immediately after the delete leaves it unfinished, start-up queues a full index, and that index writes the carried summaries back'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "a full index of a previously complete repository interrupted immediately after the delete leaves it unfinished, start-up queues a full index, and that index writes the carried summaries back",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'a full index made to throw after the delete keeps the summaries carried, and the next full index writes them back'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "a full index made to throw after the delete keeps the summaries carried, and the next full index writes them back",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/indexer/__tests__/full-index-rebuild.test.ts: 'after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+                "title": "after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/full-index-rebuild.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3830,
+            "titles": [
+              {
+                "title": "ac2: a cross-file edge deleted by hand from a store whose file hashes are unchanged is restored by repo.reindex",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose read fails during a full index is an uncommitted file and the repository reads not complete",
+                "result": "pass"
+              },
+              {
+                "title": "the repository entity is stored before the manifest step, so the manifest's DEPENDS_ON edges are stored",
+                "result": "pass"
+              },
+              {
+                "title": "a full index made to throw part-way leaves fullIndexFinished false, and start-up queues that repository for a full index",
+                "result": "pass"
+              },
+              {
+                "title": "repository B's reindex restores repository A's hand-written edge into B through Pass 0, without reindexing A",
+                "result": "pass"
+              },
+              {
+                "title": "after a reindex of the ac3 fixture no export_names entry remains under an old u64 and calls through the barrel still resolve",
+                "result": "pass"
+              },
+              {
+                "title": "a reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document",
+                "result": "pass"
+              },
+              {
+                "title": "after a reindex no doc_summary row is keyed by an entity number that is not stored",
+                "result": "pass"
+              },
+              {
+                "title": "a full index of a previously complete repository interrupted immediately after the delete leaves it unfinished, start-up queues a full index, and that index writes the carried summaries back",
+                "result": "pass"
+              },
+              {
+                "title": "a full index made to throw after the delete keeps the summaries carried, and the next full index writes them back",
+                "result": "pass"
+              },
+              {
+                "title": "after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current",
                 "result": "pass"
               }
             ],

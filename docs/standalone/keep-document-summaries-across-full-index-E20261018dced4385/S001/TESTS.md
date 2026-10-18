@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -83,3 +83,43 @@ Run at 2026-10-18T11:42:35.906Z on commit `6cf6945e`. Tests check: **passed**. 7
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/doc-summary-carry.test.ts` | 0 | 9 | 6.7 s |  |
 | `src/db/__tests__/entities-return-to-pending.test.ts` | 0 | 3 | 1 s |  |
+
+## t3
+
+Run at 2026-10-18T11:59:48.678Z on commit `8ec5a00b`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/__tests__/full-index-rebuild.test.ts: 'a reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+
+**integration: src/indexer/__tests__/full-index-rebuild.test.ts: 'after a reindex no doc_summary row is keyed by an entity number that is not stored'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | after a reindex no doc_summary row is keyed by an entity number that is not stored | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+
+**integration: src/indexer/__tests__/full-index-rebuild.test.ts: 'a full index of a previously complete repository interrupted immediately after the delete leaves it unfinished, start-up queues a full index, and that index writes the carried summaries back'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a full index of a previously complete repository interrupted immediately after the delete leaves it unfinished, start-up queues a full index, and that index writes the carried summaries back | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+
+**integration: src/indexer/__tests__/full-index-rebuild.test.ts: 'a full index made to throw after the delete keeps the summaries carried, and the next full index writes them back'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a full index made to throw after the delete keeps the summaries carried, and the next full index writes them back | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+
+**integration: src/indexer/__tests__/full-index-rebuild.test.ts: 'after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current | `src/indexer/__tests__/full-index-rebuild.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/full-index-rebuild.test.ts` | 0 | 11 | 3.8 s |  |

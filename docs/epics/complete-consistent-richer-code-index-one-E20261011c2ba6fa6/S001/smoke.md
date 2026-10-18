@@ -100,11 +100,22 @@ Completeness: complete
 
 4. **VS Code Daemon tab**: the real host and gateway over the live daemon, shot with headless Chrome. See `t17-vscode-daemon-tab-live.png`: "insrc ready" with a green "complete"; the other five with "incomplete" and their reasons; insors-extraction "indexing".
 
-## Document summaries: NOT YET REGENERATED (open)
+## Document summaries: restored; the sweep still running (difference explained)
 
-The rebuild deleted this repository's 11412 document summaries (LLD 2.10: "the summaries are regenerated ... by the doc-summarise-repo job the full index queues at its end, with model calls").
-- The job is queued: the summary lane has depth 1.
-- The summary lane runs only while the index lane is idle (Story 0f0e4f45). At 07:11 the index lane held 95 jobs: the other five repositories' full indexes, then file events.
-- At about 30 s per summary on the local model (src/indexer/doc-summary-sweep.ts), regenerating 11412 summaries is days of model work.
+The rebuild deleted this repository's 11412 document summaries (LLD 2.10: "the summaries are regenerated ... by the doc-summarise-repo job the full index queues at its end, with model calls"). At about 35 s per summary that was days of model work, so it was filed and fixed as ISSUE-dced4385 (COMPLETE @57f8d110; evidence in docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md):
 
-This acceptance check is open.
+- A full index now carries summaries across its delete and writes back every one whose section is unchanged.
+- The lost summaries were restored from the 2026-10-16 backup: 21,993 of 22,216 across the six repositories, **10,996 for this repository**.
+- A full reindex of this repository afterwards (12:14-12:56 UTC, 3,385 files) carried 10,996 summaries and wrote all 10,996 back.
+
+| | Summaries for this repository |
+|---|---:|
+| Before the s1 rebuild (2026-10-18, daemon stopped) | 11,412 |
+| After the restore and the reindex | 10,996 |
+| Difference | 416 |
+
+The difference is explained:
+- The backup is from 2026-10-16; summaries the sweep wrote in the two days after it were not in it.
+- 56 backup summaries (all repositories) were not restored because their section is gone (43) or its text changed (13).
+
+The doc-summarise-repo job queued at the end of that reindex is RUNNING, not complete: at 13:59 UTC it had covered 2,292 of the repository's 15,384 document and section entities (2,220 skipped as current, 98 summarised, 0 model failures). About 4,300 sections have no summary yet (sections the backup never held or whose text changed); at about 35 s each the job needs roughly 40 more hours. Waiting for it was declined by the stakeholder (2026-10-18, option A): the count difference is explained here and the job's completion is not awaited.

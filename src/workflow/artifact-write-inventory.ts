@@ -90,6 +90,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 
 	// --- migration -----------------------------------------------------------------
 	{ file: 'src/workflow/migrate-docs-tree.ts', class: 'migration', via: 'raw', note: 'moves the docs tree to the nested layout; rewrites files in place once' },
+	{ file: 'src/daemon/steps/workflow-step/resume.ts', class: 'migration', via: 'raw', note: 'a resume puts a parker\'s draft files back byte for byte, meta.revision included: it restores, it does not author, so it mints no revision' },
 
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---
 	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact' },
@@ -112,6 +113,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/config/github-store.ts', class: 'non-artifact', via: 'raw', note: 'github.json, written only by the daemon' },
 	{ file: 'src/workflow/runners/build/range-base.ts', class: 'non-artifact', via: 'raw', note: 'temporary git index for the range base' },
 	{ file: 'src/workflow/team/create-only.ts', class: 'non-artifact', via: 'raw', note: 'the starter team policy file' },
+	{ file: 'src/workflow/team/handoff.ts', class: 'non-artifact', via: 'raw', note: 'the handoff checkpoint, written into a temporary worktree and committed to the handoff branch' },
 	{ file: 'src/workflow/team/sighting-store.ts', class: 'non-artifact', via: 'raw', note: 'the policy sighting store' },
 	{ file: 'src/workflow/tracker/setup.ts', class: 'non-artifact', via: 'raw', note: 'tracker setup configuration' },
 ];

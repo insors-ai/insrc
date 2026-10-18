@@ -145,7 +145,7 @@ Run at 2026-10-18T18:10:25.283Z on commit `2645648d`. Tests check: **passed**. 2
 
 ## t8
 
-Run at 2026-10-18T18:16:04.606Z on commit `973b836f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-18T18:18:11.224Z on commit `2ff7cd6b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/team/__tests__/handoff-resume-check.test.ts: resumeCheck refuses an unregistered receiving path and a clone of a different repository before restoring anything, and refuses a moved upstream including the effective HLD and the Define**
 
@@ -163,4 +163,4 @@ Run at 2026-10-18T18:16:04.606Z on commit `973b836f`. Tests check: **passed**. 2
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/team/__tests__/handoff-resume-check.test.ts` | 0 | 2 | 4.2 s |  |
+| `src/workflow/team/__tests__/handoff-resume-check.test.ts` | 0 | 2 | 4.5 s |  |

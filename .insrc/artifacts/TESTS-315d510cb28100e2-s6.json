@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T18:16:04.606Z",
+    "updatedAt": "2026-10-18T18:18:11.224Z",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
   },
@@ -353,8 +353,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "973b836f",
-        "ranAt": "2026-10-18T18:16:04.606Z",
+        "commit": "2ff7cd6b",
+        "ranAt": "2026-10-18T18:18:11.224Z",
         "testsPassed": true,
         "tests": [
           {
@@ -389,7 +389,7 @@
             "file": "src/workflow/team/__tests__/handoff-resume-check.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4243,
+            "durationMs": 4488,
             "titles": [
               {
                 "title": "resumeCheck refuses an unregistered receiving path and a clone of a different repository before restoring anything, and refuses a moved upstream including the effective HLD and the Define",

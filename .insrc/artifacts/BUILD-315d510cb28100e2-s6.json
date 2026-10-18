@@ -4,7 +4,7 @@
     "epicHash": "315d510cb28100e2",
     "storyId": "s6",
     "createdAt": "2026-10-18T17:06:54.425Z",
-    "updatedAt": "2026-10-18T18:16:04.606Z",
+    "updatedAt": "2026-10-18T18:18:11.224Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -41,10 +41,10 @@
       },
       {
         "id": "t8",
-        "passed": false
+        "passed": true
       }
     ],
-    "summary": "handoff.ts gains verifyReceivingRepo(path, repositoryId?, deps) and resumeCheck(repo, unit, { workflow? }, deps) with the types StageWorkflow, ResumePlan, ResumeCheck (resume | restart | nothing-to-resume | refused) and ResumeDeps (adds a listRepos seam to ParkDeps; the real registry, db/repos listRepos, is imported lazily). verifyReceivingRepo: the path must equal (resolved) a registered repo, else 'is not a repository registered with the daemon'; when an id is given the repo's first commit (rev-list --max-parents=0 HEAD) must equal it, else 'is a different repository ...'. resumeCheck, in order, with no working file written: Task refused; registration; the repo must enforce claims; the stage (the given workflow, which must be design.epic/design.story/plan, fit the unit, and for plan need a committed LLD, or the stage inferred from artifacts committed at HEAD) and 'nothing-to-resume' when that stage is already committed; the author gate with the workflow (throws TeamGateRefusedError when someone else holds the unit; it claims an unassigned one, as the start phase does); the handoff branch name; no remote or no branch on the remote gives restart (told apart from a failure: a failed ls-remote is refused with git's message); the branch is fetched by URL with --no-write-fetch-head into a temporary ref (no remote-tracking ref or FETCH_HEAD is created), the checkpoint is read and validated (invalid JSON, no checkpoint file, unknown schema, other unit, outside path each refused with the specific reason), the repository identity is compared, a run checkpoint's stage must be the next stage, the whole upstream snapshot is compared with snapshotUpstream now (any difference, including revision 0 on one side, the effective HLD with approved amendments, or the Define, is refused naming each artifact as parked/now), any parked file with local changes is refused naming the file, and the parked file contents are read from the branch into the plan; the temporary ref is always dropped. A run checkpoint gives 'resume' with the plan; a draft-only one gives 'restart' with the files to restore. Tests use a real bare origin, a parker repo that really parks with parkDraft, and a second clone: the baseline resume plan with no ref, FETCH_HEAD or file left; unregistered and registry-down refusals before any fetch; a different repository that can fetch the same branch refused with nothing left behind; moved Define (3 to 4, and to 0), a pending amendment changing nothing and an approved one refusing; missing branch giving restart; a dead remote refused with git's message; LLD committed gives plan, both committed gives nothing-to-resume, explicit workflow cases; five bad checkpoints pushed by a helper clone; a dirty target file; a draft-only checkpoint's restart with its files; a holder gate refusal and a no-claims repo. Team suite passes; tsc clean.",
+    "summary": "The one open check was the ordering of the identity check against the fetch. What can be known before the fetch is whether the receiving path HAS an identity; what it must equal (the checkpoint's repositoryId) is written inside the checkpoint on the handoff branch, so the comparison cannot precede reading the checkpoint, and no design that keeps the identity in the checkpoint can do otherwise. verifyReceivingRepo now enforces everything that can be done up front: it is the first step after the Task check, before the claims check, the stage, the gate and any remote access, and it now always requires the repository to have an identity of its own (a git repository with history, from rev-list --max-parents=0 HEAD), refusing 'is not a git repository with history' even when it is called without an id; the comparison with the checkpoint's id happens right after the checkpoint is read, which is before any file is restored and after only a fetch into a temporary ref that is always dropped (fetched by URL with --no-write-fetch-head, so no remote-tracking ref, FETCH_HEAD or working file changes; the tests assert refs, status and FETCH_HEAD are identical afterwards, including for the different-repository clone). The first named test gains a registered but history-less repository (git init with an origin remote) and a plain directory, both refused before the remote is touched (refs, status and FETCH_HEAD unchanged), in addition to the unregistered, registry-down, different-repository, moved-upstream cases it already had. The docstring of resumeCheck states this order. Team suite passes; tsc clean.",
     "testRecord": {
       "md": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S006/TESTS.md"
     },
@@ -54,170 +54,170 @@
           "file": "docs/plans/s6-open-issues.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/cli/__tests__/settings-modal.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/cli/services/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/fixtures/repo-fields-catalog.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/config/__tests__/repo-fields.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/config/repo-fields.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/host.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/__tests__/state-store-meta.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/park-offer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state-store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/config/github.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-park-plan.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-park.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-pure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-resume-check.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/park-offer.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/snapshot-upstream.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/gate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/handoff.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       },
       {
         "target": {
           "file": "src/workflow/team/run-meta.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-18T18:16:04.606Z"
+        "timestamp": "2026-10-18T18:18:11.224Z"
       }
     ],
-    "commit": "973b836f"
+    "commit": "2ff7cd6b"
   }
 }

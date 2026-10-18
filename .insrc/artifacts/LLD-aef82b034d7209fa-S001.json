@@ -135,6 +135,13 @@
         "choice": "Adopt all five criteria",
         "rationale": "Stakeholder decision 2026-10-19: ac1-ac5 are binding for S001, read with the approved LLD's names: 'in parts' means the bounded ReviewJob (map, keyed reduce, compare), and the named error is AtomTooLargeError (one original atom larger than the whole budget). The installed-daemon completion of Epic c2ba6fa6 s1's code review is part of acceptance.",
         "resolvedAt": "2026-10-18T19:31:56.099Z"
+      },
+      "q56047d0c": {
+        "question": "Default of codeReview.controllerFrameChars (the largest emit_judgements frame, and so the controller budget of every call in it): proposed 400,000 characters, about 100k tokens, so an ordinary review still fits one frame and an s1-sized one is run as jobs; a large frame today is already saved to a file by the client rather than lost.",
+        "status": "resolved",
+        "choice": "400k default with job splitting",
+        "rationale": "Stakeholder decision 2026-10-19: codeReview.controllerFrameChars defaults to 400,000 characters (catalog type number, validated as a positive integer where it is used).",
+        "resolvedAt": "2026-10-18T19:32:59.069Z"
       }
     }
   },

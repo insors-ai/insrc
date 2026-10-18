@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -191,3 +191,19 @@ Run at 2026-10-18T15:08:22.267Z on commit `847e35d8`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts` | 0 | 2 | 4.7 s |  |
+
+## t9
+
+Run at 2026-10-18T15:11:50.055Z on commit `c9ac9ad4`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/cli/__tests__/team-claim-release.test.ts: team claim and team release resolve the unit, call the gate functions, print the outcome or the holder, and print the usage line for bad arguments**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | team claim and team release resolve the unit, call the gate functions, print the outcome or the holder, and print the usage line for bad arguments | `src/cli/__tests__/team-claim-release.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/cli/__tests__/team-claim-release.test.ts` | 0 | 1 | 2.6 s |  |

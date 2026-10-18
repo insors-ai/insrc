@@ -46,3 +46,38 @@ test('the terminal resolve command prints the refusal naming the holder when app
 	const fine = await runCommand('workflow resolve docs/plans/PLAN-x.md high1 accept', ctxWith({ resolveFinding: () => ({ findingId: 'high1', status: 'resolved', effectiveVerdict: 'pass', remainingBlocking: 0 }) }));
 	assert.match(fine[0] ?? '', /resolved high1 \(resolved\)/);
 });
+
+test('the terminal approve and resolve commands print the refusal naming the holder, formatted beside the review-block message', async () => {
+	const held = new TeamGateRefusedError({ kind: 'held-by-other', holder: 'bob', offerPark: false });
+	const blocked = Object.assign(new Error('blocked'), { name: 'ReviewBlockedError', summary: '1 HIGH' });
+
+	// approve and resolve: the cross line, the reason naming the holder, beside the review-block line
+	const approve = await runCommand('workflow approve docs/plans/PLAN-x.md', ctxWith({ approve: () => { throw held; } }));
+	const review = await runCommand('workflow approve docs/plans/PLAN-x.md', ctxWith({ approve: () => { throw blocked; } }));
+	const resolve = await runCommand('workflow resolve docs/plans/PLAN-x.md high1 apply', ctxWith({ resolveFinding: () => { throw held; } }));
+	assert.deepEqual(approve, ['✗ not approved — held by bob']);
+	assert.deepEqual(resolve, ['✗ not applied — held by bob']);
+	for (const line of [approve[0], review[0], resolve[0]]) assert.ok((line ?? '').startsWith('✗ '), `${line} uses the cross-prefixed format`);
+
+	// claim and release: the same cross line naming the holder, through the real team services
+	const team = await import('../services/team.js');
+	const gate = await import('../../workflow/team/gate.js');
+	const port = {
+		whoAmI: () => ({ ok: true, value: 'alice' }),
+		readAssignee: () => ({ ok: true, value: 'bob' }),
+		addAssignee: () => ({ ok: true, value: ['bob', 'alice'] }),
+		setAssignee: () => ({ ok: true, value: [] }),
+	};
+	gate._setGateDepsForTests({
+		readPolicy: () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as never }),
+		loadTracker: () => ({ ok: true, value: port as never }),
+		resolveIssue: () => 'acme/demo#7',
+		ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }),
+		artifactExists: () => true,
+	});
+	try {
+		const ctx = { repoPath: '/repo', onLog: () => undefined, services: { team } } as unknown as CommandCtx;
+		assert.deepEqual(await runCommand('team claim 315d510cb28100e2 s5', ctx), ['✗ not claimed — held by bob']);
+		assert.match((await runCommand('team release 315d510cb28100e2 s5', ctx))[0] ?? '', /^✗ not released — only the holder \(bob\)/);
+	} finally { gate._setGateDepsForTests(); }
+});

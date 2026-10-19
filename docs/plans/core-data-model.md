@@ -196,6 +196,20 @@ Actor { id: "<namespace>:<value>", kind: person | agent | system, name?, propert
 7. **Changes to the shape of the plan still go through a re-plan:** adding or dropping a Task, reordering, and changing `depends-on`. A direct edit that would do that is refused with a pointer to a re-plan.
 8. A Task's build rounds are `update` entries in its own change log with an `outcome` (result, round, commit); it is `completed` when a round passes the gate. The Story's `BR` record is the Story-level aggregate.
 
-## Gaps still to discuss (one at a time)
+## Gap 12: migration: SETTLED
 
-12 migration (to be redone on the corrected Gap 1).
+The delivery board reads every artifact in the repo and builds its items from them, so a mix of old and new shapes would break it. **Migration is an upfront cutover, not migrate-on-write.**
+
+1. A **hard cutover per repo**: one `insrc migrate` command converts the whole repo in one commit. New code checks a repo-level version and refuses to run on an unmigrated repo ("run `insrc migrate`"). There is no mixed state and **no read-through adapter** in the readers.
+2. The migration produces **everything the board needs, retroactively**: Epic and Story artifacts for every existing epic and story; Task artifacts from **every existing plan** with tracker bindings from the recorded task refs; computed statuses including `completed` roll-ups from approved BUILDs; and a **back-filled change log** from what the artifacts record (`create` from `createdAt`, `approve` from `approvedAt` / `approvedBy`, `review` from `meta.review`, `complete` for approved BUILDs), each marked "migrated", with a best-effort actor (`unknown:<name>` when no namespace is known).
+3. It is **idempotent and resumable**, has a `--dry-run`, and a **verification pass** that reads the result back through the delivery reader. One commit, so a revert is one `git revert`.
+4. **A team cuts over together:** after the migration commit merges, a clone with older code cannot read the repo, with a clear message from the version check.
+5. **One cutover, after the model is built:** the model is built behind the version gate and a single migration runs at the end, not one per step.
+6. Artifact ids and file names are unchanged by the migration (Gap 1), except standalone `S001` to `s1`, which keeps the old id as `legacyIds`.
+7. **Removing the second ID scheme is part of the epic** (not a separate release): delete `src/workflow/id.ts`, move the folder-name formatter into the path scheme, fix the date source (always `epicCreatedAt`), switch new issue titles and the body marker to the artifact id, and replace the delivery module's story / task ordinals. It changes no stored data, so it can be the first story in the epic's order.
+8. **Signoff (s7 to s9) waits for the new model.**
+9. The IDE repo is deprecated and out of scope.
+
+## Convergence
+
+All twelve gaps are settled. Next: write the consolidated problem statement, confirm it, then run `brainstorm` to produce the SPEC, then triage (an epic).

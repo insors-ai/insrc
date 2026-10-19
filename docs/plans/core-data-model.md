@@ -159,8 +159,20 @@ Artifact.attachments[]  { target, revision, at, externalId? }                   
 ```
 6. insrc's own posts to an issue (design summary, review report, plan comment) are `posted[]` marks, not Feedback; the `<!-- insrc:... -->` marker keeps them out of ingestion.
 7. A repo with **no tracker** has no `binding`.
-8. **IDs (to confirm):** the Define takes a root like `SPEC` and `ISSUE`: `DEF<YYYYMMDD><hash8>` (and later `PRD...`); the Epic keeps `E...`. Today one Define has one Epic, so the Define's date and hash equal its first Epic's and migration is mechanical.
+8. **IDs (confirmed):** the Define takes a root like `SPEC` and `ISSUE`: `DEF<YYYYMMDD><hash8>` (and later `PRD...`); the Epic keeps `E...`. Today one Define has one Epic, so the Define's date and hash equal its first Epic's and migration is mechanical.
+
+## Gap 9: actor identity: SETTLED
+
+```
+Actor { id: "<namespace>:<value>", kind: person | agent | system, name?, properties: { email?, aliases?: id[], via?, ... } }
+```
+1. `id` is **namespaced** (lower-case namespace) so ids cannot collide: `github:subhagho`, `gitlab:...`, `jira:5b10...`, `git:name@example.com`, `os:user@host`; the fixed system actors are `insrc:daemon` and `insrc:controller` (the two review parties).
+2. `kind` is a proper field: `person`, `agent` (a model acting for a person: the `actor` is the person and `properties.via` names the tool, e.g. `claude-code`) or `system`.
+3. **Aliases are explicit, never guessed.** One person can hold several ids at once (a Jira account that holds the claim and a GitHub account that commits and signs off), so `properties.aliases` links them.
+4. **Gates decide on the live identity from the tracker itself** (the tracker's own `whoAmI`), never on a declared alias, so a declaration cannot spoof a claim. Aliases are for linking records and showing one name.
+5. A person declares their own ids in a **per-user identity file local to the machine** (`~/.insrc/identity.json`: `{ primary, aliases[] }`). It is self-declared, so it is used for attribution and display only; a team roster in the policy is a possible later addition.
+6. When an actor is recorded, `id` is the identity of the system the action came through and the declared aliases are copied into `properties.aliases`. A bare login in old records is read as `<tracker>:<login>`.
 
 ## Gaps still to discuss (one at a time)
 
-9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

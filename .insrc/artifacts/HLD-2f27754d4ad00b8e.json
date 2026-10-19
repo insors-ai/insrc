@@ -169,6 +169,11 @@
       "reviewedAt": "2026-10-19T10:49:03.425Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-19T10:51:49.790Z",
+    "reviewOverride": {
+      "reason": "User approved over the daemon's block after two review rounds (round 1: 6 HIGH, all fixed in the revision; round 2: 4 HIGH, 2 MED, 5 LOW). The six round-2 findings are binding requirements on the named Stories (s1 FR id parse form, s2 writer inventory and anchor context, s3 ac7 test, s4 crash handling, s6/s8 once-only posting), recorded in docs/plans/core-data-model.md \"HLD approval and binding build requirements\".",
+      "at": "2026-10-19T10:51:49.789Z"
     }
   },
   "body": {

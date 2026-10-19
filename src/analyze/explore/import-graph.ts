@@ -103,7 +103,7 @@ export async function runImportGraph(
 		return {
 			type: 'import.graph',
 			// No file of the graph lies under the path: an empty result, and a complete one.
-			completeness: graphCompleteness({ returned: 0 }),
+			completeness: graphCompleteness({ returned: 0, repoCompleteness: ctx.repoCompleteness }),
 			summary: {
 				target: path,
 				topImporters:   [],
@@ -179,6 +179,7 @@ export async function runImportGraph(
 	if (importerCount.size > k) limited.push(reachedLimit('importing files', k, 'per-group', importerCount.size));
 	if (importeeCount.size > k) limited.push(reachedLimit('imported files', k, 'per-group', importeeCount.size));
 	const completeness = graphCompleteness({
+		repoCompleteness: ctx.repoCompleteness,
 		returned: topImporters.length + topImportees.length,
 		found:    importerCount.size + importeeCount.size,
 		limited,

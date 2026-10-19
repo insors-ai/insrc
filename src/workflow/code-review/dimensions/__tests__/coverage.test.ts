@@ -54,12 +54,14 @@ function fakeProvider(scripted: unknown): { provider: LLMProvider; calls: () => 
 
 test('judgeCoverage: a promised test absent from the grounding is a HIGH missing-promised-test finding (ac1)', async () => {
 	const { provider } = fakeProvider({ findings: [
-		{ severity: 'HIGH', location: 'src/a.ts:1', message: 'promised test missing', expectationRef: 'unit: alpha exercised', confidence: 'breach' },
+		{ severity: 'HIGH', location: 'src/a.ts:1', message: 'promised test missing', expectationRef: 'alpha exercised', confidence: 'breach', findingKind: 'promised-test' },
 	] });
 	const res = await judgeCoverage(subject(['src/a.ts'], [{ level: 'unit', name: 'alpha exercised' }]), groundingTwoFiles(), provider);
 	assert.equal(res.dimension, 'coverage');
 	assert.equal(res.findings.length, 1);
-	assert.equal(res.findings[0]!.expectationRef, 'unit: alpha exercised');
+	// ISSUE-b47dadc7: a promised-test HIGH names the plan's test exactly as listed.
+	assert.equal(res.findings[0]!.severity, 'HIGH');
+	assert.equal(res.findings[0]!.expectationRef, 'alpha exercised');
 	assert.equal(res.findings[0]!.confidence, 'breach');
 });
 
@@ -74,11 +76,13 @@ test('buildCoveragePrompt: serializes the approvedPlan promised tests into the t
 
 test('judgeCoverage: a changed symbol with testsReaching.length===0 is a HIGH not-exercised finding (ac2)', async () => {
 	const { provider } = fakeProvider({ findings: [
-		{ severity: 'HIGH', location: 'src/a.ts:2', message: 'alpha has no reaching test', expectationRef: 'alpha', confidence: 'breach' },
+		{ severity: 'HIGH', location: 'src/a.ts:2', message: 'alpha has no reaching test', expectationRef: 'alpha', confidence: 'breach', findingKind: 'symbol-coverage', symbolId: 'e0' },
 	] });
 	const res = await judgeCoverage(subject(), groundingTwoFiles(), provider);
 	assert.equal(res.findings.length, 1);
 	assert.equal(res.findings[0]!.expectationRef, 'alpha');
+	// ISSUE-b47dadc7: with no test record the edge-free symbol is no-edge-no-tests, so the HIGH stands.
+	assert.equal(res.findings[0]!.severity, 'HIGH');
 });
 
 test('judgeCoverage: a changed symbol WITH testsReaching yields no not-exercised finding (ac2)', async () => {
@@ -92,8 +96,8 @@ test('judgeCoverage: a changed symbol WITH testsReaching yields no not-exercised
 
 test('judgeCoverage: a present-but-failing/unverified test (observation) is distinct from a wholly-missing test (breach) (ac3)', async () => {
 	const { provider } = fakeProvider({ findings: [
-		{ severity: 'HIGH', location: 'src/a.ts:1', message: 'no test at all',            expectationRef: 'alpha',           confidence: 'breach' },
-		{ severity: 'MED',  location: 'src/b.ts:1', message: 'present but pass unverified', expectationRef: 'beta reaching test', confidence: 'observation' },
+		{ severity: 'HIGH', location: 'src/a.ts:1', message: 'no test at all',            expectationRef: 'alpha',           confidence: 'breach', findingKind: 'symbol-coverage', symbolId: 'e0' },
+		{ severity: 'MED',  location: 'src/b.ts:1', message: 'present but pass unverified', expectationRef: 'beta reaching test', confidence: 'observation', findingKind: 'symbol-coverage', symbolId: 'e1' },
 	] });
 	const res = await judgeCoverage(subject(['src/a.ts', 'src/b.ts']), groundingTwoFiles(), provider);
 	assert.equal(res.findings.length, 2);
@@ -112,8 +116,8 @@ test('buildCoveragePrompt: charge distinguishes present-failing from no-test and
 
 test('judgeCoverage: a finding whose location file is outside changedFiles is dropped (ac4)', async () => {
 	const { provider } = fakeProvider({ findings: [
-		{ severity: 'HIGH', location: 'src/a.ts:1',      message: 'in scope',     expectationRef: 'alpha', confidence: 'breach' },
-		{ severity: 'HIGH', location: 'src/other.ts:9',  message: 'out of scope', expectationRef: 'gamma', confidence: 'breach' },
+		{ severity: 'HIGH', location: 'src/a.ts:1',      message: 'in scope',     expectationRef: 'alpha', confidence: 'breach', findingKind: 'symbol-coverage', symbolId: 'e0' },
+		{ severity: 'HIGH', location: 'src/other.ts:9',  message: 'out of scope', expectationRef: 'gamma', confidence: 'breach', findingKind: 'symbol-coverage', symbolId: 'e0' },
 	] });
 	const res = await judgeCoverage(subject(['src/a.ts', 'src/b.ts']), groundingTwoFiles(), provider);
 	assert.equal(res.findings.length, 1);
@@ -199,8 +203,9 @@ test('buildCoveragePrompt: plan null emits an empty promised-tests list + soften
 
 test('COVERAGE_FINDINGS_SCHEMA: per-finding requires severity/location/message; expectationRef + confidence optional', () => {
 	const items = (COVERAGE_FINDINGS_SCHEMA as { properties: { findings: { items: { properties: Record<string, unknown>; required: string[] } } } }).properties.findings.items;
-	assert.deepEqual(Object.keys(items.properties).sort(), ['confidence', 'expectationRef', 'location', 'message', 'severity']);
-	assert.deepEqual([...items.required].sort(), ['location', 'message', 'severity']);
+	// ISSUE-b47dadc7: findingKind is required and symbolId optional.
+	assert.deepEqual(Object.keys(items.properties).sort(), ['confidence', 'expectationRef', 'findingKind', 'location', 'message', 'severity', 'symbolId']);
+	assert.deepEqual([...items.required].sort(), ['findingKind', 'location', 'message', 'severity']);
 });
 
 test('buildCoveragePrompt: symbols, then promised tests, then the output-shape reminder are TRAILING (in order)', () => {

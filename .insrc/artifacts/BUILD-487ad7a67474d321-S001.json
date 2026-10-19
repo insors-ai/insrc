@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "487ad7a67474d321",
+    "storyId": "S001",
+    "createdAt": "2026-10-17T18:32:41.579Z",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix/small: one conversion function in the codex provider path plus a reply validation against the full schema.",
+    "epicCreatedAt": "2026-10-17T10:47:23.903Z",
+    "epicSlug": "send-codex-only-schema-keywords-strict",
+    "updatedAt": "2026-10-17T20:01:34.883Z",
+    "approvedAt": "2026-10-17T20:01:35.011Z"
+  },
+  "body": {
+    "focus": "ISSUE-487ad7a67474d321: send codex only the schema keywords OpenAI strict mode accepts. The codex paths in CliProvider send codexSchemaJson(schema) (processSchemaForOpenAIStrict); strict mode refuses keywords such as uniqueItems (analyzer bundle schema meta.emptyLayers), so codex fails 400 invalid_json_schema. Fix: the copy sent to codex leaves out (or rewrites) every keyword strict mode refuses, with the refused set established by probing codex rather than assumed; the caller's schema is unchanged, and the codex reply is still validated against the caller's full schema so no constraint is lost.",
+    "producesLld": false,
+    "commit": "acb85bfc",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "summary": "The codex copy of a schema (codexStrictSchema, structured-output.ts) keeps only the keywords codex was probed to accept and no format but date-time. A schema is refused before codex is called when it holds a format the reply check cannot enforce, or when the final strict copy holds a local $ref that no longer resolves; both scans read schema maps by value. Both codex paths in CliProvider send the copy and check the reply against the caller's full schema with validateCodexReply (ajv draft 2020-12 + ajv-formats). Shared processSchemaForOpenAIStrict and validateAgainstSchema are unchanged. Probe script, raw results and the live check are in S001/codex-strict-probe.md. Eight tests; each rule has a mutation that fails them.",
+    "testRecord": {
+      "md": "docs/standalone/send-codex-only-schema-keywords-strict-E20261017487ad7a6/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/standalone/send-codex-only-schema-keywords-strict-E20261017487ad7a6/S001/codex-strict-probe.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T20:01:34.883Z"
+      },
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T20:01:34.883Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T20:01:34.883Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T20:01:34.883Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T20:01:34.883Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-17T20:01:34.883Z"
+      }
+    ]
+  }
+}

@@ -110,7 +110,7 @@ export async function runClassHierarchy(
 		return {
 			type:         'class.hierarchy',
 			// The graph holds no class or interface of this name: empty, and complete.
-			completeness: graphCompleteness({ returned: 0 }),
+			completeness: graphCompleteness({ returned: 0, repoCompleteness: ctx.repoCompleteness }),
 			subject,
 			nodes:        [],
 			notFoundNote: `No class/interface named "${subject}" found in the repo.`,
@@ -185,6 +185,7 @@ export async function runClassHierarchy(
 	return {
 		type:         'class.hierarchy',
 		completeness: graphCompleteness({
+			repoCompleteness: ctx.repoCompleteness,
 			returned: nodes.length,
 			found:    targets.length,
 			skipped:  noGraphNode.map(e => ({

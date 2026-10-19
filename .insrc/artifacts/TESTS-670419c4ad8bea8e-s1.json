@@ -1,0 +1,580 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "670419c4ad8bea8e",
+    "storyId": "s1",
+    "createdAt": "2026-10-17T13:09:28.300Z",
+    "updatedAt": "2026-10-17T13:46:11.657Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "epicSlug": "understand-changes-before-committing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "cefc8ef4",
+        "ranAt": "2026-10-17T13:09:28.300Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Identity source precedence, authority separation and no automatic merge",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/identity.test.ts",
+                "title": "Identity precedence preserves authority, case and distinct accounts",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/identity.test.ts",
+                "title": "Incomplete provider discovery never selects an apparently unique account",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Provider source matrix and available/disconnected/missing/failed adapters; Git/OS fallback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/identity.test.ts",
+                "title": "Provider adapters distinguish available, disconnected, missing and failed sources",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/identity.test.ts",
+                "title": "Local adapter reads effective repository Git email and falls back to OS without author substitution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 505,
+            "titles": [
+              {
+                "title": "Identity precedence preserves authority, case and distinct accounts",
+                "result": "pass"
+              },
+              {
+                "title": "Incomplete provider discovery never selects an apparently unique account",
+                "result": "pass"
+              },
+              {
+                "title": "Provider adapters distinguish available, disconnected, missing and failed sources",
+                "result": "pass"
+              },
+              {
+                "title": "Local adapter reads effective repository Git email and falls back to OS without author substitution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "68612a86",
+        "ranAt": "2026-10-17T13:15:42.605Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Scope fingerprint full-field vectors and strict schemas",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/contracts.test.ts",
+                "title": "Scope fingerprint covers every exact field and strict validation rejects forged input",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/contracts.test.ts",
+                "title": "Nested scopes and transport versions fail closed on every envelope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sc4 confidence fidelity and public projection key exclusion",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/contracts.test.ts",
+                "title": "Submitted confidence is preserved and public projections exclude private fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 531,
+            "titles": [
+              {
+                "title": "Scope fingerprint covers every exact field and strict validation rejects forged input",
+                "result": "pass"
+              },
+              {
+                "title": "Submitted confidence is preserved and public projections exclude private fields",
+                "result": "pass"
+              },
+              {
+                "title": "Nested scopes and transport versions fail closed on every envelope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e89d309d",
+        "ranAt": "2026-10-17T13:18:35.728Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Open complete namespace inventory fresh and existing; retain old data",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/storage.test.ts",
+                "title": "Complete namespace inventory opens fresh and existing stores without data loss",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Reject missing/corrupt/future schema; owner-index pagination",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/storage.test.ts",
+                "title": "Schema corruption fails closed and owner pagination is isolated and bounded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/storage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 983,
+            "titles": [
+              {
+                "title": "Complete namespace inventory opens fresh and existing stores without data loss",
+                "result": "pass"
+              },
+              {
+                "title": "Schema corruption fails closed and owner pagination is isolated and bounded",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "27e694bc",
+        "ranAt": "2026-10-17T13:21:22.313Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Concurrent CAS, exact replay, request conflict and transaction rollback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Concurrent updates, exact replay and request conflicts preserve atomic history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Immutable original and assisted attempts resume after reopen",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Original and assisted answers survive reopen and resume without granting authorization",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 879,
+            "titles": [
+              {
+                "title": "Concurrent updates, exact replay and request conflicts preserve atomic history",
+                "result": "pass"
+              },
+              {
+                "title": "Original and assisted answers survive reopen and resume without granting authorization",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "909b4bc2",
+        "ranAt": "2026-10-17T13:29:01.179Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Interrupted job recovery and late completion rejected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Recovery interrupts jobs and rejects late completion without losing answers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Deletion races, owner isolation, permission checks and log redaction",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Deletion isolates owners, rejects retries and late writes, and enforces private paths",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Assessment lifecycle logs omit private identity and answer content",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/service.test.ts",
+                "title": "Privacy covers the active production file layout and its lock file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3721,
+            "titles": [
+              {
+                "title": "Concurrent updates, exact replay and request conflicts preserve atomic history",
+                "result": "pass"
+              },
+              {
+                "title": "Original and assisted answers survive reopen and resume without granting authorization",
+                "result": "pass"
+              },
+              {
+                "title": "Recovery interrupts jobs and rejects late completion without losing answers",
+                "result": "pass"
+              },
+              {
+                "title": "Deletion isolates owners, rejects retries and late writes, and enforces private paths",
+                "result": "pass"
+              },
+              {
+                "title": "Assessment lifecycle logs omit private identity and answer content",
+                "result": "pass"
+              },
+              {
+                "title": "Privacy covers the active production file layout and its lock file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "8d3f6bc1",
+        "ranAt": "2026-10-17T13:34:07.366Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "RPC forged-input rejection and typed revision-conflict result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "RPC rejects forged authority and returns typed revision conflicts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Real watch framing, snapshot race, reconnect, terminal and abort fixtures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 914,
+            "titles": [
+              {
+                "title": "RPC rejects forged authority and returns typed revision conflicts",
+                "result": "pass"
+              },
+              {
+                "title": "Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "d95a0c5a",
+        "ranAt": "2026-10-17T13:37:24.133Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Five understanding roles critical/core and missing-role failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "All five understanding roles require critical core descriptors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Healthy shutdown frame flush and bounded failure paths",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Healthy shutdown flushes final frames before storage close and stops only once",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+                "title": "Socket write flushing is bounded and settles disconnected writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Preserve locks-lost exit and existing daemon shutdown regressions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8918,
+            "titles": [
+              {
+                "title": "status after failure: storeFailure names another process and does not contain 'semume'",
+                "result": "pass"
+              },
+              {
+                "title": "store failure to stop: exit within 5 seconds, pid file and socket gone, second start succeeds, last log line names the skipped close",
+                "result": "pass"
+              },
+              {
+                "title": "fatal after failure: an unhandled rejection with the store failed ends the process within 5 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "healthy shutdown is unchanged: queue drained, connections closed in order, normal exit",
+                "result": "pass"
+              },
+              {
+                "title": "with the store failed no path calls exit: the shutdown, its backstop, a failure found during the drain, and any other exit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/understanding-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3237,
+            "titles": [
+              {
+                "title": "RPC rejects forged authority and returns typed revision conflicts",
+                "result": "pass"
+              },
+              {
+                "title": "Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames",
+                "result": "pass"
+              },
+              {
+                "title": "All five understanding roles require critical core descriptors",
+                "result": "pass"
+              },
+              {
+                "title": "Healthy shutdown flushes final frames before storage close and stops only once",
+                "result": "pass"
+              },
+              {
+                "title": "Socket write flushing is bounded and settles disconnected writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "22bf2098",
+        "ranAt": "2026-10-17T13:46:11.657Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "All three ACs: durability, unchanged delivery and no false pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/acceptance.test.ts",
+                "title": "Crash recovery preserves personal history, leaves delivery unchanged and never grants a pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/understanding/__tests__/contracts.test.ts",
+                "title": "Published version one consumer fixtures match runtime contracts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Build and affected storage, server, shutdown and role regression suites",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/T008-build-evidence.md; /tmp/insrc-understanding-final-build.log; /tmp/insrc-understanding-final-affected.log; /tmp/insrc-understanding-final-integration-fixes.log"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1027,
+            "titles": [
+              {
+                "title": "Crash recovery preserves personal history, leaves delivery unchanged and never grants a pass",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/understanding/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 422,
+            "titles": [
+              {
+                "title": "Scope fingerprint covers every exact field and strict validation rejects forged input",
+                "result": "pass"
+              },
+              {
+                "title": "Submitted confidence is preserved and public projections exclude private fields",
+                "result": "pass"
+              },
+              {
+                "title": "Nested scopes and transport versions fail closed on every envelope",
+                "result": "pass"
+              },
+              {
+                "title": "Published version one consumer fixtures match runtime contracts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

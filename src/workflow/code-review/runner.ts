@@ -44,6 +44,7 @@ import type {
 	CodeReviewOutcome,
 	CodeReviewSubject,
 	DimensionResult,
+	JudgeContext,
 	ReviewDimension,
 } from './types.js';
 import { CODE_REVIEW_SCHEMA_VERSION } from './types.js';
@@ -73,6 +74,8 @@ export interface JudgeSlot {
 		subject:   CodeReviewSubject,
 		grounding: CodeReviewGrounding,
 		provider:  LLMProvider,
+		/** How the run is grounded (ISSUE-b47dadc7); judges that do not need it ignore it. */
+		ctx?:      JudgeContext,
 	) => Promise<DimensionResult>;
 }
 
@@ -202,11 +205,12 @@ export async function runCodeReview(
 		//    propagates to the catch below (=> {ok:false}, no write, later judges
 		//    never run).
 		const judges = effectiveJudges(deps.judges, subject);
+		const ctx: JudgeContext = { groundingMode: opts.groundingMode ?? 'full' };
 		const dimensions: DimensionResult[] = [];
 		for (const slot of judges) {
 			if (opts.signal?.aborted) return fail('aborted', emit);
 			emit({ phase: 'dimension-start', dimension: slot.dimension });
-			const result = await slot.judge(subject, grounding, provider);
+			const result = await slot.judge(subject, grounding, provider, ctx);
 			dimensions.push(result);
 			emit({ phase: 'dimension-done', dimension: slot.dimension });
 		}
@@ -305,7 +309,11 @@ function buildArtifact(
 		// fallback passes opts.groundingMode:'degraded' to stamp its own path.
 		groundingMode: opts.groundingMode ?? 'full',
 		...(opts.fallbackReason !== undefined ? { fallbackReason: opts.fallbackReason } : {}),
-		subject:       { changedFiles: subject.changedFiles },
+		subject:       {
+			changedFiles: subject.changedFiles,
+			...(subject.changeSetAttribution !== undefined ? { changeSetAttribution: subject.changeSetAttribution } : {}),
+			...(subject.sharedWithExcluded !== undefined ? { sharedWithExcluded: subject.sharedWithExcluded } : {}),
+		},
 		dimensions,
 		verdict,
 		counts,

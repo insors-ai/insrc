@@ -1,0 +1,760 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792352117484-dectvy",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-18T19:40:26.046Z",
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 308543,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aef82b034d7209fa",
+    "epicSlug": "review-every-changed-symbol-story-too",
+    "storyId": "S001",
+    "lldRunId": "wf-1792343404222-54bw8h",
+    "lldEffectiveHash": "951d004796fc7e6379c1b2a0d232a1b1c32d7ef2db91ef332b2c87797cd61ca9",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-18T20:06:22.072Z",
+    "rangeBase": "8c3d02a03bf8844753b106b20d783a9a131aa460"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story first makes size refusals visible and never retried, gives providers a known input budget and adds a pure batch packer. On those it builds one serialisable review job in three stages (map, keyed reduce with capped merges, and quality's cross-part compare, with a fit-or-digest chain for any combined call), then gives each of the five symbol-reading dimensions its strategy and routes the judges through their jobs. The controller path then runs the same jobs one measured frame at a time, answered by call id through the MCP tool, and the Story ends by reviewing Epic c2ba6fa6 s1 on the installed daemon."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Size refusals are recognised on every CLI failure path and never retried",
+        "summary": "Add classifyInputTooLarge and InputTooLargeError (a CliExitError with maxChars/actualChars) and apply them at runCodex's error/turn.failed check, cliExitError and the claude is_error envelope check; CliProvider.withTransientRetry and withStructuredRetry rethrow an InputTooLargeError at once.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "codex input_too_large on any of its failure paths and a claude 'Prompt is too long' envelope each surface an InputTooLargeError from completeStructured after exactly one CLI run, with maxChars/actualChars when reported.",
+          "Error messages are unchanged; other errors are retried as today."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/agent/providers/__tests__/input-too-large.test.ts: 'codex input_too_large becomes an InputTooLargeError with maxChars and actualChars; the message is unchanged'"
+          },
+          {
+            "level": "unit",
+            "name": "src/agent/providers/__tests__/input-too-large.test.ts: 'withStructuredRetry rethrows an InputTooLargeError after one call'"
+          },
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/input-too-large-cli.test.ts: 'a fake codex emitting an input_too_large error event, or exiting non-zero with it on stderr, and a fake claude returning an is_error Prompt is too long envelope each surface an InputTooLargeError from completeStructured after one run'"
+          },
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/input-too-large-cli.test.ts: 'a size refusal whose text also matches the transient classifier (API Error: Prompt is too long) runs the CLI once'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Providers state their input budget",
+        "summary": "Add the optional readonly inputBudgetChars to LLMProvider; CliProvider sets 1,048,576 for codex and leaves claude undefined; Ollama leaves it undefined.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A codex CliProvider reports 1048576; claude and Ollama report undefined."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/agent/providers/__tests__/input-budget.test.ts: 'a codex CliProvider reports 1048576; claude and Ollama report undefined'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "packIntoBatches and AtomTooLargeError",
+        "summary": "A pure greedy packer of indivisible atoms into batches whose built prompt fits a budget, and AtomTooLargeError naming an atom whose prompt alone exceeds it.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Every atom is in exactly one batch, in order, and every batch's measured prompt fits the budget.",
+          "An atom that alone does not fit raises AtomTooLargeError naming it with both sizes."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/pack-into-batches.test.ts: 'every item in exactly one batch, every batch fits, and an item that alone does not fit raises AtomTooLargeError naming it'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "ReviewJob core: whole call, MAP, merge, refusals, daemon driver",
+        "summary": "createReviewJob / nextCalls / applyAnswer with the whole-call path (one call with the supplied whole prompt when it fits or the budget is unknown), MAP over the cross product of each needed input source's batches (local findings and keyed notes, never absence findings), the finding merge (identical findings once) with parts counts, refusal re-planning (re-pack with the reported maxChars, else halves), and a daemon driver that runs a job's calls serially.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A job whose whole prompt fits, or with an unknown budget, is exactly one call with the supplied whole prompt and schema.",
+          "Every MAP call fits when serialised and every original atom of every source is read whole by some MAP call, for inputs many times the budget.",
+          "A refused call is re-planned and no prompt is sent twice."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a fitting dimension, or an unknown budget, is one call with today's prompt and schema'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'every call the job issues fits the budget at every stage, for a Story many times the budget'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a refused call is re-planned and the job completes, sending no prompt twice'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'identical findings merge once; findings differing in any field are all kept'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'every original symbol summary and clause is read whole by some call'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "ReviewJob REDUCE: obligation keys, capped merge levels, context-only calls",
+        "summary": "REDUCE keys initialised from every obligation before MAP; keys adjudicated in packed calls (a key with no notes too); a key whose notes do not fit is merged level by level into capped notes under short ids with provenance kept in the job; context-only calls when there are no symbols; merge answers over their cap or naming unknown note ids rejected.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Every obligation reaches adjudication, including one with no notes and every one when there are no symbols.",
+          "A key whose symbolIds alone exceed the budget is merged under note ids, adjudicated in one call and its findings expanded to the real symbols; the job terminates.",
+          "A merge answer over its cap or naming unknown note ids is rejected."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a key whose notes do not fit is merged level by level under capped notes and the job terminates'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a merge or digest answer over its cap or naming unknown note ids is rejected'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a requirement whose symbolIds alone exceed the budget is merged under note ids, adjudicated in one call and its findings expanded to the real symbols'"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "ReviewJob COMPARE and the joint-fit chain",
+        "summary": "COMPARE over pairs of description batches (each at most half the budget); the joint-fit chain (all full, one full with the others as digests, all digests) for every combining call, with digests capped at DIGEST_CHARS and written by calls that read their atom whole.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Every pair of atoms in different description batches is compared by some call.",
+          "Two atoms that each fit alone but not together, including two near-budget atoms, are combined through the chain and every call fits when serialised."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'a merge or digest answer over its cap or naming unknown note ids is rejected'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/__tests__/review-job.test.ts: 'every pair of atoms in different description batches is compared, and atoms too large together go full, full+digest, then digest+digest with every call fitting'"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Adherence and functional-coverage strategies",
+        "summary": "DimensionStrategy for adherence (LLD clauses and PLAN tasks as context atoms, per-clause evidence notes, clause adjudication, no-contract short circuit kept) and functional-coverage (FR atoms, per-FR evidence, FR adjudication).",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "A clause or FR implemented by symbols in different parts is not reported unrealized; one with no evidence is.",
+          "An approved design larger than the budget is split by clause and every clause adjudicated."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'adherence, functional-coverage and coverage adjudicate each requirement on evidence from every part, with or without a test record'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'an approved design larger than the budget is split by clause and every clause adjudicated'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'a symbol and a clause that each fit alone but not together are judged through the joint-fit chain and every call fits'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'every clause, FR and promised test reaches adjudication, and one no part shows evidence for is reported missing'"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Coverage strategy",
+        "summary": "DimensionStrategy for coverage: test-record atoms (a file-status atom per file always, title atoms carrying file metadata, reported tests, BUILD task results, notes), MAP with only the reached files' atoms, REDUCE per promised test with its record atoms, context-only calls when there are no symbols, normalizeCoverageFindings once after the merge.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "With a test record larger than the budget, or no symbols, every promised test is adjudicated on all its evidence; a missing one is reported and a passing one is not.",
+          "A title-less failing or malformed test file keeps its state in every call naming it."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'with a test record larger than the budget, every coverage call fits when serialised and every promised test is adjudicated on all its record evidence and notes'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'a single test file whose titles exceed the budget is split into title atoms with its file metadata and every promised test is adjudicated on all of them'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'timed-out, non-zero-exit and malformed test files with no titles keep their state through the file-status atom in every call that names them'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'with no symbols and a test record over the budget, context-only calls judge every promised test, reporting the missing one and not the passing one'"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Conventions and quality strategies",
+        "summary": "DimensionStrategy for conventions (per-module idiom notes and module adjudication with today's too-few-examples rule) and quality (within-part MAP, one-line descriptions, COMPARE, pair judgement through the joint-fit chain).",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "A module idiom spread over parts is judged on all its examples.",
+          "Duplicated logic in symbols in different parts, including two near-budget summaries, is reported with counterpartRef."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'conventions judges a module idiom on examples from every part'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'quality reports duplication between symbols in different parts with counterpartRef'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'two duplicate symbols whose summaries fit only one at a time are judged in two directions against digests'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'two duplicate symbols whose summaries each nearly fill the budget are judged digest against digest, and every pair prompt fits when serialised'"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "The five judges run as jobs; parts recorded",
+        "summary": "Route judgeAdherence, judgeConventions, judgeCoverage, judgeFunctionalCoverage and judgeQuality through their job with the provider's budget; add the optional DimensionResult.parts counts and keep them on the record.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t2",
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "A fitting review makes the same provider calls with byte-identical prompts as before, and the existing judge, runner and handler suites pass unchanged.",
+          "An over-budget review completes through the runner with one verdict and parts counts recorded per dimension."
+        ],
+        "derivedFrom": [
+          "c7",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'the runner folds one verdict and writes one record with parts per dimension; coverage is normalised once'"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "codeReview.controllerFrameChars setting",
+        "summary": "Add the catalog row (type number, default 400000) and update the catalog contract test; the reader requires a positive integer and falls back to the default with a warning.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The catalog has 38 settings with codeReview.controllerFrameChars a number defaulting to 400000; a non-positive or non-integer value falls back to 400000."
+        ],
+        "derivedFrom": [
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/config/__tests__/config-catalog-contract.test.ts (existing, updated: 38 settings, codeReview.controllerFrameChars a number with default 400000)"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Controller jobs and emit_calls frames within the measured envelope",
+        "summary": "The controller path keeps one ReviewJob per dimension in the step state; when the review does not fit today's single frame it emits next 'emit_calls' frames (calls with callId, dimension, stage, prompt, schema; no grounding or legacy prompts), planned with a per-call budget of controllerFrameChars minus the measured frame envelope and packed while the serialised frame fits. A review that fits one frame is exactly as today.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "Every serialised emit_calls frame fits controllerFrameChars, including a call near the frame budget.",
+          "A review that fits one frame produces today's emit_judgements frame unchanged."
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a review that fits one frame is exactly as today, out-of-scope findings disclosed as today'"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/code-review-step/__tests__/handler.test.ts (existing, still passes)"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'every serialised emit_calls frame fits controllerFrameChars, with no grounding or legacy prompts, including a call near the frame budget'"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'with a test record larger than the frame budget, every emit_calls frame fits and the record written matches the daemon path'"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a symbol and clause too large together, and a test file too large alone, complete frame by frame with every serialised frame within the budget'"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Controller answers by callId, frame tokens and the MCP schema",
+        "summary": "The judgements phase accepts answers [{ callId, output }] for an emit_calls frame; applyAnswer advances each job; a fresh token per frame with the previous released; a wrong callId is bad-judgements and a replayed token state-not-found; the insrc_code_review_step MCP input schema accepts answers, forwarded unchanged; the last answers drive the runner.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "An over-budget review completes through the registered MCP tool frame by frame and writes the same record as the daemon path.",
+          "A wrong callId is bad-judgements and a replayed frame token is state-not-found."
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'an over-budget review is answered frame by frame by callId through the registered MCP tool and writes the same record as the daemon path'"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a wrong callId is bad-judgements and a replayed frame token is state-not-found'"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a degraded review with no symbols and an oversized record completes frame by frame and reports the missing promised test'"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Ship and smoke",
+        "summary": "Push, update the installed daemon, run the code review of Epic c2ba6fa6 s1 on codex and record calls per stage per dimension and the largest prompt sent; send one oversized prompt through the claude CLI and record what it returns; record in smoke.md.",
+        "size": "S",
+        "order": 14,
+        "dependsOn": [
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "smoke.md records s1's completed review with calls per stage and the largest prompt, and the claude CLI's oversized-prompt response."
+        ],
+        "derivedFrom": [
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "docs/standalone/review-every-changed-symbol-story-too-E20261018aef82b03/S001/smoke.md: the code review of Epic c2ba6fa6 s1 completes (it failed with a 1,247,701-character prompt), recording the calls per stage per dimension and the largest prompt sent"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/pack-into-batches.test.ts: 'every item in exactly one batch, every batch fits, and an item that alone does not fit raises AtomTooLargeError naming it'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job.test.ts: 'a fitting dimension, or an unknown budget, is one call with today's prompt and schema'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job.test.ts: 'every call the job issues fits the budget at every stage, for a Story many times the budget'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job.test.ts: 'a key whose notes do not fit is merged level by level under capped notes and the job terminates'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job.test.ts: 'a merge or digest answer over its cap or naming unknown note ids is rejected'",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job.test.ts: 'a refused call is re-planned and the job completes, sending no prompt twice'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job.test.ts: 'identical findings merge once; findings differing in any field are all kept'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job.test.ts: 'a requirement whose symbolIds alone exceed the budget is merged under note ids, adjudicated in one call and its findings expanded to the real symbols'",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job.test.ts: 'every original symbol summary and clause is read whole by some call'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/input-too-large.test.ts: 'codex input_too_large becomes an InputTooLargeError with maxChars and actualChars; the message is unchanged'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/input-too-large.test.ts: 'withStructuredRetry rethrows an InputTooLargeError after one call'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/input-too-large-cli.test.ts: 'a fake codex emitting an input_too_large error event, or exiting non-zero with it on stderr, and a fake claude returning an is_error Prompt is too long envelope each surface an InputTooLargeError from completeStructured after one run'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/input-too-large-cli.test.ts: 'a size refusal whose text also matches the transient classifier (API Error: Prompt is too long) runs the CLI once'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'adherence, functional-coverage and coverage adjudicate each requirement on evidence from every part, with or without a test record'",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'conventions judges a module idiom on examples from every part'",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'quality reports duplication between symbols in different parts with counterpartRef'",
+        "coveredByTaskIds": [
+          "t9",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'an approved design larger than the budget is split by clause and every clause adjudicated'",
+        "coveredByTaskIds": [
+          "t7",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'the runner folds one verdict and writes one record with parts per dimension; coverage is normalised once'",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'two duplicate symbols whose summaries fit only one at a time are judged in two directions against digests'",
+        "coveredByTaskIds": [
+          "t9",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'two duplicate symbols whose summaries each nearly fill the budget are judged digest against digest, and every pair prompt fits when serialised'",
+        "coveredByTaskIds": [
+          "t9",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'with a test record larger than the budget, every coverage call fits when serialised and every promised test is adjudicated on all its record evidence and notes'",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'a symbol and a clause that each fit alone but not together are judged through the joint-fit chain and every call fits'",
+        "coveredByTaskIds": [
+          "t7",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'a single test file whose titles exceed the budget is split into title atoms with its file metadata and every promised test is adjudicated on all of them'",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'timed-out, non-zero-exit and malformed test files with no titles keep their state through the file-status atom in every call that names them'",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'every clause, FR and promised test reaches adjudication, and one no part shows evidence for is reported missing'",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/code-review/__tests__/review-job-dimensions.test.ts: 'with no symbols and a test record over the budget, context-only calls judge every promised test, reporting the missing one and not the passing one'",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'an over-budget review is answered frame by frame by callId through the registered MCP tool and writes the same record as the daemon path'",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a wrong callId is bad-judgements and a replayed frame token is state-not-found'",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a review that fits one frame is exactly as today, out-of-scope findings disclosed as today'",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/code-review-step/__tests__/handler.test.ts (existing, still passes)",
+        "coveredByTaskIds": [
+          "t12",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'every serialised emit_calls frame fits controllerFrameChars, with no grounding or legacy prompts, including a call near the frame budget'",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'with a test record larger than the frame budget, every emit_calls frame fits and the record written matches the daemon path'",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/config/__tests__/config-catalog-contract.test.ts (existing, updated: 38 settings, codeReview.controllerFrameChars a number with default 400000)",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a symbol and clause too large together, and a test file too large alone, complete frame by frame with every serialised frame within the budget'",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/code-review-step/__tests__/controller-jobs.test.ts: 'a degraded review with no symbols and an oversized record completes frame by frame and reports the missing promised test'",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "docs/standalone/review-every-changed-symbol-story-too-E20261018aef82b03/S001/smoke.md: the code review of Epic c2ba6fa6 s1 completes (it failed with a 1,247,701-character prompt), recording the calls per stage per dimension and the largest prompt sent",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 packIntoBatches"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 ReviewJob (createReviewJob / nextCalls / applyAnswer)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 DimensionStrategy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 withStructuredRetry"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 classifyInputTooLarge"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 CliProvider.inputBudgetChars"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 judgeAdherence / judgeConventions / judgeCoverage / judgeFunctionalCoverage / judgeQuality"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 emitJudgementsResult"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 insrc_code_review_step MCP registration"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 data model: DimensionResult.parts"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 data model: config codeReview.controllerFrameChars"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy smoke (Epic c2ba6fa6 s1 review)"
+    }
+  ]
+}

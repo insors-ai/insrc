@@ -52,6 +52,21 @@ export interface DimensionFinding {
 	readonly counterpartRef?: string | undefined;
 	/** conventions: a signal sampled from too few examples is an observation, not a breach. */
 	readonly confidence?: 'observation' | 'breach' | undefined;
+	/** coverage (ISSUE-b47dadc7): what the finding is about. */
+	readonly findingKind?: CoverageFindingKind | undefined;
+	/** coverage: the entityId of the prepared symbol a 'symbol-coverage' finding names. */
+	readonly symbolId?: string | undefined;
+}
+
+/** What a coverage finding is about (ISSUE-b47dadc7). */
+export type CoverageFindingKind = 'symbol-coverage' | 'promised-test' | 'other';
+
+/** A coverage HIGH lowered to LOW because its evidence does not support a breach. */
+export interface LoweredFinding {
+	readonly location: string;
+	readonly reason:   string;
+	readonly symbolId?: string | undefined;
+	readonly expectationRef?: string | undefined;
 }
 
 /** All findings one dimension produced for a Story. */
@@ -70,6 +85,12 @@ export interface DimensionResult {
 	 * this field existed.
 	 */
 	readonly outOfScope?: readonly DimensionFinding[] | undefined;
+	/** Coverage HIGHs lowered to LOW, each with why (ISSUE-b47dadc7). Not part of
+	 *  the verdict beyond the lowered severity; omitted when nothing was lowered. */
+	readonly lowered?: readonly LoweredFinding[] | undefined;
+	/** How many calls of each stage the dimension took, when it took more than one
+	 *  (ISSUE-aef82b03: judged as a bounded review job). Absent for one call. */
+	readonly parts?: { readonly map: number; readonly reduce: number; readonly compare: number } | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,6 +112,21 @@ export interface ChangedSymbolSummary {
 	/** Test-file callers that reach this symbol, each `<test file>#<caller name>`
 	 *  (the file joins it to the Story's test record; ISSUE-1102dc71). */
 	readonly testsReaching: readonly string[];
+	/** Whether the coverage dimension judges this symbol (ISSUE-b47dadc7): a
+	 *  function, method or class in a non-test file. Absent on a diff-review row
+	 *  and on summaries built before the field existed. */
+	readonly coverageEligible?: boolean | undefined;
+	/** The coverage judge's evidence class for an eligible symbol (ISSUE-b47dadc7). */
+	readonly coverageEvidence?: CoverageEvidence | undefined;
+}
+
+/** How far the graph and the Story's test record show a symbol is exercised. */
+export type CoverageEvidence = 'reached-passing' | 'reached-not-passing' | 'no-edge-story-tests-pass' | 'no-edge-no-tests';
+
+/** What every judge slot is told about the run (ISSUE-b47dadc7). */
+export interface JudgeContext {
+	/** 'degraded' when the grounding is the diff, not the graph. */
+	readonly groundingMode: 'full' | 'degraded';
 }
 
 /** The IPC-served grounding bundle — structured summaries only, never file text. */
@@ -120,6 +156,11 @@ export type CodeReviewFallbackReason =
  *  implementation-correctness; (B) LLD only → LLD-contract review; (C) neither
  *  → pure code review with no design contract. The conventions + quality
  *  dimensions read neither, so they are mode-agnostic. */
+/** How a review's changed set was scoped (ISSUE-b47dadc7): the uncommitted
+ *  working tree, or the committed range by the Story's `Insrc-Story` trailer or
+ *  by every first-parent commit. */
+export type ChangeSetAttribution = 'story-trailer' | 'first-parent-range' | 'working-tree';
+
 export interface CodeReviewSubject {
 	readonly repoPath:     string;
 	readonly epicHash:     string;
@@ -134,6 +175,11 @@ export interface CodeReviewSubject {
 	/** The Story's TESTS record: the gate's per-file, per-title results, which
 	 *  the coverage dimension judges pass-state from (ISSUE-1102dc71). */
 	readonly testRecord:   TestRecord | null;
+	/** How `changedFiles` was scoped; absent when the changed-file seam did not say. */
+	readonly changeSetAttribution?: ChangeSetAttribution | undefined;
+	/** Story files that another Story's excluded commit also changed: a full review
+	 *  judges them whole (stated limit, ISSUE-b47dadc7). */
+	readonly sharedWithExcluded?: readonly string[] | undefined;
 }
 
 /** Resolving a subject either yields the subject, or a REASON that is NOT a
@@ -174,7 +220,12 @@ export interface CodeReviewBody {
 	 *  full review and on records written before this field. */
 	readonly fallbackReason?: CodeReviewFallbackReason | undefined;
 	/** The exact review subject: the Story's changed files (git-derived). */
-	readonly subject:    { readonly changedFiles: readonly string[] };
+	readonly subject:    {
+		readonly changedFiles: readonly string[];
+		/** Optional on read: records written before ISSUE-b47dadc7 lack both. */
+		readonly changeSetAttribution?: ChangeSetAttribution | undefined;
+		readonly sharedWithExcluded?: readonly string[] | undefined;
+	};
 	/** All four dimension results (adherence / conventions / coverage / quality). */
 	readonly dimensions: readonly DimensionResult[];
 	/** Folded from the aggregated finding severities: any HIGH → block,

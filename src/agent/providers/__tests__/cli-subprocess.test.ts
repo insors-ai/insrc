@@ -154,3 +154,20 @@ test('completeStructured without opts.cwd runs the CLI in the inherited working 
 		}
 	} finally { f.cleanup(); }
 });
+
+// ---------------------------------------------------------------------------
+// Per-call time limit of a structured call (ISSUE-d4b2cd1c)
+// ---------------------------------------------------------------------------
+
+test('a structured call honours its own timeoutMs, so a silent CLI is killed at the caller\'s limit, not the provider default', async () => {
+	const f = fakeCli('hang');
+	try {
+		const p = new CliProvider({ kind: 'claude', binPath: f.bin, timeoutMs: 120_000 });
+		const started = Date.now();
+		await assert.rejects(
+			p.completeStructured([{ role: 'user', content: 'hi' }], { type: 'object', properties: {} }, { timeoutMs: 1_500 }),
+			/exited with -9/,
+		);
+		assert.ok(Date.now() - started < 20_000, `killed after ${Date.now() - started} ms, not at the call's 1,500 ms limit`);
+	} finally { f.cleanup(); }
+});

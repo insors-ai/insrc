@@ -1541,6 +1541,48 @@
         "relPath": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/er-model.html",
         "title": "ER model"
       }
+    ],
+    "feedback": [
+      {
+        "id": "79b127bb",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-18T04:21:08.617Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
+        },
+        "comment": "Amended 2026-10-18 by the stakeholder's decision during the build of task t8: a resolved relative IMPORTS carries the target file's absolute path as meta.targetFile, written by the per-file resolver (src/indexer/resolver.ts). The cross-file pass's file-target classification (section 2.9: 'not-code' -> 'no-candidate' with reason 'target-not-code'; 'excluded-by-ignore' / not stored -> stays 'awaiting-target' with reasons 'target-excluded-by-ignore' / 'target-not-committed') needs the path of a file that is not stored. A pending row holds only the file's entity id, a hash of the path that cannot be reversed, and the design named no source for the path. The keep-awaiting writer keeps the rest of the meta, so the path rides on the row; edges store no meta. t8's scope therefore includes this change to src/indexer/resolver.ts.",
+        "kind": "feedback"
+      },
+      {
+        "id": "60830321",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-18T04:22:17.590Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
+        },
+        "comment": "Amended 2026-10-18 by the stakeholder's decision during the build of task t8, on the check 'after a settle that adds a call to JSON.parse, the row is no-candidate and a complete repository stays complete'. The TypeScript parser records no CALLS row for JSON.parse(...): parse is on its built-in method list, which exists so that a built-in call is never matched by name to a method of an imported class (JSON.parse in a file importing a parser would otherwise resolve to TypescriptParser.parse, a wrong edge). The check is met by its outcome: a built-in call creates no row and cannot make a complete repository incomplete, and an unresolvable library call (the case the check is after) is classed 'no-candidate' with reason 'no-match' in every mode. The parser keeps the built-in list; src/indexer/__tests__/cross-file-modes.test.ts asserts both.",
+        "kind": "feedback"
+      },
+      {
+        "id": "4b37ae56",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-18T05:09:20.259Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
+        },
+        "comment": "Amended 2026-10-18 by the stakeholder's decision during the build of task t11. A full index deletes the repository's rows before it writes them again (section 2.10), so while it runs an entity of that repository is not stored and a search request naming it by id (search.callers, entity.closure, ...) could not be traced to its repository: Story s5's guard (src/daemon/search-guard.ts) read the entity's repository and, finding none, answered the request (an empty, partial answer) instead of refusing it with 'repo-indexing'. Decision: a request naming an entity that is not stored is refused for every repository whose status is 'indexing' (the guard's own ensureRepoQueryable refusal, naming that repository); with none being indexed it is answered as before. Repositories whose last index ended in an error are not included, so an unknown id is not refused indefinitely. Accepted cost: an id that is genuinely unknown is also refused while some repository is being indexed. t11's scope therefore includes src/daemon/search-guard.ts.",
+        "kind": "feedback"
+      },
+      {
+        "id": "7d710d42",
+        "author": "Subho Ghosh (stakeholder decision, recorded by the controller)",
+        "timestamp": "2026-10-18T14:04:02.653Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S001/LLD.md"
+        },
+        "comment": "Stakeholder decision 2026-10-18 (option A) on t17's check 'The doc-summarise-repo job for this repository completes and its summary count after the reindex equals the count before (or the difference is explained in smoke.md)': the job's completion is NOT awaited. The rebuild's summary loss was fixed by ISSUE-dced4385 (COMPLETE @57f8d110): 10,996 of this repository's 11,412 summaries restored and kept across a later reindex; the 416 difference is explained in S001/smoke.md (46bc01b4). The sweep is still running (2,292 of 15,384 entities at 13:59 UTC, about 4,300 sections without a summary, about 40 h of local-model work). The t17 validate verdict that fails this check literally is accepted; s1's BUILD approval needs an override citing this decision.",
+        "kind": "feedback"
+      }
     ]
   },
   "citations": [

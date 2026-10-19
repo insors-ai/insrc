@@ -195,6 +195,13 @@ function walkNode(
       break;
 
     case 'export_statement': {
+      // A re-export (`export { a } from './y.js'`, `export * from './y.js'`)
+      // declares nothing here; it is stored as pending EXPORTS rows.
+      const reExportSource = node.childForFieldName('source');
+      if (reExportSource) {
+        extractReExport(node, reExportSource, repo, filePath, fileId, relations);
+        return;
+      }
       // Recurse into the exported declaration
       const decl = node.childForFieldName('declaration');
       if (decl) {
@@ -361,7 +368,7 @@ function extractClass(
     const classCallsSeen = new Set<string>();
     for (const member of body.namedChildren) {
       if (member.type === 'method_definition' || member.type === 'method_signature') {
-        extractMethod(member, source, repo, repoId, filePath, lang, fileId, id, name, now, entities, relations);
+        extractMethod(member, source, repo, repoId, filePath, lang, fileId, id, name, exported, now, entities, relations);
         const ctorBody = member.childForFieldName('name')?.text === 'constructor' ? member.childForFieldName('body') : null;
         if (ctorBody) extractCalls(ctorBody, id, repo, filePath, relations, classCallsSeen);
       } else if (member.type === 'public_field_definition' || member.type === 'field_definition') {
@@ -425,6 +432,7 @@ function extractMethod(
   fileId:    string,
   classId:   string,
   className: string,
+  classExported: boolean,
   now:       string,
   entities:  Entity[],
   relations: Relation[],
@@ -433,6 +441,10 @@ function extractMethod(
   if (!nameNode) return;
 
   const methodName = nameNode.text;
+  // A method of an exported class is visible to the files that import it, unless it is
+  // private (`private` or `#name`): the cross-file pass only resolves exported candidates.
+  const isPrivate = nameNode.type === 'private_property_identifier'
+    || node.children.some(c => c.type === 'accessibility_modifier' && c.text === 'private');
   if (methodName === 'constructor') {
     // Skip constructor — covered by the class entity
     return;
@@ -457,6 +469,7 @@ function extractMethod(
     body:      node.text,
     embedding: [],
     indexedAt: now,
+    isExported: classExported && !isPrivate,
     isAsync,
     signature: sig,
   });
@@ -662,6 +675,45 @@ function extractImport(
       resolved: true,
     });
   }
+}
+
+/**
+ * A re-export line as pending EXPORTS rows from the file (Epic c2ba6fa6 s1):
+ * one per name of `export { a, b as c } from './y.js'` (rawTo the name in the
+ * source file, exportedAs the name this file exports it under), and one with
+ * rawTo '*' for `export * from './y.js'`. The cross-file pass resolves them.
+ * `export * as ns from` is not a re-export of names and emits nothing.
+ */
+function extractReExport(
+  node:      SyntaxNode,
+  source:    SyntaxNode,
+  repo:      string,
+  filePath:  string,
+  fileId:    string,
+  relations: Relation[],
+): void {
+  const specifier = source.text.replace(/^['"`]|['"`]$/g, '');
+  if (!specifier) return;
+  const row = (rawTo: string, exportedAs: string): Relation => ({
+    kind:     'EXPORTS',
+    from:     fileId,
+    to:       rawTo,
+    resolved: false,
+    meta:     { specifier, exportedAs, file: filePath, repo },
+  });
+
+  const clause = node.namedChildren.find(c => c.type === 'export_clause');
+  if (clause) {
+    for (const spec of clause.namedChildren) {
+      if (spec.type !== 'export_specifier') continue;
+      const name = spec.childForFieldName('name')?.text;
+      if (!name) continue;
+      relations.push(row(name, spec.childForFieldName('alias')?.text ?? name));
+    }
+    return;
+  }
+  // `export * as ns` holds its `*` inside a namespace_export node, so only a bare star matches.
+  if (node.children.some(c => c.type === '*')) relations.push(row('*', '*'));
 }
 
 // ---------------------------------------------------------------------------

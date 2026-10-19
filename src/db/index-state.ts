@@ -9,10 +9,12 @@
  * repository's completeness as plain reason lines with their counts.
  */
 
-import { getGraphStore } from './graph/store.js';
+import { getGraphStore, withWriteTxn } from './graph/store.js';
 import type { IndexStateRow, PendingClass } from './graph/codec.js';
-import { getIndexStateRowInTxn, readUnattributedUnwritableInTxn, type UnattributedUnwritable } from './graph/index-state-rows.js';
+import { getIndexStateRowInTxn, readUnattributedUnwritableInTxn, updateIndexStateRowInTxn, type UnattributedUnwritable } from './graph/index-state-rows.js';
+import { zeroPending } from './graph/pending-class.js';
 import { lookupRepoId } from './repos.js';
+import type { RepoCompleteness } from '../shared/types.js';
 
 export type { PendingClass, UnattributedUnwritable };
 
@@ -23,14 +25,8 @@ export interface IndexState extends IndexStateRow {
 	complete:      boolean;
 }
 
-/** The completeness field returned beside a repository's unchanged status. */
-export interface RepoCompleteness {
-	complete:         boolean;
-	reasons:          string[];
-	counts:           { pending: Record<PendingClass, number>; unwritable: number; unembedded: number; uncommittedFiles: number };
-	uncommittedFiles: string[];
-	generation:       number;
-}
+/** The completeness field returned beside a repository's unchanged status (the contract type lives in shared/types). */
+export type { RepoCompleteness };
 
 /** The sc1 formula. */
 export function deriveIndexState(repoPath: string, row: IndexStateRow): IndexState {
@@ -110,4 +106,51 @@ export function completenessOf(state: IndexState | undefined): RepoCompleteness 
 		uncommittedFiles: [...state.uncommittedFiles],
 		generation: state.generation,
 	};
+}
+
+// ---------------------------------------------------------------------------
+// The full index's writes (s1/t11)
+// ---------------------------------------------------------------------------
+
+async function updateState(repoPath: string, change: (row: IndexStateRow) => void): Promise<void> {
+	const repoId = await lookupRepoId(repoPath);
+	if (repoId === undefined) return;
+	await withWriteTxn(s => { updateIndexStateRowInTxn(s, repoId, change); });
+}
+
+/** A full index begins, after the repository's rows are deleted: generation advanced, counts zeroed, not finished. */
+export function beginFullIndexState(repoPath: string): Promise<void> {
+	return updateState(repoPath, row => {
+		row.generation += 1;
+		row.pending = zeroPending();
+		row.unwritable = 0;
+		row.reasonCounts = { unwritable: {}, awaiting: {} };
+		row.unembedded = 0;
+		row.uncommittedFiles = [];
+		row.fullIndexFinished = false;
+		row.endpointPassFailed = false;
+	});
+}
+
+/**
+ * A full index is about to delete the repository (ISSUE-dced4385): only the
+ * flag, so a crash at any point after the delete leaves the repository
+ * unfinished and start-up redoes it. beginFullIndexState resets the counters
+ * after the delete.
+ */
+export function markFullIndexUnfinished(repoPath: string): Promise<void> {
+	return updateState(repoPath, row => { row.fullIndexFinished = false; });
+}
+
+/** The selected files the full index could not store. */
+export function setUncommittedFiles(repoPath: string, files: readonly string[]): Promise<void> {
+	return updateState(repoPath, row => { row.uncommittedFiles = [...files]; });
+}
+
+/** The full index finished: its cross-file and endpoint passes ran. */
+export function finishFullIndexState(repoPath: string, endpointPassFailed: boolean): Promise<void> {
+	return updateState(repoPath, row => {
+		row.fullIndexFinished = true;
+		row.endpointPassFailed = endpointPassFailed;
+	});
 }

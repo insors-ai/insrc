@@ -37,7 +37,7 @@
 import { requireApprovedLld, requireApprovedPlan, ArtifactMissingError, ArtifactNotApprovedError } from '../gates.js';
 import { getLogger } from '../../shared/logger.js';
 import { changedFiles as realChangedFiles, LEDGER_EXCLUDE_GLOBS, NoBuildChangesError } from '../runners/build/changed-files.js';
-import type { ChangedFilesOptions } from '../runners/build/changed-files.js';
+import type { ChangeSetAttributionReport, ChangedFilesOptions } from '../runners/build/changed-files.js';
 import { resolveStoryRangeBase } from '../runners/build/range-base.js';
 import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
@@ -154,18 +154,31 @@ export async function resolveCodeReviewSubject(
 	// plainer one, and the last is the call this function has always made. Only
 	// when THAT fails is the answer 'no-build-record', exactly as before.
 	const base = (deps.resolveRangeBase ?? resolveStoryRangeBase)(repoPath, epicHash, storyId);
+	// The range-base attempt keeps only the Story's trailered commits and says how
+	// it scoped the set (ISSUE-b47dadc7). The plainer attempts take no base, so
+	// they can only derive from the working tree.
+	const seen: { report?: ChangeSetAttributionReport | undefined } = {};
+	const onAttribution = (a: ChangeSetAttributionReport): void => { seen.report = a; };
+	// Read through a function: the seam sets it during the await, which narrowing cannot see.
+	const reported = (): ChangeSetAttributionReport | undefined => seen.report;
 	const attempts: ReadonlyArray<{ readonly label: string; readonly opts: ChangedFilesOptions | undefined }> = [
-		...(base !== undefined ? [{ label: 'range base + ledger exclusion', opts: { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS } }] : []),
+		...(base !== undefined ? [{
+			label: 'range base + ledger exclusion',
+			opts: { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: `${epicHash}/${storyId}`, onAttribution },
+		}] : []),
 		{ label: 'ledger exclusion only', opts: { excludeGlobs: LEDGER_EXCLUDE_GLOBS } },
 		{ label: 'plain working-tree derivation', opts: undefined },
 	];
 	let changedFiles: readonly string[] | undefined;
+	let changeSetAttribution: ChangeSetAttributionReport['attribution'] | undefined;
 	for (const [i, attempt] of attempts.entries()) {
 		try {
+			seen.report = undefined;
 			// The last attempt passes ONE argument, so it is byte-for-byte the old call.
 			changedFiles = attempt.opts === undefined
 				? await deps.changedFiles(repoPath)
 				: await deps.changedFiles(repoPath, attempt.opts);
+			changeSetAttribution = attempt.opts?.base !== undefined ? reported()?.attribution : 'working-tree';
 			break;
 		} catch (err) {
 			if (!(err instanceof NoBuildChangesError)) throw err;
@@ -181,9 +194,14 @@ export async function resolveCodeReviewSubject(
 
 	const buildRecord = deps.readBuildRecord?.(repoPath, epicHash, storyId) ?? null;
 	const testRecord  = deps.readTestRecord?.(repoPath, epicHash, storyId) ?? null;
+	const scoped      = reported();
 
 	return {
 		ok: true,
-		subject: { repoPath, epicHash, storyId, changedFiles, approvedLld, approvedPlan, buildRecord, testRecord },
+		subject: {
+			repoPath, epicHash, storyId, changedFiles, approvedLld, approvedPlan, buildRecord, testRecord,
+			...(changeSetAttribution !== undefined ? { changeSetAttribution } : {}),
+			...(scoped !== undefined ? { sharedWithExcluded: scoped.sharedWithExcluded } : {}),
+		},
 	};
 }

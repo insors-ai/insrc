@@ -380,4 +380,4 @@ const basenameParser = new BaseNameArtifactParser();
 registerParser(artifactParser);
 
 // Export for use in the indexer (basename parser needs special handling)
-export { artifactParser, basenameParser, SKIP_BASENAMES, BASENAME_LANGUAGE };
+export { artifactParser, basenameParser, SKIP_BASENAMES, BASENAME_LANGUAGE, MAX_SIZE };

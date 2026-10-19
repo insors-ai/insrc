@@ -18,6 +18,7 @@
 import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
 import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 import type { DisposableLike } from '../surfaces/types.js';
+import type { RegisteredRepo, RepoCompleteness } from '../../../src/shared/types.js';
 
 // ---------------------------------------------------------------------------
 // sc9 host + view types (verbatim from the HLD interfaceSketch)
@@ -83,10 +84,14 @@ export interface OrphanProcess {
   readonly command: string;
 }
 
-/** A registered repo reference (s7 repo picker consumes it). */
+/** A registered repo reference (s7 repo picker consumes it; the Daemon tab lists it). */
 export interface RepoRef {
   readonly path: string;
   readonly name: string;
+  /** The registry's four-value status, when repo.list sent it. */
+  readonly status?: RegisteredRepo['status'] | undefined;
+  /** Whether the index is complete (Epic c2ba6fa6 s1); absent = unknown (a daemon before the change). */
+  readonly completeness?: RepoCompleteness | undefined;
 }
 
 /** Thrown/rejected by a gateway method when its underlying read fails. */

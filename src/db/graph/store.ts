@@ -76,11 +76,9 @@ const log = getLogger('graph-store');
 const DEFAULT_MAPSIZE_GIB = 1024;
 
 /**
- * Number of named sub-DBs the env can hold. We have 21 in
- * schema_version 2 (added entity_string_by_u64); pad to 32 for
- * future additions without an env-level migration.
+ * Capacity for the 35 named databases, with room for additive namespaces.
  */
-const MAX_DBS = 32;
+export const MAX_DBS = 64;
 
 // LMDB key size: lmdb-js builds the underlying LMDB C library with
 // `MDB_MAXKEYSIZE=0` (compile-time unlimited). Keys can run up to
@@ -249,6 +247,15 @@ export class LmdbStoreSchemaVersionMismatch extends LmdbStoreError {
 type AnyDb = Database;
 
 export interface GraphStore {
+	understandingCurrent: AnyDb;
+	understandingAttempt: AnyDb;
+	understandingAudit: AnyDb;
+	understandingRequest: AnyDb;
+	understandingOwnerIndex: AnyDb;
+	understandingScopeIndex: AnyDb;
+	understandingReceipt: AnyDb;
+	understandingMeta: AnyDb;
+
 	root: RootDatabase;
 
 	// Graph
@@ -292,6 +299,11 @@ export interface GraphStore {
 	// summary rows; enables per-repo sweeps without scanning the whole
 	// docSummary sub-DB.
 	docSummaryByRepo:    AnyDb;
+	// Summaries held across a full index (ISSUE-dced4385): (repoId u32 ||
+	// UTF-8 string entity id) -> msgpack(DocSummary). Written in the
+	// repository delete's transaction, written back once the rebuild has
+	// stored the documents again.
+	docSummaryCarry:     AnyDb;
 
 	// Exploration cache -- one row per successful exploration
 	// invocation (concept.resolve / module.profile / etc.). Keyed by
@@ -320,7 +332,10 @@ let _path: string = PATHS.lmdb;
  * the test, otherwise the singleton is already pinned to the old
  * path. Pair with `closeGraphStore()` in test setup/teardown.
  */
+export function getGraphStorePath(): string { return _path; }
+
 export function setGraphStorePath(path: string): void {
+	if (_instance !== null || _initPromise !== null) throw new Error('close graph store before changing its path');
 	_path = path;
 }
 
@@ -553,6 +568,15 @@ export async function getGraphStore(): Promise<GraphStore> {
 
 		const store: GraphStore = {
 			root,
+			understandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),
+			understandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),
+			understandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),
+			understandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),
+			understandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),
+			understandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),
+			understandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),
+			understandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),
+
 
 			// Graph -- meta uses ordered-binary keys so callers can write
 			// short utf8 strings directly (lmdb-js encodes string→buffer
@@ -604,6 +628,7 @@ export async function getGraphStore(): Promise<GraphStore> {
 			// live-project-context assembly.
 			docSummary:         open_('doc_summary'),
 			docSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),
+			docSummaryCarry:    open_('doc_summary_carry'),
 
 			// Exploration cache -- 20-byte composite key
 			// (repoId u32 || lastIndexedAt u64 || paramHash u64). See

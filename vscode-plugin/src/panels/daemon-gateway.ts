@@ -77,7 +77,12 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
       } catch (err) {
         throw asReadError('repo.list failed', err);
       }
-      return (rows ?? []).map((r) => ({ path: r.path, name: r.name }));
+      return (rows ?? []).map((r) => ({
+        path: r.path,
+        name: r.name,
+        ...(r.status !== undefined ? { status: r.status } : {}),
+        ...(r.completeness !== undefined ? { completeness: r.completeness } : {}),
+      }));
     },
 
     async mcpClients(): Promise<readonly McpClientView[]> {

@@ -52,7 +52,8 @@ import type {
 } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
-import { processSchemaForOpenAIStrict, rootUnionKey } from './structured-output.js';
+import type { ProcessGroupOpts } from '../../shared/process-group.js';
+import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 
 const log = getLogger('cli-provider');
 
@@ -113,12 +114,23 @@ export function claudeReviewSessionArgs(schema: StructuredSchema, modelArgs: rea
 /**
  * The schema as codex's `--output-schema` file must hold it. codex runs output
  * schemas in strict mode, which refuses any object without
- * `additionalProperties: false` and a complete `required` list. The strict form
- * is made on a copy, because callers reuse constant schemas and the helper
- * rewrites in place (ISSUE-e48e33ae6af03720).
+ * `additionalProperties: false` and a complete `required` list
+ * (ISSUE-e48e33ae6af03720), and refuses some keywords outright
+ * (ISSUE-487ad7a67474d321). The strict form is made on a copy, because callers
+ * reuse constant schemas.
  */
 function codexSchemaJson(schema: StructuredSchema): string {
-	return JSON.stringify(processSchemaForOpenAIStrict(structuredClone(schema)));
+	return JSON.stringify(codexStrictSchema(schema));
+}
+
+/** A parsed codex reply, held to the caller's FULL schema: the copy codex was
+ *  given leaves out the keywords strict mode refuses (ISSUE-487ad7a67474d321). */
+function codexReply<T>(schema: StructuredSchema, parsed: unknown, what: string): T {
+	const checked = validateCodexReply<T>(schema, parsed);
+	if (!checked.ok) {
+		throw new Error(`${what} does not satisfy the caller's schema: ${checked.errors.join('; ')}`);
+	}
+	return checked.value;
 }
 
 /** codex arguments for a reviewer session: a read-only sandbox, never `--full-auto`. */
@@ -136,11 +148,42 @@ export interface CliProviderOpts {
 	readonly timeoutMs?: number | undefined;
 	/** Provider that handles `embed()`. Usually an Ollama provider. */
 	readonly embedDelegate?: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
+	/** How long a codex run may show no model output before it is treated as stalled. Default CODEX_FIRST_OUTPUT_MS. */
+	readonly codexFirstOutputMs?: number | undefined;
 }
 
 
+/**
+ * How long a codex reviewer session may show no model output (no event past
+ * `thread.started` / `turn.started`) before it is treated as stalled and killed
+ * (ISSUE-d4b2cd1c). Other codex calls are not watched.
+ * A model normally starts answering within seconds; on 2026-10-19 two runs took
+ * their prompt and then stayed silent until the 10-minute limit.
+ */
+export const CODEX_FIRST_OUTPUT_MS = 300_000;
+
+/** An event codex prints once the model is producing output. */
+const CODEX_MODEL_EVENT = /"type":"(?:item\.|turn\.completed|turn\.failed|error)/;
+
+/** A CLI run that produced no model output in time and was killed; retryable as a fresh run. */
+export class CliStallError extends Error {
+	/** The codex session (thread id) of the silent run, when it printed one. */
+	readonly sessionId: string | undefined;
+	constructor(cli: string, silentMs: number, sessionId: string | undefined) {
+		super(`${cli} stalled: no model output in ${Math.round(silentMs / 1000)} s${sessionId !== undefined ? ` (session ${sessionId})` : ''}; the run was killed`);
+		this.name = 'CliStallError';
+		this.sessionId = sessionId;
+	}
+}
+
+/** codex's input limit in characters, as its own refusal states it (input_too_large, max_chars). */
+export const CODEX_INPUT_BUDGET_CHARS = 1_048_576;
+
 export class CliProvider implements LLMProvider {
 	readonly supportsTools = false;
+	/** codex states its limit (CODEX_INPUT_BUDGET_CHARS); claude's is not known in
+	 *  advance, so its size refusal decides (ISSUE-aef82b03). */
+	readonly inputBudgetChars: number | undefined;
 
 	private readonly kind: CliKind;
 	/** The `--model` id this provider forwards to the CLI, or undefined when it
@@ -148,18 +191,21 @@ export class CliProvider implements LLMProvider {
 	readonly defaultModel: string | undefined;
 	private readonly binPath: string;
 	private readonly timeoutMs: number;
+	private readonly codexFirstOutputMs: number;
 	private readonly embedDelegate: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
 
 	readonly capabilities: ProviderCapabilities;
 
 	constructor(opts: CliProviderOpts) {
 		this.kind = opts.kind;
+		this.inputBudgetChars = opts.kind === 'codex' ? CODEX_INPUT_BUDGET_CHARS : undefined;
 		this.defaultModel = opts.model;
 		this.binPath = opts.binPath ?? opts.kind;
 		// 10 min default: agentic `claude`/`codex --print` calls that generate a
 		// full artifact or a deep analyze bundle routinely exceed the old 120 s
 		// (which SIGKILLed legit-but-slow syntheses). Callers can still tighten it.
 		this.timeoutMs = opts.timeoutMs ?? 600_000;
+		this.codexFirstOutputMs = opts.codexFirstOutputMs ?? CODEX_FIRST_OUTPUT_MS;
 		this.embedDelegate = opts.embedDelegate;
 		this.capabilities = {
 			structuredOutput: true,
@@ -210,6 +256,8 @@ export class CliProvider implements LLMProvider {
 				return await op();
 			} catch (err) {
 				lastErr = err;
+				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
+				if (err instanceof InputTooLargeError) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
 				const backoffMs = 2000 * attempt;
@@ -272,9 +320,10 @@ export class CliProvider implements LLMProvider {
 				'--json-schema', JSON.stringify(schema),
 				...this.modelArgs(opts),
 			];
-			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd));
+			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs));
 			if (envelope.is_error) {
-				throw new Error(`claude --print failed: ${envelope.result ?? 'no error message'}`);
+				const message = `claude --print failed: ${envelope.result ?? 'no error message'}`;
+				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));
 			}
 			if (envelope.structured_output === undefined) {
 				throw new Error('claude envelope had is_error=false but no structured_output field');
@@ -287,15 +336,17 @@ export class CliProvider implements LLMProvider {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd));
+			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs));
 			if (agentText === undefined) {
 				throw new Error('codex emitted no agent_message item');
 			}
+			let parsed: unknown;
 			try {
-				return JSON.parse(agentText) as T;
+				parsed = JSON.parse(agentText);
 			} catch (err) {
 				throw new Error(`codex agent_message.text was not parseable JSON: ${(err as Error).message}. text=${agentText.slice(0, 300)}`);
 			}
+			return codexReply<T>(schema, parsed, 'codex answer');
 		} finally {
 			rmSync(tmpDir, { recursive: true, force: true });
 		}
@@ -372,9 +423,17 @@ export class CliProvider implements LLMProvider {
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 			try {
-				return await this.reviewSessionOnce<T>(prompt, schema, { cwd: opts.cwd, timeoutMs: remainingMs });
+				return await this.reviewSessionOnce<T>(prompt, schema, { cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true });
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
+				// A run that never started answering is retried once, as a fresh run,
+				// inside the time that remains (ISSUE-d4b2cd1c).
+				if (err instanceof CliStallError) {
+					log.warn({ provider: this.kind, attempt, codexSession: err.sessionId, err: msg },
+						attempt < 2 ? 'runReviewSession: the CLI produced no model output; retrying once inside the remaining time' : 'runReviewSession: the CLI produced no model output again; giving up');
+					if (attempt < 2) continue;
+					throw err;
+				}
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 				if (attempt >= 2 || !isTransientCliError(transienceText(err))) throw err;
@@ -383,7 +442,7 @@ export class CliProvider implements LLMProvider {
 		}
 	}
 
-	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number }): Promise<T> {
+	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs()), prompt, exec);
 			if (envelope.is_error) {
@@ -403,11 +462,13 @@ export class CliProvider implements LLMProvider {
 			const messages = events.filter(e => e.type === 'item.completed' && e.item?.type === 'agent_message');
 			const text = messages[messages.length - 1]?.item?.text;
 			if (text === undefined) throw new Error('codex review session emitted no agent_message item');
+			let parsed: unknown;
 			try {
-				return JSON.parse(text) as T;
+				parsed = JSON.parse(text);
 			} catch (err) {
 				throw new Error(`codex review session answer was not parseable JSON: ${(err as Error).message}. text=${text.slice(0, 300)}`);
 			}
+			return codexReply<T>(schema, parsed, 'codex review session answer');
 		} finally {
 			rmSync(tmpDir, { recursive: true, force: true });
 		}
@@ -455,10 +516,12 @@ export class CliProvider implements LLMProvider {
 
 
 	/** The exec override for a one-shot call: run the CLI in `cwd` when the
-	 *  caller names one, else no override, so the CLI inherits the daemon's
-	 *  working directory exactly as before. */
-	private execIn(cwd: string | undefined): ExecOverride | undefined {
-		return cwd !== undefined ? { cwd, timeoutMs: this.timeoutMs } : undefined;
+	 *  caller names one, with the caller's `timeoutMs` when it names one, else
+	 *  no override, so the CLI inherits the daemon's working directory and the
+	 *  provider's timeout exactly as before. */
+	private execIn(cwd: string | undefined, timeoutMs?: number | undefined): ExecOverride | undefined {
+		if (cwd === undefined && timeoutMs === undefined) return undefined;
+		return { ...(cwd !== undefined ? { cwd } : {}), timeoutMs: timeoutMs ?? this.timeoutMs };
 	}
 
 	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
@@ -481,7 +544,11 @@ export class CliProvider implements LLMProvider {
 
 
 	private async runCodex(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ events: readonly CodexEvent[]; agentText: string | undefined }> {
-		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd);
+		const stall = exec?.watchStall === true ? { ms: this.codexFirstOutputMs, started: (stdout: string) => CODEX_MODEL_EVENT.test(stdout) } : undefined;
+		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall);
+		if (out.stalled === true) {
+			throw new CliStallError('codex', this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
+		}
 		const events: CodexEvent[] = [];
 		for (const line of out.stdout.split('\n')) {
 			const trimmed = line.trim();
@@ -489,9 +556,14 @@ export class CliProvider implements LLMProvider {
 			try { events.push(JSON.parse(trimmed) as CodexEvent); }
 			catch { /* skip non-JSON lines (codex sometimes emits prologue) */ }
 		}
-		const errorEvent = events.find(e => e.type === 'error' || e.type === 'turn.failed');
+		const errorEvents = events.filter(e => e.type === 'error' || e.type === 'turn.failed');
+		const errorEvent = errorEvents[0];
 		if (errorEvent !== undefined) {
-			throw new Error(`codex emitted error event: ${JSON.stringify(errorEvent)}`);
+			const message = `codex emitted error event: ${JSON.stringify(errorEvent)}`;
+			// Classified on every error event and the error output, not only the first
+			// event: a generic first event must not hide a size refusal behind it.
+			const said = [...errorEvents.map(e => JSON.stringify(e)), out.stderr].join('\n');
+			throw sizeRefusalOr(message, said, () => new Error(message));
 		}
 		if (out.exitCode !== 0) {
 			throw cliExitError('codex', out.exitCode, out.stdout, out.stderr);
@@ -540,6 +612,8 @@ interface SubprocessResult {
 	readonly stderr: string;
 	readonly exitCode: number;
 	readonly durationMs: number;
+	/** The run showed no output within its stall limit and was killed. */
+	readonly stalled?: boolean | undefined;
 }
 
 /** Per-call overrides for the private `runClaude`/`runCodex` helpers — a
@@ -548,6 +622,9 @@ interface SubprocessResult {
 interface ExecOverride {
 	readonly cwd?:       string | undefined;
 	readonly timeoutMs?: number | undefined;
+	/** Kill a codex run that shows no model output within the first-output limit
+	 *  (CliStallError). Only the reviewer session asks for it (ISSUE-d4b2cd1c). */
+	readonly watchStall?: boolean | undefined;
 }
 
 /** Await `ms` milliseconds. */
@@ -592,6 +669,62 @@ export class CliExitError extends Error {
 	}
 }
 
+/**
+ * The model refused the call because its input is too large (ISSUE-aef82b03).
+ * Resending the same prompt cannot succeed, so no retry layer repeats it; the
+ * caller splits the work instead. `maxChars` / `actualChars` are the sizes the
+ * CLI reported, when it reported them. Its message is the one the failure
+ * would have carried anyway.
+ */
+export class InputTooLargeError extends CliExitError {
+	readonly maxChars:    number | undefined;
+	readonly actualChars: number | undefined;
+
+	constructor(message: string, said: string, sizes: InputSizes) {
+		super(message, said);
+		this.name = 'InputTooLargeError';
+		this.maxChars = sizes.maxChars;
+		this.actualChars = sizes.actualChars;
+	}
+}
+
+/** The sizes an input-size refusal reported. */
+export interface InputSizes {
+	readonly maxChars?:    number | undefined;
+	readonly actualChars?: number | undefined;
+}
+
+/** A number the refusal states for `key` (codex: `"max_chars":1048576`). */
+function reportedNumber(text: string, key: string): number | undefined {
+	// Backslashes dropped first: inside a re-serialised codex event the quotes arrive escaped.
+	const m = new RegExp(`"?${key}"?\\s*[:=]\\s*(\\d+)`).exec(text.replace(/\\/g, ''));
+	return m?.[1] !== undefined ? Number(m[1]) : undefined;
+}
+
+/**
+ * Whether what a CLI said is a refusal of the input for its size, and the
+ * sizes it reported. codex says `input_error_code: input_too_large` with
+ * max_chars / actual_chars (observed 2026-10-18); claude's result is taken to
+ * say "Prompt is too long" (not yet observed: ISSUE-aef82b03 smoke).
+ */
+export function classifyInputTooLarge(said: string): InputSizes | undefined {
+	if (/input_too_large|input exceeds the maximum length/i.test(said)) {
+		const stated = /maximum length of (\d+)/i.exec(said)?.[1];
+		return {
+			maxChars:    reportedNumber(said, 'max_chars') ?? (stated !== undefined ? Number(stated) : undefined),
+			actualChars: reportedNumber(said, 'actual_chars'),
+		};
+	}
+	if (/prompt is too long/i.test(said)) return {};
+	return undefined;
+}
+
+/** The error for a CLI failure: an InputTooLargeError when `said` is a size refusal, else `plain()`. */
+function sizeRefusalOr(message: string, said: string, plain: () => Error): Error {
+	const sizes = classifyInputTooLarge(said);
+	return sizes !== undefined ? new InputTooLargeError(message, said, sizes) : plain();
+}
+
 /** The text a failure is judged transient on: what the CLI said, where that is known. */
 export function transienceText(err: unknown): string {
 	if (err instanceof CliExitError && err.said.length > 0) return err.said;
@@ -627,16 +760,21 @@ export function cliExitError(
 	const lead = result.length > 0 ? ` ${result}` : '';
 
 	const output = `stderr=${stderr} stdout=${stdout}`;
-	if (output.length <= CLI_OUTPUT_INLINE_CHARS) return new CliExitError(`${head}${lead} ${output}`, said);
+	// A size refusal (ISSUE-aef82b03) keeps the same message, as an InputTooLargeError.
+	const make = (message: string): CliExitError => {
+		const sizes = classifyInputTooLarge(said);
+		return sizes !== undefined ? new InputTooLargeError(message, said, sizes) : new CliExitError(message, said);
+	};
+	if (output.length <= CLI_OUTPUT_INLINE_CHARS) return make(`${head}${lead} ${output}`);
 	try {
 		const path = writeCliFailureFile(dir, cli, stdout, stderr);
 		// The error output stays in the message when it fits: with no envelope it is the only statement of the cause.
 		const errOut = stderr.length > 0 && stderr.length <= CLI_OUTPUT_INLINE_CHARS ? ` stderr=${stderr}` : '';
-		return new CliExitError(`${head}${lead}${errOut} The CLI's full output (${output.length} characters, nothing cut) is in ${path}`, said);
+		return make(`${head}${lead}${errOut} The CLI's full output (${output.length} characters, nothing cut) is in ${path}`);
 	} catch (err) {
 		// The file could not be written: the output goes in the message, whole.
 		log.warn({ dir, err: err instanceof Error ? err.message : String(err) }, 'CLI failure output could not be written to a file; it stays in the message');
-		return new CliExitError(`${head}${lead} ${output}`, said);
+		return make(`${head}${lead} ${output}`);
 	}
 }
 
@@ -692,11 +830,12 @@ async function runSubprocess(
 	stdin: string,
 	timeoutMs: number,
 	cwd?: string,
+	stall?: ProcessGroupOpts['stall'],
 ): Promise<SubprocessResult> {
-	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd);
+	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall);
 	if (result.exitCode === -1 && /ENOENT/.test(result.stderr)) {
 		resolvedBinCache.delete(command);
-		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd);
+		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall);
 	}
 	return result;
 }
@@ -710,12 +849,16 @@ async function spawnOnce(
 	stdin: string,
 	timeoutMs: number,
 	cwd?: string,
+	stall?: ProcessGroupOpts['stall'],
 ): Promise<SubprocessResult> {
-	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd });
+	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd, stall });
 	if (r.spawnError !== undefined) {
 		return { stdout: r.stdout, stderr: r.stderr + `\nspawn error: ${r.spawnError}`, exitCode: -1, durationMs: r.durationMs };
 	}
-	return { stdout: r.stdout, stderr: r.stderr, exitCode: r.timedOut ? -9 : r.exitCode, durationMs: r.durationMs };
+	return {
+		stdout: r.stdout, stderr: r.stderr, exitCode: r.timedOut || r.stalled === true ? -9 : r.exitCode, durationMs: r.durationMs,
+		...(r.stalled === true ? { stalled: true } : {}),
+	};
 }
 
 

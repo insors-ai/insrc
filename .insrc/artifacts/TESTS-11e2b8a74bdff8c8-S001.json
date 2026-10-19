@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "11e2b8a74bdff8c8",
+    "storyId": "S001",
+    "createdAt": "2026-10-18T16:50:54.330Z",
+    "updatedAt": "2026-10-18T16:50:54.330Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-18T16:46:30.180Z",
+    "epicSlug": "show-builder-reported-smoke-live-results"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "bf6c8922",
+        "ranAt": "2026-10-18T16:50:54.330Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/dimensions/__tests__/reported-tests-view.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/dimensions/__tests__/reported-tests-view.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/dimensions/__tests__/reported-tests-view.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 746,
+            "titles": [
+              {
+                "title": "the test-record view lists each builder-reported named test from its latest run, a fail winning a tie, and omits the list when there is none",
+                "result": "pass"
+              },
+              {
+                "title": "the coverage prompt grades a promised smoke test against its reported result, and is unchanged with none reported",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

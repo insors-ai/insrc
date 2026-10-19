@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792389100275-s4ym8b",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-19T05:51:40.275Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 22413,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d4b2cd1c2c1ba649",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T05:18:18.372Z",
+    "epicSlug": "stalled-premise-call-discards-daemon-s",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "d4b2cd1c2c1ba649",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/__tests__/cli-subprocess.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/shared/types.ts",
+        "src/workflow/review/__tests__/review.test.ts",
+        "src/workflow/review/review.ts",
+        "src/workflow/review/verify.ts",
+        "src/agent/providers/__tests__/cli-review-session.test.ts",
+        "src/shared/process-group.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

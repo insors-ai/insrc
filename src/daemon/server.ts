@@ -80,6 +80,47 @@ export class IpcServer {
   private readonly handlers: RpcHandlers;
   private readonly streamHandlers: StreamHandlers;
   private server: Server | null = null;
+  private readonly pendingWrites = new Set<Promise<boolean>>();
+  private writeFailed = false;
+
+  private writeLine(socket: Socket, line: string): void {
+    let complete!: (ok: boolean) => void;
+    const pending = new Promise<boolean>(resolve => { complete = resolve; });
+    this.pendingWrites.add(pending);
+    let settled = false;
+    const finish = (ok: boolean): void => {
+      if (settled) return;
+      settled = true;
+      socket.removeListener('close', failed);
+      socket.removeListener('error', failed);
+      this.pendingWrites.delete(pending);
+      if (!ok) this.writeFailed = true;
+      complete(ok);
+    };
+    const failed = (): void => finish(false);
+    socket.once('close', failed);
+    socket.once('error', failed);
+    try { socket.write(line, error => finish(!error)); } catch { finish(false); }
+  }
+
+  async flushPendingWrites(timeoutMs = 1000): Promise<boolean> {
+    const bounded = Math.max(0, Math.min(1000, timeoutMs));
+    const deadline = Date.now() + bounded;
+    while (this.pendingWrites.size > 0) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) return false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const expired = new Promise<false>(resolve => { timer = setTimeout(() => resolve(false), remaining); });
+      const flushed = await Promise.race([Promise.all([...this.pendingWrites]).then(results => results.every(Boolean)), expired]);
+      if (timer) clearTimeout(timer);
+      if (!flushed) return false;
+    }
+    return !this.writeFailed;
+  }
+
+  disconnectClients(): void {
+    for (const socket of this.conns.keys()) socket.end();
+  }
 
   /** In-memory registry of currently-attached socket connections (Story s4).
    *  Keyed by the live Socket; rebuilt purely from connect/message/close events,
@@ -89,7 +130,7 @@ export class IpcServer {
   private connSeq = 0;
   private readonly now: () => number;
 
-  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now: () => number = Date.now) {
+  constructor(handlers: RpcHandlers, streamHandlers: StreamHandlers = {}, now: () => number = Date.now, private readonly socketPath = PATHS.sockFile) {
     this.handlers = handlers;
     this.streamHandlers = streamHandlers;
     this.now = now;
@@ -111,7 +152,7 @@ export class IpcServer {
 
   async listen(): Promise<void> {
     // Remove stale socket file if present
-    try { rmSync(PATHS.sockFile); } catch { /* ignore */ }
+    try { rmSync(this.socketPath); } catch { /* ignore */ }
 
     return new Promise((resolve, reject) => {
       this.server = createServer((socket: Socket) => {
@@ -120,8 +161,8 @@ export class IpcServer {
 
       this.server.on('error', reject);
 
-      this.server.listen(PATHS.sockFile, () => {
-        log.info(`listening on ${PATHS.sockFile}`);
+      this.server.listen(this.socketPath, () => {
+        log.info(`listening on ${this.socketPath}`);
         resolve();
       });
     });
@@ -132,7 +173,7 @@ export class IpcServer {
       if (!this.server) { resolve(); return; }
       this.server.close(() => resolve());
     });
-    try { rmSync(PATHS.sockFile); } catch { /* ignore */ }
+    try { rmSync(this.socketPath); } catch { /* ignore */ }
   }
 
   private handleConnection(socket: Socket): void {
@@ -230,7 +271,7 @@ export class IpcServer {
     const sendStream = (msg: IpcStreamMessage): void => {
       try {
         const out = { ...msg, id: request.id };
-        socket.write(JSON.stringify(out) + '\n');
+        this.writeLine(socket, JSON.stringify(out) + '\n');
       } catch {
         // Socket broken — abort the handler
         abortController.abort();
@@ -253,7 +294,7 @@ export class IpcServer {
 
   private send(socket: Socket, response: IpcResponse): void {
     try {
-      socket.write(JSON.stringify(response) + '\n');
+      this.writeLine(socket, JSON.stringify(response) + '\n');
     } catch { /* socket already closed */ }
   }
 }

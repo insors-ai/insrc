@@ -1,0 +1,996 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792332750157-sxg6d6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-18T14:17:30.426Z",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 300250,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "epicSlug": "scope-code-review-story-s-own",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1792332750157-sxg6d6",
+    "hldEffectiveHash": "fbdcc4de6d9bc06e4937a236ec3d3ac492d1359a26a7935d0c9789baeb7aa4b0",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Story trailers, coverage eligibility and evidence-based normalization target the ISSUE's three stated root causes.",
+          "evidence": "Read ISSUE.md and the corresponding implementations. storyChangeSet currently retains every ordinary first-parent commit; grounding emits every entity; coverage explicitly instructs an empty testsReaching to produce HIGH. The proposed changes address those mechanisms, with legacy attribution and whole-file graph review explicitly retained as limits. [files: docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/ISSUE.md, src/workflow/runners/build/story-commits.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/dimensions/coverage.ts]",
+          "action": "Implement the attribution and coverage changes together across both execution paths.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Committed review scope currently includes other Stories' ordinary first-parent commits, and BUILD persistence defaults to HEAD.",
+          "evidence": "storyChangeSet enumerates 'rev-list --first-parent --reverse --parents' over base..HEAD and retains non-merge commits without identity filtering. changedFiles intersects the net range with those paths. persistBuildRecord uses 'const commit = rec.body.commit ?? headShortSha(repoPath)'. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "Retain the proposed trailer filter and shared BUILD persistence change.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Coverage currently receives non-code/test entities and treats missing graph edges as HIGH, including synthetic diff rows.",
+          "evidence": "assembleCodeReviewGrounding pushes a summary for every entity; isTestFile filters callers only. buildDiffSymbols emits kind:'file' with testsReaching: []. buildCoveragePrompt says 'a changed symbol with an EMPTY testsReaching is a not-exercised gap — report it HIGH'. [files: src/workflow/code-review/grounding.ts, src/workflow/code-review/dimensions/coverage.ts]",
+          "action": "Apply eligibility only to coverage and explicitly suppress symbol grading in degraded mode.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Coverage requires changes in both the daemon judge path and the controller prompt/result-injection path.",
+          "evidence": "runCodeReview calls slot.judge(subject, grounding, provider). The controller independently calls buildCoveragePrompt and injects validated results through replacement judge slots. Both handler.ts and code-review-rpc.ts independently assemble degraded grounding and replace changedFiles. These are the seams identified by the design. [files: src/workflow/code-review/runner.ts, src/workflow/code-review/dimensions/coverage.ts, src/daemon/steps/code-review-step/handler.ts, src/daemon/code-review-rpc.ts]",
+          "action": "Pass groundingMode into the controller prompt emitter as well as JudgeSlot, and normalize controller coverage before injected results reach the verdict fold.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Ordinary two-parent upstream merges exclude merged-in changes while retaining merge edits; explicit BUILD commits override derivation.",
+          "evidence": "storyChangeSet computes the parents' auto-merge tree, then retains only auto..merge-commit differences; octopus merges explicitly use first-parent..merge-commit instead. persistBuildRecord applies the supplied commit before merging prior records. Existing story-commits and build-record tests assert these behaviors. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/__tests__/story-commits.test.ts, src/workflow/runners/build/__tests__/build-record.test.ts]",
+          "action": "Keep these branches and regression assertions when adding trailer attribution.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed four evidence classes preserve defined behavior when the Story has no usable test record.",
+          "evidence": "testRecordView explicitly returns null for an absent record and produces unverified states for malformed file entries. The current prompt treats pass-states as unverified. Section 4 permits no-edge-no-tests only when a record exists, but the design supplies no alternative class for an edge-free symbol with a null record, while requiring every prepared symbol to have a class. [files: src/workflow/code-review/dimensions/test-record-view.ts, src/workflow/code-review/dimensions/coverage.ts]",
+          "action": "Specify the null-record and malformed-record classification and normalization outcomes explicitly, and add assertions for both.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion has an executable regression test that fails without this fix.",
+          "evidence": "The acceptance table specifies relevant future scenarios for ac1–ac5, but repository searches found none of the named new attribution, eligibility, normalization or trailer suites. Existing story-commits and coverage tests exercise current behavior, including accepting scripted HIGH findings without normalization. Their bodies do not establish the proposed regressions, and no tests were executed. [files: src/workflow/runners/build/__tests__/story-commits.test.ts, src/workflow/runners/build/__tests__/build-record.test.ts, src/workflow/code-review/dimensions/__tests__/coverage.test.ts]",
+          "action": "Implement the mapped suites and demonstrate their failure against the old behavior, including both execution paths, null records, reverted Story files and explicit BUILD commit overrides.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 7,
+        "unverified": 2
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-18T14:25:28.143Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-18T14:30:03.957Z",
+    "rangeBase": "fc0c65f64ced1dd1e3ded6b3d6204c7730335cb5",
+    "questionResolutions": {
+      "q6a577664": {
+        "question": "Stated limit (stakeholder decision 2026-10-18, option A): in a full (graph) review a file that another Story's commit in the same window also changed is judged whole, so its symbol summaries may include that Story's symbols; the review records such files as sharedWithExcluded. Scoping symbols to the Story's own changed lines is left out of this fix.",
+        "status": "resolved",
+        "choice": "Accept whole-file review",
+        "rationale": "Stakeholder decision 2026-10-18 (option A at the end of the first review cycle): shared files are judged whole and listed as sharedWithExcluded; changed-line scoping is out of this fix.",
+        "resolvedAt": "2026-10-18T14:30:59.107Z"
+      },
+      "qe025d6d0": {
+        "question": "Acceptance criteria (the Story carries none; derived from the ISSUE's fix intent, c1-c6): ac1 a review's change set holds only the Story's own (trailer-carrying) commits, two Stories committing on main in the same window and two standalone S001 Stories are told apart, and the BUILD record names the Story's newest trailered commit; ac2 with no trailered commit, or when trailers cannot be read, the change set is today's and the review records how it was scoped, and the step-down order is unchanged; ac3 the coverage judge sees only functions, methods and classes in non-test files; ac4 coverage severity follows the evidence class on every execution path (only no-edge-no-tests may be a HIGH breach; any other is lowered to LOW and the verdict does not block on it), and a diff review states that symbol coverage cannot be graded; ac5 both build prompts ask for the Insrc-Story trailer, and the live smoke shows a trailered Story's review scoped to its own commits.",
+        "status": "resolved",
+        "choice": "Adopt ac1–ac5 as written",
+        "rationale": "Stakeholder decision 2026-10-18: ac1-ac5 as stated; the approved LLD's test mapping already maps every proving test to them.",
+        "resolvedAt": "2026-10-18T14:32:37.165Z"
+      },
+      "q13ce9029": {
+        "question": "cd1: prepareCoverageGrounding, normalizeCoverageFindings and JudgeContext are new names (no HLD to own them; standalone fix).",
+        "status": "resolved",
+        "choice": "Define names in S001 LLD",
+        "rationale": "Stakeholder decision 2026-10-18: the standalone S001 LLD is the authority for prepareCoverageGrounding, normalizeCoverageFindings and JudgeContext; its contract section gives their signatures and behaviour.",
+        "resolvedAt": "2026-10-18T14:33:46.990Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The code review stops judging work that is not the Story's. Each build commit carries a trailer naming its Story, so the review's change set keeps only those commits even when other Stories commit on main in between, and the BUILD record names the Story's latest commit instead of whatever HEAD was. The coverage dimension judges only functions, methods and classes in non-test files, and each one arrives with an evidence class computed from its graph edges and the Story's test record: only a symbol with no edge and no passing Story test file can be a HIGH not-exercised finding, and a review grounded on the diff says its edges may be stale. Commits without the trailer fall back to today's derivation, so every existing Story stays reviewable.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "LLD for ISSUE-b47dadc7cf0cccb1: scope the code review to the Story's own changes and code — (1) the reviewed change set holds only the Story's own commits and the BUILD record names a commit of the Story; (2) the coverage dimension judges only source-code entities a test could exercise; (3) coverage severity follows the evidence (no graph edge + passing Story test file = unverified by the graph, not a HIGH breach; a diff-grounded review says its edges may be stale). Adjacent and filed separately: ISSUE-aef82b034d7209fa (split a review too large for one prompt into parts) changes the same judges; this design must not preclude it."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "storyChangeSet",
+          "signature": "storyChangeSet(repoPath: string, base: string, opts?: { readonly storyKey?: string | undefined }): StoryChangeSet & { readonly attribution: 'story-trailer' | 'first-parent-range' }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "base",
+              "type": "string",
+              "purpose": "Unchanged: the Story's range base.",
+              "optional": false
+            },
+            {
+              "name": "opts.storyKey",
+              "type": "string | undefined",
+              "purpose": "`<epicHash>/<storyId>`. When given, a non-merge commit counts as a Story unit only if its message carries the trailer `Insrc-Story: <storyKey>` (read with `git log --format=%(trailers:key=Insrc-Story,valueonly)`); merge edits are kept as today. When no commit in the range carries the trailer, the result is today's set.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "StoryChangeSet & { attribution }",
+            "meaning": "attribution says which derivation produced the units: 'story-trailer' (only commits carrying the Story's trailer, plus merge edits) or 'first-parent-range' (today's: every first-parent commit, used when no storyKey is given or no commit carries it). The result also lists sharedWithExcluded: the Story's paths that an excluded commit in the range also changed."
+          },
+          "errors": [
+            {
+              "type": "NoBuildChangesError",
+              "condition": "git fails, as today (an unresolvable base, for example)."
+            }
+          ],
+          "preconditions": [
+            "base resolves to a commit."
+          ],
+          "postconditions": [
+            "Without storyKey the result's units and paths equal today's exactly.",
+            "With storyKey and at least one trailer-carrying commit, no commit lacking the trailer contributes a unit; untrailed commits whose subject line names the Story's storyId/taskId form are logged as a warning (they may be the Story's, missed)."
+          ]
+        },
+        {
+          "name": "changedFiles",
+          "signature": "changedFiles(repoPath: string, opts?: ChangedFilesOptions & { readonly storyKey?: string | undefined }): Promise<readonly string[]>",
+          "parameters": [
+            {
+              "name": "opts.storyKey",
+              "type": "string | undefined",
+              "purpose": "Passed through to storyChangeSet when the range base is used.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "Unchanged shape. With attribution 'story-trailer' the committed paths are the union of the retained units' paths (exclusions still applied through git), not the net base..HEAD diff narrowed to them, so a file the Story changed and another Story later reverted is still the Story's; with 'first-parent-range' the result is today's (net range narrowed to the Story's paths, src/workflow/runners/build/changed-files.ts:143-150)."
+          },
+          "errors": [
+            {
+              "type": "NoBuildChangesError",
+              "condition": "As today."
+            }
+          ],
+          "preconditions": [
+            "As today."
+          ],
+          "postconditions": [
+            "Without storyKey the result is today's.",
+            "A Story file changed by a retained commit and restored by another Story's commit is in the set."
+          ]
+        },
+        {
+          "name": "resolveCodeReviewSubject",
+          "signature": "resolveCodeReviewSubject(repoPath: string, epicHash: string, storyId: string, deps?: SubjectDeps): Promise<CodeReviewSubjectResult>  // the subject gains changeSetAttribution",
+          "parameters": [
+            {
+              "name": "epicHash / storyId",
+              "type": "string",
+              "purpose": "Form the storyKey `<epicHash>/<storyId>` passed to changedFiles on the range-base attempt; the two step-down attempts stay as they are.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "CodeReviewSubjectResult",
+            "meaning": "CodeReviewSubject gains changeSetAttribution: 'story-trailer' | 'first-parent-range' | 'working-tree', recorded on the code-review body so a reader knows how the subject was scoped. The subject also carries sharedWithExcluded (from storyChangeSet), recorded on the code-review body: in a full (graph) review those files are judged whole, so their summaries may include another Story's symbols. This is a stated limit (stakeholder decision 2026-10-18, option A), not scoped further in this fix."
+          },
+          "errors": [],
+          "preconditions": [
+            "As today."
+          ],
+          "postconditions": [
+            "The review still never fails to start because of attribution: an attempt that throws steps down exactly as today."
+          ]
+        },
+        {
+          "name": "assembleCodeReviewGrounding",
+          "signature": "assembleCodeReviewGrounding(repoPath: string, changedFiles: readonly string[], deps: GroundingDeps): Promise<CodeReviewGrounding>  // each ChangedSymbolSummary gains coverageEligible",
+          "parameters": [
+            {
+              "name": "changedFiles",
+              "type": "readonly string[]",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "CodeReviewGrounding",
+            "meaning": "Each ChangedSymbolSummary gains coverageEligible: boolean = its kind is function, method or class AND its file is not a test file (isTestFile). Every symbol is still listed; nothing is dropped from other dimensions."
+          },
+          "errors": [],
+          "preconditions": [
+            "As today."
+          ],
+          "postconditions": [
+            "A Markdown section, document, config or manifest entity, a type or interface, and any entity of a test file is coverageEligible false."
+          ]
+        },
+        {
+          "name": "buildCoveragePrompt",
+          "signature": "buildCoveragePrompt(subject: CodeReviewSubject, grounding: CodeReviewGrounding, extraNote: string | undefined, opts?: { readonly groundingMode?: 'full' | 'degraded' | undefined }): LLMMessage[]",
+          "parameters": [
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "Only coverageEligible symbols are listed, each with its coverageEvidence.",
+              "optional": false
+            },
+            {
+              "name": "opts.groundingMode",
+              "type": "'full' | 'degraded' | undefined",
+              "purpose": "On 'degraded' the grounding is synthetic per-file rows with no graph edges (buildDiffSymbols, src/workflow/code-review/grounding.ts:296-310): the prompt states that symbol coverage cannot be graded in a diff review, lists no symbols, and judges only the promised tests against the test record; no not-exercised finding is possible.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "LLMMessage[]",
+            "meaning": "The coverage rule grades by coverageEvidence: 'no-edge-no-tests' may be a HIGH not-exercised breach; 'no-edge-story-tests-pass' is reported only as an observation (the graph could not confirm the symbol is reached; the Story's test files pass); 'reached-passing' needs no finding; 'reached-not-passing' is present-but-failing/unverified as today. The promised-test rule is unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "Each listed symbol carries coverageEvidence (computed by judgeCoverage before the prompt is built)."
+          ],
+          "postconditions": [
+            "No symbol with coverageEligible false appears in the coverage prompt.",
+            "Each symbol is listed as an independent entry, so a later split of the list into parts (ISSUE-aef82b034d7209fa) needs no change here."
+          ]
+        },
+        {
+          "name": "judgeCoverage",
+          "signature": "judgeCoverage(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, context?: JudgeContext): Promise<DimensionResult>",
+          "parameters": [
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "Filtered to coverageEligible symbols, and each given coverageEvidence from its testsReaching and the Story's test record (testRecordView), before the prompt is built.",
+              "optional": false
+            },
+            {
+              "name": "context",
+              "type": "JudgeContext | undefined",
+              "purpose": "{ groundingMode: 'full' | 'degraded' }, passed by the runner to every judge slot from its run options (src/workflow/code-review/runner.ts:97-100, :193); absent reads as 'full'. Other judges accept and ignore it.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DimensionResult",
+            "meaning": "As today, normalised by normalizeCoverageFindings."
+          },
+          "errors": [],
+          "preconditions": [
+            "As today."
+          ],
+          "postconditions": [
+            "A Story with zero eligible symbols gets an empty coverage judgement for changed symbols (the promised-tests rule still applies).",
+            "The folded verdict of a review whose only HIGH findings were lowered is not 'block'."
+          ]
+        },
+        {
+          "name": "prepareCoverageGrounding",
+          "signature": "prepareCoverageGrounding(subject: CodeReviewSubject, grounding: CodeReviewGrounding, groundingMode: 'full' | 'degraded'): CodeReviewGrounding",
+          "parameters": [
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "The review's grounding, every symbol.",
+              "optional": false
+            },
+            {
+              "name": "groundingMode",
+              "type": "'full' | 'degraded'",
+              "purpose": "'degraded' yields no symbols (symbol coverage unavailable).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "CodeReviewGrounding",
+            "meaning": "Only coverageEligible symbols, each with coverageEvidence from its testsReaching and the Story's test record. Every prepared symbol gets exactly one class: edges + a passing reaching test file -> 'reached-passing'; edges otherwise -> 'reached-not-passing'; no edge + a readable record with at least one passing Story test file -> 'no-edge-story-tests-pass'; no edge otherwise (no record, a malformed record, or no passing file) -> 'no-edge-no-tests'."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Shared by judgeCoverage (daemon path) and the controller path, which builds the coverage prompt itself (src/daemon/steps/code-review-step/handler.ts:444)."
+          ]
+        },
+        {
+          "name": "normalizeCoverageFindings",
+          "signature": "normalizeCoverageFindings(result: DimensionResult, prepared: CodeReviewGrounding, subject: CodeReviewSubject): DimensionResult",
+          "parameters": [
+            {
+              "name": "result",
+              "type": "DimensionResult",
+              "purpose": "The coverage dimension's result from either path.",
+              "optional": false
+            },
+            {
+              "name": "prepared",
+              "type": "CodeReviewGrounding",
+              "purpose": "The prepared grounding whose coverageEvidence decides each finding.",
+              "optional": false
+            },
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "Its approved plan gives the promised tests (promisedTestsOf(subject), from approvedPlan.body.tasks[].tests); a promised-test HIGH is kept only when its expectationRef equals one of those names exactly (after trimming). With no approved plan there are no promised tests, so every promised-test HIGH is lowered.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DimensionResult",
+            "meaning": "A HIGH finding is kept only when it is (a) findingKind 'promised-test' whose expectationRef names a test the approved plan promised, or (b) findingKind 'symbol-coverage' whose symbolId is a prepared symbol with class 'no-edge-no-tests'. Every other HIGH (any other class, an absent, unknown or ambiguous symbolId, an absent findingKind, or any symbol-coverage finding in a degraded review, which has no prepared symbols) is lowered to LOW / 'observation' with the reason recorded. Non-HIGH findings are unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Applied in judgeCoverage and in the controller path before its coverage result is injected into the runner (src/daemon/steps/code-review-step/handler.ts:528), so both paths fold the same verdict.",
+            "Both execution paths pass the subject: judgeCoverage has it, and the controller path holds it when it injects its coverage result."
+          ]
+        },
+        {
+          "name": "renderStandaloneImplementPrompt",
+          "signature": "renderStandaloneImplementPrompt(spec: StandaloneBuildSpec & { readonly epicHash: string }): string",
+          "parameters": [
+            {
+              "name": "spec.epicHash",
+              "type": "string",
+              "purpose": "The standalone Story's hash, passed by its caller in src/daemon/steps/build-step/phases/implement.ts, so the prompt asks for `Insrc-Story: <epicHash>/<storyId>` on every commit.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The no-plan standalone implement prompt, now with the same trailer rule as the task template."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "Both build prompts (src/prompts/build/implement-task.md and this one) ask for the trailer."
+          ]
+        },
+        {
+          "name": "assembleDiffCodeReviewGrounding",
+          "signature": "assembleDiffCodeReviewGrounding(repoPath: string, ..., opts: { ...; readonly storyKey?: string | undefined }): Promise<DiffGrounding & { readonly changeSetAttribution: 'story-trailer' | 'first-parent-range' | 'working-tree' }>",
+          "parameters": [
+            {
+              "name": "opts.storyKey",
+              "type": "string | undefined",
+              "purpose": "Passed by both diff-review callers (src/daemon/code-review-rpc.ts:146 and src/daemon/steps/code-review-step/handler.ts) to storyChangeSet (src/workflow/code-review/grounding.ts:433).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "diff grounding + changeSetAttribution",
+            "meaning": "When the attribution is 'story-trailer', storyRangeDiff builds every path's hunks from the kept units' own diffs (unit.from..unit.to), not from the net base..HEAD diff, so another Story's edits to a shared file are not shown; the attribution replaces the subject's along with its changedFiles."
+          },
+          "errors": [
+            {
+              "type": "DiffUnavailableError",
+              "condition": "As today."
+            }
+          ],
+          "preconditions": [
+            "As today."
+          ],
+          "postconditions": [
+            "A diff review of a trailered Story shows only the Story's own hunks, also in a file another Story edited in the same window."
+          ]
+        },
+        {
+          "name": "COVERAGE_FINDINGS_SCHEMA",
+          "signature": "finding: { severity; location; message; confidence?; expectationRef?; findingKind: 'symbol-coverage' | 'promised-test' | 'other'; symbolId?: string }",
+          "parameters": [
+            {
+              "name": "findingKind",
+              "type": "'symbol-coverage' | 'promised-test' | 'other'",
+              "purpose": "Required on every coverage finding (an object property enum, no root union), so symbol findings and promised-test findings are told apart.",
+              "optional": false
+            },
+            {
+              "name": "symbolId",
+              "type": "string | undefined",
+              "purpose": "The entityId of the prepared symbol a symbol-coverage finding is about; the prompt lists each symbol with its entityId.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "schema",
+            "meaning": "Validated by the structured retry like today."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "The controller path's emit_judgements schema for the coverage dimension carries the same two fields."
+          ]
+        },
+        {
+          "name": "JudgeSlot.judge",
+          "signature": "judge(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, context?: JudgeContext): Promise<DimensionResult>",
+          "parameters": [
+            {
+              "name": "context",
+              "type": "JudgeContext | undefined",
+              "purpose": "{ groundingMode } from the runner's options.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DimensionResult>",
+            "meaning": "Unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "None."
+          ],
+          "postconditions": [
+            "The daemon diff path (src/daemon/code-review-rpc.ts passes groundingMode 'degraded') reaches judgeCoverage as 'degraded'; an empty full grounding and an empty degraded grounding are told apart by the mode, not by the symbol count."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Build commit message (implement prompt)",
+        "change": "field-add",
+        "details": "The implement prompt's commit step requires a git trailer on every commit of a Task: `Insrc-Story: {{epicHash}}/{{storyId}}` (a blank line, then the trailer, after the message body), rendered with the Story's epicHash. The subject line format is unchanged.",
+        "schemaDiff": "+ Insrc-Story: <epicHash>/<storyId>   (git trailer)",
+        "callSites": [
+          "src/prompts/build/implement-task.md:31-32",
+          "src/daemon/steps/build-step/render.ts:26"
+        ]
+      },
+      {
+        "entity": "BUILD record body.commit",
+        "change": "invariant-change",
+        "details": "Persisting a BUILD record names the newest commit on the first-parent line from the range base that carries the Story's trailer; HEAD at persist time only when none does (today's value). An explicit body.commit still wins.",
+        "callSites": [
+          "src/workflow/runners/build/standalone-record.ts:300-316"
+        ]
+      },
+      {
+        "entity": "ChangedSymbolSummary",
+        "change": "field-add",
+        "details": "+ coverageEligible: boolean (set by grounding); + coverageEvidence?: 'reached-passing' | 'reached-not-passing' | 'no-edge-story-tests-pass' | 'no-edge-no-tests' (set by the coverage judge from testsReaching and the Story's test record: a file in the record is passing when its state is 'passing').",
+        "schemaDiff": "+ readonly coverageEligible: boolean;\n+ readonly coverageEvidence?: 'reached-passing' | 'reached-not-passing' | 'no-edge-story-tests-pass' | 'no-edge-no-tests' | undefined;",
+        "callSites": [
+          "src/workflow/code-review/types.ts:80-94",
+          "src/workflow/code-review/grounding.ts:74-104"
+        ]
+      },
+      {
+        "entity": "CodeReviewSubject / CodeReviewBody",
+        "change": "field-add",
+        "details": "+ changeSetAttribution: 'story-trailer' | 'first-parent-range' | 'working-tree' on the subject, recorded on the body beside subject.changedFiles. Optional on read, so records written before it stay valid.",
+        "callSites": [
+          "src/workflow/code-review/types.ts:119-180",
+          "src/workflow/code-review/subject.ts:119-175"
+        ]
+      },
+      {
+        "entity": "storyChangeSet units",
+        "change": "invariant-change",
+        "details": "With a story key and at least one trailer-carrying commit in the range, only those commits (and merge edits) are units; the module header's known-limit note is updated.",
+        "callSites": [
+          "src/workflow/runners/build/story-commits.ts:25-27",
+          "src/workflow/runners/build/story-commits.ts:82-128",
+          "src/workflow/runners/build/changed-files.ts:149"
+        ]
+      },
+      {
+        "entity": "Code-review record writer and the diff-review subject",
+        "change": "invariant-change",
+        "details": "The runner's record writer persists changeSetAttribution beside subject.changedFiles (today it writes only { changedFiles }); both diff-review callers replace the subject's changeSetAttribution together with its changedFiles; the controller path uses prepareCoverageGrounding and normalizeCoverageFindings so both execution paths judge coverage identically.",
+        "callSites": [
+          "src/workflow/code-review/runner.ts:257",
+          "src/daemon/steps/code-review-step/handler.ts:444",
+          "src/daemon/steps/code-review-step/handler.ts:528",
+          "src/daemon/code-review-rpc.ts:146",
+          "src/workflow/code-review/grounding.ts:363-393",
+          "src/workflow/code-review/grounding.ts:433"
+        ]
+      },
+      {
+        "entity": "StandaloneBuildSpec",
+        "change": "field-add",
+        "details": "+ epicHash: string, set by its caller in implement.ts, used for the trailer rule in renderStandaloneImplementPrompt.",
+        "schemaDiff": "+ readonly epicHash: string;",
+        "callSites": [
+          "src/daemon/steps/build-step/render.ts:183-199",
+          "src/daemon/steps/build-step/phases/implement.ts"
+        ]
+      },
+      {
+        "entity": "Coverage finding and the judge context",
+        "change": "field-add",
+        "details": "+ findingKind (required) and symbolId on coverage findings (DimensionFinding gains them as optional so other dimensions are unaffected); + JudgeContext { groundingMode } passed by the runner to every judge slot.",
+        "schemaDiff": "+ findingKind: 'symbol-coverage' | 'promised-test' | 'other';\n+ symbolId?: string;\n+ interface JudgeContext { readonly groundingMode: 'full' | 'degraded' }",
+        "callSites": [
+          "src/workflow/code-review/dimensions/coverage.ts:63-75",
+          "src/workflow/code-review/dimensions/coverage.ts:198",
+          "src/workflow/code-review/runner.ts:69-71",
+          "src/workflow/code-review/runner.ts:193",
+          "src/daemon/code-review-rpc.ts:146"
+        ]
+      },
+      {
+        "entity": "changedFiles committed-range derivation",
+        "change": "invariant-change",
+        "details": "With 'story-trailer' attribution the committed paths are the retained units' own paths, not the net range narrowed to them.",
+        "callSites": [
+          "src/workflow/runners/build/changed-files.ts:143-150"
+        ]
+      },
+      {
+        "entity": "CodeReviewSubject / CodeReviewBody sharedWithExcluded",
+        "change": "field-add",
+        "details": "+ sharedWithExcluded?: readonly string[]: the Story's paths an excluded commit in the range also changed; recorded on the body. Stated limit: such files are judged whole in a full review.",
+        "schemaDiff": "+ readonly sharedWithExcluded?: readonly string[] | undefined;",
+        "callSites": [
+          "src/workflow/code-review/types.ts:119-180",
+          "src/workflow/runners/build/story-commits.ts:82-128",
+          "src/workflow/code-review/runner.ts:292"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Reading commit trailers fails (an old git without %(trailers) formatting, or the log call errors).",
+          "detection": "The git call inside storyChangeSet throws NoBuildChangesError, as every git failure there does today.",
+          "response": "storyChangeSet with a storyKey retries without it, returning today's first-parent set with attribution 'first-parent-range', and logs the failure; the review records that attribution.",
+          "userImpact": "The review is scoped as before this fix; nothing fails to start.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Story commit was made without the trailer while other Story commits carry it.",
+          "detection": "storyChangeSet finds untrailed commits in the range whose subject line matches the build format for this Story's storyId (`feat(build): <storyId>/t<n>`, `fix(build): <storyId>/...`) and logs a warning naming them.",
+          "response": "The commit is left out of the change set (attribution stays 'story-trailer'); the warning and the attribution tell the reader why a file may be missing.",
+          "userImpact": "That commit's files are not reviewed; the log shows which commit was skipped.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The Story's test record cannot be read or is malformed.",
+          "detection": "testRecordView returns null (as today) or notes.",
+          "response": "An edge-free eligible symbol is classed 'no-edge-story-tests-pass' only when the record is readable and lists at least one passing Story test file; when the record is absent (testRecordView returns null), malformed, or lists no passing file, it is 'no-edge-no-tests', exactly today's rule (a HIGH not-exercised finding is allowed). A symbol with edges whose test files the record does not list as passing is 'reached-not-passing' (unverified, as today).",
+          "userImpact": "With no usable record, coverage severity is exactly today's; the fix only relaxes severity when the record shows the Story's tests passing.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The coverage model returns a HIGH breach on a symbol whose class is 'no-edge-story-tests-pass' or 'reached-passing'.",
+          "detection": "normalizeCoverageFindings, run on both execution paths, compares each finding's expectationRef symbol with its coverageEvidence.",
+          "response": "The finding is lowered from HIGH to LOW and from 'breach' to 'observation', and the change is recorded on the dimension result.",
+          "userImpact": "The verdict no longer blocks on graph gaps the test record contradicts.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A Story whose commits all predate this fix (no trailers).",
+          "expected": "attribution 'first-parent-range': the change set is exactly today's."
+        },
+        {
+          "input": "Two Stories commit on main in the same window, both with trailers.",
+          "expected": "Each review keeps only its own commits; the other Story's files are not reviewed."
+        },
+        {
+          "input": "Two standalone Stories, both S001, with different epicHash.",
+          "expected": "Told apart by the trailer's epicHash."
+        },
+        {
+          "input": "A merge of upstream inside the Story's range.",
+          "expected": "Merge edits are kept as today; merged-in code is still excluded."
+        },
+        {
+          "input": "A Story that changed only Markdown, manifests and tests.",
+          "expected": "No coverage-eligible symbol; the coverage dimension reports nothing about changed symbols (the promised-tests rule still runs)."
+        },
+        {
+          "input": "A symbol reached by a test file the Story's record lists as failing.",
+          "expected": "Class 'reached-not-passing': present but failing/unverified, as today."
+        },
+        {
+          "input": "A degraded (diff-grounded) review.",
+          "expected": "The coverage prompt says the edges may be stale; a breach needs class 'no-edge-no-tests' and is still lowered by the post-check otherwise."
+        },
+        {
+          "input": "The working tree is dirty when the review runs (the working-tree derivation).",
+          "expected": "attribution 'working-tree'; trailers do not apply to uncommitted changes."
+        },
+        {
+          "input": "A BUILD record persisted after another Story's commits.",
+          "expected": "body.commit names the newest commit carrying this Story's trailer, not HEAD."
+        },
+        {
+          "input": "A diff review (degraded) of a Story.",
+          "expected": "The coverage prompt says symbol coverage cannot be graded without the graph and lists no symbols; only the promised tests are judged against the test record."
+        },
+        {
+          "input": "Two trailered Stories edit the same file in the same window, and the review is a diff review.",
+          "expected": "The Story's diff holds only its own commits' hunks for that file."
+        },
+        {
+          "input": "Story A changes a file in a trailered commit; Story B later restores it in the same window.",
+          "expected": "The file is in Story A's subject and diff (from A's unit), not lost to the net range."
+        },
+        {
+          "input": "A coverage HIGH with no findingKind, an unknown symbolId, or a symbolId matching more than one prepared symbol.",
+          "expected": "Lowered to LOW with the reason recorded; the verdict does not block on it."
+        },
+        {
+          "input": "An empty grounding in a full review and an empty grounding in a diff review.",
+          "expected": "Told apart by the judge context's groundingMode."
+        },
+        {
+          "input": "Two Stories change different symbols of the same file in the same window (full review).",
+          "expected": "Stated limit: the file is in the Story's subject and is judged whole; the code-review body lists it under sharedWithExcluded so a reader knows its findings may concern another Story's symbols."
+        },
+        {
+          "input": "A coverage HIGH of findingKind 'promised-test' whose expectationRef is not a promised test, or any promised-test HIGH when no plan was approved.",
+          "expected": "Lowered to LOW with the reason recorded."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The review never fails to start because of how its subject is derived: each derivation that throws steps down, and only the last failing yields 'no-build-record' (src/workflow/code-review/subject.ts:119-175).",
+          "source": "c1"
+        },
+        {
+          "text": "Code merged in from upstream through an ordinary two-parent merge is not reviewed as Story work (storyChangeSet's merge-edit rule, src/workflow/runners/build/story-commits.ts:82-128). Exception kept as today: an octopus merge (more than two parents) is reviewed over its whole change, because git merge-tree cannot compute its auto-merge (src/workflow/runners/build/story-commits.ts:107-114).",
+          "source": "c1"
+        },
+        {
+          "text": "Every dimension other than coverage keeps seeing every changed symbol; the grounding lists every entity of every changed file (src/workflow/code-review/grounding.ts:74-104).",
+          "source": "c3"
+        },
+        {
+          "text": "The coverage judge never asserts a pass-state the test record does not support (src/workflow/code-review/dimensions/coverage.ts:100-135).",
+          "source": "c3"
+        },
+        {
+          "text": "An explicit body.commit on a BUILD record write wins over any derived value (src/workflow/runners/build/standalone-record.ts:300-316).",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run with npx tsx --test under Node 22 (PATH=/opt/homebrew/opt/node@22/bin:$PATH); temp git repositories with git maintenance and gc.auto disabled; the coverage judge driven by a stand-in provider",
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Attribution over real git: a temp repository with two Stories committing interleaved on one branch (trailers on each), an upstream merge, untrailed old commits and two standalone Stories both S001; storyChangeSet with and without a storyKey, the warning for an untrailed Story-subject commit, and the fallback when trailer reading fails.",
+          "subjects": [
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: storyChangeSet({ storyKey }) and its attribution"
+          ],
+          "fixturesNeeded": [
+            "A temp git repository built by the test with commits whose messages carry or lack `Insrc-Story: <epicHash>/<storyId>`"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The review subject end to end: resolveCodeReviewSubject over a temp repository returns only the Story's own files with changeSetAttribution 'story-trailer', today's set with 'first-parent-range' when no commit carries the trailer, 'working-tree' when the tree is dirty; and a BUILD record persisted after another Story's commits names the Story's newest trailered commit.",
+          "subjects": [
+            "src/workflow/code-review/__tests__/subject-attribution.test.ts: resolveCodeReviewSubject's changed set and attribution",
+            "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts: the BUILD record's body.commit"
+          ],
+          "fixturesNeeded": [
+            "The temp repository of the story-commits test plus a build-start file fixing the range base"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Coverage scope and severity: assembleCodeReviewGrounding marks coverageEligible (function/method/class in a non-test file only); judgeCoverage lists only eligible symbols, computes coverageEvidence from testsReaching and the test record, lowers a model HIGH breach on a symbol that is not 'no-edge-no-tests', and the degraded prompt states the edges may be stale; the build prompt renders the trailer.",
+          "subjects": [
+            "src/workflow/code-review/__tests__/grounding-eligibility.test.ts: coverageEligible",
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: coverageEvidence, the prompt and the post-check",
+            "src/daemon/steps/build-step/__tests__/render-trailer.test.ts: the implement prompt's trailer"
+          ],
+          "fixturesNeeded": [
+            "Stand-in GroundingDeps and a stand-in LLMProvider that returns a scripted finding list",
+            "Test records with passing, failing and missing files"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "On this repository after shipping: re-run the code review of ISSUE-ae864466 (whose review covered Story 0f0e4f45's files) and record that its change set and coverage findings are its own; build one small change with the trailer and record its review's attribution.",
+          "subjects": [
+            "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Every execution path: a controller-path review (handler builds the coverage prompt and injects results) and a daemon-path review both lower a graph-gap HIGH and fold a non-block verdict; a diff review of two trailered Stories editing one file shows only the reviewed Story's hunks; the no-plan standalone prompt asks for the trailer.",
+          "subjects": [
+            "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts: both review paths",
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: storyRangeDiff with a story key",
+            "src/daemon/steps/build-step/__tests__/render-trailer.test.ts: both build prompts"
+          ],
+          "fixturesNeeded": [
+            "A temp git repository with two trailered Stories editing one file; stand-in providers for the daemon path; a scripted controller judgement"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not'",
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'two standalone Stories both S001 are told apart by the trailer's epicHash'",
+            "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'the review subject holds only the Story's own files and records attribution story-trailer'",
+            "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts: 'a BUILD record persisted after another Story's commits names the Story's newest trailered commit'",
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a diff review of a trailered Story shows only its own hunks in a file another Story also edited'",
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a file one Story changed and another Story reverted stays in the first Story's subject and diff'",
+            "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range'",
+            "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a dirty tree gives attribution working-tree and the step-down order is unchanged'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/code-review/__tests__/grounding-eligibility.test.ts: 'sections, documents, config, types, interfaces and every entity of a test file are not coverage-eligible; functions, methods and classes in source files are'",
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'the coverage prompt lists only eligible symbols'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'evidence classes follow testsReaching and the test record'",
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'a model HIGH breach on a symbol that is not no-edge-no-tests is lowered to an observation'",
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'a degraded review's prompt says the edges may be stale'",
+            "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts: 'on both the controller and daemon paths a lowered graph-gap finding is LOW and the folded verdict is not block'",
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'a diff review lists no symbols and grades only the promised tests'",
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'a HIGH with no findingKind, an unknown or ambiguous symbolId, or on a diff review is lowered; a promised-test HIGH and a no-edge-no-tests symbol HIGH are kept'",
+            "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts: 'the daemon diff path reaches the coverage judge as degraded, also with an empty grounding'",
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'a promised-test HIGH is kept only when its expectationRef is a test the approved plan promised; with no plan it is lowered'",
+            "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts: 'with no test record, a malformed record, or no passing file, an edge-free symbol is no-edge-no-tests and its HIGH is kept'"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "src/daemon/steps/build-step/__tests__/render-trailer.test.ts: 'the implement prompt asks for the Insrc-Story trailer with the Story's epicHash and storyId'",
+            "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/smoke.md",
+            "src/daemon/steps/build-step/__tests__/render-trailer.test.ts: 'the no-plan standalone prompt asks for the Insrc-Story trailer with the Story's epicHash'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The review's change set is every first-parent commit from the Story's range base to HEAD plus merge edits (src/workflow/runners/build/story-commits.ts:82-128, used by src/workflow/runners/build/changed-files.ts:149 and src/workflow/code-review/subject.ts:119-175); build commits name only storyId/taskId (src/prompts/build/implement-task.md:31-32); the BUILD record's commit is HEAD at persist time (src/workflow/runners/build/standalone-record.ts:300-316); every entity of every changed file goes to the coverage judge, which grades an empty testsReaching as a HIGH breach whatever the test record says (src/workflow/code-review/grounding.ts:74-104, src/workflow/code-review/dimensions/coverage.ts:113-135).",
+      "stateAfter": "New build commits carry `Insrc-Story: <epicHash>/<storyId>`; a review keeps only the Story's trailered commits (today's set when none carry it) and records how it scoped its subject; the BUILD record names the Story's newest trailered commit; the coverage judge sees only functions, methods and classes in non-test files, each with an evidence class, and only 'no-edge-no-tests' can block as a HIGH breach.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Ship the build prompt change first (with the rest of the code in one daemon update): Stories built after it carry the trailer; nothing reads it until the review change is in the same build.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Ship the review changes (attribution, eligibility, evidence classes, post-check). No stored data is rewritten: old commits have no trailer and keep today's scoping; old code-review records lack changeSetAttribution, which readers treat as absent.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Smoke on this repository: re-run ISSUE-ae864466's code review (falls back, attribution first-parent-range, but coverage now excludes Markdown and tests) and review one Story built with the trailer; record both in S001/smoke.md.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "storyChangeSet and changedFiles gain an optional storyKey; without it their results are byte-for-byte today's (their other callers, including the build validate path, pass none). ChangedSymbolSummary gains coverageEligible (required on new grounding; grounding is built per review and never stored across versions) and an optional coverageEvidence. CodeReviewSubject and CodeReviewBody gain an optional changeSetAttribution; records written before it stay readable. The BUILD record's body.commit keeps its type; only its derivation changes, and an explicit value still wins. No IDE plugin reads these fields. StandaloneBuildSpec gains a required epicHash; its one caller (src/daemon/steps/build-step/phases/implement.ts) supplies it. assembleDiffCodeReviewGrounding gains an optional storyKey; without it its output is today's. JudgeSlot.judge gains an optional fourth context argument; existing judges ignore it. DimensionFinding gains optional findingKind and symbolId; the coverage schema requires findingKind, so the controller path's coverage judgement schema changes with it.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "A Story trailer on every build commit, a coverage-eligible flag and evidence class per symbol",
+        "oneLineSummary": "The build prompt requires a git trailer naming the Story on each commit; the change set keeps only commits carrying it (today's derivation when none does); grounding marks each symbol coverage-eligible and classes its test evidence, which the coverage prompt grades by.",
+        "approach": "(1) Attribution: the implement prompt (src/prompts/build/implement-task.md) requires every commit of a Task to end with a trailer `Insrc-Story: <epicHash>/<storyId>`. storyChangeSet gains an optional story key: when given, it keeps the commit units whose message carries that trailer (read with git's trailer parser) and merge edits as today; when no commit in the range carries it, the change set is today's, and the review records which derivation it used. The BUILD record's commit is the newest commit carrying the trailer, else HEAD as today. (2) Eligibility: assembleCodeReviewGrounding stamps each ChangedSymbolSummary with coverageEligible = the entity is code (not a document, section, config or manifest entity) in a file that is not a test file (isTestFile); the coverage judge receives only eligible symbols, every other dimension all of them. (3) Evidence: each eligible symbol carries a deterministic evidence class computed from its testsReaching and the Story's test record: 'reached-passing', 'reached-not-passing', 'no-edge-story-tests-pass' (empty testsReaching while the Story's test record has passing files), 'no-edge-no-tests'. The coverage prompt grades by the class: only 'no-edge-no-tests' may be a HIGH not-exercised breach; 'no-edge-story-tests-pass' is an observation that the graph could not confirm it; a degraded (diff) review's prompt states that edges may be stale. Each symbol stays an independent summary, so ISSUE-aef82b03 can judge them in parts.",
+        "pros": [
+          "Attribution is exact and survives interleaved Stories on main, rebases and squash merges of other work",
+          "Fallback keeps every existing Story reviewable (no trailer in old commits)",
+          "Coverage severity is decided by data the review already has (edges + test record), not left to the model",
+          "Symbols stay independent, so splitting a dimension into parts (ISSUE-aef82b03) stays a pure batching change"
+        ],
+        "cons": [
+          "Relies on the builder writing the trailer; a missing trailer on one commit drops that commit from the change set (mitigated: fallback when none carry it, and a warning when the range holds Story-subject commits without it)",
+          "Touches the build prompt, story-commits, the BUILD record write, grounding, types and the coverage prompt"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Commits captured at each validate turn",
+        "oneLineSummary": "The validate gate records, per Task, the commits added since the Story's previous validation; the change set is the union of recorded commits; coverage as in a1.",
+        "approach": "At each validate turn the daemon reads the commits on the first-parent line since the Story's previous validated HEAD and stores them on the BUILD record's task entry with the validated HEAD. The review's change set is the union of those commits (today's derivation when the record has none); the BUILD record's commit is the latest validated HEAD. Eligibility and evidence classes as in a1.",
+        "pros": [
+          "No dependence on the builder's commit message",
+          "The BUILD record gains the validated commit per Task"
+        ],
+        "cons": [
+          "Another Story's commits made between two validations of this Story are still captured, the exact case ISSUE-b47dadc7 reproduces (Story 0f0e4f45 built between ISSUE-ae864466's turns)",
+          "Commits made after the last validation (review fixes) are missed",
+          "More record schema than a1"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Independent of the builder, but fails the issue's own reproduction."
+      },
+      {
+        "id": "a3",
+        "name": "Paths named by the Story's design",
+        "oneLineSummary": "Keep only changed files the Story's LLD or plan names; coverage as in a1.",
+        "approach": "Intersect the range's changed files with the files cited by the approved LLD's call sites and the plan's tasks; fall back to today's set when the Story has no design. Eligibility and evidence classes as in a1.",
+        "pros": [
+          "No commit-message change and no record change"
+        ],
+        "cons": [
+          "Drops real Story changes to files the design did not cite (tests are rarely cited by path; a fix often touches a neighbour)",
+          "Keeps another Story's changes to the same files",
+          "Trivial and no-LLD builds get no improvement"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Smallest, but wrong in both directions for attribution."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Acceptance criteria (the Story carries none; derived from the ISSUE's fix intent, c1-c6): ac1 a review's change set holds only the Story's own (trailer-carrying) commits, two Stories committing on main in the same window and two standalone S001 Stories are told apart, and the BUILD record names the Story's newest trailered commit; ac2 with no trailered commit, or when trailers cannot be read, the change set is today's and the review records how it was scoped, and the step-down order is unchanged; ac3 the coverage judge sees only functions, methods and classes in non-test files; ac4 coverage severity follows the evidence class on every execution path (only no-edge-no-tests may be a HIGH breach; any other is lowered to LOW and the verdict does not block on it), and a diff review states that symbol coverage cannot be graded; ac5 both build prompts ask for the Insrc-Story trailer, and the live smoke shows a trailered Story's review scoped to its own commits.",
+      "cd1: prepareCoverageGrounding, normalizeCoverageFindings and JudgeContext are new names (no HLD to own them; standalone fix).",
+      "Stated limit (stakeholder decision 2026-10-18, option A): in a full (graph) review a file that another Story's commit in the same window also changed is judged whole, so its symbol summaries may include that Story's symbols; the review records such files as sharedWithExcluded. Scoping symbols to the Story's own changed lines is left out of this fix."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/subject.ts:119-175",
+      "quotedText": "const base = (deps.resolveRangeBase ?? resolveStoryRangeBase)(repoPath, epicHash, storyId);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/standalone-record.ts:300-316",
+      "quotedText": "const commit = rec.body.commit ?? headShortSha(repoPath);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:74-104",
+      "quotedText": "for (const file of changedFiles) {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/story-commits.ts:25-27",
+      "quotedText": "ordinary commits on the first-parent line, so those commits are counted as Story work."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/coverage.ts:113-135",
+      "quotedText": "a changed symbol with an EMPTY testsReaching is a not-exercised gap — report it HIGH"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/ISSUE.md",
+      "quotedText": "The reviewed change set holds only the Story's own commits"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/review-every-changed-symbol-story-too-E20261018aef82b03/ISSUE.md",
+      "quotedText": "the review covers it in parts that each fit"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/prompts/build/implement-task.md:31-32",
+      "quotedText": "`feat(build): {{storyId}}/{{taskId}} … ({{issueRef}})`"
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s3",
+      "quotedText": "a1 is the only alternative that satisfies fix-intent 1: a2 violates it on the issue's own reproduction (another Story's commits between two validate turns) and a3 violates it both ways. All three share the same coverage design, which satisfies fix-intents 2 and 3 and keeps ISSUE-aef82b03's split possible."
+    }
+  ]
+}

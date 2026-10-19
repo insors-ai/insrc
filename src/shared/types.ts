@@ -186,6 +186,9 @@ export interface LLMProvider {
   /** Embed text into a vector. Returns empty array if not supported. */
   embed(text: string): Promise<number[]>;
   readonly supportsTools: boolean;
+  /** The largest prompt, in characters, the provider accepts; undefined when not
+   *  known in advance (a size refusal then tells the caller). ISSUE-aef82b03. */
+  readonly inputBudgetChars?: number | undefined;
   /**
    * Schema-enforced structured completion (plans/structured-output.md
    * Phase A). The provider's wire layer guarantees the response
@@ -293,6 +296,9 @@ export interface StructuredCompletionOpts {
   readonly onToken?: ((token: string) => void) | undefined;
   /** Working directory for a subprocess-backed provider; see {@link CompletionOpts.cwd}. */
   readonly cwd?: string | undefined;
+  /** Wall-clock cap in milliseconds for one call of a subprocess-backed provider;
+   *  the provider's own default when unset. ISSUE-d4b2cd1c. */
+  readonly timeoutMs?: number | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -697,6 +703,30 @@ export interface RegisteredRepo {
   errorMsg?:    string;
   /** The last full index's final figures, written once when it ended. */
   lastRun?:     RepoLastRun | undefined;
+  /**
+   * Whether the repository's index is complete, beside the unchanged status
+   * (Epic c2ba6fa6 s1). Set on the daemon's repo.list and daemon.status replies;
+   * absent when it cannot be read, which a consumer reads as unknown.
+   */
+  completeness?: RepoCompleteness | undefined;
+}
+
+/** The class of a pending relationship (Epic c2ba6fa6 s1, sc1 PendingClass). */
+export type PendingRelationshipClass = 'awaiting-target' | 'ambiguous' | 'no-candidate' | 'external-endpoint';
+
+/** A repository's completeness: one plain reason line per cause, with the counts behind them (Epic c2ba6fa6 s1). */
+export interface RepoCompleteness {
+  complete:         boolean;
+  reasons:          string[];
+  counts:           { pending: Record<PendingRelationshipClass, number>; unwritable: number; unembedded: number; uncommittedFiles: number };
+  uncommittedFiles: string[];
+  generation:       number;
+}
+
+/** Relationships the store refused with no repository to count them against (Epic c2ba6fa6 s1). */
+export interface UnattributedUnwritableCount {
+  total:   number;
+  reasons: Record<string, number>;
 }
 
 /**
@@ -932,6 +962,8 @@ export interface DaemonStatus {
    * it is present, `repos` is empty: the repository list could not be read.
    */
   storeFailure?:     { kind: 'locks-lost'; at: string; operation: string; cause: string };
+  /** Relationships refused with no repository to count them against (Epic c2ba6fa6 s1); absent when it cannot be read. */
+  unattributedUnwritable?: UnattributedUnwritableCount | undefined;
   /**
    * The daemon's currently-installed source commit (Story S002 / sc2): the full
    * `git rev-parse HEAD` of the daemon checkout root, or `""` when undeterminable
@@ -940,6 +972,19 @@ export interface DaemonStatus {
    * Read best-effort inside daemon.status's never-throw contract.
    */
   installedCommit:   string;
+  /**
+   * The index queue's two lanes (Story b94cf2c9 S001): each lane's queued
+   * count, whether its worker is running a job, and the running summary
+   * sweep's progress. `queueDepth` stays the total of both lanes; a consumer
+   * that does not know this field sees no change.
+   */
+  queueLanes?:       QueueLanes;
+}
+
+/** Per-lane state of the daemon's index queue (`DaemonStatus.queueLanes`). */
+export interface QueueLanes {
+  index:   { depth: number; running: boolean };
+  summary: { depth: number; running: boolean; sweep?: { repoPath: string; done: number; total: number } };
 }
 
 /**
@@ -1010,6 +1055,8 @@ export interface RepoStats {
   sizeBytes:         number;
   /** Queued index jobs attributable to this repo. */
   pendingJobs:       number;
+  /** Whether the index is complete (Epic c2ba6fa6 s1); absent when it cannot be read. */
+  completeness?:     RepoCompleteness | undefined;
 }
 
 // ---------------------------------------------------------------------------

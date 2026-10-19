@@ -28,6 +28,8 @@ export interface ProcessGroupResult {
 	readonly exitCode:   number;
 	/** True when the time limit fired and the group was killed. */
 	readonly timedOut:   boolean;
+	/** True when the stall watchdog fired and the group was killed. */
+	readonly stalled?:   boolean | undefined;
 	readonly durationMs: number;
 	/** Present when the command could not be spawned (e.g. ENOENT). */
 	readonly spawnError?: string | undefined;
@@ -39,6 +41,12 @@ export interface ProcessGroupOpts {
 	/** Written to the child's stdin, which is then closed. */
 	readonly stdin?:    string | undefined;
 	readonly env?:      NodeJS.ProcessEnv | undefined;
+	/**
+	 * Stall watchdog: when `started(stdout)` is still false `ms` after the spawn,
+	 * the child has produced nothing it counts as output; the group is killed and
+	 * the result says `stalled`. ISSUE-d4b2cd1c.
+	 */
+	readonly stall?:    { readonly ms: number; readonly started: (stdout: string) => boolean } | undefined;
 }
 
 const GROUPS = process.platform !== 'win32';
@@ -59,13 +67,16 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 		let stdout = '';
 		let stderr = '';
 		let timedOut = false;
+		let stalled = false;
 		let settled = false;
 		const finish = (exitCode: number, spawnError?: string): void => {
 			if (settled) return;
 			settled = true;
 			clearTimeout(timer);
+			if (stallTimer !== undefined) clearTimeout(stallTimer);
 			resolve({
 				stdout, stderr, exitCode, timedOut, durationMs: Date.now() - start,
+				...(stalled ? { stalled } : {}),
 				...(spawnError !== undefined ? { spawnError } : {}),
 			});
 		};
@@ -81,6 +92,10 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 			else child.kill('SIGKILL');
 		};
 		const timer = setTimeout(() => { timedOut = true; kill(); }, opts.timeoutMs);
+		const stall = opts.stall;
+		const stallTimer = stall !== undefined && stall.ms < opts.timeoutMs
+			? setTimeout(() => { if (!stall.started(stdout)) { stalled = true; kill(); } }, stall.ms)
+			: undefined;
 
 		child.stdout.on('data', (c: Buffer) => { stdout += c.toString(); });
 		child.stderr.on('data', (c: Buffer) => { stderr += c.toString(); });

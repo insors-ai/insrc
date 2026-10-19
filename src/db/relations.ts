@@ -65,6 +65,7 @@ import {
 } from './graph/codec.js';
 import { advanceGenerationInTxn, countUnwritableInTxn, movePendingInTxn, type PendingSlot } from './graph/index-state-rows.js';
 import { awaitingReasonOf, BOUNDARY_RELATION_KINDS, pendingClassOf } from './graph/pending-class.js';
+import { putExportNameInTxn } from './export-names.js';
 
 const log = getLogger('db.relations');
 
@@ -251,7 +252,11 @@ async function upsertUnresolvedRelations(relations: Relation[]): Promise<void> {
 			withoutFile.push(r);
 			continue;
 		}
-		const id = makeUnresolvedRelationId(repo, r.from, r.kind, r.to);
+		// `export { f }` and `export { f as g }` from one file are two relationships: an
+		// aliased re-export's id also names the alias (Epic c2ba6fa6 s1).
+		const exportedAs = meta['exportedAs'];
+		const idTo = r.kind === 'EXPORTS' && typeof exportedAs === 'string' && exportedAs !== r.to ? `${r.to}\x00as\x00${exportedAs}` : r.to;
+		const id = makeUnresolvedRelationId(repo, r.from, r.kind, idTo);
 		const row: UnresolvedRow = {
 			id,
 			repoId:      0, // back-filled inside the txn
@@ -458,7 +463,12 @@ export async function updateUnresolvedMeta(
  */
 export async function promoteResolvedBatch(
 	_db: DbClient,
-	items: ReadonlyArray<{ unresolved: UnresolvedRelation; targetEntityId: string }>,
+	items: ReadonlyArray<{
+		unresolved: UnresolvedRelation;
+		targetEntityId: string;
+		/** An EXPORTS row: the name the file exports it under, written to export_names with the edge. */
+		exportName?: string | undefined;
+	}>,
 ): Promise<PromoteResult> {
 	const result: PromoteResult = { promoted: 0, keptAwaiting: 0, unwritable: 0 };
 	if (items.length === 0) return result;
@@ -466,7 +476,7 @@ export async function promoteResolvedBatch(
 	const now = Date.now();
 	await withWriteTxn(s => {
 		const promotedRepos = new Set<number>();
-		for (const { unresolved, targetEntityId } of items) {
+		for (const { unresolved, targetEntityId, exportName } of items) {
 			const stored = getPendingRowInTxn(s, unresolved.id);
 			const repoId = stored?.repoId ?? repoIdByPathInTxn(s, unresolved.repo);
 			const kindByte = RELATION_KIND_BYTE[unresolved.kind as InternalRelationKind];
@@ -494,6 +504,7 @@ export async function promoteResolvedBatch(
 			}
 			s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
 			s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
+			if (exportName !== undefined) putExportNameInTxn(s, fromU64, exportName, targetEntityId);
 			removePendingRowInTxn(s, unresolved.id);
 			if (repoId !== undefined) promotedRepos.add(repoId);
 			result.promoted++;
@@ -515,6 +526,27 @@ export async function updateUnresolvedMetaBatch(
 	await withWriteTxn(s => {
 		for (const { id, meta } of items) updatePendingMetaInTxn(s, id, meta, attemptedAt);
 	});
+}
+
+/** The relationship kind of an edge-key kind byte. */
+const KIND_OF_BYTE: ReadonlyMap<number, RelationKind> = new Map(
+	Object.entries(RELATION_KIND_BYTE).map(([kind, byte]) => [byte as number, kind as RelationKind]),
+);
+
+/**
+ * Inside a write transaction: write the edge (fromU64, kind byte, toU64) back as
+ * a pending row of the source awaiting the target's id, with its count (Epic
+ * c2ba6fa6 s1: a repository's delete returns the edges other repositories hold
+ * into it). The edge itself is left to the caller's delete. Returns false when
+ * an endpoint has no string id or the kind byte is unknown.
+ */
+export function returnEdgeToPendingInTxn(s: GraphStore, fromU64: bigint, kindByte: number, toU64: bigint): boolean {
+	const kind = KIND_OF_BYTE.get(kindByte);
+	const fromEntity = s.entityStringByU64.get(encodeEntityKey(fromU64)) as string | undefined;
+	const target = s.entityStringByU64.get(encodeEntityKey(toU64)) as string | undefined;
+	if (kind === undefined || fromEntity === undefined || target === undefined) return false;
+	writePendingRowInTxn(s, awaitingRowFor(s, fromU64, fromEntity, kind, target, undefined, Date.now()));
+	return true;
 }
 
 // ---------------------------------------------------------------------------

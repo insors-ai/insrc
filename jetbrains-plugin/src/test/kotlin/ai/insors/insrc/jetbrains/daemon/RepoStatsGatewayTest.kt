@@ -156,4 +156,41 @@ class RepoStatsGatewayTest {
         val down = DaemonGatewayImpl(RecordingRpc { _, _ -> throw DaemonUnavailableException("down") })
         assertThrows(DaemonUnavailableException::class.java) { down.registerProject("/home/dev/a", null) }
     }
+
+    // ---- completeness (Epic c2ba6fa6 s1/t14) --------------------------------
+
+    @Test
+    fun `repoStats decodes a recorded repo-stats reply - one complete repository, one incomplete with its reasons and counts, and one without the field (unknown)`() {
+        // Recorded from the daemon's own completenessOf (src/db/index-state.ts), decoded by Gson as the transport does.
+        val json = javaClass.getResource("/fixtures/repo-stats-completeness.json")!!.readText()
+        @Suppress("UNCHECKED_CAST")
+        val replies = com.google.gson.Gson().fromJson(json, List::class.java) as List<Map<String, Any?>>
+        val stats = replies.map { reply ->
+            val rpc = RecordingRpc { _, _ -> DaemonResult(ok = true, data = reply) }
+            (DaemonGatewayImpl(rpc).repoStats(reply["repoPath"] as String) as RepoStatsResult.Loaded).stats
+        }
+
+        val complete = stats[0].completeness!!
+        assertTrue(complete.complete)
+        assertEquals(emptyList<String>(), complete.reasons)
+        assertEquals(4, complete.generation)
+
+        val incomplete = stats[1].completeness!!
+        assertFalse(incomplete.complete)
+        assertEquals(
+            listOf(
+                "1 file could not be indexed",
+                "2 relationships point at files an ignore rule excludes",
+                "1 relationship could not be stored (source-missing: 1)",
+            ),
+            incomplete.reasons,
+        )
+        assertEquals(2, incomplete.pending["awaiting-target"])
+        assertEquals(1, incomplete.unwritable)
+        assertEquals(listOf("/home/dev/b/src/locked.ts"), incomplete.uncommittedFiles)
+        assertEquals("ready", stats[1].status, "the status is unchanged beside it")
+
+        assertNull(stats[2].completeness, "no field reads as unknown, never as complete")
+        assertNull(DaemonGatewayImpl.parseCompleteness(mapOf("reasons" to emptyList<String>())), "an object without a boolean complete is unknown")
+    }
 }

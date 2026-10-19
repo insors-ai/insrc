@@ -1,3 +1,7 @@
+import { createUnderstandingRoutes } from './understanding-rpc.js';
+import { UnderstandingService } from '../understanding/service.js';
+import { localIdentityDeps, resolveLearner } from '../understanding/identity.js';
+import { AssessmentError } from '../shared/understanding.js';
 /**
  * Daemon entry point.
  *
@@ -46,7 +50,8 @@ import { IndexQueue } from './queue.js';
 import { collectRepoStats } from './repo-stats.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer } from './server.js';
-import { buildDaemonStatus } from './status.js';
+import { unattributedUnwritable, withCompleteness } from './repo-completeness.js';
+import { buildDaemonStatus, composeQueueLanes } from './status.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { entitiesForSourceRoots, METHOD_ENTITIES_FOR_SOURCE_ROOTS } from './source-roots-rpc.js';
@@ -582,7 +587,7 @@ async function main(): Promise<void> {
 		},
 
 		'repo.list': async () => {
-			return await listRepos(db);
+			return await withCompleteness(await listRepos(db), r => r.path);
 		},
 
 		// Combined per-repo index statistics in one call (Story
@@ -594,7 +599,7 @@ async function main(): Promise<void> {
 			const { repoPath } = (params ?? {}) as { repoPath?: unknown };
 			const repos = await listRepos(db);
 			const store = await getGraphStore();
-			const all = collectRepoStats(store, repos, queue);
+			const all = await withCompleteness(collectRepoStats(store, repos, queue), s => s.repoPath);
 			if (typeof repoPath === 'string' && repoPath.length > 0) {
 				const one = all.find(s => s.repoPath === repoPath);
 				return one ?? { error: `repo.stats: ${repoPath} is not a registered repo` };
@@ -844,6 +849,16 @@ async function main(): Promise<void> {
 			return { ok: true };
 		},
 
+		// One-time restore of document summaries from a backup store (ISSUE-dced4385).
+		'docSummary.restoreFromBackup': async (params) => {
+			const { backupPath } = (params ?? {}) as { backupPath?: unknown };
+			if (typeof backupPath !== 'string') throw new Error('docSummary.restoreFromBackup: backupPath must be a string');
+			const { restoreDocSummariesFromBackup } = await import('../db/doc-summaries.js');
+			const counts = await restoreDocSummariesFromBackup(backupPath);
+			log.info({ backupPath, ...counts }, 'document summaries restored from a backup');
+			return counts;
+		},
+
 		'session.list': async (params) => {
 			const { repo, limit } = (params ?? {}) as { repo?: string; limit?: number };
 			const sessions = await listSessions(db, repo);
@@ -1060,8 +1075,10 @@ async function main(): Promise<void> {
 			// store has failed (Epic c2ba6fa6, Story s4).
 			const status: DaemonStatus = await buildDaemonStatus({
 				uptimeSec: Math.floor((Date.now() - startedAt) / 1000),
-				listRepos: () => listRepos(db),
+				listRepos: async () => withCompleteness(await listRepos(db), r => r.path),
+				unattributedUnwritable,
 				queueDepth: queue.depth,
+				queueLanes: () => composeQueueLanes(queue.laneStatus(), indexer.summarySweepProgress()),
 				modelState: getModelState(),
 				// Story S002 (sc2): the daemon's installed source commit for freshness
 				// checks. Best-effort git read; '' when undeterminable, never throws.
@@ -1972,6 +1989,18 @@ async function main(): Promise<void> {
 			log.info({ model }, 'ollama.pull complete');
 		},
 	};
+	let understandingService: UnderstandingService | undefined;
+	let understandingHostId: string | undefined;
+	const understandingRoutes = createUnderstandingRoutes({
+		service: () => { if (!understandingService) throw new AssessmentError('unavailable'); return understandingService; },
+		owner: async repo => {
+			if (!understandingHostId) throw new AssessmentError('unavailable');
+			if (!(await listRepos(db)).some(r => r.path === repo)) throw new AssessmentError('not-found');
+			return resolveLearner(repo, localIdentityDeps(understandingHostId));
+		},
+	});
+	Object.assign(rpcHandlers, understandingRoutes.rpc);
+	Object.assign(streamHandlers, understandingRoutes.streams);
 	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers));
 	// The team gate offers a refused holder to park their work; the daemon is where the runs and drafts it asks about live.
 	registerParkOffer();
@@ -1981,6 +2010,10 @@ async function main(): Promise<void> {
 	initChatHandlers();
 
 	await server.listen();
+	try {
+		understandingService = await UnderstandingService.open(PATHS.sockFile);
+		understandingHostId = understandingService.hostId;
+	} catch { log.warn('understanding service unavailable: initialization checks failed'); }
 	log.info('ready');
 
 	// Phase 1 cleanup: orphan-handoff worktree scan stripped along with
@@ -2043,6 +2076,8 @@ async function main(): Promise<void> {
 	const shutdown = createShutdown({
 		log,
 		stopBackgroundWork: () => {
+			understandingService?.stop();
+			understandingRoutes.stop();
 			clearInterval(pruneTimer);
 			clearInterval(readerCheckTimer);
 			stopTodosRetention();
@@ -2053,6 +2088,8 @@ async function main(): Promise<void> {
 		},
 		queueDone,
 		closeStores: async () => {
+			await server.flushPendingWrites(1000);
+			server.disconnectClients();
 			// closeDb() is a no-op post-LMDB migration (kept for
 			// caller back-compat). The in-memory DuckDB pool +
 			// per-source analyzer pools still hold connections that

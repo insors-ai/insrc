@@ -1,0 +1,444 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b94cf2c9058fd82a",
+    "storyId": "S001",
+    "createdAt": "2026-10-17T13:31:05.601Z",
+    "updatedAt": "2026-10-17T13:59:25.416Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-17T13:11:51.789Z",
+    "epicSlug": "run-document-summarisation-its-own-queue"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "36a2bcaf",
+        "ranAt": "2026-10-17T13:31:05.601Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/queue-lanes.test.ts: while a summary job is running and has not finished, an index job enqueued after it runs to completion; the two lanes run at the same time and each runs its jobs one at a time in order; summary kinds go to the summary lane and every other kind to the index lane; a single-document job is placed ahead of a queued sweep and takeDocSummaryEdit removes and returns it; depth, isProcessing and depthForRepo span both lanes (depthForRepo counts a queued sweep but not a single-document job), codeIndexWorkFor reads the index lane only, laneStatus reports each lane; stop ends both lanes and start resolves",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "each lane runs its jobs one at a time in order, at the same time as the other lane, and every kind goes to its lane",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/queue-code-index-work.test.ts: the existing test asserts the order of the index lane's in-flight jobs only, independently of summary-lane interleaving, and stops once both lanes are empty",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-code-index-work.test.ts",
+                "title": "codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-code-index-work.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 704,
+            "titles": [
+              {
+                "title": "codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor",
+                "result": "pass"
+              },
+              {
+                "title": "codeIndexWorkFor clears the in-flight job when the processor throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/queue-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 568,
+            "titles": [
+              {
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              },
+              {
+                "title": "each lane runs its jobs one at a time in order, at the same time as the other lane, and every kind goes to its lane",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it",
+                "result": "pass"
+              },
+              {
+                "title": "depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane",
+                "result": "pass"
+              },
+              {
+                "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b9d84623",
+        "ranAt": "2026-10-17T13:43:11.087Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/doc-summaries-lmdb.test.ts: writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo; writeDocSummary is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummary + getDocSummary round-trip",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummary overwrites an existing summary",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummary rejects an unknown entity",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummary rejects an unregistered repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+                "title": "writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts: summariseDoc reports a summary the conditional write did not store as skipped entity-gone or body-changed, a thrown summary write as persistence-failed, a thrown placeholder write with the original model error, and a placeholder write that finds the entity gone or changed as skipped with that reason",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "a summary of a document rewritten or deleted while it was summarised is not stored, and is reported as skipped body-changed or entity-gone",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "a summary write that throws is reported as persistence-failed",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+                "title": "when the model fails, a placeholder write that throws keeps the model error, and one that finds the document gone or rewritten reports that instead",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1446,
+            "titles": [
+              {
+                "title": "a summary of a document rewritten or deleted while it was summarised is not stored, and is reported as skipped body-changed or entity-gone",
+                "result": "pass"
+              },
+              {
+                "title": "a summary write that throws is reported as persistence-failed",
+                "result": "pass"
+              },
+              {
+                "title": "when the model fails, a placeholder write that throws keeps the model error, and one that finds the document gone or rewritten reports that instead",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/doc-summaries-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3369,
+            "titles": [
+              {
+                "title": "writeDocSummary + getDocSummary round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "writeDocSummary overwrites an existing summary",
+                "result": "pass"
+              },
+              {
+                "title": "getDocSummary returns null for unknown entity",
+                "result": "pass"
+              },
+              {
+                "title": "getDocSummary returns null for known entity with no summary",
+                "result": "pass"
+              },
+              {
+                "title": "writeDocSummary rejects an unknown entity",
+                "result": "pass"
+              },
+              {
+                "title": "writeDocSummary rejects an unregistered repo",
+                "result": "pass"
+              },
+              {
+                "title": "writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo",
+                "result": "pass"
+              },
+              {
+                "title": "listDocSummariesForRepo returns every summary for the repo",
+                "result": "pass"
+              },
+              {
+                "title": "countDocSummariesForRepo matches the list length",
+                "result": "pass"
+              },
+              {
+                "title": "listDocSummaryEntityIdsForRepo returns the same entity ids",
+                "result": "pass"
+              },
+              {
+                "title": "listDocSummariesForRepo returns empty for an unregistered repo",
+                "result": "pass"
+              },
+              {
+                "title": "deleteDocSummary drops primary + secondary index",
+                "result": "pass"
+              },
+              {
+                "title": "deleteDocSummariesForRepo scoped drop",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForFile cascades to the summary row",
+                "result": "pass"
+              },
+              {
+                "title": "placeholder rows persist the errorCode field",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "fb2c43f6",
+        "ranAt": "2026-10-17T13:53:06.888Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/__tests__/doc-summary-sweep.test.ts: runDocSummarySweep runs every queued single-document job before each entity, skips and counts an entity deleted after the sweep began, counts a throwing entity as failed and continues, classifies every result kind as summarised, skipped, gone or failed, reports progress after each entity, and returns stopped after the summary in progress once shouldStop is true",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "every result kind is classified as summarised, skipped, gone or failed",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "progress is reported after each document, with the total",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+                "title": "once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/indexer/__tests__/summary-sweep-progress.test.ts: IndexerService.summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes, stops or throws",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "summarySweepProgress is cleared when the sweep stops on shutdown",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "summarySweepProgress is cleared when the sweep throws",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+                "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-summary-sweep.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 652,
+            "titles": [
+              {
+                "title": "every queued single-document job runs before each document, including jobs queued while the sweep runs",
+                "result": "pass"
+              },
+              {
+                "title": "a document deleted after the sweep began is counted as gone and not summarised, and a throwing document is counted as failed while the sweep continues",
+                "result": "pass"
+              },
+              {
+                "title": "every result kind is classified as summarised, skipped, gone or failed",
+                "result": "pass"
+              },
+              {
+                "title": "progress is reported after each document, with the total",
+                "result": "pass"
+              },
+              {
+                "title": "once shouldStop is true the sweep returns stopped after the summary in progress, also between single-document jobs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/summary-sweep-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1108,
+            "titles": [
+              {
+                "title": "summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes",
+                "result": "pass"
+              },
+              {
+                "title": "summarySweepProgress is cleared when the sweep stops on shutdown",
+                "result": "pass"
+              },
+              {
+                "title": "summarySweepProgress is cleared when the sweep throws",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "3cf219dd",
+        "ranAt": "2026-10-17T13:59:25.416Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/daemon-status-lanes.test.ts: buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+                "title": "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+                "title": "with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 539,
+            "titles": [
+              {
+                "title": "buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress",
+                "result": "pass"
+              },
+              {
+                "title": "with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

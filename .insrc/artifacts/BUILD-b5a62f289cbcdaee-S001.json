@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "b5a62f289cbcdaee",
+    "storyId": "S001",
+    "createdAt": "2026-10-18T16:46:42.113Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-18T16:45:26.670Z",
+    "epicSlug": "keep-stored-good-summary-when-full",
+    "updatedAt": "2026-10-18T16:59:40.908Z",
+    "approvedAt": "2026-10-18T16:59:40.970Z"
+  },
+  "body": {
+    "focus": "ISSUE-b5a62f28: restoreCarriedDocSummaries (src/db/doc-summaries.ts:339-362) keeps a summary already stored for the document when it has no error and the same contentHash (keepGoodSummary); a stored placeholder is still replaced. The result counts kept rows; the full index log line (src/indexer/index.ts:745) reports them. Test in src/db/__tests__/doc-summary-carry.test.ts.",
+    "producesLld": false,
+    "commit": "d1fb60c9",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "restoreCarriedDocSummaries now writes back with keepGoodSummary, so a good summary stored after the rebuild is kept and a stored placeholder is still replaced; the result and the full index's log line count keptGood. New test in doc-summary-carry.test.ts; db and indexer suites 860/860.",
+    "testRecord": {
+      "md": "docs/standalone/keep-stored-good-summary-when-full-E20261018b5a62f28/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-b47dadc7cf0cccb1-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T16:59:40.908Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/scope-code-review-story-s-own-E20261017b47dadc7/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T16:59:40.908Z"
+      }
+    ]
+  }
+}

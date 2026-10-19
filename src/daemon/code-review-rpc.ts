@@ -146,6 +146,7 @@ export async function codeReviewRunStart(
 				diff = await (deps.assembleDiffGrounding ?? assembleDiffCodeReviewGrounding)(repoPath, undefined, {
 					base:         resolveStoryRangeBase(repoPath, params.epicHash, params.storyId),
 					excludeGlobs: LEDGER_EXCLUDE_GLOBS,
+					storyKey:     `${params.epicHash}/${params.storyId}`,
 				});
 			} catch (err) {
 				if (!(err instanceof DiffUnavailableError)) throw err;
@@ -153,7 +154,7 @@ export async function codeReviewRunStart(
 				return;
 			}
 			outcome = await runCodeReview(
-				{ ...resolved.subject, changedFiles: diff.changedFiles }, provider,
+				{ ...resolved.subject, changedFiles: diff.changedFiles, changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded }, provider,
 				{ ...base, groundingMode: 'degraded', capVerdictAtWarn: true, ...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}) },
 				{ ...runner.DEFAULT_DEPS, ...(deps.write !== undefined ? { write: deps.write } : {}), assembleGrounding: async () => diff.grounding },
 			);

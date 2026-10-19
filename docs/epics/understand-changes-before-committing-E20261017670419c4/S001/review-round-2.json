@@ -1,0 +1,125 @@
+{
+  "artifact": "design.story",
+  "stage": "design.story",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "coverage-of-intent.1",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Identity precedence and retention follow the resolved upstream decisions.",
+      "evidence": "HLD meta.questionResolutions selects one connected provider identity, repository Git email for multiple identities, and OS fallback; it requires private local retention until explicit learner deletion without automatic expiry. Sections 3.1 and 3.6 preserve those decisions. [files: .insrc/artifacts/HLD-670419c4ad8bea8e.json]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.1",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "GraphStore currently opens 27 named databases with MAX_DBS=32.",
+      "evidence": "Read the complete getGraphStore initialization: its store literal opens 27 named databases, and MAX_DBS is 32. Adding eight requires capacity for 35; raising the limit to 64 addresses this. [files: src/db/graph/store.ts]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.2",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Existing IPC streaming supports progress/data events, request-ID substitution, explicit terminal frames and disconnect cancellation.",
+      "evidence": "handleStreamMessage writes '{ ...msg, id: request.id }', aborts on socket close/error, and does not send done when the handler resolves. IpcStreamMessage.data is unknown and its kind includes progress, done and error. [files: src/daemon/server.ts, src/shared/types.ts]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "new-versus-reuse.1",
+      "ref": "new-versus-reuse",
+      "item": "new-versus-reuse",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The five understanding roles are new registrations that can reuse existing role routing and floor enforcement.",
+      "evidence": "The complete role registry contains none of the five proposed roles. resolveRoleInternal uses descriptor.defaultTier and applyCoreFloor for registered roles; absent descriptors fall back to UNKNOWN_ROLE_TIER='mid' without floor protection. The proposed initialization guard addresses that fallback. [files: src/config/role-taxonomy.ts, src/analyze/context/role-router.ts, src/config/core-floor-guard.ts]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.1",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "The watch lifecycle integration is sufficiently specified to deliver final unavailable/done frames during deliberate daemon shutdown.",
+      "evidence": "IpcServer.close only calls server.close; it neither signals active handlers nor closes their sockets. Daemon shutdown invokes 'void server.close()' and subsequently closes stores and exits. The LLD promises final shutdown frames but does not specify a subscription shutdown hook or its ordering in this existing lifecycle. [files: src/daemon/server.ts, src/daemon/index.ts, src/daemon/shutdown.ts]",
+      "action": "Specify an understanding-service shutdown hook in daemon/index.ts, invoke it before closing storage, and define how final frames are flushed before process exit. Add a shutdown-with-active-watch test.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "data-compatibility.1",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Assessment versioning should be additive and independent of graph schema migration.",
+      "evidence": "GraphStore opens named databases within one root and separately checks its graph schema version before running graph migrations. HLD explicitly requires 'assessmentSchemaVersion 1, independent of the existing graph-store schema version' and rejects hypothetical legacy assessment converters. The proposed separate metadata namespace follows that boundary. [files: src/db/graph/store.ts, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+      "action": "None.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "boundaries.1",
+      "ref": "boundaries",
+      "item": "boundaries",
+      "kind": "semantic",
+      "severity": "HIGH",
+      "premise": "The persisted attempt confidence enum preserves the sibling-owned answer contract.",
+      "evidence": "HLD sc4, owned by s3, defines AnswerSubmission.confidence as 'unsure' | 'low' | 'medium' | 'high'. LLD \u00a73.3 instead stores 'sure/unsure/unset'. Valid low/medium/high submissions cannot be represented faithfully: implementation would reject them or collapse the original confidence that S001/ac1 requires retaining. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md, docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md]",
+      "action": "Preserve the sc4 confidence values in submitted attempts. Represent an unanswered state separately if needed; do not replace the sibling-owned enum without an upstream contract amendment.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "error-paths.1",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The existing transaction helper supports synchronous, atomic mutation callbacks with rollback on failure.",
+      "evidence": "Read the complete withWriteTxn implementation: it executes root.childTransaction(run), rejects thenable callback results, propagates transaction failures, and probes stalled writes for lost locks. This supports committing current/history/request changes together and returning a typed failure instead of partial success. [files: src/db/graph/store.ts]",
+      "action": "Keep all writes inside the synchronous callback and translate failures at the understanding RPC boundary.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "tests.1",
+      "ref": "tests",
+      "item": "tests",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "All three S001 acceptance criteria have planned tests using an existing isolated persistence-test pattern.",
+      "evidence": "DEF S001/ac1 covers retained answers/confidence/progress/associations; ac2 covers unchanged delivery status and approvals; ac3 covers restart recovery without false passes. The LLD maps each to persistence, delivery-invariance, or recovery/contract tests. Existing store tests use mkdtempSync, setGraphStorePath, close/reopen, and withWriteTxn, providing the proposed isolation pattern. These are planned tests, not verified implementation results. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, src/db/graph/__tests__/store.test.ts]",
+      "action": "Include every upstream confidence value in the round-trip fixtures after correcting the contract mismatch.",
+      "fixability": "manual",
+      "outcome": "holds"
+    }
+  ],
+  "counts": {
+    "high": 1,
+    "med": 1,
+    "low": 7,
+    "unverified": 0
+  },
+  "template": "design-spec",
+  "reviewedAt": "2026-10-17T12:42:50.152Z",
+  "model": "cli-codex:gpt-6-astra",
+  "reviewedBy": "daemon"
+}

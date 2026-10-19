@@ -902,6 +902,10 @@ export interface ExplorationRunnerContext {
 	 *  don't leak into structural bundles. See
 	 *  analyze/context/repo-ignore-filter.ts. */
 	readonly ignoreFilter: import('../context/repo-ignore-filter.js').RepoIgnoreFilter;
+	/** Whether the repository's index is complete (Epic c2ba6fa6 s1). The lookups that walk
+	 *  relationships state an incomplete one in their completeness. Absent: no repository
+	 *  facts (an unregistered repository, or a caller that builds its own context). */
+	readonly repoCompleteness?: import('../../shared/types.js').RepoCompleteness | undefined;
 }
 
 export type ExplorationRunner = (

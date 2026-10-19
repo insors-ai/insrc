@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792342440177-diqsmn",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-18T16:54:00.177Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 36904,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-17T20:08:20.612Z",
+    "epicSlug": "scope-code-review-story-s-own",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "b47dadc7cf0cccb1",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/steps/build-step/__tests__/render-trailer.test.ts",
+        "src/daemon/steps/build-step/__tests__/render.test.ts",
+        "src/daemon/steps/build-step/phases/implement.ts",
+        "src/daemon/steps/build-step/render.ts",
+        "src/prompts/build/implement-task.md",
+        "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+        "src/workflow/runners/build/__tests__/story-commits.test.ts",
+        "src/workflow/runners/build/story-commits.ts",
+        "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+        "src/workflow/code-review/__tests__/subject.test.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/code-review/subject.ts",
+        "src/workflow/code-review/types.ts",
+        "src/workflow/runners/build/changed-files.ts",
+        "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/daemon/code-review-rpc.ts",
+        "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+        "src/daemon/steps/code-review-step/handler.ts",
+        "src/workflow/code-review/__tests__/diff-attribution.test.ts",
+        "src/workflow/code-review/grounding.ts",
+        "src/workflow/code-review/__tests__/grounding-eligibility.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts",
+        "src/workflow/code-review/dimensions/__tests__/coverage.test.ts",
+        "src/workflow/code-review/dimensions/coverage.ts",
+        "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/workflow/code-review/dimensions/coverage.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

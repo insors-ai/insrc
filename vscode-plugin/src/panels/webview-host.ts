@@ -446,6 +446,14 @@ function shellHtml(title: string, content: string, nonce: string, bootstrap?: st
     .chain h3 { margin: 8px 0 2px; }
     .error { color: var(--vscode-errorForeground, #f33); }
     .placeholder, .detail, .status { opacity: 0.75; }
+    .repos h3 { margin: 12px 0 4px; }
+    .repo-list { list-style: none; padding: 0; margin: 0; }
+    .repo { padding: 3px 0; }
+    .repo-name { font-weight: 600; }
+    .completeness { margin-left: 6px; padding: 0 6px; border-radius: 3px; font-size: 0.9em; }
+    .completeness.complete { color: var(--vscode-testing-iconPassed, #3a3); }
+    .completeness.incomplete { color: var(--vscode-editorWarning-foreground, #c90); border: 1px solid currentColor; }
+    .reasons { margin: 2px 0 4px 18px; padding-left: 12px; opacity: 0.85; }
   </style></head><body><h2>${escapeHtml(title)}</h2>${content}${script}</body></html>`;
 }
 

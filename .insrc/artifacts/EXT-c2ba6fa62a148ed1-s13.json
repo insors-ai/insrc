@@ -1,0 +1,161 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1792248283134-4nauky",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T14:44:51.062Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 7905,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s13",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "scope": "L",
+    "notify": "Extends Epic `complete-consistent-richer-code-index-one` (c2ba6fa6): adds a Story that makes the settle pass after file events proportional to the changed files, building on DEF-c2ba6fa6, Story s1's settle mode and pending-row index, and absorbing ISSUE-61045de91faef1a0; code in src/indexer/index.ts, src/indexer/cross-file-resolver.ts, src/indexer/external-endpoints.ts, src/indexer/messaging-endpoints.ts and src/db/entities.ts.",
+    "addedStory": {
+      "id": "s13",
+      "title": "Settling file changes does work proportional to the changed files, never a scan of the repository or the store",
+      "userValue": "After an edit, a branch switch or a merge, the graph catches up in time proportional to what changed: a burst of file events no longer costs one whole-repository resolve per file, and reading one file's or one repository's entities no longer passes over every other repository's rows. The results are the same as a full index gives.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "a repository whose index is complete, and one file in it that changes",
+          "when": "the settle pass for that file event runs",
+          "then": "the entity rows, pending rows and edges it reads are those the changed file defines, imports, exports or awaits, and their number does not grow with the size of the repository or of the store",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "a burst of file events touching N files of a repository",
+          "when": "their settle work runs",
+          "then": "the work done grows with N and with what those files touch, not with N times the repository",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "the same file changes settled event by event, and the same files indexed by a full index",
+          "when": "the edges and pending-row classes of those files are compared",
+          "then": "they are identical",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "a store holding several repositories",
+          "when": "the entities of one file, or of one repository, are read",
+          "then": "no row of another file or another repository is read, and the result is what it is today",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-c2ba6fa62a148ed1-8",
+    "evidence": [
+      {
+        "kind": "code",
+        "ref": "src/indexer/index.ts:866-869",
+        "quote": "runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, scopeFile: file })"
+      },
+      {
+        "kind": "code",
+        "ref": "src/indexer/cross-file-resolver.ts:114",
+        "quote": "const entities = await listEntitiesForRepo(opts.db, opts.repoRoot);"
+      },
+      {
+        "kind": "code",
+        "ref": "src/db/entities.ts:785",
+        "quote": "for (const { key, value } of store.entity.getRange()) {"
+      },
+      {
+        "kind": "prior-artifact",
+        "ref": ".insrc/artifacts/ISSUE-61045de91faef1a0.json",
+        "quote": "Reading the entities of one file or one repository scans the whole entity table"
+      },
+      {
+        "kind": "stakeholder",
+        "ref": "chat 2026-10-17",
+        "quote": "why scan the repos? the whole point of an event based implementation is to avoid these scans"
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"c2ba6fa62a148ed1\",\"storyId\":\"s13\"}",
+      "description": "Approve the HLD amendment (`AMD-c2ba6fa62a148ed1-8`) and the updated Epic, then run `design.story` for the new Story `s13` to produce its LLD."
+    },
+    "feedback": [
+      {
+        "id": "1a8d7fc2",
+        "author": "Subho Ghosh (stakeholder, chat 2026-10-17)",
+        "timestamp": "2026-10-17T15:03:32.462Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S013/EXT.md"
+        },
+        "comment": "Stakeholder decision, 2026-10-17 (chat): s13 is designed around a persistent unresolved-edge map, not dependency ordering.\n\nDesign: each file is parsed and stored as it arrives; every edge it cannot resolve is kept in a persistent map in the store keyed by what it awaits (repository, kind, name, or the awaited id). When a later file stores an entity, the map is looked up by that entity's name/id; each waiting edge is checked with the same visibility rule cross-file resolution uses (the caller imports the file, reaches it through a re-export, or for Go/JVM shares its package), resolved when exactly one visible candidate exists (ambiguous with candidates when several do), and removed from the map. Reverse direction: when a file is re-indexed or deleted, every resolved edge pointing into its entities goes back into the map instead of vanishing, and is re-resolved when the file's new entities are stored. No indexing order and no dependency discovery; applies to every supported language; language-specific gaps (Kotlin package mapping, JVM callee naming) stay with s12. Depth-first dependency ordering was considered and rejected: import cycles, import-less same-package dependencies and parse-only discoverable targets (Kotlin/Scala) make it unreliable.\n\nAdded acceptance criteria:\n\nac5 - Given file A calls a function that file B defines, and A is indexed before B; when B arrives through a file event; then A's call is an edge, as after a full index, with no repository scan.\n\nac6 - Given A's call to B's function is an edge; when B is edited (re-indexed) or deleted and re-created; then A's call is an edge again once B's new entities are stored, and while B's function does not exist the call is pending, never lost.\n\nEvidence (experiments 2026-10-17 against the real parser and resolver over a temporary store): indexing a.ts (calls foo) before b.ts (defines foo) leaves foo with no callers after both settles and after a whole-repository pass; after a first index where foo's callers were [a], editing and re-indexing b.ts leaves foo with no callers, also after a whole-repository pass.",
+        "kind": "feedback"
+      },
+      {
+        "id": "e913193b",
+        "author": "Subho Ghosh (stakeholder, chat 2026-10-17)",
+        "timestamp": "2026-10-17T15:27:56.953Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S013/EXT.md"
+        },
+        "comment": "Stakeholder decision, 2026-10-17 (chat), SUPERSEDES feedback 1a8d7fc2 where they differ: the refined s13 design.\n\n1. Binding keys, not bare names. A pending edge awaits what the caller's own import binds, derived when the caller is parsed without reading any other file: (target file id, exported name) for file-module languages (TypeScript/JavaScript, Python; a relative or path-mapped specifier resolves to the target file's absolute path and file ids are deterministic, so the key is exact before the target is indexed; namespace imports and Python module-qualified calls give the same shape), and (package, name) for package languages (Go, Java, Kotlin, Scala; from an explicit or wildcard import, or the caller's own package for an unqualified call). When a file stores entities it publishes its own keys: (its file id, name) for what it exports, (its package, name) for package-scoped declarations. Matching is an exact key lookup: no ambiguity across files and no lookup spikes on common names.\n\n2. External and unbindable rows never enter the map. A call bound to an external module (TS/JS non-relative specifier that is not a path mapping or workspace package; Python module outside the source roots; Go import path outside the go.mod module path; a JVM package no repository file declares, decided once the repository's package set is known and kept up to date) is classed external at parse time. A call that cannot be bound (unknown receiver type obj.method(), Scala implicits/givens, computed dynamic imports) is classed unbindable. Neither is ever looked up. The map is bounded by the current code: pending rows are per call site and replaced when their file is re-indexed.\n\n3. Caller-owned edges (from graphify's design). Re-indexing a file replaces only the edges that originate in it; edges from other files into it are kept. An edge whose target entity no longer exists after the commit goes back to the pending map (awaiting its binding key) instead of being deleted, and is re-resolved when a matching entity is stored. A callee re-index that keeps the same entity ids touches no caller.\n\n4. No whole-graph context per event: a settle reads only what the committed files define, import, export or await (graphify's incremental update reloads the whole graph per update; rejected).\n\nConsidered and rejected: depth-first dependency ordering (cycles, import-less package dependencies, parse-only discoverable targets); SCIP/compiler indexers as the engine (need a full build toolchain per repository; possible later as a separate optional precise mode); heuristic fallbacks such as unique-name, suffix or fuzzy matching (they guess; accuracy rule). Research 2026-10-17: Codebase-Memory (import-map strategies resolve ~80% of calls; fuzzy fallbacks), stack-graphs (archived by GitHub 2025-09-09; fork covers Python and Java only), graphify source (tree-sitter + import-scoped pass, member calls on untyped receivers dropped, whole-graph resolution context per update, SCIP ingest is an unwired skeleton).",
+        "kind": "feedback"
+      },
+      {
+        "id": "c0c602ac",
+        "author": "Subho Ghosh (stakeholder, chat 2026-10-17)",
+        "timestamp": "2026-10-17T16:23:58.491Z",
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S013/EXT.md"
+        },
+        "comment": "Boundary decision 2026-10-17 (option A): s13 owns the binding-key pending map (its index, lookup when a file stores entities, the external and unbindable classes) and the settle that runs once per batch and reads only what the committed files define, import, export or await (ac1-ac3, ac5). It builds on: s1 (IndexState sc1, Pass 0, pending rows by awaited id), s3 (the by-file and by-repository entity index; s13's ac4 is delivered by s3 and proven again end to end by s13's tests), s2 (the FileCommit sc2 with caller-owned edges and edges into a removed entity returned to pending; s13 re-resolves them, completing ac6), and s12 (parsers emit the binding key with each call; see feedback on s12). Amendments filed: s13 consumes sc1 and sc2. Build order: s1 -> s3 -> s2 -> s12 -> s13.",
+        "kind": "feedback"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/indexer/index.ts:866-869",
+      "quotedText": "runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, scopeFile: file })"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:114",
+      "quotedText": "const entities = await listEntitiesForRepo(opts.db, opts.repoRoot);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/db/entities.ts:785",
+      "quotedText": "for (const { key, value } of store.entity.getRange()) {"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": ".insrc/artifacts/ISSUE-61045de91faef1a0.json",
+      "quotedText": "Reading the entities of one file or one repository scans the whole entity table"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "chat 2026-10-17",
+      "quotedText": "why scan the repos? the whole point of an event based implementation is to avoid these scans"
+    }
+  ]
+}

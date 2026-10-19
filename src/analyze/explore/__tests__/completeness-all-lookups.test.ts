@@ -29,7 +29,13 @@ import { permissiveIgnoreFilter } from '../../context/repo-ignore-filter.js';
 
 import { finalizeCapabilityReuseCheck, prepareCapabilityReuseCheck } from '../capability-reuse-check.js';
 import { runClassHierarchy } from '../class-hierarchy.js';
-import { carriedCompleteness, GRAPH_BASIS_NOTE } from '../completeness-facts.js';
+import { carriedCompleteness, GRAPH_BASIS_NOTE, graphCompleteness } from '../completeness-facts.js';
+import { withWriteTxn } from '../../../db/graph/store.js';
+import { updateIndexStateRowInTxn } from '../../../db/graph/index-state-rows.js';
+import { lookupRepoId } from '../../../db/repos.js';
+import { completenessOf, readIndexState } from '../../../db/index-state.js';
+import type { RepoCompleteness } from '../../../shared/types.js';
+import { readFileSync } from 'node:fs';
 import { runConceptResolve } from '../concept-resolve.js';
 import { runConfigTrace } from '../config-trace.js';
 import { runConventionDetect } from '../convention-detect.js';
@@ -40,7 +46,7 @@ import { runDbTablesList } from '../db-tables-list.js';
 import { finalizeDocConstraintEnumerate, prepareDocConstraintEnumerate } from '../doc-constraint-enumerate.js';
 import { finalizeDocDecisionTrace, prepareDocDecisionTrace } from '../doc-decision-trace.js';
 import { runDocMention } from '../doc-mention.js';
-import { _getRunnersForTest } from '../executor.js';
+import { _getRunnersForTest, _overrideNarrowRunnerForTest, _overrideRunnerForTest, executePlan, stepPlan } from '../executor.js';
 import { runFreeformProbe } from '../freeform-probe.js';
 import { runImportGraph } from '../import-graph.js';
 import { runManifestsLocate } from '../manifests-locate.js';
@@ -555,4 +561,121 @@ test('a prepared value without the carried facts gives a record that is not esta
 	assert.match(c.basisNote ?? '', /was not carried from its first step/);
 	// With the facts carried and nothing left out, the record is complete.
 	assert.equal(carriedCompleteness(3, 'doc-index', { limited: [], skipped: [] }).complete, true);
+});
+
+// ---------------------------------------------------------------------------
+// Epic c2ba6fa6 s1/t16 -- the relationship lookups state an incomplete repository
+// ---------------------------------------------------------------------------
+
+const COUNTS = { pending: { 'awaiting-target': 3, ambiguous: 0, 'no-candidate': 0, 'external-endpoint': 0 }, unwritable: 1, unembedded: 0, uncommittedFiles: 0 };
+const INCOMPLETE: RepoCompleteness = {
+	complete: false,
+	reasons: ['3 relationships point at files an ignore rule excludes', '1 relationship could not be stored (source-missing: 1)'],
+	counts: COUNTS, uncommittedFiles: [], generation: 2,
+};
+const COMPLETE: RepoCompleteness = { complete: true, reasons: [], counts: { ...COUNTS, pending: { ...COUNTS.pending, 'awaiting-target': 0 }, unwritable: 0 }, uncommittedFiles: [], generation: 2 };
+
+/** The five lookups that walk relationships, on a found target and on their early-return path. */
+const RELATIONSHIP_LOOKUPS: Record<string, (c: ExplorationRunnerContext) => Promise<ExplorationOutput>> = {
+	'usage.example':              c => runUsageExample(exp('usage.example', { entityId: seeded['charge']!.id }), c),
+	'usage.example, no target':   c => runUsageExample(exp('usage.example', { symbolName: 'noSuchSymbolAnywhere' }), c),
+	'import.graph':               c => runImportGraph(exp('import.graph', { path: join(REPO, 'src/pay') }), c),
+	'import.graph, no file':      c => runImportGraph(exp('import.graph', { path: join(REPO, 'no/such/dir') }), c),
+	'class.hierarchy':            c => runClassHierarchy(exp('class.hierarchy', { symbolName: 'Base0' }), c),
+	'class.hierarchy, no target': c => runClassHierarchy(exp('class.hierarchy', { symbolName: 'NoSuchClass' }), c),
+	'data-model.trace':           c => runDataModelTrace(exp('data-model.trace', { entityName: 'Model' }), c),
+	'data-model.trace, no target': c => runDataModelTrace(exp('data-model.trace', { entityName: 'NoSuchClass' }), c),
+	'convention.detect':          c => runConventionDetect(exp('convention.detect', { path: join(REPO, 'src/pay') }), c),
+	'convention.detect, no entity': c => runConventionDetect(exp('convention.detect', { path: join(REPO, 'no/such/dir') }), c),
+};
+
+const recordOf = (out: ExplorationOutput): Completeness => (out as unknown as { completeness: Completeness }).completeness;
+
+test('s1/t16: the five relationship lookups report notEstablished with the reasons and their counts for an incomplete repository, and as today for a complete one or with no repository facts', async () => {
+	for (const [name, run] of Object.entries(RELATIONSHIP_LOOKUPS)) {
+		const today = recordOf(await run(ctx));
+		const complete = recordOf(await run({ ...ctx, repoCompleteness: COMPLETE }));
+		assert.deepEqual(complete, today, `${name}: a complete repository reports as today`);
+
+		const incomplete = recordOf(await run({ ...ctx, repoCompleteness: INCOMPLETE }));
+		assert.equal(incomplete.complete, false, `${name}: not established`);
+		assert.equal(incomplete.returned, today.returned, `${name}: the same result`);
+		assert.ok(incomplete.basisNote?.startsWith(GRAPH_BASIS_NOTE), `${name}: the coverage note stays first`);
+		for (const reason of INCOMPLETE.reasons) assert.ok(incomplete.basisNote?.includes(reason), `${name}: names "${reason}" with its count: ${incomplete.basisNote}`);
+	}
+});
+
+test('s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository', async () => {
+	// Make the repository's index complete, so the context carries a record a lookup can tell from an absent one.
+	const repoId = (await lookupRepoId(REPO))!;
+	await withWriteTxn(s => { updateIndexStateRowInTxn(s, repoId, row => { row.fullIndexFinished = true; }); });
+	const expected = completenessOf(await readIndexState(REPO));
+	assert.equal(expected.complete, true);
+
+	const seen: Record<string, unknown> = {};
+	const restoreRunner = _getRunnersForTest()['concept.resolve'];
+	_overrideRunnerForTest('concept.resolve', async (e, c) => {
+		seen[String(e.params['label'])] = c.repoCompleteness;
+		return { type: 'concept.resolve', query: 'stub', hits: [] } as unknown as ExplorationOutput;
+	});
+	const restoreNarrow = _overrideNarrowRunnerForTest('doc.decision.trace', {
+		schema: {},
+		async prepare(_e: Exploration, c: ExplorationRunnerContext) { seen['narrow'] = c.repoCompleteness; throw new Error('probe: context read'); },
+		finalize() { throw new Error('not reached'); },
+	} as never);
+	try {
+		const plan = (label: string, type: ExplorationType = 'concept.resolve') => ({
+			answerType: 'structural-map' as const, synthesisHint: 't',
+			explorations: [{ id: `e-${label}`, type, purpose: 'test', params: { label, topic: 'x', query: 'q' } }],
+		});
+		await executePlan({ runId: 't16', repoPath: REPO, closureRepos: [REPO], repoLastIndexedAtMs: 1n, plan: plan('executePlan') });
+		await stepPlan({ runId: 't16', repoPath: REPO, closureRepos: [REPO], repoLastIndexedAtMs: 1n, plan: plan('stepPlan') });
+		await stepPlan({ runId: 't16', repoPath: REPO, closureRepos: [REPO], repoLastIndexedAtMs: 1n, plan: plan('narrow', 'doc.decision.trace') });
+		const unregistered = join(dir, 'not-registered');
+		await executePlan({ runId: 't16', repoPath: unregistered, closureRepos: [unregistered], repoLastIndexedAtMs: 1n, plan: plan('unregistered') });
+
+		assert.deepEqual(seen['executePlan'], expected, 'executePlan');
+		assert.deepEqual(seen['stepPlan'], expected, 'stepPlan, deterministic lookup');
+		assert.deepEqual(seen['narrow'], expected, 'stepPlan, narrow lookup');
+		assert.ok('unregistered' in seen && seen['unregistered'] === undefined, 'an unregistered repository has no repository facts');
+	} finally {
+		_overrideRunnerForTest('concept.resolve', restoreRunner);
+		restoreNarrow();
+	}
+});
+
+test('s1/t16: graphCompleteness gives the same record for its existing arguments, and the nine lookups that do not walk relationships do not pass repoCompleteness', () => {
+	const limit = { what: 'callers', limit: 5, scope: 'overall' as const, reason: '9 callers were found and 5 are kept' };
+	const cases = [
+		{ returned: 0 },
+		{ returned: 3, found: 3 },
+		{ returned: 5, found: 9, limited: [limit] },
+		{ returned: 2, skipped: [{ what: 'a.ts', reason: 'unreadable' }], rule: 'Only the closure is read.' },
+		{ returned: 1, found: null },
+	];
+	for (const args of cases) {
+		const r = graphCompleteness(args);
+		assert.deepEqual(graphCompleteness({ ...args, repoCompleteness: undefined }), r, 'absent repository facts change nothing');
+		assert.deepEqual(graphCompleteness({ ...args, repoCompleteness: COMPLETE }), r, 'a complete repository changes nothing');
+		assert.equal(r.basis, 'graph');
+		assert.equal(r.basisNote, args.rule !== undefined ? `${GRAPH_BASIS_NOTE}. ${args.rule}` : GRAPH_BASIS_NOTE);
+	}
+	assert.deepEqual(graphCompleteness({ returned: 0 }), { complete: true, total: 0, returned: 0, basis: 'graph', basisNote: GRAPH_BASIS_NOTE });
+	assert.deepEqual(graphCompleteness({ returned: 5, found: 9, limited: [limit] }), { complete: false, total: 9, returned: 5, limited: [limit], basis: 'graph', basisNote: GRAPH_BASIS_NOTE });
+
+	const analyze = join(dirname(new URL(import.meta.url).pathname), '..', '..');
+	const nonRelationship = [
+		'explore/concept-resolve.ts', 'explore/manifests-locate.ts', 'explore/symbol-locate.ts', 'explore/test-locate.ts',
+		'runtimes/code/discovery-entrypoints.ts', 'runtimes/code/discovery-modules.ts', 'runtimes/code/structure-module-tree.ts',
+		'runtimes/code/surface-functional.ts', 'runtimes/shared/adherence.ts',
+	];
+	for (const f of nonRelationship) {
+		const src = readFileSync(join(analyze, f), 'utf8');   // a missing file fails the test
+		assert.match(src, /graphCompleteness\(/, `${f} is a graphCompleteness caller`);
+		assert.doesNotMatch(src, /repoCompleteness/, `${f} does not pass repoCompleteness`);
+	}
+	for (const f of ['usage-example', 'import-graph', 'class-hierarchy', 'data-model-trace', 'convention-detect']) {
+		const src = readFileSync(join(analyze, 'explore', `${f}.ts`), 'utf8');
+		assert.equal((src.match(/repoCompleteness: ctx\.repoCompleteness/g) ?? []).length, 2, `${f}.ts passes it at both of its calls`);
+	}
 });

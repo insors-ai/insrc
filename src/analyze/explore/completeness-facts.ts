@@ -13,6 +13,7 @@
 import type { SearchGrepData } from '../../daemon/tools/builtins/search/grep.js';
 import { buildCompleteness } from '../completeness.js';
 import type { Completeness, PartlyReadItem, ReachedLimit, SkippedItem } from '../completeness.js';
+import type { RepoCompleteness } from '../../shared/types.js';
 
 /**
  * Carried by every result that rests on the stored code graph. The graph's
@@ -71,7 +72,12 @@ export function graphCompleteness(args: {
 	readonly partlyRead?: readonly PartlyReadItem[] | undefined;
 	/** A rule of this lookup that bounds what it looks at, added to the basis note. */
 	readonly rule?:     string | undefined;
+	/** The repository's index completeness (Epic c2ba6fa6 s1), passed by the lookups that walk
+	 *  relationships: an incomplete index makes the result not established, with its reasons. */
+	readonly repoCompleteness?: RepoCompleteness | undefined;
 }): Completeness {
+	const incomplete = args.repoCompleteness !== undefined && !args.repoCompleteness.complete ? args.repoCompleteness : undefined;
+	const note = args.rule !== undefined ? `${GRAPH_BASIS_NOTE}. ${args.rule}` : GRAPH_BASIS_NOTE;
 	return buildCompleteness({
 		returned:  args.returned,
 		...(args.found   !== undefined ? { total: args.found }     : {}),
@@ -79,8 +85,14 @@ export function graphCompleteness(args: {
 		...(args.skipped !== undefined ? { skipped: args.skipped } : {}),
 		...(args.partlyRead !== undefined ? { partlyRead: args.partlyRead } : {}),
 		basis:     'graph',
-		basisNote: args.rule !== undefined ? `${GRAPH_BASIS_NOTE}. ${args.rule}` : GRAPH_BASIS_NOTE,
+		basisNote: incomplete !== undefined ? `${note}. ${repoIncompleteNote(incomplete)}` : note,
+		...(incomplete !== undefined ? { notEstablished: true } : {}),
 	});
+}
+
+/** The basis-note sentence for a repository whose index is not complete: each reason carries its count. */
+export function repoIncompleteNote(c: RepoCompleteness): string {
+	return `The repository's index is not complete: ${c.reasons.length > 0 ? c.reasons.join('; ') : 'no reason was recorded'}`;
 }
 
 /**

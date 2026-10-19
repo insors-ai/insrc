@@ -45,7 +45,7 @@ import { LEDGER_EXCLUDE_GLOBS } from '../../../workflow/runners/build/changed-fi
 import { resolveStoryRangeBase } from '../../../workflow/runners/build/range-base.js';
 import { buildAdherencePrompt } from '../../../workflow/code-review/dimensions/adherence.js';
 import { buildConventionsPrompt } from '../../../workflow/code-review/dimensions/conventions.js';
-import { buildCoveragePrompt } from '../../../workflow/code-review/dimensions/coverage.js';
+import { buildCoveragePrompt, normalizeCoverageFindings, prepareCoverageGrounding } from '../../../workflow/code-review/dimensions/coverage.js';
 import { buildQualityPrompt } from '../../../workflow/code-review/dimensions/quality.js';
 import { buildFunctionalCoveragePrompt } from '../../../workflow/code-review/dimensions/functional-coverage.js';
 import { buildDiagramPrompt } from '../../../workflow/code-review/dimensions/diagram/index.js';
@@ -181,6 +181,9 @@ export function buildJudgementsSchema(dims: readonly ReviewDimension[]): Record<
 									expectationRef: { type: 'string' },
 									counterpartRef: { type: 'string' },
 									confidence:     { type: 'string', enum: ['observation', 'breach'] },
+									// coverage (ISSUE-b47dadc7): what the finding is about, and the listed symbol it names.
+									findingKind:    { type: 'string', enum: ['symbol-coverage', 'promised-test', 'other'] },
+									symbolId:       { type: 'string' },
 								},
 							},
 						},
@@ -364,7 +367,7 @@ async function handleStart(
 		repo, epicHash, storyId, subject, grounding,
 	});
 
-	return emitJudgementsResult(subject, grounding, token);
+	return emitJudgementsResult(subject, grounding, token, 'full');
 }
 
 /**
@@ -394,6 +397,7 @@ async function beginDiffOnlyReview(
 
 	let grounding: CodeReviewGrounding;
 	let changedFiles: readonly string[];
+	let scoped: Pick<CodeReviewSubject, 'changeSetAttribution' | 'sharedWithExcluded'>;
 	try {
 		// The same base and the same ledger exclusion the graph path's subject uses
 		// (ISSUE-5f7a7cb9), so the two paths review the same Story range. `undefined`
@@ -401,9 +405,11 @@ async function beginDiffOnlyReview(
 		const diff = await deps.assembleDiffGrounding(repo, undefined, {
 			base:         resolveStoryRangeBase(repo, subject.epicHash, subject.storyId),
 			excludeGlobs: LEDGER_EXCLUDE_GLOBS,
+			storyKey:     `${subject.epicHash}/${subject.storyId}`,
 		});
 		grounding = diff.grounding;
 		changedFiles = diff.changedFiles;
+		scoped = { changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded };
 	} catch (err) {
 		if (err instanceof DiffUnavailableError) {
 			return errorResult('diff-unavailable', `insrc_code_review_step: could not read the changed-file diff — ${err.message}.`, true);
@@ -412,8 +418,9 @@ async function beginDiffOnlyReview(
 	}
 
 	// Re-key the subject to the diff-derived changed set (post-commit the s9
-	// working-tree set is empty; the diff path recovers it from the last commit).
-	const diffSubject: CodeReviewSubject = { ...subject, changedFiles };
+	// working-tree set is empty; the diff path recovers it from the last commit),
+	// and to how the diff scoped it (ISSUE-b47dadc7).
+	const diffSubject: CodeReviewSubject = { ...subject, changedFiles, ...scoped };
 
 	const token = saveState({
 		runId:       `cr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -423,16 +430,17 @@ async function beginDiffOnlyReview(
 		fallbackReason: reason,
 	});
 
-	return emitJudgementsResult(diffSubject, grounding, token);
+	return emitJudgementsResult(diffSubject, grounding, token, 'degraded');
 }
 
 /** Build the emit_judgements frame — the four per-dimension charges over the
  *  grounding + the judgements schema. Shared by the fresh graph path and the s10
  *  diff-only path (the four prompt builders consume grounding.symbols unchanged). */
 function emitJudgementsResult(
-	subject:   CodeReviewSubject,
-	grounding: CodeReviewGrounding,
-	token:     string,
+	subject:       CodeReviewSubject,
+	grounding:     CodeReviewGrounding,
+	token:         string,
+	groundingMode: 'full' | 'degraded',
 ): CodeReviewStepOutput {
 	const dims = expectedDimensions(subject);
 	// Prompts are keyed off the COMPUTED dims (not the content predicates) so a
@@ -441,7 +449,8 @@ function emitJudgementsResult(
 	const prompts = [
 		buildAdherencePrompt(subject, grounding, undefined),
 		buildConventionsPrompt(subject, grounding, undefined),
-		buildCoveragePrompt(subject, grounding, undefined),
+		// The same prepared symbol list the daemon's coverage judge sees (ISSUE-b47dadc7).
+		buildCoveragePrompt(subject, prepareCoverageGrounding(subject, grounding, groundingMode), undefined, { groundingMode }),
 		buildQualityPrompt(subject, grounding, undefined),
 		...(dims.includes('functional-coverage') ? [buildFunctionalCoveragePrompt(subject, grounding, undefined)] : []),
 		...(dims.includes('diagram') ? [buildDiagramPrompt(subject, grounding, undefined)] : []),
@@ -516,6 +525,15 @@ async function handleJudgements(
 		return errorResult('bad-judgements', `insrc_code_review_step: ${validated.message}`, true);
 	}
 	const byDimension = validated.byDimension;
+	const degraded = payload.groundingMode === 'degraded';
+
+	// Coverage HIGHs are normalised against the same prepared grounding the daemon
+	// judge uses, so both paths fold the same verdict (ISSUE-b47dadc7).
+	const coverage = byDimension.get('coverage');
+	if (coverage !== undefined) {
+		const prepared = prepareCoverageGrounding(payload.subject, grounding, degraded ? 'degraded' : 'full');
+		byDimension.set('coverage', normalizeCoverageFindings(coverage, prepared, payload.subject));
+	}
 
 	// Drive the SAME sc5 runCodeReview with injected deps: each judge returns the
 	// matching (already scope-dropped) DimensionResult; grounding is replayed from
@@ -535,7 +553,6 @@ async function handleJudgements(
 	// runner with groundingMode:'degraded' + capVerdictAtWarn:true, so the record is
 	// marked degraded and a clean fold can never register a pass. The graph path
 	// passes neither (⇒ 'full', uncapped) — byte-identical to s9.
-	const degraded = payload.groundingMode === 'degraded';
 
 	return await driveRunner(step.state, payload.subject, injected, deps, degraded, payload.fallbackReason);
 }

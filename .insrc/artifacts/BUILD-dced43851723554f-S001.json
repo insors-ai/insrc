@@ -1,0 +1,182 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "dced43851723554f",
+    "storyId": "S001",
+    "createdAt": "2026-10-18T11:35:11.055Z",
+    "updatedAt": "2026-10-18T13:53:49.427Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-18T10:54:00.951Z",
+    "epicSlug": "keep-document-summaries-across-full-index",
+    "approvedAt": "2026-10-18T13:53:49.733Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Pushed t1-t5 to main and updated the installed daemon (0fb0c2b7). The restore wrote 21,993 of the backup's 22,216 summaries (summary rows 321 -> 22,277 across six repositories); a second run wrote 0 and the backup's SHA-256 is unchanged. A reindex of this repository carried 10,996 summaries and wrote all 10,996 back. Evidence in smoke.md (52162130).",
+    "testRecord": {
+      "md": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-dced43851723554f-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/er-model.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/keep-document-summaries-across-full-index-E20261018dced4385/S001/smoke.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/summariser/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/doc-summary-restore-ipc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/doc-summary-carry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/doc-summary-restore.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/entities-return-to-pending.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/db/doc-summaries.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/db/index-state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/doc-summary-sweep.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/full-index-rebuild.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T13:53:49.427Z"
+      }
+    ],
+    "commit": "a9e9933d"
+  }
+}

@@ -1,0 +1,461 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792241287451-ileqpe",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T12:49:41.555Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 94081,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "epicSlug": "understand-changes-before-committing",
+    "storyId": "s1",
+    "lldRunId": "wf-1792240611397-p3t0ur",
+    "lldEffectiveHash": "0b18f1868092f658a04b0e37289cd2f22064f72dc7fa70046b626365a0e5e8bb",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-17T12:54:50.832Z",
+    "rangeBase": "8be1fb642dc0e266cd44670bfa5f6bb17d8f0955"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build the daemon foundation that keeps personal understanding checks recoverable and private. Reuse existing storage, transport and lifecycle infrastructure, with strict identity, revision and deletion checks. Verify provider identity sources explicitly and deliver tested contracts for the later assessment and editor stories.",
+      "audience": "product"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Resolve learner identity and verify adapter sources",
+        "summary": "Implement approved identity resolver and local principal binding; document each GitHub/GitLab/Jira adapter's actual module, authenticated metadata source, stable-ID field and unavailable behavior. Reuse existing connections; no login flow or account inference from remote ownership.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Single connected identity wins; multiple use repository Git email; no usable provider/Git identity falls back to OS",
+          "No automatic identity merge, case folding, agent/commit-author substitution or raw identity logging",
+          "Missing adapter is explicit; an available authenticated identity is discovered rather than silently ignored",
+          "Add and pass focused tests for this task before proceeding.",
+          "Source matrix names actual module/source/stable-ID field per provider, or evidence of missing integration; fixtures distinguish disconnected, unavailable lookup and missing adapter."
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Identity source precedence, authority separation and no automatic merge"
+          },
+          {
+            "level": "integration",
+            "name": "Provider source matrix and available/disconnected/missing/failed adapters; Git/OS fallback"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Define validated assessment and transport contracts",
+        "summary": "Implement sc1/sc2 types, runtime schemas, canonical scope tuple and safe public projections; private payload validation is extended by sibling-owned domain schemas.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Fingerprint includes every exact sc1 field, commitMode and ordered parents",
+          "Retain sc4 unsure/low/medium/high confidence; distinguish unanswered drafts",
+          "Malformed fields, forged authority, unsupported versions and missing domain handlers fail closed",
+          "Add and pass focused tests for this task before proceeding."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Scope fingerprint full-field vectors and strict schemas"
+          },
+          {
+            "level": "unit",
+            "name": "sc4 confidence fidelity and public projection key exclusion"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add assessment storage namespaces",
+        "summary": "Add eight GraphStore namespaces and typed access layer, raise MAX_DBS to64; initialize independent assessment schema version1 without rewriting existing data.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "All35 named databases open on fresh and existing stores",
+          "Collision-free keys, owner/scope indexes and bounded pagination",
+          "Malformed/newer/missing schema with existing data never resets or passes",
+          "Add and pass focused tests for this task before proceeding."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Open complete namespace inventory fresh and existing; retain old data"
+          },
+          {
+            "level": "integration",
+            "name": "Reject missing/corrupt/future schema; owner-index pagination"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement atomic mutations and resumable records",
+        "summary": "Implement prepare/resume/cancel and internal validated mutation boundary with immutable attempts/audit and request deduplication; sibling authorization unavailable.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Current/history/index/request updates atomic, acknowledged only after commit",
+          "Stale revision conflicts return owner projection; exact replay no duplicate attempt; changed payload conflicts",
+          "No delivery mutation, LLM call, pass or receipt from foundation alone",
+          "Add and pass focused tests for this task before proceeding."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Concurrent CAS, exact replay, request conflict and transaction rollback"
+          },
+          {
+            "level": "integration",
+            "name": "Immutable original and assisted attempts resume after reopen"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement recovery, deletion and local privacy",
+        "summary": "Recover interrupted jobs; enforce owner-only access and local filesystem permissions; delete all record families and invalidate late callbacks and in-memory state.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Restart retains attempts but revokes uncertain authorizations",
+          "Delete races/retries cannot resurrect history; no automatic TTL/sharing",
+          "Different owners cannot read/list/delete/watch; permissions fail closed; logs omit answers and identity",
+          "Add and pass focused tests for this task before proceeding."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Interrupted job recovery and late completion rejected"
+          },
+          {
+            "level": "integration",
+            "name": "Deletion races, owner isolation, permission checks and log redaction"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Expose daemon RPC and watch protocol",
+        "summary": "Register proposed understanding routes with typed success/error results and full redacted projections in existing progress stream frames.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Input validation, owner checks and current revision applied before mutation/replay",
+          "Watch subscribes before snapshot; monotonic coalesced revisions and reconnect refresh",
+          "Explicit done/error terminal, request-ID correlation, abort cleanup; no hidden answer keys",
+          "Add and pass focused tests for this task before proceeding."
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "RPC forged-input rejection and typed revision-conflict result"
+          },
+          {
+            "level": "integration",
+            "name": "Real watch framing, snapshot race, reconnect, terminal and abort fixtures"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Integrate startup, shutdown and reasoning roles",
+        "summary": "Register five understanding roles critical/core; startup recovery before requests; service stop hook and bounded socket-write flush before stores close.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Missing role descriptor unavailable, no fallback to mid",
+          "Healthy shutdown emits unavailable/done then flushes for at most1000ms",
+          "Existing20s backstop and locks-lost exit remain authoritative; no wait on failed store",
+          "Add and pass focused tests for this task before proceeding."
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Five understanding roles critical/core and missing-role failure"
+          },
+          {
+            "level": "integration",
+            "name": "Healthy shutdown frame flush and bounded failure paths"
+          },
+          {
+            "level": "integration",
+            "name": "Preserve locks-lost exit and existing daemon shutdown regressions"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Verify story acceptance and publish consumer fixtures",
+        "summary": "Run cross-task integration and regression checks after task-local tests; supply versioned result/event fixtures for s5 and document adapter findings and sibling seams.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "All three story ACs proven against temporary isolated LMDB and sockets",
+          "Real crash/reopen/concurrency/delete and delivery-nonmutation evidence",
+          "Build and affected storage/server/shutdown/role tests pass; no live learner data or cloud calls"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "All three ACs: durability, unchanged delivery and no false pass"
+          },
+          {
+            "level": "smoke",
+            "name": "Build and affected storage, server, shutdown and role regression suites"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Single/multiple/zero providers; repo Git-email and OS fallback; whitespace/case/authority collisions; no automatic merge",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Every scope field affects fingerprint; ordered parents, null base and SHA format validation",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Malformed/newer/missing schema; unknown transition and role missing fail closed",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "All five roles critical/default core and existing core-floor routing",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Canonical fingerprint vectors: changing only commitMode changes hash; exact stagedTreeOid and ordered parentOids preserved; explicit null and SHA256 UTF-8 tuple encoding",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Submitted confidence round-trips all sc4 values unsure/low/medium/high unchanged; unanswered draft distinct from submission",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Persist original/assisted attempts and confidence, close/reopen daemon store, compare all records and associations",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Concurrent revision writes only one succeeds; duplicate request no extra attempt/audit; payload mismatch rejected",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fault before transaction commit rolls back current/history/request/indexes together",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Startup interrupted-job recovery and late callback discard; no pass or receipt",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Learner deletion removes every key family/cache, races restart and retry without resurrection",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Different owner cannot list/read/delete/watch; permission failure refuses activation",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Completed delivery artifacts byte-identical after prepare/cancel/failure/resume/delete",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Complete 35-database inventory opens within MAX_DBS=64 for fresh and existing stores; existing rows survive reopen and new namespace initialization",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Typed revision-conflict delivered inside result with owner-only projection",
+        "coveredByTaskIds": [
+          "t2",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Unknown fields, forged learner/grade/eligibility, oversized and unsafe numeric inputs rejected",
+        "coveredByTaskIds": [
+          "t2",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Snapshot subscription race, coalescing and reconnect full refresh; no stale Ready",
+        "coveredByTaskIds": [
+          "t2",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Public projection whitelist excludes rubric/answer keys/private job payloads",
+        "coveredByTaskIds": [
+          "t2",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Missing s2/s6/s7 modules return unavailable; override intent never grants permission",
+        "coveredByTaskIds": [
+          "t2",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Actual IpcStreamMessage progress/data framing, substituted request ID, explicit done/error terminal, unsubscribe on abort and no post-terminal events",
+        "coveredByTaskIds": [
+          "t2",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Healthy daemon shutdown with active watch: stop hook before store close, final unavailable/done flushed; 1000ms bounded flush and disconnect/locks-lost paths never hang or imply pass",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 LearnerIdentity and resolved identity precedence (§3.1)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 AssessmentScope, sc1/sc2 and confidence/projection contracts (§2, §3.2–3.3)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 AssessmentRecord namespaces and schema version (§3.3, §3.7)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 CommandEnvelope, transactions and error paths (§3.4, §6)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 Deletion/privacy and interrupted recovery (§3.6, §6)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 RPC result and observation protocol (§3.5)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 Shutdown integration and critical roles (§3.5, §3.7)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 Test strategy and AC mapping (§7)"
+    }
+  ]
+}

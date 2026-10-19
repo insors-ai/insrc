@@ -28,6 +28,7 @@ import {
 	listDocSummariesForRepo,
 	listDocSummaryEntityIdsForRepo,
 	writeDocSummary,
+	writeDocSummaryIfCurrent,
 } from '../doc-summaries.js';
 import { deleteEntitiesForFile, upsertEntities } from '../entities.js';
 import { addRepo } from '../repos.js';
@@ -179,6 +180,34 @@ test('writeDocSummary rejects an unregistered repo', async () => {
 // ---------------------------------------------------------------------------
 // Per-repo list + count
 // ---------------------------------------------------------------------------
+
+test('writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo', async () => {
+	const file = `${REPO_A}/design/foo.md`;
+	const e = makeDocEntity(REPO_A, file, 'foo');
+	await upsertEntities(null, [e]);
+	const current = createHash('sha256').update(e.body, 'utf8').digest('hex');
+
+	assert.equal(await writeDocSummaryIfCurrent(null, e.id, REPO_A, makeSummary({ contentHash: current, title: 'Current' })), 'written');
+	assert.equal((await getDocSummary(null, e.id))?.title, 'Current');
+
+	// Summarised from text the document no longer has: nothing is written.
+	assert.equal(await writeDocSummaryIfCurrent(null, e.id, REPO_A, makeSummary({ contentHash: 'hash-of-older-text', title: 'Stale' })), 'body-changed');
+	assert.equal((await getDocSummary(null, e.id))?.title, 'Current', 'the stored summary is untouched');
+	await upsertEntities(null, [{ ...e, body: `${e.body}\nEdited.` }]);
+	assert.equal(await writeDocSummaryIfCurrent(null, e.id, REPO_A, makeSummary({ contentHash: current, title: 'Before the edit' })), 'body-changed');
+	assert.equal((await getDocSummary(null, e.id))?.title, 'Current');
+
+	await assert.rejects(
+		writeDocSummaryIfCurrent(null, e.id, '/repo/not-registered', makeSummary({ contentHash: createHash('sha256').update(`${e.body}\nEdited.`, 'utf8').digest('hex') })),
+		/is not registered/,
+	);
+
+	// Deleted (the delete drops the summary): a late write does not bring one back.
+	await deleteEntitiesForFile(null, file);
+	assert.equal(await writeDocSummaryIfCurrent(null, e.id, REPO_A, makeSummary({ contentHash: current })), 'entity-gone');
+	assert.equal(await getDocSummary(null, e.id), null);
+	assert.equal(await writeDocSummaryIfCurrent(null, makeEntityId(REPO_A, file, 'document', 'never-indexed'), REPO_A, makeSummary()), 'entity-gone');
+});
 
 test('listDocSummariesForRepo returns every summary for the repo', async () => {
 	const a1 = makeDocEntity(REPO_A, `${REPO_A}/design/one.md`, 'one');

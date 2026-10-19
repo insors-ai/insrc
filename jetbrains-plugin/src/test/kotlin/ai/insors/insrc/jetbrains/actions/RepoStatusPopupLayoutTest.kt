@@ -104,4 +104,38 @@ class RepoStatusPopupLayoutTest {
             "the Settings page must NOT be repointed at the new shared helper in this story (a2 rejected — no regression)",
         )
     }
+
+    // ---- completeness (Epic c2ba6fa6 s1/t14) --------------------------------
+
+    @Test
+    fun `the dialog's Index completeness group shows the reasons and counts of an incomplete repository, complete for a complete one, and unknown without the field`() {
+        val incomplete = ai.insors.insrc.jetbrains.daemon.RepoCompletenessDto(
+            complete = false,
+            reasons = listOf("1 file could not be indexed", "2 relationships point at files an ignore rule excludes"),
+            pending = mapOf("awaiting-target" to 2, "no-candidate" to 5),
+            unwritable = 0,
+            unembedded = 0,
+            uncommittedFiles = listOf("/home/dev/b/src/locked.ts"),
+            generation = 7,
+        )
+        assertEquals(
+            listOf(
+                "Completeness" to "incomplete",
+                "Reason" to "1 file could not be indexed",
+                "Reason" to "2 relationships point at files an ignore rule excludes",
+                "Awaiting a target" to "2",
+                "Could not be stored" to "0",
+                "Files not indexed" to "1",
+                "File not indexed" to "/home/dev/b/src/locked.ts",
+            ),
+            completenessRows(incomplete),
+        )
+        assertEquals(listOf("Completeness" to "complete"), completenessRows(incomplete.copy(complete = true, reasons = emptyList())))
+        assertEquals(listOf("Completeness" to "unknown"), completenessRows(null))
+
+        // The dialog renders that group from these rows.
+        val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/actions/RepoStatusDialog.kt")
+        assertTrue(src.contains("\"Index completeness\""), "an Index completeness group")
+        assertTrue(src.contains("completenessRows(s.completeness)"), "built from completenessRows")
+    }
 }

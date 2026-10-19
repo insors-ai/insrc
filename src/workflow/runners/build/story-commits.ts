@@ -22,9 +22,17 @@
  * index or the working tree. No exclusions are applied here; consumers keep
  * excluding through git (`git_diff`'s `exclude`).
  *
- * Known limits: upstream brought in by a fast-forward or by a committed
- * `git merge --squash` leaves only ordinary commits on the first-parent line,
- * so those commits are counted as Story work.
+ * Story attribution (ISSUE-b47dadc7): given a story key (`<epicHash>/<storyId>`),
+ * a non-merge commit is a unit only when its message carries the trailer
+ * `Insrc-Story: <storyKey>`, so another Story's commits on main in the same
+ * window are left out. When no commit in the range carries it, or the trailers
+ * cannot be read, the units are the first-parent ones above.
+ *
+ * Known limits: without the trailer, upstream brought in by a fast-forward or by
+ * a committed `git merge --squash` leaves only ordinary commits on the
+ * first-parent line, so those commits are counted as Story work. Merge edits are
+ * kept whatever the trailer says, and an octopus merge is reviewed over its
+ * whole change.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -57,6 +65,18 @@ export interface StoryChangeSet {
 	readonly foldedPaths: readonly string[];
 }
 
+/** How the units were chosen: by the Story's commit trailer, or every first-parent commit. */
+export type StoryAttribution = 'story-trailer' | 'first-parent-range';
+
+export interface AttributedStoryChangeSet extends StoryChangeSet {
+	readonly attribution:        StoryAttribution;
+	/** Story paths that a commit left out by the trailer also changed (empty for 'first-parent-range'). */
+	readonly sharedWithExcluded: readonly string[];
+}
+
+/** The trailer every build commit of a Story carries (ISSUE-b47dadc7). */
+export const STORY_TRAILER_KEY = 'Insrc-Story';
+
 const MAX_BUFFER = 64 * 1024 * 1024;
 
 /** Run git and return stdout; exit codes in `okCodes` (besides 0) are not failures. */
@@ -75,14 +95,62 @@ function zPaths(out: string): string[] {
 	return out.split('\0').filter(p => p.length > 0);
 }
 
+interface TrailerScan {
+	/** Commits whose message carries the Story's trailer. */
+	readonly carrying: ReadonlySet<string>;
+	/** Each commit's subject line, for the missed-commit warning. */
+	readonly subjects: ReadonlyMap<string, string>;
+	/** Abbreviated sha of the newest carrying commit on the first-parent line. */
+	readonly newest:   string | undefined;
+}
+
+/** The first-parent commits in the range that carry `Insrc-Story: <storyKey>`;
+ *  undefined when the trailers cannot be read. */
+function scanTrailers(repoPath: string, base: string, storyKey: string): TrailerScan | undefined {
+	let out: string;
+	try {
+		out = git(repoPath, ['log', '--first-parent', `--format=%H%x1f%h%x1f%s%x1f%(trailers:key=${STORY_TRAILER_KEY},valueonly,separator=%x1f)%x1e`, `${base}..HEAD`]);
+	} catch (err) {
+		log.warn({ repoPath, storyKey, err: err instanceof Error ? err.message : String(err) }, 'storyChangeSet: could not read commit trailers; using the first-parent range');
+		return undefined;
+	}
+	const carrying = new Set<string>();
+	const subjects = new Map<string, string>();
+	let newest: string | undefined;
+	// git log lists newest first, so the first carrying commit is the newest.
+	for (const record of out.split('\x1e')) {
+		const [sha, short, subject, ...values] = record.trim().split('\x1f');
+		if (sha === undefined || sha.length === 0) continue;
+		subjects.set(sha, subject ?? '');
+		if (values.some(v => v.trim() === storyKey)) {
+			carrying.add(sha);
+			newest ??= short;
+		}
+	}
+	return { carrying, subjects, newest };
+}
+
+/** The abbreviated sha of the newest first-parent commit since `base` carrying
+ *  `Insrc-Story: <storyKey>`; undefined when none does or the trailers cannot
+ *  be read. Never throws. */
+export function newestStoryCommit(repoPath: string, base: string, storyKey: string): string | undefined {
+	return scanTrailers(repoPath, base, storyKey)?.newest;
+}
+
 /**
  * The Story's own change units since `base` — see the module comment. Throws
  * {@link NoBuildChangesError} when git fails (for example, an unresolvable base).
  */
-export function storyChangeSet(repoPath: string, base: string): StoryChangeSet {
+export function storyChangeSet(repoPath: string, base: string, opts: { readonly storyKey?: string | undefined } = {}): AttributedStoryChangeSet {
 	// Each line: "<commit> <parent>..." along the first-parent line, oldest first.
 	const lines = git(repoPath, ['rev-list', '--first-parent', '--reverse', '--parents', `${base}..HEAD`])
 		.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+	const { storyKey } = opts;
+	const scan = storyKey !== undefined ? scanTrailers(repoPath, base, storyKey) : undefined;
+	const byTrailer = scan !== undefined && scan.carrying.size > 0;
+	const storyId = storyKey?.split('/')[1];
+	const excludedPaths = new Set<string>();
 
 	let emptyTree: string | undefined;
 	const units: StoryChangeUnit[] = [];
@@ -96,6 +164,14 @@ export function storyChangeSet(repoPath: string, base: string): StoryChangeSet {
 			const parent = parents[0];
 			const from = parent ?? (emptyTree ??= git(repoPath, ['hash-object', '-t', 'tree', '/dev/null']).trim());
 			const paths = zPaths(git(repoPath, ['diff-tree', '--no-commit-id', '--name-only', '-r', '-z', '--root', ref]));
+			if (byTrailer && !scan.carrying.has(ref)) {
+				for (const p of paths) excludedPaths.add(p);
+				const subject = scan.subjects.get(ref) ?? '';
+				if (storyId !== undefined && subject.includes(`(build): ${storyId}/`)) {
+					log.warn({ repoPath, storyKey, commit: ref, subject }, 'storyChangeSet: a commit names this Story but lacks its trailer; left out of the change set');
+				}
+				continue;
+			}
 			if (paths.length > 0) units.push({ kind: 'commit', ref, from, to: ref, paths });
 			continue;
 		}
@@ -125,6 +201,8 @@ export function storyChangeSet(repoPath: string, base: string): StoryChangeSet {
 		units,
 		sharedPaths: paths.filter(p => mergedIn.has(p)),
 		foldedPaths: [...new Set(units.filter(u => u.kind === 'merge-edit').flatMap(u => u.paths))].sort(),
+		attribution: byTrailer ? 'story-trailer' : 'first-parent-range',
+		sharedWithExcluded: paths.filter(p => excludedPaths.has(p)),
 	};
 }
 

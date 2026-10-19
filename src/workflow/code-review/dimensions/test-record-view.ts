@@ -54,6 +54,19 @@ export interface TestRecordView {
 	readonly buildTasks: readonly { readonly taskId: string; readonly passed: 'pass' | 'fail' | 'unavailable' }[];
 	/** Parts of the records that could not be used, and why. */
 	readonly notes: readonly string[];
+	/** Named tests the gate could not run (smoke / live) whose result the builder
+	 *  reported, from the latest run that reported each (ISSUE-11e2b8a7). Omitted
+	 *  when there is none, so such a view reads as before. */
+	readonly reportedTests?: readonly ReportedTestView[] | undefined;
+}
+
+/** A named test's builder-reported result: reported, not run by the gate. */
+export interface ReportedTestView {
+	readonly name:      string;
+	readonly result:    'pass' | 'fail';
+	readonly evidence:  string;
+	readonly source:    'reported by the builder, not run by the gate';
+	readonly decidedBy: { readonly taskId: string; readonly ranAt: string | null };
 }
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -129,7 +142,9 @@ export function testRecordView(subject: CodeReviewSubject): TestRecordView | nul
 	if (record === null) return null;
 	const notes: string[] = [];
 	const runsByFile = new Map<string, Run[]>();
+	const reported = new Map<string, { view: ReportedTestView; ranAtMs: number | undefined }>();
 	for (const task of record.body.tasks) {
+		collectReported(task, reported);
 		const files = (task as { files?: unknown }).files;
 		if (!Array.isArray(files)) {
 			notes.push(`task ${task.taskId} has no files list; it contributes no file runs`);
@@ -153,5 +168,31 @@ export function testRecordView(subject: CodeReviewSubject): TestRecordView | nul
 		const latest = runs.reduce(later);
 		return fileView(latest, runs.filter(r => r !== latest));
 	});
-	return { files, buildTasks: buildTasksOf(subject), notes };
+	const reportedTests = [...reported.keys()].sort().map(name => reported.get(name)!.view);
+	return { files, buildTasks: buildTasksOf(subject), notes, ...(reportedTests.length > 0 ? { reportedTests } : {}) };
+}
+
+/** Add the task's builder-reported named-test results to `into`, keeping per
+ *  name the latest by ranAt (a valid time beats none; on a tie a fail wins, so
+ *  a tie never yields a pass). Malformed entries are skipped. */
+function collectReported(task: unknown, into: Map<string, { view: ReportedTestView; ranAtMs: number | undefined }>): void {
+	if (!isPlainObject(task) || typeof task['taskId'] !== 'string' || !Array.isArray(task['tests'])) return;
+	const ranAt = typeof task['ranAt'] === 'string' ? task['ranAt'] : null;
+	const parsed = ranAt === null ? Number.NaN : Date.parse(ranAt);
+	const ranAtMs = Number.isFinite(parsed) ? parsed : undefined;
+	for (const t of task['tests'] as unknown[]) {
+		if (!isPlainObject(t) || typeof t['name'] !== 'string' || !isPlainObject(t['reported'])) continue;
+		const r = t['reported'];
+		if ((r['result'] !== 'pass' && r['result'] !== 'fail') || typeof r['evidence'] !== 'string') continue;
+		const view: ReportedTestView = {
+			name: t['name'], result: r['result'], evidence: r['evidence'],
+			source: 'reported by the builder, not run by the gate',
+			decidedBy: { taskId: task['taskId'], ranAt },
+		};
+		const prior = into.get(view.name);
+		const newer = prior === undefined
+			|| (ranAtMs !== undefined && (prior.ranAtMs === undefined || ranAtMs > prior.ranAtMs))
+			|| (ranAtMs === prior.ranAtMs && view.result === 'fail');
+		if (newer) into.set(view.name, { view, ranAtMs });
+	}
 }

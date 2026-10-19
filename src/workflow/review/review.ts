@@ -24,10 +24,46 @@ import { isDesignStage } from './template.js';
 import { runTemplateReview } from './template-review.js';
 import type { DesignIntent } from './template.js';
 import type { EntitiesForRepoReader } from './source-roots.js';
-import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
+import type { Claim, Evidence, Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
 import { computeVerdict, DEFAULT_BLOCK_ON, severityForOutcome, tally } from './verdict.js';
 
 export { severityForOutcome };
+
+/** The codex session a failed call ran in, when its error names one, so a stall can be followed up. */
+function codexSessionOf(message: string): string | undefined {
+	return /"thread_id":"([^"]+)"/.exec(message)?.[1];
+}
+
+/**
+ * Judge one premise; a failed or stalled call is retried once as a fresh call.
+ * One that fails again is recorded as not judged (MED, never a pass) with its
+ * cause, so the premises already judged and the rest of the review are kept
+ * (ISSUE-d4b2cd1c). A cancelled review still ends at once.
+ */
+async function verifyOrRecord(claim: Claim, ev: Evidence, provider: LLMProvider, signal: AbortSignal | undefined): Promise<Finding> {
+	let cause = '';
+	for (let attempt = 1; attempt <= 2; attempt++) {
+		try {
+			return await verifyClaim(claim, ev, provider, signal);
+		} catch (err) {
+			if (err instanceof Error && err.name === 'AbortError') throw err;
+			throwIfAborted(signal);
+			cause = err instanceof Error ? err.message : String(err);
+			const session = (err as { sessionId?: string | undefined }).sessionId ?? codexSessionOf(cause);
+			log.warn({ claimId: claim.id, attempt, codexSession: session, error: cause }, 'review:verify: the premise call failed');
+		}
+	}
+	return {
+		claimId: claim.id,
+		...(claim.ref !== undefined ? { ref: claim.ref } : {}),
+		kind: claim.kind,
+		severity: 'MED',
+		premise: claim.text,
+		evidence: `Not judged: the reviewing model call failed twice. Last error: ${cause}`,
+		action: 'Re-run the review, or judge this premise by hand.',
+		fixability: 'manual',
+	};
+}
 
 const log = getLogger('review');
 
@@ -99,7 +135,7 @@ export async function runReview(
 		throwIfAborted(signal);
 		emit(`verify:${claim.id}`);
 		const ev = evidenceById.get(claim.id) ?? { claimId: claim.id, grepResults: [], reads: [] };
-		findings.push(await verifyClaim(claim, ev, provider, signal));
+		findings.push(await verifyOrRecord(claim, ev, provider, signal));
 	}
 
 	const counts = tally(findings);

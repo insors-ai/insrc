@@ -169,3 +169,29 @@ test('editing the ghHost row of the rendered tracker section posts repoTrackerWr
   handlers[0]!();
   assert.deepEqual(posted.at(-1), { type: 'repoTrackerWrite', repoPath, key: 'ghHost', value: null });
 });
+
+test('renderDaemonTab lists each repository with its status and completeness: complete, incomplete with its reasons, and the status alone without the field (Epic c2ba6fa6 s1)', async () => {
+  const counts = { pending: { 'awaiting-target': 1, ambiguous: 0, 'no-candidate': 0, 'external-endpoint': 0 }, unwritable: 0, unembedded: 0, uncommittedFiles: 1 };
+  const html = await renderDaemonTab(fakeGateway({ registeredRepos: async () => [
+    { path: '/w/a', name: 'a', status: 'ready', completeness: { complete: true, reasons: [], counts, uncommittedFiles: [], generation: 1 } },
+    { path: '/w/b', name: 'b', status: 'ready', completeness: { complete: false, reasons: ['1 file could not be indexed', '1 relationship awaits a target that is not stored yet'], counts, uncommittedFiles: ['/w/b/x.ts'], generation: 2 } },
+    { path: '/w/c', name: 'c', status: 'indexing' },
+  ] }));
+  const item = (name: string): string => {
+    const m = new RegExp(`<li class="repo"><span class="repo-name"[^>]*>${name}</span>.*?(?=<li class="repo">|</ul></section>)`).exec(html);
+    assert.ok(m, `no list item for ${name}: ${html}`);
+    return m[0];
+  };
+  assert.match(html, /class="state">running/, 'the daemon status is still shown');
+  assert.match(item('a'), /class="status">ready<\/span> <span class="completeness complete">complete<\/span>/);
+  assert.doesNotMatch(item('a'), /incomplete|class="reasons"/);
+  assert.match(item('b'), /class="completeness incomplete">incomplete<\/span><ul class="reasons"><li>1 file could not be indexed<\/li><li>1 relationship awaits a target that is not stored yet<\/li><\/ul>/);
+  assert.match(item('c'), /class="status">indexing<\/span>/);
+  assert.doesNotMatch(item('c'), /completeness/, 'no completeness shown when the field is absent (unknown)');
+});
+
+test('renderDaemonTab keeps the daemon status when repo.list fails, and says the list is unavailable', async () => {
+  const html = await renderDaemonTab(fakeGateway({ registeredRepos: async () => { throw new GatewayReadError('repo.list failed: socket closed'); } }));
+  assert.match(html, /class="state">running/);
+  assert.match(html, /Repositories unavailable: repo\.list failed: socket closed/);
+});

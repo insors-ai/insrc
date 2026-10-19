@@ -11,7 +11,7 @@
  */
 
 import { escapeHtml } from './html.js';
-import type { DaemonDataGateway, TabRenderer, WorkflowChainRow } from './types.js';
+import { GatewayReadError, type DaemonDataGateway, type RepoRef, type TabRenderer, type WorkflowChainRow } from './types.js';
 
 /** The Refresh control both tabs render; its click posts {type:'refresh'} (wired by the host bootstrap). */
 const REFRESH_CONTROL = `<button type="button" id="insrc-refresh" class="refresh" title="Re-read from the daemon">Refresh</button>`;
@@ -24,8 +24,39 @@ const REFRESH_CONTROL = `<button type="button" id="insrc-refresh" class="refresh
 export const renderDaemonTab: TabRenderer = async (gateway: DaemonDataGateway): Promise<string> => {
   const view = await gateway.status();
   const detail = view.detail !== undefined ? `<p class="detail">${escapeHtml(view.detail)}</p>` : '';
-  return `${REFRESH_CONTROL}<p class="state">${escapeHtml(view.state)}</p>${detail}`;
+  return `${REFRESH_CONTROL}<p class="state">${escapeHtml(view.state)}</p>${detail}${await repositoryList(gateway)}`;
 };
+
+/**
+ * The Daemon tab's repository list (Epic c2ba6fa6 s1): each repository with its
+ * status and whether its index is complete; an incomplete one lists its reasons
+ * (each carries its count); one with no completeness (a daemon before the
+ * change) shows the status alone. A failed repo.list read leaves the daemon's
+ * status shown and says the list is unavailable.
+ */
+async function repositoryList(gateway: DaemonDataGateway): Promise<string> {
+  let repos: readonly RepoRef[];
+  try {
+    repos = await gateway.registeredRepos();
+  } catch (err) {
+    if (!(err instanceof GatewayReadError)) throw err;
+    return `<section class="repos"><h3>Repositories</h3><p class="placeholder">Repositories unavailable: ${escapeHtml(err.message)}</p></section>`;
+  }
+  if (repos.length === 0) {
+    return `<section class="repos"><h3>Repositories</h3><p class="placeholder">No repositories registered.</p></section>`;
+  }
+  const items = repos.map((r) => {
+    const status = r.status !== undefined ? ` <span class="status">${escapeHtml(r.status)}</span>` : '';
+    const c = r.completeness;
+    const completeness = c === undefined
+      ? ''
+      : c.complete
+        ? ` <span class="completeness complete">complete</span>`
+        : ` <span class="completeness incomplete">incomplete</span><ul class="reasons">${c.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>`;
+    return `<li class="repo"><span class="repo-name" title="${escapeHtml(r.path)}">${escapeHtml(r.name !== '' ? r.name : r.path)}</span>${status}${completeness}</li>`;
+  });
+  return `<section class="repos"><h3>Repositories</h3><ul class="repo-list">${items.join('')}</ul></section>`;
+}
 
 /**
  * The Workflows tab (ac2): the workflow chain report. Reads gateway.workflowChain()

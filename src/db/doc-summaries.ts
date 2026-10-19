@@ -20,13 +20,18 @@
  * table.
  */
 
+import { createHash } from 'node:crypto';
+import { realpathSync, statSync } from 'node:fs';
+import { isAbsolute } from 'node:path';
+import { open } from 'lmdb';
 import { Packr, Unpackr } from 'msgpackr';
 
 import type { DocSummary } from '../shared/analyze-types.js';
 import type { DbClient } from './client.js';
-import { getGraphStore, withWriteTxn } from './graph/store.js';
+import { getGraphStore, getGraphStorePath, withWriteTxn } from './graph/store.js';
 import type { GraphStore } from './graph/store.js';
 import { encodeEntityKey, prefixSuccessor } from './graph/keys.js';
+import { decodeEntityRow } from './graph/codec.js';
 import { entityU64ForId, entityIdByU64 } from './entities.js';
 import { lookupRepoIdInTxn } from './repos.js';
 
@@ -175,6 +180,266 @@ export async function writeDocSummary(
 		s.docSummary.put(primaryKey, encodeDocSummary(summary));
 		s.docSummaryByRepo.put(encodeByRepoKey(repoId, u64), Buffer.alloc(0));
 	});
+}
+
+/** What `writeDocSummaryIfCurrent` did. */
+export type DocSummaryWriteOutcome = 'written' | 'entity-gone' | 'body-changed';
+
+/**
+ * Write a summary only if it is still current (Story b94cf2c9 S001): the
+ * summariser runs at the same time as code indexing, which may delete or
+ * rewrite the document while the model works. Checked inside the write
+ * transaction, so it is atomic with the entity delete (which drops the
+ * summary in its own transaction):
+ *
+ *   - the entity is unknown or its row is gone -> nothing written, 'entity-gone';
+ *   - the hash of the stored body is not `summary.contentHash` -> nothing
+ *     written, 'body-changed';
+ *   - otherwise the row is written exactly as `writeDocSummary` writes it.
+ *
+ * With `keepGoodSummary` (the summariser's error placeholder, ISSUE-dced4385)
+ * a stored summary with no errorCode for the same contentHash is kept:
+ * 'kept-good'.
+ *
+ * Throws as `writeDocSummary` does for an unregistered repo or a failed write.
+ * `writeDocSummary` itself is unchanged for its other callers.
+ */
+export function writeDocSummaryIfCurrent(
+	db: DbClient, entityId: string, repo: string, summary: DocSummary,
+): Promise<DocSummaryWriteOutcome>;
+export function writeDocSummaryIfCurrent(
+	db: DbClient, entityId: string, repo: string, summary: DocSummary,
+	opts: { readonly keepGoodSummary: true },
+): Promise<DocSummaryWriteOutcome | 'kept-good'>;
+export async function writeDocSummaryIfCurrent(
+	_db: DbClient,
+	entityId: string,
+	repo: string,
+	summary: DocSummary,
+	opts?: { readonly keepGoodSummary?: boolean | undefined },
+): Promise<DocSummaryWriteOutcome | 'kept-good'> {
+	return withWriteTxn(s => {
+		// The caller's repo is checked only when the row is about to be written, as before.
+		const outcome = writeIfCurrentInTxn(s, entityId, summary, { keepGoodSummary: opts?.keepGoodSummary }, () => {
+			const repoId = lookupRepoIdInTxn(s, repo);
+			if (repoId === undefined) throw unregisteredRepo(repo);
+			return repoId;
+		});
+		// No onlyIfAbsent here, so 'already-present' cannot come back.
+		return outcome as DocSummaryWriteOutcome | 'kept-good';
+	});
+}
+
+/**
+ * `writeDocSummaryIfCurrent` inside the caller's write transaction. The
+ * repository is the stored entity row's own (the backup restore and the
+ * carry write-back have no caller-supplied path).
+ *
+ *   - `onlyIfAbsent`: a document that already has a summary is left as it
+ *     is, 'already-present' (the backup restore never replaces one);
+ *   - `keepGoodSummary`: a stored summary with no errorCode and the same
+ *     contentHash is left as it is, 'kept-good'.
+ */
+export function writeDocSummaryIfCurrentInTxn(
+	s: GraphStore,
+	entityId: string,
+	summary: DocSummary,
+	opts: { readonly onlyIfAbsent?: boolean | undefined; readonly keepGoodSummary?: boolean | undefined } = {},
+): DocSummaryWriteOutcome | 'already-present' | 'kept-good' {
+	return writeIfCurrentInTxn(s, entityId, summary, opts, entityRepoId => entityRepoId);
+}
+
+/** The shared body: `indexRepoId` names the repo the by-repo index entry goes under, called only for a write. */
+function writeIfCurrentInTxn(
+	s: GraphStore,
+	entityId: string,
+	summary: DocSummary,
+	opts: { readonly onlyIfAbsent?: boolean | undefined; readonly keepGoodSummary?: boolean | undefined },
+	indexRepoId: (entityRepoId: number) => number,
+): DocSummaryWriteOutcome | 'already-present' | 'kept-good' {
+	// The id lookup is inside the transaction too, so a delete cannot land between it and the write.
+	const id = s.entityIdByString.get(entityId) as bigint | number | undefined;
+	if (id === undefined) return 'entity-gone';
+	const u64 = BigInt(id);
+	// Deleted with its id mapping in one transaction; read here for the body.
+	const row = s.entity.get(encodeEntityKey(u64)) as Buffer | undefined;
+	if (row === undefined) return 'entity-gone';
+	const entity = decodeEntityRow(row);
+	if (createHash('sha256').update(entity.body, 'utf8').digest('hex') !== summary.contentHash) return 'body-changed';
+	const storedBuf = s.docSummary.get(encodeEntityKey(u64)) as Buffer | undefined;
+	if (storedBuf !== undefined) {
+		if (opts.onlyIfAbsent === true) return 'already-present';
+		if (opts.keepGoodSummary === true) {
+			const stored = decodeDocSummary(storedBuf);
+			if (stored.errorCode === undefined && stored.contentHash === summary.contentHash) return 'kept-good';
+		}
+	}
+	const repoId = indexRepoId(entity.repoId);
+	s.docSummary.put(encodeEntityKey(u64), encodeDocSummary(summary));
+	s.docSummaryByRepo.put(encodeByRepoKey(repoId, u64), Buffer.alloc(0));
+	return 'written';
+}
+
+function unregisteredRepo(repo: string): Error {
+	return new Error(
+		`writeDocSummary: repo '${repo}' is not registered -- ` +
+		'cannot summarise a doc in an unregistered repo',
+	);
+}
+
+// ---------------------------------------------------------------------------
+// Carry across a full index (ISSUE-dced4385)
+// ---------------------------------------------------------------------------
+
+/** (repoId u32 BE || UTF-8 string entity id): the document's id survives the rebuild, its u64 does not. */
+export function encodeCarryKey(repoId: number, entityId: string): Buffer {
+	const id = Buffer.from(entityId, 'utf8');
+	const buf = Buffer.alloc(4 + id.length);
+	buf.writeUInt32BE(repoId, 0);
+	id.copy(buf, 4);
+	return buf;
+}
+
+/**
+ * Copy the summary of every entity in `u64s` into the carry, inside the
+ * caller's write transaction (the repository delete's, before its cascade
+ * removes the summaries). A carry row already present for the id is
+ * overwritten: the live summary is the newer one. Returns how many were carried.
+ */
+export function carryDocSummariesInTxn(s: GraphStore, repoId: number, u64s: readonly bigint[]): number {
+	let carried = 0;
+	for (const u64 of u64s) {
+		const buf = s.docSummary.get(encodeEntityKey(u64)) as Buffer | undefined;
+		if (buf === undefined) continue;
+		const entityId = s.entityStringByU64.get(encodeEntityKey(u64)) as string | undefined;
+		if (entityId === undefined) continue;
+		s.docSummaryCarry.put(encodeCarryKey(repoId, entityId), buf);
+		carried++;
+	}
+	return carried;
+}
+
+/** Delete every carry row of the repository, inside the caller's write transaction. */
+export function deleteCarriedDocSummariesInTxn(s: GraphStore, repoId: number): void {
+	const prefix = encodeByRepoPrefix(repoId);
+	const keys = [...s.docSummaryCarry.getKeys({ start: prefix, end: prefixSuccessor(prefix) })] as Buffer[];
+	for (const k of keys) s.docSummaryCarry.remove(k);
+}
+
+const CARRY_BATCH = 500;
+
+/**
+ * Write back the repository's carried summaries once the rebuild has stored
+ * its documents: each one goes through `writeDocSummaryIfCurrentInTxn`, so it
+ * lands under the document's current entity number only if the body still
+ * hashes to its contentHash. Each carry row is removed in the same write
+ * transaction as its outcome, CARRY_BATCH rows per transaction, so a failed
+ * batch leaves its rows carried for the next full index.
+ *
+ * A summary already stored for the document with no errorCode and the same
+ * contentHash is kept ('keptGood', ISSUE-b5a62f28): it was written after the
+ * rebuild (a summary that was running when the full index started, or a backup
+ * restore), so it is at least as new as the carried one, which may be an error
+ * placeholder. A stored placeholder is still replaced.
+ */
+export async function restoreCarriedDocSummaries(
+	repo: string,
+): Promise<{ written: number; keptGood: number; entityGone: number; bodyChanged: number }> {
+	const counts = { written: 0, keptGood: 0, entityGone: 0, bodyChanged: 0 };
+	for (;;) {
+		const done = await withWriteTxn(s => {
+			const repoId = lookupRepoIdInTxn(s, repo);
+			if (repoId === undefined) return true;
+			const prefix = encodeByRepoPrefix(repoId);
+			const batch = [...s.docSummaryCarry.getRange({ start: prefix, end: prefixSuccessor(prefix), limit: CARRY_BATCH })];
+			for (const { key, value } of batch) {
+				const k = key as Buffer;
+				const outcome = writeDocSummaryIfCurrentInTxn(s, k.subarray(4).toString('utf8'), decodeDocSummary(value as Buffer), { keepGoodSummary: true });
+				if (outcome === 'written') counts.written++;
+				else if (outcome === 'kept-good') counts.keptGood++;
+				else if (outcome === 'entity-gone') counts.entityGone++;
+				else counts.bodyChanged++;
+				s.docSummaryCarry.remove(k);
+			}
+			return batch.length < CARRY_BATCH;
+		});
+		if (done) return counts;
+	}
+}
+
+// ---------------------------------------------------------------------------
+// One-time restore from a backup store (ISSUE-dced4385)
+// ---------------------------------------------------------------------------
+
+/** What `restoreDocSummariesFromBackup` did with the backup's summaries. */
+export interface DocSummaryRestoreCounts {
+	readonly read:          number;
+	readonly written:       number;
+	readonly alreadyPresent: number;
+	readonly entityGone:    number;
+	readonly bodyChanged:   number;
+	readonly undecodable:   number;
+}
+
+/**
+ * Restore the summaries a backup store holds (a single-file LMDB store with
+ * doc_summary and entity_string_by_u64, e.g. a schema backup) into the live
+ * store. Each is written only for a document stored now whose body hashes to
+ * its contentHash, and never over a summary the live store holds
+ * (onlyIfAbsent), CARRY_BATCH rows per write transaction; summaries by an
+ * earlier model are written as they are. The backup is opened read-only and
+ * closed before this returns. Running it again writes nothing new.
+ */
+export async function restoreDocSummariesFromBackup(backupPath: string): Promise<DocSummaryRestoreCounts> {
+	if (!isAbsolute(backupPath)) throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' is not an absolute path`);
+	let isFile: boolean;
+	try { isFile = statSync(backupPath).isFile(); } catch { throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' does not exist`); }
+	if (!isFile) throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' is not a file`);
+	let live: string | undefined;
+	try { live = realpathSync(getGraphStorePath()); } catch { /* not created yet: it cannot be the backup */ }
+	if (live !== undefined && realpathSync(backupPath) === live) {
+		throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' is the live store`);
+	}
+
+	// noSubdir: lmdb-js otherwise guesses from the extension, and a backup's name may have none.
+	const backup = open({ path: backupPath, readOnly: true, noSubdir: true, maxDbs: 64 });
+	try {
+		const names = new Set([...backup.getKeys({})].map(String));
+		for (const name of ['doc_summary', 'entity_string_by_u64']) {
+			if (!names.has(name)) throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' has no ${name} database`);
+		}
+		const summaries = backup.openDB({ name: 'doc_summary', keyEncoding: 'binary', encoding: 'binary' });
+		const ids = backup.openDB({ name: 'entity_string_by_u64', keyEncoding: 'binary', encoding: 'ordered-binary' });
+
+		// Decoded first (the backup is read-only and small next to the live store).
+		const rows: { entityId: string; summary: DocSummary }[] = [];
+		let read = 0, undecodable = 0;
+		for (const { key, value } of summaries.getRange({})) {
+			read++;
+			const entityId = ids.get(key as Buffer) as string | undefined;
+			let summary: DocSummary | undefined;
+			try { summary = decodeDocSummary(value as Buffer); } catch { summary = undefined; }
+			if (typeof entityId !== 'string' || typeof summary?.contentHash !== 'string') { undecodable++; continue; }
+			rows.push({ entityId, summary });
+		}
+
+		const counts = { read, written: 0, alreadyPresent: 0, entityGone: 0, bodyChanged: 0, undecodable };
+		for (let i = 0; i < rows.length; i += CARRY_BATCH) {
+			const batch = rows.slice(i, i + CARRY_BATCH);
+			await withWriteTxn(s => {
+				for (const { entityId, summary } of batch) {
+					const outcome = writeDocSummaryIfCurrentInTxn(s, entityId, summary, { onlyIfAbsent: true });
+					if (outcome === 'written') counts.written++;
+					else if (outcome === 'already-present') counts.alreadyPresent++;
+					else if (outcome === 'entity-gone') counts.entityGone++;
+					else counts.bodyChanged++;
+				}
+			});
+		}
+		return counts;
+	} finally {
+		await backup.close();
+	}
 }
 
 /**

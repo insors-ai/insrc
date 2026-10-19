@@ -41,6 +41,7 @@ import { closeLanceConn, setLanceConnPath } from '../../../db/lance/conn.js';
 import { _resetEntityVecCache, addEntityEmbeddings } from '../../../db/lance/entity-vec.js';
 import { upsertRelations } from '../../../db/relations.js';
 import { addRepo } from '../../../db/repos.js';
+import { finishFullIndexState } from '../../../db/index-state.js';
 import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { Entity } from '../../../shared/types.js';
 import { rpc, startDaemon } from '../../../mcp/__tests__/helpers/mcp-e2e.js';
@@ -177,6 +178,9 @@ export async function startSeededDaemon(opts: { readonly bigRepos?: readonly num
 		{ id: fnB.id, embedding: axis(AXIS.fnB), repo: repoB, kind: 'function', artifact: false },
 		{ id: doc.id, embedding: axis(AXIS.doc), repo: repoA, kind: 'section', artifact: true },
 	]);
+	// The seeded store stands for repositories whose full index finished: without
+	// that, the daemon's start rebuilds each from scratch (Epic c2ba6fa6 s1).
+	for (const path of [repoA, repoB, ...big.map(b => b.path)]) await finishFullIndexState(path, false);
 	await closeGraphStore();
 	await closeLanceConn();
 	_resetEntityVecCache();

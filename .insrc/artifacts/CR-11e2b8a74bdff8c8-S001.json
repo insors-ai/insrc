@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792342386311-trqzef",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-18T16:53:06.311Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 19695,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "11e2b8a74bdff8c8",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-18T16:46:30.180Z",
+    "epicSlug": "show-builder-reported-smoke-live-results",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "11e2b8a74bdff8c8",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/code-review/dimensions/__tests__/reported-tests-view.test.ts",
+        "src/workflow/code-review/dimensions/coverage.ts",
+        "src/workflow/code-review/dimensions/test-record-view.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

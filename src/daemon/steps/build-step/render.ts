@@ -138,6 +138,15 @@ export const STANDALONE_MAPPING_RULE =
 	'run, give `reported` instead: the `result` you observed and `evidence`, where the proof is; it is recorded ' +
 	'as reported by you, not run by the gate.';
 
+/** The git trailer every commit of a Story carries (ISSUE-b47dadc7): the code
+ *  review keeps only the commits naming its Story, so another Story's commits on
+ *  main in the same window are not judged as this Story's. */
+export function storyTrailerRule(epicHash: string, storyId: string): string {
+	return 'End every commit message of this Story with a blank line and then the git trailer ' +
+		`\`Insrc-Story: ${epicHash}/${storyId}\`, exactly as written. The code review keeps only the ` +
+		'commits that carry it; a commit without it is not reviewed as this Story\'s.';
+}
+
 /** How upstream changes enter a Story during its build (ISSUE-f9ced66a). A
  *  `--no-ff` merge committed on its own is the one form the Story's code review
  *  can separate from the Story's own work; a fast-forward or a squash cannot be. */
@@ -165,7 +174,10 @@ export function renderImplementPrompt(repoPath: string, ref: ResolvedTask, resol
 	const decisions = resolvedDecisions.trim().length > 0
 		? resolvedDecisions
 		: '_No design decisions were resolved for this Task; use your judgment within the stated scope._';
-	return fill(template, { ...baseVars(repoPath, ref), resolvedDecisions: decisions, mergeRule: MERGE_RULE, smallestChangeRule: SMALLEST_CHANGE_RULE });
+	return fill(template, {
+		...baseVars(repoPath, ref), resolvedDecisions: decisions, mergeRule: MERGE_RULE, smallestChangeRule: SMALLEST_CHANGE_RULE,
+		storyTrailerRule: storyTrailerRule(ref.epicHash, ref.storyId),
+	});
 }
 
 /** Shown in a validate prompt's check-results section when no evidence was given. */
@@ -181,6 +193,8 @@ export function renderValidatePrompt(repoPath: string, ref: ResolvedTask, eviden
 
 /** The spec a standalone (no-plan) build implements. */
 export interface StandaloneBuildSpec {
+	/** The Story's epicHash, for the commit trailer (ISSUE-b47dadc7). */
+	readonly epicHash:    string;
 	readonly storyId:     string;
 	readonly sizeClass:   string;
 	/** true ⇒ Small (implement the approved LLD); false ⇒ Trivial (implement the scope). */
@@ -225,6 +239,7 @@ export function renderStandaloneImplementPrompt(spec: StandaloneBuildSpec): stri
 		`- \`${TYPECHECK_CMD}\` is clean.`,
 		`- \`${TEST_CMD}\` passes (add or extend tests for the change).`,
 		'- The edit is minimal and matches the surrounding conventions.',
+		'', '## Committing', '', storyTrailerRule(spec.epicHash, spec.storyId),
 		...(spec.lldMdRel !== undefined ? ['', '## Submitting the tests', '', STANDALONE_MAPPING_RULE] : []),
 		'', '## Merging upstream', '', MERGE_RULE,
 	);

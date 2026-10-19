@@ -384,6 +384,19 @@ Someone asking what calls a function, or a code review asking which tests reach 
 - **ac3:** Given a Java qualified call obj.method() and a Scala receiver call x.method(s), where method is defined on a class in the repository, when the cross-file pass runs, then the call resolves to that method, or is reported ambiguous with its candidates; it is not left unresolved.
 - **ac4:** Given a JUnit test under src/test/java/com/x calling a class in src/main/java/com/x, and a Kotlin test calling a function in another file of its package, when the cross-file pass runs, then both calls resolve without an import.
 
+### 6.13 E20261011c2ba6fa6:S013 — Settling file changes does work proportional to the changed files, never a scan of the repository or the store
+
+**User value:**
+
+After an edit, a branch switch or a merge, the graph catches up in time proportional to what changed: a burst of file events no longer costs one whole-repository resolve per file, and reading one file's or one repository's entities no longer passes over every other repository's rows. The results are the same as a full index gives.
+
+**Acceptance criteria:**
+
+- **ac1:** Given a repository whose index is complete, and one file in it that changes, when the settle pass for that file event runs, then the entity rows, pending rows and edges it reads are those the changed file defines, imports, exports or awaits, and their number does not grow with the size of the repository or of the store.
+- **ac2:** Given a burst of file events touching N files of a repository, when their settle work runs, then the work done grows with N and with what those files touch, not with N times the repository.
+- **ac3:** Given the same file changes settled event by event, and the same files indexed by a full index, when the edges and pending-row classes of those files are compared, then they are identical.
+- **ac4:** Given a store holding several repositories, when the entities of one file, or of one repository, are read, then no row of another file or another repository is read, and the result is what it is today.
+
 ## 7. References
 
 - **[[c1]]** `code` `src/db/relations.ts` — "s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));"

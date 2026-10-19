@@ -79,7 +79,7 @@ test('registeredRepos() maps repo.list -> RepoRef[]; mcpClients() maps daemon.de
   };
   const { gateway, calls } = makeGateway({ rpc: async (m) => byMethod[m] });
 
-  assert.deepEqual(await gateway.registeredRepos(), [{ path: '/a', name: 'a' }]);
+  assert.deepEqual(await gateway.registeredRepos(), [{ path: '/a', name: 'a', status: 'ready' }]);
   assert.deepEqual(await gateway.mcpClients(), [{ host: 'claude', wired: true }]);
   assert.deepEqual(calls, ['repo.list', 'daemon.debug-status'], 'reaches only the two read IPCs (ac4)');
 });
@@ -155,4 +155,20 @@ test('source-scan: daemon-gateway.ts imports no vscode and uses no cloud/HTTP cl
   const src = readFileSync(join(HERE, '..', 'daemon-gateway.ts'), 'utf8');
   assert.doesNotMatch(src, /from ['"]vscode['"]/, 'the gateway core must not import vscode');
   assert.doesNotMatch(src, /\b(undici|fetch\(|node:http\b|node:https\b|axios)\b/, 'no cloud/HTTP client in the gateway');
+});
+
+test('registeredRepos() carries each repository\'s status and completeness from repo.list: complete, incomplete with its reasons, and none for a reply without the field (Epic c2ba6fa6 s1)', async () => {
+  const counts = { pending: { 'awaiting-target': 2, ambiguous: 0, 'no-candidate': 0, 'external-endpoint': 0 }, unwritable: 0, unembedded: 0, uncommittedFiles: 0 };
+  const complete = { complete: true, reasons: [], counts: { ...counts, pending: { ...counts.pending, 'awaiting-target': 0 } }, uncommittedFiles: [], generation: 3 };
+  const incomplete = { complete: false, reasons: ['2 relationships point at files an ignore rule excludes'], counts, uncommittedFiles: [], generation: 5 };
+  const { gateway } = makeGateway({ rpc: async () => [
+    { path: '/a', name: 'a', addedAt: '', status: 'ready', completeness: complete },
+    { path: '/b', name: 'b', addedAt: '', status: 'indexing', completeness: incomplete },
+    { path: '/c', name: 'c', addedAt: '', status: 'ready' },
+  ] });
+  assert.deepEqual(await gateway.registeredRepos(), [
+    { path: '/a', name: 'a', status: 'ready', completeness: complete },
+    { path: '/b', name: 'b', status: 'indexing', completeness: incomplete },
+    { path: '/c', name: 'c', status: 'ready' },
+  ]);
 });

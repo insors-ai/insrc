@@ -206,16 +206,27 @@ export function ReposPane(props: {
 	);
 }
 
-function RepoRow(props: { repo: RegisteredRepo; selected: boolean }): ReactElement {
+/** One repository: its status and, for an incomplete index, the number of causes and the
+ *  first one (Epic c2ba6fa6 s1). A complete index, or an unknown one (no field: a daemon
+ *  before the change), shows the status alone. */
+export function RepoRow(props: { repo: RegisteredRepo; selected: boolean }): ReactElement {
 	const r = props.repo;
 	const sel = props.selected ? { color: 'cyan' as const } : {};
+	const incomplete = r.completeness?.complete === false ? r.completeness : undefined;
+	const causes = incomplete?.reasons.length ?? 0;
 	return (
-		<Box>
-			<Text {...sel}>{props.selected ? '❯ ' : '  '}</Text>
-			<Text color={STATUS_COLOR[r.status]}>●</Text>
-			<Text> {r.status.padEnd(8)} </Text>
-			<Text {...sel} bold={props.selected}>{r.path}</Text>
-			<Text dimColor>  (indexed {formatWhen(r.lastIndexed)})</Text>
+		<Box flexDirection="column">
+			<Box>
+				<Text {...sel}>{props.selected ? '❯ ' : '  '}</Text>
+				<Text color={STATUS_COLOR[r.status]}>●</Text>
+				<Text> {r.status.padEnd(8)} </Text>
+				{incomplete !== undefined ? <Text color="yellow">incomplete </Text> : null}
+				<Text {...sel} bold={props.selected}>{r.path}</Text>
+				<Text dimColor>  (indexed {formatWhen(r.lastIndexed)})</Text>
+			</Box>
+			{incomplete !== undefined
+				? <Text color="yellow" wrap="truncate-end">{`      ${causes} ${causes === 1 ? 'cause' : 'causes'}${incomplete.reasons[0] !== undefined ? `: ${incomplete.reasons[0]}` : ''}`}</Text>
+				: null}
 		</Box>
 	);
 }

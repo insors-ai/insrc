@@ -1,0 +1,806 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792240611397-p3t0ur",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T12:40:24.817Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 213401,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "epicHash": "670419c4ad8bea8e",
+    "epicSlug": "understand-changes-before-committing",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1792239015225-9sq2cz",
+    "hldEffectiveHash": "0b18f1868092f658a04b0e37289cd2f22064f72dc7fa70046b626365a0e5e8bb",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers S001's durable personal history, unchanged delivery state, and restart recovery requirements.",
+          "evidence": "DEF S001/ac1 requires answers, confidence, assisted attempts and progress to remain associated with the original change; ac2 preserves delivery status and approvals; ac3 requires recovery without accidental pass. The proposed immutable scope, separate history namespaces, atomic writes, interrupted-job recovery and unavailable eligibility address these requirements. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, src/db/graph/store.ts]",
+          "action": "Preserve these invariants during implementation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Identity precedence and retention until explicit deletion reflect the resolved upstream decisions.",
+          "evidence": "HLD metadata specifies one connected provider identity, repository-configured Git email when multiple identities exist, OS fallback, and distinct identities unless explicitly linked. Its retention resolution says: 'Retain the learner's assessment history locally until that learner explicitly deletes it' with private history, sharing disabled and no automatic expiry. The design preserves these decisions. [files: .insrc/artifacts/HLD-670419c4ad8bea8e.json]",
+          "action": "Keep these resolutions as acceptance fixtures.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "GraphStore currently opens 27 named databases with MAX_DBS set to 32.",
+          "evidence": "Reading the complete store construction yields 27 named database opens, ending with exploration_cache. The constant is 'const MAX_DBS = 32'. Adding eight namespaces yields 35, so increasing capacity is necessary. [files: src/db/graph/store.ts]",
+          "action": "Implement the proposed capacity increase and inventory assertion together.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing streaming transport substitutes request IDs, uses a void send callback, and does not automatically emit done.",
+          "evidence": "StreamHandler accepts 'send: (msg: IpcStreamMessage) => void'. handleStreamMessage constructs '{ ...msg, id: request.id }', awaits the handler, and only removes listeners afterward; it emits an error on an uncaught handler failure but no automatic done. IpcStreamKind already includes progress, done and error. [files: src/daemon/server.ts, src/shared/types.ts]",
+          "action": "Retain the proposed explicit terminal frames and domain events inside progress.data.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "withWriteTxn supports the proposed atomic multi-namespace mutation with a synchronous callback.",
+          "evidence": "The complete implementation obtains GraphStore, executes store.root.childTransaction(run), rejects thenable callback results, awaits transaction settlement and detects lock loss. Its documented child-transaction behavior rolls back a throwing callback without rolling back neighboring callers. [files: src/db/graph/store.ts]",
+          "action": "Await withWriteTxn before acknowledgment and keep all callback work synchronous.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The role taxonomy and floor guard are reusable, while the five understanding role descriptors are new.",
+          "evidence": "The complete ROLES registry contains no understanding roles. RoleDescriptor exposes id, criticality and defaultTier; roleDescriptor returns undefined for absent entries. applyCoreFloor clamps critical roles against the configured floor. The proposed registration and explicit missing-descriptor check fit these APIs. [files: src/config/role-taxonomy.ts, src/config/core-floor-guard.ts]",
+          "action": "Test both descriptor registration and configured-floor behavior; critical does not independently force core under every configuration.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design identifies the existing transport and lifecycle integration sites needed for command registration and bounded shutdown flushing.",
+          "evidence": "daemon/index.ts constructs IpcServer from separate RPC and stream handler registries. Its stopBackgroundWork initiates server.close without awaiting it; closeStores runs after queue drain. server.ts writes directly without tracking write callbacks. These are the sites the design proposes extending, without changing the public send callback. [files: src/daemon/index.ts, src/daemon/server.ts, src/daemon/shutdown.ts]",
+          "action": "Cover both ordinary response writes and stream writes in pending-write tracking.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing connection metadata provides a concrete integration path for enumerating authenticated GitHub, GitLab and Jira stable subjects.",
+          "evidence": "The analyzer failed during planning with shaper-llm-unavailable caused by an invalid response schema. Subsequent source searches and reads found GitHub tracker configuration and ghAuthOk(), which runs 'gh auth status' and returns only ok/reason. Repository owner/repo metadata is not authenticated learner identity. No concrete stable-subject enumeration API or GitLab/Jira connection adapter was identified. [files: src/workflow/config/github.ts, src/workflow/tracker/github.ts]",
+          "action": "Specify each adapter's module, metadata source, stable-ID field and unavailable behavior. Distinguish a missing integration from an available authenticated identity that the implementation must discover.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Assessment versioning should be separate from graph versioning, with additive namespaces rather than a graph schema rewrite.",
+          "evidence": "GraphStore currently uses SCHEMA_VERSION = 5 and stores its version in meta under schema_version. Its initialization dispatches graph migrations from that value. The inspected namespace inventory and source searches contain no existing assessment storage format. A separate understanding_meta/version boundary avoids misinterpreting graph versions as assessment versions. [files: src/db/graph/store.ts, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+          "action": "Keep assessment initialization and unsupported-version handling separate from existing graph migration logic, as proposed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design preserves the HLD's shared contracts and defers grading, editor behavior, Git capture and overrides to their owning stories.",
+          "evidence": "HLD sc1 contains the scope fields retained by the canonical tuple, including commitMode and ordered parentOids. sc2 contains the same AssessmentService sketch. sc4 defines confidence as unsure/low/medium/high. HLD §6 assigns foundational schemas and role registration to s1, grading to s3, editor integration to s5, capture/enforcement to s6 and exceptions to s7. The LLD follows those boundaries. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+          "action": "Keep sibling implementations behind the proposed validated internal registration boundary.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed shutdown handling can preserve the existing forced-exit and lock-loss behavior.",
+          "evidence": "createShutdown is re-entrant guarded, invokes stopBackgroundWork synchronously, defaults hardExitMs to 20,000, and bypasses queue/store closure after detected lock loss in favor of SIGKILL. The proposed flush is confined to healthy closeStores and bounded to 1,000ms, so it need not replace these paths. [files: src/daemon/shutdown.ts, src/daemon/index.ts, src/daemon/server.ts]",
+          "action": "Keep stop hooks free of database waits and retain the proposed forced-exit, disconnect and re-entrant tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each S001 acceptance criterion has a corresponding proposed test using compatible repository test infrastructure.",
+          "evidence": "DEF ac1 maps to persistence/reopen and identity/scope tests; ac2 maps to unchanged delivery-artifact assertions; ac3 maps to interrupted-job recovery, rollback and reconnect tests. Existing graph tests use node:test, node:assert/strict, temporary directories, setGraphStorePath and closeGraphStore, supporting the proposed isolated persistence suite. Existing server registry tests use fake sockets, so the promised real-socket shutdown tests are additional work, not existing coverage. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, src/db/graph/__tests__/store.test.ts, src/daemon/__tests__/server-registry.test.ts]",
+          "action": "Implement the mapped tests, explicitly including failed and skipped assessment transitions for ac2. This review did not execute tests or verify future implementation behavior.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-17T12:44:39.150Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-17T12:48:02.165Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "Keep each learner's check and original attempts recoverable after closing the editor or restarting the daemon. Records remain private and local until the learner deletes them, independent of delivery status. This story supplies validated shared records and commands; later stories supply classification, teaching, the editor and commit enforcement.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a daemon-owned state machine with transactional current records and preserved attempt/audit history (a1). This is a proposed architecture: shared interfaces below are design contracts, not existing exported symbols. The daemon is the only authority for identity resolution, scope, questions, grading, guidance, policy and overrides. The seven stories retain the approved dependencies; common eligibility/override envelopes belong to foundational s1 so the editor does not depend on future s7. The separate DEF review timeout issue is not part of this implementation.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Learner and immutable assessment scope",
+          "purpose": "Shared identity and version boundary for all stories; all fields are proposed contracts, not existing APIs.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "interfaceSketch": "type IdentitySource = 'github' | 'gitlab' | 'jira' | 'git' | 'os';\ninterface LearnerIdentity { key: string; source: IdentitySource; subject: string; authority: string; assurance: 'provider-confirmed' | 'local-config' | 'os-local'; aliases: readonly string[]; }\ninterface AssessmentScope { repoId: string; worktreeId: string; baseOid: string | null; stagedTreeOid: string; commitMode: 'normal' | 'amend' | 'merge'; parentOids: readonly string[]; learnerKey: string; policyRevision: string; evidenceRevision: string; }\ninterface WorkAssociation { itemId: string; parentIds: readonly string[]; state: 'inferred' | 'learner-proposed' | 'verified' | 'unresolved'; evidenceRefs: readonly string[]; confidence: 'supported' | 'tentative' | 'unknown'; explanation: string; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Durable assessment commands and eligibility boundary",
+          "purpose": "Canonical revisioned record and client commands; s1 owns common envelope so editor and final override implementation share an ancestor.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7"
+          ],
+          "interfaceSketch": "type AssessmentState = 'preparing' | 'ready' | 'answering' | 'guidance' | 'evaluating' | 'completed' | 'canceled' | 'stale' | 'error';\ninterface CommandEnvelope { requestId: string; assessmentId: string; expectedRevision: number; scope: AssessmentScope; }\ninterface OverrideIntent { reason: string; acknowledged: boolean; }\ninterface AssessmentView { id: string; revision: number; scope: AssessmentScope; state: AssessmentState; associations: readonly WorkAssociation[]; completion: 'incomplete' | 'complete'; outcome: 'unassessed' | 'pending' | 'pass' | 'gaps' | 'unverifiable'; eligibility: 'pending' | 'allowed' | 'override-required' | 'stale' | 'unavailable'; }\ninterface AuthorizationReceipt { id: string; assessmentId: string; scope: AssessmentScope; attemptId: string; revision: number; basis: 'trivial' | 'optional' | 'medium-complete' | 'pass' | 'override'; overrideRecordId?: string | undefined; expiresAt: string; }\ninterface AssessmentService { prepare(scope: AssessmentScope): Promise<AssessmentView>; resume(id: string): Promise<AssessmentView>; cancel(command: CommandEnvelope): Promise<AssessmentView>; requestOverride(command: CommandEnvelope, intent: OverrideIntent): Promise<AssessmentView>; }\ninterface AuditEntry { id: string; assessmentId: string; revision: number; kind: string; occurredAt: string; scope: AssessmentScope; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Own identity normalization/alias policy, immutable scope value types, durable state revisions, audit/attempt retention, migrations, privacy and command validation. Shared eligibility and override shapes are defined here, but s6/s7 supply final policy enforcement and exception implementation; unimplemented commands return explicit unavailable. No claims of a current assessment engine. Own registration and validation of the new understanding reasoning-role descriptors and assessment schema-version boundary before consumer stories use them."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Own context-driven impact prompts, evidence limitation reporting, configuration validation and deterministic requirement mapping. Do not grade understanding or allow a classifier error to become Trivial."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own question/rubric generation, independent verification, authoritative grading, first-response capture and purpose/association assessment. Own daemon-side upstream grading/validation adaptations and provenance. Do not publish answer keys or mutate delivery records."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Own guided explanation and fresh reassessment selection, two-retry accounting and explicit gap completion. Preserve the initial answer and do not infer a pass from guidance consumption."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "Own the dedicated VS Code editor view, accessible question/guidance interactions, inferred association correction, source navigation, pending/error/Unknown display and resume. Adapt useful upstream renderer code only. Render override intents through the shared foundational contract; no UI score authority. Also own Source Control readiness presentation, derived solely from current daemon eligibility. Refresh after assessment/override results, staged/base changes, policy or learner changes and daemon reconnect; immediately mark stale/unavailable rather than showing cached Ready. Provide a reveal-assessment action in Source Control and an accessible status label. Concrete VS Code contribution APIs belong in s5 LLD; do not assume the existing status/config host supplies this integration."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own effective-index capture, hook integration, final scope recheck, receipt lifecycle, concurrency/cancellation/retry handling and post-commit association. Enforce default policy without mutating staged content. Before s7 ships, High/Unknown override requests remain unavailable rather than allowed."
+        },
+        {
+          "storyId": "s7",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Implement explicit High and Unknown exception handling using shared override shapes, record acknowledgment/reason, preserve final message audit trailers and reject forged/missing/stale records. The feature is not released as complete until both automatic pass and explicit override paths are available."
+        }
+      ],
+      "rolloutPhase": "Phase A — durable scope",
+      "nonFunctional": {
+        "performance": "Cached eligibility checks avoid model calls when exact scope/evidence/policy match. No latency promise for generation; expose progress and actionable interruption. Proposed target: cached local decisions within one second under normal local load, measured in implementation; never sacrifice evidence correctness to meet it. Bound context and jobs with visible limitations, not silent truncation.",
+        "security": "Treat source comments, IDs and learner text as untrusted data, not instructions. Validate IPC commands, repository membership and expected revisions; renderer uses escaped output/CSP and no answer keys. Local identities describe attribution, not enterprise authentication. Keep records local and unavailable to unrelated clients/users by default; explicit retention/deletion/sharing policy requires s1 design approval. Never store CLI OAuth secrets in assessment records.",
+        "observability": "Correlate assessment/job/attempt IDs and scope fingerprints with classified impact, requirement, verifier status, stale/error/timeout reasons and explicit overrides. Do not log raw learner answers or tokens by default. Distinguish transport failure, pending reasoning, cancellation and completed gaps; unavailable state cannot be reported as pass.",
+        "durability": "Versioned daemon-owned records persist acknowledged answers and audit events atomically. Restart marks interrupted jobs recoverable without granting eligibility. Revalidate scope, evidence, policy and learner before issuing short-lived attempt receipts. Record migrations and retention deletion consistently across current and history records; never revoke delivery approval as a side effect."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "AssessmentService",
+          "signature": "interface AssessmentService { prepare(scope: AssessmentScope): Promise<AssessmentView>; resume(id: string): Promise<AssessmentView>; cancel(command: CommandEnvelope): Promise<AssessmentView>; requestOverride(command: CommandEnvelope, intent: OverrideIntent): Promise<AssessmentView>; }",
+          "parameters": [
+            {
+              "name": "scope",
+              "type": "AssessmentScope",
+              "purpose": "Internally verified immutable context; never trust renderer-supplied learner or candidate tree as authoritative.",
+              "optional": false
+            },
+            {
+              "name": "command",
+              "type": "CommandEnvelope",
+              "purpose": "Request UUID, assessment ID, expected revision and exact bound scope for mutations.",
+              "optional": false
+            },
+            {
+              "name": "intent",
+              "type": "OverrideIntent",
+              "purpose": "Explicit acknowledgment and reason; unavailable in s1.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<AssessmentView>",
+            "meaning": "Redacted canonical view after durable commit; internal domain errors are mapped by RPC into typed result variants, never reduced to generic thrown strings for expected conflicts."
+          },
+          "errors": [
+            {
+              "type": "revision-conflict",
+              "condition": "Expected revision differs; return current redacted view only after ownership validation."
+            },
+            {
+              "type": "scope-mismatch",
+              "condition": "Any scope field differs; preserve original history and invalidate current authorization."
+            },
+            {
+              "type": "unavailable",
+              "condition": "Required sibling implementation, identity or scope attestation unavailable."
+            },
+            {
+              "type": "not-found",
+              "condition": "Record absent, deleted or belongs to another local principal."
+            },
+            {
+              "type": "schema-unsupported",
+              "condition": "Missing/corrupt/newer stored schema; no synthetic empty replacement."
+            }
+          ],
+          "preconditions": [
+            "Daemon owns storage; repository must be registered; caller cannot set score, learner key, state or eligibility.",
+            "Internal trusted context provider supplies identity and validated scope; absent s2/s6 integration cannot authorize."
+          ],
+          "postconditions": [
+            "prepare deduplicates exact scope per principal; new record starts revision 1, preparing/incomplete/unassessed/unavailable.",
+            "resume retains history; stale context changes view eligibility, never rewrites original scope.",
+            "cancel revokes active jobs/authorization, preserves progress; requestOverride returns unavailable until s7.",
+            "No delivery status/approval writes and no model call in s1."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "LearnerIdentity",
+        "change": "new",
+        "details": "Resolve locally: enumerate already-connected provider account identities without starting login or accepting arbitrary renderer IDs. A provider candidate is {source, authority, stable subject, assurance}; deduplicate only exact source/authority/subject. Exactly one candidate wins; multiple candidates select effective repository git config user.email; zero provider candidates also try Git email, then OS userInfo uid (username where uid unavailable). Trim whitespace, preserve subject/email case; canonical provider authority is normalized host URL. Key is SHA256 of versioned length-delimited source/authority/subject. Git authority is 'git-email'; OS authority includes installation-host ID. Git identity is current configured email, never commit author or agent identity. Missing connector integration returns no candidate with diagnostic, never fabricated provider-confirmed assurance. New daemon identity adapters must inspect existing connection metadata; use authenticated stable IDs where available, never infer account ownership from repository remotes. No automatic account merging or alias migration; aliases empty unless a future explicit linking feature is approved. All records additionally bind daemon OS principal and current resolved learner. Local config identity is attribution, not protection against another process running as the same OS user.",
+        "callSites": []
+      },
+      {
+        "entity": "AssessmentScope",
+        "change": "new",
+        "details": "Preserve all sc1 fields, ordered parentOids and commitMode. Canonical serialization with version tag produces scopeFingerprint SHA256; serialize exactly this ordered tuple: [\"assessment-scope-v1\", repoId, worktreeId, baseOid, stagedTreeOid, commitMode, parentOids, learnerKey, policyRevision, evidenceRevision]. Use canonical UTF-8 JSON array encoding with null preserved and parentOids in their original order, then SHA256; no aliases, omitted fields or object-key ordering dependence. OIDs must be lowercase full 40- or 64-hex of one object format, checked with trusted Git capture in s6; null base only unborn normal commit. Registered canonical repository and worktree identities prevent path aliases. No supplied current-scope hash proves freshness: s6 capture and s2 policy/evidence resolution supply attestations. s1 validates value shape and exact equality, with unavailable until attestations installed. Historical scope is immutable.",
+        "callSites": []
+      },
+      {
+        "entity": "AssessmentRecord and child records",
+        "change": "new",
+        "details": "New LMDB named databases understanding_current, understanding_attempt, understanding_audit, understanding_request, understanding_owner_index, understanding_scope_index, understanding_receipt, understanding_meta within existing GraphStore root; use collision-free tuple keys. Schema version1 independent of graph schema. Current value includes assessmentSchemaVersion, id UUID, ownerPrincipal, learner snapshot, immutable scope+fingerprint, revision safe positive integer, state/completion/outcome/eligibility, associations, progress cursor, job descriptor, lifecycleGeneration, createdAt/updatedAt. Attempts keyed (assessmentId, sequence) preserve attemptId, questionId/conceptId, submitted answer, confidence enum unsure/low/medium/high exactly as owned by HLD sc4; unanswered drafts have no submitted attempt and no confidence value, assisted flag, guidance references, submittedAt, evaluation status and criterion results; first response never overwritten. s3/s4 own question/evaluation payload schemas and transitions; foundational persistence accepts only registered validated domain payloads, not arbitrary renderer objects. Audit rows keyed assessmentId/revision/ordinal preserve transitions and references without duplicating raw answers. WorkAssociation retains many-to-many provenance; proposal is not verified. Separate immutable attempt events record later evaluations without rewriting submitted answer. No Lance embedding, indexing, tracker push, telemetry or cloud sync of learner history. Downstream reasoning receives minimum current assessment input through existing providers; private/local describes history storage and sharing, not a new local-only model mandate. Existing GraphStore opens 27 named databases and MAX_DBS is 32; these eight namespaces require 35. Raise MAX_DBS to 64 in src/db/graph/store.ts before opening the added namespaces, with an inventory assertion and fresh/existing-store open tests. Preserve existing named databases and their data; this is an additive namespace change, not a graph schema rewrite.",
+        "callSites": [
+          "src/db/graph/store.ts"
+        ]
+      },
+      {
+        "entity": "CommandEnvelope and mutation transaction",
+        "change": "new",
+        "details": "Every external mutation includes requestId UUID, assessmentId, expectedRevision and expected scope; principal resolved server-side. Request hash covers command kind and canonical complete payload. Under one withWriteTxn synchronous callback validate ownership, schema, current revision/generation, scope and transition; atomically append attempts/audit, update record/indexes and store dedup result. Exact repeated requestId+hash returns original receipt with current view plus appliedRevision; different payload is request-conflict. Ownership and record existence checked before replay; deletion cannot be replayed into resurrection. Serialize same-assessment writes via LMDB transaction, no provider/network await inside. Durable job descriptor includes id/kind/inputRevision/generation/status. Downstream completion CAS checks these; cancel, deletion and stale transitions discard late completion. Startup atomically marks running jobs interrupted and clears authorizations before serving requests; history/answers survive. No retry counter reset on resume.",
+        "callSites": [
+          "src/db/graph/store.ts:933"
+        ]
+      },
+      {
+        "entity": "Assessment RPC result and observation",
+        "change": "new",
+        "details": "Proposed RPC module src/daemon/understanding-rpc.ts registers understanding.prepare, understanding.resume, understanding.list, understanding.cancel, understanding.delete, understanding.history and understanding.requestOverride into src/daemon/index.ts; add understanding.watch streaming route using IpcServer stream contract. Request schema rejects additional fields, unsafe revisions, oversized input, arbitrary principal/grade/eligibility. prepare external input {requestId,repoPath,worktreePath} resolves trusted context, not client AssessmentScope. resume/get/history/list re-resolve current learner and check OS ownership. Result envelope {protocolVersion:1,ok:true,value,appliedRevision?} or {protocolVersion:1,ok:false,error:{code,retryable,message},current?:AssessmentView}; revision-conflict carries current only for owner. Codes invalid-input/not-found/revision-conflict/request-conflict/scope-mismatch/unavailable/schema-unsupported/storage-failure. Normal typed failures returned as result, not thrown; unexpected transport errors require refresh and show unavailable. watch {assessmentId,afterRevision?} subscribes before reading snapshot, then emits current projection with monotonically increasing revision; coalescing allowed because each event is complete projection. Event shape {protocolVersion:1,type:'snapshot'|'deleted'|'unavailable',assessmentId,revision?,view?}. Each subscription checks identity; changed identity terminates owner data stream. Reconnect always requests fresh projection and clears cached readiness; revision gaps trigger resume rather than replaying audit. No answer keys in views/events. No editor implementation in s1; s5 implements strict decoder against shared protocol with fixtures supplied here. history cursor is owner-bound assessment sequence, page1..100; list pages owner-filtered; never expose another learner's existence. Wire framing: understanding.watch requests set stream:true. Domain snapshot/deleted/unavailable events are data inside existing IpcStreamMessage {id: requestId, stream:\"progress\", data:event}; do not add those domain names to IpcStreamKind. Handler sends with id:0 and IpcServer substitutes the request id. Normal termination (deletion, identity change, deliberate service shutdown) sends its final deleted/unavailable event then exactly one {id:0,stream:\"done\",data:{protocolVersion:1,reason}} and resolves. Validation/fatal failure sends exactly one stream:\"error\" frame with data:{error:message,recoverable:boolean,protocolVersion:1,code}, then resolves; error is terminal. The server does not emit done automatically. On AbortSignal/disconnect, unsubscribe and release resources in finally without sending frames; no assessment cancellation is inferred from observation disconnect. Transport errors clear cached readiness and require a fresh subscription. Tests validate complete outer frames, request-ID correlation, one terminal frame and no events after terminal/abort. Deliberate shutdown integration: src/daemon/index.ts owns an understanding-service stop hook. Its stopBackgroundWork callback first marks that service stopping (reject new commands/watches), cancels domain jobs, synchronously emits unavailable then done for active watches and unregisters them, before initiating server.close(). Existing send callback remains void. Extend IpcServer internally to track outstanding socket.write callbacks and expose a bounded flushPendingWrites(timeoutMs) promise; flush failures settle as failed delivery, not uncaught rejection. In the healthy closeStores callback await that flush for at most 1000ms before closing any database, then release service resources and continue existing close order. The existing 20-second shutdown backstop and locks-lost SIGKILL path remain authoritative and never wait for this flush; no unconditional delivery guarantee is made for broken sockets, timeout or forced exit. A client treats disconnect without a terminal frame as unavailable and refreshes after reconnect. Test stop hook ordering and real-socket final frames on healthy shutdown, plus bounded backpressure, disconnect, re-entrant shutdown and locks-lost behavior. No frame is emitted after a watch is closed.",
+        "callSites": [
+          "src/daemon/server.ts"
+        ]
+      },
+      {
+        "entity": "Deletion and privacy",
+        "change": "new",
+        "details": "Retain all acknowledged personal history until learner deletion; no automatic TTL on history. Delete requires explicit {confirmed:true} plus normal revision envelope and affects only current resolved learner's chosen assessment (bulk deletion iterates owned assessments). Single transaction removes current/history/request/index/receipt rows and advances in-memory invalidation generation; absent record is a hard failure for late worker completion, never upsert. Cancel jobs and scrub in-memory projections/cache before acknowledging deletion; emit deleted event without payload then close watches. Retry of delete on absent owned ID returns absent, without preserving personal audit tombstone. No modifications to Git commit messages already written by s7 and no promise to erase user backups; deletion is logical store removal, not secure disk erasure. Never log answers, provider subjects, emails or private payloads; log opaque IDs/error categories only. Store/socket must be accessible only by daemon OS user: validate owned parent/storage path and enforce 0700 directories and 0600 socket/files before enabling understanding, fail closed if ownership or permission checks fail. Same-OS-user processes remain trusted-local boundary; supplied client label/pid is not authentication.",
+        "callSites": [
+          "src/db/graph/store.ts",
+          "src/daemon/server.ts"
+        ]
+      },
+      {
+        "entity": "Assessment schema and roles",
+        "change": "new",
+        "details": "Runtime schema registry with assessmentSchemaVersion=1; validate every persisted row on read and before mutation. Empty new namespace initialized atomically; existing data without version, malformed values, newer version or dangling referenced child returns schema-unsupported/storage-failure, never reset/pass. No old assessment format exists to migrate in s1. Future migrations require backup/checkpoint and atomic version publication; do not implement hypothetical converters. Register understanding.classify/generate/grade/verify/guide in src/config/role-taxonomy.ts as critical/default core, verify descriptors on service initialization; missing role yields unavailable, never unknown-role mid fallback. s1 calls no LLM. Service dependencies expose typed internal domain transition registration for s2/s3/s4/s6/s7 with schema guards; no generic privileged mutation RPC. Receipt envelope exists but s1 never issues one; all eligibility unavailable until downstream authoritative policy/capture installed.",
+        "callSites": [
+          "src/config/role-taxonomy.ts",
+          "src/db/graph/store.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "Define versioned learner identity, immutable scope and association schemas; consume daemon-derived inputs only. Identity precedence follows resolved HLD decisions."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "Implement durable prepare/resume/cancel, history/deletion and typed transport projection infrastructure; preserve shared service sketch and wrap domain errors in RPC results. Define but do not implement policy authorization/override scoring. Consumer-owned domain commands register validated schemas in later stories."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Concurrent stale mutation",
+          "detection": "Transactional expectedRevision check",
+          "response": "revision-conflict with owner-only current view; no writes",
+          "userImpact": "Refresh before resubmitting",
+          "recoverable": true
+        },
+        {
+          "scenario": "Lost response then retry",
+          "detection": "requestId and canonical payload hash",
+          "response": "Same command returns appliedRevision/current view; changed payload returns request-conflict",
+          "userImpact": "No duplicate answer or consumed retry",
+          "recoverable": true
+        },
+        {
+          "scenario": "Crash or interrupted evaluation",
+          "detection": "Startup running-job scan before RPC enablement",
+          "response": "Persist interrupted job, unavailable eligibility, invalidate receipts; preserve acknowledged attempts",
+          "userImpact": "Resume progress without accidental pass",
+          "recoverable": true
+        },
+        {
+          "scenario": "Corrupt/newer schema or transaction failure",
+          "detection": "Version/schema guards and failed atomic commit",
+          "response": "Typed failure; no reset or partial success; recovery diagnostic without raw answers",
+          "userImpact": "History unavailable pending recovery; commit not authorized",
+          "recoverable": true
+        },
+        {
+          "scenario": "Identity or staged/policy/evidence scope changed",
+          "detection": "Fresh trusted context comparison",
+          "response": "not-found for different owner; stale/unavailable projection for same-owner changed scope, original record retained",
+          "userImpact": "New check required for new context",
+          "recoverable": true
+        },
+        {
+          "scenario": "Deletion races worker/replay",
+          "detection": "Missing current record or generation mismatch",
+          "response": "Discard result and reject replay without recreating record",
+          "userImpact": "Deleted history stays deleted",
+          "recoverable": false
+        },
+        {
+          "scenario": "Unknown domain transition or missing sibling",
+          "detection": "Registered schema/handler and role checks",
+          "response": "unavailable; no pass/receipt",
+          "userImpact": "Foundation alone cannot enable commit gate",
+          "recoverable": true
+        },
+        {
+          "scenario": "Local privacy cannot be enforced",
+          "detection": "OS ownership/path/mode check before feature activation",
+          "response": "unavailable, no private data accepted",
+          "userImpact": "Actionable local permission correction",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Multiple providers and missing Git email",
+          "expected": "OS identity fallback; no arbitrary provider selection"
+        },
+        {
+          "input": "No providers but usable Git email",
+          "expected": "Use configured Git email before OS fallback"
+        },
+        {
+          "input": "Case/whitespace variants and different provider authorities",
+          "expected": "Trim only subject whitespace; preserve case and authority namespace, no silent merge"
+        },
+        {
+          "input": "Partial staged content and message-only amend",
+          "expected": "s1 represents immutable supplied scope; s6 captures actual intended candidate, never baseline working tree"
+        },
+        {
+          "input": "Unsure, original incorrect response and assisted retry",
+          "expected": "Separate immutable attempts/assessment events and durable counters; s3/s4 define pedagogy"
+        },
+        {
+          "input": "Several inferred/proposed task IDs or no association",
+          "expected": "Preserve provenance and reason; no forced primary or delivery write"
+        },
+        {
+          "input": "Watch reconnect, missing revision or identity switch",
+          "expected": "Refresh full redacted projection; no cached Ready or cross-owner payload"
+        },
+        {
+          "input": "History exceeding one page",
+          "expected": "Bounded owner-only pagination; no automatic retention expiry"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Personal assessment does not alter work item status or approval.",
+          "source": "c1"
+        },
+        {
+          "text": "Retain original responses, confidence and assisted history; uncertainty never becomes pass.",
+          "source": "c1"
+        },
+        {
+          "text": "Daemon owns canonical records and authorization; clients cannot supply grading truth.",
+          "source": "c2"
+        },
+        {
+          "text": "Private local retention ends only on learner deletion; no sharing.",
+          "source": "c3"
+        },
+        {
+          "text": "Reuse Git wrappers; executor auto-approval and hook skipping are not assessment overrides.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Identity, schema, scope and state invariants",
+          "subjects": [
+            "Single/multiple/zero providers; repo Git-email and OS fallback; whitespace/case/authority collisions; no automatic merge",
+            "Every scope field affects fingerprint; ordered parents, null base and SHA format validation",
+            "Malformed/newer/missing schema; unknown transition and role missing fail closed",
+            "All five roles critical/default core and existing core-floor routing",
+            "Canonical fingerprint vectors: changing only commitMode changes hash; exact stagedTreeOid and ordered parentOids preserved; explicit null and SHA256 UTF-8 tuple encoding",
+            "Submitted confidence round-trips all sc4 values unsure/low/medium/high unchanged; unanswered draft distinct from submission"
+          ],
+          "fixturesNeeded": [
+            "Injected connected-provider identities, Git config reader and OS principal",
+            "Fake clock and UUID generator, canonical scope vectors"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove durable atomicity and privacy with real temporary LMDB, not mocks alone",
+          "subjects": [
+            "Persist original/assisted attempts and confidence, close/reopen daemon store, compare all records and associations",
+            "Concurrent revision writes only one succeeds; duplicate request no extra attempt/audit; payload mismatch rejected",
+            "Fault before transaction commit rolls back current/history/request/indexes together",
+            "Startup interrupted-job recovery and late callback discard; no pass or receipt",
+            "Learner deletion removes every key family/cache, races restart and retry without resurrection",
+            "Different owner cannot list/read/delete/watch; permission failure refuses activation",
+            "Completed delivery artifacts byte-identical after prepare/cancel/failure/resume/delete",
+            "Complete 35-database inventory opens within MAX_DBS=64 for fresh and existing stores; existing rows survive reopen and new namespace initialization"
+          ],
+          "fixturesNeeded": [
+            "Temporary isolated graph store using existing store-test setup; never user's live DB",
+            "Fixture domain module for validated answer events; no production grading in s1",
+            "Approved delivery artifact copies and fake context attestation"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "RPC protocol and reconnect fixture suite for s5 consumer",
+          "subjects": [
+            "Typed revision-conflict delivered inside result with owner-only projection",
+            "Unknown fields, forged learner/grade/eligibility, oversized and unsafe numeric inputs rejected",
+            "Snapshot subscription race, coalescing and reconnect full refresh; no stale Ready",
+            "Public projection whitelist excludes rubric/answer keys/private job payloads",
+            "Missing s2/s6/s7 modules return unavailable; override intent never grants permission",
+            "Actual IpcStreamMessage progress/data framing, substituted request ID, explicit done/error terminal, unsubscribe on abort and no post-terminal events",
+            "Healthy daemon shutdown with active watch: stop hook before store close, final unavailable/done flushed; 1000ms bounded flush and disconnect/locks-lost paths never hang or imply pass"
+          ],
+          "fixturesNeeded": [
+            "Real temporary Unix socket and daemon handlers",
+            "Versioned public result/event fixtures consumed later by editor decoder"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: persisted original and assisted attempts/confidence/association round-trip",
+            "unit: exact scope and deterministic identity separation"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: completed delivery artifacts unchanged across assessment lifecycle"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: crash recovery, failed commit rollback and deletion races",
+            "contract: reconnect/current projection and missing dependencies never pass"
+          ]
+        }
+      ],
+      "testFramework": "Existing node:test + node:assert/strict TypeScript runner with temporary isolated LMDB and sockets. Run npm run build, new understanding tests, affected graph-store/server and role/core-floor suites. No live cloud calls required; fixtures exercise persistence only, actual grader/editor/Git enforcement tests belong s3/s5/s6."
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Revisioned aggregate plus append-only child records",
+        "oneLineSummary": "One current record, separate immutable attempts and audit entries, committed together.",
+        "approach": "Use daemon-owned LMDB namespaces in the existing root transaction. Each command validates a discriminated schema and writes the aggregate, appended history and idempotency result atomically; public projection omits private rubric payloads. Replay is only request deduplication, not event sourcing.",
+        "pros": [
+          "Small bounded current reads",
+          "Preserves original attempts without copying history on each update",
+          "Fits existing synchronous transaction primitive"
+        ],
+        "cons": [
+          "Requires explicit namespace/key and deletion consistency checks"
+        ],
+        "costEstimate": "M",
+        "constraintCoverage": "sc1/sc2: immutable identities and revisions; ac1/k1/k4: durable original/confidence/assisted attempts; ac2/k6: no delivery writes; ac3/k9: restart recovery never grants pass. Both can meet these; a1 keeps bounded current reads."
+      },
+      {
+        "id": "a2",
+        "name": "Single serialized assessment document",
+        "oneLineSummary": "Embed current record, complete history and request receipts in one value.",
+        "approach": "Use one versioned LMDB value per assessment with all attempts/audit and idempotency entries embedded, replacing it atomically on every accepted command and deriving a redacted projection.",
+        "pros": [
+          "Simple atomic record replacement",
+          "Few key families"
+        ],
+        "cons": [
+          "Unbounded history repeatedly serialized",
+          "Large record deletion/resume and IPC projection risk",
+          "Harder bounded pagination"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Correctness possible but unnecessary write amplification and unbounded documents for indefinite retention.",
+        "constraintCoverage": "sc1/sc2: immutable identities and revisions; ac1/k1/k4: durable original/confidence/assisted attempts; ac2/k6: no delivery writes; ac3/k9: restart recovery never grants pass. Both can meet these; a1 keeps bounded current reads."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "narrative": "A saved mutation is acknowledged only after its record, history and replay receipt commit together. Conflicts return current state without altering history.",
+      "participants": [
+        {
+          "id": "client",
+          "label": "Editor client",
+          "description": "Untrusted command sender; displays daemon projection."
+        },
+        {
+          "id": "daemon",
+          "label": "Assessment service",
+          "description": "Validates identity, scope, revision and command."
+        },
+        {
+          "id": "store",
+          "label": "Local LMDB",
+          "description": "Daemon-owned atomic current and history storage."
+        }
+      ],
+      "messages": [
+        {
+          "from": "client",
+          "to": "daemon",
+          "label": "Command with request ID and expected revision",
+          "description": "No score or authority accepted from client."
+        },
+        {
+          "from": "daemon",
+          "to": "store",
+          "label": "Validate and atomically persist current + history + request receipt",
+          "description": "Synchronous transaction, no model call."
+        },
+        {
+          "from": "store",
+          "to": "daemon",
+          "label": "Committed or conflict",
+          "kind": "return",
+          "description": "No partial acknowledged write."
+        },
+        {
+          "from": "daemon",
+          "to": "client",
+          "label": "Typed result and redacted projection",
+          "kind": "return",
+          "description": "Conflict carries current owner view; success follows durability."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/understand-changes-before-committing-E20261017670419c4/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/HLD-670419c4ad8bea8e.json",
+      "quotedText": "User-resolved retention, identity, enablement and Git reuse decisions in meta.questionResolutions."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/tools/executor.ts:38"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:933"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/server.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/shared/types.ts:851"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/daemon/shutdown.ts"
+    }
+  ]
+}

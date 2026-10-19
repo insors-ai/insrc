@@ -30,6 +30,8 @@ import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bi
 import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
 import { readTestRecord } from './test-record.js';
+import { resolveStoryRangeBase } from './range-base.js';
+import { newestStoryCommit } from './story-commits.js';
 
 const log = getLogger('workflow:build-record');
 
@@ -294,6 +296,13 @@ export function buildRecordPathsFor(repoPath: string, rec: BuildRecord): { md: s
 	return pathsForMerged(repoPath, mergeWithPrior(jsonPath, rec));
 }
 
+/** The Story's newest trailered commit since its range base; undefined when the
+ *  base cannot be resolved or no commit carries the trailer. Never throws. */
+function storyCommit(repoPath: string, epicHash: string, storyId: string): string | undefined {
+	const base = resolveStoryRangeBase(repoPath, epicHash, storyId);
+	return base !== undefined ? newestStoryCommit(repoPath, base, `${epicHash}/${storyId}`) : undefined;
+}
+
 export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string } {
 	// The json path is hash-flat (identity-free), so resolve + merge FIRST, then
 	// key the nested md folder on the MERGED record. mergeWithPrior preserves the
@@ -305,12 +314,13 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// `body.commit` is produced HERE rather than in either writer, so the two routes
 	// cannot diverge: this is the one persist entry point both funnel through.
 	//
-	// It is HEAD AT PERSIST TIME, as the design specifies — so a re-persist
-	// REFRESHES it rather than preserving the earlier value. That is deliberate but
-	// easy to misread: the field says "the commit this record was written at", not
-	// "the commit the Story's work first landed in". A caller that knows better can
-	// supply `body.commit` explicitly and it wins for that write.
-	const commit = rec.body.commit ?? headShortSha(repoPath);
+	// It is the Story's newest commit carrying its `Insrc-Story` trailer since the
+	// range base (ISSUE-b47dadc7), so another Story's later commits on main do not
+	// stand in for it. With no trailered commit it is HEAD AT PERSIST TIME, as
+	// before — so a re-persist REFRESHES it rather than preserving the earlier
+	// value. A caller that knows better can supply `body.commit` explicitly and it
+	// wins for that write.
+	const commit = rec.body.commit ?? storyCommit(repoPath, rec.meta.epicHash, rec.meta.storyId) ?? headShortSha(repoPath);
 	const withCommit: BuildRecord = commit !== undefined
 		? { ...rec, body: { ...rec.body, commit } }
 		: rec;

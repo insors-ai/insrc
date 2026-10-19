@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792332458284-p1cvkl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-18T14:08:16.121Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 37832,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "aef82b034d7209fa",
+    "epicSlug": "review-every-changed-symbol-story-too",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-18T17:09:49.078Z",
+    "parentRef": {
+      "slug": "review-every-changed-symbol-story-too"
+    }
+  },
+  "body": {
+    "title": "Review every changed symbol of a Story too large for one review prompt",
+    "reproduction": "Run the code review (insrc_code_review_step) on a Story with a large change set. Seen 2026-10-18 on Epic c2ba6fa6 Story s1 (17 build tasks): the daemon built a 1,247,701-character review prompt; the codex CLI refused it with 'Input exceeds the maximum length of 1048576 characters' (input_too_large); the structured retry sent the same prompt three times; the review ended with daemon-review-daemon-error and recorded nothing. Expected: the review completes and judges every changed symbol, whatever the size of the Story. Observed: no review at all, so the Story's BUILD had to be approved with an override and no code review.",
+    "rootCause": "Each review dimension's judge sends the Story's whole changed-symbol set, with its grounding, in one structured model call: adherence (src/workflow/code-review/dimensions/adherence.ts:147), conventions (src/workflow/code-review/dimensions/conventions.ts:156), coverage (src/workflow/code-review/dimensions/coverage.ts:180), functional coverage (src/workflow/code-review/dimensions/functional-coverage.ts:149) and quality (src/workflow/code-review/dimensions/quality.ts:132). Nothing measures the prompt against the reviewing CLI's input limit or divides the work, so a Story whose summaries exceed the limit can never be reviewed. The structured retry (src/agent/providers/structured-output.ts:186-190) treats the refusal like a schema failure and repeats the identical oversized call. The runner drives one call per dimension and folds those results into one verdict (src/workflow/code-review/runner.ts:8-19), with no notion of a dimension judged in parts.",
+    "fixIntent": "The code review of a Story of any size completes and judges every changed symbol: when one dimension's material does not fit the reviewing model's input, the review covers it in parts that each fit, and the parts' findings make up that dimension's single result and the Story's one verdict. Nothing is dropped or truncated to fit. A refusal for input size is not retried as if it were a malformed answer. A Story that fits in one call is reviewed as today."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/adherence.ts:147",
+      "quotedText": "provider.completeStructured<unknown>(buildAdherencePrompt(subject, grounding, note), ADHERENCE_FINDINGS_SCHEMA, { cwd: subject.repoPath });"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/conventions.ts:156",
+      "quotedText": "provider.completeStructured<unknown>(buildConventionsPrompt(subject, grounding, note), CONVENTIONS_FINDINGS_SCHEMA, { cwd: subject.repoPath });"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/coverage.ts:180",
+      "quotedText": "provider.completeStructured<unknown>(buildCoveragePrompt(subject, grounding, note), COVERAGE_FINDINGS_SCHEMA, { cwd: subject.repoPath });"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/functional-coverage.ts:149",
+      "quotedText": "provider.completeStructured<unknown>(buildFunctionalCoveragePrompt(subject, grounding, note), FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA, { cwd: subject.repoPath });"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/dimensions/quality.ts:132",
+      "quotedText": "provider.completeStructured<unknown>(buildQualityPrompt(subject, grounding, note), QUALITY_FINDINGS_SCHEMA, { cwd: subject.repoPath });"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts:186-190",
+      "quotedText": "export async function withStructuredRetry<T>(call, validate, maxAttempts): Promise<T>"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/code-review/runner.ts:8-19",
+      "quotedText": "dimension judges into ONE persisted `CodeReviewArtifact` ... drives the four judges"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "insrc_code_review_step start, Epic c2ba6fa62a148ed1 Story s1, 2026-10-18",
+      "quotedText": "Input exceeds the maximum length of 1048576 characters. (code -32602), data: {\"input_error_code\":\"input_too_large\",\"max_chars\":1048576,\"actual_chars\":1247701}"
+    },
+    {
+      "id": "c9",
+      "kind": "stakeholder",
+      "ref": "user rule 2026-10-08 (no payload caps)",
+      "quotedText": "never cap/truncate a large payload"
+    }
+  ]
+}

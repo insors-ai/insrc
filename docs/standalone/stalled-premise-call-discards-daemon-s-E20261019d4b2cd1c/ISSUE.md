@@ -1,0 +1,25 @@
+<!-- insrc:artifact ISSUE-d4b2cd1c2c1ba649 -->
+
+# A stalled premise call discards the daemon's whole design review
+
+## Reproduction
+
+Run insrc_review_step on a controller-authored DEF so the daemon reviews it. Seen twice on 2026-10-19 on DEF-8315a11f29fd2812. Round 1 (10:02): the daemon extracted 46 premises; premise checks p01-p03 each returned in about 13 s; the codex session for p04 (01a15271-3e9b-77a0-94b3-cc3299328415) recorded the prompt at 10:05:17 and then no model activity at all (no reasoning, no token count, no answer). At 10:15:15 the daemon killed it at the 10-minute call limit (codex exited with -9) and returned daemon-review-daemon-error: 'No review was recorded'. Round 3 (10:31) was the same: 61 premises, p01-p03 in about 13 s each, p04's session (01a15289-ffb7-7ba2-8ca1-cf637559360b) silent from 10:32:19 until it was killed at 10:42:17. Round 2, between them, ran all 49 checks and completed, so the stall is intermittent rather than tied to the 4th call. Observed: one silent call costs 10 minutes and throws away every premise already judged; no review is stamped, so approval needs an override. Expected: a call that produces nothing is noticed and retried promptly, and the review still records every premise it judged.
+
+## Root cause
+
+Two parts, both in the daemon's review path. (1) Nothing survives one failed call: the review judges premises one after another in src/workflow/review/review.ts:98-103 (`findings.push(await verifyClaim(claim, ev, provider, signal))`) with no handling of a failed premise, and verifyClaim calls provider.completeStructured directly (src/workflow/review/verify.ts:218) with no retry, so the error from one killed call ends the whole review and src/daemon/workflow-review-rpc.ts records nothing. (2) A silent call is only detected by the provider's wall-clock limit: CliProvider sets a 600,000 ms per-call timeout (src/agent/providers/cli-provider.ts:180) and passes it to the subprocess (src/agent/providers/cli-provider.ts:491, src/agent/providers/cli-provider.ts:509); there is no check for a call that has produced no output, so a session that never starts answering is waited on for the full 10 minutes. Why codex's model stays silent on such a call is not established: the session logs show the prompt delivered and then no model events, which points outside insrc (the model service), and it did not recur in round 2.
+
+## Fix intent
+
+A design review survives a stalled or failed model call. A call that has produced no model output is recognised as stalled well before the 10-minute limit and retried once as a fresh call; the premises already judged are kept; a premise whose call still fails after its retry is recorded in the review as not judged, naming the cause, so it can never count as a pass and the rest of the review is still stamped. The log names the codex session of every stalled call so the upstream cause can be followed up.
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/review/review.ts:98-103` — "findings.push(await verifyClaim(claim, ev, provider, signal));"
+- **[[c2]]** `code` `src/workflow/review/verify.ts:218` — "const raw = await provider.completeStructured<RawFinding>("
+- **[[c3]]** `code` `src/agent/providers/cli-provider.ts:180` — "this.timeoutMs = opts.timeoutMs ?? 600_000;"
+- **[[c4]]** `code` `src/agent/providers/cli-provider.ts:491` — "const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd);"
+- **[[c5]]** `code` `src/daemon/workflow-review-rpc.ts` — "workflowReviewStart"
+- **[[c6]]** `analyze-bundle` `insrc_analyze_step how-does-it-work of 2026-10-19 over src/workflow/review/verify.ts, src/daemon/workflow-review-rpc.ts and the CliProvider timeout`
+- **[[c7]]** `step-output` `daemon log /tmp/.insrc/agent.30.log 2026-10-19 10:02-10:42 and codex sessions 01a15271-3e9b-77a0-94b3-cc3299328415, 01a15289-ffb7-7ba2-8ca1-cf637559360b` — "workflow.review: no review recorded ... codex exited with -9"

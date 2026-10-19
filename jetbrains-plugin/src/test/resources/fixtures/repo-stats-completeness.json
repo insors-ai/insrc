@@ -1,0 +1,93 @@
+[
+  {
+    "repoPath": "/home/dev/a",
+    "status": "ready",
+    "addedAt": "2026-10-01T00:00:00.000Z",
+    "lastIndexed": "2026-10-18T00:00:00.000Z",
+    "fileCount": 3,
+    "filesByLanguage": {
+      "typescript": 3
+    },
+    "entityCount": 9,
+    "entityCountByKind": {
+      "function": 9
+    },
+    "relationCount": 4,
+    "sizeBytes": 2048,
+    "pendingJobs": 0,
+    "completeness": {
+      "complete": true,
+      "reasons": [],
+      "counts": {
+        "pending": {
+          "awaiting-target": 0,
+          "ambiguous": 0,
+          "no-candidate": 0,
+          "external-endpoint": 0
+        },
+        "unwritable": 0,
+        "unembedded": 0,
+        "uncommittedFiles": 0
+      },
+      "uncommittedFiles": [],
+      "generation": 4
+    }
+  },
+  {
+    "repoPath": "/home/dev/b",
+    "status": "ready",
+    "addedAt": "2026-10-01T00:00:00.000Z",
+    "lastIndexed": "2026-10-18T00:00:00.000Z",
+    "fileCount": 3,
+    "filesByLanguage": {
+      "typescript": 3
+    },
+    "entityCount": 9,
+    "entityCountByKind": {
+      "function": 9
+    },
+    "relationCount": 4,
+    "sizeBytes": 2048,
+    "pendingJobs": 0,
+    "completeness": {
+      "complete": false,
+      "reasons": [
+        "1 file could not be indexed",
+        "2 relationships point at files an ignore rule excludes",
+        "1 relationship could not be stored (source-missing: 1)"
+      ],
+      "counts": {
+        "pending": {
+          "awaiting-target": 2,
+          "ambiguous": 1,
+          "no-candidate": 5,
+          "external-endpoint": 0
+        },
+        "unwritable": 1,
+        "unembedded": 0,
+        "uncommittedFiles": 1
+      },
+      "uncommittedFiles": [
+        "/home/dev/b/src/locked.ts"
+      ],
+      "generation": 7
+    }
+  },
+  {
+    "repoPath": "/home/dev/c",
+    "status": "ready",
+    "addedAt": "2026-10-01T00:00:00.000Z",
+    "lastIndexed": "2026-10-18T00:00:00.000Z",
+    "fileCount": 3,
+    "filesByLanguage": {
+      "typescript": 3
+    },
+    "entityCount": 9,
+    "entityCountByKind": {
+      "function": 9
+    },
+    "relationCount": 4,
+    "sizeBytes": 2048,
+    "pendingJobs": 0
+  }
+]

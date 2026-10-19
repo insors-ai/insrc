@@ -70,7 +70,7 @@ test('the validate prompts no longer instruct running the repo-wide sweep or any
 	const implement = renderImplementPrompt('/repo', TASK, '');
 	assert.ok(implement.includes(SWEEP));
 	assert.ok(implement.includes(TYPECHECK));
-	const standaloneImplement = renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '' });
+	const standaloneImplement = renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '' });
 	assert.ok(standaloneImplement.includes(SWEEP));
 	assert.ok(standaloneImplement.includes(TYPECHECK));
 });
@@ -96,8 +96,8 @@ test('both validate prompts place the given evidence text in an evidence section
 test('the implement prompts tell the implementer to merge upstream with --no-ff and commit the merge on its own', () => {
 	const prompts = [
 		renderImplementPrompt('/repo', TASK, ''),
-		renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '' }),
-		renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'x', resolvedDecisions: '' }),
+		renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', resolvedDecisions: '' }),
+		renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'x', resolvedDecisions: '' }),
 	];
 	for (const prompt of prompts) {
 		assert.ok(prompt.includes('## Merging upstream'), 'has the merge section');
@@ -170,9 +170,9 @@ test("the implement prompt tells the builder to pass the cases for each listed t
 	}
 	assert.match(implement, /with the `tests` mapping described above\.\s*$/);
 	// A standalone build WITH a design is told the same, by subject; a trivial one (no design, no named tests) is not.
-	const small = renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'f', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '' });
+	const small = renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'f', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '' });
 	assert.ok(small.includes('## Submitting the tests') && small.includes("`name` the subject's text exactly as the design states it") && small.includes('`reported`'));
-	assert.ok(!renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'f', resolvedDecisions: '' }).includes('## Submitting the tests'));
+	assert.ok(!renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'f', resolvedDecisions: '' }).includes('## Submitting the tests'));
 
 	// The judge is told what to check about the named tests and the reported results, on both routes.
 	for (const prompt of [renderValidatePrompt('/repo', TASK, 'E'), renderStandaloneValidatePrompt({ storyId: 'S001', sizeClass: 'small', lldMdRel: 'docs/x/LLD.md', evidence: 'E' })]) {
@@ -205,8 +205,8 @@ test("the implement prompt tells the builder to pass the cases for each listed t
 
 const implementPrompts = (): string[] => [
 	renderImplementPrompt('/repo', TASK, ''),
-	renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '' }),
-	renderStandaloneImplementPrompt({ storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'x', resolvedDecisions: '' }),
+	renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'small', producesLld: true, focus: 'x', lldMdRel: 'docs/x/LLD.md', resolvedDecisions: '' }),
+	renderStandaloneImplementPrompt({ epicHash: 'f1bf0fb3085c629c', storyId: 'S001', sizeClass: 'trivial', producesLld: false, focus: 'x', resolvedDecisions: '' }),
 ];
 
 test('every implement prompt, plan-driven and standalone Small and Trivial, carries the smallest-complete-change section with the rule filled in and no placeholder left', () => {

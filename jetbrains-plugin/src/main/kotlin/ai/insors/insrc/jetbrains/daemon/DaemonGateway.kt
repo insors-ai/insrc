@@ -423,6 +423,22 @@ data class RepoStatsDto(
     val relationCount: Int,
     val sizeBytes: Long,
     val pendingJobs: Int,
+    /** Whether the index is complete (Epic c2ba6fa6 s1); null when the reply has no field (unknown: a daemon before the change). */
+    val completeness: RepoCompletenessDto? = null,
+)
+
+/**
+ * The plugin mirror of the daemon's `RepoCompleteness` (Epic c2ba6fa6 s1): the
+ * plain reason lines (each carries its count) and the counts behind them.
+ */
+data class RepoCompletenessDto(
+    val complete: Boolean,
+    val reasons: List<String>,
+    val pending: Map<String, Int>,
+    val unwritable: Int,
+    val unembedded: Int,
+    val uncommittedFiles: List<String>,
+    val generation: Int,
 )
 
 /**
@@ -1529,7 +1545,27 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             relationCount = (data["relationCount"] as? Number)?.toInt() ?: 0,
             sizeBytes = (data["sizeBytes"] as? Number)?.toLong() ?: 0L,
             pendingJobs = (data["pendingJobs"] as? Number)?.toInt() ?: 0,
+            completeness = parseCompleteness(data["completeness"]),
         )
+
+        /**
+         * The `completeness` field of a repo.stats reply (Epic c2ba6fa6 s1), or null when it is
+         * absent or not an object with a boolean `complete` (read as unknown, never as complete).
+         */
+        internal fun parseCompleteness(raw: Any?): RepoCompletenessDto? {
+            val m = raw as? Map<*, *> ?: return null
+            val complete = m["complete"] as? Boolean ?: return null
+            val counts = m["counts"] as? Map<*, *>
+            return RepoCompletenessDto(
+                complete = complete,
+                reasons = (m["reasons"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                pending = numberMap(counts?.get("pending")),
+                unwritable = (counts?.get("unwritable") as? Number)?.toInt() ?: 0,
+                unembedded = (counts?.get("unembedded") as? Number)?.toInt() ?: 0,
+                uncommittedFiles = (m["uncommittedFiles"] as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                generation = (m["generation"] as? Number)?.toInt() ?: 0,
+            )
+        }
 
         /**
          * Parse the daemon's `daemon.status` reply into a [DaemonStatusDto] (Story

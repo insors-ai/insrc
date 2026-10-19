@@ -1,0 +1,750 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1792239015225-9sq2cz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-17T12:15:49.620Z",
+    "epicCreatedAt": "2026-10-17T08:59:42.630Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 334383,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "670419c4ad8bea8e",
+    "epicSlug": "understand-changes-before-committing",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The impact, completion, retry and Unknown policies preserve the upstream decisions.",
+          "evidence": "Read the DEF's resolved questions and specification §§3–6. The recorded decisions require 'two retries per question', independently verified criteria, Medium completion with gaps, default Medium/High requirements, and an explicit override for Unknown. The HLD incorporates these and keeps disabled-requirement behavior explicitly proposed. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, docs/pre-commit-understanding-spec.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Identity and association decisions are preserved without adopting rejected defaults or expanding non-goals.",
+          "evidence": "The DEF records provider IDs, Git precedence and OS fallback, explicitly leaving retention/privacy undecided. Its association decision requires many-to-many inferred links and permits explaining why no item applies. The HLD preserves these decisions and excludes delivery-state changes, new agent adapters and a separate Grokcheck runtime. [files: docs/epics/understand-changes-before-committing-E20261017670419c4/DEF.md, docs/pre-commit-understanding-spec.md]",
+          "action": "Resolve the explicitly deferred normalization and privacy details in s1 LLD.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing diff grounding mixes staged and unstaged changes and can fall back to committed changes.",
+          "evidence": "Read assembleDiffCodeReviewGrounding and realDiffGroundingDeps. workingTreeDiff invokes runDiff with both staged:false and staged:true and joins their bodies. An empty working diff selects rangeDiff or lastCommitDiff. This is unsuitable as unchanged authorization scope. [files: src/workflow/code-review/grounding.ts]",
+          "action": "Preserve the proposed separate effective-index capture.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing webview host supplies status/config lifecycle patterns, not an assessment or Source Control readiness implementation.",
+          "evidence": "Read createWebviewPanelHost, message handlers and HTML shell. Its panels are insrc.detailedStatus and insrc.repoConfiguration; detail tabs are daemon/workflows/debug. It implements singleton reveal/disposal, validated messages and nonce-based CSP, matching the HLD's limited reuse claim. [files: vscode-plugin/src/panels/webview-host.ts, vscode-plugin/src/panels/types.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing provider and role-routing facilities can be reused, but the five understanding roles require registration.",
+          "evidence": "CliProvider.complete accepts LLMMessage[] and invokes Claude or Codex CLI paths. RoleRouter resolves descriptors, applies applyCoreFloor and materializes providers. The full taxonomy contains none of the proposed understanding roles; unknown roles currently default to mid without floor protection. The HLD correctly requires new descriptors and an initialization guard. [files: src/shared/types.ts, src/agent/providers/cli-provider.ts, src/config/role-taxonomy.ts, src/config/core-floor-guard.ts, src/analyze/context/role-router.ts]",
+          "action": "Keep the missing-descriptor guard local to the understanding domain; preserve existing unknown-role behavior for other consumers.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed shared contracts fully specify transport of revision conflicts and assessment state updates.",
+          "evidence": "Read the IPC response types, server dispatch and HLD contracts. IpcResponse.error is a string, and thrown handler errors are reduced through failureMessage. The HLD requires stale revisions to return fresh state and readiness to refresh on state/revision events, but supplies neither a conflict-result envelope nor a subscription/reconnect contract. A compatible implementation is possible through result/stream payloads, but its shape and change sites remain unspecified. [files: src/shared/types.ts, src/daemon/server.ts, src/daemon/index.ts, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+          "action": "In s1/s5 LLD, define typed conflict results, projection retrieval and event/reconnect contracts, including daemon registration and client decoding sites.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Daemon-owned LMDB transactions support the proposed atomic current/history writes without holding a transaction over reasoning.",
+          "evidence": "Read store initialization and withWriteTxn. The store opens named databases under one root; withWriteTxn uses root.childTransaction and rejects thenable callbacks with 'withWriteTxn callbacks must be synchronous'. The HLD's short atomic mutations and separately persisted reasoning jobs fit this constraint. [files: src/db/graph/store.ts]",
+          "action": "Use synchronous transactional callbacks and acknowledge only after the transaction promise resolves.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Assessment versioning is correctly treated as a new contract rather than an existing graph migration guarantee.",
+          "evidence": "The graph store dispatches on meta.schema_version and treats a missing version as first boot. Its opened namespaces contain no assessment store. The HLD explicitly introduces a separate assessmentSchemaVersion and stricter missing/corrupt-record handling, without claiming graph migrations already implement assessment/history/receipt consistency. [files: src/db/graph/store.ts, docs/pre-commit-understanding-spec.md]",
+          "action": "Implement and test the separate version boundary in s1.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Story ownership and ordering preserve the DEF dependencies and daemon/client authority boundary.",
+          "evidence": "Compared all seven DEF stories and their dependencies with the HLD contract owners. Required edges are preserved, including s3→s4, s2/s3/s4→s5, s2/s3/s5→s6 and s6→s7. Foundational override envelopes avoid an s5→s7 dependency; enforcement remains s6/s7. Specification §2 explicitly assigns canonical state and grading to the daemon and presentation to the plugin. [files: .insrc/artifacts/DEF-670419c4ad8bea8e.json, docs/pre-commit-understanding-spec.md, vscode-plugin/src/panels/types.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Provider and storage failures are detectable and the design states non-authorizing handling.",
+          "evidence": "CliProvider.withTransientRetry retries transient failures sequentially and rethrows deterministic or exhausted failures. withWriteTxn rejects failed transactions and detected lock loss; IPC sends handler failures as errors. The HLD maps unavailable reasoning to Unknown, interrupted jobs to recoverable state, and corrupt storage to recovery errors rather than passes. [files: src/agent/providers/cli-provider.ts, src/db/graph/store.ts, src/daemon/server.ts]",
+          "action": "Retain these distinctions when defining domain error codes.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Exact support and recovery behavior for Git invocation variants is sufficiently established to verify authorization correctness.",
+          "evidence": "Read the existing grounding implementation and specification's commit-coordination requirements. Existing grounding does not implement the proposed hook/receipt protocol. The HLD deliberately defers the supported command set, hook ordering and race boundary to s6 LLD; its planned tests cannot yet establish those guarantees. The analyzer also failed with shaper-llm-unavailable caused by an invalid response schema, so inspection continued through direct reads. [files: src/workflow/code-review/grounding.ts, docs/pre-commit-understanding-spec.md, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+          "action": "Before enforcement, define supported invocations and demonstrate partial-index, amend, cancellation, hook composition and mismatch handling in real Git repositories.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every DEF acceptance criterion has a planned test mapping.",
+          "evidence": "Compared all 22 DEF criteria—three each for s1–s6 and four for s7—with the HLD matrix. Each has an owner, test level and observable assertion. Additional rows cover the five association checks, upstream fixture parity, Git edge cases, role routing and schema recovery. These are planned tests, not verified implementation results. [files: .insrc/artifacts/DEF-670419c4ad8bea8e.json, docs/pre-commit-understanding-spec.md, docs/epics/understand-changes-before-committing-E20261017670419c4/HLD.md]",
+          "action": "Carry these mappings into story test plans and executable tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12,
+        "unverified": 2
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-17T12:19:08.755Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-17T12:22:58.641Z",
+    "questionResolutions": {
+      "qf33e3f27": {
+        "question": "Before s1 implementation, settle preferred Git identity semantics, normalization and multi-provider/no-Git ambiguity; preserve user-approved provider/Git/OS precedence.",
+        "status": "resolved",
+        "choice": "Use the active repository's configured Git email as Git ID. With one connected GitHub/GitLab/Jira identity, use that identity. With multiple connected identities, use the repository's Git email. If no usable identity is available, fall back to the OS user ID. Keep identities distinct unless explicitly linked.",
+        "rationale": "User explicitly accepted this interpretation in chat. This preserves the approved provider/Git/OS precedence without automatically merging identities.",
+        "resolvedAt": "2026-10-17T12:27:44.498Z"
+      },
+      "q0a8f7ef6": {
+        "question": "Before s1 persistence ships, decide retention duration, visibility, deletion and sharing; no 30-day default was accepted.",
+        "status": "resolved",
+        "choice": "Retain the learner's assessment history locally until that learner explicitly deletes it. History is private to the learner, sharing is disabled, and there is no automatic expiry.",
+        "rationale": "User explicitly chose retention until learner deletion, private and local, with sharing disabled.",
+        "resolvedAt": "2026-10-17T12:30:14.335Z"
+      },
+      "q2c98434d": {
+        "question": "Confirm proposed project enablement and optional assessment behavior for individually disabled requirements; strict Medium and High remain default requirements.",
+        "status": "resolved",
+        "choice": "Require explicit feature enablement per project. Within an enabled project, Medium completion and High pass-or-explicit-recorded-override are required by default. If either requirement is individually disabled, its assessment remains available voluntarily without blocking the commit.",
+        "rationale": "User explicitly accepted project opt-in, strict Medium/High defaults within enabled projects, and voluntary tests for disabled requirements.",
+        "resolvedAt": "2026-10-17T12:31:40.687Z"
+      },
+      "qed3cc567": {
+        "question": "Before s6 enforcement ships, specify supported Git commands and hook ordering, temporary indexes, amend/merge handling and the exact race/bypass boundary.",
+        "status": "resolved",
+        "choice": "Reuse and extend the framework's existing git_commit, git_amend, git_merge, git_diff, git_status, git_stage and runShell infrastructure. Add one shared daemon assessment eligibility check, invoked by insrc Git operations and hooks for commits initiated outside insrc; do not create a separate commit gateway. Support ordinary commits, amend and merge completion with the effective index (including partial staging and temporary indexes). Implement missing exact candidate snapshot/base binding, eligibility, and explicit commit-recorded overrides. Existing executor auto-approval and verifyHooks:false are not assessment overrides. Existing working-tree Git baseline may supply patterns but must not substitute unstaged content for the intended commit. Story s6 must specify/test hook ordering, actual message verification, cancellation and mismatch recovery; external hook bypass, plumbing and mutation after validation remain outside cooperative local enforcement.",
+        "rationale": "User approved the revised approach after inspecting available framework tools and their gaps. Preserve existing Git capabilities and build only missing assessment coordination.",
+        "resolvedAt": "2026-10-17T12:36:42.369Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The daemon keeps one durable understanding record for each learner and exact staged change. A VS Code editor pane delivers questions and guidance while Git adapters check the applicable requirement and any recorded exception. Inferred work associations enrich the assessment; explaining an unassociated change's intent and association is itself part of the test."
+    },
+    "frameworkSummary": "Choose a daemon-owned state machine with transactional current records and preserved attempt/audit history (a1). This is a proposed architecture: shared interfaces below are design contracts, not existing exported symbols. The daemon is the only authority for identity resolution, scope, questions, grading, guidance, policy and overrides. The seven stories retain the approved dependencies; common eligibility/override envelopes belong to foundational s1 so the editor does not depend on future s7. The separate DEF review timeout issue is not part of this implementation.",
+    "architectureShape": "Existing integration references: daemon entry and RPC transport in src/daemon/index.ts and src/daemon/server.ts; reasoning/context candidates in src/analyze/context; changed-entity grounding reference in src/workflow/code-review/grounding.ts; editor lifecycle/message/CSP reference in vscode-plugin/src/panels/webview-host.ts. Discovery is bounded. The existing webview host manages status/config panels, so the assessment gets its own editor-area panel using compatible lifecycle/message patterns rather than a new status tab. Existing diff grounding can mix staged/unstaged or fall back to committed changes; it must not supply authorization scope unchanged.\n\nIntroduce a daemon-internal understanding domain (new module placement to be finalized in LLD) using existing LLMProvider/role routing and daemon-owned durable local storage. Proposed persistence uses a versioned LMDB namespace managed by the daemon storage layer, separate from work-item artifacts and conversations; clients never open it. Atomically persist state revision plus attempt/audit entry before acknowledging a mutation. Duplicate request IDs return the original result; stale expectedRevision rejects and returns fresh state. Long reasoning is a persisted job with an interruption state, not a database transaction held over a model call. No LLM calls in parallel.\n\nScope capture reads the effective Git index (including GIT_INDEX_FILE), repository/worktree identity, base/parents and intended commit mode; initial commits have an explicit absent base. Worktree content and graph timestamps never substitute for staged objects. Build structured entity summaries and relations tied to this snapshot; permit only bounded attributable staged excerpts under a specified grounding contract. Unsupported binary/deletion/rename/language cases are explicit evidence limitations. A stale index or incomplete evidence cannot produce a false pass or Trivial classification. Evidence changes invalidate affected assessments; policy revision changes require fresh eligibility checks.\n\nResolve the local learner from available GitHub/GitLab/Jira account IDs, prefer Git identity when multiple IDs exist, then OS user identity as fallback, as approved. Namespace provider IDs by authority and OS IDs by host; record source/assurance and aliases. Git configuration is locally asserted rather than authenticated proof. Never infer identity from the agent or commit author of somebody else's code. Exact meaning and normalization of the preferred Git identity, missing-Git multi-provider ambiguity, retention duration and cross-user visibility must be finalized in s1 LLD; no automatic merge of uncertain identities and no silent adoption of the rejected random-per-repository proposal.\n\nAssociate available work IDs many-to-many with evidence provenance. Parent IDs can establish epic/story/task hierarchy without proving a code mapping. Unassociated changes get purpose and association questions, allowing a reasoned no-item explanation. Learner proposals remain distinct from verified associations; insufficient evidence yields unverifiable, not automatic incorrectness or pass. Work-item states and approvals are never mutated by assessments.\n\nClassification is a sequential daemon reasoning operation returning exactly Trivial/Low/Medium/High or a separate Unknown/error state with reasons. Policy evaluation is deterministic after contextual classification. Default strict Medium completion and High pass-or-override are enabled. Trivial needs no assessment; Low is optional; Medium completes after all required concepts are addressed or explicitly recorded as gaps, with no outcome block; High requires all required rubric criteria independently verified or an explicit override. Unknown requires an explicit recorded override, not an invented impact. Proposed behavior for individually disabled Medium/High requirements is optional assessment, with visible policy status; this remains a design proposal pending HLD approval.\n\nStart with evidence-backed explanation/change-impact and intent-association questions. Separate generated content from independent evidence-verification judgments using a fresh reviewer context through the existing provider abstraction. Answer rubrics stay daemon-only. Preserve first answer/confidence, partial or unverifiable judgments, all guidance and assisted attempts. Unsure opens guidance without needing an answer and is not itself a wrong answer. Incorrect submitted responses also open guidance. Allow an initial attempt plus two fresh retries per question/concept, carrying the same evidence and criterion versions; retries cannot be reset by reopening or requesting help. Reading guidance never passes; finishing with recorded gaps can complete Medium, but not satisfy High. Exact question count and rubric selection are LLD decisions.\n\nGit integration is opt-in installation for the registered project, with required policy defaults effective once enabled. A thin local Git adapter talks IPC to the daemon; there is no Grokcheck process. Pre-commit captures the actual candidate scope and returns allowed or actionable pending/block. It never holds a Git command open while the person learns: the editor shows the assessment and the user retries the commit after completion. A successful matching test permits the next check automatically, not an unsolicited new commit. Background assessments may coexist; final authorization uses short per-worktree serialization and durable attempt IDs.\n\nCoordinate pre-commit with commit-msg validation and post-commit observation. A receipt binds learner, full scope, policy, assessment revision and attempt; message validation rechecks scope and required override metadata before permitting completion. For explicit High or Unknown exceptions, daemon-recorded acknowledgment/reason must match the actual final message; handwritten trailers alone are insufficient. Preserve user message text; do not expose detailed learning answers in trailers. Normal commit messages do not invalidate a pass, but edits removing/changing required override records do. Cancellation revokes pending attempt receipts while retaining learning history. Retries reuse learning evidence only for identical inputs; expired receipts are reissued only after fresh checks.\n\nLocal hooks are not tamper-proof. Respect existing hooks/core.hooksPath and documented ordering; never overwrite hooks silently. Use the effective temporary index for partial-path commits and validate amended commit parents. Merge/unmerged-index or unsupported Git invocations must return an explicit unsupported/error outcome before authorization. Git/hook bypass, an external index mutation after the last check and later hooks rewriting content are declared limits; post-commit mismatch is audited and never falsely marked covered. LLD and integration tests must define the exact supported Git command set and race boundary before enforcement ships.\n\nAdapt selected Grokcheck modules from revision 0d8fa1730f11fa3178bb132f30d42f2dea2d8a90 per docs/pre-commit-understanding-spec.md section 9: grading/validation/evidence and history patterns live in the daemon, useful presentation remains in the editor. Preserve MIT attribution and provenance. No upstream server, Python runtime, scope heuristics, browser-side authoritative keys, or Claude-specific lifecycle dependency. Upstream tests are behavioral references, not proof of insrc policy correctness.\n\nSource Control readiness (s5): the VS Code Source Control surface must show Ready, Understanding check required, Override required, Stale or Unavailable from the current daemon projection, with an action to reveal the assessment editor. Refresh on state/revision events and on reconnect, staged/base changes, policy changes and learner changes. Until a fresh scope/eligibility response arrives, invalidate any old Ready indication. The display is informational and never replaces the Git gate. Existing status/config webviews are references only, not an implementation of this requirement. The concrete supported extension contribution is validated in s5 LLD.\n\nReasoning roles: s1 owns adding proposed RoleIds understanding.classify, understanding.generate, understanding.grade, understanding.verify and understanding.guide to the existing registry in src/config/role-taxonomy.ts before consumers ship. All five are critical with defaultTier core because their judgments can reduce required checks, produce grading criteria or teach the learner; use existing coreFloor enforcement and configured CLI providers. s2 consumes classify; s3 consumes generate, grade and verify; s4 consumes guide and verify. Independent verification uses a fresh context and evidence rather than trusting an author self-verdict. Fail initialization for an absent descriptor instead of allowing unknown-role mid fallback. Deterministic policy evaluation and copied pure grading helpers need no model. Calls remain sequential. Verify these mappings and floor behavior with role-routing contract tests.\n\nAssessment persistence version boundary (s1): introduce assessmentSchemaVersion 1, independent of the existing graph-store schema version. A persisted envelope contains version, assessment ID, revision, learner identity/provenance, immutable scope, policy/evidence revisions, state, association provenance, questions/private rubric references, original and assisted attempt records, audit references, and receipt/override references. The exact storage keys and per-record field schemas are LLD work. Readers dispatch by this version; absent/malformed or unsupported newer versions yield an explicit recovery error and never authorize a commit. Do not invent a migration for hypothetical older assessment formats. Future supported upgrades must validate and atomically publish consistent current/history/receipt versions; interrupted migration leaves the prior version usable or explicitly unavailable, never partially authoritative. Migrations and deletion must invalidate affected receipts and apply the approved retention policy consistently to current and historical personal data. Tests cover fresh v1, corrupt/missing version, unsupported newer version, interrupted upgrades and deletion consistency. These are proposed assessment contracts, not claims that existing graph migrations already provide them.\n\nPlanned verification matrix: these are acceptance tests to implement, not test results. Every row is owned by the named story; integration tests may exercise previously delivered contracts.\n\n| DEF criterion | Owner | Test level | Observable assertion |\n| --- | --- | --- | --- |\n| s1/ac1 | s1 | Daemon persistence integration | Save/reopen the same learner and scope; preserve answers, confidence, assisted history and associations. |\n| s1/ac2 | s1 | Daemon integration | Fail, skip and resume assessments; snapshot linked work-item approvals/status before and after and assert no mutations. |\n| s1/ac3 | s1 | Restart/recovery integration | Interrupt a job, restart daemon and reconnect editor; acknowledged progress survives and missing state never yields pass. |\n| s2/ac1 | s2 | Classifier contract plus curated evaluation | Scope includes staged/base evidence; validated impact has rationale/evidence; semantically distinct equal-size diffs need not receive equal impact and no size rule substitutes for reasoning. |\n| s2/ac2 | s2 | Policy table unit tests | All four impacts and setting combinations yield the documented none/optional/complete/pass-or-override requirement. |\n| s2/ac3 | s2 | Failure integration | Missing evidence/provider failure remains Unknown with actionable recovery; only an explicit recorded exception permits the Unknown path. |\n| s3/ac1 | s3 | Generation/verifier integration | Ground questions in versioned staged and linked evidence; contradictory claims rejected and missing evidence disclosed. |\n| s3/ac2 | s3 | Daemon command/security tests | First answer/confidence immutable; altered client grade/pass fields cannot grant eligibility; disputed/pending verification never passes. |\n| s3/ac3 | s3 | Provider/host contract | Manual/assistant-authored changes use the same assessment lifecycle through configured provider fakes; no Claude hook or Grokcheck process required. |\n| s4/ac1 | s4 | Editor/daemon integration | Unsure before answer submission opens grounded guidance immediately and does not count as incorrect. |\n| s4/ac2 | s4 | Evaluation/guidance integration | Incorrect submitted response opens contextual walkthrough with evidence and retained original response. |\n| s4/ac3 | s4 | State-machine integration | Reading guidance does not pass; fresh question retains original history, marks assisted results and enforces initial attempt plus two retries across reconnects. |\n| s5/ac1 | s5 | VS Code extension UI | Editor shows impact, rationale, requirement, scope, questions, confidence, guidance and results; Source Control readiness updates from daemon state. |\n| s5/ac2 | s5 | UI/IPC recovery | Close/reload and reconnect; resume current daemon state without losing saved answers; stale UI cannot authorize a changed scope. |\n| s5/ac3 | s5 | UI action integration | Optional decline and explicit exception have distinct labels, acknowledgment and commit consequences. |\n| s6/ac1 | s6 | Real temporary Git repository | Trivial/Low/strict Medium/High policy produces correct Git exit behavior; strict Medium completion with gaps permits retry and High valid pass permits retry. |\n| s6/ac2 | s6 | Real Git repository | Change staged tree, base, effective temporary index or amend parents; reject prior pass/override receipt while retaining history. |\n| s6/ac3 | s6 | Git/IPC concurrency and failure | Daemon disconnect, concurrent attempts and cancellation never silently allow required checks; retry recovers idempotently. |\n| s7/ac1 | s7 | Git gate integration | Failed/skipped High without explicit override remains blocked. |\n| s7/ac2 | s7 | Real Git commit/message | Explicit exception reason and acknowledgment persist; actual resulting commit contains matching audit metadata while existing message is preserved. |\n| s7/ac3 | s7 | Git message/scope tamper tests | Remove/change required metadata, type an unrecorded trailer or mutate staged scope; reject the exception authorization. |\n| s7/ac4 | s7 | Git retry integration | Current verified High pass permits matching commit without exception metadata or override interaction. |\n\nAdditional agreed requirements:\n\n| Requirement | Owner | Test level | Observable assertion |\n| --- | --- | --- | --- |\n| Spec section 13 check 1 | s3 | Association integration | One commit covers multiple inferred task IDs without forcing a primary; hierarchy IDs do not prove code mapping. |\n| Spec section 13 check 2 | s3 | Question/evaluation integration | Unsupported links elicit purpose and association questions; evidence-supported explanation that no item applies is permitted. |\n| Spec section 13 check 3 | s3 | Grading unit/integration | Selecting an ID alone cannot satisfy understanding or verify a link. |\n| Spec section 13 check 4 | s1, s3 | Persistence/evaluation integration | Learner-proposed/inferred/verified/unresolved states stay distinct; absent evidence yields uncertainty rather than automatic wrong/pass. |\n| Spec section 13 check 5 | s4 | Guided-learning integration | Unsure/incorrect association answer invokes guidance and fresh check; work-item status remains unchanged. |\n| Spec section 11 check 13 | s3 | Upstream fixture parity | Adapt relevant pinned Grokcheck grading/normalization fixtures and validate TypeScript results; add insrc rubric, Unknown, retry and authority cases. No Python runtime required. |\n| Git edge cases | s6, s7 | Real temporary repositories | Partial staging, GIT_INDEX_FILE, initial commit, amend, supported merge state, existing-hook composition, repeated attempts and post-commit mismatch follow the declared support boundary. |\n| Model-role floor | s1-s4 | Routing contract | Every proposed role is registered, critical and core-floor protected; missing descriptors fail visibly and provider calls remain sequential. |\n| Schema evolution/deletion | s1 | Storage fault injection | Version mismatch/corruption and interrupted migration cannot authorize; current/history deletion and receipt invalidation remain consistent. |\n",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Learner and immutable assessment scope",
+        "purpose": "Shared identity and version boundary for all stories; all fields are proposed contracts, not existing APIs.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "interfaceSketch": "type IdentitySource = 'github' | 'gitlab' | 'jira' | 'git' | 'os';\ninterface LearnerIdentity { key: string; source: IdentitySource; subject: string; authority: string; assurance: 'provider-confirmed' | 'local-config' | 'os-local'; aliases: readonly string[]; }\ninterface AssessmentScope { repoId: string; worktreeId: string; baseOid: string | null; stagedTreeOid: string; commitMode: 'normal' | 'amend' | 'merge'; parentOids: readonly string[]; learnerKey: string; policyRevision: string; evidenceRevision: string; }\ninterface WorkAssociation { itemId: string; parentIds: readonly string[]; state: 'inferred' | 'learner-proposed' | 'verified' | 'unresolved'; evidenceRefs: readonly string[]; confidence: 'supported' | 'tentative' | 'unknown'; explanation: string; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc2",
+        "name": "Durable assessment commands and eligibility boundary",
+        "purpose": "Canonical revisioned record and client commands; s1 owns common envelope so editor and final override implementation share an ancestor.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "interfaceSketch": "type AssessmentState = 'preparing' | 'ready' | 'answering' | 'guidance' | 'evaluating' | 'completed' | 'canceled' | 'stale' | 'error';\ninterface CommandEnvelope { requestId: string; assessmentId: string; expectedRevision: number; scope: AssessmentScope; }\ninterface OverrideIntent { reason: string; acknowledged: boolean; }\ninterface AssessmentView { id: string; revision: number; scope: AssessmentScope; state: AssessmentState; associations: readonly WorkAssociation[]; completion: 'incomplete' | 'complete'; outcome: 'unassessed' | 'pending' | 'pass' | 'gaps' | 'unverifiable'; eligibility: 'pending' | 'allowed' | 'override-required' | 'stale' | 'unavailable'; }\ninterface AuthorizationReceipt { id: string; assessmentId: string; scope: AssessmentScope; attemptId: string; revision: number; basis: 'trivial' | 'optional' | 'medium-complete' | 'pass' | 'override'; overrideRecordId?: string | undefined; expiresAt: string; }\ninterface AssessmentService { prepare(scope: AssessmentScope): Promise<AssessmentView>; resume(id: string): Promise<AssessmentView>; cancel(command: CommandEnvelope): Promise<AssessmentView>; requestOverride(command: CommandEnvelope, intent: OverrideIntent): Promise<AssessmentView>; }\ninterface AuditEntry { id: string; assessmentId: string; revision: number; kind: string; occurredAt: string; scope: AssessmentScope; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc3",
+        "name": "Contextual impact and project policy",
+        "purpose": "A validated classifier output and deterministic policy mapping; Unknown is not a fifth assessed impact level.",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "interfaceSketch": "type Impact = 'Trivial' | 'Low' | 'Medium' | 'High';\ntype Classification = { status: 'classified'; impact: Impact; rationale: string; evidenceRefs: readonly string[]; concepts: readonly string[]; } | { status: 'unknown'; reason: string; evidenceRefs: readonly string[]; };\ninterface UnderstandingPolicy { revision: string; mediumStrict: boolean; highRequired: boolean; enabled: boolean; }\ninterface Requirement { mode: 'none' | 'optional' | 'complete' | 'pass-or-override' | 'unknown-override'; rationale: string; }\ninterface ImpactService { classify(scope: AssessmentScope): Promise<Classification>; requirement(classification: Classification, policy: UnderstandingPolicy): Requirement; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc4",
+        "name": "Verified assessment content and attempt evaluation",
+        "purpose": "Daemon-only answer criteria and client-safe prompts, with independent evidence verification and immutable original attempts.",
+        "ownedByStory": "s3",
+        "consumedByStories": [
+          "s4",
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "interfaceSketch": "interface EvidenceRef { id: string; source: 'staged-code' | 'requirement' | 'design' | 'test' | 'review' | 'work-item'; version: string; scopeKey: string; locator: string; }\ninterface QuestionView { id: string; conceptId: string; kind: 'explanation' | 'change-impact' | 'intent-association'; prompt: string; evidenceRefs: readonly EvidenceRef[]; }\ninterface AnswerSubmission { questionId: string; response: string; confidence: 'unsure' | 'low' | 'medium' | 'high'; proposedAssociations: readonly WorkAssociation[]; }\ninterface Evaluation { attemptId: string; questionId: string; outcome: 'correct' | 'incorrect' | 'partial' | 'unverifiable'; assisted: boolean; verifierStatus: 'verified' | 'disputed' | 'pending'; evidenceRefs: readonly EvidenceRef[]; }\ninterface AssessmentEvaluator { answer(command: CommandEnvelope, submission: AnswerSubmission): Promise<AssessmentView>; finishWithGaps(command: CommandEnvelope): Promise<AssessmentView>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc5",
+        "name": "Guidance and bounded reassessment",
+        "purpose": "Automatic help on Unsure or incorrect responses without erasing first attempts or awarding pass for reading.",
+        "ownedByStory": "s4",
+        "consumedByStories": [
+          "s5",
+          "s6",
+          "s7"
+        ],
+        "interfaceSketch": "interface GuidanceView { questionId: string; trigger: 'unsure' | 'incorrect'; explanation: string; evidenceRefs: readonly EvidenceRef[]; remainingRetries: number; nextQuestion?: QuestionView | undefined; }\ninterface GuidanceService { requestHelp(command: CommandEnvelope, questionId: string): Promise<GuidanceView>; continueAfterGuidance(command: CommandEnvelope, questionId: string): Promise<AssessmentView>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc6",
+        "name": "Editor presentation boundary",
+        "purpose": "Client-safe state and actions; no answer keys, model-provider credentials or authority to claim a pass.",
+        "ownedByStory": "s5",
+        "consumedByStories": [
+          "s6",
+          "s7"
+        ],
+        "interfaceSketch": "interface AssessmentEditorRequest { repoId: string; assessmentId: string; reveal: boolean; }\ninterface AssessmentEditor { reveal(request: AssessmentEditorRequest): Promise<void>; }\ninterface EditorProjection { assessment: AssessmentView; classification: Classification; requirement: Requirement; questions: readonly QuestionView[]; guidance?: GuidanceView | undefined; error?: { code: string; message: string; retryable: boolean } | undefined; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc7",
+        "name": "Git attempt and message authorization",
+        "purpose": "Snapshot-bound pre-commit and final message checks; override extension in s7 consumes this existing attempt boundary.",
+        "ownedByStory": "s6",
+        "consumedByStories": [
+          "s7"
+        ],
+        "interfaceSketch": "interface GitAttempt { id: string; scope: AssessmentScope; effectiveIndexPath: string; messageDigest?: string | undefined; }\ntype GateDecision = { status: 'allow'; receipt: AuthorizationReceipt } | { status: 'pending' | 'block' | 'stale' | 'unavailable'; assessmentId?: string | undefined; reason: string; };\ninterface CommitGate { check(attempt: GitAttempt): Promise<GateDecision>; validateMessage(attempt: GitAttempt, message: string, receiptId: string): Promise<GateDecision>; observeCommit(attemptId: string, commitOid: string): Promise<void>; }\ninterface OverrideRecord { id: string; assessmentId: string; learnerKey: string; scope: AssessmentScope; reason: string; acknowledgedAt: string; }",
+        "assumptions": []
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Own identity normalization/alias policy, immutable scope value types, durable state revisions, audit/attempt retention, migrations, privacy and command validation. Shared eligibility and override shapes are defined here, but s6/s7 supply final policy enforcement and exception implementation; unimplemented commands return explicit unavailable. No claims of a current assessment engine. Own registration and validation of the new understanding reasoning-role descriptors and assessment schema-version boundary before consumer stories use them."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Own context-driven impact prompts, evidence limitation reporting, configuration validation and deterministic requirement mapping. Do not grade understanding or allow a classifier error to become Trivial."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own question/rubric generation, independent verification, authoritative grading, first-response capture and purpose/association assessment. Own daemon-side upstream grading/validation adaptations and provenance. Do not publish answer keys or mutate delivery records."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "Own guided explanation and fresh reassessment selection, two-retry accounting and explicit gap completion. Preserve the initial answer and do not infer a pass from guidance consumption."
+      },
+      {
+        "storyId": "s5",
+        "owns": [
+          "sc6"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "Own the dedicated VS Code editor view, accessible question/guidance interactions, inferred association correction, source navigation, pending/error/Unknown display and resume. Adapt useful upstream renderer code only. Render override intents through the shared foundational contract; no UI score authority. Also own Source Control readiness presentation, derived solely from current daemon eligibility. Refresh after assessment/override results, staged/base changes, policy or learner changes and daemon reconnect; immediately mark stale/unavailable rather than showing cached Ready. Provide a reveal-assessment action in Source Control and an accessible status label. Concrete VS Code contribution APIs belong in s5 LLD; do not assume the existing status/config host supplies this integration."
+      },
+      {
+        "storyId": "s6",
+        "owns": [
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Own effective-index capture, hook integration, final scope recheck, receipt lifecycle, concurrency/cancellation/retry handling and post-commit association. Enforce default policy without mutating staged content. Before s7 ships, High/Unknown override requests remain unavailable rather than allowed."
+      },
+      {
+        "storyId": "s7",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6",
+          "sc7"
+        ],
+        "internal": "Implement explicit High and Unknown exception handling using shared override shapes, record acknowledgment/reason, preserve final message audit trailers and reject forged/missing/stale records. The feature is not released as complete until both automatic pass and explicit override paths are available."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "Cached eligibility checks avoid model calls when exact scope/evidence/policy match. No latency promise for generation; expose progress and actionable interruption. Proposed target: cached local decisions within one second under normal local load, measured in implementation; never sacrifice evidence correctness to meet it. Bound context and jobs with visible limitations, not silent truncation.",
+      "security": "Treat source comments, IDs and learner text as untrusted data, not instructions. Validate IPC commands, repository membership and expected revisions; renderer uses escaped output/CSP and no answer keys. Local identities describe attribution, not enterprise authentication. Keep records local and unavailable to unrelated clients/users by default; explicit retention/deletion/sharing policy requires s1 design approval. Never store CLI OAuth secrets in assessment records.",
+      "observability": "Correlate assessment/job/attempt IDs and scope fingerprints with classified impact, requirement, verifier status, stale/error/timeout reasons and explicit overrides. Do not log raw learner answers or tokens by default. Distinguish transport failure, pending reasoning, cancellation and completed gaps; unavailable state cannot be reported as pass.",
+      "durability": "Versioned daemon-owned records persist acknowledged answers and audit events atomically. Restart marks interrupted jobs recoverable without granting eligibility. Revalidate scope, evidence, policy and learner before issuing short-lived attempt receipts. Record migrations and retention deletion consistently across current and history records; never revoke delivery approval as a side effect."
+    },
+    "erDefinition": {
+      "id": "understanding-state",
+      "narrative": "The assessment binds a learner to one immutable commit scope, with separate attempt history and many-to-many work associations. Authorization records refer back to that exact assessment; work-item delivery remains external.",
+      "classes": {
+        "Learner": {
+          "description": "Attributed local person with identity provenance.",
+          "attributes": {
+            "key": {
+              "description": "Namespaced canonical learner key.",
+              "range": "string",
+              "identifier": true
+            }
+          }
+        },
+        "Assessment": {
+          "description": "Versioned daemon-owned understanding session.",
+          "attributes": {
+            "id": {
+              "description": "Assessment identifier.",
+              "range": "string",
+              "identifier": true
+            },
+            "learner": {
+              "description": "Person whose understanding is assessed.",
+              "range": "Learner",
+              "required": true
+            },
+            "scope": {
+              "description": "Exact assessed staged commit intent.",
+              "range": "CommitScope",
+              "required": true
+            },
+            "attempts": {
+              "description": "Original and assisted answer history.",
+              "range": "AnswerAttempt",
+              "multivalued": true
+            },
+            "associations": {
+              "description": "Inferred, proposed or verified work associations.",
+              "range": "WorkAssociation",
+              "multivalued": true
+            }
+          }
+        },
+        "CommitScope": {
+          "description": "Immutable staged/base/policy identity.",
+          "attributes": {
+            "key": {
+              "description": "Fingerprint over full commit intent.",
+              "range": "string",
+              "identifier": true
+            }
+          }
+        },
+        "AnswerAttempt": {
+          "description": "Preserved answer, confidence and verification result.",
+          "attributes": {
+            "id": {
+              "description": "Attempt identity.",
+              "range": "string",
+              "identifier": true
+            }
+          }
+        },
+        "WorkAssociation": {
+          "description": "Evidence-qualified relation to an external work item.",
+          "attributes": {
+            "itemId": {
+              "description": "Referenced epic/story/task/issue ID; not proof of code mapping.",
+              "range": "string"
+            },
+            "state": {
+              "description": "Inferred, learner-proposed, verified or unresolved.",
+              "range": "string"
+            }
+          }
+        },
+        "Authorization": {
+          "description": "Short-lived commit-attempt decision, possibly an explicit exception.",
+          "attributes": {
+            "id": {
+              "description": "Receipt identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "assessment": {
+              "description": "Assessment that justified the decision.",
+              "range": "Assessment",
+              "required": true
+            },
+            "scope": {
+              "description": "Scope that this receipt can authorize.",
+              "range": "CommitScope",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "Phase A — durable scope",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "Establish shared identity, scope, record and command envelopes before all consumers.",
+          "backwardCompat": "No hook installation or changes to work-item state; migrations confined to new assessment storage.",
+          "featureFlag": "understanding.enabled"
+        },
+        {
+          "name": "Phase B — impact policy",
+          "includesStories": [
+            "s2"
+          ],
+          "rationale": "Define contextual classification and requirement mapping before questions and eligibility.",
+          "backwardCompat": "Existing project settings unchanged; new flag proposed off until explicitly enabled, with Medium/High defaults on inside enabled projects.",
+          "featureFlag": "understanding.enabled"
+        },
+        {
+          "name": "Phase C — questions and guidance",
+          "includesStories": [
+            "s3",
+            "s4"
+          ],
+          "rationale": "Land s3 before s4 within this phase; first-response verification precedes assisted reassessment.",
+          "backwardCompat": "No Grokcheck runtime dependency; notices and fixtures accompany copied modules. Existing review/workflow providers retain their contracts.",
+          "featureFlag": "understanding.enabled"
+        },
+        {
+          "name": "Phase D — editor assessment",
+          "includesStories": [
+            "s5"
+          ],
+          "rationale": "Expose the complete learning experience only after question/guidance boundaries are available.",
+          "backwardCompat": "Existing status/config panels remain unchanged; development preview cannot authorize real commits.",
+          "featureFlag": "understanding.enabled"
+        },
+        {
+          "name": "Phase E — commit enforcement and exceptions",
+          "includesStories": [
+            "s6",
+            "s7"
+          ],
+          "rationale": "Land s6 before s7; release enforcement only after final-message validation and explicit override paths pass integrated checks.",
+          "backwardCompat": "Preserve existing hooks and user messages; explicit project enablement installs documented integration. Disabling removes only insrc-owned integration and revokes pending receipts, not user hooks or learning history.",
+          "featureFlag": "understanding.enabled"
+        }
+      ],
+      "orderingRationale": "All story edges and shared-contract owners precede consumers. s1 owns cross-cutting eligibility/override envelopes; s2 precedes s3, s3 precedes s4, s2/s3/s4 precede s5, s2/s3/s5 precede s6, and s6 precedes s7. No release presents s6 alone as complete because required overrides are implemented by s7.",
+      "riskyBits": [
+        {
+          "area": "Exact staged evidence and Git coordination",
+          "why": "Partial staging, temporary indexes, amendments, concurrent external Git activity and later hooks can desynchronize evidence or final messages.",
+          "mitigation": "Use effective-index/base/parent/mode fingerprints, revisioned short-lived receipts and commit-msg rechecks; test supported Git variants with real temporary repos. Document bypass/race boundaries and audit post-commit mismatches."
+        },
+        {
+          "area": "Assessment correctness and inferred association",
+          "why": "Generated rubrics or plausible learner answers can be mistaken for verified evidence; missing links are not proof of incorrectness.",
+          "mitigation": "Independent verifier context, attributable staged evidence, explicit unverifiable state, two bounded retries and immutable original/assisted attempts. Test intent-association questions with multiple tasks and no provable item."
+        },
+        {
+          "area": "Identity and durable personal history",
+          "why": "Local Git identities are not authenticated, aliases can collide and history can expose sensitive details.",
+          "mitigation": "Namespace identities and retain provenance/assurance; resolve Git precedence semantics and privacy/retention in s1 LLD before persistence ships. Require exact learner matching for authorization; no automatic uncertain merges or raw-answer logging."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Daemon state machine with transactional records",
+        "oneLineSummary": "One daemon-owned assessment aggregate coordinates evidence, learning and commit eligibility; VS Code and Git are clients.",
+        "approach": "Persist a versioned assessment state machine in daemon-owned local storage, with an append-only attempt/audit history alongside the current projection. Scope every assessment and authorization to learner, repository/worktree, staged snapshot, base and policy revision. Existing context and provider facilities supply reasoning; a thin VS Code editor pane renders state and submits user actions.\n\nGit hooks request decisions before a commit, then validate required override metadata at commit-message time. They do not run the learning UI inside a blocking Git process: an unfinished assessment returns an actionable pending result and the user retries the commit after completing it. Copied Grokcheck logic is adapted inside the daemon or editor renderer, never hosted in another service.",
+        "pros": [
+          "One authority determines completion, pass and commit eligibility; reconnects do not create competing client truth.",
+          "Durable revisions and idempotent commands can resume attempts without replaying a complete event-sourcing system.",
+          "A local hook adapter covers VS Code and ordinary Git invocations within declared hook boundaries."
+        ],
+        "cons": [
+          "Cross-hook consistency cannot prevent every external index mutation or hook bypass; the supported boundary must be explicit.",
+          "Storage schema changes need migration and audit-history rules.",
+          "Long-running reasoning needs cancellation and restart recovery separate from the Git invocation."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "reasonRejected": ""
+      },
+      {
+        "id": "a2",
+        "name": "Daemon event sourcing with derived projections",
+        "oneLineSummary": "Every assessment transition is an immutable event; eligibility and editor views are reconstructed projections.",
+        "approach": "Keep the daemon as sole owner but represent identity resolution, scope capture, classification, question verification, answers, guidance and overrides as a durable event log. Build separate projections for the editor, learning history and commit authorization. All reasoning uses the existing provider boundary.\n\nGit adapters and the editor send commands with expected revisions. Projection freshness is required before authorizing the exact staged commit. Upstream grading and evidence-validation patterns are adapted to event-producing operations within the daemon, with no standalone runtime.",
+        "pros": [
+          "A complete ordered history supports detailed reconstruction of first answers, guidance and later associations.",
+          "Projection rebuilds can recover read models from preserved events."
+        ],
+        "cons": [
+          "Projection lag introduces another correctness condition in the commit gate.",
+          "Versioning event schemas and replaying older assessment policies adds effort beyond the seven user-facing stories.",
+          "Sensitive answers become harder to delete consistently from append-only history and rebuilt projections."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "reasonRejected": "Projection consistency and deletion complexity without required replay benefit."
+      },
+      {
+        "id": "a3",
+        "name": "Daemon assessment service with editor-coordinated commits",
+        "oneLineSummary": "Daemon owns assessment truth while a VS Code command exclusively coordinates assessed commits.",
+        "approach": "Keep all classification, grading, history and authorization inside the daemon. The VS Code editor captures commit intent, runs the check and invokes Git only when the daemon permits the same snapshot. Runtime-neutral Grokcheck ports remain internal.\n\nThe editor holds the commit orchestration context and inserts override metadata before invoking Git. Commits from other editors, terminals or agents remain outside this initial gate unless a later hook adapter is added. A daemon restart can restore the assessment, but the editor must reconstruct the commit attempt.",
+        "pros": [
+          "One coordinator can prepare a consistent message and intended commit before invoking Git.",
+          "Avoids cross-hook handoff for the initial VS Code command."
+        ],
+        "cons": [
+          "Ordinary Git commits in the same workspace can bypass assessment unintentionally, conflicting with the requested pre-commit trigger.",
+          "Editor reload recovery must reconcile both persisted assessment and a lost commit orchestration session.",
+          "Later agent/terminal support requires another integration layer rather than sharing the initial trigger."
+        ],
+        "costEstimate": "M",
+        "assumptionsRelied": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "reasonRejected": "Editor-only commits only partially satisfy k3/k4."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Before s1 implementation, settle preferred Git identity semantics, normalization and multi-provider/no-Git ambiguity; preserve user-approved provider/Git/OS precedence.",
+      "Before s1 persistence ships, decide retention duration, visibility, deletion and sharing; no 30-day default was accepted.",
+      "Confirm proposed project enablement and optional assessment behavior for individually disabled requirements; strict Medium and High remain default requirements.",
+      "Before s6 enforcement ships, specify supported Git commands and hook ordering, temporary indexes, amend/merge handling and the exact race/bypass boundary."
+    ],
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/understand-changes-before-committing-E20261017670419c4/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1",
+      "quotedText": "Structural-map bundle: daemon entry/RPC, grounding exports, editor host, bounded import graph and conventions."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1",
+      "quotedText": "Capability discovery: adjacent daemon/context infrastructure; no complete assessment capability demonstrated in three candidates."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/DEF-670419c4ad8bea8e.json"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:229"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:207"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/webview-host.ts:9"
+    },
+    {
+      "id": "c7",
+      "kind": "convention",
+      "ref": "AGENTS.md:122"
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "AGENTS.md:135"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:161"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:185"
+    },
+    {
+      "id": "c11",
+      "kind": "doc",
+      "ref": "mocks/commit-understanding.md:3"
+    },
+    {
+      "id": "c12",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:157"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts:58"
+    },
+    {
+      "id": "c14",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:81"
+    },
+    {
+      "id": "c15",
+      "kind": "doc",
+      "ref": "docs/pre-commit-understanding-spec.md:213"
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "success": {
+    "protocolVersion": 1,
+    "ok": true,
+    "value": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 2,
+      "scope": {
+        "repoId": "/example/repo",
+        "worktreeId": "/example/repo",
+        "baseOid": null,
+        "stagedTreeOid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "commitMode": "normal",
+        "parentOids": [],
+        "learnerKey": "opaque-learner-key",
+        "policyRevision": "policy-1",
+        "evidenceRevision": "evidence-1"
+      },
+      "state": "canceled",
+      "associations": [],
+      "completion": "incomplete",
+      "outcome": "unassessed",
+      "eligibility": "unavailable"
+    },
+    "appliedRevision": 2
+  },
+  "conflict": {
+    "protocolVersion": 1,
+    "ok": false,
+    "error": {
+      "code": "revision-conflict",
+      "retryable": false,
+      "message": "revision-conflict"
+    },
+    "current": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "revision": 2,
+      "scope": {
+        "repoId": "/example/repo",
+        "worktreeId": "/example/repo",
+        "baseOid": null,
+        "stagedTreeOid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "commitMode": "normal",
+        "parentOids": [],
+        "learnerKey": "opaque-learner-key",
+        "policyRevision": "policy-1",
+        "evidenceRevision": "evidence-1"
+      },
+      "state": "canceled",
+      "associations": [],
+      "completion": "incomplete",
+      "outcome": "unassessed",
+      "eligibility": "unavailable"
+    }
+  },
+  "snapshot": {
+    "id": 73,
+    "stream": "progress",
+    "data": {
+      "protocolVersion": 1,
+      "type": "snapshot",
+      "assessmentId": "11111111-1111-4111-8111-111111111111",
+      "revision": 2,
+      "view": {
+        "id": "11111111-1111-4111-8111-111111111111",
+        "revision": 2,
+        "scope": {
+          "repoId": "/example/repo",
+          "worktreeId": "/example/repo",
+          "baseOid": null,
+          "stagedTreeOid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "commitMode": "normal",
+          "parentOids": [],
+          "learnerKey": "opaque-learner-key",
+          "policyRevision": "policy-1",
+          "evidenceRevision": "evidence-1"
+        },
+        "state": "canceled",
+        "associations": [],
+        "completion": "incomplete",
+        "outcome": "unassessed",
+        "eligibility": "unavailable"
+      }
+    }
+  },
+  "deleted": {
+    "id": 73,
+    "stream": "progress",
+    "data": {
+      "protocolVersion": 1,
+      "type": "deleted",
+      "assessmentId": "11111111-1111-4111-8111-111111111111"
+    }
+  },
+  "done": {
+    "id": 73,
+    "stream": "done",
+    "data": {
+      "protocolVersion": 1,
+      "reason": "deleted"
+    }
+  },
+  "error": {
+    "id": 73,
+    "stream": "error",
+    "data": {
+      "protocolVersion": 1,
+      "error": "not-found",
+      "recoverable": false,
+      "code": "not-found"
+    }
+  }
+}

@@ -1,16 +1,20 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { join, extname, resolve, relative, sep } from 'node:path';
+import { join, extname, resolve, relative, sep, basename } from 'node:path';
 import type { DbClient } from '../db/client.js';
-import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope } from '../shared/types.js';
-import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById } from '../db/entities.js';
+import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity } from '../shared/types.js';
+import type { SummariseDocResult } from '../analyze/summariser/index.js';
+import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById, deleteEntitiesForRepo } from '../db/entities.js';
 import {
   upsertRelations,
   deleteRelationsForFile,
   deleteUnresolvedForFile,
   deleteUnresolvedForRepoFile,
+  deleteUnresolvedForRepo,
 } from '../db/relations.js';
+import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, readIndexState, setUncommittedFiles } from '../db/index-state.js';
+import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
 import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
@@ -34,6 +38,7 @@ import './parser/scala.js';
 import './parser/kotlin.js';
 import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
+import { hasIgnoredSegment, selectFile } from './file-selection.js';
 import { Watcher, IGNORE_DIRS } from './watcher.js';
 import { resolveRepoIgnore, initRepoIgnore } from './repo-ignore-config.js';
 import { IndexQueue } from '../daemon/queue.js';
@@ -70,40 +75,6 @@ const IGNORE_SET = new Set(IGNORE_DIRS);
  *
  * Falls back to the directory walker for non-git repos.
  */
-
-/**
- * Skip patterns for generated / minified files. These have a parser
- * (e.g. tree-sitter-typescript handles `.mjs`) but indexing them is
- * unhelpful and pathologically expensive: a 1.5MB minified file
- * produces thousands of fake-looking entities, each ~8KB long, and
- * embedding 2548 entities × 16/batch × ~99s/batch on Ollama runs to
- * 4+ hours per file. Better to drop them here than burn the daemon
- * for an entire afternoon on a build artifact the user didn't want
- * indexed in the first place. Tested against:
- *
- *   `pdf.worker.min.mjs`        -> match (.min.mjs)
- *   `vendor.bundle.js`          -> match (.bundle.js)
- *   `react.production.min.js`   -> match (.min.js)
- *   `chunk-AB12CD.js`           -> no match (kept)
- *   `Component.test.ts`         -> no match (kept)
- */
-const GENERATED_FILE_PATTERN = /\.(min|bundle|dist|production|prod)\.(js|mjs|cjs|css|html|json)$|[-_]min\.(js|mjs|cjs|css)$/i;
-
-/**
- * @returns true if the file should be skipped because it's a build
- * artifact / minified output rather than source.
- */
-function isGeneratedOrMinified(filePath: string): boolean {
-  return GENERATED_FILE_PATTERN.test(filePath);
-}
-
-/** True when any path segment of `file` (relative to `repoPath`) is in the
- *  ignore set. Applies the ignore list to `git ls-files` output too — the git
- *  walker honours `.gitignore`, but a repo can COMMIT ignore-worthy dirs (e.g.
- *  insrc's own `.insrc/artifacts/*.md`), which `.gitignore` never excludes. */
-function hasIgnoredSegment(file: string, repoPath: string, ignoreSet: Set<string>): boolean {
-  return relative(repoPath, file).split(sep).some(seg => ignoreSet.has(seg));
-}
 
 function listRepoFiles(repoPath: string, ignore: readonly string[] = IGNORE_DIRS): string[] {
   const ignoreSet = new Set(ignore);
@@ -202,6 +173,8 @@ export class IndexerService {
    *  files touched in the window. */
   private readonly settleTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private readonly settleScopeFiles: Map<string, Set<string>> = new Map();
+  /** The settle passes running now (a test waits for them). */
+  private readonly settlePasses: Set<Promise<void>> = new Set();
 
   /**
    * Set of registered repo root paths -- the source of truth for
@@ -214,6 +187,8 @@ export class IndexerService {
    * paths. Now we restrict to the explicitly-registered roots.
    */
   private readonly registeredRepos: Set<string> = new Set();
+  /** The running document-summary sweep's progress (summarySweepProgress). */
+  private sweepProgress: { repoPath: string; done: number; total: number } | undefined = undefined;
 
   /** How long to wait after the last file event before kicking the
    *  cross-file pass on the incremental path. Sits *on top of* the
@@ -287,7 +262,10 @@ export class IndexerService {
       if (
         repo.status === 'pending' ||
         repo.status === 'error' ||
-        (repo.status === 'indexing' && !repo.lastIndexed)
+        (repo.status === 'indexing' && !repo.lastIndexed) ||
+        // A full index that never finished (interrupted, or none since the
+        // index-state change) is redone from scratch (Epic c2ba6fa6 s1).
+        (await readIndexState(repo.path))?.fullIndexFinished !== true
       ) {
         // 'pending':                 freshly-added repo, never indexed
         // 'error':                   prior run failed (e.g. resolver exception); retry on
@@ -567,7 +545,7 @@ export class IndexerService {
    */
   protected async resolveAfterReconcile(repoPath: string): Promise<void> {
     const sourceRoots = detectSourceRoots(repoPath);
-    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots });
+    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'repository' });
     log.info({ repo: repoPath, ...cf }, 'cross-file pass after index clean-up');
     try {
       await resolveExternalEndpoints({ db: this.db, repo: repoPath });
@@ -591,6 +569,14 @@ export class IndexerService {
   _armedSettleTimersForTest(): number {
     return this.settleTimers.size;
   }
+
+  /** Test seam: resolves once every settle pass that has started has ended. */
+  async _settlePassesDoneForTest(): Promise<void> {
+    while (this.settlePasses.size > 0) await Promise.all([...this.settlePasses]);
+  }
+
+  /** Test seam: runs right after a full index's repository delete (a test makes it throw). */
+  protected async _afterRepositoryDeleteForTest(_repoPath: string): Promise<void> {}
 
   /** The registry status writes of a full index, in one place (a test counts them). */
   protected async writeIndexStatus(
@@ -627,37 +613,53 @@ export class IndexerService {
       let total = 0;
       const t0 = Date.now();
 
-      const files = listRepoFiles(repoPath, resolveRepoIgnore(repoPath));
+      // A full index rebuilds the repository from scratch (Epic c2ba6fa6 s1):
+      // the relationships other repositories hold into it go back to pending
+      // (the cross-file pass completes them), then every row it holds in both
+      // stores goes, cached explorations included. Its document summaries are
+      // carried across (ISSUE-dced4385) and written back below for every
+      // document whose body is unchanged; the doc-summarise-repo job queued
+      // at the end summarises only the changed and new ones. Marked unfinished
+      // first, so a crash after the delete is redone at start-up.
+      await markFullIndexUnfinished(repoPath);
+      const { returnedToPending, carriedDocSummaries } = await deleteEntitiesForRepo(
+        this.db, repoPath, { returnIncomingToPending: true, carryDocSummaries: true },
+      );
+      await this._afterRepositoryDeleteForTest(repoPath);
+      await deleteUnresolvedForRepo(this.db, repoPath);
+      await beginFullIndexState(repoPath);
+      log.info({ repo: repoPath, returnedToPending, carriedDocSummaries }, 'full index: repository rows deleted');
+
+      const ignore = resolveRepoIgnore(repoPath);
+      const files = listRepoFiles(repoPath, ignore);
       const supported: string[] = [];
-      let skippedGenerated = 0;
+      let notCode = 0;
       for (const filePath of files) {
-        const ext = extname(filePath).toLowerCase();
-        const hasParser = this.supported.has(ext) || basenameParser.handles(filePath);
-        if (!hasParser) continue;
-        if (isGeneratedOrMinified(filePath)) {
-          skippedGenerated++;
-          continue;
-        }
-        supported.push(filePath);
+        if (selectFile(filePath, repoPath, ignore) === 'selected') supported.push(filePath);
+        else notCode++;
       }
       setIndexRunSelected(repoPath, supported.length);
       log.info(
-        { repo: repoPath, total: files.length, supported: supported.length, skippedGenerated },
+        { repo: repoPath, total: files.length, supported: supported.length, notCode },
         'full index: files to process',
       );
 
+      const uncommitted: string[] = [];
       for (const filePath of supported) {
         total++;
         if (total % 50 === 0 || total === 1) {
           log.info({ repo: repoPath, progress: `${total}/${supported.length}`, fileCount, skipped }, 'full index: progress');
         }
         try {
-          const indexed = await this.indexFile(filePath, repoPath, false);
-          if (indexed) fileCount++; else skipped++;
+          // Nothing of the repository is stored now: no unchanged-hash skip, no per-file delete.
+          const indexed = await this.indexFile(filePath, repoPath, false, { fresh: true });
+          // A selected file always has a parser, so false means its read failed.
+          if (indexed) fileCount++; else { skipped++; uncommitted.push(filePath); }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           log.error({ file: filePath, err: msg }, 'full index: file error (skipping)');
           skipped++;
+          uncommitted.push(filePath);
         }
         bumpIndexRunDone(repoPath);
         // (LMDB substrate: no periodic checkpoint needed -- there's no
@@ -682,6 +684,10 @@ export class IndexerService {
         }
       }
 
+      await setUncommittedFiles(repoPath, uncommitted);
+
+      // The repository entity, so the manifest's DEPENDS_ON edges have a source.
+      await this.storeRepoEntity(repoPath);
       // Emit DEPENDS_ON edges from repo manifest
       await this.indexManifest(repoPath);
 
@@ -704,8 +710,9 @@ export class IndexerService {
       // next startup re-enqueues a full index instead of treating a
       // half-done index as ready.
       const sourceRoots = detectSourceRoots(repoPath);
-      const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots });
+      const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'full' });
       log.info({ repo: repoPath, ...cf }, 'cross-file pass after full index');
+      let endpointPassFailed = false;
 
       // External-endpoint pass (S003): resolve the unresolved CALLS_HTTP
       // relations the outbound detectors emitted into externalEndpoint nodes +
@@ -716,6 +723,7 @@ export class IndexerService {
         const ee = await resolveExternalEndpoints({ db: this.db, repo: repoPath });
         log.info({ repo: repoPath, ...ee }, 'external-endpoint pass after cross-file resolve');
       } catch (err) {
+        endpointPassFailed = true;
         log.warn(
           { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
           'external-endpoint pass failed (non-fatal)',
@@ -727,11 +735,16 @@ export class IndexerService {
         const me = await resolveMessagingEndpoints({ db: this.db, repo: repoPath });
         log.info({ repo: repoPath, ...me }, 'messaging-endpoint pass after cross-file resolve');
       } catch (err) {
+        endpointPassFailed = true;
         log.warn(
           { repo: repoPath, err: err instanceof Error ? err.message : String(err) },
           'messaging-endpoint pass failed (non-fatal)',
         );
       }
+      // Every document the rebuild stores is stored by now (after the index clean-up).
+      const summaries = await restoreCarriedDocSummaries(repoPath);
+      log.info({ repo: repoPath, ...summaries }, 'full index: carried document summaries written back');
+      await finishFullIndexState(repoPath, endpointPassFailed);
 
       // Build the entity_vec HNSW index now that the bulk-insert
       // phase is done. No-op below the row-count threshold; lazy
@@ -844,10 +857,12 @@ export class IndexerService {
     if (existing !== undefined) clearTimeout(existing);
     const timer = setTimeout(() => {
       this.settleTimers.delete(repoPath);
-      void this.runSettlePass(repoPath).catch(err => {
+      const pass = this.runSettlePass(repoPath).catch(err => {
         const msg = err instanceof Error ? err.message : String(err);
         log.warn({ repo: repoPath, err: msg }, 'settle pass failed');
       });
+      this.settlePasses.add(pass);
+      void pass.finally(() => this.settlePasses.delete(pass));
     }, this.settleWindowMs);
     timer.unref();  // don't keep the daemon alive just for the settle
     this.settleTimers.set(repoPath, timer);
@@ -859,15 +874,10 @@ export class IndexerService {
     if (scope === undefined || scope.size === 0) return;
 
     const sourceRoots = detectSourceRoots(repoPath);
-    let totalResolved = 0, totalAmbiguous = 0, totalRewired = 0;
-    for (const file of scope) {
-      const result = await runCrossFileResolver({
-        db: this.db, repoRoot: repoPath, sourceRoots, scopeFile: file,
-      });
-      totalResolved  += result.resolved;
-      totalAmbiguous += result.ambiguous;
-      totalRewired   += result.importsRewired;
-    }
+    const result = await runCrossFileResolver({
+      db: this.db, repoRoot: repoPath, sourceRoots, mode: 'settle', committedFiles: [...scope],
+    });
+    const totalResolved = result.resolved, totalAmbiguous = result.ambiguous, totalRewired = result.importsRewired;
 
     // S003: resolve any CALLS_HTTP relations the just-edited files emitted into
     // externalEndpoint nodes + edges — once per repo, after the per-file loop.
@@ -915,9 +925,20 @@ export class IndexerService {
    * swallowed; the sweep continues so partial progress accumulates
    * even if some docs consistently break.
    */
-  private async docSummariseRepo(repoPath: string): Promise<void> {
+  /** The running document-summary sweep's progress, or undefined when none runs (Story b94cf2c9 S001). */
+  summarySweepProgress(): { repoPath: string; done: number; total: number } | undefined {
+    return this.sweepProgress === undefined ? undefined : { ...this.sweepProgress };
+  }
+
+  /** Summarise one document; a seam so tests run the sweep without a model. */
+  protected async summariseEntity(entity: Entity): Promise<SummariseDocResult> {
     const { summariseDoc } = await import('../analyze/summariser/index.js');
-    const { listEntitiesForRepo } = await import('../db/entities.js');
+    return summariseDoc({ db: this.db, entity });
+  }
+
+  private async docSummariseRepo(repoPath: string): Promise<void> {
+    const { listEntitiesForRepo, getEntity } = await import('../db/entities.js');
+    const { runDocSummarySweep } = await import('./doc-summary-sweep.js');
     const entities = await listEntitiesForRepo(this.db, repoPath);
     const docs = entities.filter(e => e.kind === 'document' || e.kind === 'section');
     if (docs.length === 0) {
@@ -926,32 +947,28 @@ export class IndexerService {
     }
     log.info({ repo: repoPath, count: docs.length }, 'doc summariser: sweep started');
     const t0 = Date.now();
-    let summarised = 0, skipped = 0, failed = 0;
-    for (const entity of docs) {
-      try {
-        const res = await summariseDoc({ db: this.db, entity });
-        if (res.ok) {
-          if (res.skipped === 'unchanged') skipped += 1;
-          else                             summarised += 1;
-        } else {
-          failed += 1;
-        }
-      } catch (err) {
-        // summariseDoc is designed not to throw for LLM/schema
-        // failures, but a bug or an OOM could still throw. Log +
-        // continue so one bad entity doesn't stop the sweep.
-        failed += 1;
-        log.warn(
-          { repo: repoPath, entityId: entity.id, err: err instanceof Error ? err.message : String(err) },
-          'doc summariser: entity threw (continuing sweep)',
-        );
-      }
+    this.sweepProgress = { repoPath, done: 0, total: docs.length };
+    try {
+      // The sweep re-reads each document before summarising it, runs queued
+      // single-document jobs first, and stops between documents on shutdown.
+      const counts = await runDocSummarySweep(docs.map(e => e.id), {
+        getEntity:  id => getEntity(this.db, id),
+        summarise:  entity => this.summariseEntity(entity),
+        takeEdit:   () => this.queue.takeDocSummaryEdit(),
+        runEdit:    entityId => this.docSummariseEntity(entityId),
+        shouldStop: () => this.queue.isStopping,
+        waitForCodeIdle: () => this.queue.waitForIndexIdle(),
+        isCodeIdle: () => this.queue.isIndexIdle,
+        onProgress: (done, total) => { this.sweepProgress = { repoPath, done, total }; },
+      });
+      const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+      log.info(
+        { repo: repoPath, ...counts, elapsed: `${elapsed}s` },
+        counts.stopped ? 'doc summariser: sweep stopped' : 'doc summariser: sweep complete',
+      );
+    } finally {
+      this.sweepProgress = undefined;
     }
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-    log.info(
-      { repo: repoPath, summarised, skipped, failed, elapsed: `${elapsed}s` },
-      'doc summariser: sweep complete',
-    );
   }
 
   /**
@@ -960,15 +977,18 @@ export class IndexerService {
    * makes no-op saves collapse to a hash compare.
    */
   private async docSummariseEntity(entityId: string): Promise<void> {
-    const { summariseDoc } = await import('../analyze/summariser/index.js');
     const { getEntity } = await import('../db/entities.js');
     const entity = await getEntity(this.db, entityId);
     if (entity === null) {
       log.debug({ entityId }, 'doc summariser: entity gone (deleted between enqueue and run)');
       return;
     }
+    // Code work that arrived while the document was read goes first (Story 0f0e4f45);
+    // on shutdown the summary is not started. No await between the last check and the call.
+    while (!this.queue.isStopping && !this.queue.isIndexIdle) await this.queue.waitForIndexIdle();
+    if (this.queue.isStopping) return;
     try {
-      await summariseDoc({ db: this.db, entity });
+      await this.summariseEntity(entity);
     } catch (err) {
       log.warn(
         { entityId, err: err instanceof Error ? err.message : String(err) },
@@ -1020,6 +1040,9 @@ export class IndexerService {
     filePath:   string,
     repoPath:   string,
     cleanFirst: boolean,
+    /** `fresh`: the repository's rows were just deleted (a full index), so there is
+     *  nothing to compare a hash with or to delete first; the file is always written. */
+    opts?:      { readonly fresh?: boolean | undefined },
   ): Promise<boolean> {
     const parser = getParser(filePath) ?? (basenameParser.handles(filePath) ? basenameParser : null);
     if (!parser) return false;
@@ -1031,7 +1054,9 @@ export class IndexerService {
     const hash = contentHash(source);
 
     // Skip if unchanged (handles editor save-without-change)
-    if (!cleanFirst) {
+    if (opts?.fresh === true) {
+      // nothing stored for the repository: write it
+    } else if (!cleanFirst) {
       const existing = await getEntity(this.db, makeEntityId(repoPath, filePath, 'file', filePath));
       if (existing?.hash === hash) {
         log.debug({ file: filePath }, 'skipped (unchanged)');
@@ -1075,6 +1100,17 @@ export class IndexerService {
       'indexed',
     );
     return true;
+  }
+
+  /** The repository's own entity (kind 'repo'): the source of its DEPENDS_ON edges. */
+  private async storeRepoEntity(repoPath: string): Promise<void> {
+    const repoId = await lookupRepoId(repoPath);
+    if (repoId === undefined) throw new UnregisteredRepoError(repoPath);
+    await upsertEntities(this.db, [{
+      id: makeEntityId(repoPath, '', 'repo', repoPath), kind: 'repo', name: basename(repoPath),
+      language: 'config', repoId, repo: repoPath, file: '', startLine: 0, endLine: 0,
+      body: '', embedding: [], indexedAt: new Date().toISOString(),
+    }]);
   }
 
   private async indexManifest(repoPath: string): Promise<void> {

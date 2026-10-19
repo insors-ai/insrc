@@ -108,6 +108,21 @@ ChangeLogEntry { id, actor, timestamp, operation, revision?: { number, contentHa
 4. Withdrawing something (a dropped Task) is `withdraw`, never `delete`.
 5. The whole log is kept; its size is handled with storage (Gap 10).
 
+## Gap 5: comment vs feedback: SETTLED
+
+The class is **`Feedback`** (the artifact field `comments[]` becomes `feedback[]`). Entries are immutable and append-only, with **no lifecycle of their own** (no resolved flag, no decision).
+
+```
+Feedback { id (UUID), text, actor, timestamp, feedback[] (nested replies), kind: comment | suggestion | revision-request,
+           anchor?: { quote?, section?, prefix?, suffix?, lines? }, revision? (the artifact revision it was written against),
+           source?: { system, externalId, url? }, batchId? }
+```
+
+1. Feedback is **resolved as part of the artifact, not individually**: an `update` change log entry carries `addresses: all | [feedback ids]` (default `all`). **Open feedback** is whatever no `update` entry has addressed; it is derived, never stored on the entry.
+2. A reply is just another `Feedback` entry nested under its parent, of any `kind`.
+3. `decision` is dropped (approvals live in `lifecycle.approval` and the log); `revision` replaces `target.version`, tying feedback to `Lifecycle.revision`.
+4. The link from an IDE review comment to an open question (a payload element) needs a `Reference` that points inside an artifact: `fragment?` (decided with Gap 7).
+
 ## Gaps still to discuss (one at a time)
 
-5 comment vs feedback (anchor, kind, decision, resolved); 6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

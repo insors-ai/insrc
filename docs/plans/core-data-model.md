@@ -96,6 +96,18 @@ non-terminal --replaced--> superseded | --dropped--> withdrawn
 5. Revisions **do not cascade** through the hierarchy: an Epic's revision does not move when a Story changes. Upstream movement is the job of `Staleness`.
 6. Two clones that both bump to the same number offline can name different content once git merges the files. The rule (detect the hash mismatch and report a conflict) is decided with Gap 10 (storage and merges).
 
+## Gap 4: operations and the change log entry: SETTLED
+
+```
+ChangeLogEntry { id, actor, timestamp, operation, revision?: { number, contentHash }, status?: { from, to }, outcome?: { result, summary, data? }, references? }
+```
+
+1. The operation set is **closed**. Content: `create`, `update`, `delete` (reserved: no producer today), `reparent`. Lifecycle: `request-review`, `review`, `approve`, `reject`, `open-signoff`, `signoff-changes`, `signed-off`, `complete`, `reopen`, `withdraw`, `supersede`, `mark-stale`, `ack-stale`. A build, review or test round is an `update` carrying an `outcome` (this is how the overwritten `BR` / `CR` / `TR` keep their history). A subclass adds detail through `outcome.data`, not a new operation.
+2. A content operation carries `revision`; a lifecycle operation carries `status { from, to }` (mandatory), so the log alone explains every status change and the current state can be rebuilt by replaying it.
+3. **Not in the log:** comments (their own stream), claims and releases (the tracker assignee), and reference additions that are not content.
+4. Withdrawing something (a dropped Task) is `withdraw`, never `delete`.
+5. The whole log is kept; its size is handled with storage (Gap 10).
+
 ## Gaps still to discuss (one at a time)
 
-4 operations beyond create / update / delete, and what a log entry carries; 5 comment vs feedback (anchor, kind, decision, resolved); 6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+5 comment vs feedback (anchor, kind, decision, resolved); 6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

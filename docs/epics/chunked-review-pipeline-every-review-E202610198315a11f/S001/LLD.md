@@ -63,6 +63,7 @@ createReviewJob(adapter: ReviewAdapter<unknown>, path: 'daemon' | 'controller', 
 **Postconditions:**
 - Under the limit, the first stage's calls carry exactly today's messages and schema inside the envelope.
 - Every pending call has a callId no call of this job carried before.
+- Grouping order over the limit: prepare first unites atoms joined by 'calls' relations, then 'same-file', then 'same-module', then 'references'. It packs whole groups into chunks that fit, and a group too large for one chunk is split along the next-weaker relation kind before single atoms are placed. Relation direction does not matter for grouping. Atoms keep the material's order within a chunk.
 
 ### 2.2 `runReviewJob`
 
@@ -128,7 +129,7 @@ runCodeReview(subject: CodeReviewSubject, provider: LLMProvider, opts: RunCodeRe
 **Returns:** `Promise<CodeReviewOutcome>` — Unchanged shape; each expected dimension is now one pipeline job (single-chunk adapter wrapping that dimension's existing prompt builder), run in today's order; ux and deterministic diagram handlers are deterministic stages; adherence makes no call without an approved LLD or plan.
 
 **Errors:**
-- `as today` when A dimension failing both attempts fails the review and records nothing.
+- `CodeReviewOutcome { ok: false, error }` when A model-judged dimension's call fails both pipeline attempts. As today, runCodeReview returns { ok: false, error } and records nothing. The attempt count is an intentional policy change from the HLD: today the dimension's withStructuredRetry (3 attempts) wraps CliProvider.withTransientRetry (3 attempts), whereas under the pipeline every call gets exactly two attempts, each under its own callId.
 
 **Preconditions:**
 - Signature unchanged.
@@ -294,10 +295,11 @@ runShaperToolLoop(args: RunShaperToolLoopArgs): Promise<ShaperToolLoopResult>
 **Parameters:**
 - `args: RunShaperToolLoopArgs` — Unchanged.
 
-**Returns:** `Promise<ShaperToolLoopResult>` — Unchanged behaviour; its tool loop (runToolLoop) and final structured emit are moved behind a generic read-only loop taking caller-supplied messages, answer schema, deadline, signal and retry policy, which both runShaperToolLoop and the Ollama reviewer session call. The generic loop passes the caller's signal to every tool-selection turn (provider.complete) and to the final structured emit, and checks it before each turn and each tool run, so a cancelled Ollama reviewer session stops within the turn in flight. The analyzer's wrapper passes no signal, so its behaviour is unchanged.
+**Returns:** `Promise<ShaperToolLoopResult>` — Unchanged behaviour; its tool loop (runToolLoop) and final structured emit are moved behind a generic read-only loop taking caller-supplied messages, answer schema, deadline, signal and retry policy, which both runShaperToolLoop and the Ollama reviewer session call. The generic loop passes the caller's signal to every tool-selection turn (provider.complete) and to the final structured emit, and checks it before each turn and each tool run, so a cancelled Ollama reviewer session stops within the turn in flight. The analyzer's wrapper passes no signal, so its behaviour is unchanged. The extracted loop and final emit have TWO production callers in src/analyze/context/driver.ts, and both keep their prompts, tracing, retries and errors: runShaperToolLoop, and runShaper's legacy tail, which calls runToolLoop and runFinalStructuredEmit directly (src/analyze/context/driver.ts:539, src/analyze/context/driver.ts:547).
 
 **Postconditions:**
 - Analyzer tests for runShaperToolLoop pass unchanged.
+- runShaper's legacy tail behaves unchanged, and its existing tests pass unchanged.
 
 ### 2.15 `packIntoBatches`
 
@@ -403,6 +405,24 @@ validate?(answer: unknown): readonly string[]
 **Postconditions:**
 - The whole template review, retries included, keeps today's single limit.
 
+### 2.21 `ReviewAdapter.neighbourSummary`
+
+```typescript
+neighbourSummary?(atom: ReviewAtom, material: ReviewMaterial): string
+```
+
+**Parameters:**
+- `atom: ReviewAtom` — An atom related to an atom in the chunk being planned, held in another chunk.
+- `material: ReviewMaterial` — The adapter's material, so the writer can name the atom's related atoms.
+
+**Returns:** `string` — The text prepare puts in NeighbourSummary.summary (sc3). Prepare sets atomId, label and heldInChunk itself. Optional member of sc2's ReviewAdapter, owned by s1. When it is absent, prepare uses the atom's label as the summary. s2 supplies it for code review and s4 for design review.
+
+**Preconditions:**
+- Must be deterministic and make no model call: prepare and every re-plan call it, and the same atom must give the same text.
+
+**Postconditions:**
+- For every relation cut by the chunk plan, each side's chunk carries one NeighbourSummary of the other side's atom. One per related atom per chunk, never duplicated.
+
 ## 3. Data model changes
 
 ### 3.1 `config review.chunkTokens` — new
@@ -497,7 +517,7 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
   - User impact: As today.
 - **Premise extraction, a code-review model dimension or the template session fails both attempts.** (terminal)
   - Detection: onCallFailure 'fail-review'.
-  - Response: The review fails and records nothing, as today.
+  - Response: The review fails and records nothing; runCodeReview returns { ok: false, error } as today. Only the attempt count changes: two attempts in all (pipeline policy) instead of today's nested retries.
   - User impact: As today.
 - **The review is cancelled.** (terminal)
   - Detection: The AbortSignal fires. It is checked before every call and after every answer, and it is passed into the call in flight: runInProcessGroup kills the CLI's process group, and the Ollama request's fetch is aborted.
@@ -575,7 +595,7 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
 1. Add the optional internalRetry field to StructuredCompletionOpts and ReviewSessionOpts, and signal to ReviewSessionOpts. Add an optional attempts parameter to CliProvider.withTransientRetry, set to 1 when internalRetry is false. Map internalRetry false to maxAttempts 1 in OllamaProvider.completeStructured. When the field is absent, behaviour is unchanged. — ↩ rollbackable
 2. Classify size refusals in the claude session's is_error envelope as InputTooLargeError in CliProvider.runReviewSession, using the classifier completeStructured already uses. The codex session is already classified through runCodex; keep it and add a regression test. — ↩ rollbackable
 3. Add an optional signal to ProcessGroupOpts (kill the group on abort, report aborted). Forward StructuredCompletionOpts.signal and ReviewSessionOpts.signal through runSubprocess in CliProvider, and through a per-call fetch in OllamaProvider, so that an abort ends the call in flight with AbortError, never retried. Absent signal: unchanged. — ↩ rollbackable
-4. Extract the generic read-only tool loop and final structured emit from runShaperToolLoop behind caller-supplied messages, schema, deadline, signal and retry policy. Repoint runShaperToolLoop at it unchanged (existing analyzer tests are the guard). Add the optional runReviewSession to the LLMProvider interface and implement it on OllamaProvider over that loop. — ↩ rollbackable
+4. Extract the generic read-only tool loop and final structured emit from runShaperToolLoop behind caller-supplied messages, schema, deadline, signal and retry policy. Repoint both production callers at it unchanged: runShaperToolLoop and runShaper's legacy tail (src/analyze/context/driver.ts:539) (existing analyzer tests are the guard). Add the optional runReviewSession to the LLMProvider interface and implement it on OllamaProvider over that loop. — ↩ rollbackable
 5. Add the review.chunkTokens catalog entry (number, default 128000) and REVIEW_CHARS_PER_TOKEN = 3. Old config files without the key get the default through the existing config reconcile fill step. — ↩ rollbackable
 6. Create src/workflow/review-pipeline. Move packIntoBatches and grow the delivered ReviewJob into ReviewPipelineJob, with the envelope, the driver step functions, the failure policies, refusal re-division, the bounded gather, and the deadline. The only consumers of the old review-job.ts API (createReviewJob(strategy, budget), runReviewJob(strategy, provider), DimensionStrategy, Atom, jobResult) are its own tests, src/workflow/code-review/__tests__/review-job.test.ts and src/workflow/code-review/__tests__/pack-into-batches.test.ts. They move with the module and are rewritten to the new API. review-job.ts is deleted, with no compatibility wrappers. pack-into-batches.ts keeps a re-export at its old path, because packIntoBatches is unchanged. — ↩ rollbackable
 7. Add the single-chunk adapters, each wrapping its existing prompt builder unchanged: the code-review dimensions, the premise review (extract, probe, verify with record-not-judged and the 3-minute limit) and the template review (one reviewer-session stage). Each adapter has daemon and controller stage plans. — ↩ rollbackable
@@ -635,9 +655,9 @@ Nothing delivered moves.
 
 ## Review
 
-### ✅ Review `PASS` — design.story (design.story)
+### ⚠️ Review `WARN` — design.story (design.story)
 
-**0 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-19T07:12:38.337Z
+**0 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-19T08:57:31.662Z
 
 Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
 
@@ -647,4 +667,6 @@ _None._
 
 #### Could not verify (does not block)
 
-_None._
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| error-paths | The proposed execution timeout guarantees a three-minute premise-verification limit on Ollama as well as CLI providers. | verifyClaim passes timeoutMs, but StructuredCompletionOpts documents it as a subprocess-provider limit. OllamaProvider.completeStructured does not consume timeoutMs. The LLD adds signal forwarding and names execution.timeoutMs, but does not specify whether the driver creates a timeout signal or Ollama gains timeout enforcement. The existing code therefore cannot establish this guarantee. [files: src/workflow/review/verify.ts, src/shared/types.ts, src/agent/providers/ollama.ts, src/agent/providers/cli-provider.ts] | Specify which layer enforces structured-call timeouts on Ollama, how timeout differs from user cancellation, and test a stalled Ollama verification request. |

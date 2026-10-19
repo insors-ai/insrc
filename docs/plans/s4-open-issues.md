@@ -4,7 +4,7 @@ Logged 2026-10-18 after S4 (epic `team-signoff-claim-based-workflow`, `315d510cb
 
 | # | Status | Issue | Owner / next step |
 | :--- | :--- | :--- | :--- |
-| S4-1 | open | Amendment `AMD-315d510cb28100e2-11` (`resolveIssueId(ref)` on the tracker port) is pending. Until it is agreed, an issue adopted by its label after a timed-out create is not linked under its parent. | s1 to agree; then link adopted Story and Task issues in `ensureUnitIssueDetailed`. |
+| S4-1 | resolved 2026-10-19 (standalone story 72b1bee074ba2dab/S001, AMD-11 approved) | Amendment `AMD-315d510cb28100e2-11` (`resolveIssueId(ref)` on the tracker port) is pending. Until it is agreed, an issue adopted by its label after a timed-out create is not linked under its parent. | s1 to agree; then link adopted Story and Task issues in `ensureUnitIssueDetailed`. |
 | S4-2 | resolved by decision 2026-10-19 (team-workflow.md "Revision rule decision") | Identical content writes keep their revision (`writeArtifact`); the approved contract says every content write mints prior + 1. Accepted deviation (a): the BUILD-record byte-identity test depends on it. | Revisit with s8 (revision) when signoff binds to the revision. |
 | S4-3 | resolved by decision 2026-10-19 (team-workflow.md "Revision rule decision") | The provenance writer is meta-only; the plan classified it as content. Accepted deviation (b): provenance round-trip tests and the review-decision "changes no state" rule depend on it. | Revisit with s8. |
 | S4-4 | open | No per-Task body comment: the plan review comment goes on the Story issue (`planComment` mark) because the legacy code has no per-Task comment and the LLD does not say what it contains. | Decide the content with the owner, or amend the LLD. |

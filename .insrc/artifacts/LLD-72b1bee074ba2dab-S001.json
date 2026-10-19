@@ -163,6 +163,12 @@
       "reviewedAt": "2026-10-19T04:05:41.972Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-19T04:11:26.138Z",
+    "rangeBase": "3a0d2dec386b06397b3bb45cf1a380eaf8d4106b",
+    "reviewOverride": {
+      "reason": "User approved over the daemon's block (2 HIGH, 3 MED, 5 LOW, 1 could-not-verify, round 1): the six findings are binding build requirements recorded in docs/plans/team-workflow.md \"S4-1 adoption link: LLD approval and binding build requirements\"; redoing the LLD would re-run eight steps for clarifications of an already-chosen design.",
+      "at": "2026-10-19T04:11:26.137Z"
     }
   },
   "body": {

@@ -290,7 +290,9 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		adopted = old.value ?? undefined;
 	}
 	if (adopted !== undefined) {
-		recordUnit(unit, adopted, now());
+		const recorded = recordUnit(unit, adopted, now());
+		// An issue found by its label (its create timed out) was never linked under its parent: do it now.
+		if (parentRef !== undefined && recorded) linkAdopted(unit, port, parentRef, adopted);
 		return { ok: true, value: { issue: adopted, created: false, duplicateCheck: 'clean' } };
 	}
 
@@ -331,15 +333,58 @@ export function isUnitSettled(unit: UnitRef): boolean {
 	} catch { return false; }
 }
 
-/** A link under the parent that failed at creation is retried; on success the record is cleared of it. */
+/** The tracker's id of an issue; a tracker without the lookup counts as a failed lookup, never a crash. */
+function lookUpIssueId(port: TrackerPort, ref: IssueRef): PortResult<number> {
+	if (typeof port.issueOps.resolveIssueId !== 'function') return { ok: false, reason: 'this tracker cannot look up an issue id', kind: 'rejected' };
+	return port.issueOps.resolveIssueId(ref);
+}
+
+/** Store the unit's pending link on its own record (the record keeps its revision and extras marks). */
+function savePendingLink(unit: UnitRef, pendingLink: NonNullable<UnitIssue['pendingLink']>): void {
+	try {
+		const path = ownJson(unit);
+		const record = readTrackerMeta(path)?.units?.[unitKey(unit)];
+		if (record === undefined) { log.warn({ unit: unitKey(unit) }, 'unit-issue: no record to keep the pending link on'); return; }
+		patchTrackerMeta(path, { units: { [unitKey(unit)]: { ...record, pendingLink } } });
+	} catch (err) { log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: could not record the pending link'); }
+}
+
+/** Link an issue adopted by its label under its parent; any failure leaves a pending link for the next ensure and never fails the ensure. */
+function linkAdopted(unit: UnitRef, port: TrackerPort, parent: IssueRef, child: IssueRef): void {
+	const id = lookUpIssueId(port, child);
+	if (!id.ok) {
+		log.warn({ unit: unitKey(unit), child, kind: id.kind, reason: id.reason }, 'unit-issue: could not look up the adopted issue id (the link is retried next time)');
+		savePendingLink(unit, { parent, child });
+		return;
+	}
+	const link = port.issueOps.linkSubIssue(parent, id.value);
+	if (!link.ok) {
+		log.warn({ unit: unitKey(unit), parent, child, kind: link.kind, reason: link.reason }, 'unit-issue: could not link the adopted issue under its parent (retried next time)');
+		savePendingLink(unit, { parent, childId: id.value });
+	}
+}
+
+/** A link under the parent that failed earlier is retried; on success the record is cleared of it. A record that knows only the child ref looks its id up first. */
 function retryPendingLink(unit: UnitRef, port: TrackerPort, issue: IssueRef): void {
 	try {
 		const path = ownJson(unit);
 		const record = readTrackerMeta(path)?.units?.[unitKey(unit)];
 		const pending = record?.pendingLink;
 		if (record === undefined || pending === undefined) return;
-		const link = port.issueOps.linkSubIssue(pending.parent, pending.childId);
-		if (!link.ok) { log.warn({ unit: unitKey(unit), issue, reason: link.reason }, 'unit-issue: the pending link under the parent failed again'); return; }
+		let childId = pending.childId;
+		if (childId === undefined) {
+			if (pending.child === undefined) { log.warn({ unit: unitKey(unit), issue }, 'unit-issue: the pending link names neither a child id nor a child ref'); return; }
+			const id = lookUpIssueId(port, pending.child);
+			if (!id.ok) { log.warn({ unit: unitKey(unit), issue, kind: id.kind, reason: id.reason }, 'unit-issue: the pending link\'s child id could not be looked up again'); return; }
+			childId = id.value;
+		}
+		const link = port.issueOps.linkSubIssue(pending.parent, childId);
+		if (!link.ok) {
+			log.warn({ unit: unitKey(unit), issue, reason: link.reason }, 'unit-issue: the pending link under the parent failed again');
+			// keep the id just found, so the next try does not look it up again
+			if (pending.childId === undefined) savePendingLink(unit, { parent: pending.parent, childId });
+			return;
+		}
 		const { pendingLink: _done, ...settled } = record;
 		patchTrackerMeta(path, { units: { [unitKey(unit)]: settled } });
 	} catch (err) { log.warn({ unit: unitKey(unit), err: (err as Error).message }, 'unit-issue: could not retry the pending link'); }

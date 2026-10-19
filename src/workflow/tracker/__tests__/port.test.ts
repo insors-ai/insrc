@@ -13,7 +13,7 @@
 import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -137,6 +137,13 @@ test('TrackerPort type exposes issueOps with the AMD-8 signatures', () => {
 	// A fixture that breaks a signature (string child id) must be reported, so the check bites.
 	const broken = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'issue-ops-signatures-broken.ts');
 	assert.ok(typeErrors(broken).length > 0, 'the broken fixture should fail to typecheck');
+});
+
+test('the signature fixture compiles with resolveIssueId and its broken twin does not', () => {
+	const dir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
+	assert.match(readFileSync(join(dir, 'issue-ops-signatures.ts'), 'utf8'), /resolveIssueId:/, 'the fixture declares resolveIssueId');
+	assert.deepEqual(typeErrors(join(dir, 'issue-ops-signatures.ts')), []);
+	assert.ok(typeErrors(join(dir, 'issue-ops-signatures-broken.ts')).some(e => /resolveIssueId|PortResult<string>|number/.test(e)), 'a resolveIssueId that does not return a number is reported');
 });
 
 // ---------------------------------------------------------------------------

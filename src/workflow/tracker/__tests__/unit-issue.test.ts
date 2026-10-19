@@ -46,6 +46,8 @@ function fakeTracker(over: {
 	withListing?: boolean; failList?: boolean; failClose?: boolean; failLink?: number;
 	/** Answer this many findIssue calls with "not found" whatever exists (a stale read of two daemons). */
 	staleFinds?: number;
+	/** Fail this many resolveIssueId calls (with `failResolveKind`), and leave resolveIssueId off the tracker altogether. */
+	failResolve?: number; failResolveKind?: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected'; withoutResolve?: boolean;
 	/** Another daemon's issue, created just before this call's own, so it has the lower number. */
 	racer?: boolean;
 	/** Runs right after this fake's create commits an issue and before it returns (another daemon acting in between). */
@@ -54,7 +56,7 @@ function fakeTracker(over: {
 	shared?: { issues: Issue[]; next: { n: number } };
 } = {}) {
 	const issues: Issue[] = over.shared?.issues ?? [];
-	const calls = { find: 0, create: 0, list: 0, label: [] as string[], link: [] as Array<[string, number]>, comments: [] as Array<[string, string]>, closed: [] as string[] };
+	const calls = { find: 0, create: 0, list: 0, resolve: [] as string[], label: [] as string[], link: [] as Array<[string, number]>, comments: [] as Array<[string, string]>, closed: [] as string[] };
 	const counter = over.shared?.next ?? { n: 1 };
 	let stale = over.staleFinds ?? 0;
 	const find = (labels: string[]): PortResult<IssueRef | null> => {
@@ -90,6 +92,14 @@ function fakeTracker(over: {
 				if (over.failLink !== undefined && over.failLink > 0) { over.failLink -= 1; return { ok: false, reason: 'link rejected', kind: 'rejected' }; }
 				return { ok: true, value: undefined };
 			},
+			...(over.withoutResolve === true ? {} : {
+				resolveIssueId: (ref: IssueRef): PortResult<number> => {
+					calls.resolve.push(ref);
+					if (over.failResolve !== undefined && over.failResolve > 0) { over.failResolve -= 1; return { ok: false, reason: 'lookup failed', kind: over.failResolveKind ?? 'unreachable' }; }
+					const hit = issues.find(i => i.ref === ref);
+					return hit === undefined ? { ok: false, reason: 'no such issue', kind: 'rejected' } : { ok: true, value: 1000 + hit.number };
+				},
+			}),
 			comment: (ref: IssueRef, body: string): PortResult<void> => { calls.comments.push([ref, body]); return { ok: true, value: undefined }; },
 			close: (ref: IssueRef): PortResult<void> => {
 				if (over.failClose === true) return { ok: false, reason: 'close rejected', kind: 'rejected' };
@@ -428,5 +438,127 @@ test('a malformed plan is a before-create failure, not a throw', () => {
 		assert.equal(r.ok, false);
 		assert.equal(r.ok ? '' : r.phase, 'before-create');
 		assert.equal(t.calls.create, creates);
+	} finally { fx.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// Linking an issue adopted by its label under its parent (S4-1)
+// ---------------------------------------------------------------------------
+
+type AdoptOver = Parameters<typeof fakeTracker>[0];
+
+/** An epic and its issue, then a unit whose create times out after the tracker committed it. Returns the tracker, ready to adopt that unit. */
+function timedOutUnit(fx: ReturnType<typeof seed>, unitOf: (repo: string) => UnitRef, over: NonNullable<AdoptOver> = {}) {
+	const t = fakeTracker(over);
+	assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
+	if (unitOf(fx.repo).unit === 'task') assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+	over.failCreate = true; over.commitThenFail = true;
+	const first = ensureUnitIssueDetailed(unitOf(fx.repo), t.port, deps);
+	assert.deepEqual(first.ok ? null : first.phase, 'create', 'the outcome is unconfirmed');
+	return t;
+}
+const recordOf = (fx: ReturnType<typeof seed>, u: UnitRef) => (u.unit === 'story' ? fx.read(lldArtifactId(HASH, 's1')) : fx.read(planArtifactId(HASH, 's1'))).meta.tracker.units[u.unit === 'story' ? 'story:s1' : 'task:s1/t1'];
+
+test('a Story or Task issue adopted by its label after a timed-out create is resolved and linked under its parent, a failed resolve records pendingLink with child and a failed link records childId, the next ensure completes either, an Epic adoption makes no call, and an old pendingLink with childId still links without a resolve', () => {
+	// Story: adopted, resolved, linked, settled; the record keeps its revision mark
+	let fx = seed();
+	try {
+		const t = timedOutUnit(fx, story);
+		const linksBefore = t.calls.link.length;
+		const adopted = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		assert.deepEqual(adopted.ok && [adopted.value.issue, adopted.value.created], ['acme/demo#2', false]);
+		assert.deepEqual(t.calls.resolve, ['acme/demo#2']);
+		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 1002]]);
+		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
+		assert.equal(recordOf(fx, story(fx.repo)).createdAtRevision, 2);
+		assert.equal(isUnitSettled(story(fx.repo)), true);
+	} finally { fx.cleanup(); }
+
+	// Task: adopted under its Story's issue
+	fx = seed();
+	try {
+		const t = timedOutUnit(fx, task);
+		const linksBefore = t.calls.link.length;
+		assert.equal(ensureUnitIssueDetailed(task(fx.repo), t.port, deps).ok, true);
+		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#2', 1003]]);
+		assert.equal(isUnitSettled(task(fx.repo)), true);
+	} finally { fx.cleanup(); }
+
+	// A failed resolve is kept as pendingLink { parent, child } AFTER the adoption record exists, survives it, and the next ensure completes it
+	fx = seed();
+	try {
+		const t = timedOutUnit(fx, story, { failResolve: 1 });
+		const adopted = ensureUnitIssueDetailed(story(fx.repo), t.port, deps);
+		assert.equal(adopted.ok, true, 'a failed lookup never fails the ensure');
+		const rec = recordOf(fx, story(fx.repo));
+		assert.deepEqual(rec.pendingLink, { parent: 'acme/demo#1', child: 'acme/demo#2' });
+		assert.equal(rec.issue, 'acme/demo#2');
+		assert.equal(rec.createdAtRevision, 2, 'the record kept its revision mark');
+		assert.equal(isUnitSettled(story(fx.repo)), false);
+		const linksBefore = t.calls.link.length;
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 1002]], 'the retry looked the id up, then linked');
+		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
+	} finally { fx.cleanup(); }
+
+	// A failed link after a good lookup keeps the id; the retry does not look it up again
+	fx = seed();
+	try {
+		const over: NonNullable<AdoptOver> = {};
+		const t = timedOutUnit(fx, story, over);
+		over.failLink = 1;
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, { parent: 'acme/demo#1', childId: 1002 });
+		const resolvesBefore = t.calls.resolve.length;
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.equal(t.calls.resolve.length, resolvesBefore, 'no second lookup');
+		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
+	} finally { fx.cleanup(); }
+
+	// Every failure kind of the lookup is handled the same way; a still-failing retry leaves the record as it was
+	for (const kind of ['missing-tool', 'missing-signin', 'unreachable', 'rejected'] as const) {
+		fx = seed();
+		try {
+			const t = timedOutUnit(fx, story, { failResolve: 2, failResolveKind: kind });
+			assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true, kind);
+			const kept = { parent: 'acme/demo#1', child: 'acme/demo#2' };
+			assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, kept, kind);
+			assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true, kind);
+			assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, kept, `${kind}: still failing leaves the record as it was`);
+		} finally { fx.cleanup(); }
+	}
+
+	// A tracker without the lookup counts as a failed lookup, not a crash
+	fx = seed();
+	try {
+		const t = timedOutUnit(fx, story, { withoutResolve: true });
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, { parent: 'acme/demo#1', child: 'acme/demo#2' });
+	} finally { fx.cleanup(); }
+
+	// An Epic adoption has no parent: no lookup, no link
+	fx = seed();
+	try {
+		const t = fakeTracker({ failCreate: true, commitThenFail: true });
+		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, false);
+		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
+		assert.deepEqual([t.calls.resolve.length, t.calls.link.length], [0, 0]);
+	} finally { fx.cleanup(); }
+
+	// A record from before this change ({ parent, childId }) links with its id and makes no lookup
+	fx = seed();
+	try {
+		const t = fakeTracker();
+		assert.equal(ensureUnitIssueDetailed(epic(fx.repo), t.port, deps).ok, true);
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		const lld = fx.read(lldArtifactId(HASH, 's1'));
+		lld.meta.tracker.units['story:s1'].pendingLink = { parent: 'acme/demo#1', childId: 77 };
+		writeFileSync(fx.json(lldArtifactId(HASH, 's1')), JSON.stringify(lld));
+		const resolvesBefore = t.calls.resolve.length;
+		const linksBefore = t.calls.link.length;
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 77]]);
+		assert.equal(t.calls.resolve.length, resolvesBefore);
+		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
 	} finally { fx.cleanup(); }
 });

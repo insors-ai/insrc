@@ -249,6 +249,18 @@ export function ghLinkSubIssue(owner: string, repo: string, parentRef: string, c
 	runGh(['api', '-X', 'POST', `repos/${owner}/${repo}/issues/${parseIssueRef(parentRef).number}/sub_issues`, '-F', `sub_issue_id=${childId}`], { discardOutput: true });
 }
 
+/** A well-formed `owner/repo#N` with a positive number (parseIssueRef alone only checks the separators). */
+const STRICT_ISSUE_REF_RE = /^[^/#\s]+\/[^/#\s]+#[1-9][0-9]*(?![\s\S])/;
+
+/** The REST database id of an issue (what the sub-issues API takes as `sub_issue_id`), read from its number. Throws a classified GhCommandError. */
+export function ghGetIssueId(owner: string, repo: string, ref: string): number {
+	if (!STRICT_ISSUE_REF_RE.test(ref)) throw new GhCommandError('rejected', `malformed issue reference '${ref}' (expected owner/repo#N with a positive number)`);
+	const out = runGh(['api', `repos/${owner}/${repo}/issues/${parseIssueRef(ref).number}`, '--jq', '.id']).trim();
+	const id = /^[1-9][0-9]*$/.test(out) ? Number(out) : NaN;
+	if (!Number.isSafeInteger(id)) throw new GhCommandError('rejected', `gh did not return a numeric id for '${ref}'`);
+	return id;
+}
+
 export function ghGetIssueBody(owner: string, repo: string, ref: string): string {
 	return runGh(['issue', 'view', parseIssueRef(ref).number, '--repo', `${owner}/${repo}`, '--json', 'body', '-q', '.body']);
 }

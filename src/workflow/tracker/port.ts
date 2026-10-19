@@ -55,6 +55,8 @@ export interface SignoffRequestRef {
 export interface IssueOps {
 	create(spec: IssueSpec): PortResult<CreatedIssue>;
 	linkSubIssue(parent: IssueRef, childId: number): PortResult<void>;
+	/** The tracker's numeric id of an issue, the `childId` linkSubIssue needs (AMD-315d510cb28100e2-11). Reads only. */
+	resolveIssueId(ref: IssueRef): PortResult<number>;
 	close(issue: IssueRef): PortResult<void>;
 	comment(issue: IssueRef, body: string): PortResult<void>;
 	readBody(issue: IssueRef): PortResult<string>;

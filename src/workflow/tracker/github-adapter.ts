@@ -30,6 +30,7 @@ import {
 	ghListIssuesByLabelsStrict,
 	ghGetIssueBody,
 	ghLinkSubIssue,
+	ghGetIssueId,
 	runGh,
 } from './github.js';
 import { parseIssueRef } from './refs.js';
@@ -135,6 +136,7 @@ function createIssueOps(owner: string, repo: string): IssueOps {
 	return {
 		create: (spec: IssueSpec) => attempt((): CreatedIssue => ghCreateIssueTyped(owner, repo, spec.title, spec.body, spec.labels, spec.issueType)),
 		linkSubIssue: (parent: IssueRef, childId: number) => attempt(() => ghLinkSubIssue(owner, repo, parent, childId)),
+		resolveIssueId: (ref: IssueRef) => attempt(() => ghGetIssueId(owner, repo, ref)),
 		close: (issue: IssueRef) => attempt(() => ghCloseIssue(owner, repo, issue)),
 		comment: (issue: IssueRef, body: string) => attempt(() => ghComment(owner, repo, issue, body)),
 		readBody: (issue: IssueRef) => attempt(() => ghGetIssueBody(owner, repo, issue)),

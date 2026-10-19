@@ -29,8 +29,13 @@ export interface UnitIssue {
 	readonly issue:     string;
 	/** `meta.revision` of the artifact when the issue was recorded. */
 	readonly createdAtRevision: number;
-	/** The link under its parent failed at creation: retried the next time the unit is ensured. */
-	readonly pendingLink?: { readonly parent: string; readonly childId: number } | undefined;
+	/**
+	 * The link under its parent failed: retried the next time the unit is ensured. `childId` is the tracker's numeric id of the
+	 * issue when it is known (a successful create, or a successful lookup); `child` is the issue's ref, kept when the id could
+	 * not be looked up, so the retry looks it up first. At least one is present. Code from before `child` existed reads only
+	 * `childId`, so rolling back past this field needs every `{ parent, child }` record resolved to a `childId` first.
+	 */
+	readonly pendingLink?: { readonly parent: string; readonly childId?: number | undefined; readonly child?: string | undefined } | undefined;
 	/** Per approve-time extra, the ISO time it succeeded; absent = still to run. */
 	readonly extrasDone?: {
 		readonly milestone?:     string | undefined;

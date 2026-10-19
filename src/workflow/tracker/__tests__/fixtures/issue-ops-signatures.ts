@@ -15,6 +15,7 @@ const ok = <T>(value: T): PortResult<T> => ({ ok: true, value });
 export const ops: IssueOps = {
 	create: spec => { const labels: readonly string[] = spec.labels; void labels; return ok(created); },
 	linkSubIssue: (parent: IssueRef, childId: number) => { void parent; void childId; return ok(undefined); },
+	resolveIssueId: (ref: IssueRef) => { void ref; return ok(42); },
 	close: (issue: IssueRef) => { void issue; return ok(undefined); },
 	comment: (issue: IssueRef, body: string) => { void issue; void body; return ok(undefined); },
 	readBody: (issue: IssueRef) => { void issue; return ok(''); },

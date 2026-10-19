@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 import { createGithubTracker } from '../github-adapter.js';
 import {
 	GH_TIMEOUT_MS, GhCommandError, ghAttachMilestone, ghCloseIssue, ghComment, ghCreateIssueTyped, ghCreateLabel, ghEditIssueBody,
-	ghEnsureMilestone, ghGetIssueBody, ghLinkSubIssue, runGh, _setTrackerExecForTests,
+	ghEnsureMilestone, ghGetIssueBody, ghGetIssueId, ghLinkSubIssue, runGh, _setTrackerExecForTests,
 } from '../github.js';
 import type { IssueSpec } from '../port.js';
 
@@ -463,4 +463,42 @@ test('ensureLabel returns false on failure, ensureMilestone swallows a failed cr
 	recordingGh();
 	assert.deepEqual(ops.close('o/r#4'), { ok: true, value: undefined });
 	assert.deepEqual(ops.close('o/r#4'), { ok: true, value: undefined });
+});
+
+test("ghGetIssueId and the adapter's resolveIssueId run gh api for the issue number, return the numeric id, and fail on a non-integer or a gh error", () => {
+	const ops = createGithubTracker('o', 'r').issueOps;
+	const seen: string[][] = [];
+	let answer = '9001\n';
+	_setTrackerExecForTests((_cmd, args) => { seen.push([...args]); return answer; });
+	assert.equal(ghGetIssueId('o', 'r', 'o/r#10'), 9001);
+	assert.deepEqual(seen[0], ['api', 'repos/o/r/issues/10', '--jq', '.id']);
+	assert.deepEqual(ops.resolveIssueId('o/r#10'), { ok: true, value: 9001 });
+	assert.deepEqual(seen[1], seen[0], 'the port runs the same argv as the wrapper');
+
+	// output that is not a positive integer is a rejected lookup, never a number
+	for (const bad of ['', 'null', 'abc', '12.5', '-3', '0', '1e3', '9001 9002']) {
+		answer = bad;
+		const r = ops.resolveIssueId('o/r#10');
+		assert.deepEqual([r.ok, r.ok ? '' : r.kind], [false, 'rejected'], `output '${bad}'`);
+	}
+
+	// malformed refs are refused before gh runs
+	answer = '1';
+	const before = seen.length;
+	for (const ref of ['o/r#abc', '/#', 'o/#5', '/r#5', 'o/r#', 'o/r#0', 'o/r#05', 'o/r#5\n', 'or#5', 'o/r', 'o/r/x#5']) {
+		const r = ops.resolveIssueId(ref);
+		assert.deepEqual([r.ok, r.ok ? '' : r.kind], [false, 'rejected'], `ref '${ref}'`);
+		assert.throws(() => ghGetIssueId('o', 'r', ref), GhCommandError, `ref '${ref}'`);
+	}
+	assert.equal(seen.length, before, 'gh was not run for a malformed ref');
+
+	// a gh failure keeps its kind
+	failWith(execError({ code: 'ENOENT' }, 'spawnSync gh ENOENT'));
+	assert.equal((ops.resolveIssueId('o/r#10') as { kind: string }).kind, 'missing-tool');
+	failWith(execError({ stderr: 'You are not logged in to any GitHub hosts. Run gh auth login to authenticate.' }));
+	assert.equal((ops.resolveIssueId('o/r#10') as { kind: string }).kind, 'missing-signin');
+	failWith(execError({ code: 'ETIMEDOUT' }));
+	assert.equal((ops.resolveIssueId('o/r#10') as { kind: string }).kind, 'unreachable');
+	failWith(execError({ stderr: 'HTTP 404 Not Found' }));
+	assert.equal((ops.resolveIssueId('o/r#10') as { kind: string }).kind, 'rejected');
 });

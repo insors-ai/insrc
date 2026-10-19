@@ -146,6 +146,23 @@ Reference { entityId, type, relation, fragment?, quote? }
 5. References are **outgoing only**; "what references this" is derived. Adding a reference is not content and never moves a revision.
 6. What folds in: `citations[]` become `cites` references (the `[[c1]]` markers map onto reference ids); `meta.tracker` becomes `tracked-by` references; `PlanTask.dependsOn` becomes `depends-on` between Task artifacts. The unit-issue record fields that are not references (`createdAtRevision`, `extrasDone`, `pendingLink`) need a home (Gap 8).
 
+## Gap 8: issues and external things: IN PROGRESS
+
+Decided so far:
+
+1. A tracker issue is **not an artifact**; an artifact points to it with a `tracked-by` reference. (The `ISSUE` root is insrc's own defect record, a different thing.)
+2. **Lifecycle artifacts** (the units people work on) have a **1:1 binding** to a tracker issue: the framework creates the issue, or a person creates it first and the framework creates the artifact linked to it.
+3. **Supporting artifacts** (PLAN, CR, diagrams, mocks, ...) have no issue of their own; they are **attached to the issue of the artifact they support**.
+4. Attachment is an `attach(issue, artifact)` port operation each adapter implements: **GitHub and GitLab post a link** to the artifact (it is checked in), as a **permalink to the file at a commit**, not a branch; a new revision posts a new link and the old one stays as history; **Jira** uploads a real attachment.
+5. Tracker bookkeeping is a typed structure, not a bag:
+```
+Artifact.binding?       { reference (tracked-by), createdAtRevision, posted[], pendingLink? }   lifecycle artifacts
+Artifact.attachments[]  { target, revision, at, externalId? }                                   supporting artifacts
+```
+6. insrc's own posts to an issue (design summary, review report, plan comment) are `posted[]` marks, not Feedback; the `<!-- insrc:... -->` marker keeps them out of ingestion.
+
+Open: which artifacts are the lifecycle artifacts (units as first-class artifacts?); whether a repo with no tracker simply has no binding.
+
 ## Gaps still to discuss (one at a time)
 
 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

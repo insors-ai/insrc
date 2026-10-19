@@ -17,7 +17,7 @@ import { test } from 'node:test';
 
 import {
 	claudeReviewSessionArgs, CliProvider, codexReviewSessionArgs, REVIEW_SESSION_ANALYZE_TOOLS,
-	REVIEW_SESSION_READ_TOOLS, ReviewSessionTimeoutError,
+	REVIEW_SESSION_READ_TOOLS, ReviewSessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS,
 } from '../cli-provider.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
@@ -28,6 +28,7 @@ const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'bo
  *   { out }            print `out` and exit 0
  *   { fail, code? }    print `fail` to stderr and exit `code` (default 1)
  *   { sleepMs, ... }   wait first
+ *   { pre, ... }       print `pre` before waiting (a run that starts and then goes silent)
  */
 const FAKE = `#!/usr/bin/env node
 import { appendFileSync, readFileSync } from 'node:fs';
@@ -41,6 +42,7 @@ appendFileSync(calls, JSON.stringify({ argv: process.argv.slice(2), cwd: process
 const n = readFileSync(calls, 'utf8').trim().split('\\n').length;
 const script = JSON.parse(readFileSync(join(here, 'script.json'), 'utf8'));
 const step = script[Math.min(n - 1, script.length - 1)];
+if (step.pre) process.stdout.write(step.pre);
 if (step.sleepMs) await new Promise(r => setTimeout(r, step.sleepMs));
 if (step.fail !== undefined) { process.stderr.write(step.fail); process.exit(step.code ?? 1); }
 process.stdout.write(step.out);
@@ -207,5 +209,54 @@ test('one-shot calls and the edit session build the same arguments as before', a
 		assert.deepEqual(complete, ['--print', '--output-format', 'json', '--model', 'opus']);
 		assert.deepEqual(structured, ['--print', '--output-format', 'json', '--json-schema', JSON.stringify(SCHEMA), '--model', 'opus']);
 		assert.deepEqual(edit, ['--print', '--output-format', 'json', '--permission-mode', 'acceptEdits', '--model', 'opus']);
+	} finally { f.cleanup(); }
+});
+
+// --- a codex run that never starts answering (ISSUE-d4b2cd1c) -------------------
+
+/** What a stalled codex run printed on 2026-10-19 before going silent. */
+const codexSilent = (id: string): string =>
+	JSON.stringify({ type: 'thread.started', thread_id: id }) + '\n' + JSON.stringify({ type: 'turn.started' }) + '\n';
+
+test('a codex reviewer session that produces no model output is killed early and retried once as a fresh run', async () => {
+	const f = fakeCli([{ pre: codexSilent('t-silent'), sleepMs: 30_000, out: '' }, { out: codexOk(JSON.stringify({ ok: true })) }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin, codexFirstOutputMs: 1_000 });
+		const t0 = Date.now();
+		const answer = await p.runReviewSession<{ ok: boolean }>('P', SCHEMA, { cwd: f.dir, deadlineMs: 20_000 });
+		assert.deepEqual(answer, { ok: true });
+		assert.equal(f.calls().length, 2, 'the silent run was replaced by a fresh one');
+		assert.ok(Date.now() - t0 < 10_000, `the stall was noticed at the first-output limit, not the deadline (took ${Date.now() - t0}ms)`);
+	} finally { f.cleanup(); }
+});
+
+test('a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit', async () => {
+	const twice = fakeCli([{ pre: codexSilent('t-again'), sleepMs: 30_000, out: '' }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: twice.bin, codexFirstOutputMs: 1_000 });
+		await assert.rejects(
+			p.runReviewSession('P', SCHEMA, { cwd: twice.dir, deadlineMs: 20_000 }),
+			(e: unknown) => e instanceof CliStallError && e.sessionId === 't-again',
+		);
+		assert.equal(twice.calls().length, 2, 'retried once, not more');
+	} finally { twice.cleanup(); }
+	// Model output printed early, then a long silence: not a stall.
+	const slow = fakeCli([{ pre: codexSilent('t-slow') + JSON.stringify({ type: 'item.started', item: { type: 'reasoning' } }) + '\n', sleepMs: 2_500, out: codexOk(JSON.stringify({ ok: true })) }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: slow.bin, codexFirstOutputMs: 1_000 });
+		assert.deepEqual(await p.runReviewSession('P', SCHEMA, { cwd: slow.dir, deadlineMs: 20_000 }), { ok: true });
+		assert.equal(slow.calls().length, 1);
+	} finally { slow.cleanup(); }
+	assert.ok(CODEX_FIRST_OUTPUT_MS < 600_000, 'the default first-output limit is well under the 10-minute call limit');
+});
+
+test('a one-shot codex structured call that stalls fails with a CliStallError naming its session', async () => {
+	const f = fakeCli([{ pre: codexSilent('t-oneshot'), sleepMs: 30_000, out: '' }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: f.bin, codexFirstOutputMs: 1_000 });
+		await assert.rejects(
+			p.completeStructured([{ role: 'user', content: 'hi' }], SCHEMA),
+			(e: unknown) => e instanceof CliStallError && e.sessionId === 't-oneshot' && /no model output/.test(e.message),
+		);
 	} finally { f.cleanup(); }
 });

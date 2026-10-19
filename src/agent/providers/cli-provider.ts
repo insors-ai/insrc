@@ -52,6 +52,7 @@ import type {
 } from '../../shared/types.js';
 import { getLogger } from '../../shared/logger.js';
 import { runInProcessGroup } from '../../shared/process-group.js';
+import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
 
 const log = getLogger('cli-provider');
@@ -147,8 +148,32 @@ export interface CliProviderOpts {
 	readonly timeoutMs?: number | undefined;
 	/** Provider that handles `embed()`. Usually an Ollama provider. */
 	readonly embedDelegate?: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
+	/** How long a codex run may show no model output before it is treated as stalled. Default CODEX_FIRST_OUTPUT_MS. */
+	readonly codexFirstOutputMs?: number | undefined;
 }
 
+
+/**
+ * How long a codex run may show no model output (no event past `thread.started`
+ * / `turn.started`) before it is treated as stalled and killed (ISSUE-d4b2cd1c).
+ * A model normally starts answering within seconds; on 2026-10-19 two runs took
+ * their prompt and then stayed silent until the 10-minute limit.
+ */
+export const CODEX_FIRST_OUTPUT_MS = 300_000;
+
+/** An event codex prints once the model is producing output. */
+const CODEX_MODEL_EVENT = /"type":"(?:item\.|turn\.completed|turn\.failed|error)/;
+
+/** A CLI run that produced no model output in time and was killed; retryable as a fresh run. */
+export class CliStallError extends Error {
+	/** The codex session (thread id) of the silent run, when it printed one. */
+	readonly sessionId: string | undefined;
+	constructor(cli: string, silentMs: number, sessionId: string | undefined) {
+		super(`${cli} stalled: no model output in ${Math.round(silentMs / 1000)} s${sessionId !== undefined ? ` (session ${sessionId})` : ''}; the run was killed`);
+		this.name = 'CliStallError';
+		this.sessionId = sessionId;
+	}
+}
 
 /** codex's input limit in characters, as its own refusal states it (input_too_large, max_chars). */
 export const CODEX_INPUT_BUDGET_CHARS = 1_048_576;
@@ -165,6 +190,7 @@ export class CliProvider implements LLMProvider {
 	readonly defaultModel: string | undefined;
 	private readonly binPath: string;
 	private readonly timeoutMs: number;
+	private readonly codexFirstOutputMs: number;
 	private readonly embedDelegate: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
 
 	readonly capabilities: ProviderCapabilities;
@@ -178,6 +204,7 @@ export class CliProvider implements LLMProvider {
 		// full artifact or a deep analyze bundle routinely exceed the old 120 s
 		// (which SIGKILLed legit-but-slow syntheses). Callers can still tighten it.
 		this.timeoutMs = opts.timeoutMs ?? 600_000;
+		this.codexFirstOutputMs = opts.codexFirstOutputMs ?? CODEX_FIRST_OUTPUT_MS;
 		this.embedDelegate = opts.embedDelegate;
 		this.capabilities = {
 			structuredOutput: true,
@@ -398,6 +425,12 @@ export class CliProvider implements LLMProvider {
 				return await this.reviewSessionOnce<T>(prompt, schema, { cwd: opts.cwd, timeoutMs: remainingMs });
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
+				// A run that never started answering is retried once, as a fresh run,
+				// inside the time that remains (ISSUE-d4b2cd1c).
+				if (err instanceof CliStallError && attempt < 2) {
+					log.warn({ provider: this.kind, codexSession: err.sessionId, err: msg }, 'runReviewSession: the CLI produced no model output; retrying once inside the remaining time');
+					continue;
+				}
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 				if (attempt >= 2 || !isTransientCliError(transienceText(err))) throw err;
@@ -508,7 +541,11 @@ export class CliProvider implements LLMProvider {
 
 
 	private async runCodex(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ events: readonly CodexEvent[]; agentText: string | undefined }> {
-		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd);
+		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd,
+			{ ms: this.codexFirstOutputMs, started: stdout => CODEX_MODEL_EVENT.test(stdout) });
+		if (out.stalled === true) {
+			throw new CliStallError('codex', this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
+		}
 		const events: CodexEvent[] = [];
 		for (const line of out.stdout.split('\n')) {
 			const trimmed = line.trim();
@@ -572,6 +609,8 @@ interface SubprocessResult {
 	readonly stderr: string;
 	readonly exitCode: number;
 	readonly durationMs: number;
+	/** The run showed no output within its stall limit and was killed. */
+	readonly stalled?: boolean | undefined;
 }
 
 /** Per-call overrides for the private `runClaude`/`runCodex` helpers — a
@@ -785,11 +824,12 @@ async function runSubprocess(
 	stdin: string,
 	timeoutMs: number,
 	cwd?: string,
+	stall?: ProcessGroupOpts['stall'],
 ): Promise<SubprocessResult> {
-	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd);
+	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall);
 	if (result.exitCode === -1 && /ENOENT/.test(result.stderr)) {
 		resolvedBinCache.delete(command);
-		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd);
+		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall);
 	}
 	return result;
 }
@@ -803,12 +843,16 @@ async function spawnOnce(
 	stdin: string,
 	timeoutMs: number,
 	cwd?: string,
+	stall?: ProcessGroupOpts['stall'],
 ): Promise<SubprocessResult> {
-	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd });
+	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd, stall });
 	if (r.spawnError !== undefined) {
 		return { stdout: r.stdout, stderr: r.stderr + `\nspawn error: ${r.spawnError}`, exitCode: -1, durationMs: r.durationMs };
 	}
-	return { stdout: r.stdout, stderr: r.stderr, exitCode: r.timedOut ? -9 : r.exitCode, durationMs: r.durationMs };
+	return {
+		stdout: r.stdout, stderr: r.stderr, exitCode: r.timedOut || r.stalled === true ? -9 : r.exitCode, durationMs: r.durationMs,
+		...(r.stalled === true ? { stalled: true } : {}),
+	};
 }
 
 

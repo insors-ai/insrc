@@ -49,7 +49,8 @@ async function verifyOrRecord(claim: Claim, ev: Evidence, provider: LLMProvider,
 			if (err instanceof Error && err.name === 'AbortError') throw err;
 			throwIfAborted(signal);
 			cause = err instanceof Error ? err.message : String(err);
-			log.warn({ claimId: claim.id, attempt, codexSession: codexSessionOf(cause), error: cause }, 'review:verify: the premise call failed');
+			const session = (err as { sessionId?: string | undefined }).sessionId ?? codexSessionOf(cause);
+			log.warn({ claimId: claim.id, attempt, codexSession: session, error: cause }, 'review:verify: the premise call failed');
 		}
 	}
 	return {

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-19T04:26:54.745Z  ·  **Updated:** 2026-10-19T04:28:13.257Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-19T04:26:54.745Z  ·  **Updated:** 2026-10-19T04:35:08.737Z
 
-**Commit:** 662b0468
+**Commit:** 30581043
 
 ## Scope
 
@@ -22,8 +22,8 @@ Two mechanical de-duplications with no behaviour change and no new contract.
 
 ## Changes
 
-- `docs/plans/s6-open-issues.md` — **insrc-build** (2026-10-19T04:28:13.257Z)
-- `docs/plans/team-signoff-issues-inventory.md` — **insrc-build** (2026-10-19T04:28:13.257Z)
-- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-19T04:28:13.257Z)
-- `src/workflow/team/__tests__/handoff-resume.test.ts` — **insrc-build** (2026-10-19T04:28:13.257Z)
-- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-19T04:28:13.257Z)
+- `docs/plans/s6-open-issues.md` — **insrc-build** (2026-10-19T04:35:08.737Z)
+- `docs/plans/team-signoff-issues-inventory.md` — **insrc-build** (2026-10-19T04:35:08.737Z)
+- `src/daemon/steps/workflow-step/park-offer.ts` — **insrc-build** (2026-10-19T04:35:08.737Z)
+- `src/workflow/team/__tests__/handoff-resume.test.ts` — **insrc-build** (2026-10-19T04:35:08.737Z)
+- `src/workflow/team/handoff.ts` — **insrc-build** (2026-10-19T04:35:08.737Z)

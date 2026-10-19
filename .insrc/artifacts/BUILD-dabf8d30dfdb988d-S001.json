@@ -9,12 +9,13 @@
     "authoredBy": "controller",
     "triageRationale": "Two mechanical de-duplications with no behaviour change and no new contract.",
     "epicCreatedAt": "2026-10-19T04:26:54.745Z",
-    "updatedAt": "2026-10-19T04:28:13.257Z"
+    "updatedAt": "2026-10-19T04:35:08.737Z",
+    "approvedAt": "2026-10-19T04:35:09.888Z"
   },
   "body": {
     "focus": "Remove two duplications left by s6: S6-1 keep one runIsForUnit in src/workflow/team/handoff.ts and import it from src/daemon/steps/workflow-step/park-offer.ts; S6-2 make src/workflow/team/__tests__/handoff-resume.test.ts import its two-clone world from helpers/handoff-world.ts instead of defining it inline. No behaviour change.",
     "producesLld": false,
-    "commit": "662b0468",
+    "commit": "30581043",
     "tasks": [
       {
         "id": "S001",
@@ -30,35 +31,35 @@
           "file": "docs/plans/s6-open-issues.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-19T04:28:13.257Z"
+        "timestamp": "2026-10-19T04:35:08.737Z"
       },
       {
         "target": {
           "file": "docs/plans/team-signoff-issues-inventory.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-19T04:28:13.257Z"
+        "timestamp": "2026-10-19T04:35:08.737Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/workflow-step/park-offer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-19T04:28:13.257Z"
+        "timestamp": "2026-10-19T04:35:08.737Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/handoff-resume.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-19T04:28:13.257Z"
+        "timestamp": "2026-10-19T04:35:08.737Z"
       },
       {
         "target": {
           "file": "src/workflow/team/handoff.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-19T04:28:13.257Z"
+        "timestamp": "2026-10-19T04:35:08.737Z"
       }
     ]
   }

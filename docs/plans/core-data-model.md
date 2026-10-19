@@ -213,3 +213,11 @@ The delivery board reads every artifact in the repo and builds its items from th
 ## Convergence
 
 All twelve gaps are settled. Next: write the consolidated problem statement, confirm it, then run `brainstorm` to produce the SPEC, then triage (an epic).
+
+## Scope rulings after the HLD review (2026-10-19, round 1)
+
+The HLD review (6 HIGH) led to these owner rulings, which narrow the approved Define and apply to every Story's design:
+
+1. **Tracker scope: GitHub only.** This epic adds `listComments` and `attach` to the tracker port and implements them for the GitHub adapter. GitLab and Jira adapters do not exist today and are a later epic; the port is defined so they can implement it. (This narrows ac18 and the GitLab / Jira wording of the Define.)
+2. **No compatibility code.** Nothing is left in the code only to cope with older data or older tools: no compatibility release or reader guard for old clients, no `legacyIds` alias or resolver, no reading of the old issue-body marker, and no "older clone reads the converted repository with a clear message" (the second half of ac29 is dropped). Things may break on the `v2` branch; artifacts are handled manually where needed. The conversion renames standalone `S001` to `s1` and rewrites the references it can; it keeps no alias.
+3. **Fixes taken from the review:** the sidecars carry the owning artifact id on every line (Tasks share a file); `id.ts`'s functional-requirement id helpers move with s1 and stored FR ids stay valid; the revision-fork check reads the log's last content entry on every authoritative read (approve, review, complete); the HLD gets an acceptance-to-test matrix; write ordering and recovery for a head written without its log entry are specified.

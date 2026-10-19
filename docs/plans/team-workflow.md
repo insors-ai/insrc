@@ -266,3 +266,14 @@ The two S4 deviations are settled in favour of the code, and the contract text i
 4. **What s8 inherits.** A signoff binds to `meta.revision`; "the stage changed" means the revision moved, which happens exactly when content changed. s8 must not rely on a bump for a no-op write.
 
 The existing tests (`artifact-writer.test.ts`, the provenance round-trip tests, the BUILD-record byte-identity test) already pin this behaviour. No code change.
+
+## S4-1 adoption link: LLD approval and binding build requirements (2026-10-19)
+
+The standalone LLD `LLD-72b1bee074ba2dab-S001` ("Link an adopted unit issue under its parent via resolveIssueId", `docs/standalone/link-adopted-unit-issue-under-its-E2026101972b1bee0/S001/LLD.md`) was reviewed once by the daemon: `block`, 2 HIGH, 3 MED, 5 LOW, 1 could-not-verify. It was approved with a recorded review override, and the six items below are **binding build requirements**; the build gate checks each as an acceptance check.
+
+1. **Persist `pendingLink` after the adoption record exists (HIGH).** `recordUnit` keeps the prior record when the issue is unchanged and ignores a supplied `pendingLink`. Adoption must therefore write the `pendingLink` with an explicit patch that preserves the record's revision and extras (or `recordUnit`'s merge rule must be changed for it). A test saves a `pendingLink` after the adoption record already exists and reads it back.
+2. **Rollback of child-only records (HIGH).** The old retry calls `linkSubIssue(parent, childId)` unconditionally, so a `{ parent, child }` record read by old code sends `sub_issue_id=undefined`. The record and the LLD state that rolling back requires resolving or converting child-only records first; the new code never writes `undefined` as a child id.
+3. **The sc1 dependency (MED).** `AMD-315d510cb28100e2-11` is a pending `sharedContract.methodAdd` on `sc1`, owned by s1. The build notes the dependency, and the amendment is approved in the amendment store before the build is completed.
+4. **Strict ref validation (MED).** `parseIssueRef` checks only the separators (`o/r#abc` and `/#` pass). `ghGetIssueId` validates that owner, repo and number are non-empty and the number is a positive integer, and tests malformed values.
+5. **Every failure kind (MED).** `runGh` also fails with `missing-tool` and `missing-signin`. `resolveIssueId` passes every `PortFailureKind` through, and the pending-link recording applies to each.
+6. **Acceptance criteria (could-not-verify).** The Story has none; the build gate's task acceptance checks stand in: Story and Task adoption, lookup and link retries, Epic exclusion and legacy `{ parent, childId }` records, each with a named test.

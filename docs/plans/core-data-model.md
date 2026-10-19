@@ -134,6 +134,18 @@ Feedback { id (UUID), text, actor, timestamp, feedback[] (nested replies), kind:
 7. **Actor:** a synced entry records the tracker user as a namespaced actor id such as `github:subhagho` (Gap 9).
 8. **When it runs:** on demand, and where the holder works on the unit (for a Task: `implement` and `validate`). No background polling.
 
+## Gap 7: parent vs references: SETTLED
+
+```
+Reference { entityId, type, relation, fragment?, quote? }
+```
+1. `entityId` is an artifact ID or an external id (`owner/repo#N`, a code path, a URL). `type` is the **target's** type: an artifact type (SPEC, LLD, TASK, DIAG, ...) or a namespaced external type (`github:issue`, `jira:issue`, `github:pull-request`, `code`, `doc`, `url`); an integration adds its own namespace.
+2. `relation` says **why** the edge exists, from a closed set: `derived-from` (a Define from its SPEC, a bugfix from its ISSUE), `depends-on` (Task on Task), `tracked-by` (the tracker issue or request), `supersedes`, `documents` (a diagram or mock of what it illustrates), `implements`, `cites` (grounding), `reviews`.
+3. `fragment?` points inside the target (a section, a payload element such as an open question, or lines); `quote?` carries the quoted text of a citation.
+4. **`parent` stays its own single field**: the work-item hierarchy edge (Epic > Story > Task). Children are derived from it with an index, never stored. A `parent` that disagrees with the hierarchical ID is a validation error.
+5. References are **outgoing only**; "what references this" is derived. Adding a reference is not content and never moves a revision.
+6. What folds in: `citations[]` become `cites` references (the `[[c1]]` markers map onto reference ids); `meta.tracker` becomes `tracked-by` references; `PlanTask.dependsOn` becomes `depends-on` between Task artifacts. The unit-issue record fields that are not references (`createdAtRevision`, `extrasDone`, `pendingLink`) need a home (Gap 8).
+
 ## Gaps still to discuss (one at a time)
 
-7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

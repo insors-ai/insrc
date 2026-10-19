@@ -24,17 +24,18 @@ Every persisted entity (Define, Design, Plan, Task, BUILD/CR/TESTS records, UML 
 - Tracker issue comments are only ever written by insrc, never read.
 - There are two ID systems (below).
 
-## Gap 1: ID scheme: REOPENED 2026-10-19
+## Gap 1: ID scheme: SETTLED (corrected 2026-10-19)
 
-**Correction.** The earlier Gap 1 text (and the Gap 8 and Gap 12 text built on it) treated the work-item id of `src/workflow/id.ts` (`E<date><hash8>:S<nnn>:T<nnn>`) as the base and proposed renaming every artifact to it. That was wrong. The owner's ruling: **the workflow ID scheme is completely removed, so there is no confusion going forward. The artifact ids are the only scheme.** `id.ts` was added by the GitHub/Jira integration epic and duplicated ID creation.
+**One scheme: the artifact ids.** The workflow ID scheme (`src/workflow/id.ts`, `E<date><hash8>:S<nnn>:T<nnn>`) is **completely removed**; it was added by the GitHub/Jira integration epic and duplicated ID creation. (Evidence it drifted: a PLAN's title read `E20261018...` from the plan's own `createdAt` while its folder read `E20261016...` from the epic's `epicCreatedAt`.)
 
-What is generated today (the scheme that stays): flat, typed, hash-based artifact ids, which are the JSON file names under `.insrc/artifacts/` and the `<!-- insrc:artifact ... -->` marker in the markdown: `DEF-<hash16>`, `HLD-<hash16>`, `LLD-<hash>-<story>`, `PLAN-<hash>-<story>`, `BUILD-<hash>-<story>`, `CR-<hash>-<story>`, `TESTS-<hash>-<story>`, `EXT-<hash>-<story>`, `AMD-<hash>-<n>`, `SPEC-<hash>`, `ISSUE-<hash>`. The markdown lives in a hierarchical folder tree (`docs/epics/<slug>-E<date><hash8>/S006/LLD.md`), where the folder key and the issue-title/label ids use the work-item scheme being removed.
-
-Evidence the duplication already drifted: a PLAN's title reads `E20261018315d510c:S006` (built from the plan's own `createdAt`) while its folder is `E20261016315d510c` (built from the epic's `epicCreatedAt`); the same epic has two `E...` ids.
-
-Still valid from the earlier discussion: IDs are hierarchical and human-readable (no separate UUID); an ID never changes; `SPEC`, `ISSUE` and the Define are origin / root artifacts that later artifacts reference.
-
-To redo: the grammar for the artifacts that have no id today (Epic, Story, Task, the Tasks file, diagrams, the round records), story-id normalisation, and what replaces the work-item id in issue titles, labels and folder names.
+1. An artifact id is `<TYPE>-<epicHash16>[-<story>[-<task>[-<n>]]]`: hierarchical, readable, with no separate UUID, and **an id never changes**.
+2. **Existing prefixes are unchanged** (no migration): `DEF-`, `HLD-`, `LLD-`, `PLAN-`, `BUILD-`, `CR-`, `TESTS-`, `EXT-`, `AMD-`, `SPEC-`, `ISSUE-`.
+3. **New ids** for what has none: `EPIC-<hash>`, `STORY-<hash>-<story>`, `TASK-<hash>-<story>-<task>`, `TASKS-<hash>-<story>` (the Tasks file) and `DIAG-<hash>-<story>-<n>` (`n` per owning unit; only the holder authors under a unit, so counters do not collide). A future PRD takes `PRD-<hash>`.
+4. **One story-id form everywhere:** lower case `s6` and `t10` (standalone `S001` becomes `s1`). Folder names are derived from it and keep their present form.
+5. `BUILD-`, `CR-` and `TESTS-` are one per Story and are **overwritten in place**; the history of rounds is the change log.
+6. The Define is `DEF-<hash>` as today and is the `parent` of its Epic `EPIC-<hash>` (same hash while one Define has one Epic); `SPEC-` and `ISSUE-` are origin artifacts that later artifacts reference (`derived-from`).
+7. **Issue titles and the issue-body marker use the artifact id:** `EPIC-<hash> — <problem>`, `STORY-<hash>-s6 — <title>`, `TASK-<hash>-s6-t10 — <title>`. Issues created earlier keep their titles; lookup uses the `insrc:unit:...` label, not the title; the body-marker reader accepts both forms during the transition.
+8. **Folder names are unchanged:** `docs/epics/<slug>-E<date><hash8>/S006/`, the date always taken from the epic's `epicCreatedAt`. The folder-name formatter moves to the path scheme and is a directory name only; it is never parsed back into an id.
 
 ## Gap 2: payload and lifecycle on the base: SETTLED
 
@@ -160,7 +161,7 @@ Artifact.attachments[]  { target, revision, at, externalId? }                   
 ```
 6. insrc's own posts to an issue (design summary, review report, plan comment) are `posted[]` marks, not Feedback; the `<!-- insrc:... -->` marker keeps them out of ingestion.
 7. A repo with **no tracker** has no `binding`.
-8. **IDs (confirmed):** the Define takes a root like `SPEC` and `ISSUE`: `DEF<YYYYMMDD><hash8>` (and later `PRD...`); the Epic keeps `E...`. Today one Define has one Epic, so the Define's date and hash equal its first Epic's and migration is mechanical.
+8. **IDs:** see Gap 1 (corrected): `DEF-<hash>` is the parent of `EPIC-<hash>`.
 
 ## Gap 9: actor identity: SETTLED
 

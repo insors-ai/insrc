@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## S001
 
-Run at 2026-10-19T04:18:35.726Z on commit `4efe3e73`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-19T04:20:07.833Z on commit `e77aca2e`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: unit: ghGetIssueId and the adapter's resolveIssueId run gh api for the issue number, return the numeric id, and fail on a non-integer or a gh error**
 
@@ -32,6 +32,6 @@ Run at 2026-10-19T04:18:35.726Z on commit `4efe3e73`. Tests check: **passed**. 3
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/tracker/__tests__/github-adapter.test.ts` | 0 | 20 | 0.6 s |  |
-| `src/workflow/tracker/__tests__/port.test.ts` | 0 | 11 | 5.2 s |  |
-| `src/workflow/tracker/__tests__/unit-issue.test.ts` | 0 | 12 | 1.2 s |  |
+| `src/workflow/tracker/__tests__/github-adapter.test.ts` | 0 | 20 | 1.1 s |  |
+| `src/workflow/tracker/__tests__/port.test.ts` | 0 | 11 | 6.3 s |  |
+| `src/workflow/tracker/__tests__/unit-issue.test.ts` | 0 | 12 | 1.1 s |  |

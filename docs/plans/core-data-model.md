@@ -146,23 +146,21 @@ Reference { entityId, type, relation, fragment?, quote? }
 5. References are **outgoing only**; "what references this" is derived. Adding a reference is not content and never moves a revision.
 6. What folds in: `citations[]` become `cites` references (the `[[c1]]` markers map onto reference ids); `meta.tracker` becomes `tracked-by` references; `PlanTask.dependsOn` becomes `depends-on` between Task artifacts. The unit-issue record fields that are not references (`createdAtRevision`, `extrasDone`, `pendingLink`) need a home (Gap 8).
 
-## Gap 8: issues and external things: IN PROGRESS
-
-Decided so far:
+## Gap 8: issues and external things: SETTLED
 
 1. A tracker issue is **not an artifact**; an artifact points to it with a `tracked-by` reference. (The `ISSUE` root is insrc's own defect record, a different thing.)
-2. **Lifecycle artifacts** (the units people work on) have a **1:1 binding** to a tracker issue: the framework creates the issue, or a person creates it first and the framework creates the artifact linked to it.
-3. **Supporting artifacts** (PLAN, CR, diagrams, mocks, ...) have no issue of their own; they are **attached to the issue of the artifact they support**.
-4. Attachment is an `attach(issue, artifact)` port operation each adapter implements: **GitHub and GitLab post a link** to the artifact (it is checked in), as a **permalink to the file at a commit**, not a branch; a new revision posts a new link and the old one stays as history; **Jira** uploads a real attachment.
+2. **Lifecycle artifacts** are tracked and have a **1:1 binding** to a tracker issue (created by the framework, or created first by a person with the artifact then created linked to it): **Define (to become the PRD) > Epic > Story > Task**. `parent` of an Epic is its Define/PRD (one PRD can have several Epics); `parent` of a Story is its Epic; of a Task its Story. A PRD concept is the extension of today's Define.
+3. **Supporting artifacts** have no issue of their own and are **attached to the issue of the unit they describe**: HLD, LLD, PLAN, the `BR` / `CR` / `TR` records, diagrams and mocks.
+4. Attachment is an `attach(issue, artifact)` port operation each adapter implements: **GitHub and GitLab post a link** (the artifact is checked in), as a **permalink to the file at a commit**, not a branch; a new revision posts a new link and the old one stays as history. **Jira** uploads a real attachment.
 5. Tracker bookkeeping is a typed structure, not a bag:
 ```
 Artifact.binding?       { reference (tracked-by), createdAtRevision, posted[], pendingLink? }   lifecycle artifacts
 Artifact.attachments[]  { target, revision, at, externalId? }                                   supporting artifacts
 ```
 6. insrc's own posts to an issue (design summary, review report, plan comment) are `posted[]` marks, not Feedback; the `<!-- insrc:... -->` marker keeps them out of ingestion.
-
-Open: which artifacts are the lifecycle artifacts (units as first-class artifacts?); whether a repo with no tracker simply has no binding.
+7. A repo with **no tracker** has no `binding`.
+8. **IDs (to confirm):** the Define takes a root like `SPEC` and `ISSUE`: `DEF<YYYYMMDD><hash8>` (and later `PRD...`); the Epic keeps `E...`. Today one Define has one Epic, so the Define's date and hash equal its first Epic's and migration is mechanical.
 
 ## Gaps still to discuss (one at a time)
 
-8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

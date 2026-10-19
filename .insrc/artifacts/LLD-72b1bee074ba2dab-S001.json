@@ -111,7 +111,7 @@
           "kind": "semantic",
           "severity": "MED",
           "premise": "There are no HLD shared contracts or other Story ownership constraints to honor.",
-          "evidence": "AMD-315d510cb28100e2-11 declares 'type': 'sharedContract.methodAdd', 'contractId': 'sc1', and 'status': 'pending'. Its purpose says 'the GitHub adapter test is s1’s to add'. S4-1 names the prerequisite 's1 to agree; then link adopted Story and Task issues'. Standalone metadata does not remove that existing shared-contract dependency. [files: .insrc/artifacts/AMD-315d510cb28100e2-11.json, docs/plans/s4-open-issues.md, .insrc/artifacts/LLD-72b1bee074ba2dab-S001.json]",
+          "evidence": "AMD-315d510cb28100e2-11 declares 'type': 'sharedContract.methodAdd', 'contractId': 'sc1', and 'status': 'pending'. Its purpose says 'the GitHub adapter test is s1\u2019s to add'. S4-1 names the prerequisite 's1 to agree; then link adopted Story and Task issues'. Standalone metadata does not remove that existing shared-contract dependency. [files: .insrc/artifacts/AMD-315d510cb28100e2-11.json, docs/plans/s4-open-issues.md, .insrc/artifacts/LLD-72b1bee074ba2dab-S001.json]",
           "action": "Document the sc1 dependency and resolve the pending amendment and ownership before treating the port addition as an agreed contract.",
           "fixability": "manual",
           "outcome": "does-not-hold"
@@ -177,7 +177,7 @@
       "audience": "technical"
     },
     "hldContextSlice": {
-      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "frameworkSummary": "Standalone feature \u2014 no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
       "ownedContracts": [],
       "consumedContracts": [],
       "boundary": {
@@ -487,13 +487,13 @@
         },
         {
           "order": 2,
-          "action": "Widen the pendingLink type with an optional child ref and make childId optional; no stored record changes",
-          "rollbackable": true
+          "action": "Widen the pendingLink type with an optional child ref and make childId optional; no stored record changes. Rolling back past this step requires every { parent, child } record to be resolved to a childId first (old code reads only childId and would send sub_issue_id=undefined)",
+          "rollbackable": false
         },
         {
           "order": 3,
-          "action": "Link on adoption in ensureUnitIssueDetailed and resolve first in retryPendingLink for a child-only record",
-          "rollbackable": true
+          "action": "Link on adoption in ensureUnitIssueDetailed and resolve first in retryPendingLink for a child-only record; rolling back leaves any { parent, child } record unreadable by old code, so resolve them to childId first",
+          "rollbackable": false
         }
       ],
       "backwardCompat": "IssueOps gains a required member, so any full implementer outside this repository must add it; the only full implementers in the repository are the GitHub adapter, the compile-time fixture and the unit-issue fake. Stored pendingLink records written earlier carry childId and are read unchanged. The GitHub-facing behaviour for created issues is unchanged.",

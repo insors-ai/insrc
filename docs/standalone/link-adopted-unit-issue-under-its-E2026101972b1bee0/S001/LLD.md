@@ -207,8 +207,8 @@ Gains resolveIssueId (amendment AMD-315d510cb28100e2-11). Required on the type: 
 **Steps**
 
 1. Add ghGetIssueId and the GitHub adapter's resolveIssueId, and declare resolveIssueId on IssueOps with the signature fixture updated — ↩ rollbackable
-2. Widen the pendingLink type with an optional child ref and make childId optional; no stored record changes — ↩ rollbackable
-3. Link on adoption in ensureUnitIssueDetailed and resolve first in retryPendingLink for a child-only record — ↩ rollbackable
+2. Widen the pendingLink type with an optional child ref and make childId optional; no stored record changes. Rolling back past this step requires every { parent, child } record to be resolved to a childId first (old code reads only childId and would send sub_issue_id=undefined) — not rollbackable until child-only records are resolved
+3. Link on adoption in ensureUnitIssueDetailed and resolve first in retryPendingLink for a child-only record; rolling back leaves any { parent, child } record unreadable by old code, so resolve them to childId first — not rollbackable until child-only records are resolved
 
 **Backward compat:** IssueOps gains a required member, so any full implementer outside this repository must add it; the only full implementers in the repository are the GitHub adapter, the compile-time fixture and the unit-issue fake. Stored pendingLink records written earlier carry childId and are read unchanged. The GitHub-facing behaviour for created issues is unchanged.
 

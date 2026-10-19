@@ -4,7 +4,7 @@
     "epicHash": "72b1bee074ba2dab",
     "storyId": "S001",
     "createdAt": "2026-10-19T04:16:39.987Z",
-    "updatedAt": "2026-10-19T04:16:39.987Z",
+    "updatedAt": "2026-10-19T04:18:35.726Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-19T04:05:36.450Z",
     "epicSlug": "link-adopted-unit-issue-under-its"
@@ -13,8 +13,8 @@
     "tasks": [
       {
         "taskId": "S001",
-        "commit": "9b50bca2",
-        "ranAt": "2026-10-19T04:16:39.987Z",
+        "commit": "4efe3e73",
+        "ranAt": "2026-10-19T04:18:35.726Z",
         "testsPassed": true,
         "tests": [
           {
@@ -62,7 +62,7 @@
             "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1173,
+            "durationMs": 576,
             "titles": [
               {
                 "title": "runGh classifies ENOENT, authentication failure, timeout and other failures",
@@ -151,7 +151,7 @@
             "file": "src/workflow/tracker/__tests__/port.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 6156,
+            "durationMs": 5195,
             "titles": [
               {
                 "title": "missingCapabilities names every capability the tracker does not declare",
@@ -204,7 +204,7 @@
             "file": "src/workflow/tracker/__tests__/unit-issue.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1180,
+            "durationMs": 1241,
             "titles": [
               {
                 "title": "ensureUnitIssue takes a unit and a port and returns a PortResult without a phase",

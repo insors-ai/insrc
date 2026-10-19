@@ -8,11 +8,37 @@
     "createdAt": "2026-10-19T04:53:15.800Z",
     "authoredBy": "controller",
     "triageRationale": "A behaviour-preserving extraction inside one file.",
-    "epicCreatedAt": "2026-10-19T04:53:15.800Z"
+    "epicCreatedAt": "2026-10-19T04:53:15.800Z",
+    "updatedAt": "2026-10-19T04:55:07.999Z"
   },
   "body": {
     "focus": "S5-1: in src/workflow/team/gate.ts, claim() and teamGate() repeat the holder comparison, the add-only addAssignee call, its failure handling and the contested check. Extract one private helper used by both, keeping each path's exact refusal wording and outcomes. No behaviour change.",
     "producesLld": false,
-    "commit": "0b0291f2"
+    "commit": "d1e10b05",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/765de3f648ba09ee-E20261019765de3f6/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T04:55:07.999Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-19T04:55:07.999Z"
+      }
+    ]
   }
 }

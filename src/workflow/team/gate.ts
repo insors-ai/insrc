@@ -231,21 +231,20 @@ export function readHolder(ctx: Extract<TeamContext, { team: true }>, unit: Unit
 	return { ok: true, state: { unit, holder: a.value, readAt: now() } };
 }
 
-/** A stage someone holds: allowed for that holder, refused (held by the other) for anyone else. */
-function holderOutcome(repo: string, unit: UnitRef, action: GuardedAction | 'claim', holder: string, actor: string): GateOutcome {
-	return sameLogin(holder, actor) ? allowed() : logOutcome(unit, action, heldByOther(repo, unit, holder, actor));
-}
-
 /**
- * Take an unassigned stage with the add-only assignment, never removing another claimant. Returns the refusal when the add
- * failed or the assignees read back show a contest, and undefined when the actor now holds the stage. `words` is what the
- * calling path says: its name for the claim, and how it tells the user a contest is settled.
+ * What the actor may do with a stage whose live holder was just read (null when nobody holds it): the holder passes, anyone
+ * else is refused naming the holder, and an unassigned stage is taken with the add-only assignment, never removing another
+ * claimant. The refusal wording and whether the take counts as an implicit claim differ by caller, so `words` carries them.
  */
-function addActorAsAssignee(ctx: Extract<TeamContext, { team: true }>, unit: UnitRef, action: GuardedAction | 'claim', words: { readonly failed: string; readonly contested: string }): GateOutcome | undefined {
+function decideOnHolder(
+	repo: string, unit: UnitRef, action: GuardedAction | 'claim', ctx: Extract<TeamContext, { team: true }>, holder: string | null,
+	words: { readonly failed: string; readonly contested: string; readonly implicit: boolean },
+): GateOutcome {
+	if (holder !== null) return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, action, heldByOther(repo, unit, holder, ctx.who));
 	const added = ctx.port.addAssignee(ctx.issue, ctx.who);
 	if (!added.ok) return logOutcome(unit, action, refused(`${words.failed} (${added.kind}): ${added.reason}; the stage state is unknown, read it again before acting`));
 	if (added.value.length > 1) return logOutcome(unit, action, refused(`the claim is contested: ${added.value.join(', ')} are all assigned; ${words.contested}`));
-	return undefined;
+	return allowed(words.implicit);
 }
 
 /**
@@ -273,11 +272,9 @@ export function teamGate(repo: string, unit: UnitRef, action: GuardedAction, aut
 		if (!read.ok) return logOutcome(unit, action, read.outcome);
 		const holder = read.state.holder;
 
-		if (holder !== null) return holderOutcome(repo, unit, action, holder, ctx.who);
-		if (!CLAIMING.has(action)) return allowed();
-
-		// Nobody holds the stage: take it.
-		return addActorAsAssignee(ctx, unit, action, { failed: 'the implicit claim failed', contested: 'ask an administrator to release the stage' }) ?? allowed(true);
+		// Only author and build take an unassigned stage; the other actions leave it alone.
+		if (holder === null && !CLAIMING.has(action)) return allowed();
+		return decideOnHolder(repo, unit, action, ctx, holder, { failed: 'the implicit claim failed', contested: 'ask an administrator to release the stage', implicit: true });
 	} catch (err) {
 		return logOutcome(unit, action, refused(`the team gate failed: ${errorText(err)}`));
 	}
@@ -303,9 +300,7 @@ export function claim(repo: string, unit: UnitRef): GateOutcome {
 		const read = readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
 		if (!read.ok) return logOutcome(unit, 'claim', read.outcome);
 		const holder = read.state.holder;
-		if (holder !== null) return holderOutcome(repo, unit, 'claim', holder, ctx.who);
-
-		return addActorAsAssignee(ctx, unit, 'claim', { failed: 'the claim failed', contested: 'nobody was removed, ask an administrator to release the stage' }) ?? allowed();
+		return decideOnHolder(repo, unit, 'claim', ctx, holder, { failed: 'the claim failed', contested: 'nobody was removed, ask an administrator to release the stage', implicit: false });
 	} catch (err) {
 		return logOutcome(unit, 'claim', refused(`the claim failed: ${errorText(err)}`));
 	}

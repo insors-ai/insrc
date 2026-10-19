@@ -183,6 +183,17 @@ Actor { id: "<namespace>:<value>", kind: person | agent | system, name?, propert
 6. **Revision fork rule (from Gap 3):** on every read the head is checked: `lifecycle.revision.contentHash` must equal the hash of `payload` and `description`, and must match the last content entry in the log. A mismatch (two clones bumped to the same number with different content and git merged silently) flags the artifact **`conflict`**; gates refuse to approve, review or complete a `conflict` artifact until a person resolves it. Nothing picks a side silently.
 7. The whole log is kept; no compaction.
 
+## Gap 11: Tasks as their own artifacts: SETTLED
+
+1. A Task is a tracked lifecycle artifact (`E...:S...:T010`), a child of its Story, 1:1 with its tracker issue, with its own lifecycle, change log and feedback.
+2. **One file per plan:** the Tasks of a Story live together in a single JSON file (`E...:S...:TASKS`). The file is a **storage unit; each Task stays its own artifact** with its own `id`, lifecycle, binding, references and payload. The change log and feedback sidecars (`.log.jsonl`, `.feedback.jsonl`) are **shared by the file**, each line keyed by the Task id; `merge=union` and the unique line ids work as in Gap 10.
+3. **Created at plan approval, not at plan draft.** Until then the PLAN is the only place tasks exist, as proposals, and there are no Task issues, claims or feedback. Approving the plan generates the Tasks file from the approved plan revision (each Task gets a `derived-from` reference to it) and creates the Task issues (the existing Task issue creation, ordering and Story parent link unchanged).
+4. **After approval the Task artifacts are the truth for execution.** The plan's payload stops being edited; the PLAN document renders its task table from the Tasks.
+5. **Re-plan** (a new plan revision, approved): a changed Task gets a new revision, a Task the plan drops is `withdrawn` (its issue is closed), a new Task takes the next number. **Task ids are never reused.**
+6. **The holder can edit a single Task directly,** limited to its own content: summary, size, acceptance checks and named tests. The Task moves to a new revision and back to `draft`, and needs **local re-approval only, no signoff**. The plan is not invalidated and keeps its own revision and approval.
+7. **Changes to the shape of the plan still go through a re-plan:** adding or dropping a Task, reordering, and changing `depends-on`. A direct edit that would do that is refused with a pointer to a re-plan.
+8. A Task's build rounds are `update` entries in its own change log with an `outcome` (result, round, commit); it is `completed` when a round passes the gate. The Story's `BR` record is the Story-level aggregate.
+
 ## Gaps still to discuss (one at a time)
 
-11 Tasks as their own artifacts; 12 migration.
+12 migration.

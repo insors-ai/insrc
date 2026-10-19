@@ -277,3 +277,7 @@ The standalone LLD `LLD-72b1bee074ba2dab-S001` ("Link an adopted unit issue unde
 4. **Strict ref validation (MED).** `parseIssueRef` checks only the separators (`o/r#abc` and `/#` pass). `ghGetIssueId` validates that owner, repo and number are non-empty and the number is a positive integer, and tests malformed values.
 5. **Every failure kind (MED).** `runGh` also fails with `missing-tool` and `missing-signin`. `resolveIssueId` passes every `PortFailureKind` through, and the pending-link recording applies to each.
 6. **Acceptance criteria (could-not-verify).** The Story has none; the build gate's task acceptance checks stand in: Story and Task adoption, lookup and link retries, Epic exclusion and legacy `{ parent, childId }` records, each with a named test.
+
+## S4-5 decision: the policy read on a repeat draft write (2026-10-19)
+
+A repeat write of a draft whose units all have recorded issues makes **no tracker call and no network call**. It still reads the team policy through `policyReader`, which is local git (the remote-tracking ref), because the policy can change between writes and a stale answer would treat a team repo as solo or the reverse. The read is **not cached**: the gate and the reader deliberately never cache. The S4 PLAN's t9 acceptance wording ("runs no command") is amended to match.

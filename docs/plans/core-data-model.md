@@ -123,6 +123,17 @@ Feedback { id (UUID), text, actor, timestamp, feedback[] (nested replies), kind:
 3. `decision` is dropped (approvals live in `lifecycle.approval` and the log); `revision` replaces `target.version`, tying feedback to `Lifecycle.revision`.
 4. The link from an IDE review comment to an open question (a payload element) needs a `Reference` that points inside an artifact: `fragment?` (decided with Gap 7).
 
+## Gap 6: external ids and tracker sync: SETTLED
+
+1. **Inbound:** a comment on the artifact's tracker issue is ingested as a `Feedback` entry with `source = { system, externalId, url? }`. `externalId` dedupes (ingested once). insrc's own posts carry the `<!-- insrc:... -->` marker and are never ingested.
+2. **No stored cursor:** the "since" point is derived, the latest timestamp among the artifact's feedback that carries that `system`.
+3. **Outbound:** feedback entered in the IDE or TUI against a unit with a tracker issue is posted once; its `source` is then set to the posted comment. `source` therefore means "this entry is in the tracker", in both directions.
+4. **Which issue:** the unit's own issue (a Task's feedback goes to the Task issue); the issue is in the artifact's `references[]`.
+5. **Edits and deletes** on the tracker side are not mirrored (feedback is immutable); a later edit shows up as a new reply if someone writes one.
+6. **`kind` from the tracker:** defaults to `comment`; a first line `/revise` makes a `revision-request` and `/suggest` a `suggestion`.
+7. **Actor:** a synced entry records the tracker user as a namespaced actor id such as `github:subhagho` (Gap 9).
+8. **When it runs:** on demand, and where the holder works on the unit (for a Task: `implement` and `validate`). No background polling.
+
 ## Gaps still to discuss (one at a time)
 
-6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

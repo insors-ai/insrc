@@ -290,9 +290,10 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 		adopted = old.value ?? undefined;
 	}
 	if (adopted !== undefined) {
-		const recorded = recordUnit(unit, adopted, now());
+		recordUnit(unit, adopted, now());
 		// An issue found by its label (its create timed out) was never linked under its parent: do it now.
-		if (parentRef !== undefined && recorded) linkAdopted(unit, port, parentRef, adopted);
+		// Whether or not every sibling record was written: the unit's own record is what a later ensure resolves from.
+		if (parentRef !== undefined) linkAdopted(unit, port, parentRef, adopted);
 		return { ok: true, value: { issue: adopted, created: false, duplicateCheck: 'clean' } };
 	}
 

@@ -46,6 +46,8 @@ function fakeTracker(over: {
 	withListing?: boolean; failList?: boolean; failClose?: boolean; failLink?: number;
 	/** Answer this many findIssue calls with "not found" whatever exists (a stale read of two daemons). */
 	staleFinds?: number;
+	/** Runs after a findIssue lookup with what it found (a file changing between the lookup and the record). */
+	afterFind?: (hit: IssueRef | null) => void;
 	/** Fail this many resolveIssueId calls (with `failResolveKind`), and leave resolveIssueId off the tracker altogether. */
 	failResolve?: number; failResolveKind?: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected'; withoutResolve?: boolean;
 	/** Another daemon's issue, created just before this call's own, so it has the lower number. */
@@ -64,6 +66,7 @@ function fakeTracker(over: {
 		if (over.failFind === true) return { ok: false, reason: 'gh timed out', kind: 'unreachable' };
 		if (stale > 0) { stale -= 1; return { ok: true, value: null }; }
 		const hit = issues.find(i => labels.every(l => i.spec.labels.includes(l)));
+		over.afterFind?.(hit?.ref ?? null);
 		return { ok: true, value: hit?.ref ?? null };
 	};
 	const port = {
@@ -534,6 +537,22 @@ test('a Story or Task issue adopted by its label after a timed-out create is res
 		const t = timedOutUnit(fx, story, { withoutResolve: true });
 		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
 		assert.deepEqual(recordOf(fx, story(fx.repo)).pendingLink, { parent: 'acme/demo#1', child: 'acme/demo#2' });
+	} finally { fx.cleanup(); }
+
+	// A sibling record that cannot be written (the Define's storyRefs) does not stop the link or its retry marker
+	fx = seed();
+	try {
+		const over: NonNullable<AdoptOver> = {};
+		const t = timedOutUnit(fx, story, over);
+		over.afterFind = hit => {
+			if (hit !== 'acme/demo#2') return;
+			const def = fx.read(defineArtifactId(HASH)); def.meta = null;
+			writeFileSync(fx.json(defineArtifactId(HASH)), JSON.stringify(def));
+		};
+		const linksBefore = t.calls.link.length;
+		assert.equal(ensureUnitIssueDetailed(story(fx.repo), t.port, deps).ok, true);
+		assert.deepEqual(t.calls.link.slice(linksBefore), [['acme/demo#1', 1002]], 'linked although the Define could not be patched');
+		assert.equal(recordOf(fx, story(fx.repo)).pendingLink, undefined);
 	} finally { fx.cleanup(); }
 
 	// An Epic adoption has no parent: no lookup, no link

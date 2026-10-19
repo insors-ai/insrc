@@ -1242,6 +1242,15 @@
     "reviewOverride": {
       "reason": "User approved over the daemon's block (round 1: 0 HIGH, 70 MED, 1 LOW). The review's grounding failed: its file reads returned only the first line (a comment delimiter) of storage.ts, id.ts, provenance/types.ts and delivery/graph.ts, so 67 of 71 rows are 'unverifiable' and none contradicts a premise; the one verified row (k9) is sound. A second round would run the same tool against the same files.",
       "at": "2026-10-19T10:21:02.417Z"
+    },
+    "questionResolutions": {
+      "q61ec8e44": {
+        "question": "Item s1c: stories declare dependencies (s2 on s1, s8 on s5, s6 and s7, s9 on s1 to s7) so each is testable once its dependencies are done, but not in isolation; inherent to a layered model, the graph is explicit and acyclic.",
+        "status": "resolved",
+        "choice": "Dependency-complete testing",
+        "rationale": "Owner accepted: a story is testable once its declared dependencies are complete; the dependency graph stays explicit and acyclic; no substitutes or restructuring.",
+        "resolvedAt": "2026-10-19T10:29:14.648Z"
+      }
     }
   },
   "body": {

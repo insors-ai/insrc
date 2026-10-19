@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-19T04:53:15.800Z  ·  **Updated:** 2026-10-19T04:55:07.999Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-19T04:53:15.800Z  ·  **Updated:** 2026-10-19T04:56:52.498Z
 
-**Commit:** d1e10b05
+**Commit:** 0689f4b9
 
 ## Scope
 
@@ -16,11 +16,11 @@ A behaviour-preserving extraction inside one file.
 
 ## Tasks validated
 
-- ✗ `S001`
+- ✓ `S001`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/workflow/team/__tests__/gate.test.ts` — **insrc-build** (2026-10-19T04:55:07.999Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-19T04:55:07.999Z)
+- `src/workflow/team/__tests__/gate.test.ts` — **insrc-build** (2026-10-19T04:56:52.498Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-19T04:56:52.498Z)

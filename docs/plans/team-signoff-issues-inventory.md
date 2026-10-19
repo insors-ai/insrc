@@ -13,7 +13,7 @@ Epic `team-signoff-claim-based-workflow` (`315d510cb28100e2`). Written 2026-10-1
 | S4-5 | open | medium | A second draft write reads the team policy through local git; the build gate reads that as "runs a command". The LLD says the policy read comes first. | Cache the policy read, or amend the acceptance check. |
 | S4-4 | open | medium | No per-Task body comment: the plan review comment goes on the Story issue. | Decide the content with the owner, or amend the LLD. |
 | S4-7 | open | medium | The last S4 code review is `block` from a diff-only review (stale code index). | Re-run the code review once the index is fresh. |
-| S5-1 | open | medium | `claim` and `teamGate` in `src/workflow/team/gate.ts` repeat the holder comparison, the add-only assign, failure handling and the contention check. | Extract one shared assignment helper. |
+| S5-1 | resolved 2026-10-19 | medium | `claim` and `teamGate` in `src/workflow/team/gate.ts` repeat the holder comparison, the add-only assign, failure handling and the contention check. | Extract one shared assignment helper. |
 | S4-8 | open | low | The full test sweep times out in one run; the TUI poll-interval test is flaky. | Batch the sweep; look at the flake. |
 | S6-1 | resolved 2026-10-19 | low | `runIsForUnit` exists in `park-offer.ts` and `handoff.ts`. | Keep one copy in `handoff.ts`, import it. |
 | S6-2 | resolved 2026-10-19 | low | The two-clone test world is in `helpers/handoff-world.ts` and still inline in `handoff-resume.test.ts`. | Make that test import the helper. |

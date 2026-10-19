@@ -4,7 +4,7 @@
     "epicHash": "765de3f648ba09ee",
     "storyId": "S001",
     "createdAt": "2026-10-19T04:55:07.999Z",
-    "updatedAt": "2026-10-19T04:55:07.999Z",
+    "updatedAt": "2026-10-19T04:56:52.498Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-19T04:53:15.800Z"
   },
@@ -12,8 +12,8 @@
     "tasks": [
       {
         "taskId": "S001",
-        "commit": "d1e10b05",
-        "ranAt": "2026-10-19T04:55:07.999Z",
+        "commit": "0689f4b9",
+        "ranAt": "2026-10-19T04:56:52.498Z",
         "testsPassed": true,
         "tests": [
           {
@@ -30,7 +30,7 @@
             "file": "src/workflow/team/__tests__/gate.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1235,
+            "durationMs": 2605,
             "titles": [
               {
                 "title": "teamGate allows with no tracker call when there is no policy, teamMode is false or claimsEnforced is false",

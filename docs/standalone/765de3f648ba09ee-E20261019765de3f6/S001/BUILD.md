@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-19T04:53:15.800Z  ·  **Updated:** 2026-10-19T04:56:52.498Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-19T04:53:15.800Z  ·  **Updated:** 2026-10-19T05:15:14.501Z
 
-**Commit:** 0689f4b9
+**Commit:** dbf14678
 
 ## Scope
 
@@ -22,5 +22,12 @@ A behaviour-preserving extraction inside one file.
 
 ## Changes
 
-- `src/workflow/team/__tests__/gate.test.ts` — **insrc-build** (2026-10-19T04:56:52.498Z)
-- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-19T04:56:52.498Z)
+- `.insrc/artifacts/CR-765de3f648ba09ee-S001.json` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S004/PLAN.md` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `docs/plans/s4-open-issues.md` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `docs/plans/s5-open-issues.md` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `docs/plans/team-signoff-issues-inventory.md` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `docs/plans/team-workflow.md` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `docs/standalone/765de3f648ba09ee-E20261019765de3f6/S001/CR.md` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `src/workflow/team/__tests__/gate.test.ts` — **insrc-build** (2026-10-19T05:15:14.501Z)
+- `src/workflow/team/gate.ts` — **insrc-build** (2026-10-19T05:15:14.501Z)

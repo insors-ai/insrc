@@ -43,3 +43,14 @@ DEF (12 MED, checked by hand); s3, s4, s5 and s6 LLDs (s5 and s6 findings became
 - The IDE repo must mirror `repo-fields-catalog.json` (the `branchPattern` row changed in s6).
 - s7 (signoff), s8 (revision) and s9 (tracker status sync) not started; `S009/EXT.md` exists from the define step.
 - ac28 is read at stage level: after a lost machine the half-run stage restarts from step one; step progress travels only in a park-time checkpoint.
+
+## F. Clean-up round, 2026-10-19
+
+| Item | Result | Override note |
+| :--- | :--- | :--- |
+| S4-2, S4-3, S4-6 | Resolved by decision (revision rule, `team-workflow.md`). No code change. | n/a |
+| S4-1 | Built as standalone story `72b1bee074ba2dab/S001`; AMD-11 approved. | LLD approved over a daemon `block` (six findings made binding and met); BUILD approved over a `block` of hollow coverage grounding (10 HIGH "empty testsReaching", 4 LOW `\| undefined` on lines outside the change). |
+| S6-1, S6-2 | Built as standalone story `dabf8d30dfdb988d/S001`. | BUILD approved over a `block` of 74 HIGH "empty testsReaching": a behaviour-preserving de-duplication pinned by existing tests. |
+| S5-1 | Built as standalone story `765de3f648ba09ee/S001`. | BUILD approved over a `block` of 47 HIGH "empty testsReaching": the code index records no test edges for the changed symbols; adherence, conventions and quality had no findings; the exact refusal wording of both paths is pinned by a new test. |
+| S4-5 | Resolved by decision (policy read stays uncached; t9 wording amended). | n/a |
+| Still open | S4-4 (per-Task comment content), S4-7 (re-run the S4 code review), S4-8 (sweep timeout, flaky tests). | |

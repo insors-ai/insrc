@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## S001
 
-Run at 2026-10-19T05:35:21.040Z on commit `2aaa3221`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-19T05:39:07.513Z on commit `881891a4`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **src/agent/providers/__tests__/cli-review-session.test.ts**
 
@@ -38,6 +38,6 @@ Run by file: the build commit touched this test file.
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/agent/providers/__tests__/cli-review-session.test.ts` | 0 | 15 | 12.4 s |  |
-| `src/agent/providers/__tests__/cli-subprocess.test.ts` | 0 | 5 | 4.2 s |  |
-| `src/workflow/review/__tests__/review.test.ts` | 0 | 11 | 0.6 s |  |
+| `src/agent/providers/__tests__/cli-review-session.test.ts` | 0 | 15 | 14 s |  |
+| `src/agent/providers/__tests__/cli-subprocess.test.ts` | 0 | 5 | 4.4 s |  |
+| `src/workflow/review/__tests__/review.test.ts` | 0 | 11 | 0.7 s |  |

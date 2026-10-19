@@ -40,7 +40,7 @@ DEF (12 MED, checked by hand); s3, s4, s5 and s6 LLDs (s5 and s6 findings became
 
 - Unrelated test failures seen in the s6 sweep: `template-review` "SPEC template and the Epic limit" (timing flake), `SqliteDriver` and `temporalTrend` in `src/daemon`. Not checked against the baseline.
 - `db`, `analyze` and `indexer` suites exceed 280 s; no result in the s6 sweep.
-- The IDE repo must mirror `repo-fields-catalog.json` (the `branchPattern` row changed in s6).
+- ~~The IDE repo must mirror `repo-fields-catalog.json`~~: dropped 2026-10-19, the IDE repo is deprecated and out of scope.
 - s7 (signoff), s8 (revision) and s9 (tracker status sync) not started; `S009/EXT.md` exists from the define step.
 - ac28 is read at stage level: after a lost machine the half-run stage restarts from step one; step progress travels only in a park-time checkpoint.
 

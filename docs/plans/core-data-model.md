@@ -123,13 +123,13 @@ Feedback { id (UUID), text, actor, timestamp, feedback[] (nested replies), kind:
 1. Feedback is **resolved as part of the artifact, not individually**: an `update` change log entry carries `addresses: all | [feedback ids]` (default `all`). **Open feedback** is whatever no `update` entry has addressed; it is derived, never stored on the entry.
 2. A reply is just another `Feedback` entry nested under its parent, of any `kind`.
 3. `decision` is dropped (approvals live in `lifecycle.approval` and the log); `revision` replaces `target.version`, tying feedback to `Lifecycle.revision`.
-4. The link from an IDE review comment to an open question (a payload element) needs a `Reference` that points inside an artifact: `fragment?` (decided with Gap 7).
+4. The link from a review comment (from a plugin or the TUI) to an open question (a payload element) needs a `Reference` that points inside an artifact: `fragment?` (decided with Gap 7).
 
 ## Gap 6: external ids and tracker sync: SETTLED
 
 1. **Inbound:** a comment on the artifact's tracker issue is ingested as a `Feedback` entry with `source = { system, externalId, url? }`. `externalId` dedupes (ingested once). insrc's own posts carry the `<!-- insrc:... -->` marker and are never ingested.
 2. **No stored cursor:** the "since" point is derived, the latest timestamp among the artifact's feedback that carries that `system`.
-3. **Outbound:** feedback entered in the IDE or TUI against a unit with a tracker issue is posted once; its `source` is then set to the posted comment. `source` therefore means "this entry is in the tracker", in both directions.
+3. **Outbound:** feedback entered in the TUI or another client against a unit with a tracker issue is posted once; its `source` is then set to the posted comment. `source` therefore means "this entry is in the tracker", in both directions.
 4. **Which issue:** the unit's own issue (a Task's feedback goes to the Task issue); the issue is in the artifact's `references[]`.
 5. **Edits and deletes** on the tracker side are not mirrored (feedback is immutable); a later edit shows up as a new reply if someone writes one.
 6. **`kind` from the tracker:** defaults to `comment`; a first line `/revise` makes a `revision-request` and `/suggest` a `suggestion`.

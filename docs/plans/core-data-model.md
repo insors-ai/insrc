@@ -173,6 +173,16 @@ Actor { id: "<namespace>:<value>", kind: person | agent | system, name?, propert
 5. A person declares their own ids in a **per-user identity file local to the machine** (`~/.insrc/identity.json`: `{ primary, aliases[] }`). It is self-declared, so it is used for attribution and display only; a team roster in the policy is a possible later addition.
 6. When an actor is recorded, `id` is the identity of the system the action came through and the declared aliases are copied into `properties.aliases`. A bare login in old records is read as `<tracker>:<login>`.
 
+## Gap 10: storage and merges across clones: SETTLED
+
+1. **Three files per artifact:** the **head** `<id>.json` (identity, description, parent, references, lifecycle, binding, attachments, payload; rewritten, only by the unit's holder or approver), `<id>.log.jsonl` (the change log, one entry per line, append-only) and `<id>.feedback.jsonl` (feedback, one entry per line, append-only).
+2. The two `.jsonl` files set **`merge=union`** in `.gitattributes`, so two clones that each add distinct lines merge without a conflict. Every line has a unique id; a reader drops duplicates and orders by `(timestamp, id)`.
+3. Conflicts in the head are rare (only the holder authors; an approval comes from one actor) and are **real conflicts**: git reports them and a person resolves them.
+4. **Nothing is stored that can be derived:** feedback counts, open feedback, the current status after replay and child lists are computed on read.
+5. Locations stay: heads and sidecars under `.insrc/artifacts/`, rendered markdown under `docs/`, committed and pushed as today. The **markdown is a generated view** of head plus sidecars, now including the feedback and a log summary.
+6. **Revision fork rule (from Gap 3):** on every read the head is checked: `lifecycle.revision.contentHash` must equal the hash of `payload` and `description`, and must match the last content entry in the log. A mismatch (two clones bumped to the same number with different content and git merged silently) flags the artifact **`conflict`**; gates refuse to approve, review or complete a `conflict` artifact until a person resolves it. Nothing picks a side silently.
+7. The whole log is kept; no compaction.
+
 ## Gaps still to discuss (one at a time)
 
-10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+11 Tasks as their own artifacts; 12 migration.

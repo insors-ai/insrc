@@ -35,6 +35,58 @@ Today: the work-item ID in `src/workflow/id.ts` (`E<YYYYMMDD><hash8>[:S<nnn>][:T
 5. The design documents take type segments `:DEF`, `:HLD`, `:LLD`, `:PLN` (so an LLD is `E...:S006:LLD`; the unit's own ID stays the unit's, never the document's).
 6. There are several ID **roots**, minted by the one module: `E<YYYYMMDD><hash8>` (epic work items), `SPEC<YYYYMMDD><hash8>` (a brainstormed spec) and `ISSUE<YYYYMMDD><hash8>` (a tracked defect). The grammar after the root is the same. `SPEC` and `ISSUE` are **origin artifacts**: the artifacts downstream (the Define, or a bugfix's first artifact) carry a **reference** to them (relation `derived-from`), not a parent edge, and a SPEC or ISSUE is never re-IDed when it becomes an epic or story. This makes the relation kind on `Reference` (Gap 7) required.
 
+## Gap 2: payload and lifecycle on the base: SETTLED
+
+1. **Payload** is defined by each subclass (typed per subclass). The base stays generic.
+2. **Lifecycle** is defined in the base as proper structures, not loose fields. A subclass that does not use a structure leaves it empty.
+
+```
+Artifact: id, description, parent?, references[], comments[], changeLog[], lifecycle: Lifecycle, payload (subclass)
+
+Lifecycle   { status, revision: Revision, approval?: Approval, review?: Review, signoffs: Signoff[], stale?: Staleness }
+Revision    { number, contentHash, at, by: Actor }
+Approval    { revision, by: Actor, at, override?: { reason } }
+Review      { revision, reviewer: Actor, party: controller | daemon, verdict: pass | warn | block, counts, at, report?: Reference }
+Signoff     { revision, request: Reference (external PR / MR / Jira item), state: open | changes-requested | completed, actors: Actor[], at }
+Staleness   { upstream: Reference, upstreamRevision, since }
+```
+
+3. `approval` and `review` hold the **current** record only; history is in the change log. `signoffs` is a list (a stage can have several requests over time).
+4. `Review` is part of the base; **whether a type requires review is a setting** (today only Define, HLD and LLD do).
+5. Every change to a lifecycle structure appends a change log entry (approve, review, signoff opened / completed, marked stale, ...). The structures hold the current answer; the log holds the history. Each structure names the revision it covers, so a content change leaves the old approval, review and signoffs visible as covering an older revision and the status falls back to `draft`.
+6. **Status values** (solo repos may use any of them; only the signoff steps are team-only):
+
+| Status | Kind | Meaning |
+| :--- | :--- | :--- |
+| `draft` | working | authored, not put forward; also where a content change lands |
+| `pending-review` | working | the other-party review is requested and has not returned |
+| `approved` | working | locally approved at the current revision, review satisfied where required |
+| `in-signoff` | step | a signoff request is open on this revision |
+| `changes-requested` | step | the requester asked for changes; the author revises |
+| `signed-off` | step | the third party signed off this revision |
+| `rejected` | working | needs rework; a new revision returns it to `draft` |
+| `completed` | terminal | the unit's work is done (roll-up rule below) |
+| `withdrawn` | terminal | deprecated or not needed |
+| `superseded` | terminal | replaced by another artifact that carries its lineage |
+
+Stale, the review verdict and the claim are **not** statuses: stale is the `Staleness` structure, the verdict lives in `Review`, and who holds a unit is the tracker assignee.
+
+7. **Transitions**
+```
+draft -> pending-review -> draft (verdict recorded) | draft -> approved
+approved -> in-signoff -> signed-off | in-signoff -> changes-requested -> draft (new revision)
+draft | approved | in-signoff -> rejected -> draft (new revision)
+non-terminal --content changes--> draft
+non-terminal --replaced--> superseded | --dropped--> withdrawn
+```
+8. **`completed` is a roll-up, recorded when it first becomes true** (a `completed` log entry; the existing completion hook releases the claim; a re-plan of a completed unit is an explicit reopen):
+   - a **Task** completes when its build is done and has passed the gate;
+   - a **Story** completes when all its Tasks are completed and its build record has been code-reviewed and approved;
+   - an **Epic** completes when all its Stories are completed;
+   - **withdrawn and superseded children do not count**; rejected or unfinished children do;
+   - the design documents, diagrams and the `BR` / `CR` / `TR` records become `completed` **together with the unit they describe** (a finished Story's LLD, Plan, diagrams and records are all frozen as completed);
+   - the code review must be **clean, or explicitly overridden by the user** (the override is recorded in the log).
+
 ## Gaps still to discuss (one at a time)
 
-2 payload and state on the base; 3 revision (derived from the change log?); 4 operations beyond create / update / delete, and what a log entry carries; 5 comment vs feedback (anchor, kind, decision, resolved); 6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+3 revision (derived from the change log?); 4 operations beyond create / update / delete, and what a log entry carries; 5 comment vs feedback (anchor, kind, decision, resolved); 6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

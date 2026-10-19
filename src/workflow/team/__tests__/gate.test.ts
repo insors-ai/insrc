@@ -394,3 +394,25 @@ test('the first-author exception looks for the artifact being authored, not the 
 		assert.ok(!first(teamGate(repo, epic, 'author')));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
+
+test('the implicit claim in teamGate and the explicit claim keep their own refusal wording for a failed add and a contested claim', () => {
+	const wording = (outcome: ReturnType<typeof claim>): string => (outcome.kind === 'refused' ? outcome.reason : `not refused: ${outcome.kind}`);
+
+	inject(fakePort([], { failAdd: 'unreachable' }));
+	assert.equal(wording(teamGate('/repo', UNIT, 'author')), 'the implicit claim failed (unreachable): add unreachable; the stage state is unknown, read it again before acting');
+	inject(fakePort([], { failAdd: 'unreachable' }));
+	assert.equal(wording(claim('/repo', UNIT)), 'the claim failed (unreachable): add unreachable; the stage state is unknown, read it again before acting');
+
+	inject(fakePort([], { raceWith: 'bob' }));
+	assert.equal(wording(teamGate('/repo', UNIT, 'build')), 'the claim is contested: bob, alice are all assigned; ask an administrator to release the stage');
+	inject(fakePort([], { raceWith: 'bob' }));
+	assert.equal(wording(claim('/repo', UNIT)), 'the claim is contested: bob, alice are all assigned; nobody was removed, ask an administrator to release the stage');
+
+	// the holder decision is the same for both: the holder passes, anyone else is refused naming the holder
+	for (const [name, ask] of [['teamGate', () => teamGate('/repo', UNIT, 'author')], ['claim', () => claim('/repo', UNIT)]] as const) {
+		inject(fakePort(['ALICE']));
+		assert.equal(ask().kind, 'allowed', `${name}: the holder`);
+		inject(fakePort(['bob']));
+		assert.deepEqual(ask(), { kind: 'held-by-other', holder: 'bob', offerPark: false }, `${name}: another holder`);
+	}
+});

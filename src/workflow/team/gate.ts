@@ -231,6 +231,23 @@ export function readHolder(ctx: Extract<TeamContext, { team: true }>, unit: Unit
 	return { ok: true, state: { unit, holder: a.value, readAt: now() } };
 }
 
+/** A stage someone holds: allowed for that holder, refused (held by the other) for anyone else. */
+function holderOutcome(repo: string, unit: UnitRef, action: GuardedAction | 'claim', holder: string, actor: string): GateOutcome {
+	return sameLogin(holder, actor) ? allowed() : logOutcome(unit, action, heldByOther(repo, unit, holder, actor));
+}
+
+/**
+ * Take an unassigned stage with the add-only assignment, never removing another claimant. Returns the refusal when the add
+ * failed or the assignees read back show a contest, and undefined when the actor now holds the stage. `words` is what the
+ * calling path says: its name for the claim, and how it tells the user a contest is settled.
+ */
+function addActorAsAssignee(ctx: Extract<TeamContext, { team: true }>, unit: UnitRef, action: GuardedAction | 'claim', words: { readonly failed: string; readonly contested: string }): GateOutcome | undefined {
+	const added = ctx.port.addAssignee(ctx.issue, ctx.who);
+	if (!added.ok) return logOutcome(unit, action, refused(`${words.failed} (${added.kind}): ${added.reason}; the stage state is unknown, read it again before acting`));
+	if (added.value.length > 1) return logOutcome(unit, action, refused(`the claim is contested: ${added.value.join(', ')} are all assigned; ${words.contested}`));
+	return undefined;
+}
+
 /**
  * May `action` change this stage unit? Allowed with no tracker call outside team mode;
  * otherwise the live assignee decides. Never throws.
@@ -256,18 +273,11 @@ export function teamGate(repo: string, unit: UnitRef, action: GuardedAction, aut
 		if (!read.ok) return logOutcome(unit, action, read.outcome);
 		const holder = read.state.holder;
 
-		if (holder !== null) {
-			return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, action, heldByOther(repo, unit, holder, ctx.who));
-		}
+		if (holder !== null) return holderOutcome(repo, unit, action, holder, ctx.who);
 		if (!CLAIMING.has(action)) return allowed();
 
-		// Nobody holds the stage: take it with an add-only assignment, never removing another claimant.
-		const added = ctx.port.addAssignee(ctx.issue, ctx.who);
-		if (!added.ok) return logOutcome(unit, action, refused(`the implicit claim failed (${added.kind}): ${added.reason}; the stage state is unknown, read it again before acting`));
-		if (added.value.length > 1) {
-			return logOutcome(unit, action, refused(`the claim is contested: ${added.value.join(', ')} are all assigned; ask an administrator to release the stage`));
-		}
-		return allowed(true);
+		// Nobody holds the stage: take it.
+		return addActorAsAssignee(ctx, unit, action, { failed: 'the implicit claim failed', contested: 'ask an administrator to release the stage' }) ?? allowed(true);
 	} catch (err) {
 		return logOutcome(unit, action, refused(`the team gate failed: ${errorText(err)}`));
 	}
@@ -293,14 +303,9 @@ export function claim(repo: string, unit: UnitRef): GateOutcome {
 		const read = readHolder(ctx, unit, testDeps.now ?? ((): string => new Date().toISOString()));
 		if (!read.ok) return logOutcome(unit, 'claim', read.outcome);
 		const holder = read.state.holder;
-		if (holder !== null) return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, 'claim', heldByOther(repo, unit, holder, ctx.who));
+		if (holder !== null) return holderOutcome(repo, unit, 'claim', holder, ctx.who);
 
-		const added = ctx.port.addAssignee(ctx.issue, ctx.who);
-		if (!added.ok) return logOutcome(unit, 'claim', refused(`the claim failed (${added.kind}): ${added.reason}; the stage state is unknown, read it again before acting`));
-		if (added.value.length > 1) {
-			return logOutcome(unit, 'claim', refused(`the claim is contested: ${added.value.join(', ')} are all assigned; nobody was removed, ask an administrator to release the stage`));
-		}
-		return allowed();
+		return addActorAsAssignee(ctx, unit, 'claim', { failed: 'the claim failed', contested: 'nobody was removed, ask an administrator to release the stage' }) ?? allowed();
 	} catch (err) {
 		return logOutcome(unit, 'claim', refused(`the claim failed: ${errorText(err)}`));
 	}

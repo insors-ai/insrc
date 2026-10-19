@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "765de3f648ba09ee",
+    "storyId": "S001",
+    "createdAt": "2026-10-19T04:53:15.800Z",
+    "authoredBy": "controller",
+    "triageRationale": "A behaviour-preserving extraction inside one file.",
+    "epicCreatedAt": "2026-10-19T04:53:15.800Z"
+  },
+  "body": {
+    "focus": "S5-1: in src/workflow/team/gate.ts, claim() and teamGate() repeat the holder comparison, the add-only addAssignee call, its failure handling and the contested check. Extract one private helper used by both, keeping each path's exact refusal wording and outcomes. No behaviour change.",
+    "producesLld": false,
+    "commit": "0b0291f2"
+  }
+}

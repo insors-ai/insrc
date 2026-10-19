@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "dabf8d30dfdb988d",
+    "storyId": "S001",
+    "createdAt": "2026-10-19T04:26:54.745Z",
+    "authoredBy": "controller",
+    "triageRationale": "Two mechanical de-duplications with no behaviour change and no new contract.",
+    "epicCreatedAt": "2026-10-19T04:26:54.745Z"
+  },
+  "body": {
+    "focus": "Remove two duplications left by s6: S6-1 keep one runIsForUnit in src/workflow/team/handoff.ts and import it from src/daemon/steps/workflow-step/park-offer.ts; S6-2 make src/workflow/team/__tests__/handoff-resume.test.ts import its two-clone world from helpers/handoff-world.ts instead of defining it inline. No behaviour change.",
+    "producesLld": false,
+    "commit": "67188756"
+  }
+}

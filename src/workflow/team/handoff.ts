@@ -328,8 +328,8 @@ export function inferStageWorkflow(repoPath: string, unit: UnitRef | (HandoffUni
 // Parking: deciding what to hand over
 // ---------------------------------------------------------------------------
 
-/** Does a stored run change this unit (same repository, unit kind, epic and story)? (park-offer.ts holds the same check; see docs/plans/s6-open-issues.md S6-1.) */
-function runIsForUnit(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>, unit: UnitRef): boolean {
+/** Does a stored run change this unit (same repository, unit kind, epic and story)? The park offer asks the same question. */
+export function runIsForUnit(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>, unit: UnitRef): boolean {
 	const u = authorUnitOf(intent);
 	return u !== undefined
 		&& resolve(u.repoPath) === resolve(unit.repoPath)

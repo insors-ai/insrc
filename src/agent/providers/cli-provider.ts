@@ -428,9 +428,11 @@ export class CliProvider implements LLMProvider {
 				const msg = err instanceof Error ? err.message : String(err);
 				// A run that never started answering is retried once, as a fresh run,
 				// inside the time that remains (ISSUE-d4b2cd1c).
-				if (err instanceof CliStallError && attempt < 2) {
-					log.warn({ provider: this.kind, codexSession: err.sessionId, err: msg }, 'runReviewSession: the CLI produced no model output; retrying once inside the remaining time');
-					continue;
+				if (err instanceof CliStallError) {
+					log.warn({ provider: this.kind, attempt, codexSession: err.sessionId, err: msg },
+						attempt < 2 ? 'runReviewSession: the CLI produced no model output; retrying once inside the remaining time' : 'runReviewSession: the CLI produced no model output again; giving up');
+					if (attempt < 2) continue;
+					throw err;
 				}
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);

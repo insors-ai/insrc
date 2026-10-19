@@ -24,16 +24,17 @@ Every persisted entity (Define, Design, Plan, Task, BUILD/CR/TESTS records, UML 
 - Tracker issue comments are only ever written by insrc, never read.
 - There are two ID systems (below).
 
-## Gap 1: ID scheme: SETTLED
+## Gap 1: ID scheme: REOPENED 2026-10-19
 
-Today: the work-item ID in `src/workflow/id.ts` (`E<YYYYMMDD><hash8>[:S<nnn>][:T<nnn>]`, added with the GitHub/Jira integration; used for issue titles, folders, labels) and the artifact IDs in `src/workflow/storage.ts` (`DEF-<hash16>`, `LLD-<hash>-S001`, `PLAN-…`, `BUILD-…`, `CR-…`, `TESTS-…`, `SPEC-…`, `ISSUE-…`, `EXT-…`, `AMD-…`). The second duplicates the first and the two disagree (`S001` against `s1`, hash length). The duplication is a defect.
+**Correction.** The earlier Gap 1 text (and the Gap 8 and Gap 12 text built on it) treated the work-item id of `src/workflow/id.ts` (`E<date><hash8>:S<nnn>:T<nnn>`) as the base and proposed renaming every artifact to it. That was wrong. The owner's ruling: **the workflow ID scheme is completely removed, so there is no confusion going forward. The artifact ids are the only scheme.** `id.ts` was added by the GitHub/Jira integration epic and duplicated ID creation.
 
-1. IDs stay hierarchical and human-readable (they read well on flat tracker schemas such as GitHub). No separate UUID.
-2. One ID system, minted in one module. The work-item grammar is the base; an artifact's ID is its owning unit's ID plus an optional type segment: Task `...:T010`, diagram or mock `...:DIAG<nnn>`, build / code-review / test records `...:BR`, `...:CR`, `...:TR` (the Story ID plus the segment).
-3. Rounds (`BR`, `CR`, `TR`) are overwritten in place; the change log is the only record of earlier rounds (so a log entry for them must carry the round's outcome: Gap 4).
-4. An ID never changes. Diagram numbering is a per-parent counter; only the unit's holder authors under it (the claim gate), so counters do not collide.
-5. The design documents take type segments `:DEF`, `:HLD`, `:LLD`, `:PLN` (so an LLD is `E...:S006:LLD`; the unit's own ID stays the unit's, never the document's).
-6. There are several ID **roots**, minted by the one module: `E<YYYYMMDD><hash8>` (epic work items), `SPEC<YYYYMMDD><hash8>` (a brainstormed spec) and `ISSUE<YYYYMMDD><hash8>` (a tracked defect). The grammar after the root is the same. `SPEC` and `ISSUE` are **origin artifacts**: the artifacts downstream (the Define, or a bugfix's first artifact) carry a **reference** to them (relation `derived-from`), not a parent edge, and a SPEC or ISSUE is never re-IDed when it becomes an epic or story. This makes the relation kind on `Reference` (Gap 7) required.
+What is generated today (the scheme that stays): flat, typed, hash-based artifact ids, which are the JSON file names under `.insrc/artifacts/` and the `<!-- insrc:artifact ... -->` marker in the markdown: `DEF-<hash16>`, `HLD-<hash16>`, `LLD-<hash>-<story>`, `PLAN-<hash>-<story>`, `BUILD-<hash>-<story>`, `CR-<hash>-<story>`, `TESTS-<hash>-<story>`, `EXT-<hash>-<story>`, `AMD-<hash>-<n>`, `SPEC-<hash>`, `ISSUE-<hash>`. The markdown lives in a hierarchical folder tree (`docs/epics/<slug>-E<date><hash8>/S006/LLD.md`), where the folder key and the issue-title/label ids use the work-item scheme being removed.
+
+Evidence the duplication already drifted: a PLAN's title reads `E20261018315d510c:S006` (built from the plan's own `createdAt`) while its folder is `E20261016315d510c` (built from the epic's `epicCreatedAt`); the same epic has two `E...` ids.
+
+Still valid from the earlier discussion: IDs are hierarchical and human-readable (no separate UUID); an ID never changes; `SPEC`, `ISSUE` and the Define are origin / root artifacts that later artifacts reference.
+
+To redo: the grammar for the artifacts that have no id today (Epic, Story, Task, the Tasks file, diagrams, the round records), story-id normalisation, and what replaces the work-item id in issue titles, labels and folder names.
 
 ## Gap 2: payload and lifecycle on the base: SETTLED
 
@@ -146,7 +147,7 @@ Reference { entityId, type, relation, fragment?, quote? }
 5. References are **outgoing only**; "what references this" is derived. Adding a reference is not content and never moves a revision.
 6. What folds in: `citations[]` become `cites` references (the `[[c1]]` markers map onto reference ids); `meta.tracker` becomes `tracked-by` references; `PlanTask.dependsOn` becomes `depends-on` between Task artifacts. The unit-issue record fields that are not references (`createdAtRevision`, `extrasDone`, `pendingLink`) need a home (Gap 8).
 
-## Gap 8: issues and external things: SETTLED
+## Gap 8: issues and external things: SETTLED (item 8's ids superseded by the Gap 1 correction)
 
 1. A tracker issue is **not an artifact**; an artifact points to it with a `tracked-by` reference. (The `ISSUE` root is insrc's own defect record, a different thing.)
 2. **Lifecycle artifacts** are tracked and have a **1:1 binding** to a tracker issue (created by the framework, or created first by a person with the artifact then created linked to it): **Define (to become the PRD) > Epic > Story > Task**. `parent` of an Epic is its Define/PRD (one PRD can have several Epics); `parent` of a Story is its Epic; of a Task its Story. A PRD concept is the extension of today's Define.
@@ -196,4 +197,4 @@ Actor { id: "<namespace>:<value>", kind: person | agent | system, name?, propert
 
 ## Gaps still to discuss (one at a time)
 
-12 migration.
+12 migration (to be redone on the corrected Gap 1).

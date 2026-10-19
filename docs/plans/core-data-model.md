@@ -87,6 +87,15 @@ non-terminal --replaced--> superseded | --dropped--> withdrawn
    - the design documents, diagrams and the `BR` / `CR` / `TR` records become `completed` **together with the unit they describe** (a finished Story's LLD, Plan, diagrams and records are all frozen as completed);
    - the code review must be **clean, or explicitly overridden by the user** (the override is recorded in the log).
 
+## Gap 3: revision: SETTLED
+
+1. `Lifecycle.revision` is the structure `{ number, contentHash, at, by }`, holding the **current** revision only. History is in the change log: every content-changing entry records the revision number and hash it produced.
+2. A revision moves **only when content changes**. An identical rewrite (same hash), a comment, a reference change or a provenance write does not move it. (This formalises S4-2 / S4-3.)
+3. **Content** (what `contentHash` covers) is the `payload` and the `description`. `parent`, `references`, `comments`, `changeLog` and `lifecycle` are **not** content: adding a tracker link or an origin reference does not invalidate a signoff. Re-parenting is its own deliberate, logged operation (`reparent`), not a silent edit.
+4. Both the **number** (for people and for binding: "signoff covers revision 7") and the **hash** (integrity, and detecting an identical rewrite) are kept.
+5. Revisions **do not cascade** through the hierarchy: an Epic's revision does not move when a Story changes. Upstream movement is the job of `Staleness`.
+6. Two clones that both bump to the same number offline can name different content once git merges the files. The rule (detect the hash mismatch and report a conflict) is decided with Gap 10 (storage and merges).
+
 ## Gaps still to discuss (one at a time)
 
-3 revision (derived from the change log?); 4 operations beyond create / update / delete, and what a log entry carries; 5 comment vs feedback (anchor, kind, decision, resolved); 6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.
+4 operations beyond create / update / delete, and what a log entry carries; 5 comment vs feedback (anchor, kind, decision, resolved); 6 external comment ids for tracker sync; 7 parent vs references (relation kind); 8 issues as external references; 9 actor id namespacing; 10 storage and merges across clones; 11 Tasks as their own artifacts; 12 migration.

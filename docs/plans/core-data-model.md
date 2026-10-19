@@ -24,7 +24,7 @@ Every persisted entity (Define, Design, Plan, Task, BUILD/CR/TESTS records, UML 
 - Tracker issue comments are only ever written by insrc, never read.
 - There are two ID systems (below).
 
-## Gap 1: ID scheme: SETTLED (decisions 1 to 4); open points 5 and 6
+## Gap 1: ID scheme: SETTLED
 
 Today: the work-item ID in `src/workflow/id.ts` (`E<YYYYMMDD><hash8>[:S<nnn>][:T<nnn>]`, added with the GitHub/Jira integration; used for issue titles, folders, labels) and the artifact IDs in `src/workflow/storage.ts` (`DEF-<hash16>`, `LLD-<hash>-S001`, `PLAN-…`, `BUILD-…`, `CR-…`, `TESTS-…`, `SPEC-…`, `ISSUE-…`, `EXT-…`, `AMD-…`). The second duplicates the first and the two disagree (`S001` against `s1`, hash length). The duplication is a defect.
 
@@ -32,8 +32,8 @@ Today: the work-item ID in `src/workflow/id.ts` (`E<YYYYMMDD><hash8>[:S<nnn>][:T
 2. One ID system, minted in one module. The work-item grammar is the base; an artifact's ID is its owning unit's ID plus an optional type segment: Task `...:T010`, diagram or mock `...:DIAG<nnn>`, build / code-review / test records `...:BR`, `...:CR`, `...:TR` (the Story ID plus the segment).
 3. Rounds (`BR`, `CR`, `TR`) are overwritten in place; the change log is the only record of earlier rounds (so a log entry for them must carry the round's outcome: Gap 4).
 4. An ID never changes. Diagram numbering is a per-parent counter; only the unit's holder authors under it (the claim gate), so counters do not collide.
-5. **Open:** the type segments for the design documents (suggested `:DEF`, `:HLD`, `:LLD`, `:PLN`).
-6. **Open:** the work-item ID carries the epic's creation date, so an ID needs the Define's `createdAt`; how `SPEC` and `ISSUE`, which exist before any epic, are identified.
+5. The design documents take type segments `:DEF`, `:HLD`, `:LLD`, `:PLN` (so an LLD is `E...:S006:LLD`; the unit's own ID stays the unit's, never the document's).
+6. There are several ID **roots**, minted by the one module: `E<YYYYMMDD><hash8>` (epic work items), `SPEC<YYYYMMDD><hash8>` (a brainstormed spec) and `ISSUE<YYYYMMDD><hash8>` (a tracked defect). The grammar after the root is the same. `SPEC` and `ISSUE` are **origin artifacts**: the artifacts downstream (the Define, or a bugfix's first artifact) carry a **reference** to them (relation `derived-from`), not a parent edge, and a SPEC or ISSUE is never re-IDed when it becomes an epic or story. This makes the relation kind on `Reference` (Gap 7) required.
 
 ## Gaps still to discuss (one at a time)
 

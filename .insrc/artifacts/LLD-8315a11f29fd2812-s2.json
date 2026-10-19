@@ -28,7 +28,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "warn",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -36,9 +36,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S002 covers the upstream requirements for relation-based grouping, neighbour summaries on both sides of a cut, and whole-symbol preservation.",
-          "evidence": "HLD storyBoundaries.s2 requires these three behaviors as ac1–ac3. The proposed material, neighbourSummary contract, and integration tests address all three. [files: .insrc/artifacts/HLD-8315a11f29fd2812.json]",
-          "action": "Retain this scope.",
+          "premise": "The design covers S002's three acceptance criteria without adding review criteria.",
+          "evidence": "DEF §6.2 requires call/file/module grouping, summaries across chunk boundaries, and whole-symbol review with named oversize failures. The proposed relations, neighbourSummary and prepare integration address these; verdict and gather changes remain outside S002. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -48,8 +48,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Graph grounding stores caller and callee names, while diff grounding supplies file rows with empty edges.",
-          "evidence": "assembleCodeReviewGrounding writes 'callers: callers.map(c => c.name)' and the corresponding callee mapping. buildDiffSymbols writes kind 'file', entityId 'diff:${f.path}', and empty callers/callees arrays. [files: src/workflow/code-review/grounding.ts]",
+          "premise": "Graph grounding contains structured summaries with caller/callee names; diff grounding contains file rows with hunks and empty edges.",
+          "evidence": "assembleCodeReviewGrounding assigns 'callers: callers.map(c => c.name)' and the analogous callees array. buildDiffSymbols assigns 'kind: file', 'signature: hunks + truncNote', and empty callers/callees arrays. ChangedSymbolSummary has no module field. [files: src/workflow/code-review/grounding.ts, src/workflow/code-review/types.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -60,23 +60,11 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Coverage material must use the narrowed, enriched grounding already used by today's coverage prompt.",
-          "evidence": "prepareCoverageGrounding returns no symbols for degraded mode; otherwise it filters by coverage eligibility and adds coverageEvidence. judgeCoverage and the controller's emitJudgementsResult pass this prepared grounding to buildCoveragePrompt. [files: src/workflow/code-review/dimensions/coverage.ts, src/daemon/steps/code-review-step/handler.ts]",
-          "action": "Preserve preparation on both execution paths.",
+          "premise": "The delivered review job packs whole atoms by rendered prompt size without relationship grouping or neighbour summaries.",
+          "evidence": "DimensionStrategy supplies symbols and context without relations. planMap measures 'promptChars(strategy.map.messages(syms, ctx, undefined))' and invokes packWithin; packIntoBatches greedily batches items in order. [files: src/workflow/code-review/review-job.ts, src/workflow/code-review/pack-into-batches.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The grounding universally contains structured summaries with no source text.",
-          "evidence": "buildDiffSymbols explicitly says a text file 'carries its unified-diff section' and assigns 'signature: hunks + truncNote'. The design acknowledges this elsewhere, but its unconditional no-source-text migration statement and invariant exclude this existing behavior. [files: src/workflow/code-review/grounding.ts]",
-          "action": "Qualify the invariant: graph grounding contains structured summaries; degraded grounding retains existing diff text in signature.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -84,9 +72,21 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Relation-aware material and neighbour summaries extend capabilities absent from the delivered review job.",
-          "evidence": "The delivered Atom contains id, label and data. DimensionStrategy supplies symbols/context; planMap packs them using rendered prompt size. These contracts contain no relations or neighbour-summary hook. S001 separately specifies the new optional neighbourSummary(atom, material) hook. [files: src/workflow/code-review/review-job.ts, .insrc/artifacts/LLD-8315a11f29fd2812-s1.json]",
-          "action": "Implement these functions against S001's new contracts, not the delivered Atom interface.",
+          "premise": "prepareCoverageGrounding is reusable with the stated signature and produces precisely the coverage rows supplied to today's prompt.",
+          "evidence": "The function accepts subject, grounding and groundingMode; degraded mode returns empty symbols. Otherwise it filters eligibility and adds coverageEvidence. judgeCoverage and the controller's emitJudgementsResult both pass its output to buildCoveragePrompt. [files: src/workflow/code-review/dimensions/coverage.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed material builder and neighbour writer add capabilities absent from the current implementation.",
+          "evidence": "Source searches found no codeReviewMaterial or neighbourSummary implementation. The existing Atom/DimensionStrategy contracts and packing implementation contain neither relationship metadata nor neighbour rendering. The proposed review-pipeline directory is not yet implemented. [files: src/workflow/code-review/review-job.ts, src/workflow/code-review/pack-into-batches.ts]",
+          "action": "Treat S001's pipeline as a prerequisite, not delivered code.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -96,23 +96,11 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "assembleCodeReviewGrounding can remain unchanged with the stated signature.",
-          "evidence": "Its implementation accepts repoPath, readonly changedFiles and GroundingDeps and returns Promise<CodeReviewGrounding>. Its emitted rows already provide entityId, file, kind, name, signature, callers and callees required by the proposed pure material builder. [files: src/workflow/code-review/grounding.ts, src/workflow/code-review/types.ts]",
-          "action": "Keep the assembler and its IPC-facing output unchanged.",
+          "premise": "The proposed material and neighbour-summary functions fit the upstream shared contracts without changing the grounding assembler or its callers.",
+          "evidence": "HLD sc1 defines atoms with id, label, text and optional file/module, plus relations and obligations. S001 §2.21 defines 'neighbourSummary?(atom: ReviewAtom, material: ReviewMaterial): string'. assembleCodeReviewGrounding has the stated three-argument signature; runner and daemon IPC callers consume its unchanged CodeReviewGrounding result. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts, src/daemon/index.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The concrete adapter wiring and S001 prepare integration are available with the expected shape.",
-          "evidence": "S001's artifact specifies the material and neighbourSummary contracts, but src/workflow/review-pipeline is absent from this checkout. Consequently, actual adapter factories, wiring sites and prepare behavior cannot be inspected. The analyzer also failed with shaper-llm-unavailable caused by an invalid response schema. [files: .insrc/artifacts/LLD-8315a11f29fd2812-s1.json, src/workflow/code-review/review-job.ts]",
-          "action": "Verify the concrete adapter factories and integration tests against S001's implementation before building S002.",
-          "fixability": "manual",
-          "outcome": "could-not-verify"
         },
         {
           "claimId": "data-compatibility.1",
@@ -120,9 +108,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Existing grounding rows, including rows predating coverageEligible, require no stored-data migration for this material builder.",
-          "evidence": "ChangedSymbolSummary already requires every field used to construct atoms and relations. coverageEligible and coverageEvidence are optional; prepareCoverageGrounding handles an absent eligibility flag using 's.coverageEligible ?? isCoverageEligible(s.kind, s.file)'. S002 adds derived material without changing these stored or transported fields. [files: src/workflow/code-review/types.ts, src/workflow/code-review/dimensions/coverage.ts]",
-          "action": "Include an older row without coverageEligible in the coverage-material fixture.",
+          "premise": "Building material from existing summary fields requires no grounding migration and preserves compatibility with summaries lacking coverage eligibility.",
+          "evidence": "The required identity, file, kind, name, signature and edge arrays already exist. coverageEligible and coverageEvidence are optional. prepareCoverageGrounding uses 's.coverageEligible ?? isCoverageEligible(s.kind, s.file)', and existing fixtures exercise legacy rows without the flag. [files: src/workflow/code-review/types.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts]",
+          "action": "Retain the legacy-row coverage fixture when testing the material builder.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,9 +120,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Material construction and summary writing belong to S002; generic planning and dimension-specific gather remain outside its scope.",
-          "evidence": "HLD assigns changed-symbol atoms, relations and neighbour summaries to s2, and per-dimension chunk prompts, obligations and gather to s3. S001 defines the optional summary hook and explicitly owns relation ordering and preparation. [files: .insrc/artifacts/HLD-8315a11f29fd2812.json, .insrc/artifacts/LLD-8315a11f29fd2812-s1.json]",
-          "action": "Keep grouping implementation in S001 and prompt/gather implementation in S003.",
+          "premise": "S002 owns material relationships and neighbour text while S001 owns packing and S003 owns obligations, prompts and gather.",
+          "evidence": "HLD §5.2 explicitly assigns 'changed-symbol atoms' and 'how neighbour summaries are written' to S002. S001 specifies grouping order and direction-independent grouping. S003 specifies obligations/context 'added to s2’s codeReviewMaterial output by each dimension’s adapter'. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/LLD.md]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,11 +132,11 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Oversize detection should measure the rendered singleton call and report the atom label rather than truncate its content.",
-          "evidence": "The existing review-job packWithin computes 'const alone = sizeOf([item])' and throws AtomTooLargeError(describe(item), alone, b.hard). planMap supplies a size function based on promptChars(strategy.map.messages(...)). This supports the proposed rendered-call measurement and named terminal failure; future neighbour/envelope integration remains unverified. [files: src/workflow/code-review/review-job.ts, src/workflow/code-review/pack-into-batches.ts]",
-          "action": "Preserve this behavior and run the proposed rendered-singleton regression against S001 prepare.",
+          "premise": "The upstream implementation guarantees the specified neighbour-free lower-bound oversize check before provider calls.",
+          "evidence": "The existing packer throws AtomTooLargeError with atom, size and budget, and S001's design promises named oversize failures. However, the shared pipeline is not implemented, so its neighbour-aware packing and the claimed lower-bound check cannot be verified in code. The analyzer also failed with shaper-llm-unavailable after a provider schema rejection. [files: src/workflow/code-review/pack-into-batches.ts, src/workflow/code-review/review-job.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
+          "action": "Make the specified singleton and neighbour-co-location regression tests prerequisites for accepting S001/S002 integration.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "could-not-verify"
         },
         {
           "claimId": "tests.1",
@@ -156,29 +144,29 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each upstream S002 acceptance criterion has an explicit proposed proving test.",
-          "evidence": "HLD defines ac1 as grouping precedence, ac2 as summaries on both sides of a cut, and ac3 as whole-symbol preservation with named oversize rejection. The design maps each to explicit integration tests and adds rendered-call sizing tests. These are planned tests, not implemented or executed tests in this checkout. [files: .insrc/artifacts/HLD-8315a11f29fd2812.json, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/LLD.md]",
-          "action": "Execute the mapped tests after S001 and S002 are implemented.",
+          "premise": "Each upstream S002 acceptance criterion maps to an explicit proposed test.",
+          "evidence": "Compared DEF S002/ac1–ac3 with the LLD mapping: ac1 has relation-priority and rendered-fit tests; ac2 has summaries on both sides of a cut; ac3 has whole-atom conservation and named oversize tests. Existing grounding and coverage tests use node:test and node:assert/strict as proposed. This verifies the test plan, not passing implementation tests. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/LLD.md, src/workflow/code-review/__tests__/grounding.test.ts, src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts]",
+          "action": "Implement and run the mapped tests after the S001 prepare seam is available.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 1,
+        "med": 0,
         "low": 10,
         "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-19T09:02:10.488Z",
+      "reviewedAt": "2026-10-19T10:30:19.861Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-10-19T09:11:30.691Z",
     "reviewOverride": {
       "reason": "Round-3 MED (diff-review grounding carries diff text in signature) corrected in the invariant and state-before wording; no design change. User approved the override in chat 2026-10-19.",
       "at": "2026-10-19T09:11:30.687Z"
-    }
+    },
+    "approvedAt": "2026-10-19T10:51:06.278Z"
   },
   "body": {
     "summary": {
@@ -474,7 +462,7 @@
       "errorCases": [
         {
           "scenario": "One changed symbol's summary alone exceeds the chunk limit (in practice a diff review row whose signature holds a whole file's hunks).",
-          "detection": "s1's prepare renders the minimal valid call holding that atom alone (the dimension's instructions, the atom as a one-row array, its neighbour summaries, the context it must carry and the call envelope) and measures that whole call against limitChars, as the delivered packer does (sizeOf([item]) over the built prompt). An atom whose singleton call does not fit cannot fit in any chunk. Atom text alone is never the measure.",
+          "detection": "s1's prepare computes a lower bound for any chunk holding that atom: the minimal valid call with the atom alone and NO neighbour summaries (the dimension's instructions, the atom as a one-row array, the context it must carry, and the envelope). Neighbour summaries describe atoms held elsewhere and only ever add to a chunk, so every chunk containing the atom is at least this size. The atom is reported only when this lower bound exceeds limitChars. A chunk that fits without neighbours but not with them is s1's packing problem (it groups related atoms together, which removes their neighbour lines), never an oversize atom.",
           "response": "AtomTooLargeError naming the atom by its label (file#name, or the file path for a diff row), raised before any provider call. The atom is never cut and no review is recorded, as s1 defines.",
           "userImpact": "The review stops and names the oversized symbol, rather than judging part of it silently.",
           "recoverable": false
@@ -510,7 +498,7 @@
         },
         {
           "input": "The dimension's prepared grounding is empty (for example coverage on a degraded review, where prepareCoverageGrounding lists no symbols).",
-          "expected": "Empty atoms and relations; the single-chunk path applies, as today."
+          "expected": "Empty atoms and relations. If the dimension's rendered single call fits the limit, s1's single-chunk path applies as today. If it does not fit (for example coverage on a diff review with a large test record), s1 divides the review with zero atoms and every obligation is judged on its own context atoms (s1 createReviewJob postcondition); s3 supplies those obligations."
         },
         {
           "input": "Material under the limit.",
@@ -565,7 +553,8 @@
             "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'",
             "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'under the limit the plan is one chunk and the dimension prompt is unchanged'",
             "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'",
-            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'"
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'"
           ],
           "fixturesNeeded": [
             "the s1 prepare entry point with a test limitChars",
@@ -595,7 +584,8 @@
           "provingTests": [
             "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'",
             "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'",
-            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'"
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'"
           ]
         }
       ]

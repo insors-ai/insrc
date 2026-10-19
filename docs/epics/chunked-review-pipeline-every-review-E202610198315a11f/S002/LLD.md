@@ -109,7 +109,7 @@ assembleCodeReviewGrounding(repoPath: string, changedFiles: readonly string[], d
 **Error cases**
 
 - **One changed symbol's summary alone exceeds the chunk limit (in practice a diff review row whose signature holds a whole file's hunks).** (terminal)
-  - Detection: s1's prepare renders the minimal valid call holding that atom alone (the dimension's instructions, the atom as a one-row array, its neighbour summaries, the context it must carry and the call envelope) and measures that whole call against limitChars, as the delivered packer does (sizeOf([item]) over the built prompt). An atom whose singleton call does not fit cannot fit in any chunk. Atom text alone is never the measure.
+  - Detection: s1's prepare computes a lower bound for any chunk holding that atom: the minimal valid call with the atom alone and NO neighbour summaries (the dimension's instructions, the atom as a one-row array, the context it must carry, and the envelope). Neighbour summaries describe atoms held elsewhere and only ever add to a chunk, so every chunk containing the atom is at least this size. The atom is reported only when this lower bound exceeds limitChars. A chunk that fits without neighbours but not with them is s1's packing problem (it groups related atoms together, which removes their neighbour lines), never an oversize atom.
   - Response: AtomTooLargeError naming the atom by its label (file#name, or the file path for a diff row), raised before any provider call. The atom is never cut and no review is recorded, as s1 defines.
   - User impact: The review stops and names the oversized symbol, rather than judging part of it silently.
 - **Two atoms would share an id (the grounding lists the same entity twice).** (terminal)
@@ -126,7 +126,7 @@ assembleCodeReviewGrounding(repoPath: string, changedFiles: readonly string[], d
 | A diff review (kind 'file' rows with empty callers and callees). | Only same-module relations, so files in the same directory are kept together. |
 | A symbol calling itself (its own name among its callees). | No self-relation. |
 | A file at the repository root. | module is '.', so root files share one module. |
-| The dimension's prepared grounding is empty (for example coverage on a degraded review, where prepareCoverageGrounding lists no symbols). | Empty atoms and relations; the single-chunk path applies, as today. |
+| The dimension's prepared grounding is empty (for example coverage on a degraded review, where prepareCoverageGrounding lists no symbols). | Empty atoms and relations. If the dimension's rendered single call fits the limit, s1's single-chunk path applies as today. If it does not fit (for example coverage on a diff review with a large test record), s1 divides the review with zero atoms and every obligation is judged on its own context atoms (s1 createReviewJob postcondition); s3 supplies those obligations. |
 | Material under the limit. | s1's single-chunk path is used; the relations and neighbour summaries are not used, so today's prompt is unchanged. |
 
 **Invariants to preserve**
@@ -146,7 +146,7 @@ assembleCodeReviewGrounding(repoPath: string, changedFiles: readonly string[], d
   - Subjects: `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON'`, `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none'`, `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only'`, `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence'`, `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a duplicate entityId throws an error naming it'`, `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'the same grounding gives identical material and identical neighbour summaries every time'`, `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names'`
   - Fixtures: `hand-built CodeReviewGrounding rows covering call chains, same-named symbols, shared files and directories, and diff rows`
 - **integration** — The material through s1's prepare with a small limit: grouping order, neighbour summaries on both sides of a cut, whole atoms, and an oversized atom named.
-  - Subjects: `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'under the limit the plan is one chunk and the dimension prompt is unchanged'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'`
+  - Subjects: `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'under the limit the plan is one chunk and the dimension prompt is unchanged'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'`
   - Fixtures: `the s1 prepare entry point with a test limitChars`, `groundings large enough to divide under that limit`
 
 **Acceptance mapping**
@@ -155,7 +155,7 @@ assembleCodeReviewGrounding(repoPath: string, changedFiles: readonly string[], d
 | :--- | :--- |
 | `ac1` | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'`, `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'` |
 | `ac2` | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol'`, `src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names'` |
-| `ac3` | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'` |
+| `ac3` | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'`, `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'` |
 
 ## 6. Migration
 
@@ -212,3 +212,23 @@ Prepare issues one summarise call per atom that is cut from a related atom, thro
 - **[[c11]]** `step-output` `s7 migration`
 - **[[c12]]** `step-output` `s8 checklist`
 - **[[c13]]** `code` `src/workflow/code-review/grounding.ts:103`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 9 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-19T10:30:19.861Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| error-paths | The upstream implementation guarantees the specified neighbour-free lower-bound oversize check before provider calls. | The existing packer throws AtomTooLargeError with atom, size and budget, and S001's design promises named oversize failures. However, the shared pipeline is not implemented, so its neighbour-aware packing and the claimed lower-bound check cannot be verified in code. The analyzer also failed with shaper-llm-unavailable after a provider schema rejection. [files: src/workflow/code-review/pack-into-batches.ts, src/workflow/code-review/review-job.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md] | Make the specified singleton and neighbour-co-location regression tests prerequisites for accepting S001/S002 integration. |

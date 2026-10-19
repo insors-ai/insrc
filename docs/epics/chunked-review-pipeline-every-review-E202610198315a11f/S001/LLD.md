@@ -64,6 +64,8 @@ createReviewJob(adapter: ReviewAdapter<unknown>, path: 'daemon' | 'controller', 
 - Under the limit, the first stage's calls carry exactly today's messages and schema inside the envelope.
 - Every pending call has a callId no call of this job carried before.
 - Grouping order over the limit: prepare first unites atoms joined by 'calls' relations, then 'same-file', then 'same-module', then 'references'. It packs whole groups into chunks that fit, and a group too large for one chunk is split along the next-weaker relation kind before single atoms are placed. Relation direction does not matter for grouping. Atoms keep the material's order within a chunk.
+- Divided with no atoms: when the single call (the adapter's singleCalls rendered with all its context) is over the limit, the job is divided even if the material has zero atoms, for example a diff review whose coverage has no symbols but a large test record. Prepare plans no chunk calls. Every obligation goes straight to gather and is judged by obligationCall on its own context atoms, packed by the s1 packer so that every call fits. An obligation context atom that alone does not fit raises AtomTooLargeError naming it.
+- single: true is set only when the rendered single call fits the limit; an empty material does not by itself mean single.
 
 ### 2.2 `runReviewJob`
 
@@ -129,7 +131,7 @@ runCodeReview(subject: CodeReviewSubject, provider: LLMProvider, opts: RunCodeRe
 **Returns:** `Promise<CodeReviewOutcome>` — Unchanged shape; each expected dimension is now one pipeline job (single-chunk adapter wrapping that dimension's existing prompt builder), run in today's order; ux and deterministic diagram handlers are deterministic stages; adherence makes no call without an approved LLD or plan.
 
 **Errors:**
-- `CodeReviewOutcome { ok: false, error }` when A model-judged dimension's call fails both pipeline attempts. As today, runCodeReview returns { ok: false, error } and records nothing. The attempt count is an intentional policy change from the HLD: today the dimension's withStructuredRetry (3 attempts) wraps CliProvider.withTransientRetry (3 attempts), whereas under the pipeline every call gets exactly two attempts, each under its own callId.
+- `CodeReviewOutcome { ok: false, error }` when A model-judged dimension's call fails both pipeline attempts. As today, runCodeReview returns { ok: false, error } and records nothing. Only the number of attempts changes, and it implements the HLD's retry policy (one re-issue under a new UUID, two attempts in all per call). That replaces today's nested retries, where the dimension's withStructuredRetry (3 attempts) wraps CliProvider.withTransientRetry (3 attempts).
 
 **Preconditions:**
 - Signature unchanged.
@@ -190,7 +192,7 @@ verifyClaim(claim: Claim, evidence: Evidence, provider: LLMProvider, signal?: Ab
 **Parameters:**
 - `claim: Claim` — Unchanged.
 
-**Returns:** `Promise<Finding>` — Its prompt builder (buildVerifyPrompt) becomes the verify stage's per-premise call; VERIFY_CALL_TIMEOUT_MS becomes the call's execution timeoutMs and the repo becomes its cwd.
+**Returns:** `Promise<Finding>` — Its prompt builder (buildVerifyPrompt) becomes the verify stage's per-premise call, with today's prompt, order and VERIFY_CALL_TIMEOUT_MS (180,000 ms) as the call's execution timeoutMs. Running the call with the repository as its cwd is a deliberate ADDITION: today verifyClaim passes no cwd (src/workflow/review/verify.ts:229). The HLD records it as an additive change, so that structured review calls all run in the repository.
 
 **Postconditions:**
 - The 3-minute per-call limit is kept.
@@ -285,6 +287,7 @@ runReviewSession?<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessi
 
 **Postconditions:**
 - The Ollama session reads the repository with read-only tools only and ends with a structured answer checked against the schema.
+- The Ollama session never executes a tool outside its read-only allowlist; an unadvertised call is refused at dispatch.
 
 ### 2.14 `runShaperToolLoop`
 
@@ -295,11 +298,12 @@ runShaperToolLoop(args: RunShaperToolLoopArgs): Promise<ShaperToolLoopResult>
 **Parameters:**
 - `args: RunShaperToolLoopArgs` — Unchanged.
 
-**Returns:** `Promise<ShaperToolLoopResult>` — Unchanged behaviour; its tool loop (runToolLoop) and final structured emit are moved behind a generic read-only loop taking caller-supplied messages, answer schema, deadline, signal and retry policy, which both runShaperToolLoop and the Ollama reviewer session call. The generic loop passes the caller's signal to every tool-selection turn (provider.complete) and to the final structured emit, and checks it before each turn and each tool run, so a cancelled Ollama reviewer session stops within the turn in flight. The analyzer's wrapper passes no signal, so its behaviour is unchanged. The extracted loop and final emit have TWO production callers in src/analyze/context/driver.ts, and both keep their prompts, tracing, retries and errors: runShaperToolLoop, and runShaper's legacy tail, which calls runToolLoop and runFinalStructuredEmit directly (src/analyze/context/driver.ts:539, src/analyze/context/driver.ts:547).
+**Returns:** `Promise<ShaperToolLoopResult>` — Unchanged behaviour; its tool loop (runToolLoop) and final structured emit are moved behind a generic read-only loop taking caller-supplied messages, answer schema, deadline, signal and retry policy, which both runShaperToolLoop and the Ollama reviewer session call. The generic loop passes the caller's signal to every tool-selection turn (provider.complete) and to the final structured emit, and checks it before each turn and each tool run, so a cancelled Ollama reviewer session stops within the turn in flight. The analyzer's wrapper passes no signal, so its behaviour is unchanged. The extracted loop and final emit have TWO production callers in src/analyze/context/driver.ts, and both keep their prompts, tracing, retries and errors: runShaperToolLoop, and runShaper's legacy tail, which calls runToolLoop and runFinalStructuredEmit directly (src/analyze/context/driver.ts:539, src/analyze/context/driver.ts:547). Read-only is enforced at EXECUTION, not only by what is advertised. Today runToolLoop dispatches any returned tool name through executeTool, which resolves the global registry, including file_write. The generic loop therefore checks every returned call's name (after alias resolution) against the caller's allowlist before dispatch. A call outside it is never executed: the loop answers the model with a tool error saying the tool is not available, and logs it. For the reviewer session the allowlist is the read-only tool set.
 
 **Postconditions:**
 - Analyzer tests for runShaperToolLoop pass unchanged.
 - runShaper's legacy tail behaves unchanged, and its existing tests pass unchanged.
+- A model-returned call to a tool outside the allowlist (for example file_write or Write) never reaches executeTool, on both callers.
 
 ### 2.15 `packIntoBatches`
 
@@ -374,11 +378,12 @@ complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse>
 ### 2.19 `AdapterStage.validate`
 
 ```typescript
-validate?(answer: unknown): readonly string[]
+validate?(answer: unknown, call: ReviewCall): readonly string[]
 ```
 
 **Parameters:**
 - `answer: unknown` — The envelope's inner answer, already checked against the stage schema.
+- `call: ReviewCall` — The call the answer came back for: its stage, role and carries (chunkId, atomIds, noteIds, key), so a validator can check the answer against exactly the material that call carried. Passed from the job on every turn, so it survives the adapter being rebuilt.
 
 **Returns:** `readonly string[]` — Semantic problems (empty: valid). A non-empty result is the 'invalid-answer' cause, and the reasons become the re-issued call's correction note.
 
@@ -422,6 +427,23 @@ neighbourSummary?(atom: ReviewAtom, material: ReviewMaterial): string
 
 **Postconditions:**
 - For every relation cut by the chunk plan, each side's chunk carries one NeighbourSummary of the other side's atom. One per related atom per chunk, never duplicated.
+
+### 2.22 `GatherPlan.relationCall`
+
+```typescript
+relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => readonly ChunkPrompt[]) | undefined
+```
+
+**Parameters:**
+- `pair: readonly [ReviewAtom, ReviewAtom]` — The two ends of one relation in ChunkPlan.crossRelations.
+
+**Returns:** `readonly ChunkPrompt[]` — One or more calls that together judge the relation, for example both full atoms in one call, or one call in each direction when they do not fit together. A refinement of sc2's sketch, which returned a single ChunkPrompt; this Story owns sc2. The driver issues them serially, counts each under pipelineCalls.relation, and treats the relation as judged when all of them are answered.
+
+**Preconditions:**
+- Every returned call must fit limitChars; prepare measures each one like any other call.
+
+**Postconditions:**
+- Each relation in crossRelations is offered to relationCall exactly once per job.
 
 ## 3. Data model changes
 
@@ -535,6 +557,10 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
   - Detection: The signal reaches the in-flight complete or completeStructured request and is checked before each turn and tool run.
   - Response: AbortError at once; no further turn; nothing recorded.
   - User impact: The cancel takes effect within the turn in flight.
+- **An Ollama reviewer session's model returns a call to a tool it was not offered (for example file_write).** (recoverable)
+  - Detection: The generic tool loop checks the call's name, after alias resolution, against the allowlist before dispatch.
+  - Response: The call is not executed. The model gets a tool error ('not available in this session'), the refusal is logged, and the loop continues within its turn budget.
+  - User impact: A review can never write to the repository.
 
 **Edge cases**
 
@@ -542,7 +568,7 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
 | :--- | :--- |
 | A code review whose expected dimensions include ux and a component diagram, under the limit. | ux and the component handler run as deterministic stages reading the snapshot's fileFacts; no model call for them; findings equal today's. |
 | A code review with neither an approved LLD nor an approved plan. | The adherence stage makes no call, as today. |
-| A DEF review under the limit on the daemon. | One extract call, a deterministic probe, then one verify call per premise in claim order, each with the 3-minute limit and the repo as cwd. |
+| A DEF review under the limit on the daemon. | One extract call, a deterministic probe, then one verify call per premise in claim order: today's prompts, order and 3-minute limit. The one difference from today is that each verify call now runs with the repository as cwd, which the HLD sets as an additive change. |
 | A mock companion added or removed after prepare. | The ux stage's result is unchanged: it reads fileFacts from the snapshot. |
 | review.chunkTokens set to a non-default value. | limitChars = value x 3 for every provider. |
 | A provider called by code outside the pipeline (analyzer, workflows) with no internalRetry option. | Today's retries unchanged. |
@@ -566,7 +592,7 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
   - Subjects: `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'`, `src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts and src/workflow/review-pipeline/__tests__/review-job-core.test.ts: the delivered ISSUE-aef82b03 tests, moved and rewritten to the new API`
   - Fixtures: `toy adapter with model and deterministic stages`, `scripted fake LLMProvider recording every prompt as sent`
 - **integration** — Today's reviews through the pipeline give today's calls and results; providers honour internalRetry and recognise session size refusals; Ollama runs a reviewer session.
-  - Subjects: `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'adherence makes no call without an approved LLD or plan'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit HLD review makes one reviewer-session call and gives today's report'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'a mock added or removed after prepare does not change the ux result'`, `src/agent/providers/__tests__/internal-retry.test.ts: 'internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts'`, `src/agent/providers/__tests__/cli-review-session.test.ts: 'a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline'`, `src/analyze/context/__tests__/driver-unit.test.ts (existing, still passes)`, `src/analyze/context/__tests__/run-shaper-wiring.test.ts (existing, still passes)`, `src/analyze/context/__tests__/shaper-errors.test.ts (existing, still passes)`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema'`, `src/agent/providers/__tests__/abort-in-flight.test.ts: 'aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn'`
+  - Subjects: `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'adherence makes no call without an approved LLD or plan'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit HLD review makes one reviewer-session call and gives today's report'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'a mock added or removed after prepare does not change the ux result'`, `src/agent/providers/__tests__/internal-retry.test.ts: 'internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts'`, `src/agent/providers/__tests__/cli-review-session.test.ts: 'a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline'`, `src/analyze/context/__tests__/driver-unit.test.ts (existing, still passes)`, `src/analyze/context/__tests__/run-shaper-wiring.test.ts (existing, still passes)`, `src/analyze/context/__tests__/shaper-errors.test.ts (existing, still passes)`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema'`, `src/agent/providers/__tests__/abort-in-flight.test.ts: 'aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed'`
   - Fixtures: `recorded answers for one code review, one DEF review and one HLD review`, `fake claude and codex binaries`, `fake Ollama chat endpoint with a tool-call turn`
 - **live** — The identifier envelope is accepted by both CLIs on the real review schemas, and a high-end Ollama model completes a review.
   - Subjects: `src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'claude and codex accept the envelope around every review answer schema and echo the callId'`, `src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline'`
@@ -580,7 +606,7 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
 | `ac2` | `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies'`, `src/agent/providers/__tests__/internal-retry.test.ts: 'internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks'` |
 | `ac3` | `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens'` |
 | `ac4` | `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt'`, `src/agent/providers/__tests__/cli-review-session.test.ts: 'a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is'` |
-| `ac5` | `src/agent/providers/__tests__/ollama-review-session.test.ts: 'an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline'`, `src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline'` |
+| `ac5` | `src/agent/providers/__tests__/ollama-review-session.test.ts: 'an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline'`, `src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed'` |
 
 ## 8. Migration
 
@@ -655,9 +681,9 @@ Nothing delivered moves.
 
 ## Review
 
-### ⚠️ Review `WARN` — design.story (design.story)
+### ✅ Review `PASS` — design.story (design.story)
 
-**0 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-19T08:57:31.662Z
+**0 do not hold · 0 could not be verified · 11 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-19T10:36:50.532Z
 
 Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
 
@@ -667,6 +693,4 @@ _None._
 
 #### Could not verify (does not block)
 
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| error-paths | The proposed execution timeout guarantees a three-minute premise-verification limit on Ollama as well as CLI providers. | verifyClaim passes timeoutMs, but StructuredCompletionOpts documents it as a subprocess-provider limit. OllamaProvider.completeStructured does not consume timeoutMs. The LLD adds signal forwarding and names execution.timeoutMs, but does not specify whether the driver creates a timeout signal or Ollama gains timeout enforcement. The existing code therefore cannot establish this guarantee. [files: src/workflow/review/verify.ts, src/shared/types.ts, src/agent/providers/ollama.ts, src/agent/providers/cli-provider.ts] | Specify which layer enforces structured-call timeouts on Ollama, how timeout differs from user cancellation, and test a stalled Ollama verification request. |
+_None._

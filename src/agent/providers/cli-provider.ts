@@ -292,7 +292,7 @@ export class CliProvider implements LLMProvider {
 				'--json-schema', JSON.stringify(schema),
 				...this.modelArgs(opts),
 			];
-			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd));
+			const { envelope } = await this.runClaude(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs));
 			if (envelope.is_error) {
 				const message = `claude --print failed: ${envelope.result ?? 'no error message'}`;
 				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));
@@ -308,7 +308,7 @@ export class CliProvider implements LLMProvider {
 			const schemaPath = join(tmpDir, 'schema.json');
 			writeFileSync(schemaPath, codexSchemaJson(schema));
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd));
+			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd, opts?.timeoutMs));
 			if (agentText === undefined) {
 				throw new Error('codex emitted no agent_message item');
 			}
@@ -480,10 +480,12 @@ export class CliProvider implements LLMProvider {
 
 
 	/** The exec override for a one-shot call: run the CLI in `cwd` when the
-	 *  caller names one, else no override, so the CLI inherits the daemon's
-	 *  working directory exactly as before. */
-	private execIn(cwd: string | undefined): ExecOverride | undefined {
-		return cwd !== undefined ? { cwd, timeoutMs: this.timeoutMs } : undefined;
+	 *  caller names one, with the caller's `timeoutMs` when it names one, else
+	 *  no override, so the CLI inherits the daemon's working directory and the
+	 *  provider's timeout exactly as before. */
+	private execIn(cwd: string | undefined, timeoutMs?: number | undefined): ExecOverride | undefined {
+		if (cwd === undefined && timeoutMs === undefined) return undefined;
+		return { ...(cwd !== undefined ? { cwd } : {}), timeoutMs: timeoutMs ?? this.timeoutMs };
 	}
 
 	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {

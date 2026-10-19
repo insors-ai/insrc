@@ -31,6 +31,7 @@ import { gatherEvidence } from '../probe.js';
 import { runReview } from '../review.js';
 import { renderReviewReport } from '../report.js';
 import type { Claim } from '../types.js';
+import { VERIFY_CALL_TIMEOUT_MS } from '../verify.js';
 
 // The probe uses the shared `runGrepSearch` backend (ripgrep when present,
 // Node walk otherwise), so these tests run everywhere — no rg guard needed.
@@ -343,5 +344,82 @@ test('gatherEvidence notes a file that EXISTS on disk but is named in no file bo
 		assert.ok(ev);
 		const all = ev.grepResults.flatMap(g => g.matches).join('\n');
 		assert.match(all, /FILE EXISTS: .*foo\.ts/);
+	} finally { cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// A stalled or failed premise call (ISSUE-d4b2cd1c)
+// ---------------------------------------------------------------------------
+
+const STALL = 'codex exited with -9. stderr=Reading prompt from stdin...\n stdout={"type":"thread.started","thread_id":"t-stalled"}';
+
+/** makeProvider, but the 'beta constant' premise call throws `STALL` on its first `failures` calls; records every verify call's options. */
+function stallingProvider(failures: number): { provider: LLMProvider; betaCalls: () => number; verifyOpts: StructuredCompletionOpts[] } {
+	const p = makeProvider({ inventoryLow: true });
+	const orig = p.completeStructured.bind(p);
+	let beta = 0;
+	const verifyOpts: StructuredCompletionOpts[] = [];
+	(p as { completeStructured: LLMProvider['completeStructured'] }).completeStructured = async <T>(messages: LLMMessage[], schema: StructuredSchema, opts?: StructuredCompletionOpts): Promise<T> => {
+		const isVerify = !('claims' in ((schema as { properties?: Record<string, unknown> }).properties ?? {}));
+		if (isVerify) verifyOpts.push(opts ?? {});
+		const content = messages.map(m => (typeof m.content === 'string' ? m.content : '')).join('\n');
+		if (isVerify && content.includes('beta constant') && beta++ < failures) throw new Error(STALL);
+		return orig<T>(messages, schema, opts);
+	};
+	return { provider: p, betaCalls: () => beta, verifyOpts };
+}
+
+test('a premise call that fails once is retried as a fresh call and judged; the review completes', async () => {
+	const { repo, cleanup } = makeRepo();
+	try {
+		const s = stallingProvider(1);
+		const report = await runReview(ARTIFACT, { repo, stage: 'plan', provider: s.provider, ...BASE_OPTS });
+		assert.equal(s.betaCalls(), 2, 'the failed premise call was made again');
+		assert.equal(report.findings.length, 3);
+		assert.equal(report.findings.find(f => f.claimId === 'c-cite')?.severity, 'LOW', 'judged by the retry');
+	} finally { cleanup(); }
+});
+
+test('a premise call that fails twice is recorded as not judged, never as a pass, and every other premise is kept', async () => {
+	const { repo, cleanup } = makeRepo();
+	try {
+		const s = stallingProvider(Number.POSITIVE_INFINITY);
+		const report = await runReview(ARTIFACT, { repo, stage: 'plan', provider: s.provider, ...BASE_OPTS });
+		assert.equal(s.betaCalls(), 2, 'retried once, not more');
+		const cite = report.findings.find(f => f.claimId === 'c-cite');
+		assert.ok(cite, 'the failed premise is in the report');
+		assert.equal(cite.severity, 'MED');
+		assert.equal(cite.fixability, 'manual');
+		assert.ok(cite.evidence.startsWith('Not judged'), cite.evidence);
+		assert.ok(cite.evidence.includes('t-stalled'), 'the cause, with its codex session, is kept');
+		assert.equal(report.findings.find(f => f.claimId === 'c-inv')?.severity, 'LOW', 'premises judged before it are kept');
+		assert.equal(report.findings.find(f => f.claimId === 'c-sem')?.severity, 'MED', 'premises after it are still judged');
+		assert.equal(report.verdict, 'block', 'a premise not judged blocks under the default policy');
+	} finally { cleanup(); }
+});
+
+test('every premise judgement carries a per-call limit well under the provider default', async () => {
+	const { repo, cleanup } = makeRepo();
+	try {
+		const s = stallingProvider(0);
+		await runReview(ARTIFACT, { repo, stage: 'plan', provider: s.provider, ...BASE_OPTS });
+		assert.equal(s.verifyOpts.length, 3);
+		for (const o of s.verifyOpts) assert.equal(o.timeoutMs, VERIFY_CALL_TIMEOUT_MS);
+		assert.ok(VERIFY_CALL_TIMEOUT_MS <= 180_000);
+	} finally { cleanup(); }
+});
+
+test('a cancelled review still ends at once instead of recording the premise as not judged', async () => {
+	const { repo, cleanup } = makeRepo();
+	try {
+		const p = makeProvider({ inventoryLow: true });
+		const orig = p.completeStructured.bind(p);
+		(p as { completeStructured: LLMProvider['completeStructured'] }).completeStructured = async <T>(messages: LLMMessage[], schema: StructuredSchema, opts?: StructuredCompletionOpts): Promise<T> => {
+			if (!('claims' in ((schema as { properties?: Record<string, unknown> }).properties ?? {}))) {
+				const e = new Error('cancelled'); e.name = 'AbortError'; throw e;
+			}
+			return orig<T>(messages, schema, opts);
+		};
+		await assert.rejects(runReview(ARTIFACT, { repo, stage: 'plan', provider: p, ...BASE_OPTS }), (e: unknown) => e instanceof Error && e.name === 'AbortError');
 	} finally { cleanup(); }
 });

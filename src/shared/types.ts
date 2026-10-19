@@ -296,6 +296,9 @@ export interface StructuredCompletionOpts {
   readonly onToken?: ((token: string) => void) | undefined;
   /** Working directory for a subprocess-backed provider; see {@link CompletionOpts.cwd}. */
   readonly cwd?: string | undefined;
+  /** Wall-clock cap in milliseconds for one call of a subprocess-backed provider;
+   *  the provider's own default when unset. ISSUE-d4b2cd1c. */
+  readonly timeoutMs?: number | undefined;
 }
 
 // ---------------------------------------------------------------------------

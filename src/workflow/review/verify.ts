@@ -203,6 +203,14 @@ export { renderEvidence };
  * Judge one claim against its gathered evidence. One structured LLM call;
  * evidence is placed at the prompt tail.
  */
+/**
+ * The wall-clock cap of one premise judgement. A judgement normally returns in
+ * well under a minute; a call that is still silent after this is treated as
+ * stalled and retried by the review (ISSUE-d4b2cd1c), instead of holding the
+ * whole review for the provider's 10-minute default.
+ */
+export const VERIFY_CALL_TIMEOUT_MS = 180_000;
+
 export async function verifyClaim(
 	claim:    Claim,
 	evidence: Evidence,
@@ -218,7 +226,7 @@ export async function verifyClaim(
 	const raw = await provider.completeStructured<RawFinding>(
 		messages,
 		VERIFY_SCHEMA,
-		signal !== undefined ? { signal } : {},
+		{ timeoutMs: VERIFY_CALL_TIMEOUT_MS, ...(signal !== undefined ? { signal } : {}) },
 	);
 
 	const finding = normalizeFinding(claim, raw);

@@ -154,8 +154,9 @@ export interface CliProviderOpts {
 
 
 /**
- * How long a codex run may show no model output (no event past `thread.started`
- * / `turn.started`) before it is treated as stalled and killed (ISSUE-d4b2cd1c).
+ * How long a codex reviewer session may show no model output (no event past
+ * `thread.started` / `turn.started`) before it is treated as stalled and killed
+ * (ISSUE-d4b2cd1c). Other codex calls are not watched.
  * A model normally starts answering within seconds; on 2026-10-19 two runs took
  * their prompt and then stayed silent until the 10-minute limit.
  */
@@ -422,7 +423,7 @@ export class CliProvider implements LLMProvider {
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 			try {
-				return await this.reviewSessionOnce<T>(prompt, schema, { cwd: opts.cwd, timeoutMs: remainingMs });
+				return await this.reviewSessionOnce<T>(prompt, schema, { cwd: opts.cwd, timeoutMs: remainingMs, watchStall: true });
 			} catch (err) {
 				const msg = err instanceof Error ? err.message : String(err);
 				// A run that never started answering is retried once, as a fresh run,
@@ -439,7 +440,7 @@ export class CliProvider implements LLMProvider {
 		}
 	}
 
-	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number }): Promise<T> {
+	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs()), prompt, exec);
 			if (envelope.is_error) {
@@ -541,8 +542,8 @@ export class CliProvider implements LLMProvider {
 
 
 	private async runCodex(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ events: readonly CodexEvent[]; agentText: string | undefined }> {
-		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd,
-			{ ms: this.codexFirstOutputMs, started: stdout => CODEX_MODEL_EVENT.test(stdout) });
+		const stall = exec?.watchStall === true ? { ms: this.codexFirstOutputMs, started: (stdout: string) => CODEX_MODEL_EVENT.test(stdout) } : undefined;
+		const out = await runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, stall);
 		if (out.stalled === true) {
 			throw new CliStallError('codex', this.codexFirstOutputMs, /"thread_id":"([^"]+)"/.exec(out.stdout)?.[1]);
 		}
@@ -619,6 +620,9 @@ interface SubprocessResult {
 interface ExecOverride {
 	readonly cwd?:       string | undefined;
 	readonly timeoutMs?: number | undefined;
+	/** Kill a codex run that shows no model output within the first-output limit
+	 *  (CliStallError). Only the reviewer session asks for it (ISSUE-d4b2cd1c). */
+	readonly watchStall?: boolean | undefined;
 }
 
 /** Await `ms` milliseconds. */

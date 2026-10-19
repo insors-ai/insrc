@@ -250,13 +250,11 @@ test('a codex run silent twice fails with its session named, and a run that is a
 	assert.ok(CODEX_FIRST_OUTPUT_MS < 600_000, 'the default first-output limit is well under the 10-minute call limit');
 });
 
-test('a one-shot codex structured call that stalls fails with a CliStallError naming its session', async () => {
-	const f = fakeCli([{ pre: codexSilent('t-oneshot'), sleepMs: 30_000, out: '' }]);
+test('only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit', async () => {
+	const f = fakeCli([{ pre: codexSilent('t-oneshot'), sleepMs: 2_500, out: codexOk(JSON.stringify({ ok: true })) }]);
 	try {
 		const p = new CliProvider({ kind: 'codex', binPath: f.bin, codexFirstOutputMs: 1_000 });
-		await assert.rejects(
-			p.completeStructured([{ role: 'user', content: 'hi' }], SCHEMA),
-			(e: unknown) => e instanceof CliStallError && e.sessionId === 't-oneshot' && /no model output/.test(e.message),
-		);
+		assert.deepEqual(await p.completeStructured([{ role: 'user', content: 'hi' }], SCHEMA), { ok: true });
+		assert.equal(f.calls().length, 1);
 	} finally { f.cleanup(); }
 });

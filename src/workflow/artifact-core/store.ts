@@ -142,6 +142,9 @@ export class ArtifactStore {
 			throw new ArtifactShapeError(`the actor '${String(by?.id)}' has no namespaced lower-case id such as github:alice`);
 		}
 		this.checkLinks(a, key);
+		if (typeof a.payload?.body !== 'object' || a.payload.body === null || Array.isArray(a.payload.body) || !Array.isArray(a.payload.citations)) {
+			throw new ArtifactShapeError(`the payload of ${a.id} needs a body object and a citations list`);
+		}
 		const codec = codecFor(key.kind);
 
 		const path = artifactJsonPath(this.deps.repoPath, a.id);
@@ -176,11 +179,15 @@ export class ArtifactStore {
 		const prepared = prepareArtifactWrite(path, build(first.revision), kind);
 		if (priorBytes === prepared.bytes) return;       // nothing changes: no staged operation, no log entry
 
-		const operationId = createHash('sha256').update(`${a.id}\n${priorRevision}\n${prepared.bytes}`).digest('hex').slice(0, 32);
+		// The id is a hash of the artifact, the prior revision, the prepared bytes and the time of the write, so the same
+		// transition made twice (references A to B, back to A, to B again) logs twice. A retry does not recompute it: it
+		// finds the staged operation in the journal and reuses that id.
+		const timestamp = (this.deps.now ?? (() => new Date()))().toISOString();
+		const operationId = createHash('sha256').update(`${a.id}\n${priorRevision}\n${prepared.bytes}\n${timestamp}`).digest('hex').slice(0, 32);
 		const entry: ChangeLogEntry = {
 			id: operationId,
 			actor: by,
-			timestamp: (this.deps.now ?? (() => new Date()))().toISOString(),
+			timestamp,
 			operation: prior === undefined ? 'create' : 'update',
 			revision: { number: prepared.revision, contentHash: a.lifecycle.revision.contentHash },
 		};

@@ -72,6 +72,13 @@ describe('decodeArtifactHead', () => {
 		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ signoffs: [null] }) })), ArtifactShapeError, 'signoffs: [null]');
 		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ approval: {} }) })), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ review: { revision: 1 } }) })), ArtifactShapeError);
+		const okReview = { revision: 1, reviewer: actor, party: 'daemon', verdict: 'pass', counts: {}, at: 't' };
+		for (const [why, review] of [['no party', { ...okReview, party: undefined }], ['unknown party', { ...okReview, party: 'me' }], ['no verdict', { ...okReview, verdict: undefined }], ['no at', { ...okReview, at: undefined }], ['bad report', { ...okReview, report: {} }]] as const) {
+			assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ review }) })), ArtifactShapeError, why);
+		}
+		assert.equal(decodeArtifactHead(LLD, head({ lifecycle: lc({ review: okReview }) })).artifact.lifecycle.review?.verdict, 'pass');
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ stale: { upstream: okRef, upstreamRevision: 1 } }) })), ArtifactShapeError, 'staleness with no since');
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ approval: { revision: 1, by: actor, at: 't', override: 'x' } }) })), ArtifactShapeError, 'override is an object with a reason');
 		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ stale: { upstream: okRef } }) })), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { binding: { reference: okRef } } })), ArtifactShapeError, 'binding with only a reference');
 		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { attachments: [{ target: okRef }] } })), ArtifactShapeError, 'attachment with only a target');

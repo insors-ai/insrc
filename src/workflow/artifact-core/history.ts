@@ -59,8 +59,8 @@ function validateFeedback(f: Feedback): void {
 	if (a.prefix !== undefined && a.prefix.length > CONTEXT_MAX) throw new HistoryEntryError(`feedback ${f.id}: the anchor prefix is over ${CONTEXT_MAX} characters`);
 	if (a.suffix !== undefined && a.suffix.length > CONTEXT_MAX) throw new HistoryEntryError(`feedback ${f.id}: the anchor suffix is over ${CONTEXT_MAX} characters`);
 	if (a.lines !== undefined) {
-		const [from, to] = a.lines;
-		if (!Array.isArray(a.lines) || a.lines.length !== 2 || !Number.isInteger(from) || !Number.isInteger(to) || from > to) {
+		const lines: unknown = a.lines;
+		if (!Array.isArray(lines) || lines.length !== 2 || !Number.isInteger(lines[0]) || !Number.isInteger(lines[1]) || (lines[0] as number) > (lines[1] as number)) {
 			throw new HistoryEntryError(`feedback ${f.id}: the anchor lines are not an ordered pair`);
 		}
 	}

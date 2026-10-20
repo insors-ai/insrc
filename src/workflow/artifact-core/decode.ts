@@ -57,9 +57,17 @@ function lifecycleProblem(v: unknown): string | undefined {
 	const r = v['revision'];
 	if (!isObject(r) || !Number.isInteger(r['number']) || !isStr(r['contentHash']) || !isStr(r['at']) || !isActor(r['by'])) return 'has a malformed revision';
 	if (!Array.isArray(v['signoffs']) || !v['signoffs'].every(isSignoff)) return 'has no signoffs list, or a malformed signoff';
-	if (v['approval'] !== undefined && !(isObject(v['approval']) && isInt(v['approval']['revision']) && isActor(v['approval']['by']) && isStr(v['approval']['at']))) return 'has a malformed approval';
-	if (v['review'] !== undefined && !(isObject(v['review']) && isInt(v['review']['revision']) && isActor(v['review']['reviewer']) && isObject(v['review']['counts']))) return 'has a malformed review';
-	if (v['stale'] !== undefined && !(isObject(v['stale']) && isReference(v['stale']['upstream']) && isInt(v['stale']['upstreamRevision']))) return 'has a malformed staleness record';
+	const approval = v['approval'];
+	if (approval !== undefined && !(isObject(approval) && isInt(approval['revision']) && isActor(approval['by']) && isStr(approval['at'])
+		&& (approval['override'] === undefined || (isObject(approval['override']) && isStr(approval['override']['reason']))))) return 'has a malformed approval';
+	const review = v['review'];
+	if (review !== undefined && !(isObject(review) && isInt(review['revision']) && isActor(review['reviewer'])
+		&& (review['party'] === 'controller' || review['party'] === 'daemon')
+		&& (review['verdict'] === 'pass' || review['verdict'] === 'warn' || review['verdict'] === 'block')
+		&& isObject(review['counts']) && isStr(review['at'])
+		&& (review['report'] === undefined || isReference(review['report'])))) return 'has a malformed review';
+	const stale = v['stale'];
+	if (stale !== undefined && !(isObject(stale) && isReference(stale['upstream']) && isInt(stale['upstreamRevision']) && isStr(stale['since']))) return 'has a malformed staleness record';
 	return undefined;
 }
 

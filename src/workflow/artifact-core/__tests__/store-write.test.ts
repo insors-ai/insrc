@@ -190,4 +190,26 @@ describe('ArtifactStore.write', () => {
 			assert.equal((await k.store.read(id)).binding?.reference.entityId, 'o/r#1');
 		} finally { k.done(); }
 	});
+
+	it('the same metadata transition made twice is logged twice, and a malformed payload is refused before anything is staged', async () => {
+		const k = kit();
+		try {
+			const id = `DEF-${H}`;
+			const refA: Reference[] = [external];
+			const refB: Reference[] = [{ ...external, entityId: 'owner/repo#8' }];
+			await k.store.write(artifact(id, { references: refA }), alice);
+			const current = async () => k.store.read(id);
+			for (const refs of [refB, refA, refB, refA, refB]) await k.store.write({ ...(await current()), references: refs }, alice);
+			const log = (await k.store.readWithHistory(id)).changeLog;
+			assert.equal(log.length, 6, 'create plus five reference changes, none merged as a duplicate');
+			assert.equal(new Set(log.map(e => e.id)).size, 6);
+			assert.equal((await current()).lifecycle.revision.number, 1, 'metadata changes never moved the revision');
+			// malformed payloads
+			await assert.rejects(k.store.write(artifact(id, { payload: { body: 'x' as never, citations: [] } }), alice), ArtifactShapeError);
+			await assert.rejects(k.store.write(artifact(id, { payload: { body: {}, citations: 'x' as never } }), alice), ArtifactShapeError);
+			await assert.rejects(k.store.write(artifact(`LLD-${H}-s1`, { payload: { body: [] as never, citations: [] } }), alice), ArtifactShapeError);
+			assert.equal(await k.journal.pending(id), undefined, 'nothing was staged');
+			assert.equal((await k.store.readWithHistory(id)).changeLog.length, 6);
+		} finally { k.done(); }
+	});
 });

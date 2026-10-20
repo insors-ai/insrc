@@ -10,18 +10,23 @@
  * never stored on the parent.
  */
 
-import { existsSync, readdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
-import { ARTIFACTS_DIR, artifactJsonPath } from '../storage.js';
+import { ArtifactIds, InvalidArtifactKeyError, isArtifactIdKind } from '../artifact-ids.js';
+import type { ArtifactKey } from '../artifact-ids.js';
+import { ARTIFACTS_DIR, artifactJsonPath, prepareArtifactWrite, writeAtomic } from '../storage.js';
 import { getLogger } from '../../shared/logger.js';
-import type { HeadPayload } from './codecs.js';
+import { codecFor, creationContextProvider } from './codecs.js';
+import type { CreationContextProvider, HeadFile, HeadPayload } from './codecs.js';
 import { decodeArtifactHead } from './decode.js';
 import type { History } from './history.js';
+import { createMemoryJournal } from './journal.js';
+import type { StagedOperation, WriteJournal } from './journal.js';
 import { ArtifactNotFoundError, ArtifactShapeError } from './types.js';
-import type { Artifact, ChangeLogEntry, Feedback } from './types.js';
+import type { Actor, Artifact, ChangeLogEntry, Feedback, Reference } from './types.js';
 
 const log = getLogger('artifact-store');
 
@@ -32,6 +37,36 @@ function isObject(v: unknown): v is Record<string, unknown> {
 export interface ArtifactStoreDeps {
 	readonly repoPath: string;
 	readonly history:  History;
+	/** Required: a write is staged here before it changes anything. */
+	readonly journal:  WriteJournal;
+	/** The creation context for an id with no head; defaults to the repository's provider. */
+	readonly contexts?: CreationContextProvider | undefined;
+	readonly now?:      (() => Date) | undefined;
+	/** Replaces the head file; defaults to the atomic writer. Injected by tests to fail a replace. */
+	readonly writeHead?: ((path: string, bytes: string) => void) | undefined;
+}
+
+/** Sorted-key JSON, so two payloads that differ only in key order compare equal. */
+function canonical(v: unknown): string {
+	if (Array.isArray(v)) return `[${v.map(canonical).join(',')}]`;
+	if (typeof v === 'object' && v !== null) {
+		return `{${Object.keys(v).sort().filter(k => (v as Record<string, unknown>)[k] !== undefined).map(k => `${JSON.stringify(k)}:${canonical((v as Record<string, unknown>)[k])}`).join(',')}}`;
+	}
+	return JSON.stringify(v) ?? 'null';
+}
+
+const ACTOR_ID = /^[a-z][a-z0-9-]*:\S+$/;
+
+/** A reference whose type is an artifact type must name a valid artifact id; external targets are allowed. */
+function checkReference(r: Reference, where: string): void {
+	if (isArtifactIdKind(r.type) && ArtifactIds.parse(r.entityId) === undefined) {
+		throw new ArtifactShapeError(`${where} names '${r.entityId}', which is not a valid ${r.type} artifact id`);
+	}
+}
+
+/** A store whose journal lives in memory and does not survive a restart. For tests only. */
+export function createNonDurableStore(deps: Omit<ArtifactStoreDeps, 'journal'>): ArtifactStore {
+	return new ArtifactStore({ ...deps, journal: createMemoryJournal() });
 }
 
 export class ArtifactStore {
@@ -80,5 +115,98 @@ export class ArtifactStore {
 			}
 		}
 		return children.sort();
+	}
+	/**
+	 * Store the whole envelope. Any operation the journal still holds for this id is completed first. Then the
+	 * head is prepared (the revision and exact bytes are known before a file changes), the operation is staged
+	 * with its change log entry, the entry is appended, the head replaced and the journal cleared.
+	 */
+	async write(a: Artifact<HeadPayload>, by: Actor): Promise<void> {
+		const key = ArtifactIds.parse(a.id);
+		if (key === undefined) throw new InvalidArtifactKeyError(`'${a.id}' is not an artifact id`);
+		if (typeof by?.id !== 'string' || !ACTOR_ID.test(by.id) || by.id !== by.id.toLowerCase()) {
+			throw new ArtifactShapeError(`the actor '${String(by?.id)}' has no namespaced lower-case id such as github:alice`);
+		}
+		this.checkLinks(a, key);
+		const codec = codecFor(key.kind);
+
+		const path = artifactJsonPath(this.deps.repoPath, a.id);
+		await this.completePending(a.id, path);
+
+		const priorBytes = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+		const prior = priorBytes === undefined ? undefined : decodeArtifactHead(a.id, priorBytes);
+		const contentChanged = prior === undefined
+			|| a.description !== prior.artifact.description
+			|| canonical(a.payload.body) !== canonical(prior.artifact.payload.body)
+			|| canonical(a.payload.citations) !== canonical(prior.artifact.payload.citations);
+		const kind = contentChanged ? 'content' : 'meta-only';
+		const priorRevision = prior === undefined ? 0 : prior.artifact.lifecycle.revision.number;
+
+		const build = (revisionNumber: number): HeadFile => {
+			const base: HeadFile = prior === undefined
+				? codec.encode(a.payload, key, (this.deps.contexts ?? creationContextProvider(this.deps.repoPath, { now: this.deps.now }))(key))
+				: { ...prior.head, meta: prior.head.meta, body: a.payload.body, citations: a.payload.citations };
+			const envelope = {
+				description: a.description,
+				...(a.parent !== undefined ? { parent: a.parent } : {}),
+				references:  a.references,
+				...(a.binding !== undefined ? { binding: a.binding } : {}),
+				attachments: a.attachments,
+			};
+			const lifecycle = { ...a.lifecycle, revision: { ...a.lifecycle.revision, number: revisionNumber } };
+			return { ...base, meta: { ...base.meta, envelope, lifecycle } };
+		};
+		// The revision depends on the bytes and the bytes carry the revision: prepare once for the number, once with it.
+		const first = prepareArtifactWrite(path, build(priorRevision), kind);
+		const prepared = prepareArtifactWrite(path, build(first.revision), kind);
+		if (priorBytes === prepared.bytes) return;       // nothing changes: no staged operation, no log entry
+
+		const operationId = createHash('sha256').update(`${a.id}\n${priorRevision}\n${prepared.bytes}`).digest('hex').slice(0, 32);
+		const entry: ChangeLogEntry = {
+			id: operationId,
+			actor: by,
+			timestamp: (this.deps.now ?? (() => new Date()))().toISOString(),
+			operation: prior === undefined ? 'create' : 'update',
+			revision: { number: prepared.revision, contentHash: a.lifecycle.revision.contentHash },
+		};
+		const op: StagedOperation = { operationId, priorRevision, bytes: prepared.bytes, entry };
+
+		await this.deps.journal.stage(a.id, op);
+		await this.deps.history.appendLog(a.id, entry);
+		try { (this.deps.writeHead ?? writeAtomic)(path, prepared.bytes); }
+		catch (err) {
+			log.warn({ id: a.id, operationId, err: (err as Error).message }, 'the head replace failed; the staged operation is finished by the next write');
+			throw err;
+		}
+		await this.clearQuietly(a.id, operationId);
+	}
+
+	/** Finish the operation the journal holds for `id`: append its entry if the log lacks it, replace the head if it differs, clear. */
+	private async completePending(id: string, path: string): Promise<void> {
+		const op = await this.deps.journal.pending(id);
+		if (op === undefined) return;
+		const entries = await this.deps.history.log(id);
+		if (!entries.some(e => e.id === op.entry.id)) await this.deps.history.appendLog(id, op.entry);
+		const current = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+		if (current !== op.bytes) (this.deps.writeHead ?? writeAtomic)(path, op.bytes);
+		await this.clearQuietly(id, op.operationId);
+	}
+
+	private async clearQuietly(id: string, operationId: string): Promise<void> {
+		try { await this.deps.journal.clear(id, operationId); }
+		catch (err) { log.warn({ id, operationId, err: (err as Error).message }, 'clearing the journal failed after the head was replaced; the next write only clears it'); }
+	}
+
+	private checkLinks(a: Artifact<HeadPayload>, key: ArtifactKey): void {
+		if (a.parent !== undefined) {
+			const parentKey = ArtifactIds.parse(a.parent.entityId);
+			if (parentKey === undefined) throw new ArtifactShapeError(`the parent of ${a.id} is '${a.parent.entityId}', which is not an artifact id`);
+			const expected = ArtifactIds.parentOf(key);
+			if (expected !== undefined && ArtifactIds.make(expected) !== a.parent.entityId) {
+				throw new ArtifactShapeError(`the parent of ${a.id} has to be ${ArtifactIds.make(expected)}, not ${a.parent.entityId}`);
+			}
+		}
+		for (const r of a.references) checkReference(r, `a reference of ${a.id}`);
+		for (const t of a.attachments) checkReference(t.target, `an attachment of ${a.id}`);
 	}
 }

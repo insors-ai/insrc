@@ -28,7 +28,7 @@ import ts from 'typescript';
  * signoff.
  */
 
-export type WriteClass = 'content' | 'meta-only' | 'mixed' | 'render' | 'record' | 'migration' | 'non-artifact';
+export type WriteClass = 'content' | 'meta-only' | 'mixed' | 'render' | 'record' | 'migration' | 'store' | 'non-artifact';
 export type WriteVia = 'writeArtifact' | 'raw' | 'injected' | 'both';
 
 export interface WriteSite {
@@ -80,6 +80,9 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/review/resolve.ts', class: 'mixed', via: 'both', sites: [{ fn: 'resolveReviewFinding', kind: 'content|meta-only' }], note: 'apply changes the body; accept, override and defer change only meta' },
 	{ file: 'src/workflow/review/run-artifact.ts', class: 'mixed', via: 'both', sites: [{ fn: 'reviewArtifactFile', kind: 'content|meta-only' }], note: 'auto-fixes change the body; a report-only review changes only meta' },
 	{ file: 'src/daemon/steps/review-step/phases/verdicts.ts', class: 'mixed', via: 'both', sites: [{ fn: 'handleVerdicts', kind: 'content|meta-only' }], note: 'auto-fixes change the body; a report-only review changes only meta' },
+
+	// --- store: the artifact store itself ------------------------------------------
+	{ file: 'src/workflow/artifact-core/store.ts', class: 'store', via: 'injected', note: 'ArtifactStore.write prepares the head with prepareArtifactWrite (the one revision rule) and replaces it with writeAtomic, after staging the operation in the journal and appending its change log entry' },
 
 	// --- record: a change request, not a claim unit or a signoff-covered stage artifact ---
 	{ file: 'src/workflow/amendments/store.ts', class: 'record', via: 'raw', note: 'an amendment is a change request against the HLD; no signoff binds to its revision. If amendments are ever put under signoff this entry becomes content' },
@@ -285,6 +288,9 @@ export function checkInventoryEntry(source: string, entry: InventoryEntry | unde
 		for (const c of scan.rawCalls) {
 			if (!c.annotated) problems.push(`line ${c.line}: raw ${c.name} without a 'raw-write: <why>' comment`);
 		}
+	}
+	if (entry.class === 'store' && !/\bprepareArtifactWrite\b/.test(source)) {
+		problems.push('a store file must prepare its heads with prepareArtifactWrite so the revision rule has one implementation');
 	}
 	if (entry.class === 'mixed') {
 		if (entry.sites === undefined || entry.sites.length === 0) problems.push('a mixed entry must name its write sites');

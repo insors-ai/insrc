@@ -96,6 +96,9 @@ function isKind(s: string): s is ArtifactIdKind {
 	return Object.prototype.hasOwnProperty.call(SHAPES, s);
 }
 
+/** True when `s` names an artifact kind (`LLD`, `TASK`, ...), as opposed to an external type such as `github:issue`. */
+export function isArtifactIdKind(s: string): s is ArtifactIdKind { return isKind(s); }
+
 function check(key: ArtifactKey): void {
 	const { kind } = key;
 	if (!isKind(kind)) throw new InvalidArtifactKeyError(`unknown artifact kind '${String(kind)}'`);

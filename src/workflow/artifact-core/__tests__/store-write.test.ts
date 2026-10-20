@@ -1,0 +1,152 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+
+import { ArtifactIds } from '../../artifact-ids.js';
+import type { ArtifactIdKind, ArtifactKey } from '../../artifact-ids.js';
+import { artifactJsonPath, workItemAnchorCreatedAt } from '../../storage.js';
+import { renderDefineMarkdown } from '../../artifacts/define.js';
+import type { DefineArtifact } from '../../artifacts/define.js';
+import { registeredKinds } from '../codecs.js';
+import { ArtifactShapeError, UnknownArtifactKindError } from '../types.js';
+import type { Reference } from '../types.js';
+import { InvalidArtifactKeyError } from '../../artifact-ids.js';
+import { H, alice, artifact, kit } from './store-kit.js';
+
+const keyFor = (kind: ArtifactIdKind): ArtifactKey => {
+	switch (kind) {
+		case 'SPEC': case 'ISSUE': return { kind, epicHash: '89abcdef' };
+		case 'AMD': return { kind, epicHash: H, seq: 1 };
+		case 'DEF': case 'HLD': return { kind, epicHash: H };
+		default: return { kind, epicHash: H, story: 's1' };
+	}
+};
+const external: Reference = { entityId: 'owner/repo#7', type: 'github:issue', relation: 'tracked-by' };
+
+describe('ArtifactStore.write', () => {
+	it('write then read round trip keeps the revision rule for every registered kind', async () => {
+		const k = kit();
+		try {
+			// the Define first: it stamps the work item's anchor that the other kinds read
+			const kinds = [...registeredKinds()].sort((a, b) => (a === 'DEF' ? -1 : b === 'DEF' ? 1 : 0));
+			for (const kind of kinds) {
+				const id = ArtifactIds.make(keyFor(kind));
+				await k.store.write(artifact(id), alice);
+				const created = await k.store.read(id);
+				assert.equal(created.lifecycle.revision.number, 1, `${kind} create is revision 1`);
+				assert.equal(JSON.parse(readFileSync(artifactJsonPath(k.repo, id), 'utf8')).meta.revision, 1);
+				assert.deepEqual(created.payload.body, { text: 'one' });
+
+				// an identical rewrite keeps the revision and logs nothing
+				const logged = (await k.store.readWithHistory(id)).changeLog.length;
+				await k.store.write(created, alice);
+				assert.equal((await k.store.read(id)).lifecycle.revision.number, 1, `${kind} identical`);
+				assert.equal((await k.store.readWithHistory(id)).changeLog.length, logged, `${kind} identical logs nothing`);
+
+				// a reference change keeps it
+				await k.store.write({ ...created, references: [external] }, alice);
+				const withRef = await k.store.read(id);
+				assert.equal(withRef.lifecycle.revision.number, 1, `${kind} reference change`);
+				assert.deepEqual(withRef.references, [external]);
+
+				// a description change moves it
+				await k.store.write({ ...withRef, description: 'changed' }, alice);
+				assert.equal((await k.store.read(id)).lifecycle.revision.number, 2, `${kind} description`);
+
+				// a payload change moves it by one
+				const described = await k.store.read(id);
+				await k.store.write({ ...described, payload: { body: { text: 'two' }, citations: [{ id: 'c1' }] } }, alice);
+				const last = await k.store.read(id);
+				assert.equal(last.lifecycle.revision.number, 3, `${kind} payload`);
+				assert.equal(JSON.parse(readFileSync(artifactJsonPath(k.repo, id), 'utf8')).meta.revision, 3);
+				assert.equal((await k.store.readWithHistory(id)).changeLog.length, 4, `${kind}: create, reference, description, payload`);
+			}
+		} finally { k.done(); }
+	});
+
+	it('only a content change moves the revision, and a description change is content', async () => {
+		const k = kit();
+		try {
+			const id = `DEF-${H}`;
+			await k.store.write(artifact(id), alice);
+			const a = await k.store.read(id);
+			const lifecycleOnly = { ...a, lifecycle: { ...a.lifecycle, status: 'approved' as const } };
+			await k.store.write(lifecycleOnly, alice);
+			const b = await k.store.read(id);
+			assert.equal(b.lifecycle.status, 'approved');
+			assert.equal(b.lifecycle.revision.number, 1, 'a lifecycle change is meta-only');
+			await k.store.write({ ...b, attachments: [{ target: external, revision: 1, at: 't' }] }, alice);
+			assert.equal((await k.store.read(id)).lifecycle.revision.number, 1, 'attachments are meta-only');
+			await k.store.write({ ...(await k.store.read(id)), description: 'new words' }, alice);
+			assert.equal((await k.store.read(id)).lifecycle.revision.number, 2, 'a description change is content');
+			// the revision in the log and in the lifecycle is the one the prepare step returned
+			const log = (await k.store.readWithHistory(id)).changeLog;
+			assert.deepEqual(log.map(e => [e.operation, e.revision?.number]), [['create', 1], ['update', 1], ['update', 1], ['update', 2]]);
+			assert.equal(log[0]?.actor.id, 'github:alice');
+		} finally { k.done(); }
+	});
+
+	it('a bad parent or artifact-typed reference is refused and external references are accepted', async () => {
+		const k = kit();
+		try {
+			await k.store.write(artifact(`DEF-${H}`), alice);
+			const id = `LLD-${H}-s1`;
+			const parent = (entityId: string): Reference => ({ entityId, type: 'STORY', relation: 'derived-from' });
+			// a parent that is not an artifact id
+			await assert.rejects(k.store.write(artifact(id, { parent: parent('not an id') }), alice), ArtifactShapeError);
+			// a TASK's parent must be exactly its STORY
+			const task = `TASK-${H}-s1-t1`;
+			await assert.rejects(k.store.write(artifact(task, { parent: parent(`STORY-${H}-s2`) }), alice), (e: unknown) => e instanceof ArtifactShapeError && /has to be STORY-0123456789abcdef-s1/.test(e.message));
+			// the right parent passes the link check (a Task has no codec yet, so the kind is what stops it)
+			await assert.rejects(k.store.write(artifact(task, { parent: parent(`STORY-${H}-s1`) }), alice), UnknownArtifactKindError);
+			// an artifact-typed reference with a bad id
+			await assert.rejects(k.store.write(artifact(id, { references: [{ entityId: 'LLD-bad', type: 'LLD', relation: 'cites' }] }), alice), ArtifactShapeError);
+			await assert.rejects(k.store.write(artifact(id, { attachments: [{ target: { entityId: 'x', type: 'PLAN', relation: 'documents' }, revision: 1, at: 't' }] }), alice), ArtifactShapeError);
+			// nothing was written by any refusal
+			assert.equal((await k.store.readWithHistory(`DEF-${H}`)).changeLog.length, 1);
+			// external targets and artifact-typed references with good ids are accepted
+			const ok: Reference[] = [
+				external,
+				{ entityId: 'src/workflow/storage.ts', type: 'code-path', relation: 'implements' },
+				{ entityId: 'https://example.com', type: 'url', relation: 'cites' },
+				{ entityId: `HLD-${H}`, type: 'HLD', relation: 'derived-from' },
+			];
+			await k.store.write(artifact(id, { references: ok, parent: parent(`STORY-${H}-s1`) }), alice);
+			assert.deepEqual((await k.store.read(id)).references, ok);
+			// bad ids, kinds and actors
+			await assert.rejects(k.store.write(artifact('LLD-nope'), alice), InvalidArtifactKeyError);
+			await assert.rejects(k.store.write(artifact(`TASK-${H}-s1-t1`), alice), UnknownArtifactKindError);
+			await assert.rejects(k.store.write(artifact(id), { ...alice, id: 'Alice' }), ArtifactShapeError);
+		} finally { k.done(); }
+	});
+
+	it('a store write keeps the prior meta so workItemAnchorCreatedAt and the Define renderer give the same results', async () => {
+		const k = kit();
+		try {
+			const id = `DEF-${H}`;
+			const body = {
+				flavor: 'enhancement', problem: 'p', nonGoals: [], assumptions: [], constraints: [],
+				stories: [{ id: 's1', title: 't', userValue: 'v', acceptanceCriteria: [{ id: 'ac1', given: 'g', when: 'w', then: 't', operationalizes: [] }] }],
+				openQuestions: [],
+			};
+			await k.store.write(artifact(id, { payload: { body, citations: [] } }), alice);
+			const pathOf = artifactJsonPath(k.repo, id);
+			// a field the codec does not know, stamped by another writer between two store writes
+			const stamped = JSON.parse(readFileSync(pathOf, 'utf8'));
+			stamped.meta.approvedAt = '2026-10-21T00:00:00Z';
+			stamped.meta.tracker = { units: { s1: { issue: 5 } } };
+			const { writeFileSync } = await import('node:fs');
+			writeFileSync(pathOf, JSON.stringify(stamped));
+			const anchor = workItemAnchorCreatedAt(stamped.meta);
+			const rendered = renderDefineMarkdown({ meta: stamped.meta, body, citations: [] } as unknown as DefineArtifact);
+
+			await k.store.write({ ...(await k.store.read(id)), description: 'moved' }, alice);
+			const after = JSON.parse(readFileSync(pathOf, 'utf8'));
+			assert.equal(after.meta.approvedAt, '2026-10-21T00:00:00Z', 'prior meta is kept');
+			assert.deepEqual(after.meta.tracker, stamped.meta.tracker);
+			assert.equal(workItemAnchorCreatedAt(after.meta), anchor, 'the same anchor');
+			assert.equal(renderDefineMarkdown(after as DefineArtifact), rendered.replace(/^/, ''), 'the same markdown');
+			assert.deepEqual(Object.keys(after.meta).filter(x => !(x in stamped.meta)).sort(), ['envelope', 'lifecycle'].filter(x => !(x in stamped.meta)).sort());
+		} finally { k.done(); }
+	});
+});

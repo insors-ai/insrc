@@ -157,6 +157,12 @@ test('the detector reports appendFileSync in every form, an unlisted appendSidec
 	assert.deepEqual(checkInventoryEntry(mixedAppend, content), []);
 	assert.match(checkInventoryEntry(mixedAppend.replace('// raw-write: log\n', ''), content).join(), /raw appendFileSync without a 'raw-write/);
 
+	// a store entry must go through prepareArtifactWrite
+	const storeEntry2 = { file: 'x.ts', class: 'store', via: 'injected', note: 'control' } as InventoryEntry;
+	const goodStore = "import { prepareArtifactWrite, writeAtomic } from './storage.js';\nexport const w = (p: string) => { prepareArtifactWrite(p, {meta:{}}, 'content'); return writeAtomic; };\n";
+	assert.deepEqual(checkInventoryEntry(goodStore, storeEntry2), []);
+	assert.match(checkInventoryEntry("import { writeAtomic } from './storage.js';\nexport const w = writeAtomic;\n", storeEntry2).join(), /prepareArtifactWrite/);
+
 	// the five existing writers are found exactly as before
 	for (const w of ['writeArtifact', 'writeRecordFile', 'writeAtomic', 'writeFileSync', 'renameSync']) {
 		const src = `import { ${w} } from './w.js';\nexport function f(p: string) { ${w}(p, 'x'); }\n`;

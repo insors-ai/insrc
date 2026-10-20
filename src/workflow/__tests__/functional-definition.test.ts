@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { mintFrId } from '../id.js';
+import { RequirementIds } from '../artifact-ids.js';
 import {
 	validateFunctionalDefinition,
 	type FunctionalDefinition,
@@ -28,10 +28,10 @@ const EPIC = '185807ba9a6b35d3';
 const ISO  = '2026-07-17T07:42:28.275Z';
 
 function docFr(ordinal: number, extra: Partial<FunctionalRequirement> = {}): FunctionalRequirement {
-	return { id: mintFrId(EPIC, ISO, ordinal), statement: `outcome ${ordinal}`, scope: 'doc', ...extra };
+	return { id: RequirementIds.mint(EPIC, ISO, ordinal), statement: `outcome ${ordinal}`, scope: 'doc', ...extra };
 }
 function itemFr(ordinal: number, storyId: string, itemRef: string): FunctionalRequirement {
-	return { id: mintFrId(EPIC, ISO, ordinal, storyId), statement: `outcome ${ordinal}`, scope: 'item', itemRef };
+	return { id: RequirementIds.mint(EPIC, ISO, ordinal, storyId), statement: `outcome ${ordinal}`, scope: 'item', itemRef };
 }
 
 // ---------------------------------------------------------------------------
@@ -85,7 +85,7 @@ test('a per-item FR with a dangling itemRef is rejected', () => {
 
 test('a per-item FR missing itemRef is rejected', () => {
 	const fd: FunctionalDefinition = {
-		requirements: [{ id: mintFrId(EPIC, ISO, 1, 's1'), statement: 'x', scope: 'item' }],
+		requirements: [{ id: RequirementIds.mint(EPIC, ISO, 1, 's1'), statement: 'x', scope: 'item' }],
 	};
 	const err = validateFunctionalDefinition(fd, new Set(['s1']));
 	assert.match(err ?? '', /missing itemRef/);

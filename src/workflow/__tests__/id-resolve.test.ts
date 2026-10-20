@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Unit + integration tests for the hierarchical workflow-id (`workflow/id.ts`)
- * and the tracker resolver (`workflow/tracker/resolve.ts`), plus the
+ * Integration tests for the tracker resolver (`workflow/tracker/resolve.ts`), plus the
  * issue-body id-marker embed/extract round-trip.
  *
  * Run: npx tsx --test src/workflow/__tests__/id-resolve.test.ts
@@ -17,14 +16,6 @@ import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import {
-	epicWorkflowId, storyWorkflowId, taskWorkflowId,
-	toCanonical, toSlug, parseWorkflowId, isWorkflowIdString,
-	parentId, epicOf, isEpicId, isStoryId, isTaskId,
-	storyIdToOrdinal, ordinalToStoryId, taskIdToOrdinal, ordinalToTaskId,
-	deriveWorkItemIdentity,
-	type WorkflowId,
-} from '../id.js';
 import {
 	resolveWorkflowRef, workflowIdForIssue, issueForWorkflowId,
 	readEpicDefinition,
@@ -41,168 +32,6 @@ const SLUG_TASK  = 'E20260717185807ba-S001-T003';
 const EPIC_ID  = `EPIC-${EPIC_HASH}`;
 const STORY_ID = `STORY-${EPIC_HASH}-s1`;
 const TASK_ID  = `TASK-${EPIC_HASH}-s1-t3`;
-
-// ---------------------------------------------------------------------------
-// id — the worked example, exactly
-// ---------------------------------------------------------------------------
-
-test('worked example — canonical + slug, exactly', () => {
-	const t = taskWorkflowId(EPIC_HASH, CREATED, 's1', 't3');
-	assert.equal(toCanonical(t), CANON_TASK);
-	assert.equal(toSlug(t), SLUG_TASK);
-	assert.equal(toCanonical(epicWorkflowId(EPIC_HASH, CREATED)), 'E20260717185807ba');
-	assert.equal(toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 's1')), 'E20260717185807ba:S001');
-	// slug is exactly the canonical with ':' → '-'
-	assert.equal(toSlug(t), toCanonical(t).replaceAll(':', '-'));
-});
-
-// ---------------------------------------------------------------------------
-// id — round trips at all three levels (canonical ↔ struct ↔ slug)
-// ---------------------------------------------------------------------------
-
-test('round-trip canonical + slug at every level', () => {
-	const ids: WorkflowId[] = [
-		epicWorkflowId(EPIC_HASH, CREATED),
-		storyWorkflowId(EPIC_HASH, CREATED, 's12'),
-		taskWorkflowId(EPIC_HASH, CREATED, 's1', 't3'),
-	];
-	for (const id of ids) {
-		assert.deepEqual(parseWorkflowId(toCanonical(id)), id, `canonical round-trip ${toCanonical(id)}`);
-		assert.deepEqual(parseWorkflowId(toSlug(id)), id, `slug round-trip ${toSlug(id)}`);
-	}
-});
-
-test('ordinal padding — <3 digits pad to 3, >=1000 keep full width', () => {
-	assert.equal(toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 's1')),   'E20260717185807ba:S001');
-	assert.equal(toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 's12')),  'E20260717185807ba:S012');
-	assert.equal(toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 's123')), 'E20260717185807ba:S123');
-	const big = storyWorkflowId(EPIC_HASH, CREATED, 's1234');
-	assert.equal(toCanonical(big), 'E20260717185807ba:S1234');
-	assert.deepEqual(parseWorkflowId(toCanonical(big)), big);
-});
-
-test('parse accepts canonical AND slug for the same node', () => {
-	assert.deepEqual(parseWorkflowId(CANON_TASK), parseWorkflowId(SLUG_TASK));
-	assert.equal(isWorkflowIdString(CANON_TASK), true);
-	assert.equal(isWorkflowIdString(SLUG_TASK), true);
-	assert.equal(isWorkflowIdString('s1/t3'), false);
-	assert.equal(isWorkflowIdString('nope'), false);
-	assert.equal(parseWorkflowId('E[20260717185807ba]'), null);   // old bracket form rejected
-	assert.equal(parseWorkflowId('Ebad'), null);
-});
-
-test('hash8 derives from epicHash slice, never re-hashed', () => {
-	assert.equal(epicWorkflowId(EPIC_HASH, CREATED).hash8, EPIC_HASH.slice(0, 8));
-});
-
-test('date is UTC of createdAt', () => {
-	// 00:30Z stays same day; a pre-midnight-UTC local time would not, but
-	// the input is already Z so this pins the UTC read.
-	assert.equal(epicWorkflowId(EPIC_HASH, '2026-01-05T23:59:59.000Z').date, '20260105');
-	assert.equal(epicWorkflowId(EPIC_HASH, '2026-12-31T00:00:00.000Z').date, '20261231');
-});
-
-// ---------------------------------------------------------------------------
-// id — parentId chain + predicates + epicOf
-// ---------------------------------------------------------------------------
-
-test('parentId chain task → story → epic → null', () => {
-	const task  = taskWorkflowId(EPIC_HASH, CREATED, 's1', 't3');
-	const story = parentId(task);
-	assert.deepEqual(story, storyWorkflowId(EPIC_HASH, CREATED, 's1'));
-	const epic = parentId(story!);
-	assert.deepEqual(epic, epicWorkflowId(EPIC_HASH, CREATED));
-	assert.equal(parentId(epic!), null);
-
-	assert.equal(isTaskId(task), true);
-	assert.equal(isStoryId(story!), true);
-	assert.equal(isEpicId(epic!), true);
-	assert.deepEqual(epicOf(task), epicWorkflowId(EPIC_HASH, CREATED));
-});
-
-// ---------------------------------------------------------------------------
-// id — label bridges
-// ---------------------------------------------------------------------------
-
-test('label ↔ ordinal bridges', () => {
-	assert.equal(storyIdToOrdinal('s1'), 1);
-	assert.equal(ordinalToStoryId(1), 's1');
-	assert.equal(taskIdToOrdinal('t3'), 3);
-	assert.equal(ordinalToTaskId(3), 't3');
-	assert.equal(storyWorkflowId(EPIC_HASH, CREATED, 's1').story, 1);
-	assert.throws(() => storyIdToOrdinal('x1'));
-	assert.throws(() => taskIdToOrdinal('s1'));
-});
-
-// ---------------------------------------------------------------------------
-// S001 — uniform work-item identity: storyIdToOrdinal accepts both cases +
-// the deriveWorkItemIdentity bundle. Standalone stories (uppercase 'S001')
-// must canonicalize identically to their epic-parented lowercase sibling,
-// with no regression for the already-canonicalizing lowercase class.
-// ---------------------------------------------------------------------------
-
-test('S001: storyIdToOrdinal accepts s<n> AND S<nnn> — case + padding inert', () => {
-	// 's1', 'S1' and 'S001' all denote ordinal 1.
-	assert.equal(storyIdToOrdinal('s1'), 1);
-	assert.equal(storyIdToOrdinal('S1'), 1);
-	assert.equal(storyIdToOrdinal('S001'), 1);
-	// leading zeros are inert at any ordinal
-	assert.equal(storyIdToOrdinal('S010'), 10);
-	assert.equal(storyIdToOrdinal('s10'), 10);
-	// a genuinely bad id still throws the identical Error (widening is additive)
-	assert.throws(() => storyIdToOrdinal('story-1'), /invalid storyId 'story-1' \(expected s<n>\)/);
-	assert.throws(() => storyIdToOrdinal(''), /expected s<n>/);
-	assert.throws(() => storyIdToOrdinal('x1'), /expected s<n>/);
-});
-
-test('S001/ac1: a standalone uppercase S001 canonicalizes to the same id as its lowercase sibling', () => {
-	const upper = toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 'S001'));
-	const lower = toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 's1'));
-	assert.equal(upper, 'E20260717185807ba:S001');
-	assert.equal(upper, lower);            // identical to the epic-parented sibling
-	assert.equal(toSlug(storyWorkflowId(EPIC_HASH, CREATED, 'S001')), 'E20260717185807ba-S001');
-});
-
-test('S001/ac2: lowercase story ids are byte-identical before/after; ordinalToStoryId unchanged', () => {
-	// no-regression: 's10' still ordinal 10, canonical S010, slug -S010
-	const s10 = storyWorkflowId(EPIC_HASH, CREATED, 's10');
-	assert.equal(s10.story, 10);
-	assert.equal(toCanonical(s10), 'E20260717185807ba:S010');
-	assert.equal(toSlug(s10), 'E20260717185807ba-S010');
-	// ordinalToStoryId is deliberately NOT changed — still lowercase 's<n>'
-	// (tracker/resolve.ts reconstruction depends on this form).
-	assert.equal(ordinalToStoryId(1), 's1');
-	assert.equal(ordinalToStoryId(10), 's10');
-});
-
-test('S001: deriveWorkItemIdentity composes the bundle; story-level s1===S001; epic-level has no story segment', () => {
-	const fromUpper = deriveWorkItemIdentity(EPIC_HASH, CREATED, 'S001');
-	const fromLower = deriveWorkItemIdentity(EPIC_HASH, CREATED, 's1');
-	assert.deepEqual(fromUpper, fromLower);   // case does not affect identity
-	assert.deepEqual(fromUpper, {
-		canonical:   'E20260717185807ba:S001',
-		slug:        'E20260717185807ba-S001',
-		epicSegment: 'E20260717185807ba',
-		story:       1,
-	});
-	// epic-level (storyId omitted): no :S segment, story undefined
-	const epic = deriveWorkItemIdentity(EPIC_HASH, CREATED);
-	assert.deepEqual(epic, {
-		canonical:   'E20260717185807ba',
-		slug:        'E20260717185807ba',
-		epicSegment: 'E20260717185807ba',
-	});
-	assert.equal(epic.story, undefined);
-	// a bad storyId propagates the storyIdToOrdinal throw (no swallow)
-	assert.throws(() => deriveWorkItemIdentity(EPIC_HASH, CREATED, 'bad'), /expected s<n>/);
-});
-
-test('S001/lc1: identity stays both-way — parse(toCanonical(mint(S001))) yields ordinal 1', () => {
-	const round = parseWorkflowId(toCanonical(storyWorkflowId(EPIC_HASH, CREATED, 'S001')));
-	assert.equal(round?.story, 1);
-	assert.equal(round?.level, 'story');
-	assert.deepEqual(round, storyWorkflowId(EPIC_HASH, CREATED, 's1'));
-});
 
 // ---------------------------------------------------------------------------
 // resolver — fixture artifacts

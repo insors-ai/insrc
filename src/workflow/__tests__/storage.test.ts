@@ -33,7 +33,7 @@ import {
 	stubArtifactPaths,
 	writeAtomic,
 } from '../storage.js';
-import { deriveWorkItemIdentity } from '../id.js';
+import { folderSegment } from '../path-scheme.js';
 import { InvalidArtifactKeyError } from '../artifact-ids.js';
 import { readLldArtifact } from '../gates.js';
 import {
@@ -353,8 +353,8 @@ test('t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to O
 		const stageOneAnchor = resolveEpicAnchor(repo, MIDNIGHT_HASH) ?? LATE_DAY_N;
 		const stageTwoAnchor = resolveEpicAnchor(repo, MIDNIGHT_HASH) ?? EARLY_DAY_N1;
 
-		const segOne = deriveWorkItemIdentity(MIDNIGHT_HASH, stageOneAnchor, 's1').epicSegment;
-		const segTwo = deriveWorkItemIdentity(MIDNIGHT_HASH, stageTwoAnchor, 's1').epicSegment;
+		const segOne = folderSegment({ epicHash: MIDNIGHT_HASH, epicCreatedAt: stageOneAnchor, story: 's1' });
+		const segTwo = folderSegment({ epicHash: MIDNIGHT_HASH, epicCreatedAt: stageTwoAnchor, story: 's1' });
 
 		assert.equal(segOne, segTwo, 'both stages must land on ONE identity segment');
 		assert.equal(segOne, `E20261002${MIDNIGHT_HASH.slice(0, 8)}`,
@@ -363,8 +363,8 @@ test('t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to O
 		// Guard the fixture itself: the two clocks MUST fall on different dates,
 		// or this test would pass without exercising anything.
 		assert.notEqual(
-			deriveWorkItemIdentity(MIDNIGHT_HASH, LATE_DAY_N, 's1').epicSegment,
-			deriveWorkItemIdentity(MIDNIGHT_HASH, EARLY_DAY_N1, 's1').epicSegment,
+			folderSegment({ epicHash: MIDNIGHT_HASH, epicCreatedAt: LATE_DAY_N, story: 's1' }),
+			folderSegment({ epicHash: MIDNIGHT_HASH, epicCreatedAt: EARLY_DAY_N1, story: 's1' }),
 			'fixture precondition: the two stage clocks straddle a UTC date boundary',
 		);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -385,8 +385,8 @@ test('t2 — a SAME-DAY fixture cannot detect the defect, which is why the above
 
 		assert.notEqual(early, later, 'the two anchors genuinely differ');
 		assert.equal(
-			deriveWorkItemIdentity(MIDNIGHT_HASH, early, 's1').epicSegment,
-			deriveWorkItemIdentity(MIDNIGHT_HASH, later, 's1').epicSegment,
+			folderSegment({ epicHash: MIDNIGHT_HASH, epicCreatedAt: early, story: 's1' }),
+			folderSegment({ epicHash: MIDNIGHT_HASH, epicCreatedAt: later, story: 's1' }),
 			'yet they collapse to the same segment — so a same-day fixture proves nothing',
 		);
 	} finally { rmSync(repo, { recursive: true, force: true }); }

@@ -12,13 +12,13 @@
  * the per-body optional field + renderer section are wired by later Tasks.
  */
 
-import { isFrId } from '../id.js';
+import { RequirementIds } from '../artifact-ids.js';
 
 /**
  * A stable functional-requirement id, sequence-numbered like stories/tasks (lc1).
  *   - doc-level : `E<YYYYMMDD><hash8>:FR<nnn>`
  *   - per-item  : `E<YYYYMMDD><hash8>:S<nnn>:FR<nnn>`
- * Minted + parsed by `mintFrId` / `parseFrId` in `../id.ts`.
+ * Minted + parsed by `RequirementIds.mint` / `RequirementIds.parse` in `../artifact-ids.ts`.
  */
 export type FrId = string;
 
@@ -45,7 +45,7 @@ export interface FunctionalDefinition {
  * as absent and passes (returns `null`). Otherwise it rejects — with a specific
  * message — a malformed FR id, a duplicate FR id, a per-item requirement missing
  * its `itemRef`, or a per-item `itemRef` that resolves to no known story/task id.
- * (A requirement whose id could not be minted never reaches here — `mintFrId`
+ * (A requirement whose id could not be minted never reaches here — `RequirementIds.mint`
  * throws at mint time.) Returns the error string, or `null` when the record is
  * valid/absent.
  *
@@ -58,7 +58,7 @@ export function validateFunctionalDefinition(
 	if (fd === undefined || fd.requirements.length === 0) return null; // absent-safe
 	const seen = new Set<string>();
 	for (const r of fd.requirements) {
-		if (!isFrId(r.id)) {
+		if (!RequirementIds.isRequirementId(r.id)) {
 			return `functionalDefinition: '${r.id}' is not a valid FR id`;
 		}
 		if (seen.has(r.id)) {

@@ -20,12 +20,12 @@ import {
 } from '../functional-coverage.js';
 import type { CodeReviewSubject, CodeReviewGrounding, ChangedSymbolSummary } from '../../types.js';
 import type { LLMProvider } from '../../../../shared/types.js';
-import { mintFrId } from '../../../id.js';
+import { RequirementIds } from '../../../artifact-ids.js';
 
 const EPIC = '185807ba9a6b35d3';
 const ISO  = '2026-07-17T07:42:28.275Z';
-const FR1 = mintFrId(EPIC, ISO, 1);
-const FR2 = mintFrId(EPIC, ISO, 2);
+const FR1 = RequirementIds.mint(EPIC, ISO, 1);
+const FR2 = RequirementIds.mint(EPIC, ISO, 2);
 
 const subject = (
 	changedFiles: readonly string[] = ['src/a.ts'],

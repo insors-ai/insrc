@@ -16,7 +16,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { mintFrId } from '../id.js';
+import { RequirementIds } from '../artifact-ids.js';
 import type { FunctionalDefinition } from '../artifacts/functional-definition.js';
 import { renderDefineMarkdown, type DefineArtifact, type DefineBody } from '../artifacts/define.js';
 import { renderHldMarkdown, type HldArtifact, type HldBody } from '../artifacts/hld.js';
@@ -28,8 +28,8 @@ const ISO  = '2026-07-17T07:42:28.275Z';
 
 const RECORD: FunctionalDefinition = {
 	requirements: [
-		{ id: mintFrId(EPIC, ISO, 1), statement: 'the reviewer can see the intended outcome', scope: 'doc' },
-		{ id: mintFrId(EPIC, ISO, 2, 's1'), statement: 'a per-item outcome', scope: 'item', itemRef: 's1' },
+		{ id: RequirementIds.mint(EPIC, ISO, 1), statement: 'the reviewer can see the intended outcome', scope: 'doc' },
+		{ id: RequirementIds.mint(EPIC, ISO, 2, 's1'), statement: 'a per-item outcome', scope: 'item', itemRef: 's1' },
 	],
 };
 const HEADING = '## Functional requirements';
@@ -95,8 +95,8 @@ for (const [name, render] of RENDERERS) {
 		// The FR heading is 'Functional requirements' — plain (old renderers) or
 		// engine-numbered '## N. Functional requirements' (S002-reshaped renderers).
 		assert.match(withRec, /## (?:\d+\. )?Functional requirements/, `${name} must render the FR heading when present`);
-		assert.ok(withRec.includes(mintFrId(EPIC, ISO, 1)), `${name} must list the doc-level FR id`);
-		assert.ok(withRec.includes(mintFrId(EPIC, ISO, 2, 's1')), `${name} must list the per-item FR id`);
+		assert.ok(withRec.includes(RequirementIds.mint(EPIC, ISO, 1)), `${name} must list the doc-level FR id`);
+		assert.ok(withRec.includes(RequirementIds.mint(EPIC, ISO, 2, 's1')), `${name} must list the per-item FR id`);
 		// The FR requirement lines are present verbatim (de-headed by the engine reshaping).
 		assert.ok(withRec.includes(RECORD.requirements[0]!.statement), `${name} lists the doc-level FR statement`);
 	});

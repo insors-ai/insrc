@@ -145,7 +145,7 @@ import {
 	type AmendmentRecord,
 } from './amendments/index.js';
 import { isAmendment } from './amendments/types.js';
-import { mintFrId } from './id.js';
+import { RequirementIds } from './artifact-ids.js';
 import {
 	validateFunctionalDefinition,
 	type FunctionalDefinition,
@@ -1093,7 +1093,7 @@ interface FrStatement { readonly statement?: unknown; readonly rationale?: unkno
 /**
  * S001 back-fill: assemble the functional-definition record from the FR
  * STATEMENTS elicited in s2 (`epic.frame`, doc-level) + s3 (`stories.compose`,
- * per-story). Ids are MINTED here — off the model — via `mintFrId` in a fixed
+ * per-story). Ids are MINTED here — off the model — via `RequirementIds.mint` in a fixed
  * order (doc-level first by emission order, then per-story in story order), so
  * they stay stable + sequence-numbered (S001's guarantee). Scope/itemRef are
  * inferred from the elicitation site, so a per-item FR can never carry a
@@ -1119,7 +1119,7 @@ export function assembleFunctionalDefinition(
 		docOrd += 1;
 		const rationale = clean(fr.rationale);
 		reqs.push({
-			id:        mintFrId(epicHash, createdAtISO, docOrd),
+			id:        RequirementIds.mint(epicHash, createdAtISO, docOrd),
 			statement,
 			scope:     'doc',
 			...(rationale !== undefined ? { rationale } : {}),
@@ -1138,7 +1138,7 @@ export function assembleFunctionalDefinition(
 			itemOrd += 1;
 			const rationale = clean(fr.rationale);
 			reqs.push({
-				id:        mintFrId(epicHash, createdAtISO, itemOrd, storyId),
+				id:        RequirementIds.mint(epicHash, createdAtISO, itemOrd, storyId),
 				statement,
 				scope:     'item',
 				itemRef:   storyId,

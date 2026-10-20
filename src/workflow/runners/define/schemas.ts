@@ -169,7 +169,7 @@ export const epicFrameSchema = {
 		},
 		// OPTIONAL doc-level functional requirements (S001 back-fill). The model
 		// emits outcome-worded STATEMENTS only — no id, no scope. `defineSynthesizer`
-		// mints the stable FR ids (scope 'doc') via `mintFrId`. Absent-safe.
+		// mints the stable FR ids (scope 'doc') via `RequirementIds.mint`. Absent-safe.
 		functionalRequirements: {
 			type: 'array',
 			items: {
@@ -266,7 +266,7 @@ export const storiesComposeSchema = {
 					},
 					// OPTIONAL per-story functional requirements (S001 back-fill). Outcome-worded
 					// STATEMENTS only — no id, no scope; `defineSynthesizer` mints stable FR ids
-					// (scope 'item', itemRef = this story's id) via `mintFrId`. Absent-safe.
+					// (scope 'item', itemRef = this story's id) via `RequirementIds.mint`. Absent-safe.
 					functionalRequirements: {
 						type: 'array',
 						items: {

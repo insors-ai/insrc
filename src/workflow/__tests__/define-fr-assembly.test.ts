@@ -6,7 +6,7 @@
 /**
  * S001 back-fill — `assembleFunctionalDefinition` turns the FR STATEMENTS elicited in
  * s2 (epic.frame, doc-level) + s3 (stories.compose, per-story) into a validated
- * FunctionalDefinition record, MINTING stable ids off the model via `mintFrId`.
+ * FunctionalDefinition record, MINTING stable ids off the model via `RequirementIds.mint`.
  * Doc-level first (scope 'doc'), then per-story (scope 'item', itemRef = story id,
  * ordinal restarts per story). Absent-safe; a dangling itemRef fails validation.
  *
@@ -17,7 +17,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { assembleFunctionalDefinition } from '../orchestrator.js';
-import { isFrId, parseFrId } from '../id.js';
+import { RequirementIds } from '../artifact-ids.js';
 
 const EPIC = '0123456789abcdef';
 const CREATED = '2026-09-28T00:00:00.000Z';
@@ -56,18 +56,18 @@ test('assembles doc-level + per-story FRs with minted ids, correct scope/itemRef
 	assert.equal(reqs[0]!.statement, 'Doc requirement A.');
 	assert.equal(reqs[0]!.itemRef, undefined);
 	assert.equal(reqs[1]!.rationale, 'why B');
-	assert.ok(reqs.every(r => isFrId(r.id)), 'every minted id is a valid FR id');
+	assert.ok(reqs.every(r => RequirementIds.isRequirementId(r.id)), 'every minted id is a valid FR id');
 
 	// Per-story: scope 'item', itemRef = story id, S-segment matches the story ordinal.
 	const perItem = reqs.filter(r => r.scope === 'item');
 	assert.equal(perItem.length, 3);
 	assert.equal(perItem[0]!.itemRef, 's1');
-	assert.equal(parseFrId(perItem[0]!.id)!.story, 1); // s1 → S001
+	assert.equal(RequirementIds.parse(perItem[0]!.id)!.story, 1); // s1 → S001
 	assert.equal(perItem[1]!.itemRef, 's2');
-	assert.equal(parseFrId(perItem[1]!.id)!.story, 2); // s2 → S002
+	assert.equal(RequirementIds.parse(perItem[1]!.id)!.story, 2); // s2 → S002
 	// Per-story ordinal restarts within each story (s2's two FRs are FR1, FR2).
-	assert.equal(parseFrId(perItem[1]!.id)!.fr, 1);
-	assert.equal(parseFrId(perItem[2]!.id)!.fr, 2);
+	assert.equal(RequirementIds.parse(perItem[1]!.id)!.fr, 1);
+	assert.equal(RequirementIds.parse(perItem[2]!.id)!.fr, 2);
 
 	// All ids unique.
 	assert.equal(new Set(reqs.map(r => r.id)).size, reqs.length);

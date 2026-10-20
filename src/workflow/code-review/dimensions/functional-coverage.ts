@@ -142,6 +142,10 @@ export function functionalCoverageSpec(subject: CodeReviewSubject): ModelDimensi
 		schema:    FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA,
 		prompt:    (grounding, _mode, note) => buildFunctionalCoveragePrompt(subject, grounding, note),
 		obligations: () => functionalCoverageObligations(functionalRequirementsOf(subject)),
+		// A divided review: chunks note how their code realises each FR; the gather judges each FR.
+		notesChunk: {
+			framing: 'You are an independent code reviewer gathering evidence on FUNCTIONAL COVERAGE: whether each functional requirement (FR) the design declared is GENUINELY realized by the changed code. Genuine realization counts, not mere mention: a symbol whose name resembles an FR but does not implement its stated outcome does not realize it.',
+		},
 		toResult:  output => ({
 			dimension: DIMENSION,
 			findings: output.findings

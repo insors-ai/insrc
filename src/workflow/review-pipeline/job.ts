@@ -698,7 +698,8 @@ function reserveFor(limitChars: number): number {
 }
 
 /** The default correction: the reasons appended to the first system message, or a system message of their own. */
-function withCorrectionNote(prompt: ChunkPrompt, reasons: readonly string[]): ChunkPrompt {
+/** The default correction: the reasons appended to the call's first system message (or prepended as one). */
+export function withCorrectionNote(prompt: ChunkPrompt, reasons: readonly string[]): ChunkPrompt {
 	const note = ['Your previous answer was REJECTED:', ...reasons.map(r => `- ${r}`), 'Answer again, correcting every point above.'].join('\n');
 	const first = prompt.messages[0];
 	const messages = first !== undefined && first.role === 'system' && typeof first.content === 'string'

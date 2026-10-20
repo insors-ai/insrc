@@ -146,6 +146,10 @@ export function adherenceSpec(subject: CodeReviewSubject): ModelDimensionSpec<Ad
 				})),
 		}),
 		obligations: () => adherenceObligations(subject),
+		// A divided review: chunks note how their code meets each clause; the gather judges each clause.
+		notesChunk: {
+			framing: 'You are an independent code reviewer gathering evidence on ADHERENCE: whether a Story\'s changed code correctly implements its approved plan tasks and honours its approved design (LLD) clauses. Departures from an approved expectation matter; a design decision itself is out of scope.',
+		},
 		...(subject.approvedLld === null && subject.approvedPlan === null ? { skip: () => ({ dimension: DIMENSION, findings: [] }) } : {}),
 	};
 }

@@ -19,8 +19,11 @@ import { buildCoveragePrompt, coverageSpec } from '../../code-review/dimensions/
 import { buildFunctionalCoveragePrompt, functionalCoverageSpec } from '../../code-review/dimensions/functional-coverage.js';
 import { qualitySpec } from '../../code-review/dimensions/quality.js';
 import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject } from '../../code-review/types.js';
+import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
+import { chunkNotesFrom, NOTES_CHUNK_SCHEMA } from '../adapters/code-review-chunk.js';
 import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
-import type { ReviewMaterial } from '../types.js';
+import { applyOutput, createReviewJob, nextCalls, ReviewCallFailedError } from '../job.js';
+import type { ReviewAdapter, ReviewCall, ReviewMaterial, ReviewPipelineJob } from '../types.js';
 
 const LLD_BODY = {
 	contractDetails: { surfaceLevel: 'internal', api: [{ name: 'placeOrder', signature: 'placeOrder(customer: string): string' }, { name: 'cancelOrder', signature: 'cancelOrder(id: string): void' }] },
@@ -167,4 +170,103 @@ test("a promised test's obligation context holds its reported result, build task
 		assert.deepEqual(again, first);
 		assert.deepEqual(copied, first);
 	}
+});
+
+// -- chunk stage (t2) ----------------------------------------------------------
+
+/** Six symbols in three directories, too large together for a small limit; placeOrder calls fill, and the two do not fit one call. */
+const big = (name: string, file: string, callees: string[] = [], chars = 2_500): ChangedSymbolSummary =>
+	({ ...row(name, file), signature: `${name}(${'p'.repeat(chars)})`, callees });
+const DIVIDING: CodeReviewGrounding = { symbols: [
+	big('placeOrder', 'src/order/order.ts', ['fill'], 5_500), big('cancelOrder', 'src/order/cancel.ts'), big('fill', 'src/basket/basket.ts', [], 5_500),
+	big('empty', 'src/basket/empty.ts'), big('price', 'src/price/price.ts'), big('discount', 'src/price/discount.ts'),
+] };
+const SMALL = 14_000;
+const NOTES_ONLY = [['adherence', adherenceSpec], ['functional-coverage', functionalCoverageSpec], ['conventions', conventionsSpec]] as const;
+
+function dividedJob<O>(spec: (s: CodeReviewSubject) => ModelDimensionSpec<O>, s: CodeReviewSubject = subject(), limit = SMALL): { job: ReviewPipelineJob; adapter: ReviewAdapter<unknown> } {
+	const snap = codeReviewSnapshot(s, DIVIDING);
+	const adapter = modelDimensionAdapter(spec(s), s, snap) as unknown as ReviewAdapter<unknown>;
+	return { job: createReviewJob(adapter, 'daemon', snap, limit), adapter };
+}
+const echo = (call: ReviewCall, answer: unknown) => ({ callId: /This request's id is "([^"]+)"/.exec(promptText(call.messages))![1]!, answer });
+
+test('adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk', () => {
+	const props = (NOTES_CHUNK_SCHEMA as { properties: Record<string, unknown>; additionalProperties: boolean }).properties;
+	assert.deepEqual(Object.keys(props), ['notes'], 'notes only');
+	assert.equal((NOTES_CHUNK_SCHEMA as { additionalProperties: boolean }).additionalProperties, false);
+	const missing = { severity: 'HIGH', location: 'src/order/order.ts:1', message: 'clause lld:contract:2 is not implemented', expectationRef: 'lld:contract:2' };
+	// A findings field, or a finding smuggled into a note, fails the schema.
+	assert.equal(validateAgainstSchema(NOTES_CHUNK_SCHEMA, { notes: [], findings: [missing] }).ok, false);
+	assert.equal(validateAgainstSchema(NOTES_CHUNK_SCHEMA, { notes: [{ key: 'lld:contract:2', atomIds: [], note: 'x', ...missing }] }).ok, false);
+	assert.equal(validateAgainstSchema(NOTES_CHUNK_SCHEMA, { notes: [{ key: 'lld:contract:2', atomIds: [], note: 'x' }] }).ok, true);
+
+	for (const [name, spec] of NOTES_ONLY) {
+		const { job, adapter } = dividedJob(spec);
+		assert.equal(job.plan.single, false, `${name}: divided`);
+		const call = nextCalls(job, adapter)[0]!;
+		assert.equal(call.role, 'chunk');
+		assert.deepEqual(call.prompt.schema, NOTES_CHUNK_SCHEMA, `${name}: the chunk call asks for notes only`);
+		// The pipeline rejects an answer carrying a finding, whatever location it names: it is re-issued, never recorded.
+		const next = applyOutput(job, adapter, call.callId, echo(call, { notes: [], findings: [missing] }));
+		assert.equal(next.stageAnswers.length, 0, `${name}: nothing recorded`);
+		assert.ok(next.pending.some(c => c.attempt === 2 && c.carries.chunkId === call.carries.chunkId), `${name}: re-issued`);
+	}
+});
+
+test("a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note", () => {
+	for (const [name, spec] of NOTES_ONLY) {
+		const { job, adapter } = dividedJob(spec);
+		const key = adapter.material().obligations[0]!.key;
+		const first = nextCalls(job, adapter)[0]!;
+		const outside = DIVIDING.symbols.map(s => s.entityId).find(id => !first.carries.atomIds.includes(id))!;
+		// An unknown key: re-issued once, the same chunk call with the reason appended, never today's single prompt.
+		let next = applyOutput(job, adapter, first.callId, echo(first, { notes: [{ key: 'no-such-key', atomIds: [first.carries.atomIds[0]], note: 'x' }] }));
+		const again = next.pending.find(c => c.attempt === 2)!;
+		assert.ok(again !== undefined, `${name}: re-issued`);
+		assert.equal(again.carries.chunkId, first.carries.chunkId, `${name}: the same chunk`);
+		assert.deepEqual(again.prompt.schema, NOTES_CHUNK_SCHEMA, `${name}: still the chunk call`);
+		const system = again.prompt.messages[0]!.content as string;
+		assert.ok(system.includes('REJECTED') && system.includes('"no-such-key" is not one of the listed obligation keys'), `${name}: the correction names the reason`);
+		assert.ok((again.prompt.messages[1]!.content as string) === (first.prompt.messages[1]!.content as string), `${name}: the chunk's payload is unchanged`);
+		// An atom outside the call's carries on the re-issue: the review fails.
+		assert.throws(() => applyOutput(next, adapter, again.callId, echo(again, { notes: [{ key, atomIds: [outside], note: 'x' }] })),
+			(e: unknown) => e instanceof ReviewCallFailedError && /invalid-answer/.test(e.message), name);
+		// A valid answer is recorded.
+		next = applyOutput(job, adapter, first.callId, echo(first, { notes: [{ key, atomIds: [first.carries.atomIds[0]!], note: 'realised here' }] }));
+		assert.equal(next.stageAnswers.length, 1, name);
+		// The gather reads the keyed notes from the recorded answer.
+		assert.deepEqual(chunkNotesFrom(next.stageAnswers[0]!), [{ key, text: 'realised here', atomIds: [first.carries.atomIds[0]!] }], name);
+	}
+});
+
+test("a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's", () => {
+	const s = subject();
+	for (const [name, spec] of NOTES_ONLY) {
+		const { job, adapter } = dividedJob(spec);
+		const material = adapter.material();
+		let sawNeighbour = false;
+		for (const call of job.pending) {
+			assert.ok(call.chars <= SMALL, `${name}: a ${call.chars}-character call`);
+			const user = call.prompt.messages[1]!.content as string;
+			for (const id of call.carries.atomIds) {
+				const sig = DIVIDING.symbols.find(x => x.entityId === id)!.signature;
+				assert.ok(user.includes(JSON.stringify(sig)), `${name}: ${id} is read whole`);
+			}
+			for (const o of material.obligations) assert.ok(user.includes(JSON.stringify(o.key)), `${name}: obligation ${o.key} listed`);
+			for (const a of material.context ?? []) assert.ok(user.includes(a.label) && user.includes(a.text), `${name}: context ${a.id}`);
+			const chunk = job.plan.chunks.find(c => c.id === call.carries.chunkId)!;
+			for (const n of chunk.neighbours) { sawNeighbour = true; assert.ok(user.includes(`- ${n.summary} (in ${n.heldInChunk})`)); }
+		}
+		assert.ok(sawNeighbour, `${name}: the cut call relation is summarised`);
+		// Under the limit: one call, today's prompt and schema.
+		const single = dividedJob(spec, s, 384_000).job;
+		assert.equal(single.plan.single, true);
+		assert.equal(single.pending.length, 1);
+		assert.deepEqual(single.pending[0]!.prompt.messages, spec(s).prompt(DIVIDING, 'full', undefined), `${name}: today's prompt`);
+		assert.deepEqual(single.pending[0]!.prompt.schema, spec(s).schema);
+	}
+	// Conventions' chunk calls carry its documented rules, as today's prompt does.
+	const conv = dividedJob(conventionsSpec).job.pending[0]!.prompt.messages[1]!.content as string;
+	assert.ok(conv.includes('## Documented rules'));
 });

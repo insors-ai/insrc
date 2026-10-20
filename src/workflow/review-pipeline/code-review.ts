@@ -25,9 +25,10 @@ import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/typ
 import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
+import { notesChunkCall, validateNotesChunk, type NotesChunkSpec } from './adapters/code-review-chunk.js';
 import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
-import { createReviewJob } from './job.js';
+import { createReviewJob, withCorrectionNote } from './job.js';
 import { reviewLimitChars } from './limit.js';
 import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, StageAnswer } from './types.js';
 
@@ -81,6 +82,9 @@ export interface ModelDimensionSpec<O> {
 	/** What a divided review must judge (Story s3): the obligations and their context atoms,
 	 *  from the saved subject and the material's atoms only. Absent: none. */
 	readonly obligations?: ((material: ReviewMaterial) => DimensionObligations) | undefined;
+	/** A divided review's chunk call that writes notes only (adherence, functional coverage,
+	 *  conventions; Story s3). Absent: the dimension has no notes-only chunk call. */
+	readonly notesChunk?: NotesChunkSpec | undefined;
 }
 
 /** A deterministic dimension: run on the snapshot alone on the daemon path; the controller is offered its prompt. */
@@ -124,29 +128,38 @@ function singleAnswer(outputs: Readonly<Record<string, unknown>>, stage: string,
 export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
 	const execution = { mode: 'structured' as const, cwd: subject.repoPath };
+	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
+	// obligations and their context. From the snapshot and the saved subject only.
+	const material = (): ReviewMaterial => {
+		const base = codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding);
+		const own = spec.obligations?.(base);
+		if (own === undefined) return base;
+		return { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+	};
+	const singleSchema = JSON.stringify(spec.schema);
 	const stages = (path: ReviewPath): readonly AdapterStage[] => {
 		if (spec.skip !== undefined) {
 			// No call: the dimension's result is known without the model, on either path.
 			return [{ id: 'skip', kind: 'deterministic', after: [], onCallFailure: 'fail-review', singleCalls: () => [], chunkCalls: () => [], run: async () => spec.skip!() }];
 		}
 		void path;
+		const notes = spec.notesChunk;
 		return [{
 			id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review',
 			singleCalls: () => [{ messages: spec.prompt(grounding, groundingMode, undefined), schema: spec.schema, execution }],
-			chunkCalls: () => [],
-			// Today's correction: the prompt rebuilt with withStructuredRetry's note.
-			withCorrection: (prompt, reasons) => ({ ...prompt, messages: spec.prompt(grounding, groundingMode, buildRetryNote(reasons)) }),
+			chunkCalls: chunk => notes !== undefined ? [notesChunkCall(notes, chunk, material(), execution)] : [],
+			// A chunk answer is checked against the obligations and the atoms its call carried.
+			validate: (answer, call) => call.role === 'chunk' && notes !== undefined ? validateNotesChunk(answer, call, material()) : [],
+			// Today's correction for today's call: the prompt rebuilt with withStructuredRetry's note.
+			// A chunk call keeps its own prompt, with the reasons appended.
+			withCorrection: (prompt, reasons) => JSON.stringify(prompt.schema) === singleSchema
+				? { ...prompt, messages: spec.prompt(grounding, groundingMode, buildRetryNote(reasons)) }
+				: withCorrectionNote(prompt, reasons),
 		}];
 	};
 	return {
 		kind: 'code-review', dimension: spec.dimension,
-		// Story s2: the dimension's rows as whole atoms with their relations, from the snapshot only.
-		material: () => {
-			const material = codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding);
-			const own = spec.obligations?.(material);
-			if (own === undefined) return material;
-			return { ...material, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
-		},
+		material,
 		neighbourSummary,
 		stagesFor: stages,
 		finish: (outputs, ctx) => spec.skip !== undefined

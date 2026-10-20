@@ -57,12 +57,12 @@ const buildRec = (createdAt: string, standalone: boolean): BuildRecord => ({
 
 /** What a design finalizer does: stamp the Epic's anchor on the record, write its json, and render its md in the
  *  folder the stamp names. Returns the md path. */
-function writeDesign(r: ReturnType<typeof tempRepo>, kind: 'HLD' | 'LLD' | 'PLAN', createdAt: string, standalone: boolean): string {
+function writeDesign(r: ReturnType<typeof tempRepo>, kind: 'HLD' | 'LLD' | 'PLAN', createdAt: string, standalone: boolean, lldIsHead = false): string {
 	const stamp = resolveEpicAnchor(r.repo, HASH)!;
 	const meta = { epicHash: HASH, ...(kind === 'HLD' ? {} : { storyId: 's1' }), createdAt, epicCreatedAt: stamp, epicSlug: SLUG, ...(standalone ? { standalone: true } : {}) };
 	const id = kind === 'HLD' ? `HLD-${HASH}` : `${kind}-${HASH}-s1`;
 	// the standalone route's head is the LLD already on disk: do not replace its stamp-bearing record
-	if (!(standalone && kind === 'LLD')) r.seed(id, meta);
+	if (!(lldIsHead && kind === 'LLD')) r.seed(id, meta);
 	const anchor = workItemAnchorCreatedAt(meta);
 	const wk = standalone ? 'standalone' : 'epic';
 	const md = kind === 'HLD' ? hldArtifactPaths(r.repo, HASH, anchor, wk, SLUG).md
@@ -74,12 +74,17 @@ function writeDesign(r: ReturnType<typeof tempRepo>, kind: 'HLD' | 'LLD' | 'PLAN
 }
 
 test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one folder on the epic route and on the standalone route, including delivery grouping', () => {
-	for (const standalone of [false, true]) {
+	// three routes: an epic (DEF head), a standalone feature headed by its stamped LLD, and a standalone fix headed by an ISSUE
+	for (const route of ['epic', 'standalone-lld-head', 'standalone-issue-head'] as const) {
+		const standalone = route !== 'epic';
+		const lldIsHead = route === 'standalone-lld-head';
 		const r = tempRepo();
 		try {
-			if (standalone) {
+			if (lldIsHead) {
 				// no DEF: a stamped standalone LLD heads the work item (written on D1, stamped with the Epic's D0)
 				r.seed(`LLD-${HASH}-s1`, { epicHash: HASH, storyId: 's1', createdAt: D1, epicCreatedAt: D0, epicSlug: SLUG, standalone: true });
+			} else if (standalone) {
+				r.seed(`ISSUE-${HASH}`, { issueHash: HASH, createdAt: D0, epicSlug: SLUG, standalone: true });
 			} else {
 				r.seed(`DEF-${HASH}`, { epicHash: HASH, createdAt: D0, epicSlug: SLUG });
 			}
@@ -88,7 +93,7 @@ test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one 
 			// the design records, each written on its own later day
 			const design: string[] = [];
 			design.push(dirname(writeDesign(r, 'HLD', D1, standalone)));
-			design.push(dirname(dirname(writeDesign(r, 'LLD', D2, standalone))));
+			design.push(dirname(dirname(writeDesign(r, 'LLD', D2, standalone, lldIsHead))));
 			design.push(dirname(dirname(writeDesign(r, 'PLAN', D3, standalone))));
 
 			// the ledger records: TESTS on D4, BUILD on D5, the code review on D6
@@ -108,19 +113,22 @@ test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one 
 
 			const folders = new Set([...design, dirname(dirname(tests.md)), dirname(dirname(build.md)), dirname(dirname(cr))]);
 			assert.equal(folders.size, 1, `one folder, got ${[...folders].join(' | ')}`);
-			assert.match([...folders][0]!, new RegExp(`/docs/${standalone ? 'standalone' : 'epics'}/${SLUG}-E20261001c0ffee00$`));
+			assert.match([...folders][0]!, new RegExp(`/docs/${standalone ? 'standalone' : 'epics'}/${SLUG}-E20261001c0ffee00$`), route);
 			assert.equal(dirname(tests.md), dirname(build.md), 'BUILD and TESTS share the story folder');
 
 			// the delivery reader, over the store these records were written to, groups them under one work item
 			const graph = buildWorkItemGraph(loadArtifactRecordSet(r.repo));
 			const ids = [...graph.items.keys()];
-			assert.ok(ids.every(id => id.startsWith('E20261001c0ffee00')), `every id carries the Epic's day, got ${ids.join(', ')}`);
+			assert.ok(ids.every(id => id.startsWith('E20261001c0ffee00')), `${route}: every id carries the Epic's day, got ${ids.join(', ')}`);
 			assert.ok(ids.includes('E20261001c0ffee00:S001'), 'the story is one item');
 			const story = graph.items.get('E20261001c0ffee00:S001')!;
 			const kinds = story.evidenceArtifactIds.map(a => a.split('-')[0]).sort();
 			assert.deepEqual(kinds, ['BUILD', 'CR', 'LLD', 'PLAN']);
-			const epicItem = graph.items.get('E20261001c0ffee00');
-			if (!standalone) assert.ok(epicItem?.evidenceArtifactIds.some(a => a.startsWith('DEF-')) && epicItem.evidenceArtifactIds.some(a => a.startsWith('HLD-')), 'the Epic item holds the DEF and the HLD');
+			// (TESTS records are not delivery evidence: the reader skips them by design, so they are checked by folder above.)
+			if (route === 'epic') {
+				const epicItem = graph.items.get('E20261001c0ffee00');
+				assert.ok(epicItem?.evidenceArtifactIds.some(a => a.startsWith('DEF-')) && epicItem.evidenceArtifactIds.some(a => a.startsWith('HLD-')), 'the Epic item holds the DEF and the HLD');
+			}
 		} finally { r.done(); }
 	}
 });

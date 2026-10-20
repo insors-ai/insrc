@@ -13,7 +13,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -85,5 +85,47 @@ test('internalRetry false makes exactly one attempt on CliProvider completeStruc
 		const o = failingOllama();
 		await assert.rejects(o.provider.completeStructured([{ role: 'user', content: 'x' }], SCHEMA, internalRetry === false ? { internalRetry } : {}));
 		assert.equal(o.calls(), expected, `ollama completeStructured, internalRetry=${String(internalRetry)}`);
+	}
+});
+
+/** A fake claude that records each run's stdin (the prompt) in `runs.jsonl` and answers. */
+const FAKE_OK = `#!/usr/bin/env node
+import { appendFileSync } from 'node:fs';
+let stdin = '';
+for await (const c of process.stdin) stdin += c;
+appendFileSync(process.env.INSRC_FAKE_RUNS, JSON.stringify(stdin) + '\\n');
+process.stdout.write(JSON.stringify({ is_error: false, result: '', structured_output: { ok: true } }));
+`;
+
+test('a relaunch after a failed launch (ENOENT) delivers the prompt exactly once, even with internalRetry false', async () => {
+	const root = mkdtempSync(join(tmpdir(), 'insrc-relaunch-'));
+	const dirA = join(root, 'a');
+	const dirB = join(root, 'b');
+	mkdirSync(dirA); mkdirSync(dirB);
+	const name = `insrc-fake-claude-${process.pid}`;
+	const runsPath = join(root, 'runs.jsonl');
+	writeFileSync(join(dirA, name), FAKE_OK);
+	chmodSync(join(dirA, name), 0o755);
+	const savedPath = process.env.PATH;
+	const savedRuns = process.env.INSRC_FAKE_RUNS;
+	process.env.PATH = `${dirA}:${dirB}:${savedPath ?? ''}`;
+	process.env.INSRC_FAKE_RUNS = runsPath;
+	const runs = (): string[] => (existsSync(runsPath) ? readFileSync(runsPath, 'utf8').trim().split('\n').map(l => JSON.parse(l) as string) : []);
+	try {
+		const p = new CliProvider({ kind: 'claude', binPath: name });
+		// First call resolves and caches the binary in dir A.
+		await p.completeStructured([{ role: 'user', content: 'first' }], SCHEMA, { internalRetry: false });
+		assert.equal(runs().length, 1);
+		// Move the binary: the cached path now fails to launch (ENOENT) and must be re-resolved.
+		renameSync(join(dirA, name), join(dirB, name));
+		const out = await p.completeStructured<{ ok: boolean }>([{ role: 'user', content: 'second' }], SCHEMA, { internalRetry: false });
+		assert.deepEqual(out, { ok: true });
+		const second = runs().slice(1);
+		assert.equal(second.length, 1, 'the relaunched call ran exactly once');
+		assert.ok(second[0]?.includes('second'), 'and it carried the prompt');
+	} finally {
+		process.env.PATH = savedPath;
+		if (savedRuns === undefined) delete process.env.INSRC_FAKE_RUNS; else process.env.INSRC_FAKE_RUNS = savedRuns;
+		rmSync(root, { recursive: true, force: true });
 	}
 });

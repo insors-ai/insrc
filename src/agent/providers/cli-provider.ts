@@ -828,7 +828,11 @@ function resolveBin(command: string): string {
 }
 
 /** Run the CLI, retrying ONCE on a spurious spawn ENOENT (macOS posix_spawn
- *  race under load): drop the cached path + re-resolve + re-spawn. */
+ *  race under load): drop the cached path + re-resolve + re-spawn.
+ *
+ *  This relaunch stays on even under `internalRetry: false` (Epic 8315a11f s1):
+ *  an ENOENT launch never started a process, so no prompt reached any model and
+ *  nothing is sent twice. The caller's one attempt is the one run that starts. */
 async function runSubprocess(
 	command: string,
 	args: readonly string[],

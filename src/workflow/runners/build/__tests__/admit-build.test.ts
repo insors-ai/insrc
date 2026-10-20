@@ -31,6 +31,7 @@ import { approvalVerdict, driftVerdict } from '../admission.js';
 import { approveArtifactByJsonPath } from '../../../gates.js';
 import type { PlanArtifact } from '../../../artifacts/plan.js';
 import { artifactJsonPath, lldArtifactId, planArtifactId } from '../../../storage.js';
+import { ArtifactShapeError } from '../../../artifact-core/types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';
@@ -244,7 +245,7 @@ test('t4: admitBuild propagates a corrupt plan body rather than reporting plan-m
 	try {
 		seedCorruptPlan(repo, 's1');   // present on disk but undecodable
 		assert.throws(() => admitBuild(repo, HASH, 's1'), (err: unknown) => {
-			assert.ok(err instanceof SyntaxError);   // a parse error, not a modeled refusal
+			assert.ok(err instanceof ArtifactShapeError);   // the shared decoder's error, not a modeled refusal
 			return true;
 		});
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -285,7 +286,7 @@ test('t2: approvalVerdict re-throws an unrelated (corrupt-body) error rather tha
 	try {
 		seedCorruptPlan(repo, 's1');
 		assert.throws(() => approvalVerdict(repo, HASH, 's1'), (err: unknown) => {
-			assert.ok(err instanceof SyntaxError);
+			assert.ok(err instanceof ArtifactShapeError);
 			return true;
 		});
 	} finally { rmSync(repo, { recursive: true, force: true }); }

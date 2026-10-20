@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s3
 
-**Standalone:** no  ·  **Created:** 2026-10-20T16:44:27.482Z  ·  **Updated:** 2026-10-20T18:13:52.999Z
+**Standalone:** no  ·  **Created:** 2026-10-20T16:44:27.482Z  ·  **Updated:** 2026-10-20T18:15:34.861Z
 
-**Commit:** 0aa410a8
+**Commit:** 3817b7b4
 
 ## Summary
 
-gather.relationCall for quality and adherence (adapters/code-review-gather.ts; each spec's chunk.relation gives its rules): a cut 'calls' relation is judged once, both full rows in one call when they fit, else (or within a refused size) two calls, each one full row against the other's neighbour summary; non-call cut relations get no call. The judgement asks for today's findings shape located in the caller's file (adherence also sees the approved clauses and tasks). gather.validate rejects findings located outside the two symbols' files or naming a counterpart that is neither, with fixed-size reasons; the re-issue carries them and a second failure fails the review.
+gather.relationCall for quality and adherence: a cut 'calls' relation is judged once, both full rows in one call when they fit, else two calls each one full row against the other's neighbour summary; every returned call is measured against the limit (or the refused size) and a row that does not fit even so is named by AtomTooLargeError, never cut (fix 3817b7b4). A mismatch must be located at the caller: gather.validate accepts only the caller's file and only the two symbols as counterpart, with fixed-size reasons; re-issued once, then the review fails.
 
 ## Tasks validated
 
@@ -22,19 +22,19 @@ gather.relationCall for quality and adherence (adapters/code-review-gather.ts; e
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-8315a11f29fd2812-s3.json` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/code-review/dimensions/adherence.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/code-review/dimensions/conventions.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/code-review/dimensions/coverage.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/code-review/dimensions/functional-coverage.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/code-review/dimensions/quality.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/review-pipeline/adapters/code-review-chunk.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/review-pipeline/adapters/code-review-gather.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/review-pipeline/adapters/code-review-obligations.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/review-pipeline/code-review.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
-- `src/workflow/review-pipeline/job.ts` — **insrc-build** (2026-10-20T18:13:52.999Z)
+- `.insrc/artifacts/PLAN-8315a11f29fd2812-s3.json` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/code-review/dimensions/adherence.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/code-review/dimensions/conventions.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/code-review/dimensions/coverage.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/code-review/dimensions/functional-coverage.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/code-review/dimensions/quality.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/review-pipeline/adapters/code-review-chunk.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/review-pipeline/adapters/code-review-gather.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/review-pipeline/adapters/code-review-obligations.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/review-pipeline/code-review.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
+- `src/workflow/review-pipeline/job.ts` — **insrc-build** (2026-10-20T18:15:34.861Z)
 
 ## Feedback
 

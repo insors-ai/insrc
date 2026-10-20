@@ -80,20 +80,22 @@ const fileOfLocation = (location: string): string => {
 	return i >= 0 ? location.slice(0, i) : location;
 };
 
-/** A relation answer's problems: a finding not located at the caller (the first symbol), or naming a
- *  counterpart that is neither of the two. Fixed-size reasons: made-up values are located, not quoted. */
+/** A relation answer's problems: a finding not located at the caller (the first symbol: its file, and its
+ *  name in the message, since a row carries no line range), or naming a counterpart that is neither of
+ *  the two. Fixed-size reasons: made-up values are located, not quoted. */
 function relationReasons(answer: unknown, call: ReviewCall, material: ReviewMaterial): string[] {
 	if (call.role !== 'relation') return [];
 	const pair = call.carries.atomIds.map(id => material.atoms.find(a => a.id === id)).filter((a): a is ReviewAtom => a !== undefined);
 	// A mismatch is located at the caller: relationCall's pair is [caller, callee].
 	const callerFile = pair[0]?.file;
+	const callerName = pair[0] !== undefined ? (JSON.parse(pair[0].text) as { name?: string }).name ?? pair[0].id : '';
 	const names = new Set(pair.flatMap(a => [a.id, a.label, (JSON.parse(a.text) as { name?: string }).name ?? a.id]));
-	const findings = (answer as { findings?: readonly { location?: string; counterpartRef?: string }[] }).findings ?? [];
-	const badLocations = findings.flatMap((f, i) => fileOfLocation(f.location ?? '') === callerFile ? [] : [`findings[${i}].location`]);
+	const findings = (answer as { findings?: readonly { location?: string; message?: string; counterpartRef?: string }[] }).findings ?? [];
+	const badLocations = findings.flatMap((f, i) => fileOfLocation(f.location ?? '') === callerFile && (f.message ?? '').includes(callerName) ? [] : [`findings[${i}]`]);
 	const badCounterparts = findings.flatMap((f, i) => f.counterpartRef === undefined || names.has(f.counterpartRef.trim()) ? [] : [`findings[${i}].counterpartRef`]);
 	const listed = pair.map(a => a.label).join(' and ');
 	return [
-		...(badLocations.length > 0 ? [`${badLocations.length} findings are not located at the caller (first: ${badLocations[0]}); locate a mismatch at the caller, in ${JSON.stringify(callerFile ?? '')}`] : []),
+		...(badLocations.length > 0 ? [`${badLocations.length} findings are not located at the caller (first: ${badLocations[0]}); locate a mismatch at the caller: in ${JSON.stringify(callerFile ?? '')}, naming ${JSON.stringify(callerName)} in the message`] : []),
 		...(badCounterparts.length > 0 ? [`${badCounterparts.length} findings name a counterpart that is not one of the two symbols judged (first: ${badCounterparts[0]}); name only ${listed}`] : []),
 	];
 }
@@ -178,7 +180,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 				chunk.framing,
 				`This review was DIVIDED into chunks. You judge ONE call that crosses chunks: ${caller.label} calls ${callee.label}. Judge whether the caller's use matches the callee: the arguments it passes, how it uses the return value, and the callee's error contract.`,
 				chunk.relation ?? '',
-				`A mismatch is a finding located at \`file:line\` in the CALLER's file, ${JSON.stringify(caller.file ?? caller.label)}. Name a counterpart (counterpartRef) only as one of the two symbols. If the call matches, return an EMPTY findings array.`,
+				`A mismatch is a finding located at the CALLER: \`file:line\` in its file, ${JSON.stringify(caller.file ?? caller.label)}, with its name, ${JSON.stringify((JSON.parse(caller.text) as { name?: string }).name ?? caller.id)}, in the message. Name a counterpart (counterpartRef) only as one of the two symbols. If the call matches, return an EMPTY findings array.`,
 			].filter(x => x.length > 0).join('\n');
 			const user = [
 				...full.map(a => [`## ${a === caller ? 'The caller' : 'The callee'} (full structured summary): ${a.label}`, '```json', JSON.stringify(JSON.parse(a.text), null, 2), '```'].join('\n')),

@@ -505,7 +505,7 @@ test('a relation call carries both full summaries when they fit, else full again
 		assert.equal(one.length, 1, spec.name);
 		const text = promptText(one[0]!.messages);
 		assert.ok(text.includes(sig('id-placeOrder')) && text.includes(sig('id-fill')), 'both full rows');
-		assert.match(one[0]!.messages[0]!.content as string, /located at `file:line` in the CALLER's file, "src\/order\/order\.ts"/);
+		assert.match(one[0]!.messages[0]!.content as string, /located at the CALLER: `file:line` in its file, "src\/order\/order\.ts", with its name, "placeOrder", in the message/);
 		assert.deepEqual(one[0]!.schema, spec(s).schema, "today's findings shape");
 		// Within a refused size: two calls, each one full row against the other's summary line, each within the size.
 		const maxChars = 9_000;
@@ -551,11 +551,13 @@ test('a relation answer naming a counterpart or location outside its two symbols
 			j = applyOutput(j, adapter, call.callId, echo(call, call.role === 'chunk' ? chunkAnswer(kind, call) : { findings: [] }));
 		}
 		const mismatch = { severity: 'MED', location: 'src/order/order.ts:3', message: 'placeOrder ignores the error fill throws' };
+		// In the caller's file but about another symbol (its message does not name the caller): rejected.
+		assert.equal(adapter.gather!.validate!({ findings: [{ ...mismatch, message: 'cancelOrder is unsafe' }] }, relation).length, 1, `${kind}: not about the caller`);
 		// A location outside the two symbols: re-issued once, with the reason.
 		const outside = applyOutput(j, adapter, relation.callId, echo(relation, { findings: [{ ...mismatch, location: 'src/price/price.ts:1' }] }));
 		const again = outside.pending.find(c => c.attempt === 2)!;
 		assert.ok(again !== undefined && again.role === 'relation', `${kind}: re-issued`);
-		assert.match(again.prompt.messages[0]!.content as string, /1 findings are not located at the caller \(first: findings\[0\]\.location\); locate a mismatch at the caller, in "src\/order\/order\.ts"/);
+		assert.match(again.prompt.messages[0]!.content as string, /1 findings are not located at the caller \(first: findings\[0\]\); locate a mismatch at the caller: in "src\/order\/order\.ts", naming "placeOrder" in the message/);
 		// A finding located at the callee, not the caller, is rejected too.
 		assert.deepEqual(adapter.gather!.validate!({ findings: [{ ...mismatch, location: 'src/basket/basket.ts:2' }] }, relation).length, 1, `${kind}: not at the callee`);
 		// A counterpart outside the two symbols on the re-issue: the review fails.
@@ -568,4 +570,49 @@ test('a relation answer naming a counterpart or location outside its two symbols
 		assert.equal(part.findings[0]!.location, 'src/order/order.ts:3', `${kind}: at the caller`);
 		assert.equal(part.findings[0]!.dimension, spec(subject()).dimension);
 	}
+});
+
+test('a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller', () => {
+	// fill may return undefined; placeOrder reads fill(basket).total without a check. The two are cut apart.
+	const g: CodeReviewGrounding = { symbols: DIVIDING.symbols.map(x =>
+		x.entityId === 'id-fill' ? { ...x, signature: `fill(basket: Basket): Basket | undefined /* undefined when the basket is empty */ ${'p'.repeat(5_400)}` }
+		: x.entityId === 'id-placeOrder' ? { ...x, signature: `placeOrder(basket: Basket): Order /* reads fill(basket).total directly */ ${'p'.repeat(5_400)}` }
+		: x) };
+	const s = subject();
+	const snap = codeReviewSnapshot(s, g);
+	const adapter = modelDimensionAdapter(qualitySpec(s), s, snap, SMALL) as unknown as ReviewAdapter<unknown>;
+	let job = createReviewJob(adapter, 'daemon', snap, SMALL);
+	assert.ok(job.plan.crossRelations.some(r => r.kind === 'calls' && r.from === 'id-placeOrder' && r.to === 'id-fill'), 'cut apart');
+	// A scripted reviewer that judges only from what a call carries: it reports the disagreement when it sees
+	// the callee's undefined return and the caller's unchecked use in the same call, at the caller's file.
+	const reviewer = (call: ReviewCall): unknown => {
+		if (call.role === 'chunk') return chunkAnswer('quality', call);
+		const text = promptText(call.messages);
+		const disagree = text.includes('Basket | undefined') && text.includes('reads fill(basket).total directly');
+		const caller = /located at the CALLER: `file:line` in its file, "([^"]+)", with its name, "([^"]+)"/.exec(call.messages[0]!.content as string);
+		return { findings: disagree && caller !== null ? [{ severity: 'HIGH', location: `${caller[1]}:1`, message: `${caller[2]} reads .total from fill, which returns undefined for an empty basket`, counterpartRef: 'fill', confidence: 'breach' }] : [] };
+	};
+	const answered: { call: ReviewCall; answer: unknown }[] = [];
+	try {
+		for (let guard = 0; job.phase !== 'done'; guard++) {
+			assert.ok(guard < 100);
+			const call = nextCalls(job, adapter)[0]!;
+			const answer = reviewer(call);
+			answered.push({ call, answer });
+			job = applyOutput(job, adapter, call.callId, echo(call, answer));
+		}
+	} catch (e) {
+		if (!/dividing a code review is not available yet/.test(String(e))) throw e;
+	}
+	// No chunk could see both contracts; the relation call the job issued did, and the mismatch it reports is at the caller.
+	assert.ok(answered.filter(a => a.call.role === 'chunk').every(a => (a.answer as { findings: unknown[] }).findings.length === 0));
+	const relation = answered.find(a => a.call.role === 'relation')!;
+	assert.deepEqual(relation.call.carries.atomIds, ['id-placeOrder', 'id-fill']);
+	assert.deepEqual(adapter.gather!.validate!(relation.answer, relation.call), [], 'accepted: at the caller');
+	const part = adapter.gather!.partOf({ role: 'relation', key: relation.call.carries.key!, atomIds: relation.call.carries.atomIds, answer: relation.answer }) as { findings: { location: string; message: string; counterpartRef?: string; dimension: string }[] };
+	assert.equal(part.findings.length, 1);
+	assert.equal(part.findings[0]!.location, 'src/order/order.ts:1');
+	assert.match(part.findings[0]!.message, /^placeOrder /);
+	assert.equal(part.findings[0]!.counterpartRef, 'fill');
+	assert.equal(part.findings[0]!.dimension, 'quality');
 });

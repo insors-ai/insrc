@@ -46,6 +46,7 @@
  *      docs/plans/analyze-context-builder.md Phase 3
  */
 
+import { emitStructuredAnswer, runReadOnlyToolLoop, type ReadOnlyToolLoopResult } from '../../agent/read-only-tool-loop.js';
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -55,7 +56,6 @@ import { fileURLToPath } from 'node:url';
 import { OllamaProvider } from '../../agent/providers/ollama.js';
 import { loadAnalyzeConfig, type AnalyzeConfig } from '../../config/analyze.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
-import { executeTool } from '../../daemon/tools/executor.js';
 import type { ToolDeps } from '../../daemon/tools/types.js';
 import { listRepos } from '../../db/repos.js';
 import { getLogger } from '../../shared/logger.js';
@@ -85,7 +85,7 @@ import {
 	SCHEMA_VERSION,
 	validateBundleWithErrors,
 } from './schema.js';
-import { getReadOnlyTools } from './tool-surface.js';
+import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from './tool-surface.js';
 import { decompose, DecomposerLlmUnavailableError, DecomposerPromptMissingError } from './decomposer.js';
 import { synthesize, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
 import { executePlan } from '../explore/index.js';
@@ -105,6 +105,9 @@ import type {
 	ShaperTraceEvent,
 	TaskShapeInput,
 } from './types.js';
+
+/** The tools the analyzer's tool loop may execute: the advertised read-only surface. */
+const READ_ONLY_SET: ReadonlySet<string> = new Set(READ_ONLY_TOOL_IDS);
 
 const log = getLogger('analyze:context:driver');
 
@@ -867,99 +870,37 @@ async function runToolLoop(
 	maxToolTurns: number,
 	onTrace?:     ((event: ShaperTraceEvent) => void) | undefined,
 ): Promise<ToolLoopResult> {
-	let toolCallCount = 0;
-	const tools = getReadOnlyTools();
-	const convo: LLMMessage[] = [...messages];
-	// What the tools returned, kept so that reaching the turn limit does not lose it.
-	const gathered: PartialFinding[] = [];
-
-	for (let turn = 0; turn < maxToolTurns; turn++) {
-		let response: LLMResponse;
-		try {
-			// disableThinking: true is critical for the qwen3.6 family --
-			// without `think: false` on the Ollama wire body the model
-			// emits empty bodies (memory: qwen3_6_needs_think_false). The
-			// provider also auto-fires this when tools are present, but
-			// passing it explicitly costs nothing and protects against a
-			// future provider refactor.
-			response = await provider.complete(convo, {
-				tools,
-				toolChoice:      'auto',
-				disableThinking: true,
-			});
-		} catch (err) {
-			throw classifyOllamaError(err, 'tool loop');
-		}
-
-		const toolCalls = response.toolCalls ?? [];
-
-		if (response.stopReason !== 'tool_use' || toolCalls.length === 0) {
-			// Model is done with the tool-loop. Append its final assistant
-			// text (if any) and break.
-			if (response.text.length > 0) {
-				convo.push({ role: 'assistant', content: response.text });
-			}
-			return { messages: convo, toolCallCount };
-		}
-
-		// Append the assistant's tool_use turn verbatim so the next round
-		// sees its prior decisions in conversation history.
-		const assistantBlocks: ContentBlock[] = [];
-		if (response.text.length > 0) {
-			assistantBlocks.push({ type: 'text', text: response.text });
-		}
-		for (const call of toolCalls) {
-			assistantBlocks.push({
-				type:  'tool_use',
-				id:    call.id,
-				name:  call.name,
-				input: call.input,
-			});
-		}
-		convo.push({ role: 'assistant', content: assistantBlocks });
-
-		// Execute every tool call sequentially -- the project's
-		// no-parallel-LLM-calls rule applies to provider calls; tool
-		// execution is not LLM but we keep it serial for simplicity and
-		// determinism (matches the existing executor's contract). Each
-		// call fires a paired trace event (call + response) so the UI's
-		// LiveStepsWidget can grow a sub-row per tool interaction --
-		// otherwise a 6+ minute tool loop looks like a single silent
-		// stage row to the user (ISSUES.md I-002).
-		const resultBlocks: ContentBlock[] = [];
-		for (const call of toolCalls) {
-			toolCallCount += 1;
-			if (onTrace !== undefined) {
-				onTrace({
-					type:         'tool-call',
-					tool:         call.name,
-					argsPreview:  previewToolArgs(call.input),
-				});
-			}
-			const result = await executeTool(call.name, call.input, deps);
-			if (onTrace !== undefined) {
-				onTrace({
-					type:         'tool-response',
-					tool:         call.name,
-					ok:           result.success !== false,
-					notePreview:  previewToolOutput(result.output),
-				});
-			}
-			resultBlocks.push({
-				type:         'tool_result',
-				tool_use_id:  call.id,
-				content:      result.output,
-				isError:      result.success === false,
-			});
-			gathered.push({
-				source:  `${call.name}(${previewToolArgs(call.input)})`,
-				content: toolOutputText(result.output),
-			});
-		}
-		convo.push({ role: 'user', content: resultBlocks });
+	let result: ReadOnlyToolLoopResult;
+	try {
+		result = await runReadOnlyToolLoop({
+			provider,
+			messages,
+			tools:    getReadOnlyTools(),
+			allow:    READ_ONLY_SET,
+			deps,
+			maxTurns: maxToolTurns,
+			// Each call fires a paired trace event (call + response) so the UI's
+			// LiveStepsWidget can grow a sub-row per tool interaction --
+			// otherwise a 6+ minute tool loop looks like a single silent
+			// stage row to the user (ISSUES.md I-002).
+			onTrace: onTrace === undefined ? undefined : (event) => {
+				if (event.type === 'tool-call') {
+					onTrace({ type: 'tool-call', tool: event.tool, argsPreview: previewToolArgs(event.input) });
+				} else {
+					onTrace({ type: 'tool-response', tool: event.tool, ok: event.ok, notePreview: previewToolOutput(event.output) });
+				}
+			},
+		});
+	} catch (err) {
+		throw classifyOllamaError(err, 'tool loop');
 	}
+	if (result.done) return { messages: result.messages, toolCallCount: result.toolCallCount };
 
 	// The results are written to a file in full; the error's message names it.
+	const gathered: PartialFinding[] = result.gathered.map(g => ({
+		source:  `${g.tool}(${previewToolArgs(g.input)})`,
+		content: toolOutputText(g.output),
+	}));
 	throw toolLoopExhausted(maxToolTurns, gathered);
 }
 
@@ -981,33 +922,27 @@ async function runFinalStructuredEmit(
 	// The Ajv backstop catches all three, but retrying with a vague
 	// "emit the bundle" prompt loses cycles. Explicit field-by-field
 	// guidance turns ~3-retry failures into single-pass successes.
-	const finalMessages: LLMMessage[] = [
-		...messages,
-		{
-			role:    'user',
-			content:
-				'Now emit the final AnalyzeContextBundle as a JSON object.\n' +
-				'\n' +
-				'The object MUST have EXACTLY these seven string fields, in any order:\n' +
-				'  - "system"     (string, required)\n' +
-				'  - "focus"      (string, required)\n' +
-				'  - "summary"    (string, required)\n' +
-				'  - "structure"  (string, required)\n' +
-				'  - "surface"    (string, required)\n' +
-				'  - "artefacts"  (string, required)\n' +
-				'  - "upstream"   (string, required)\n' +
-				'\n' +
-				'Rules:\n' +
-				'  - Every field is REQUIRED. Use "" (empty string) for any layer\n' +
-				'    you have nothing to report on -- do not omit the key.\n' +
-				'  - Each value MUST be a string -- never an object, array, number,\n' +
-				'    or null. For empty layers use "".\n' +
-				'  - DO NOT add any field outside the seven listed above. No\n' +
-				'    `layers`, `bundle`, `meta`, `data`, or other wrapper keys.\n' +
-				'\n' +
-				'Respond with ONLY the JSON object -- no prose, no fenced block.',
-		},
-	];
+	const instruction =
+		'Now emit the final AnalyzeContextBundle as a JSON object.\n' +
+		'\n' +
+		'The object MUST have EXACTLY these seven string fields, in any order:\n' +
+		'  - "system"     (string, required)\n' +
+		'  - "focus"      (string, required)\n' +
+		'  - "summary"    (string, required)\n' +
+		'  - "structure"  (string, required)\n' +
+		'  - "surface"    (string, required)\n' +
+		'  - "artefacts"  (string, required)\n' +
+		'  - "upstream"   (string, required)\n' +
+		'\n' +
+		'Rules:\n' +
+		'  - Every field is REQUIRED. Use "" (empty string) for any layer\n' +
+		'    you have nothing to report on -- do not omit the key.\n' +
+		'  - Each value MUST be a string -- never an object, array, number,\n' +
+		'    or null. For empty layers use "".\n' +
+		'  - DO NOT add any field outside the seven listed above. No\n' +
+		'    `layers`, `bundle`, `meta`, `data`, or other wrapper keys.\n' +
+		'\n' +
+		'Respond with ONLY the JSON object -- no prose, no fenced block.';
 
 	// Live-preview state: accumulate the incoming stream, keep the tail
 	// visible, throttle emissions so a burst of small chunks doesn't
@@ -1032,26 +967,21 @@ async function runFinalStructuredEmit(
 	};
 
 	try {
-		const raw = await provider.completeStructured<AnalyzeContextBundle>(
-			finalMessages,
+		const raw = await emitStructuredAnswer<AnalyzeContextBundle>({
+			provider,
+			messages,
+			instruction,
 			// The stored schema without `report`: the report is derived by code.
-			modelFacingBundleSchema({ withMeta: true }),
-			{
-				maxAttempts:     structuredOutputRetries,
-				// Critical for qwen3.6 -- without `think: false` the model
-				// emits empty bodies (memory: qwen3_6_needs_think_false).
-				// Harmless on other model families (the provider's wire
-				// layer applies it conditionally).
-				disableThinking: true,
-				// Output-token budget. The shaper bundle has 7 fields each
-				// of which can carry multi-section markdown; 8K is too
-				// small for code-target M/L/XL scopes (truncates as
-				// "Unterminated string in JSON"). Configured via
-				// analyze.shaper.ollamaNumPredict (default 20480).
-				maxTokens:       maxOutputTokens,
-				...(onStreamToken !== undefined ? { onToken: onStreamToken } : {}),
-			},
-		);
+			schema:      modelFacingBundleSchema({ withMeta: true }),
+			maxAttempts: structuredOutputRetries,
+			// Output-token budget. The shaper bundle has 7 fields each
+			// of which can carry multi-section markdown; 8K is too
+			// small for code-target M/L/XL scopes (truncates as
+			// "Unterminated string in JSON"). Configured via
+			// analyze.shaper.ollamaNumPredict (default 20480).
+			maxTokens:   maxOutputTokens,
+			onToken:     onStreamToken,
+		});
 		return raw;
 	} catch (err) {
 		const errClass = classifyOllamaError(err, 'final structured emit');

@@ -23,7 +23,7 @@ import { isAbsolute, join } from 'node:path';
 import { buildRetryNote } from '../../agent/providers/structured-output.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
 import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
 import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
 import { compareStage, pairStage } from './adapters/code-review-duplicates.js';
@@ -117,7 +117,8 @@ export const CONTROLLER_FINDINGS_SCHEMA: StructuredSchema = {
 	},
 };
 
-/** The one answer of a single-call stage. A divided review cannot be finished here (Stories s2, s3). */
+/** The one answer of a single-call stage. A deterministic dimension's controller prompt is never
+ *  divided into chunks (it has no atoms), so a divided one cannot be finished here. */
 function singleAnswer(outputs: Readonly<Record<string, unknown>>, stage: string, dimension: string, divided: boolean): unknown {
 	if (divided) {
 		throw new Error(`code review ${dimension}: the dimension's single call is over the review.chunkTokens limit, and dividing a code review is not available yet. No review was recorded.`);
@@ -128,7 +129,25 @@ function singleAnswer(outputs: Readonly<Record<string, unknown>>, stage: string,
 }
 
 /** A model dimension's adapter, built from the subject and the job's snapshot. */
-export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars()): ReviewAdapter<DimensionResult> {
+/** The repo-relative file of a `file:line` location. */
+function fileOfLocation(location: string): string {
+	const i = location.indexOf(':');
+	return i >= 0 ? location.slice(0, i) : location;
+}
+
+/** The findings a divided review's chunks reported, in stage order (coverage's symbol findings,
+ *  quality's findings, then quality's pair findings); notes-only chunks report none. */
+function chunkFindings(outputs: Readonly<Record<string, unknown>>, dimension: ReviewDimension): DimensionFinding[] {
+	return ['judge', 'pair'].flatMap(stage => ((outputs[stage] ?? []) as readonly StageAnswer[])
+		.flatMap(a => ((a.answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] }).findings ?? []).map(f => ({ ...f, dimension }))));
+}
+
+/**
+ * A model dimension's adapter, built from the subject and the job's snapshot. `path` is the
+ * job's: a divided review's out-of-set findings are dropped on the daemon path and kept in
+ * outOfScope on the controller path, as each path does today.
+ */
+export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars(), path: ReviewPath = 'daemon'): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
 	const execution = { mode: 'structured' as const, cwd: subject.repoPath };
 	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
@@ -140,12 +159,20 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		return { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
 	};
 	const singleSchema = JSON.stringify(spec.schema);
-	const stages = (path: ReviewPath): readonly AdapterStage[] => {
+	// A divided review's merged findings through today's result filters, applied once over the whole.
+	const changed = new Set(subject.changedFiles);
+	const finalize = (findings: readonly DimensionFinding[]): DimensionResult => {
+		const result = spec.toResult({ findings } as unknown as O, grounding, groundingMode);
+		if (path !== 'controller') return result;
+		const outOfScope = findings.filter(f => !changed.has(fileOfLocation(f.location)));
+		return { ...result, ...(outOfScope.length > 0 ? { outOfScope } : {}) };
+	};
+	const stages = (stagePath: ReviewPath): readonly AdapterStage[] => {
 		if (spec.skip !== undefined) {
 			// No call: the dimension's result is known without the model, on either path.
 			return [{ id: 'skip', kind: 'deterministic', after: [], onCallFailure: 'fail-review', singleCalls: () => [], chunkCalls: () => [], run: async () => spec.skip!() }];
 		}
-		void path;
+		void stagePath;
 		const chunkSpec = spec.chunk;
 		const judge: AdapterStage = {
 			id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review',
@@ -171,11 +198,14 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		stagesFor: stages,
 		// Story s3: a divided review judges each obligation once, over every chunk's notes.
 		...(spec.chunk !== undefined && spec.skip === undefined
-			? { gather: codeReviewGather({ dimension: spec.dimension, chunk: spec.chunk, schema: spec.schema, material, execution, limitChars, changedFiles: subject.changedFiles }) }
+			? { gather: codeReviewGather({ dimension: spec.dimension, chunk: spec.chunk, schema: spec.schema, material, execution, limitChars, changedFiles: subject.changedFiles, finalize }) }
 			: {}),
-		finish: (outputs, ctx) => spec.skip !== undefined
-			? outputs['skip'] as DimensionResult
-			: spec.toResult(singleAnswer(outputs, 'judge', spec.dimension, ctx.divided) as O, grounding, groundingMode),
+		finish: (outputs, ctx) => {
+			if (spec.skip !== undefined) return outputs['skip'] as DimensionResult;
+			// Divided: the chunks' own findings, the first part gather.merge joins (and filters) with the rest.
+			if (ctx.divided) return { dimension: spec.dimension, findings: chunkFindings(outputs, spec.dimension) };
+			return spec.toResult(singleAnswer(outputs, 'judge', spec.dimension, false) as O, grounding, groundingMode);
+		},
 	};
 }
 

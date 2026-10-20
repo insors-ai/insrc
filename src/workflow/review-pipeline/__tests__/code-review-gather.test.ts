@@ -23,7 +23,7 @@ import { validateAgainstSchema } from '../../../agent/providers/structured-outpu
 import { chunkNotesFrom, NOTES_CHUNK_SCHEMA } from '../adapters/code-review-chunk.js';
 import { NO_EVIDENCE, REDUCE_NOTE_SCHEMA } from '../adapters/code-review-gather.js';
 import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
-import { applyOutput, createReviewJob, nextCalls, ReviewCallFailedError } from '../job.js';
+import { applyOutput, createReviewJob, nextCalls, result, ReviewCallFailedError } from '../job.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { ReviewAdapter, ReviewCall, ReviewMaterial, ReviewPipelineJob } from '../types.js';
 
@@ -714,4 +714,86 @@ test('compare and pair calls are counted under pipelineCalls.relation, not chunk
 	const relationCalls = calls.filter(c => c.role === 'relation').length;
 	assert.equal(last.counts.relation, by('compare') + by('pair') + relationCalls, 'compare and pair under relation, re-issue included');
 	assert.equal(last.counts.chunk, by('judge'), 'chunk counts only the chunk reads');
+});
+
+// -- merge and finish (t7) ------------------------------------------------------
+
+/** Drive a divided job on `path` to its result. */
+function divided<O>(spec: (s: CodeReviewSubject) => ModelDimensionSpec<O>, path: 'daemon' | 'controller', answer: (call: ReviewCall) => unknown, s: CodeReviewSubject = subject(), g: CodeReviewGrounding = DIVIDING): { result: { findings: { location: string; severity: string; message: string; expectationRef?: string; dimension: string }[]; outOfScope?: { location: string }[]; lowered?: { location: string; reason: string }[]; pipelineCalls?: Record<string, number> }; calls: ReviewCall[] } {
+	const snap = codeReviewSnapshot(s, g);
+	const adapter = modelDimensionAdapter(spec(s), s, snap, SMALL, path) as unknown as ReviewAdapter<unknown>;
+	const { job, calls } = drive(createReviewJob(adapter, path, snap, SMALL), adapter, answer);
+	assert.equal(job.phase, 'done');
+	return { result: result(job), calls };
+}
+
+test('out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today', () => {
+	// src/price is not in the Story's changed set; src/order is.
+	const inSet = { severity: 'MED', location: 'src/order/order.ts:2', message: 'placeOrder risk', confidence: 'breach' };
+	const outOfSet = { severity: 'MED', location: 'src/price/price.ts:2', message: 'price risk', confidence: 'breach' };
+	const answer = (call: ReviewCall): unknown => call.stage === 'judge' && call.role === 'chunk'
+		? { findings: call.carries.atomIds.includes('id-placeOrder') ? [inSet] : call.carries.atomIds.includes('id-price') ? [outOfSet] : [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: atomId })) }
+		: call.role === 'chunk' ? chunkAnswer('quality', call) : { findings: [] };
+	const daemon = divided(qualitySpec, 'daemon', answer).result;
+	assert.deepEqual(daemon.findings.map(f => f.location), ['src/order/order.ts:2']);
+	assert.equal(daemon.outOfScope, undefined, 'dropped, as the daemon judge does today');
+	const controller = divided(qualitySpec, 'controller', answer).result;
+	assert.deepEqual(controller.findings.map(f => f.location), ['src/order/order.ts:2']);
+	assert.deepEqual(controller.outOfScope?.map(f => f.location), ['src/price/price.ts:2'], 'kept in outOfScope, as the controller step does today');
+});
+
+test('a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by finish, as today', () => {
+	const at = 'src/order/order.ts:1';
+	const { result: r, calls } = divided(functionalCoverageSpec, 'daemon', call => {
+		if (call.role === 'chunk') return { notes: [] };
+		if (call.carries.key === 'fr:FR1') return { findings: [{ severity: 'HIGH', location: at, message: 'FR1 is not realized', expectationRef: 'FR1', confidence: 'breach' }] };
+		return { findings: [{ severity: 'HIGH', location: at, message: 'an invented requirement', expectationRef: 'FR9', confidence: 'breach' }] };
+	});
+	assert.ok(calls.some(c => c.carries.key === 'fr:FR2'), 'FR2 was judged');
+	assert.deepEqual(r.findings.map(f => f.expectationRef), ['FR1'], 'FR9 is unknown: dropped');
+});
+
+test('pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review', () => {
+	for (const [kind, spec] of [['quality', qualitySpec], ['notes', adherenceSpec]] as const) {
+		const { result: r, calls } = divided(spec, 'daemon', call => call.role === 'chunk' ? chunkAnswer(kind, call) : { findings: [] });
+		const relation = calls.filter(c => c.role === 'relation' || c.stage === 'compare' || c.stage === 'pair').length;
+		assert.deepEqual(r.pipelineCalls, {
+			chunk: calls.filter(c => c.stage === 'judge' && c.role === 'chunk').length,
+			obligation: calls.filter(c => c.role === 'obligation').length,
+			relation, merge: 0,
+		}, kind);
+		assert.ok(r.pipelineCalls!['chunk']! > 1 && r.pipelineCalls!['relation']! >= 1, `${kind}: a divided review`);
+		if (kind === 'notes') assert.ok(r.pipelineCalls!['obligation']! > 1);
+	}
+	// One chunk: no pipelineCalls.
+	const s = subject();
+	const snap = codeReviewSnapshot(s, DIVIDING);
+	const adapter = modelDimensionAdapter(qualitySpec(s), s, snap, 384_000) as unknown as ReviewAdapter<unknown>;
+	const { job } = drive(createReviewJob(adapter, 'daemon', snap, 384_000), adapter, () => ({ findings: [] }));
+	assert.equal((result(job) as { pipelineCalls?: unknown }).pipelineCalls, undefined);
+});
+
+test('merge keeps identical findings once, expands note ids to atoms, moves out-of-set findings to outOfScope, and normalises coverage once', () => {
+	// Identical findings from two obligations are kept once, in stage order after the chunk findings.
+	const same = { severity: 'MED', location: 'src/order/order.ts:4', message: 'placeOrder departs from the contract', expectationRef: 'LLD contract 1: placeOrder' };
+	const adherence = divided(adherenceSpec, 'controller', call => call.role === 'chunk' ? { notes: [] } : call.carries.key === 'lld:contract:1' || call.carries.key === 'plan:t1' ? { findings: [same] } : call.carries.key === 'lld:edge:1' ? { findings: [{ ...same, location: 'src/price/price.ts:1' }] } : { findings: [] }).result;
+	assert.deepEqual(adherence.findings.map(f => f.location), ['src/order/order.ts:4'], 'once');
+	assert.deepEqual(adherence.outOfScope?.map(f => f.location), ['src/price/price.ts:1'], 'out of set: outOfScope on the controller path');
+
+	// Coverage: normalised once over the merged result, chunk and gather findings together.
+	const unreached = { severity: 'HIGH', location: 'src/order/order.ts:1', message: 'placeOrder is not exercised', findingKind: 'symbol-coverage', symbolId: 'id-placeOrder', confidence: 'breach' };
+	const missing = { severity: 'HIGH', location: 'src/order/order.ts:1', message: 'the promised test is missing', findingKind: 'promised-test', expectationRef: UNIT, confidence: 'breach' };
+	const coverage = divided(coverageSpec, 'daemon', call => {
+		if (call.role === 'chunk') return { findings: call.carries.atomIds.includes('id-placeOrder') ? [unreached] : [], notes: [] };
+		return { findings: call.carries.key === `test:${UNIT}` ? [missing] : [] };
+	}).result;
+	// placeOrder's evidence is no-edge-story-tests-pass (the record has passing files), so its HIGH is lowered, once;
+	// the missing promised test stays HIGH.
+	assert.deepEqual(coverage.findings.map(f => [f.message, f.severity]), [['placeOrder is not exercised', 'LOW'], ['the promised test is missing', 'HIGH']]);
+	assert.equal(coverage.lowered?.length, 1, 'normalised once');
+
+	// Quality: a duplicate reported by pair reaches the result with its counterpart, after the chunk findings.
+	const dup = { severity: 'MED', location: 'src/order/cancel.ts:1', message: 'cancelOrder duplicates fill', counterpartRef: 'fill', confidence: 'breach' };
+	const quality = divided(qualitySpec, 'daemon', qualityReviewer(c => { const [f, sec] = listsOf(c); return f.includes('id-cancelOrder') && sec.includes('id-fill') ? [{ a: 'id-cancelOrder', b: 'id-fill', why: 'same' }] : f.includes('id-fill') && sec.includes('id-cancelOrder') ? [{ a: 'id-fill', b: 'id-cancelOrder', why: 'same' }] : []; }, () => ({ findings: [dup] }))).result;
+	assert.deepEqual(quality.findings.map(f => [f.location, (f as { counterpartRef?: string }).counterpartRef]), [['src/order/cancel.ts:1', 'fill']]);
 });

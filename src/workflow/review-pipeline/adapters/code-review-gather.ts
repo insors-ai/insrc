@@ -22,8 +22,8 @@
  * counterpart outside the two symbols is rejected.
  *
  * partOf maps an obligation or relation answer to a part of today's DimensionResult; merge
- * joins the chunk result with the parts (t7 adds its de-duplication and today's
- * per-dimension filters).
+ * joins the chunk result with the parts in order, keeps each identical finding once, and
+ * applies the dimension's own result filters once over the whole (finalize).
  */
 
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
@@ -54,6 +54,27 @@ export interface CodeReviewGatherArgs {
 	readonly limitChars:   number;
 	/** The Story's changed files: a finding is located in one of them, as today. */
 	readonly changedFiles: readonly string[];
+	/** Today's result filters over the merged findings (the dimension's toResult: changed-set
+	 *  filter, known-FR filter, coverage normalised once); the path decides out-of-set findings. */
+	readonly finalize:     (findings: readonly DimensionFinding[]) => DimensionResult;
+}
+
+/** A finding's identity: every field, in a fixed order. */
+function findingKey(f: DimensionFinding): string {
+	return JSON.stringify(Object.keys(f).sort().map(k => [k, (f as unknown as Record<string, unknown>)[k]]));
+}
+
+/** The parts in order (chunk results, then obligations, then relations), each identical finding once. */
+export function mergeFindings(parts: readonly DimensionResult[]): DimensionFinding[] {
+	const seen = new Set<string>();
+	const out: DimensionFinding[] = [];
+	for (const f of parts.flatMap(p => p.findings)) {
+		const k = findingKey(f);
+		if (seen.has(k)) continue;
+		seen.add(k);
+		out.push(f);
+	}
+	return out;
 }
 
 /** The expectationRef an obligation's findings carry, as today's filters and rules read it:
@@ -215,6 +236,6 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 			dimension,
 			findings: ((g.answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] }).findings ?? []).map(f => ({ ...f, dimension })),
 		}),
-		merge: (parts: readonly DimensionResult[]): DimensionResult => ({ dimension, findings: parts.flatMap(p => p.findings) }),
+		merge: (parts: readonly DimensionResult[]): DimensionResult => args.finalize(mergeFindings(parts)),
 	};
 }

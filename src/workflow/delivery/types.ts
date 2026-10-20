@@ -87,7 +87,7 @@ export interface WorkItemNode {
 	readonly title:               string | null;
 	readonly workItemHash:        string | null;
 	readonly standalone:          boolean;
-	/** Every raw id joined into this item, e.g. ['S001', 's1']. */
+	/** Every raw id joined into this item, (stored spellings of one story). */
 	readonly sourceIds:           readonly string[];
 	readonly parentId:            string | null;
 	/** Sorted. */

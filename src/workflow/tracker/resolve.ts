@@ -79,9 +79,9 @@ const DEF_RE  = /^DEF-([0-9a-f]{16})\.json$/;
  *  needs. Consulted only where a DEF is absent, so DEF-bearing epics are
  *  unaffected. */
 const ISSUE_RE = /^ISSUE-([0-9a-f]{16})\.json$/;
-// Story ids come in two shapes: the epic route mints `s1`..`s9`, the
-// standalone/bugfix route mints `S001`. Both must match, or a bugfix story is
-// unresolvable by issue number.
+// Every route mints the lowercase `s<n>` story id. The pattern still accepts an
+// uppercase one so a story stored before the s9 conversion can be read by issue
+// number.
 const LLD_RE  = /^LLD-([0-9a-f]{16})-([sS]\d+)\.json$/;
 const PLAN_RE = /^PLAN-([0-9a-f]{16})-([sS]\d+)\.json$/;
 

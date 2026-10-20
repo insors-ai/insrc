@@ -65,7 +65,7 @@ export type CompanionHeaderSource =
 export interface CompanionHeaderInput {
 	readonly repoPath:   string;
 	readonly source:     CompanionHeaderSource;
-	/** The source artifact's id, e.g. LLD-<hash>-S001. */
+	/** The source artifact's id, e.g. LLD-<hash>-s1. */
 	readonly artifactId: string;
 	/** The source markdown's path; the link is to its file name, as the companion is its sibling. */
 	readonly sourceMdPath: string;

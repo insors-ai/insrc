@@ -227,8 +227,12 @@ test("a chunk answer with an unknown key, an atom outside its call's carries, or
 		assert.equal(again.carries.chunkId, first.carries.chunkId, `${name}: the same chunk`);
 		assert.deepEqual(again.prompt.schema, NOTES_CHUNK_SCHEMA, `${name}: still the chunk call`);
 		const system = again.prompt.messages[0]!.content as string;
-		assert.ok(system.includes('REJECTED') && system.includes('"no-such-key" is not one of the listed obligation keys'), `${name}: the correction names the reason`);
+		assert.ok(system.includes('REJECTED') && system.includes('keys that are not listed obligation keys: "no-such-key"'), `${name}: the correction names the reason`);
 		assert.ok((again.prompt.messages[1]!.content as string) === (first.prompt.messages[1]!.content as string), `${name}: the chunk's payload is unchanged`);
+		// Many bad notes give one short reason per kind, each value once.
+		const many = Array.from({ length: 200 }, () => ({ key: 'no-such-key', atomIds: [outside], note: 'x' }));
+		const reasons = adapter.stagesFor('daemon')[0]!.validate!({ notes: many }, first);
+		assert.deepEqual(reasons, ['notes use keys that are not listed obligation keys: "no-such-key"', `notes name atomIds that are not symbols in this chunk: "${outside}"`], name);
 		// An atom outside the call's carries on the re-issue: the review fails.
 		assert.throws(() => applyOutput(next, adapter, again.callId, echo(again, { notes: [{ key, atomIds: [outside], note: 'x' }] })),
 			(e: unknown) => e instanceof ReviewCallFailedError && /invalid-answer/.test(e.message), name);

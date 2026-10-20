@@ -84,16 +84,18 @@ export function notesChunkCall(spec: NotesChunkSpec, chunk: ReviewChunk, materia
 	return { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: NOTES_CHUNK_SCHEMA, execution };
 }
 
-/** A notes-only chunk answer's problems: a key that is not an obligation, an atom the call did not carry. */
+/** A notes-only chunk answer's problems: keys that are not obligations, atoms the call did not carry.
+ *  One reason per kind, each distinct value named once, so the correction stays small beside the call. */
 export function validateNotesChunk(answer: unknown, call: ReviewCall, material: ReviewMaterial): string[] {
 	const keys = new Set(material.obligations.map(o => o.key));
 	const carried = new Set(call.carries.atomIds);
-	const reasons: string[] = [];
-	for (const [i, n] of ((answer as { notes?: readonly ChunkNote[] }).notes ?? []).entries()) {
-		if (!keys.has(n.key)) reasons.push(`notes[${i}].key "${n.key}" is not one of the listed obligation keys`);
-		for (const id of n.atomIds) if (!carried.has(id)) reasons.push(`notes[${i}].atomIds names "${id}", which is not a symbol in this chunk`);
-	}
-	return reasons;
+	const notes = (answer as { notes?: readonly ChunkNote[] }).notes ?? [];
+	const badKeys = [...new Set(notes.map(n => n.key).filter(k => !keys.has(k)))];
+	const badAtoms = [...new Set(notes.flatMap(n => n.atomIds).filter(id => !carried.has(id)))];
+	return [
+		...(badKeys.length > 0 ? [`notes use keys that are not listed obligation keys: ${badKeys.map(k => JSON.stringify(k)).join(', ')}`] : []),
+		...(badAtoms.length > 0 ? [`notes name atomIds that are not symbols in this chunk: ${badAtoms.map(k => JSON.stringify(k)).join(', ')}`] : []),
+	];
 }
 
 /** The keyed notes a chunk answer carries, for the gather. */

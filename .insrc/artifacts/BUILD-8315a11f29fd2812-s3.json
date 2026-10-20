@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-20T16:45:32.296Z",
+    "updatedAt": "2026-10-20T16:54:56.125Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": false
       }
     ],
-    "summary": "Each model code-review dimension's material() now carries its obligations and context atoms, built from the saved subject and the snapshot only. The builders live in the new src/workflow/review-pipeline/adapters/code-review-obligations.ts; code-review.ts gains an optional ModelDimensionSpec.obligations hook that material() applies. Each dimension attaches its builder with one line in its own spec (adherenceSpec, conventionsSpec, coverageSpec, functionalCoverageSpec): those specs ARE each dimension's adapter definition, which is where the s3 LLD contract 2.1 puts the obligations ('added to s2's codeReviewMaterial output by each dimension's adapter'), and the task's own wording is 'each model dimension's material() adds obligations'. Choosing the builder by dimension inside code-review.ts instead would make it import the judges' helpers (functionalRequirementsOf, promisedTestsOf, testRecordView), while every judge imports code-review.ts: an import cycle. No prompt, schema, filter or judge behaviour changed in those files.",
+    "summary": "Adherence, functional coverage and conventions get a notes-only chunk call in a divided review (src/workflow/review-pipeline/adapters/code-review-chunk.ts, wired in code-review.ts; each dimension's spec supplies its framing in one entry, conventions also its documented rules): obligations and context, the chunk's rows and neighbour lines; schema { notes: [{ key, atomIds, note }] } with no findings field. validate rejects unknown keys and atoms outside the call; the re-issue keeps the chunk call with the reasons appended (s1's withCorrectionNote, now exported, instead of duplicating it), while the single call keeps today's correction. chunkNotesFrom reads the keyed notes and is tested here; it is attached to the adapter's gather plan in t4, because GatherPlan's required members (obligationCall, reduceCall, partOf, merge) are t4's.",
     "testRecord": {
       "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/TESTS.md"
     },
@@ -26,51 +30,65 @@
           "file": "src/workflow/code-review/dimensions/adherence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:45:32.296Z"
+        "timestamp": "2026-10-20T16:54:56.125Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/conventions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:45:32.296Z"
+        "timestamp": "2026-10-20T16:54:56.125Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:45:32.296Z"
+        "timestamp": "2026-10-20T16:54:56.125Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:45:32.296Z"
+        "timestamp": "2026-10-20T16:54:56.125Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:45:32.296Z"
+        "timestamp": "2026-10-20T16:54:56.125Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/adapters/code-review-chunk.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:54:56.125Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-obligations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:45:32.296Z"
+        "timestamp": "2026-10-20T16:54:56.125Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/code-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:45:32.296Z"
+        "timestamp": "2026-10-20T16:54:56.125Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/job.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:54:56.125Z"
       }
     ],
-    "commit": "aecee5ff"
+    "commit": "7de06bfd"
   }
 }

@@ -94,6 +94,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---
 	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact; appendRunLog and appendProgressLog append to the jsonl run traces' },
+	{ file: 'src/workflow/artifact-core/sidecar.ts', class: 'non-artifact', via: 'raw', note: 'appendSidecarLine, the one function that appends a history record as a JSON line to the path it is given; the lines are history, not an artifact head' },
 	{ file: 'src/daemon/fatal.ts', class: 'non-artifact', via: 'raw', note: 'appends the crash trace to daemon.crash.log' },
 	{ file: 'src/daemon/shutdown.ts', class: 'non-artifact', via: 'raw', note: 'appends the last line (reason and health) to the shutdown record' },
 	{ file: 'src/daemon/steps/analyze-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },

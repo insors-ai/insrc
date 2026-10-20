@@ -1,0 +1,66 @@
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+
+import { History } from '../history.js';
+import { createMemorySidecar } from '../sidecar.js';
+import { HistoryEntryError, HistoryReadError } from '../types.js';
+import type { Actor, ChangeLogEntry, Feedback } from '../types.js';
+import { InvalidArtifactKeyError } from '../../artifact-ids.js';
+
+const ID = 'LLD-0123456789abcdef-s2';
+const actor: Actor = { id: 'github:alice', kind: 'person', properties: {} };
+const fb = (id: string, over: Partial<Feedback> = {}): Feedback =>
+	({ id, text: 'fix this', actor, timestamp: '2026-10-20T10:00:00Z', feedback: [], kind: 'comment', ...over });
+const entry = (id: string, over: Partial<ChangeLogEntry> = {}): ChangeLogEntry =>
+	({ id, actor, timestamp: '2026-10-20T11:00:00Z', operation: 'update', ...over });
+
+describe('History', () => {
+	it('History validates feedback and keeps the anchor through a round trip, and openFeedback closes entries by addresses', async () => {
+		const h = new History(createMemorySidecar());
+		const anchor = { quote: 'q', prefix: 'pre', suffix: 'suf', section: 'sec', lines: [3, 5] as [number, number] };
+		await h.appendFeedback(ID, fb('f1', { anchor }));
+		assert.deepEqual((await h.feedback(ID))[0]?.anchor, anchor);
+
+		const bad: [string, Feedback][] = [
+			['empty text', fb('b1', { text: '  ' })],
+			['unknown kind', fb('b2', { kind: 'shout' as Feedback['kind'] })],
+			['quote over 500', fb('b3', { anchor: { quote: 'x'.repeat(501) } })],
+			['prefix over 40', fb('b4', { anchor: { prefix: 'x'.repeat(41) } })],
+			['suffix over 40', fb('b5', { anchor: { suffix: 'x'.repeat(41) } })],
+			['lines out of order', fb('b6', { anchor: { lines: [5, 3] } })],
+			['lines not integers', fb('b7', { anchor: { lines: [1.5, 3] } })],
+			['no id', fb('')],
+		];
+		for (const [why, f] of bad) await assert.rejects(h.appendFeedback(ID, f), HistoryEntryError, why);
+		// limits are inclusive
+		await h.appendFeedback(ID, fb('ok', { anchor: { quote: 'x'.repeat(500), prefix: 'x'.repeat(40), suffix: 'x'.repeat(40), lines: [2, 2] } }));
+		await assert.rejects(h.appendFeedback('not-an-id', fb('f9')), InvalidArtifactKeyError);
+
+		// the log: validation and tail
+		await assert.rejects(h.appendLog(ID, entry('e0', { operation: 'explode' as ChangeLogEntry['operation'] })), HistoryEntryError);
+		await assert.rejects(h.appendLog(ID, { ...entry('e0'), timestamp: '' }), HistoryEntryError);
+		assert.equal(await h.logTail(ID), undefined);
+
+		// openness: addressed by listed id, by 'all', and not by an earlier entry
+		const h2 = new History(createMemorySidecar());
+		await h2.appendFeedback(ID, fb('f1'));
+		await h2.appendFeedback(ID, fb('f2'));
+		await h2.appendFeedback(ID, fb('f3', { timestamp: '2026-10-20T12:00:00Z' }));
+		assert.deepEqual((await h2.openFeedback(ID)).map(f => f.id), ['f1', 'f2', 'f3']);
+		await h2.appendLog(ID, entry('e1', { addresses: ['f1'] }));
+		assert.deepEqual((await h2.openFeedback(ID)).map(f => f.id), ['f2', 'f3']);
+		await h2.appendLog(ID, entry('e2', { addresses: 'all' }));
+		assert.deepEqual((await h2.openFeedback(ID)).map(f => f.id), ['f3'], 'f3 came after both entries');
+		assert.equal((await h2.logTail(ID))?.id, 'e2');
+		assert.equal((await h2.log(ID)).length, 2);
+		// another artifact's records never leak in
+		assert.deepEqual(await h2.log('LLD-0123456789abcdef-s3'), []);
+	});
+
+	it('a failing or malformed reader surfaces as HistoryReadError', async () => {
+		const broken = { appendRecord: () => Promise.resolve(), readRecords: () => Promise.reject(new Error('disk')) };
+		await assert.rejects(new History(broken).log(ID), HistoryReadError);
+		const junk = { appendRecord: () => Promise.resolve(), readRecords: () => Promise.resolve([1]) } as never;
+		await assert.rejects(new History(junk).feedback(ID), HistoryReadError);
+	});
+});

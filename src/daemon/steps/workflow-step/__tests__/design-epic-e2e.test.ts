@@ -250,6 +250,29 @@ test('design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../', asyn
 	}
 });
 
+test('design.epic: synthesize with a Define that carries no creation time fails with missing-anchor and writes nothing', async () => {
+	_clearWorkflowStateStoreForTests();
+	registerWorkflowRunners();
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-hld-e2e-noanchor-'));
+	const slug = HASH;
+	try {
+		seedApprovedDefine(repo, slug);
+		// the Define is stored without a creation time, so nothing anchors the Epic's folder
+		const defineJson = defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering').json;
+		const define = JSON.parse(readFileSync(defineJson, 'utf8')) as { meta: Record<string, unknown> };
+		delete define.meta['createdAt'];
+		writeFileSync(defineJson, JSON.stringify(define, null, 2));
+		const state = await walkToSynthesize(repo, slug, s6PassedVerdict);
+		const out = payload(await handleWorkflowStep({ phase: 'synthesize', artifact: artifactJson, state }));
+		assert.notEqual(out['next'], 'done', JSON.stringify(out));
+		assert.match(JSON.stringify(out), /no Epic anchor/);
+		assert.equal(existsSync(join(repo, '.insrc', 'artifacts', `HLD-${slug}.json`)), false, 'no HLD record was written');
+		assert.equal(existsSync(join(repo, 'docs', 'epics', 'tag-filtering-E20260718a3f4b8c9', 'HLD.md')), false);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('design.epic: refuses to start without an approved Define', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();

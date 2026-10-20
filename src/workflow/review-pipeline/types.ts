@@ -89,8 +89,9 @@ export interface AdapterStage {
 	singleCalls(prior: StageOutputs, snapshot: ReviewMaterialSnapshot): readonly ChunkPrompt[];
 	/** The calls that read one chunk (a model stage, divided review). */
 	chunkCalls(chunk: ReviewChunk, prior: StageOutputs, snapshot: ReviewMaterialSnapshot): readonly ChunkPrompt[];
-	/** A deterministic stage's work; it reads only `prior` and the snapshot. */
-	run?(prior: StageOutputs, snapshot: ReviewMaterialSnapshot): Promise<unknown>;
+	/** A deterministic stage's work; it reads only `prior` and the snapshot. `signal`
+	 *  cancels it; the pipeline also stops waiting for it the moment the signal fires. */
+	run?(prior: StageOutputs, snapshot: ReviewMaterialSnapshot, signal?: AbortSignal): Promise<unknown>;
 	readonly onCallFailure: FailurePolicy;
 	/** Semantic problems with an answer already checked against the schema; empty = valid.
 	 *  Non-empty is an invalid answer, and the reasons become the re-issue's correction. */

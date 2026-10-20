@@ -114,14 +114,23 @@ test("a review under the limit is one chunk whose calls carry today's messages a
 		const ids = many.filter(a => a.file === `src/file${f}.ts` && a.id !== 'a20' && a.id !== 'a0').map(a => a.id);
 		assert.equal(new Set(ids.map(chunkOf)).size, 1, `src/file${f}.ts stays in one chunk`);
 	}
-	// A relation the plan cuts: each side's chunk names the other side's atom, once, with its summary and holder.
+	// A usage relation the plan cuts (calls, references): each side's chunk names the other side's
+	// atom, once, with its summary and holder. A proximity relation (same file or directory) adds a
+	// summary only while it fits, and any it adds names the right holder, once.
 	assert.ok(big.plan.crossRelations.some(r => r.from === 'a4' && r.to === 'a28'), 'the far reference is cut');
 	for (const r of big.plan.crossRelations) {
 		const from = chunks.find(c => c.id === chunkOf(r.from))!;
 		const to = chunks.find(c => c.id === chunkOf(r.to))!;
-		assert.deepEqual(from.neighbours.filter(n => n.atomId === r.to).map(n => n.heldInChunk), [to.id]);
-		assert.deepEqual(to.neighbours.filter(n => n.atomId === r.from).map(n => n.heldInChunk), [from.id]);
-		assert.ok(from.neighbours.find(n => n.atomId === r.to)!.summary.startsWith('summary of '));
+		const fromSide = from.neighbours.filter(n => n.atomId === r.to).map(n => n.heldInChunk);
+		const toSide = to.neighbours.filter(n => n.atomId === r.from).map(n => n.heldInChunk);
+		if (r.kind === 'calls' || r.kind === 'references') {
+			assert.deepEqual(fromSide, [to.id]);
+			assert.deepEqual(toSide, [from.id]);
+			assert.ok(from.neighbours.find(n => n.atomId === r.to)!.summary.startsWith('summary of '));
+		} else {
+			assert.ok(fromSide.length <= 1 && fromSide.every(h => h === to.id));
+			assert.ok(toSide.length <= 1 && toSide.every(h => h === from.id));
+		}
 	}
 	const run = await drive(big, s => toyAdapter(s), seeingModel().answer);
 	const out = result<ToyResult>(run.job);
@@ -677,6 +686,35 @@ test('a review cancelled while a call is in flight ends at once with AbortError,
 		assert.equal(calls, 1, 'no re-issue');
 		assert.equal(finished, 0, 'nothing recorded: the review produced no result');
 	}
+	// Cancelled while a deterministic stage runs (a probe that never finishes): AbortError at once, nothing committed.
+	{
+		let finishedProbe = false;
+		const hang = async (): Promise<unknown> => new Promise(() => { /* never settles */ });
+		const ac = new AbortController();
+		const snapP: ReviewMaterialSnapshot = { kind: 'design-review', documentText: 'the DEF' };
+		const extractOnly = {
+			completeStructured: async (_m: LLMMessage[], schema: StructuredSchema) =>
+				({ callId: (schema as unknown as { properties: { callId: { const: string } } }).properties.callId.const, answer: { claims: [{ id: 'p1' }] } }),
+		} as unknown as LLMProvider;
+		const adapter = premiseAdapter(snapP, async (...a) => { const r = await hang(); finishedProbe = true; return r; });
+		setTimeout(() => ac.abort(), 50);
+		const t0 = Date.now();
+		const err = await Promise.race([
+			runReviewJob(createReviewJob(adapter, 'daemon', snapP, 384_000), adapter, extractOnly, { signal: ac.signal }).then(() => null, (e: unknown) => e),
+			new Promise(r => setTimeout(() => r(new Error('still running 3 s after the cancel')), 3_000)),
+		]);
+		assert.ok(err instanceof Error && err.name === 'AbortError', `got ${String(err)}`);
+		assert.ok(Date.now() - t0 < 1_000, 'the pending stage did not hold the review');
+		assert.equal(finishedProbe, false);
+		// runStage itself: the stage's output is never committed after the cancel.
+		let j = createReviewJob(adapter, 'daemon', snapP, 384_000);
+		const ex = nextCalls(j, adapter)[0]!;
+		j = applyOutput(j, adapter, ex.callId, { callId: ex.callId, answer: { claims: [{ id: 'p1' }] } });
+		const ac2 = new AbortController();
+		setTimeout(() => ac2.abort(), 30);
+		await assert.rejects(runStage(j, adapter, { signal: ac2.signal }), (e: unknown) => e instanceof Error && e.name === 'AbortError');
+		assert.equal(j.snapshot.evidence, undefined);
+	}
 	// An answer that arrives around the cancel is never applied after it: wherever the cancel lands
 	// relative to the answer (swept across microtask turns), a result is never made once it fired.
 	for (let depth = 0; depth <= 8; depth++) {
@@ -825,4 +863,45 @@ test('a relation judged by two calls is complete only when both are answered', (
 	wj = applyOutput(wj, wa, first.callId, model.answer(first));
 	const second = wj.pending[0]!;
 	assert.throws(() => applyOutput(wj, wa, second.callId, model.answer(second)), (e: unknown) => e instanceof AtomTooLargeError && /relation a1 references a2/.test(e.message));
+});
+
+test('usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged', () => {
+	// h calls k; 60 small symbols share h's directory only. Sized with every summary line, {h, k} would not fit;
+	// sized with the summaries it must carry (none: its only usage partner is inside), it does.
+	const h = atom(1, 3_500, 'src/hub/h.ts', 'src/hub');
+	const k = atom(2, 300, 'src/hub/k.ts', 'src/hub');
+	const mates = Array.from({ length: 60 }, (_, i) => atom(100 + i, 40, `src/hub/m${i}.ts`, 'src/hub'));
+	const atoms = [h, k, ...mates];
+	const rel: ReviewRelation[] = [{ from: 'a1', to: 'a2', kind: 'calls' }];
+	for (let i = 0; i < atoms.length; i++) for (let j = i + 1; j < atoms.length; j++) rel.push({ from: atoms[i]!.id, to: atoms[j]!.id, kind: 'same-module' });
+	const snap = toySnapshot(atoms, rel);
+	const job = createReviewJob(toyAdapter(snap), 'daemon', snap, LIMIT);
+	const holder = job.plan.chunks.find(c => c.atomIds.includes('a1'))!;
+	assert.ok(holder.atomIds.includes('a2'), 'the call partners share the chunk');
+	// With every proximity line counted, that chunk could not have been formed.
+	const allLines = mates.reduce((n, m) => n + `summary of ${m.label}`.length + 40, 0);
+	assert.ok(holder.chars - holder.neighbours.reduce((n, x) => n + x.summary.length + 40, 0) + allLines > LIMIT, 'it fits only because proximity lines are optional');
+	assert.ok(holder.chars <= LIMIT);
+	assert.ok(holder.neighbours.length < mates.length, 'only the proximity summaries that fit');
+	// The packer fills the hub's chunk with whole symbols; a chunk with room left carries proximity summaries as context.
+	assert.ok(job.plan.chunks.some(c => c.neighbours.length > 0 && c.chars <= LIMIT), 'proximity summaries are added where they fit');
+	for (const c of job.pending) assert.ok(c.chars <= LIMIT);
+
+	// A usage summary is never dropped while there is room: a call cut between two chunks keeps both lines.
+	const x = atom(10, 3_000, 'src/x/x.ts', 'src/x'), y = atom(11, 3_000, 'src/y/y.ts', 'src/y'), z = atom(12, 3_000, 'src/z/z.ts', 'src/z');
+	const chain = toySnapshot([x, y, z], [{ from: 'a10', to: 'a11', kind: 'calls' }, { from: 'a11', to: 'a12', kind: 'calls' }]);
+	const cj = createReviewJob(toyAdapter(chain), 'daemon', chain, LIMIT);
+	for (const r of cj.plan.crossRelations) {
+		const of = (id: string) => cj.plan.chunks.find(c => c.atomIds.includes(id))!;
+		assert.ok(of(r.from).neighbours.some(n => n.atomId === r.to) && of(r.to).neighbours.some(n => n.atomId === r.from), `the cut call ${r.from}->${r.to} keeps both summaries`);
+	}
+
+	// Last resort: an atom so large that its usage summaries do not fit beside it keeps those that fit, logged.
+	const giant = atom(20, LIMIT - 700, 'src/g/g.ts', 'src/g');
+	const callees = Array.from({ length: 12 }, (_, i) => atom(30 + i, 300, `src/c${i}/c.ts`, `src/c${i}`));
+	const lastSnap = toySnapshot([giant, ...callees], callees.map(c => ({ from: 'a20', to: c.id, kind: 'calls' as const })));
+	const lj = createReviewJob(toyAdapter(lastSnap), 'daemon', lastSnap, LIMIT);
+	const gchunk = lj.plan.chunks.find(c => c.atomIds.includes('a20'))!;
+	assert.deepEqual(gchunk.atomIds, ['a20']);
+	assert.ok(gchunk.chars <= LIMIT && gchunk.neighbours.length < callees.length, 'the atom stays whole; the summaries that do not fit are left out');
 });

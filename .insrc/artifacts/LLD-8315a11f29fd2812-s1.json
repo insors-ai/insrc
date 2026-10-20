@@ -28,91 +28,55 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "pass",
+      "verdict": "block",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
           "ref": "coverage-of-intent",
           "item": "coverage-of-intent",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "S001 covers the upstream pipeline, identifier, shared-limit, refusal-handling and Ollama requirements without taking on later Stories' review semantics.",
-          "evidence": "DEF §6.1 specifies ac1–ac5 for these capabilities. HLD §5.1 assigns S001 the generic engine and single-chunk adapters; §5.2–5.5 defer material construction, divided-review adjudication and controller integration. The proposed stages accommodate the existing serial dimension runner and extract/probe/verify orchestration. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/code-review/runner.ts, src/workflow/review/review.ts]",
-          "action": "Preserve the stated rollout boundaries.",
+          "severity": "MED",
+          "premise": "The design covers the HLD requirement that every structured review call runs in the repository working directory.",
+          "evidence": "HLD \u00a75.1 explicitly requires 'every structured review call runs in the repository working directory'. The LLD adds cwd only to verification while preserving extraction unchanged. premiseAdapter's extract stage uses execution: { mode: 'structured' }; the parity test explicitly asserts extraction's cwd is undefined. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts]",
+          "action": "Specify repo cwd for extraction too, and update the parity assertion, or explicitly amend the upstream requirement.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "current-behaviour.1",
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Code-review calls currently have nested retries, and adherence makes no call without an approved LLD or plan.",
-          "evidence": "judgeAdherence returns an empty result when both approved artifacts are null; otherwise it wraps completeStructured in withStructuredRetry. CliProvider.completeStructured wraps its execution in withTransientRetry, whose maxAttempts is 3. runCodeReview awaits judges serially and catches failures before its persistence path. [files: src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/runner.ts, src/agent/providers/cli-provider.ts, src/agent/providers/structured-output.ts]",
-          "action": "Retain the no-contract short circuit and remove both retry layers from pipeline-owned calls.",
+          "severity": "MED",
+          "premise": "Today's review paths send their own calls, no call carries an identifier, and there is no review configuration key.",
+          "evidence": "The current runReview and runTemplateReview already invoke createReviewJob and runReviewJob. runDimensionJob does the same for code-review adapters. The driver sends internalRetry: false, job.issue wraps calls with envelopeMessages/envelopeSchema, and CONFIG_CATALOG already declares review.chunkTokens with default 128000. [files: src/workflow/review/review.ts, src/workflow/review/template-review.ts, src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/job.ts, src/config/config-catalog.ts]",
+          "action": "Rebase the current-behaviour and migration sections onto the delivered pipeline. Separate completed work from the remaining amendments.",
           "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.2",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Premise review extracts, probes and verifies serially; verifyClaim has a 180-second timeout and currently supplies no cwd.",
-          "evidence": "runReview awaits extractClaims, gatherEvidence and then verifyOrRecord for each claim. verifyClaim supplies '{ timeoutMs: VERIFY_CALL_TIMEOUT_MS, ...(signal !== undefined ? { signal } : {}) }'; VERIFY_CALL_TIMEOUT_MS is 180_000. No cwd is supplied. [files: src/workflow/review/review.ts, src/workflow/review/verify.ts]",
-          "action": "Preserve ordering and timeout while adding the explicitly designed repository cwd.",
-          "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "new-versus-reuse.1",
           "ref": "new-versus-reuse",
           "item": "new-versus-reuse",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The delivered ReviewJob and packIntoBatches provide reusable bounded planning and refusal-handling machinery.",
-          "evidence": "ReviewJob already stores pending calls, carried symbol/context IDs and issued prompt hashes. applyRefusal reduces budgets and replans the refused material. packIntoBatches measures complete batches and throws AtomTooLargeError when an individual item's rendered prompt exceeds the budget. [files: src/workflow/code-review/review-job.ts, src/workflow/code-review/pack-into-batches.ts]",
-          "action": "Preserve these behaviors when generalizing the API.",
+          "severity": "MED",
+          "premise": "Ollama's reviewer session and the generic read-only tool loop still need to be introduced and extracted.",
+          "evidence": "OllamaProvider already implements runReviewSession using runReadOnlyToolLoop and emitStructuredAnswer. The generic loop already resolves getTool(name), rejects tools absent from args.allow, and dispatches only allowed tools. The analyzer's runToolLoop wrapper already calls that shared implementation. [files: src/agent/providers/ollama.ts, src/agent/read-only-tool-loop.ts, src/analyze/context/driver.ts]",
+          "action": "Describe these as existing dependencies and specify only necessary changes; do not extract or introduce a second implementation.",
           "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "new-versus-reuse.2",
-          "ref": "new-versus-reuse",
-          "item": "new-versus-reuse",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The analyzer loop needs execution-time allowlist enforcement before it can safely serve the proposed read-only reviewer.",
-          "evidence": "runToolLoop advertises getReadOnlyTools(), but dispatches returned names directly through 'executeTool(call.name, call.input, deps)'. executeTool resolves the global registry and executes the resolved tool; it does not enforce the shaper allowlist. tool-surface.ts already exposes the explicit allowlist and isReadOnlyShaperTool predicate. [files: src/analyze/context/driver.ts, src/analyze/context/tool-surface.ts, src/daemon/tools/executor.ts]",
-          "action": "Reuse the existing allowlist and enforce it before dispatch, as designed.",
-          "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "change-sites.1",
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Removing the old ReviewJob API requires updating its tests, but no current production consumer.",
-          "evidence": "Repository-wide TypeScript import searches found review-job imports only in review-job.test.ts. The current runner invokes dimension judges directly. pack-into-batches is imported by review-job.ts and its dedicated test. Reading the job implementation confirms the old signatures described in the migration. [files: src/workflow/code-review/review-job.ts, src/workflow/code-review/runner.ts, src/workflow/code-review/__tests__/review-job.test.ts, src/workflow/code-review/__tests__/pack-into-batches.test.ts]",
-          "action": "Move and rewrite the tests; retain the promised packer re-export.",
+          "severity": "HIGH",
+          "premise": "The stated adapter contracts suffice for the new zero-atom path to pack an obligation's context atoms into bounded gather calls.",
+          "evidence": "GatherPlan currently exposes 'obligationCall: (key: string, evidence: readonly EvidenceNote[]) => ChunkPrompt'. It accepts no selected context batch and returns one prompt. startGather passes only evidence-note IDs to requestNoteCall; requestNoteCall can reduce notes, not context atoms. With zero notes and an oversized obligation prompt, its empty batches satisfy the non-progress check and it throws 'the evidence for ... cannot be reduced to fit one call'. The LLD adds this context-packing guarantee without specifying the required contract or gather changes. [files: src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/job.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
+          "action": "Define how obligation context is selected, passed in batches, recorded in carries, and combined into one judgement. Add the corresponding GatherPlan and gather-driver changes, including named oversized-context-atom errors.",
           "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Both runShaperToolLoop and runShaper's legacy tail must be updated when extracting the generic loop.",
-          "evidence": "Both production paths independently invoke runToolLoop followed by runFinalStructuredEmit. The final emitter also supplies analyzer-specific schema instructions, tracing and structured-output retry options, so moving only runShaperToolLoop would leave a second implementation path. [files: src/analyze/context/driver.ts]",
-          "action": "Preserve both wrappers' analyzer-specific behavior during extraction.",
-          "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "data-compatibility.1",
@@ -120,9 +84,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Older configuration documents can receive review.chunkTokens through the existing catalog reconciliation mechanism.",
-          "evidence": "reconcileConfig iterates catalog entries, classifies each dotted path and, for 'fill', calls 'writeLeaf(config, owned, keys, cloneDefault(opt.default))'. This supports adding a previously absent review subtree without a bespoke migration. [files: src/config/reconcile.ts, src/config/config-catalog.ts]",
-          "action": "Add the catalog entry and retain a regression test for an old configuration lacking review.",
+          "premise": "Missing review.chunkTokens values can receive the default through existing config reconciliation.",
+          "evidence": "CONFIG_CATALOG declares a numeric review.chunkTokens default of 128000. reconcileConfig iterates catalog rows and its 'fill' branch writes cloneDefault(opt.default) for missing paths. [files: src/config/config-catalog.ts, src/config/reconcile.ts]",
+          "action": "Retain this reconciliation path.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -132,9 +96,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Keeping parts unchanged and adding optional pipelineCalls avoids changing the existing code-review result shape for single-chunk reviews.",
-          "evidence": "DimensionResult.parts is currently optional with exactly '{ map: number; reduce: number; compare: number }'. The runner persists dimensions directly, and validateArtifact checks dimension order, verdict and folded finding counts without requiring parts or rejecting additional dimension fields. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
-          "action": "Keep parts readable and omit pipelineCalls on single-chunk results as specified.",
+          "premise": "The added result metadata can remain optional while preserving the existing parts shape.",
+          "evidence": "DimensionResult retains optional parts with map/reduce/compare counts and separately declares optional pipelineCalls. ReviewReport also declares optional pipelineCalls. finishJob attaches pipelineCalls only when the job is divided; the runner preserves dimension objects when constructing the stored body. [files: src/workflow/code-review/types.ts, src/workflow/review/types.ts, src/workflow/review-pipeline/job.ts, src/workflow/code-review/runner.ts]",
+          "action": "Keep these fields optional and preserve the existing parts contract.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -144,9 +108,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S001 owns refinements to sc1–sc6 while controller frames and MCP schema changes remain S005's responsibility.",
-          "evidence": "HLD §4 assigns sc1–sc6 to s1 and sc7 to s5. Its rollout explicitly places controller adoption in Phase C. The LLD confines S001 to adapter stage plans and driver APIs while leaving the controller frames unchanged until s5. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
-          "action": "Keep controller schema and state migration out of this implementation.",
+          "premise": "S001 owns the generic pipeline contracts while controller frame adoption and domain-specific chunking/gather remain assigned to adjacent stories.",
+          "evidence": "HLD \u00a75 assigns sc1\u2013sc6 to S001, code material to S002, code gather to S003, document chunking/gather to S004, and controller integration/sc7 to S005. The LLD preserves these assignments. Current controller handlers still expose emit_judgements and emit_findings, while adapter stage plans already distinguish daemon and controller paths. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/code-review.ts, src/daemon/steps/code-review-step/handler.ts, src/daemon/steps/review-step/handler.ts]",
+          "action": "Keep the amendments within the generic contracts and leave controller frame integration to S005.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -156,9 +120,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Claude reviewer-session size classification is missing today, whereas Codex sessions already reach the size-refusal classifier.",
-          "evidence": "reviewSessionOnce throws a plain Error for Claude's is_error envelope. Claude completeStructured already uses sizeRefusalOr. The Codex session calls runCodex, which classifies error events through sizeRefusalOr and nonzero exits through cliExitError. [files: src/agent/providers/cli-provider.ts]",
-          "action": "Add Claude classification and preserve the existing Codex path with regression tests.",
+          "premise": "Failed model judgements can be retried once and then handled by the stage-specific failure policy.",
+          "evidence": "applyFailure reissues while call.attempt < MAX_CALL_ATTEMPTS, where the constant is 2. Exhaustion either throws ReviewCallFailedError or records notJudged. The premise verify stage uses record-not-judged, and notJudgedFinding produces a MED finding while retaining other answers. The driver treats AbortError and reviewer-session timeout as terminal before retry classification. [files: src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/design-review.ts]",
+          "action": "Preserve these distinctions when extending gather and refusal handling.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -167,12 +131,12 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The proposed not-judged and diagram-observation policies preserve existing failure outcomes.",
-          "evidence": "verifyOrRecord attempts verification twice and then returns a MED finding beginning 'Not judged: the reviewing model call failed twice'. judgeDiagram catches failures separately for each handler, appends a LOW observation and continues with the remaining handlers. [files: src/workflow/review/review.ts, src/workflow/code-review/dimensions/diagram/index.ts]",
-          "action": "Preserve per-premise and per-handler isolation when introducing stages.",
+          "severity": "HIGH",
+          "premise": "The specified cancellation contract ends the entire review immediately, including an active deterministic stage.",
+          "evidence": "runReviewJob awaits runStage directly. runStage checks the signal before and after 'await stage.run(job.outputs, job.snapshot)', but AdapterStage.run accepts no signal and the await is not raced against cancellation. The premise probe invokes gatherEvidence through this path. An abort during that work therefore waits for the stage to finish, despite the unconditional immediate-cancellation promise. [files: src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/design-review.ts]",
+          "action": "Pass cancellation into deterministic stages and bound the driver's wait, preventing output commit after cancellation. Add a test that aborts while a deterministic stage remains pending.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "tests.1",
@@ -180,25 +144,36 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Every upstream S001 acceptance criterion has an explicit planned test mapping, using viable existing test seams.",
-          "evidence": "DEF §6.1 ac1–ac5 map to parity, identifier retries, limit calculation, refusal redivision and Ollama execution tests in LLD §7. Existing review-job tests record rendered prompts and inject size refusals; existing CLI-session tests use scripted fake executables to inspect arguments, cwd, calls and retry counts. These support the proposed assertions. This verifies test-plan coverage, not execution of the proposed tests. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, src/workflow/code-review/__tests__/review-job.test.ts, src/agent/providers/__tests__/cli-review-session.test.ts]",
-          "action": "Implement and run the mapped tests, including the explicitly gated live envelope and Ollama checks.",
+          "premise": "The five upstream S001 acceptance criteria have corresponding test scenarios.",
+          "evidence": "DEF S001 ac1\u2013ac5 cover parity, identifiers, the default limit, size refusal, and Ollama execution. The LLD maps all five. Existing test bodies assert prompt/result parity, fresh identifiers and two-attempt handling, 384000-character defaults, refusal subdivision with preserved carried atoms/notes, and both Ollama execution modes in a gated live test. These tests were inspected, not executed. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/workflow/review-pipeline/__tests__/pipeline-job.test.ts, src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts, src/workflow/review-pipeline/__tests__/envelope.live.test.ts]",
+          "action": "Retain the mappings; do not treat gated live-test presence as evidence of a successful live run.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The test strategy covers the amended distinction between mandatory usage summaries and optional proximity summaries.",
+          "evidence": "The LLD's test strategy does not specify a case where proximity summaries prevent an otherwise fitting related group. The existing planner measures 'every related atom outside the candidate' without distinguishing relation kinds. Its current test checks summaries for every crossRelation and separately tests trimming a near-full atom, but does not exercise usage-first sizing or optional proximity admission. [files: src/workflow/review-pipeline/prepare.ts, src/workflow/review-pipeline/__tests__/pipeline-job.test.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
+          "action": "Add a regression fixture where call-related atoms fit together only when proximity summaries are excluded from mandatory sizing. Assert usage summaries take priority, optional summaries fit the remaining budget, and last-resort omissions are logged.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         }
       ],
       "counts": {
-        "high": 0,
-        "med": 0,
-        "low": 13,
+        "high": 2,
+        "med": 4,
+        "low": 5,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-20T07:05:35.290Z",
+      "reviewedAt": "2026-10-20T14:05:27.919Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-20T07:41:57.440Z"
+    }
   },
   "body": {
     "summary": {
@@ -374,7 +349,7 @@
           "internal": "The two controller steps' use of the job, and the MCP boundary that admits it: the new answers phase in the insrc_review_step and insrc_code_review_step input schemas in src/mcp/server.ts, their registered schema contracts and tool descriptions, with schema and surface tests (src/mcp/__tests__/schema-registry.test.ts); keeping it in step state, frame sizing, answer validation by call identifier, and offering a review under the limit today's prompts as identified calls in the same frame shape. Compatibility: the controller step states gain an optional pipeline field; a state without it (saved before the change) is resumed on today's path; both stores are memory-only, so, as today, a state does not survive a daemon restart. Tests: S005/ac1 a controller review over the limit is handed the daemon's chunks one frame at a time and records the same kind of result; ac2 a missing or wrong identifier in an answer is rejected and the call offered again under a new UUID; ac3 a new controller review under the limit is offered today's prompts, each as an identified call, and gives today's result; a pre-change state resumes on today's emit_judgements / judgements (code review), emit_claims / claims and emit_verdicts / verdicts (DEF/plan premise review) and emit_findings / findings (HLD/LLD template review) frames, each path tested. The answers phase also accepts a failure outcome per call (size refusal with the reported limit, stall, transient error), mapped to the driver's failure handling and admitted by both MCP input schemas; tested: a controller-reported size refusal re-divides the call, a reported stall or transient error re-issues it once under a new identifier."
         }
       ],
-      "rolloutPhase": "Phase A — the pipeline, single chunk everywhere",
+      "rolloutPhase": "Phase A \u2014 the pipeline, single chunk everywhere",
       "nonFunctional": {
         "performance": "Calls are serial (k6). A review under the limit makes the same number of calls as today. Every prompt sent, chunk or gather, is at most review.chunkTokens x 3 characters.",
         "security": "No new transport: calls go through the existing LLMProvider and the installed CLIs (k7). Reviewer sessions keep their read-only tool sets.",
@@ -432,7 +407,8 @@
             "Every pending call has a callId no call of this job carried before.",
             "Grouping order over the limit: prepare first unites atoms joined by 'calls' relations, then 'same-file', then 'same-module', then 'references'. It packs whole groups into chunks that fit, and a group too large for one chunk is split along the next-weaker relation kind before single atoms are placed. Relation direction does not matter for grouping. Atoms keep the material's order within a chunk.",
             "Divided with no atoms: when the single call (the adapter's singleCalls rendered with all its context) is over the limit, the job is divided even if the material has zero atoms, for example a diff review whose coverage has no symbols but a large test record. Prepare plans no chunk calls. Every obligation goes straight to gather and is judged by obligationCall on its own context atoms, packed by the s1 packer so that every call fits. An obligation context atom that alone does not fit raises AtomTooLargeError naming it.",
-            "single: true is set only when the rendered single call fits the limit; an empty material does not by itself mean single."
+            "single: true is set only when the rendered single call fits the limit; an empty material does not by itself mean single.",
+            "Sizing (amended 2026-10-20): a candidate group is measured with the summaries it must carry, those of usage-related atoms outside it ('calls', 'references'); proximity summaries ('same-file', 'same-module') are added afterwards while they fit the packing budget. So grouping related atoms together never fails merely because of optional context lines."
           ]
         },
         {
@@ -949,7 +925,8 @@
           ],
           "postconditions": [
             "Snapshot completion: the material snapshot is written in two kinds of step and never changes after. At prepare it takes the grounding, ux fileFacts and document text. For the premise review, the moment the extract stage's answer is applied its claims are written to snapshot.claims, and the moment the probe stage commits its evidence is written to snapshot.evidence. Each is written once, and later stages, re-planning and resumed turns read only those fields.",
-            "A deterministic stage that throws applies its onCallFailure policy (record-observation for a diagram handler; fail-review otherwise)."
+            "A deterministic stage that throws applies its onCallFailure policy (record-observation for a diagram handler; fail-review otherwise).",
+            "Cancellation (amended 2026-10-20): the stage receives the signal, and the wait for it is raced against the signal, so a cancel ends the review at once even while a deterministic stage that ignores the signal is running; its output is never committed after the cancel."
           ]
         },
         {
@@ -1061,7 +1038,8 @@
             "Must be deterministic and make no model call: prepare and every re-plan call it, and the same atom must give the same text."
           ],
           "postconditions": [
-            "For every relation cut by the chunk plan, each side's chunk carries one NeighbourSummary of the other side's atom. One per related atom per chunk, never duplicated."
+            "A relation of a usage kind ('calls' between code symbols, 'references' between document sections) that the chunk plan cuts always gives each side's chunk one NeighbourSummary of the other side's atom. A cut relation of a proximity kind ('same-file', 'same-module') adds the other atom's summary as context while it fits the chunk's packing budget. One per related atom per chunk, never duplicated. Amended 2026-10-20 (user decision, from s2's build): previously every cut relation was required, which sized every chunk with all proximity lines and made it impossible for a symbol to fit beside its related atoms.",
+            "Last resort only: an atom so large that even its usage summaries do not fit beside it keeps the ones that fit, and the omission is logged; the atom itself is never cut."
           ]
         },
         {
@@ -1274,7 +1252,7 @@
         },
         {
           "input": "A DEF review under the limit on the daemon.",
-          "expected": "One extract call, a deterministic probe, then one verify call per premise in claim order: today's prompts, order and 3-minute limit. The one difference from today is that each verify call now runs with the repository as cwd, which the HLD sets as an additive change."
+          "expected": "One extract call, a deterministic probe, then one verify call per premise in claim order: today's prompts, order and 3-minute limit. The one difference from today is that every structured call (extraction and each verify call) now runs with the repository as cwd, as the HLD requires of every structured review call (amended 2026-10-20 after review: extraction was first kept without a working directory)."
         },
         {
           "input": "A mock companion added or removed after prepare.",
@@ -1333,7 +1311,8 @@
             "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded'",
             "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them'",
             "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'",
-            "src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts and src/workflow/review-pipeline/__tests__/review-job-core.test.ts: the delivered ISSUE-aef82b03 tests, moved and rewritten to the new API"
+            "src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts and src/workflow/review-pipeline/__tests__/review-job-core.test.ts: the delivered ISSUE-aef82b03 tests, moved and rewritten to the new API",
+            "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged'"
           ],
           "fixturesNeeded": [
             "toy adapter with model and deterministic stages",
@@ -1424,7 +1403,7 @@
       ]
     },
     "migration": {
-      "stateBefore": "Each review path builds and sends its own calls (s1 analyze bundles). runCodeReview (src/workflow/code-review/runner.ts:171) runs each dimension through its own withStructuredRetry wrapper (3 attempts, e.g. src/workflow/code-review/dimensions/adherence.ts:155). runReview (src/workflow/review/review.ts:108) runs extractClaims (src/workflow/review/extract.ts:166), then a probe, then verifyClaim (src/workflow/review/verify.ts:214) for each premise; it routes HLD/LLD to runTemplateReview (src/workflow/review/template-review.ts:50), which calls CliProvider.runReviewSession (src/agent/providers/cli-provider.ts:420). Providers retry inside the call: CliProvider.withTransientRetry (src/agent/providers/cli-provider.ts:251) makes 3 attempts and OllamaProvider.completeStructured (src/agent/providers/ollama.ts:537) uses withStructuredRetry (src/agent/providers/structured-output.ts:186). No call carries an identifier. The ISSUE-aef82b03 ReviewJob and packIntoBatches live under src/workflow/code-review (review-job.ts:210, :321; pack-into-batches.ts:34). There is no review.* config key. In reviewer sessions, a codex size refusal is already classified as InputTooLargeError (runCodex, src/agent/providers/cli-provider.ts:566), but a claude is_error envelope throws a plain Error (src/agent/providers/cli-provider.ts:448). OllamaProvider has no runReviewSession, and the analyzer's tool loop is private to src/analyze/context/driver.ts:863.",
+      "stateBefore": "Delivery note (2026-10-20): this section and the steps below describe the code as it was before Story s1 was built; s1's build (tasks t1-t13) delivered them, so the review pipeline, the provider options, the Ollama reviewer session and review.chunkTokens now exist. The 2026-10-20 amendment changes only prepare's neighbour-summary rule, extraction's working directory and deterministic-stage cancellation. Each review path builds and sends its own calls (s1 analyze bundles). runCodeReview (src/workflow/code-review/runner.ts:171) runs each dimension through its own withStructuredRetry wrapper (3 attempts, e.g. src/workflow/code-review/dimensions/adherence.ts:155). runReview (src/workflow/review/review.ts:108) runs extractClaims (src/workflow/review/extract.ts:166), then a probe, then verifyClaim (src/workflow/review/verify.ts:214) for each premise; it routes HLD/LLD to runTemplateReview (src/workflow/review/template-review.ts:50), which calls CliProvider.runReviewSession (src/agent/providers/cli-provider.ts:420). Providers retry inside the call: CliProvider.withTransientRetry (src/agent/providers/cli-provider.ts:251) makes 3 attempts and OllamaProvider.completeStructured (src/agent/providers/ollama.ts:537) uses withStructuredRetry (src/agent/providers/structured-output.ts:186). No call carries an identifier. The ISSUE-aef82b03 ReviewJob and packIntoBatches live under src/workflow/code-review (review-job.ts:210, :321; pack-into-batches.ts:34). There is no review.* config key. In reviewer sessions, a codex size refusal is already classified as InputTooLargeError (runCodex, src/agent/providers/cli-provider.ts:566), but a claude is_error envelope throws a plain Error (src/agent/providers/cli-provider.ts:448). OllamaProvider has no runReviewSession, and the analyzer's tool loop is private to src/analyze/context/driver.ts:863.",
       "stateAfter": "One module, src/workflow/review-pipeline, holds ReviewPipelineJob, the pure driver step functions, the serial runReviewJob driver, packIntoBatches and the single-chunk adapters for every code-review dimension, the premise review and the template review. runCodeReview, runReview and runTemplateReview keep their signatures and result shapes, and route every model call through the pipeline. Each call is wrapped in the identifier envelope, sent with internalRetry: false, and re-issued at most once under a new callId by the pipeline. review.chunkTokens (default 128000; x3 = 384,000 chars) sets the limit. Size refusals from reviewer sessions surface as InputTooLargeError. OllamaProvider implements runReviewSession over a generic read-only tool loop that runShaperToolLoop also uses. Under the limit, every review makes today's calls in today's order and gives today's results.",
       "migrationSteps": [
         {

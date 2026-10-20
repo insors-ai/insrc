@@ -283,7 +283,7 @@ test('an under-limit DEF review makes one extract call, a probe and one verify c
 		assert.deepEqual(seen.map(c => c.schema), [EXTRACT_SCHEMA, VERIFY_SCHEMA, VERIFY_SCHEMA]);
 		const ex = buildExtractPrompt(DEF, 'define');
 		assert.deepEqual(seen[0]!.messages, [{ role: 'system', content: ex.system }, { role: 'user', content: ex.user }], "today's extraction prompt");
-		assert.equal(seen[0]!.opts?.cwd, undefined, 'extraction keeps today\'s call: no working directory');
+		assert.equal(seen[0]!.opts?.cwd, repo, 'extraction runs in the repository, as every structured review call');
 		// The probe ran: each verify prompt is today's, over the evidence gatherEvidence finds.
 		const claims = normalizeClaimsEnvelope({ claims: CLAIMS as never });
 		const evidence = await gatherEvidence(claims, repo, { readEntitiesForRepo: noEntities });

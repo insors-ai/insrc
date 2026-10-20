@@ -348,9 +348,11 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 	let output: unknown;
 	let next = job;
 	try {
-		output = await stage.run(job.outputs, job.snapshot);
+		// Raced against the signal: a stage that ignores it cannot hold the review past a cancel.
+		output = await untilAborted(stage.run(job.outputs, job.snapshot, opts.signal), opts.signal);
 	} catch (err) {
 		throwIfAborted(opts.signal);
+		if (err instanceof Error && err.name === 'AbortError') throw err;
 		const detail = err instanceof Error ? err.message : String(err);
 		if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, 'stage-error', detail);
 		next = { ...job, notJudged: [...job.notJudged, { stage: stage.id, key: stage.id, cause: 'stage-error', detail, policy: stage.onCallFailure }] };
@@ -627,11 +629,28 @@ function withCorrectionNote(prompt: ChunkPrompt, reasons: readonly string[]): Ch
 	return { ...prompt, messages };
 }
 
-function throwIfAborted(signal: AbortSignal | undefined): void {
-	if (signal?.aborted !== true) return;
+/** `work`, or AbortError as soon as `signal` fires. The work itself is left to finish on its own. */
+export function untilAborted<T>(work: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+	if (signal === undefined) return work;
+	if (signal.aborted) return Promise.reject(abortError());
+	return new Promise<T>((resolve, reject) => {
+		const onAbort = (): void => reject(abortError());
+		signal.addEventListener('abort', onAbort, { once: true });
+		work.then(
+			v => { signal.removeEventListener('abort', onAbort); resolve(v); },
+			(e: unknown) => { signal.removeEventListener('abort', onAbort); reject(e); },
+		);
+	});
+}
+
+function abortError(): Error {
 	const err = new Error('the review was cancelled');
 	err.name = 'AbortError';
-	throw err;
+	return err;
+}
+
+function throwIfAborted(signal: AbortSignal | undefined): void {
+	if (signal?.aborted === true) throw abortError();
 }
 
 function freeze<T>(value: T): T {

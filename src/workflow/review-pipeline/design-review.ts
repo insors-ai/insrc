@@ -74,10 +74,10 @@ export function premiseAdapter(snapshot: ReviewMaterialSnapshot, opts: PremiseAd
 	const document = snapshot.documentText ?? '';
 	const extract: AdapterStage = {
 		id: 'extract', kind: 'model', after: [], onCallFailure: 'fail-review',
-		// Today's extract call: no working directory.
+		// Today's extract prompt; like every structured review call, it runs in the repository (HLD).
 		singleCalls: () => {
 			const { system, user } = buildExtractPrompt(document, opts.stage);
-			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: EXTRACT_SCHEMA, execution: { mode: 'structured' } }];
+			return [{ messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: EXTRACT_SCHEMA, execution: { mode: 'structured', cwd: opts.repo } }];
 		},
 		chunkCalls: () => [],
 		snapshotField: 'claims',

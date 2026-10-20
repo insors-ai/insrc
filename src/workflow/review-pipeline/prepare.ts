@@ -12,8 +12,14 @@
  * atom held in another chunk. Pure: no model call, no I/O.
  */
 
+import { getLogger } from '../../shared/logger.js';
 import { AtomTooLargeError } from './pack-into-batches.js';
 import { RELATION_PRECEDENCE, type NeighbourSummary, type ReviewAtom, type ReviewChunk, type ReviewMaterial, type ReviewRelation } from './types.js';
+
+const log = getLogger('review-pipeline:prepare');
+
+/** Relation kinds whose cut always keeps a summary on both sides; the others are context. */
+export const USAGE_KINDS: ReadonlySet<ReviewRelation['kind']> = new Set(['calls', 'references']);
 
 /** The rendered size of a chunk's call(s) holding `atomIds` with `neighbours`. */
 export type ChunkMeasure = (atomIds: readonly string[], neighbours: readonly NeighbourSummary[]) => number;
@@ -47,10 +53,14 @@ export function planChunks(args: PlanChunksArgs): PlannedChunks {
 	if (ids.length === 0) return { chunks: [], crossRelations: [] };
 	const inPlan = new Set(ids);
 	const related = relatedMap(material.relations);
+	// A cut usage relation (a call between symbols, a reference between sections) always
+	// keeps its summary on both sides; the summaries of atoms that only share a file or a
+	// directory are context, added while they fit.
+	const usageRelated = relatedMap(material.relations.filter(r => USAGE_KINDS.has(r.kind)));
 
-	// While sizing, every related atom outside the candidate is a neighbour: an upper bound.
-	const provisional = (group: readonly string[]): NeighbourSummary[] => neighboursOf(group, related, byId, args.summaryOf, () => '?');
-	const size = (group: readonly string[]): number => measure(group, provisional(group));
+	// While sizing, every usage-related atom outside the candidate is a required neighbour.
+	const required = (group: readonly string[]): NeighbourSummary[] => neighboursOf(group, usageRelated, byId, args.summaryOf, () => '?');
+	const size = (group: readonly string[]): number => measure(group, required(group));
 
 	const units = split(ids, RELATION_PRECEDENCE.length);
 	function split(group: readonly string[], level: number): string[][] {
@@ -86,12 +96,23 @@ export function planChunks(args: PlanChunksArgs): PlannedChunks {
 	const holder = new Map<string, string>(args.heldElsewhere ?? []);
 	packed.forEach((group, i) => { for (const id of group) holder.set(id, chunkIds[i]!); });
 	const chunks: ReviewChunk[] = packed.map((group, i) => {
-		let neighbours = neighboursOf(group, related, byId, args.summaryOf, id => holder.get(id) ?? '');
+		const heldIn = (id: string): string => holder.get(id) ?? '';
+		let neighbours = neighboursOf(group, usageRelated, byId, args.summaryOf, heldIn);
+		const requiredIds = new Set(neighbours.map(n => n.atomId));
+		// Context summaries (same file, same directory) while they fit the packing budget.
+		for (const extra of neighboursOf(group, related, byId, args.summaryOf, heldIn)) {
+			if (requiredIds.has(extra.atomId)) continue;
+			if (measure(group, [...neighbours, extra]) <= soft) neighbours = [...neighbours, extra];
+		}
 		let chars = measure(group, neighbours);
-		// An atom that fills its chunk keeps the neighbours that still fit; the atom is never cut.
-		while (chars > hard && neighbours.length > 0) {
-			neighbours = neighbours.slice(0, -1);
-			chars = measure(group, neighbours);
+		// Last resort: one atom so large that even its usage summaries do not fit beside it.
+		// The atom is never cut; the summaries that do not fit are left out, and logged.
+		if (chars > hard) {
+			log.warn({ chunk: chunkIds[i], atoms: group, summaries: neighbours.length }, 'review pipeline: a chunk cannot hold all its usage summaries beside its atom; leaving out the ones that do not fit');
+			while (chars > hard && neighbours.length > 0) {
+				neighbours = neighbours.slice(0, -1);
+				chars = measure(group, neighbours);
+			}
 		}
 		return { id: chunkIds[i]!, atomIds: group, neighbours, chars };
 	});

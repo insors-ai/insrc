@@ -152,6 +152,7 @@ export function conventionsSpec(subject: CodeReviewSubject): ModelDimensionSpec<
 		// A divided review: chunks note idiom examples and candidate deviations per module; the gather judges each module.
 		chunk: {
 			kind: 'notes',
+			judge: 'Judge this module\'s conventions on the idiom examples and candidate deviations every chunk noted. A breach of a documented rule is a finding naming the rule id in expectationRef, confidence "breach", located at the symbol. A module idiom drawn from too few examples to be confident is reported as confidence "observation" (typically LOW), not a breach. A candidate deviation the evidence does not support is not reported.',
 			framing: 'You are an independent code reviewer gathering evidence on CONVENTIONS: whether a Story\'s changed code obeys the repo\'s DOCUMENTED coding rules (listed below) and the local idioms of the modules it touched. For a module, note the idiom examples you see and any candidate deviation, naming a breached documented rule by its id.',
 			reference: ['## Documented rules (the baseline — name a breached rule by its id)', '```json', JSON.stringify(DOCUMENTED_RULES, null, 2), '```'].join('\n'),
 		},

@@ -21,6 +21,7 @@ import { qualitySpec } from '../../code-review/dimensions/quality.js';
 import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject } from '../../code-review/types.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { chunkNotesFrom, NOTES_CHUNK_SCHEMA } from '../adapters/code-review-chunk.js';
+import { NO_EVIDENCE, REDUCE_NOTE_SCHEMA } from '../adapters/code-review-gather.js';
 import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
 import { applyOutput, createReviewJob, nextCalls, ReviewCallFailedError } from '../job.js';
 import type { ReviewAdapter, ReviewCall, ReviewMaterial, ReviewPipelineJob } from '../types.js';
@@ -186,7 +187,7 @@ const NOTES_ONLY = [['adherence', adherenceSpec], ['functional-coverage', functi
 
 function dividedJob<O>(spec: (s: CodeReviewSubject) => ModelDimensionSpec<O>, s: CodeReviewSubject = subject(), limit = SMALL): { job: ReviewPipelineJob; adapter: ReviewAdapter<unknown> } {
 	const snap = codeReviewSnapshot(s, DIVIDING);
-	const adapter = modelDimensionAdapter(spec(s), s, snap) as unknown as ReviewAdapter<unknown>;
+	const adapter = modelDimensionAdapter(spec(s), s, snap, limit) as unknown as ReviewAdapter<unknown>;
 	return { job: createReviewJob(adapter, 'daemon', snap, limit), adapter };
 }
 const echo = (call: ReviewCall, answer: unknown) => ({ callId: /This request's id is "([^"]+)"/.exec(promptText(call.messages))![1]!, answer });
@@ -327,4 +328,120 @@ test('a quality chunk answer missing, repeating or adding a description is rejec
 	assert.equal(single.plan.single, true);
 	assert.deepEqual(single.pending[0]!.prompt.messages, qualitySpec(subject()).prompt(DIVIDING, 'full', undefined));
 	assert.deepEqual(single.pending[0]!.prompt.schema, qualitySpec(subject()).schema);
+});
+
+// -- gather (t4) ---------------------------------------------------------------
+
+/** Answer every call `answer` gives an answer for, to the end of the job (or until the
+ *  divided finish of t7 is reached, while it is not built). Returns every call made. */
+function drive(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, answer: (call: ReviewCall) => unknown): { job: ReviewPipelineJob; calls: ReviewCall[] } {
+	const calls: ReviewCall[] = [];
+	try {
+		for (let guard = 0; job.phase !== 'done'; guard++) {
+			assert.ok(guard < 500, 'progress');
+			const call = nextCalls(job, adapter)[0];
+			assert.ok(call !== undefined, `a call in phase ${job.phase}`);
+			calls.push(call);
+			job = applyOutput(job, adapter, call.callId, echo(call, answer(call)));
+		}
+	} catch (e) {
+		if (!/dividing a code review is not available yet/.test(String(e))) throw e;
+	}
+	return { job, calls };
+}
+const userOf = (call: ReviewCall): string => call.prompt.messages[1]!.content as string;
+
+test('a key with no notes is adjudicated on the no-evidence statement', () => {
+	const s = subject();
+	const { job, adapter } = dividedJob(adherenceSpec, s);
+	const keys = adapter.material().obligations.map(o => o.key);
+	const noted = keys[0]!;
+	const { calls } = drive(job, adapter, call => call.role === 'chunk'
+		? { notes: call.carries.chunkId === job.plan.chunks[0]!.id ? [{ key: noted, atomIds: [call.carries.atomIds[0]!], note: 'placeOrder implements this contract' }] : [] }
+		: { findings: [] });
+	const obligations = calls.filter(c => c.role === 'obligation');
+	// Every obligation is judged once, the noted one on its note, every other on the no-evidence statement.
+	assert.deepEqual(obligations.map(c => c.carries.key).sort(), [...keys].sort());
+	for (const c of obligations) {
+		assert.deepEqual(c.prompt.schema, adherenceSpec(s).schema, "today's findings schema");
+		if (c.carries.key === noted) {
+			assert.ok(userOf(c).includes('placeOrder implements this contract') && !userOf(c).includes(NO_EVIDENCE));
+		} else {
+			assert.ok(userOf(c).includes(NO_EVIDENCE), `${c.carries.key} is judged on the no-evidence statement`);
+		}
+		// Its own context (the clause) is in the call.
+		const ctxId = adapter.material().obligations.find(o => o.key === c.carries.key)!.atomIds![0]!;
+		assert.ok(userOf(c).includes(adapter.material().context!.find(a => a.id === ctxId)!.text));
+	}
+	// A missing clause reported by its obligation call is a finding of the dimension, as one call would report it.
+	const gather = adapter.gather!;
+	const missing = { severity: 'HIGH', location: 'src/order/cancel.ts:1', message: 'cancelOrder is not implemented', expectationRef: 'LLD contract 2: cancelOrder' };
+	const part = gather.partOf({ role: 'obligation', key: keys[1]!, atomIds: [], answer: { findings: [missing] } }) as { findings: unknown[] };
+	assert.deepEqual(part.findings, [{ ...missing, dimension: 'adherence' }]);
+});
+
+test('a conventions candidate rejected by the module judgement is absent from the merged result', () => {
+	const { job, adapter } = dividedJob(conventionsSpec);
+	const deviation = 'cancelOrder uses a callback where the module uses promises: candidate deviation';
+	const { calls } = drive(job, adapter, call => {
+		if (call.role === 'chunk') {
+			const mod = adapter.material().obligations.find(o => o.key === 'module:src/order');
+			return { notes: call.carries.atomIds.some(id => id === 'id-cancelOrder') && mod !== undefined ? [{ key: 'module:src/order', atomIds: ['id-cancelOrder'], note: deviation }] : [] };
+		}
+		return { findings: [] };   // the module judgement rejects the candidate
+	});
+	const judged = calls.find(c => c.role === 'obligation' && c.carries.key === 'module:src/order')!;
+	assert.ok(userOf(judged).includes(deviation), 'the module judgement sees the candidate');
+	assert.ok(userOf(judged).includes('## Documented rules'), 'with the documented rules');
+	// The chunk could not record it (notes only); the module judgement rejected it: no finding remains.
+	const gather = adapter.gather!;
+	const parts = calls.filter(c => c.role === 'obligation').map(c => gather.partOf({ role: 'obligation', key: c.carries.key!, atomIds: [], answer: { findings: [] } }));
+	const merged = gather.merge([{ dimension: 'conventions', findings: [] }, ...parts]) as { findings: unknown[] };
+	assert.deepEqual(merged.findings, []);
+});
+
+test('a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing', () => {
+	const s = subject();
+	const { job, adapter } = dividedJob(coverageSpec, s);
+	const { calls } = drive(job, adapter, call => call.role === 'chunk' ? { findings: [], notes: [] } : { findings: [] });
+	const smoke = calls.find(c => c.role === 'obligation' && c.carries.key === `test:${SMOKE}`)!;
+	const user = userOf(smoke);
+	// Its reported result is in the call, chosen by name; no test file names it, and no symbol reaches it.
+	assert.ok(user.includes('"result": "pass"') && user.includes('docs/smoke.txt') && user.includes('reported by the builder, not run by the gate'));
+	assert.ok(!user.includes('src/order/__tests__/order.test.ts'), 'no test file names the smoke test');
+	assert.ok(DIVIDING.symbols.every(x => x.testsReaching.length === 0));
+	// The rules it is judged by: a reported pass needs no finding; only an unnamed, unreported test is missing.
+	const system = smoke.prompt.messages[0]!.content as string;
+	assert.match(system, /reported passed by the builder, needs no finding/);
+	assert.match(system, /no test file names and no reported result covers is a HIGH missing-promised-test finding/);
+	assert.ok(user.includes(`expectationRef ${JSON.stringify(SMOKE)}`), 'a finding about it would name it exactly');
+	// Judged present, it adds no finding to the result.
+	assert.deepEqual((adapter.gather!.partOf({ role: 'obligation', key: `test:${SMOKE}`, atomIds: [], answer: { findings: [] } }) as { findings: unknown[] }).findings, []);
+});
+
+test('a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits', () => {
+	const { job, adapter } = dividedJob(functionalCoverageSpec);
+	const cap = adapter.gather!.noteCapChars;
+	assert.equal(cap, Math.floor(SMALL / 4));
+	// Every chunk writes a long note on FR1: together they cannot fit one judgement.
+	const long = (c: ReviewCall) => `${c.carries.chunkId}: ${'evidence '.repeat(Math.floor(SMALL / 30))}`;
+	let rejected = false;
+	const { calls } = drive(job, adapter, call => {
+		if (call.role === 'chunk') return { notes: [{ key: 'fr:FR1', atomIds: [call.carries.atomIds[0]!], note: long(call) }] };
+		if (call.role === 'reduce') {
+			// One over-long reduction is rejected and re-issued; the rest fit the cap.
+			if (!rejected) { rejected = true; return { text: 'x'.repeat(cap + 1) }; }
+			return { text: `condensed ${call.carries.noteIds.join(',')}` };
+		}
+		return { findings: [] };
+	});
+	const reduces = calls.filter(c => c.role === 'reduce');
+	assert.ok(reduces.length >= 1, 'reduced');
+	assert.ok(reduces.every(c => c.carries.key === 'fr:FR1'));
+	assert.deepEqual(reduces[0]!.prompt.schema, REDUCE_NOTE_SCHEMA);
+	assert.ok(reduces.some(c => c.attempt === 2), 'the over-long reduction was re-issued');
+	const fr1 = calls.filter(c => c.role === 'obligation' && c.carries.key === 'fr:FR1');
+	assert.equal(fr1.length, 1, 'then judged once');
+	assert.ok(userOf(fr1[0]!).includes('condensed '), 'on the condensed notes');
+	for (const c of calls) assert.ok(c.chars <= SMALL, `a ${c.role} call of ${c.chars} characters`);
 });

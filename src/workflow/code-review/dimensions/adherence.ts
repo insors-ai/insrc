@@ -149,6 +149,7 @@ export function adherenceSpec(subject: CodeReviewSubject): ModelDimensionSpec<Ad
 		// A divided review: chunks note how their code meets each clause; the gather judges each clause.
 		chunk: {
 			kind: 'notes',
+			judge: 'Judge whether the Story\'s changed code implements this approved clause or plan task. A place where the code departs from it is a finding located at that code. A clause or task that requires code and that no note shows implemented is an unimplemented-expectation finding. Report only departures from the approved expectation; the approved decision itself is out of scope.',
 			framing: 'You are an independent code reviewer gathering evidence on ADHERENCE: whether a Story\'s changed code correctly implements its approved plan tasks and honours its approved design (LLD) clauses. Departures from an approved expectation matter; a design decision itself is out of scope.',
 		},
 		...(subject.approvedLld === null && subject.approvedPlan === null ? { skip: () => ({ dimension: DIMENSION, findings: [] }) } : {}),

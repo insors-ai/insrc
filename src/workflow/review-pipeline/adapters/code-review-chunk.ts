@@ -37,6 +37,8 @@ export interface ChunkSpec {
 	readonly reference?: string | undefined;
 	/** Today's findings schema (coverage, quality): its finding item is the chunk's. */
 	readonly findings?:  StructuredSchema | undefined;
+	/** Today's rules for judging one obligation at gather (absent for quality, which has none). */
+	readonly judge?:     string | undefined;
 }
 
 const NOTES_PROPERTY = {

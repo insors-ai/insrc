@@ -26,6 +26,7 @@ import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
 import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
+import { codeReviewGather } from './adapters/code-review-gather.js';
 import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
 import { createReviewJob, withCorrectionNote } from './job.js';
@@ -126,7 +127,7 @@ function singleAnswer(outputs: Readonly<Record<string, unknown>>, stage: string,
 }
 
 /** A model dimension's adapter, built from the subject and the job's snapshot. */
-export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot): ReviewAdapter<DimensionResult> {
+export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars()): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
 	const execution = { mode: 'structured' as const, cwd: subject.repoPath };
 	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
@@ -163,6 +164,10 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		material,
 		neighbourSummary,
 		stagesFor: stages,
+		// Story s3: a divided review judges each obligation once, over every chunk's notes.
+		...(spec.chunk !== undefined && spec.skip === undefined
+			? { gather: codeReviewGather({ dimension: spec.dimension, chunk: spec.chunk, schema: spec.schema, material, execution, limitChars, changedFiles: subject.changedFiles }) }
+			: {}),
 		finish: (outputs, ctx) => spec.skip !== undefined
 			? outputs['skip'] as DimensionResult
 			: spec.toResult(singleAnswer(outputs, 'judge', spec.dimension, ctx.divided) as O, grounding, groundingMode),

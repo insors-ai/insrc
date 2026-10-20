@@ -80,8 +80,16 @@ export interface TrackerPort {
 	findIssue(labels: string[]): PortResult<IssueRef | null>;
 	/** Every issue, open or closed, carrying all the labels, complete across pages, in ascending issue-number order (AMD-315d510cb28100e2-10). */
 	findIssues(labels: string[]): PortResult<IssueRef[]>;
+	/** Every issue, open or closed, whose title is exactly the artifact-id `token` or starts with it followed by an em dash and a space ({@link titleMatchesToken}), complete across pages, in ascending issue-number order. A failed lookup is a failed result, never an empty list (AMD-2f27754d4ad00b8e-6). */
+	findIssuesByTitleToken(token: string): PortResult<IssueRef[]>;
 	openSignoffRequest(spec: SignoffRequestSpec): PortResult<SignoffRequestRef>;
 	readSignoffState(ref: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'>;
+}
+
+/** Whether an issue title names the artifact id `token`: the title is the token, or the token then ` — ` and a
+ *  title. A longer id that merely starts with the token (`STORY-<h>-s10` for `STORY-<h>-s1`) does not match. */
+export function titleMatchesToken(title: string, token: string): boolean {
+	return token.length > 0 && (title === token || title.startsWith(`${token} \u2014 `));
 }
 
 export type LoadTracker = (repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>;

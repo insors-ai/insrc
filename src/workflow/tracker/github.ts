@@ -18,6 +18,7 @@ import { execFileSync, type ExecFileSyncOptions } from 'node:child_process';
 import { existsSync } from 'node:fs';
 
 import { buildRef, parseIssueRef } from './refs.js';
+import { titleMatchesToken } from './port.js';
 import { epicMembershipLabel } from './conventions.js';
 
 export type TrackerExec = (cmd: string, args: readonly string[], opts?: ExecFileSyncOptions) => Buffer | string;
@@ -322,6 +323,22 @@ export function ghListIssuesByLabelsStrict(owner: string, repo: string, labels: 
 	const numbers = out.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 	if (numbers.some(n => !/^\d+$/.test(n))) throw new GhCommandError('rejected', 'gh api returned an unexpected answer for the issue listing');
 	return numbers.map(Number).sort((x, y) => x - y).map(n => buildRef(owner, repo, String(n)));
+}
+
+/** Every issue (open or closed) whose title is the artifact id `token` or starts with it followed by ` — `, ascending by
+ *  number, across every page (pull requests are left out). The filter runs here, on the full listing, so a longer id
+ *  that merely starts with the token is never returned. A failed or timed-out listing throws a classified
+ *  {@link GhCommandError}; it is never read as "no match". */
+export function ghListIssuesByTitleTokenStrict(owner: string, repo: string, token: string): string[] {
+	const out = runGh(['api', '--paginate', `repos/${owner}/${repo}/issues?state=all&per_page=100`, '-q', '.[] | select(.pull_request | not) | {number, title}']);
+	const found: number[] = [];
+	for (const line of out.split('\n').map(l => l.trim()).filter(l => l.length > 0)) {
+		let row: { number?: unknown; title?: unknown };
+		try { row = JSON.parse(line) as typeof row; } catch { throw new GhCommandError('rejected', 'gh api returned an unexpected answer for the issue listing'); }
+		if (typeof row.number !== 'number' || typeof row.title !== 'string') throw new GhCommandError('rejected', 'gh api returned an unexpected answer for the issue listing');
+		if (titleMatchesToken(row.title, token)) found.push(row.number);
+	}
+	return found.sort((x, y) => x - y).map(n => buildRef(owner, repo, String(n)));
 }
 
 /** Ensure a milestone exists (idempotent) then attach an issue to it.

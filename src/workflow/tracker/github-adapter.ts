@@ -28,6 +28,7 @@ import {
 	ghEnsureMilestone,
 	ghFindIssueByLabelsStrict,
 	ghListIssuesByLabelsStrict,
+	ghListIssuesByTitleTokenStrict,
 	ghGetIssueBody,
 	ghLinkSubIssue,
 	ghGetIssueId,
@@ -185,6 +186,8 @@ export function createGithubTracker(owner: string, repo: string): TrackerPort {
 		findIssue: (labels: string[]) => attempt(() => ghFindIssueByLabelsStrict(owner, repo, labels) ?? null),
 
 		findIssues: (labels: string[]) => attempt(() => ghListIssuesByLabelsStrict(owner, repo, labels)),
+
+		findIssuesByTitleToken: (token: string) => attempt(() => ghListIssuesByTitleTokenStrict(owner, repo, token)),
 
 		openSignoffRequest: () => unsupported('signoff requests'),
 		readSignoffState: () => unsupported('reading signoff state'),

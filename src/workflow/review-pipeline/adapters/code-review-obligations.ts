@@ -9,8 +9,12 @@
  * asks the model to judge, each with the context atoms it is judged on.
  *
  *   adherence           one 'clause' per approved LLD clause (each contract entry,
- *                       data-model change, error case, edge case and invariant)
- *                       and one per approved PLAN task; none without either.
+ *                       data-model change, shared-contract interaction, error case,
+ *                       edge case, invariant and migration step, the backward
+ *                       compatibility and the state after, and the Story's scope
+ *                       boundary) and one per approved PLAN task; none without
+ *                       either. Every other LLD section is excluded with a reason
+ *                       (ADHERENCE_LLD_EXCLUDED).
  *   functional coverage one 'requirement' per FR.
  *   coverage            one 'promised-test' per test the plan promised. Its context
  *                       is all the record evidence for that test, chosen by its
@@ -65,12 +69,48 @@ const contextAtom = (id: string, label: string, value: unknown): ReviewAtom =>
 interface LldBodyClauses {
 	readonly contractDetails?: { readonly api?: readonly { readonly name?: string }[] } | readonly { readonly name?: string }[];
 	readonly dataModelChanges?: readonly { readonly entity?: string }[];
+	readonly interactionWithShared?: readonly { readonly contractId?: string; readonly role?: string }[];
 	readonly errorPaths?: {
 		readonly errorCases?: readonly { readonly scenario?: string }[];
 		readonly edgeCases?: readonly { readonly input?: string }[];
 		readonly invariantsToPreserve?: readonly { readonly text?: string }[];
 	};
+	readonly migration?: {
+		readonly stateAfter?: string;
+		readonly migrationSteps?: readonly { readonly order?: number; readonly action?: string }[];
+		readonly backwardCompat?: string;
+	};
+	readonly hldContextSlice?: unknown;
+	/** Hand-written into a few early LLDs; today's single prompt shows it, so it is judged. */
+	readonly acceptanceCriteria?: readonly { readonly id?: string; readonly criterion?: string }[];
 }
+
+/** The LLD body sections divided adherence turns into obligations: every section that states
+ *  what the code must do, as today's single prompt (which reads the whole body) judges it. */
+export const ADHERENCE_LLD_SECTIONS: readonly string[] = [
+	'contractDetails', 'dataModelChanges', 'interactionWithShared', 'errorPaths', 'migration', 'hldContextSlice', 'acceptanceCriteria',
+];
+
+/** The LLD body sections adherence does not turn into obligations, and why. A body section in
+ *  neither list is a gap: the obligation tests fail on it. */
+export const ADHERENCE_LLD_EXCLUDED: Readonly<Record<string, string>> = {
+	summary:                       'prose restating the design; every expectation in it is stated in a judged section',
+	testStrategy:                  'the promised tests: the coverage dimension judges them',
+	functionalDefinition:          'the functional requirements: the functional-coverage dimension judges them',
+	alternativesConsidered:        'rejected designs and the rationale for the chosen one',
+	chosenAlternative:             'the id of the chosen alternative, whose content is the judged sections',
+	openQuestions:                 'questions, not expectations',
+	contextRefs:                   'pointers to shared context documents',
+	companions:                    'the companion documents: the diagram and ux dimensions judge them',
+	erDefinition:                  'a companion diagram\'s definition: the diagram dimension judges it',
+	uxDefinition:                  'the ux companion\'s definition: the ux dimension judges it',
+	sequenceDefinition:            'a companion diagram\'s definition: the diagram dimension judges it',
+	componentDependencyDefinition: 'a companion diagram\'s definition: the diagram dimension judges it',
+	adherence:                     'which review dimensions apply, not an expectation of the code',
+	feedback:                      'reviewers\' comments on the document',
+	contractDetailsRef:            'a hand-written pointer to another Story\'s contract in an early LLD, no expectation of its own',
+	dataModelChanges_note_omitted: 'a hand-written placeholder in an early LLD, no expectation',
+};
 
 interface PlanBodyTasks {
 	readonly tasks?: readonly { readonly id?: string; readonly title?: string }[];
@@ -92,6 +132,18 @@ export function adherenceObligations(subject: CodeReviewSubject): DimensionOblig
 		(lld.errorPaths?.errorCases ?? []).forEach((e, i) => clause(`lld:error:${i + 1}`, `error case ${i + 1}: ${e.scenario ?? ''}`, e));
 		(lld.errorPaths?.edgeCases ?? []).forEach((e, i) => clause(`lld:edge:${i + 1}`, `edge case ${i + 1}: ${e.input ?? ''}`, e));
 		(lld.errorPaths?.invariantsToPreserve ?? []).forEach((e, i) => clause(`lld:invariant:${i + 1}`, `invariant ${i + 1}: ${e.text ?? ''}`, e));
+		(lld.interactionWithShared ?? []).forEach((e, i) => clause(`lld:shared:${i + 1}`, `shared contract ${e.contractId ?? i + 1} (${e.role ?? 'interaction'})`, e));
+		const m = lld.migration;
+		if (m !== undefined) {
+			(m.migrationSteps ?? []).forEach((e, i) => clause(`lld:migration:${i + 1}`, `migration step ${e.order ?? i + 1}: ${e.action ?? ''}`, e));
+			if (m.backwardCompat !== undefined) clause('lld:backward-compat', 'backward compatibility', m.backwardCompat);
+			if (m.stateAfter !== undefined) clause('lld:state-after', 'state after the change', m.stateAfter);
+		}
+		(lld.acceptanceCriteria ?? []).forEach((e, i) => clause(`lld:criterion:${e.id ?? i + 1}`, `acceptance criterion ${e.id ?? i + 1}: ${e.criterion ?? ''}`, e));
+		// The Story's boundary: what other Stories own and the shared contracts it consumes, never re-implements.
+		if (lld.hldContextSlice !== undefined) {
+			clause('lld:scope', 'scope: the change stays within its Story\'s boundary and consumes the contracts adjacent Stories own, never re-implementing them', lld.hldContextSlice);
+		}
 	}
 	const plan = (subject.approvedPlan as { body?: PlanBodyTasks } | null)?.body;
 	(plan?.tasks ?? []).forEach((t, i) => {

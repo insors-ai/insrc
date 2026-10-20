@@ -11,6 +11,8 @@
  */
 
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { adherenceSpec, buildAdherencePrompt } from '../../code-review/dimensions/adherence.js';
@@ -22,9 +24,11 @@ import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject } fro
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { chunkNotesFrom, NOTES_CHUNK_SCHEMA } from '../adapters/code-review-chunk.js';
 import { NO_EVIDENCE, REDUCE_NOTE_SCHEMA } from '../adapters/code-review-gather.js';
+import { ADHERENCE_LLD_EXCLUDED, ADHERENCE_LLD_SECTIONS } from '../adapters/code-review-obligations.js';
 import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
 import { applyOutput, createReviewJob, nextCalls, result, ReviewCallFailedError } from '../job.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
+import { envelopeMessages, promptChars } from '../envelope.js';
 import type { ReviewAdapter, ReviewCall, ReviewMaterial, ReviewPipelineJob } from '../types.js';
 
 const LLD_BODY = {
@@ -36,6 +40,10 @@ const LLD_BODY = {
 		invariantsToPreserve: [{ text: 'An order id is never reused.', source: 'c1' }],
 	},
 	functionalDefinition: { requirements: [{ id: 'FR1', statement: 'A customer can place an order.', scope: 'doc' }, { id: 'FR2', statement: 'A placed order can be cancelled.', scope: 'doc' }] },
+	interactionWithShared: [{ contractId: 'sc1', role: 'consumes', howDetails: 'reads the order store' }],
+	migration: { stateBefore: 'no orders', stateAfter: 'orders are stored', migrationSteps: [{ order: 1, action: 'add the order table', rollbackable: true }, { order: 2, action: 'backfill', rollbackable: true }], backwardCompat: 'old clients ignore the new field', zeroDowntime: true, dataRewriteRequired: false },
+	hldContextSlice: { frameworkSummary: 'orders', adjacentBoundaries: [{ storyId: 's2', internal: 'payments' }] },
+	testStrategy: { testFramework: 'node:test', testLevels: [] },
 };
 const SMOKE = 'Installed daemon: an order placed through the RPC is stored';
 const UNIT = "src/order/__tests__/order.test.ts: 'places an order'";
@@ -79,13 +87,21 @@ test("each dimension's obligations equal what today's prompt judges: clauses and
 
 	// adherence: every LLD clause and every PLAN task, each naming its clause as context.
 	const adherence = materialOf(adherenceSpec(s), s);
-	assert.deepEqual(keys(adherence), ['lld:contract:1', 'lld:contract:2', 'lld:data-model:1', 'lld:error:1', 'lld:edge:1', 'lld:invariant:1', 'plan:t1', 'plan:t2']);
+	assert.deepEqual(keys(adherence), ['lld:contract:1', 'lld:contract:2', 'lld:data-model:1', 'lld:error:1', 'lld:edge:1', 'lld:invariant:1', 'lld:shared:1', 'lld:migration:1', 'lld:migration:2', 'lld:backward-compat', 'lld:state-after', 'lld:scope', 'plan:t1', 'plan:t2']);
+	// Every section of the body is either judged or excluded with a reason; the fixture's are all judged or excluded.
+	for (const k of Object.keys(LLD_BODY)) assert.ok(ADHERENCE_LLD_SECTIONS.includes(k) || k in ADHERENCE_LLD_EXCLUDED, `fixture section ${k}`);
+	// And so is every section of every LLD in this repository, so a new section cannot drop out of divided adherence unseen.
+	const dir = join(process.cwd(), '.insrc', 'artifacts');
+	const sections = new Set(readdirSync(dir).filter(f => /^LLD-.*\.json$/.test(f)).flatMap(f => Object.keys((JSON.parse(readFileSync(join(dir, f), 'utf8')) as { body: object }).body)));
+	assert.ok(sections.size > 10, 'the repository LLDs were read');
+	for (const k of sections) assert.ok(ADHERENCE_LLD_SECTIONS.includes(k) || k in ADHERENCE_LLD_EXCLUDED, `LLD section ${k} is neither judged by adherence nor excluded with a reason`);
 	assert.ok(adherence.obligations.every(o => o.kind === 'clause'));
 	const adherencePrompt = promptText(buildAdherencePrompt(s, GROUNDING, undefined));
 	for (const o of adherence.obligations) {
 		assert.equal(o.atomIds?.length, 1, `${o.key} names its clause`);
-		const clause = JSON.parse(adherence.context!.find(a => a.id === o.atomIds![0])!.text) as Record<string, unknown>;
-		// The clause is one today's prompt carries: each of its values is in the prompt's LLD or PLAN JSON.
+		const text = adherence.context!.find(a => a.id === o.atomIds![0])!.text;
+		// The clause is one today's prompt carries: each of its values (or the clause itself, a string) is in the prompt's LLD or PLAN JSON.
+		const clause = text.startsWith('{') || text.startsWith('[') ? JSON.parse(text) as Record<string, unknown> : { value: text };
 		for (const v of Object.values(clause)) if (typeof v === 'string') assert.ok(adherencePrompt.includes(JSON.stringify(v)), `${o.key}: ${v} is in today's prompt`);
 	}
 
@@ -499,7 +515,8 @@ test('a relation call carries both full summaries when they fit, else full again
 	const s = subject();
 	const snap = codeReviewSnapshot(s, DIVIDING);
 	for (const spec of [qualitySpec, adherenceSpec] as const) {
-		const adapter = modelDimensionAdapter(spec(s), s, snap, SMALL) as unknown as ReviewAdapter<unknown>;
+		// A limit both rows fit beside the framing (adherence's lists its obligations too).
+		const adapter = modelDimensionAdapter(spec(s), s, snap, 24_000) as unknown as ReviewAdapter<unknown>;
 		const material = adapter.material();
 		const atomOf = (id: string) => material.atoms.find(a => a.id === id)!;
 		const caller = atomOf('id-placeOrder'), callee = atomOf('id-fill');
@@ -513,13 +530,13 @@ test('a relation call carries both full summaries when they fit, else full again
 		assert.match(one[0]!.messages[0]!.content as string, /located at the CALLER: `file:line` in its file, "src\/order\/order\.ts", with its name, "placeOrder", in the message/);
 		assert.deepEqual(one[0]!.schema, spec(s).schema, "today's findings shape");
 		// Within a refused size: two calls, each one full row against the other's summary line, each within the size.
-		const maxChars = 9_000;
+		const maxChars = 12_000;
 		const two = relationCall([caller, callee], maxChars);
 		assert.equal(two.length, 2);
 		const [fromCaller, fromCallee] = two.map(c => promptText(c.messages));
 		assert.ok(fromCaller!.includes(sig('id-placeOrder')) && !fromCaller!.includes(sig('id-fill')) && fromCaller!.includes(`- ${material.atoms && (adapter.neighbourSummary!(callee, material))}`));
 		assert.ok(fromCallee!.includes(sig('id-fill')) && !fromCallee!.includes(sig('id-placeOrder')) && fromCallee!.includes(`- ${adapter.neighbourSummary!(caller, material)}`));
-		for (const c of two) assert.ok(promptText(c.messages).length + 600 <= maxChars, 'each within the reported size, envelope included');
+		for (const c of two) assert.ok(promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', c.messages)) <= maxChars, 'each within the reported size, envelope included');
 		// A size no row fits even against the other's summary: named as too large, never cut.
 		assert.throws(() => relationCall([caller, callee], 4_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/order/order.ts#placeOrder'));
 		// When both do not fit the limit, the same two calls.
@@ -538,7 +555,9 @@ test('a relation call carries both full summaries when they fit, else full again
 		assert.ok(job.plan.crossRelations.some(r => r.kind === 'calls' && r.from === 'id-placeOrder' && r.to === 'id-fill'), 'the call is cut');
 		const { calls } = drive(job, adapter, call => call.role === 'chunk' ? chunkAnswer(kind, call) : { findings: [] });
 		const relations = calls.filter(c => c.role === 'relation');
-		assert.deepEqual(relations.map(c => c.carries.atomIds), [['id-placeOrder', 'id-fill']], `${kind}: the call relation, once`);
+		// The cut call relation and nothing else, judged in one call or, when both rows do not fit, its two halves.
+		assert.ok(relations.length >= 1 && relations.length <= 2, kind);
+		assert.ok(relations.every(c => c.carries.key === relations[0]!.carries.key && c.carries.atomIds.join() === 'id-placeOrder,id-fill'), `${kind}: the call relation only`);
 		for (const c of calls) assert.ok(c.chars <= SMALL, `${kind}: a ${c.role} call of ${c.chars}`);
 	}
 });

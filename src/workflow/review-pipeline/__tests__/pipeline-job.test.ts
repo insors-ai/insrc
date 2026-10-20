@@ -313,6 +313,31 @@ test('a size refusal re-divides exactly the atoms and notes the call carried and
 		assert.deepEqual(planned.flatMap(c => c.carries.noteIds).sort(), notes.map(n => n.noteId).sort());
 	}
 
+	// A refused chunk holding one atom is re-planned neighbour-free: it keeps only the summaries
+	// that fit the reported size, and is named only when the atom alone does not fit it.
+	{
+		const one = atom(50, LIMIT - 1_200);
+		const crowd = Array.from({ length: 8 }, (_, i) => atom(60 + i));
+		const cs = toySnapshot([one, ...crowd], crowd.map(c => ({ from: 'a50', to: c.id, kind: 'references' as const })));
+		const ca = toyAdapter(cs);
+		const cj = createReviewJob(ca, 'daemon', cs, LIMIT);
+		const holding = cj.pending.find(c => c.carries.atomIds.includes('a50'))!;
+		assert.deepEqual(holding.carries.atomIds, ['a50']);
+		const fullNeighbours = cj.plan.chunks.find(c => c.id === holding.carries.chunkId)!.neighbours.length;
+		assert.equal(fullNeighbours, crowd.length);
+		const aloneChars = holding.chars - JSON.stringify(cj.plan.chunks.find(c => c.id === holding.carries.chunkId)!.neighbours.map(nb => ({ nid: nb.atomId, summary: nb.summary, heldIn: nb.heldInChunk }))).length + 2;
+		const reported = holding.chars - 300;
+		assert.ok(aloneChars < reported, 'the atom alone fits the reported size');
+		const re = applyFailure(cj, ca, holding.callId, 'size-refusal', reported);
+		const again = re.pending.find(c => c.carries.atomIds.includes('a50'))!;
+		assert.deepEqual(again.carries.atomIds, ['a50']);
+		assert.ok(again.chars <= reported, `${again.chars} within ${reported}`);
+		const kept = re.plan.chunks.find(c => c.id === again.carries.chunkId)!.neighbours.length;
+		assert.ok(kept > 0 && kept < fullNeighbours, `${kept} of ${fullNeighbours} summaries kept`);
+		assert.notEqual(content(again), content(holding), 'not resent');
+		assert.throws(() => applyFailure(cj, ca, holding.callId, 'size-refusal', aloneChars - 50), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/f50.ts#fn50'));
+	}
+
 	// The reported size bounds even a unit that cannot be split: an atom larger than it is named.
 	const mixed = toySnapshot([...Array.from({ length: 6 }, (_, i) => atom(i)), atom(40, 2_300), ...Array.from({ length: 6 }, (_, i) => atom(i + 10))]);
 	const ma = toyAdapter(mixed);
@@ -444,6 +469,61 @@ test("runStage commits a deterministic stage's output; extract claims and probe 
 			assert.deepEqual(j.notJudged.map(n => [n.stage, n.policy, n.cause]), [['probe', 'record-observation', 'handler broke']]);
 		}
 	}
+	// Re-planning after the snapshot is complete reads the claims and evidence from it alone: a
+	// refused verify call is re-divided over the document's sections, each part carrying the
+	// snapshot's claims and evidence for its sections; extract is not asked again, the probe not re-run.
+	{
+		const sections = Array.from({ length: 6 }, (_, i) => ({ id: `s${i}`, label: `## Section ${i}`, text: `section-${i}-${'d'.repeat(500)}` }));
+		const docSnap: ReviewMaterialSnapshot = { kind: 'design-review', documentText: JSON.stringify(sections) };
+		let probeRuns = 0;
+		const sectioned = (snapshot: ReviewMaterialSnapshot): ReviewAdapter<unknown> => {
+			const atoms = JSON.parse(snapshot.documentText!) as typeof sections;
+			const exec = { mode: 'structured' as const, cwd: '/repo' };
+			const view = (snap: ReviewMaterialSnapshot, ids: readonly string[]): string => JSON.stringify({
+				sections: atoms.filter(a => ids.includes(a.id)).map(a => a.text),
+				claims: (snap.claims ?? []).filter(c => ids.includes((c as { section: string }).section)),
+				evidence: (snap.evidence ?? []).filter(e => ids.includes((e as { section: string }).section)),
+			});
+			return {
+				kind: 'design-review', dimension: 'premise',
+				material: () => ({ atoms, relations: [], obligations: [] }),
+				stagesFor: () => [
+					{ id: 'extract', kind: 'model', after: [], onCallFailure: 'fail-review', snapshotField: 'claims',
+						// The snapshot's form is marked, so a call built from it can be told from one built from the stage output.
+						toSnapshot: out => (((out as StageAnswer[])[0]!.answer as { claims: object[] }).claims).map(c => ({ ...c, fromSnapshot: true })),
+						singleCalls: () => [{ messages: [{ role: 'user', content: 'extract' }], schema: CLAIMS_SCHEMA, execution: exec }], chunkCalls: () => [] },
+					{ id: 'probe', kind: 'deterministic', after: ['extract'], onCallFailure: 'fail-review', snapshotField: 'evidence',
+						toSnapshot: out => out as unknown[], singleCalls: () => [], chunkCalls: () => [],
+						run: async (_p, snap) => { probeRuns++; return (snap.claims ?? []).map(c => ({ section: (c as { section: string }).section, hits: 2, fromSnapshot: true })); } },
+					{ id: 'verify', kind: 'model', after: ['probe'], onCallFailure: 'record-not-judged',
+						singleCalls: (_p, snap) => [{ messages: [{ role: 'user', content: `verify all ${view(snap, atoms.map(a => a.id))}` }], schema: TOY_SCHEMA, execution: exec }],
+						chunkCalls: (chunk, _p, snap) => [{ messages: [{ role: 'user', content: `verify part ${view(snap, chunk.atomIds)}` }], schema: TOY_SCHEMA, execution: exec }] },
+				],
+				finish: outputs => outputs,
+			};
+		};
+		let sj = createReviewJob(sectioned(docSnap), 'daemon', docSnap, LIMIT);
+		const exc = nextCalls(sj, sectioned(sj.snapshot))[0]!;
+		const extracted = sections.map((sec, i) => ({ id: `p${i}`, section: sec.id, text: `claim ${i}` }));
+		sj = applyOutput(sj, sectioned(sj.snapshot), exc.callId, { callId: exc.callId, answer: { claims: extracted } });
+		sj = await runStage(sj, sectioned(sj.snapshot));
+		assert.equal(probeRuns, 1);
+		const whole = nextCalls(sj, sectioned(sj.snapshot))[0]!;
+		assert.equal(whole.role, 'single');
+		sj = applyFailure(sj, sectioned(sj.snapshot), whole.callId, 'size-refusal', 2_000);
+		const parts = sj.pending;
+		assert.ok(parts.length >= 2 && parts.every(c => c.stage === 'verify' && c.role === 'chunk' && c.chars <= 2_000));
+		for (const c of parts) {
+			const text = content(c);
+			const claimIds = [...text.matchAll(/"id":"(p\d+)"/g)].map(m => m[1]);
+			assert.deepEqual(claimIds, c.carries.atomIds.map(id => `p${id.slice(1)}`), 'the claims of exactly its sections');
+			for (const id of claimIds) assert.ok(text.includes(`"text":"claim ${id!.slice(1)}","fromSnapshot":true`), `claim ${id} in its snapshot form`);
+			assert.equal((text.match(/"hits":2/g) ?? []).length, c.carries.atomIds.length, 'with the evidence for its sections');
+		}
+		assert.equal(probeRuns, 1, 'the probe did not run again');
+		assert.ok(!sj.pending.some(c => c.stage === 'extract'), 'extract was not asked again');
+	}
+
 	// A cancelled runStage ends with AbortError and commits nothing.
 	let atProbe = createReviewJob(premiseAdapter(snap, probe), 'daemon', snap, 384_000);
 	const ec = nextCalls(atProbe, premiseAdapter(atProbe.snapshot, probe))[0]!;

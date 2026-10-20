@@ -317,10 +317,9 @@ function redivide(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, stage
 		return issueChunkCalls(next, stage, planned.chunks, { key: call.carries.key });
 	}
 	const refused = job.plan.chunks.find(c => c.id === call.carries.chunkId);
-	if (call.carries.atomIds.length <= 1) {
-		const atom = material.atoms.find(a => a.id === call.carries.atomIds[0]);
-		throw new AtomTooLargeError(atom?.label ?? `the ${stage.id} call`, call.chars, hard);
-	}
+	// One atom is re-planned too: without the neighbour lines that no longer fit. It is
+	// named only when the atom alone, neighbour-free, exceeds the reported size (prepare).
+	if (call.carries.atomIds.length === 0) throw new AtomTooLargeError(`the ${stage.id} call`, call.chars, hard);
 	const heldElsewhere = new Map<string, string>();
 	for (const c of job.plan.chunks) if (c.id !== refused?.id) for (const id of c.atomIds) heldElsewhere.set(id, c.id);
 	const planned = planWithin(job, adapter, stage, material, soft, hard, call.carries.atomIds, heldElsewhere);

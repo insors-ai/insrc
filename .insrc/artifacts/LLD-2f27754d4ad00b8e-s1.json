@@ -200,6 +200,13 @@
         "choice": "Approve the Define exception",
         "rationale": "Done on 2026-10-20 with the owner's yes: DEF ac1 restated and k2 qualified (DEF revision 1, commit 3c871d76).",
         "resolvedAt": "2026-10-20T08:50:41.939Z"
+      },
+      "q155d3f02": {
+        "question": "findIssuesByTitleToken is a TrackerPort addition and s6 (sc6) owns the port additions; the user is asked to record that s1 adds this single method and that s6 builds on it rather than adding a second title lookup.",
+        "status": "resolved",
+        "choice": "S1 adds; S6 reuses",
+        "rationale": "Recorded as approved amendment AMD-2f27754d4ad00b8e-6 (methodAdd on sc6), owner's yes 2026-10-20.",
+        "resolvedAt": "2026-10-20T08:52:05.535Z"
       }
     }
   },

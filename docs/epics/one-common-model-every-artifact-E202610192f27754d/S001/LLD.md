@@ -879,6 +879,8 @@ The same anchor and path design as a1, but parse, the storage lookups and the la
 
 - `q28c07af3` — PREREQUISITE: DEF ac1 says every existing artifact keeps its id and no stored reference stops resolving, and k2 says an artifact id never changes once created; the user's ruling and a1 break the 444 stored uppercase artifacts until s9. Restate ac1 as: lowercase artifacts keep their id; uppercase artifacts fail with a pointer to the s9 conversion, and qualify k2 with the single s9 rename of S001 to s1. The s1 plan must not start until the user has approved the restated Define.
   - **resolved**: Approve the Define exception — Done on 2026-10-20 with the owner's yes: DEF ac1 restated and k2 qualified (DEF revision 1, commit 3c871d76). _(2026-10-20T08:50:41.939Z)_
+- `q155d3f02` — findIssuesByTitleToken is a TrackerPort addition and s6 (sc6) owns the port additions; the user is asked to record that s1 adds this single method and that s6 builds on it rather than adding a second title lookup.
+  - **resolved**: S1 adds; S6 reuses — Recorded as approved amendment AMD-2f27754d4ad00b8e-6 (methodAdd on sc6), owner's yes 2026-10-20. _(2026-10-20T08:52:05.535Z)_
 
 ## Citations
 

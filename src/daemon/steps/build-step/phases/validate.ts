@@ -34,6 +34,7 @@ import {
 import { collectBuildChangeLog } from '../../../../workflow/runners/build/changed-files.js';
 import { mergeInProgress } from '../../../../workflow/runners/build/story-commits.js';
 import { readLldArtifact } from '../../../../workflow/gates.js';
+import { MissingAnchorError, type PathIntent } from '../../../../workflow/artifact-ids.js';
 import { inheritedStoryStandalone, lldMdRel, readEpicDefinitionCore, workItemAnchorCreatedAt, workItemKindOf } from '../../../../workflow/storage.js';
 import { checkTestMapping, oneLine, usableStoredMapping, type NamedTest, type TestMappingEntry } from '../test-mapping.js';
 import type { BuildStandaloneContext, BuildStepDone, BuildStepError, BuildStepInputValidate } from '../types.js';
@@ -370,6 +371,19 @@ async function handleStandaloneValidate(
  *  record as a fail-open SIDE EFFECT. Used by BOTH the plan-driven and the
  *  standalone (S002) branches so the verdict + persist behaviour is identical. */
 async function runValidateSession(
+	...args: Parameters<typeof runValidateTurn>
+): Promise<BuildStepDone | BuildStepError> {
+	try {
+		return await runValidateTurn(...args);
+	} catch (e) {
+		// A work item with no Epic anchor cannot place its records: say so, instead of
+		// returning a verdict whose ledger could not be filed.
+		if (e instanceof MissingAnchorError) return err('missing-anchor', `insrc_build_step[validate]: ${e.message}`);
+		throw e;
+	}
+}
+
+async function runValidateTurn(
 	repoPath: string,
 	prompt:   (evidence: string) => string,
 	ident:    {
@@ -402,6 +416,10 @@ async function runValidateSession(
 
 	// ONE time and ONE resolved route flag for both of the Story's records.
 	const now = (clockOverride ?? (() => new Date().toISOString()))();
+	// The turn holds ONE write root: the TESTS write, the path calculation for the change log
+	// and the BUILD persist all root a first record on this time, so a failure of one cannot
+	// leave a later step without an anchor.
+	const writeIntent: PathIntent = { kind: 'write', root: { createdAt: now } };
 	const identified = ident.epicHash.length > 0 && ident.storyId.length > 0;
 	// A route that cannot be resolved writes NEITHER record on this turn: a record
 	// written with no flag could be filed under the wrong top-level folder, and a
@@ -433,6 +451,7 @@ async function runValidateSession(
 				toTestRecordTask(repoPath, ident.taskId, now, results.tests),
 			);
 		} catch (e) {
+			if (e instanceof MissingAnchorError) throw e;
 			const message = e instanceof Error ? e.message : String(e);
 			log.warn({ storyId: ident.storyId, taskId: ident.taskId, err: message }, 'insrc_build_step[validate]: the test record was not written; the verdict is unchanged');
 			testRecordNote = `the test record was not written (${message}); the record on disk, if there is one, still shows this Task's earlier run, with that run's commit and time`;
@@ -443,7 +462,9 @@ async function runValidateSession(
 		if (!identified || readTestRecord(repoPath, ident.epicHash, ident.storyId) === null) return undefined;
 		try {
 			return relative(repoPath, testRecordPaths(repoPath, ident.epicHash, ident.storyId, { now, standalone: routeFlag }, { kind: 'read' }).md);
-		} catch {
+		} catch (e) {
+			// A test record on disk that no anchor can place is not an absent one.
+			if (e instanceof MissingAnchorError) throw e;
 			return undefined;
 		}
 	};
@@ -574,7 +595,7 @@ async function runValidateSession(
 				// file. Without this the only dirty paths when the collector runs are
 				// usually these, so the record would report that the Story changed its
 				// own ledger entries. The list is the one the completion record uses.
-				const exclude = storyWorkflowFiles(repoPath, rec, { kind: 'write', root: { createdAt: rec.meta.createdAt } });
+				const exclude = storyWorkflowFiles(repoPath, rec, writeIntent);
 				// The Story's COMMITTED range base. Consulted by the derivation only
 				// when the working tree is clean — which is the normal case here,
 				// because the implement prompt commits before validation runs.
@@ -590,6 +611,7 @@ async function runValidateSession(
 					body: { ...rec.body, ...(changeLog.length > 0 ? { changeLog } : {}) },
 				});
 			} catch (err) {
+				if (err instanceof MissingAnchorError) throw err;
 				log.warn(
 					{ storyId, taskId, err: err instanceof Error ? err.message : String(err) },
 					'insrc_build_step[validate]: BUILD ledger persist failed; returning the verdict unchanged',

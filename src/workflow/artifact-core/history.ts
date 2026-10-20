@@ -43,7 +43,7 @@ function validateCommon(e: Record<string, unknown>, what: string): void {
 	if (!nonEmpty(e['timestamp'])) throw new HistoryEntryError(`${what} ${String(e['id'])} has no timestamp`);
 }
 
-function validateLogEntry(e: ChangeLogEntry): void {
+export function validateLogEntry(e: ChangeLogEntry): void {
 	validateCommon(e as unknown as Record<string, unknown>, 'change log entry');
 	if (!(OPERATIONS as readonly unknown[]).includes(e.operation)) {
 		throw new HistoryEntryError(`change log entry ${e.id} names an unknown operation '${String(e.operation)}'`);
@@ -54,8 +54,22 @@ function validateFeedback(f: Feedback): void {
 	validateCommon(f as unknown as Record<string, unknown>, 'feedback');
 	if (typeof f.text !== 'string' || f.text.trim().length === 0) throw new HistoryEntryError(`feedback ${f.id} has no text`);
 	if (!(FEEDBACK_KINDS as readonly unknown[]).includes(f.kind)) throw new HistoryEntryError(`feedback ${f.id} has an unknown kind '${String(f.kind)}'`);
+	if (!Array.isArray(f.feedback)) throw new HistoryEntryError(`feedback ${f.id} has no list of replies`);
+	for (const reply of f.feedback) {
+		if (!isObject(reply)) throw new HistoryEntryError(`feedback ${f.id} has a reply that is not an entry`);
+		validateFeedback(reply as unknown as Feedback);
+	}
+	if (f.revision !== undefined && !Number.isInteger(f.revision)) throw new HistoryEntryError(`feedback ${f.id}: the revision is not an integer`);
+	if (f.batchId !== undefined && typeof f.batchId !== 'string') throw new HistoryEntryError(`feedback ${f.id}: the batch id is not text`);
+	if (f.source !== undefined && !(isObject(f.source) && nonEmpty(f.source.system) && nonEmpty(f.source.externalId) && (f.source.url === undefined || typeof f.source.url === 'string'))) {
+		throw new HistoryEntryError(`feedback ${f.id}: the source needs a system and an external id`);
+	}
 	const a = f.anchor;
 	if (a === undefined) return;
+	if (!isObject(a)) throw new HistoryEntryError(`feedback ${f.id}: the anchor is not an object`);
+	for (const field of ['quote', 'prefix', 'suffix', 'section'] as const) {
+		if (a[field] !== undefined && typeof a[field] !== 'string') throw new HistoryEntryError(`feedback ${f.id}: the anchor ${field} is not text`);
+	}
 	if (a.quote !== undefined && a.quote.length > QUOTE_MAX) throw new HistoryEntryError(`feedback ${f.id}: the anchor quote is over ${QUOTE_MAX} characters`);
 	if (a.prefix !== undefined && a.prefix.length > CONTEXT_MAX) throw new HistoryEntryError(`feedback ${f.id}: the anchor prefix is over ${CONTEXT_MAX} characters`);
 	if (a.suffix !== undefined && a.suffix.length > CONTEXT_MAX) throw new HistoryEntryError(`feedback ${f.id}: the anchor suffix is over ${CONTEXT_MAX} characters`);

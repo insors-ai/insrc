@@ -21,7 +21,8 @@ import { ARTIFACTS_DIR, artifactJsonPath, prepareArtifactWrite, writeAtomic } fr
 import { getLogger } from '../../shared/logger.js';
 import { codecFor, creationContextProvider } from './codecs.js';
 import type { CreationContextProvider, HeadFile, HeadPayload } from './codecs.js';
-import { decodeArtifactHead } from './decode.js';
+import { decodeArtifactHead, isActor } from './decode.js';
+import { validateLogEntry } from './history.js';
 import type { History } from './history.js';
 import { createMemoryJournal } from './journal.js';
 import type { StagedOperation, WriteJournal } from './journal.js';
@@ -62,7 +63,8 @@ const ACTOR_ID = /^[a-z][a-z0-9-]*:\S+$/;
 
 /** A reference whose type is an artifact type must name a valid artifact id; external targets are allowed. */
 function checkReference(r: Reference, where: string): void {
-	if (isArtifactIdKind(r.type) && ArtifactIds.parse(r.entityId) === undefined) {
+	if (!isArtifactIdKind(r.type)) return;
+	if (ArtifactIds.parse(r.entityId)?.kind !== r.type) {
 		throw new ArtifactShapeError(`${where} names '${r.entityId}', which is not a valid ${r.type} artifact id`);
 	}
 }
@@ -141,6 +143,7 @@ export class ArtifactStore {
 		if (typeof by?.id !== 'string' || !ACTOR_ID.test(by.id) || by.id !== by.id.toLowerCase()) {
 			throw new ArtifactShapeError(`the actor '${String(by?.id)}' has no namespaced lower-case id such as github:alice`);
 		}
+		if (!isActor(by)) throw new ArtifactShapeError(`the actor '${by.id}' needs a kind (person, agent or system) and a properties object`);
 		this.checkLinks(a, key);
 		if (typeof a.payload?.body !== 'object' || a.payload.body === null || Array.isArray(a.payload.body) || !Array.isArray(a.payload.citations)) {
 			throw new ArtifactShapeError(`the payload of ${a.id} needs a body object and a citations list`);
@@ -190,6 +193,7 @@ export class ArtifactStore {
 			operation: prior === undefined ? 'create' : 'update',
 			revision: { number: prepared.revision, contentHash: a.lifecycle.revision.contentHash },
 		};
+		validateLogEntry(entry);                          // never stage an entry the log would refuse: it would block every later write
 		const op: StagedOperation = { operationId, priorRevision, bytes: prepared.bytes, entry };
 
 		await this.deps.journal.stage(a.id, op);

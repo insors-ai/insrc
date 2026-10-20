@@ -30,12 +30,20 @@ describe('History', () => {
 			['lines out of order', fb('b6', { anchor: { lines: [5, 3] } })],
 			['lines not integers', fb('b7', { anchor: { lines: [1.5, 3] } })],
 			['no id', fb('')],
+			['replies not a list', { ...fb('b12'), feedback: null as never }],
+			['a bad reply', fb('b13', { feedback: [fb('r1', { text: '' })] })],
+			['a reply that is not an entry', fb('b14', { feedback: [42 as never] })],
+			['anchor quote not text', fb('b15', { anchor: { quote: 42 as never } })],
+			['anchor not an object', fb('b16', { anchor: 'x' as never })],
+			['revision not an integer', fb('b17', { revision: 1.5 })],
+			['source without an external id', fb('b18', { source: { system: 'github' } as never })],
 			['actor without kind and properties', { ...fb('b10'), actor: { id: 'github:alice' } as never }],
 			['actor of an unknown kind', { ...fb('b11'), actor: { ...actor, kind: 'robot' } as never }],
 			['lines not a list', fb('b8', { anchor: { lines: 42 as never } })],
 			['lines of one', fb('b9', { anchor: { lines: [1] as never } })],
 		];
 		for (const [why, f] of bad) await assert.rejects(h.appendFeedback(ID, f), HistoryEntryError, why);
+		await h.appendFeedback(ID, fb('with-reply', { feedback: [fb('r2')], revision: 2, batchId: 'b', source: { system: 'github', externalId: '9', url: 'u' } }));
 		// limits are inclusive
 		await h.appendFeedback(ID, fb('ok', { anchor: { quote: 'x'.repeat(500), prefix: 'x'.repeat(40), suffix: 'x'.repeat(40), lines: [2, 2] } }));
 		await assert.rejects(h.appendFeedback('not-an-id', fb('f9')), InvalidArtifactKeyError);

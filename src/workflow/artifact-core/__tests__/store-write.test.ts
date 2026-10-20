@@ -101,6 +101,8 @@ describe('ArtifactStore.write', () => {
 			await assert.rejects(k.store.write(artifact(task, { parent: parent(`STORY-${H}-s1`) }), alice), UnknownArtifactKindError);
 			// an artifact-typed reference with a bad id
 			await assert.rejects(k.store.write(artifact(id, { references: [{ entityId: 'LLD-bad', type: 'LLD', relation: 'cites' }] }), alice), ArtifactShapeError);
+			// a valid id of another kind than the declared type
+			await assert.rejects(k.store.write(artifact(id, { references: [{ entityId: `PLAN-${H}-s1`, type: 'HLD', relation: 'cites' }] }), alice), ArtifactShapeError);
 			await assert.rejects(k.store.write(artifact(id, { attachments: [{ target: { entityId: 'x', type: 'PLAN', relation: 'documents' }, revision: 1, at: 't' }] }), alice), ArtifactShapeError);
 			// nothing was written by any refusal
 			assert.equal((await k.store.readWithHistory(`DEF-${H}`)).changeLog.length, 1);
@@ -117,6 +119,11 @@ describe('ArtifactStore.write', () => {
 			await assert.rejects(k.store.write(artifact('LLD-nope'), alice), InvalidArtifactKeyError);
 			await assert.rejects(k.store.write(artifact(`TASK-${H}-s1-t1`), alice), UnknownArtifactKindError);
 			await assert.rejects(k.store.write(artifact(id), { ...alice, id: 'Alice' }), ArtifactShapeError);
+			// an actor with a good id but no kind is refused BEFORE staging, so it cannot block the artifact
+			await assert.rejects(k.store.write(artifact(id), { id: 'github:eve' } as never), ArtifactShapeError);
+			await assert.rejects(k.store.write(artifact(id), { id: 'github:eve', kind: 'robot', properties: {} } as never), ArtifactShapeError);
+			assert.equal(await k.journal.pending(id), undefined);
+			await k.store.write(artifact(id), alice);       // and the artifact is still writable
 		} finally { k.done(); }
 	});
 

@@ -19,12 +19,12 @@ import { ARTIFACT_WRITE_INVENTORY } from '../artifact-write-inventory.js';
 
 const ROOT = join(import.meta.dirname, '..', '..', '..');
 
-/** Every .ts file under src, repo-relative with forward slashes. */
+/** Every source file under src and the root scripts, repo-relative with forward slashes: .ts, .tsx, .js, .mjs and .cjs. */
 function sourceFiles(dir: string, out: string[] = []): string[] {
 	for (const name of readdirSync(dir)) {
 		const path = join(dir, name);
 		if (statSync(path).isDirectory()) sourceFiles(path, out);
-		else if (name.endsWith('.ts')) out.push(relative(ROOT, path).split('\\').join('/'));
+		else if (/\.(?:[cm]?[jt]sx?)$/.test(name)) out.push(relative(ROOT, path).split('\\').join('/'));
 	}
 	return out;
 }
@@ -36,8 +36,9 @@ test('no source file, bin entry or write-inventory row refers to src/workflow/id
 	}
 
 	// no source file imports the id module (any relative depth) or names the migration tool; this file names them only in this list
-	const files = sourceFiles(join(ROOT, 'src')).filter(f => f !== 'src/workflow/__tests__/id-removal.test.ts');
-	const importsId = /from\s+'(?:\.{1,2}\/)+(?:workflow\/)?id\.js'/;
+	// A module specifier ending in /id.js or /id.ts in any quote style, static or dynamic, or the tool by any of its names.
+	const files = [...sourceFiles(join(ROOT, 'src')), 'copy-assets.mjs'].filter(f => f !== 'src/workflow/__tests__/id-removal.test.ts' && existsSync(join(ROOT, f)));
+	const importsId = /['"`][^'"`\n]*\/id\.(?:js|ts)['"`]/;
 	const namesTool = /migrate-docs-tree|insrc-migrate-docs|migrateDocsTree/;
 	for (const f of files) {
 		const text = readFileSync(join(ROOT, f), 'utf8');
@@ -48,7 +49,12 @@ test('no source file, bin entry or write-inventory row refers to src/workflow/id
 	// no bin entry in package.json
 	const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { bin?: Record<string, string> };
 	for (const [name, target] of Object.entries(pkg.bin ?? {})) {
-		assert.doesNotMatch(`${name} ${target}`, /migrate-docs/, `bin entry ${name} refers to the migration tool`);
+		assert.doesNotMatch(`${name} ${target}`, /migrate-docs|\/workflow\/id\.js/, `bin entry ${name} refers to a removed file`);
+		const source = join(ROOT, target.replace(/^\.\/out\//, 'src/').replace(/\.js$/, ''));
+		assert.equal(existsSync(`${source}.ts`) || existsSync(`${source}.tsx`), true, `bin entry ${name} points at a source file that exists`);
+	}
+	for (const [name, script] of Object.entries((JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts?: Record<string, string> }).scripts ?? {})) {
+		assert.doesNotMatch(script, /migrate-docs|workflow\/id\.js/, `script ${name} refers to a removed file`);
 	}
 
 	// no write-inventory row

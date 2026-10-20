@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-20T18:15:34.861Z",
+    "updatedAt": "2026-10-20T18:28:43.500Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
@@ -29,10 +29,10 @@
       },
       {
         "id": "t5",
-        "passed": false
+        "passed": true
       }
     ],
-    "summary": "gather.relationCall for quality and adherence: a cut 'calls' relation is judged once, both full rows in one call when they fit, else two calls each one full row against the other's neighbour summary; every returned call is measured against the limit (or the refused size) and a row that does not fit even so is named by AtomTooLargeError, never cut (fix 3817b7b4). A mismatch must be located at the caller: gather.validate accepts only the caller's file and only the two symbols as counterpart, with fixed-size reasons; re-issued once, then the review fails.",
+    "summary": "gather.relationCall for quality and adherence: a cut 'calls' relation is judged once (both full rows when they fit, else one full row against the other's summary in each direction, each measured; a row that cannot fit is named, never cut). A relation finding must be at the caller: rows carry no line ranges, so the prompt asks for the caller's file AND its name in the message, and gather.validate rejects anything else (fixed-size reasons; re-issued once, then the review fails). New test: a real contract disagreement (fill may return undefined, placeOrder reads .total unchecked) cut across chunks; a reviewer judging only from what each call carries finds it only in the relation call the job issues, and the finding lands at the caller.",
     "testRecord": {
       "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/TESTS.md"
     },
@@ -42,94 +42,94 @@
           "file": ".insrc/artifacts/PLAN-8315a11f29fd2812-s3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/adherence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/conventions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/quality.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-chunk.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-gather.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-obligations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/code-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/job.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T18:15:34.861Z"
+        "timestamp": "2026-10-20T18:28:43.500Z"
       }
     ],
-    "commit": "3817b7b4",
+    "commit": "40c58e88",
     "feedback": [
       {
         "id": "c264a0b0",

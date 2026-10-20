@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -114,7 +114,7 @@ Run at 2026-10-20T17:14:24.444Z on commit `3f3345c3`. Tests check: **passed**. 4
 
 ## t5
 
-Run at 2026-10-20T18:15:34.861Z on commit `3817b7b4`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-20T18:28:43.500Z on commit `40c58e88`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits'**
 
@@ -127,9 +127,10 @@ Run at 2026-10-20T18:15:34.861Z on commit `3817b7b4`. Tests check: **passed**. 2
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` |
+| pass | a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 12 | 0.8 s |  |
+| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 13 | 0.7 s |  |

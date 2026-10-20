@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-20T18:15:34.861Z",
+    "updatedAt": "2026-10-20T18:28:43.500Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
   },
@@ -343,8 +343,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "3817b7b4",
-        "ranAt": "2026-10-20T18:15:34.861Z",
+        "commit": "40c58e88",
+        "ranAt": "2026-10-20T18:28:43.500Z",
         "testsPassed": true,
         "tests": [
           {
@@ -369,6 +369,11 @@
                 "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
                 "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
               }
             ],
             "files": []
@@ -379,7 +384,7 @@
             "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 765,
+            "durationMs": 651,
             "titles": [
               {
                 "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
@@ -427,6 +432,10 @@
               },
               {
                 "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
                 "result": "pass"
               }
             ],

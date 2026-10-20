@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-20T18:38:26.321Z",
+    "updatedAt": "2026-10-20T18:40:12.120Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
   },
@@ -445,8 +445,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "a1c3ae7d",
-        "ranAt": "2026-10-20T18:38:26.321Z",
+        "commit": "3bb5726b",
+        "ranAt": "2026-10-20T18:40:12.120Z",
         "testsPassed": true,
         "tests": [
           {
@@ -494,7 +494,7 @@
             "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 865,
+            "durationMs": 936,
             "titles": [
               {
                 "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",

@@ -137,7 +137,7 @@ Run at 2026-10-20T18:28:43.500Z on commit `40c58e88`. Tests check: **passed**. 3
 
 ## t6
 
-Run at 2026-10-20T18:38:26.321Z on commit `a1c3ae7d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-20T18:40:12.120Z on commit `3bb5726b`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a pair answer naming a counterpart outside its two symbols is rejected'**
 

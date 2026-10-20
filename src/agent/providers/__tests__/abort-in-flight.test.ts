@@ -25,24 +25,32 @@ import { OllamaProvider } from '../ollama.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
 
-/** A fake CLI that records its pid in `pids` and then hangs for a minute. */
+/** A fake CLI that starts a child of its own (a tool the CLI ran), records its pid
+ *  in `pids` and the child's in `kids`, and then hangs for a minute. */
 const HANGING = `#!/usr/bin/env node
 import { appendFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-appendFileSync(join(dirname(fileURLToPath(import.meta.url)), 'pids'), process.pid + '\\n');
+const here = dirname(fileURLToPath(import.meta.url));
+const kid = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 60000)'], { stdio: 'ignore' });
+appendFileSync(join(here, 'kids'), kid.pid + '\\n');
+appendFileSync(join(here, 'pids'), process.pid + '\\n');
 setTimeout(() => {}, 60_000);
 `;
 
-function hangingCli(): { bin: string; pids: () => number[]; cleanup: () => void } {
+function hangingCli(): { bin: string; pids: () => number[]; kids: () => number[]; cleanup: () => void } {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-abort-'));
 	const bin = join(dir, 'fake.mjs');
 	writeFileSync(bin, HANGING);
 	chmodSync(bin, 0o755);
 	const pids = join(dir, 'pids');
+	const kids = join(dir, 'kids');
+	const read = (f: string): number[] => (existsSync(f) ? readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map(Number) : []);
 	return {
 		bin,
-		pids: () => (existsSync(pids) ? readFileSync(pids, 'utf8').trim().split('\n').filter(Boolean).map(Number) : []),
+		pids: () => read(pids),
+		kids: () => read(kids),
 		cleanup: () => rmSync(dir, { recursive: true, force: true }),
 	};
 }
@@ -77,8 +85,9 @@ test('aborting a CLI completeStructured or reviewer session in flight kills the 
 			const { err, ms } = await abortWhenRunning(f, signal => p.completeStructured([{ role: 'user', content: 'x' }], SCHEMA, { signal }));
 			assert.ok(err instanceof Error && err.name === 'AbortError', `completeStructured: got ${String(err)}`);
 			assert.ok(ms < 2_000, `completeStructured ended ${ms} ms after the abort`);
-			await waitFor(() => !alive(f.pids()[0]!), 2_000);
+			await waitFor(() => !alive(f.pids()[0]!) && !alive(f.kids()[0]!), 2_000);
 			assert.equal(alive(f.pids()[0]!), false, 'the CLI process is killed');
+			assert.equal(alive(f.kids()[0]!), false, 'and so is the process it started: the whole group');
 			assert.equal(f.pids().length, 1, 'not retried');
 		} finally { f.cleanup(); }
 	}
@@ -90,8 +99,9 @@ test('aborting a CLI completeStructured or reviewer session in flight kills the 
 			const { err, ms } = await abortWhenRunning(f, signal => p.runReviewSession('x', SCHEMA, { cwd: tmpdir(), deadlineMs: 60_000, signal }));
 			assert.ok(err instanceof Error && err.name === 'AbortError', `runReviewSession: got ${String(err)}`);
 			assert.ok(ms < 2_000, `runReviewSession ended ${ms} ms after the abort`);
-			await waitFor(() => !alive(f.pids()[0]!), 2_000);
+			await waitFor(() => !alive(f.pids()[0]!) && !alive(f.kids()[0]!), 2_000);
 			assert.equal(alive(f.pids()[0]!), false, 'the CLI process is killed');
+			assert.equal(alive(f.kids()[0]!), false, 'and so is the process it started: the whole group');
 			assert.equal(f.pids().length, 1, 'not retried');
 		} finally { f.cleanup(); }
 	}
@@ -137,5 +147,28 @@ test('aborting a CLI completeStructured or reviewer session in flight kills the 
 	} finally {
 		server.closeAllConnections();
 		await new Promise<void>(r => server.close(() => r()));
+	}
+	// An abort with a custom reason, before any response header: still AbortError, not retried.
+	let silentRequests = 0;
+	const silent = createServer((req) => { silentRequests++; req.resume(); /* never answers */ });
+	await new Promise<void>(r => silent.listen(0, '127.0.0.1', r));
+	try {
+		const p = new OllamaProvider('test-model', `http://127.0.0.1:${(silent.address() as AddressInfo).port}`);
+		for (const [label, run] of [
+			['completeStructured', (signal: AbortSignal) => p.completeStructured([{ role: 'user', content: 'x' }], SCHEMA, { signal })],
+			['complete', (signal: AbortSignal) => p.complete([{ role: 'user', content: 'x' }], { signal })],
+		] as const) {
+			const before = silentRequests;
+			const ac = new AbortController();
+			const call = run(ac.signal).then(() => null, (e: unknown) => e);
+			await waitFor(() => silentRequests > before, 5_000);
+			ac.abort(new Error('review cancelled'));
+			const err = await Promise.race([call, new Promise(r => setTimeout(() => r(new Error('still running 5 s after the abort')), 5_000))]);
+			assert.ok(err instanceof Error && err.name === 'AbortError', `ollama ${label} (custom reason): got ${String(err)}`);
+			assert.equal(silentRequests - before, 1, `ollama ${label} (custom reason) not retried`);
+		}
+	} finally {
+		silent.closeAllConnections();
+		await new Promise<void>(r => silent.close(() => r()));
 	}
 });

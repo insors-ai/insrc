@@ -344,6 +344,9 @@ export class OllamaProvider implements LLMProvider {
         // for large-context calls on CPU-only machines.
         return await this.completeStreaming(ollamaMessages, tools, opts);
       } catch (err) {
+        // A cancelled call is AbortError whatever the fetch rejected with (an abort
+        // with a custom reason rejects with that reason). Never retried.
+        if (opts.signal?.aborted === true) throw abortError();
         lastErr = err;
         if (attempt < MAX_TRANSIENT_RETRIES && isTransientOllamaError(err)) {
           const delayMs = TRANSIENT_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
@@ -633,6 +636,8 @@ export class OllamaProvider implements LLMProvider {
             throw new Error(`ollama.completeStructured: response was not valid JSON: ${(err as Error).message}. Got: ${stripped.slice(0, 200)}`);
           }
         } catch (err) {
+          // A cancelled call is AbortError whatever the fetch rejected with.
+          if (opts?.signal?.aborted === true) throw abortError();
           if (err instanceof Error && err.message.startsWith('ollama.completeStructured:')) {
             throw err;
           }

@@ -13,7 +13,8 @@
  */
 
 import assert from 'node:assert/strict';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdtempSync, openSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -151,6 +152,23 @@ test('an Ollama reviewer session reads the repo with read-only tools and returns
 				assert.ok(Date.now() - t0 < 2_000, 'ended at its deadline');
 				assert.equal(f.bodies.length, 1, 'never retried');
 			} finally { await f.close(); }
+		}
+		// The deadline also holds while a tool runs: file_read on a FIFO blocks until a writer opens it.
+		{
+			const fifo = join(repo, 'blocked');
+			execFileSync('mkfifo', [fifo]);
+			const f = await fakeOllama(() => asksTool('file_read', { path: 'blocked' }));
+			try {
+				const t0 = Date.now();
+				const err = await within(f.provider.runReviewSession('review this', ANSWER_SCHEMA, { cwd: repo, deadlineMs: 500 }).then(() => null, (e: unknown) => e as Error), 5_000);
+				assert.ok(err instanceof ReviewSessionTimeoutError, `got ${String(err)}`);
+				assert.ok(Date.now() - t0 < 2_000, 'ended at its deadline, the tool still blocked');
+				assert.equal(f.bodies.length, 1, 'no further turn');
+			} finally {
+				// Release the blocked read so the test process can exit.
+				closeSync(openSync(fifo, 'w'));
+				await f.close();
+			}
 		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -306,6 +324,20 @@ test('cancelling an Ollama reviewer session mid tool loop aborts the in-flight t
 				execute: async () => { ac.abort(); return { output: 'ok', format: 'text', success: true }; },
 			}).then(() => null, (e: unknown) => e);
 			assert.ok(err instanceof Error && err.name === 'AbortError', `got ${String(err)}`);
+			assert.equal(sent.length, 1, 'no further turn started');
+		}
+		// Abort while a tool that ignores the signal is still running: the loop ends at once.
+		{
+			const ac = new AbortController();
+			const { provider: p, sent } = scripted([toolTurn(call('1', 'file_read', { path: 'x' })), DONE]);
+			setTimeout(() => ac.abort(), 50);
+			const t0 = Date.now();
+			const err = await within(runReadOnlyToolLoop({
+				provider: p, messages: [{ role: 'user', content: 'go' }], tools: [], allow: ALLOW, deps: deps(tmpdir()), maxTurns: 5, signal: ac.signal,
+				execute: () => new Promise<ToolResult>(() => {}),
+			}).then(() => null, (e: unknown) => e as Error), 5_000);
+			assert.ok(err instanceof Error && err.name === 'AbortError', `got ${String(err)}`);
+			assert.ok(Date.now() - t0 < 1_000, 'not held by the tool');
 			assert.equal(sent.length, 1, 'no further turn started');
 		}
 	} finally {

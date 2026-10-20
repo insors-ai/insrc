@@ -127,7 +127,9 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 			throwIfAborted(args.signal);
 			toolCallCount += 1;
 			args.onTrace?.({ type: 'tool-call', tool: call.name, input: call.input });
-			const result = await dispatch(call.name, call.input);
+			// Raced against the signal: a tool that ignores cancellation (a git
+			// command's own timeout, a blocked read) cannot hold the loop past it.
+			const result = await untilAborted(dispatch(call.name, call.input), args.signal);
 			args.onTrace?.({ type: 'tool-response', tool: call.name, ok: result.success !== false, output: result.output });
 			resultBlocks.push({ type: 'tool_result', tool_use_id: call.id, content: result.output, isError: result.success === false });
 			gathered.push({ tool: call.name, input: call.input, output: result.output });
@@ -205,8 +207,25 @@ function refused(name: string, id: string): ToolResult {
 }
 
 function throwIfAborted(signal: AbortSignal | undefined): void {
-	if (signal?.aborted !== true) return;
+	if (signal?.aborted === true) throw abortError();
+}
+
+/** `work`, or AbortError as soon as `signal` fires. The work itself is left to finish on its own. */
+function untilAborted<T>(work: Promise<T>, signal: AbortSignal | undefined): Promise<T> {
+	if (signal === undefined) return work;
+	if (signal.aborted) return Promise.reject(abortError());
+	return new Promise<T>((resolve, reject) => {
+		const onAbort = (): void => reject(abortError());
+		signal.addEventListener('abort', onAbort, { once: true });
+		work.then(
+			v => { signal.removeEventListener('abort', onAbort); resolve(v); },
+			(e: unknown) => { signal.removeEventListener('abort', onAbort); reject(e); },
+		);
+	});
+}
+
+function abortError(): Error {
 	const err = new Error('the call was cancelled');
 	err.name = 'AbortError';
-	throw err;
+	return err;
 }

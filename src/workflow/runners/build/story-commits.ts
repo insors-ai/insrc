@@ -105,11 +105,15 @@ interface TrailerScan {
 }
 
 /** The first-parent commits in the range that carry `Insrc-Story: <storyKey>`;
- *  undefined when the trailers cannot be read. */
+ *  undefined when the messages cannot be read. The line counts in any paragraph
+ *  of the message: git's trailer parser reads only the last paragraph, so a Story
+ *  line followed by a blank line and a co-author block would be missed
+ *  (ISSUE-f431a442). It must be a whole line of that form; a mention inside
+ *  other text does not count. */
 function scanTrailers(repoPath: string, base: string, storyKey: string): TrailerScan | undefined {
 	let out: string;
 	try {
-		out = git(repoPath, ['log', '--first-parent', `--format=%H%x1f%h%x1f%s%x1f%(trailers:key=${STORY_TRAILER_KEY},valueonly,separator=%x1f)%x1e`, `${base}..HEAD`]);
+		out = git(repoPath, ['log', '--first-parent', '--format=%H%x1f%h%x1f%s%x1f%B%x1e', `${base}..HEAD`]);
 	} catch (err) {
 		log.warn({ repoPath, storyKey, err: err instanceof Error ? err.message : String(err) }, 'storyChangeSet: could not read commit trailers; using the first-parent range');
 		return undefined;
@@ -119,15 +123,24 @@ function scanTrailers(repoPath: string, base: string, storyKey: string): Trailer
 	let newest: string | undefined;
 	// git log lists newest first, so the first carrying commit is the newest.
 	for (const record of out.split('\x1e')) {
-		const [sha, short, subject, ...values] = record.trim().split('\x1f');
+		const [sha, short, subject, ...rest] = record.trim().split('\x1f');
 		if (sha === undefined || sha.length === 0) continue;
 		subjects.set(sha, subject ?? '');
-		if (values.some(v => v.trim() === storyKey)) {
+		if (storyLines(rest.join('\x1f')).includes(storyKey)) {
 			carrying.add(sha);
 			newest ??= short;
 		}
 	}
 	return { carrying, subjects, newest };
+}
+
+/** The keys of every whole `Insrc-Story: <key>` line in a commit message. */
+export function storyLines(message: string): string[] {
+	const prefix = `${STORY_TRAILER_KEY}:`;
+	return message.split('\n')
+		.map(l => l.trim())
+		.filter(l => l.startsWith(prefix))
+		.map(l => l.slice(prefix.length).trim());
 }
 
 /** The abbreviated sha of the newest first-parent commit since `base` carrying

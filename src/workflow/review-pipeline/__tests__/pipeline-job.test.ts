@@ -20,11 +20,11 @@ import { test } from 'node:test';
 import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import type { StructuredSchema } from '../../../shared/types.js';
-import { applyFailure, applyOutput, createReviewJob, MaterialChangedError, nextCalls, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
+import { applyFailure, applyOutput, createReviewJob, MaterialChangedError, nextCalls, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { AdapterStage, EvidenceNote, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
-import { asSent, atom, drive, seeingModel, todayMessages, TOY_SCHEMA, toyAdapter, toySnapshot, type ToyOpts, type ToyResult } from './toy-adapter.js';
+import { asSent, atom, atomIdsIn, callIdIn, drive, NOTE_SCHEMA, RELATION_SCHEMA, seeingModel, todayMessages, TOY_SCHEMA, toyAdapter, toySnapshot, VERDICT_SCHEMA, type ToyOpts, type ToyResult } from './toy-adapter.js';
 
 test('the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens', () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-review-limit-'));
@@ -580,4 +580,115 @@ test("a re-issued reviewer-session call gets only the remaining time to the job 
 	// Near the end, each session gets only what remains.
 	const late = nextCalls(divided, long, T + sessions * 30 * 60_000 - 5_000);
 	assert.ok(late.every(c => (c.execution as { deadlineMs: number }).deadlineMs === 5_000));
+});
+
+// -- the bounded gather (plan task t8) ----------------------------------------
+
+/** A model for divided reviews: chunk calls report what they see with one keyed note per atom; reductions,
+ *  obligations and relations answer in their own shapes. Records every call it is given. */
+function gatherModel(noteChars: number, reduceChars: number): { answer: (call: ReviewCall) => unknown; calls: ReviewCall[] } {
+	const calls: ReviewCall[] = [];
+	return {
+		calls,
+		answer: (call: ReviewCall) => {
+			calls.push(call);
+			const id = callIdIn(call.messages);
+			const text = content(call);
+			const noteIds = [...text.matchAll(/"noteId":"([a-z]\d+)"/g)].map(m => m[1]!);
+			if (call.prompt.schema === NOTE_SCHEMA) return { callId: id, answer: { text: `reduced[${noteIds.join(',')}]`.padEnd(reduceChars, '.') } };
+			if (call.prompt.schema === VERDICT_SCHEMA) return { callId: id, answer: { verdict: `judged on ${noteIds.join(',')}` } };
+			if (call.prompt.schema === RELATION_SCHEMA) return { callId: id, answer: { holds: true } };
+			const seen = atomIdsIn(text);
+			return { callId: id, answer: { seen, notes: seen.map(a => ({ key: 'k1', text: `${a}:${'e'.repeat(noteChars)}` })) } };
+		},
+	};
+}
+
+test('an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept', async () => {
+	const atoms = Array.from({ length: 30 }, (_, i) => atom(i, 300));
+	const snap = toySnapshot(atoms, [], ['k1', 'k2']);
+	const rebuild = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => toyAdapter(s, { gatherLimit: LIMIT });
+	const model = gatherModel(800, 1_400);
+	const { job } = await drive(createReviewJob(rebuild(snap), 'daemon', snap, LIMIT), rebuild, model.answer);
+	assert.equal(job.phase, 'done');
+
+	// Every call of every role fit the limit.
+	for (const c of model.calls) assert.ok(c.chars <= LIMIT, `a ${c.chars}-character ${c.role} call`);
+	// Level by level: the chunk notes did not fit one call, nor did their first reduction.
+	assert.equal(job.gatherLevels['k1'], 2);
+	const reductions = model.calls.filter(c => c.role === 'reduce');
+	const chunkNotes = job.notes.filter(n => n.key === 'k1' && job.noteProvenance[n.noteId] === undefined);
+	assert.equal(chunkNotes.length, atoms.length, 'one note per atom from the chunks');
+	const level1 = reductions.filter(c => c.carries.noteIds.every(id => chunkNotes.some(n => n.noteId === id)));
+	const level2 = reductions.filter(c => !level1.includes(c));
+	assert.ok(level1.length >= 2 && level2.length >= 1, `${level1.length} first-level and ${level2.length} second-level reductions`);
+	assert.deepEqual(level1.flatMap(c => c.carries.noteIds).sort(), chunkNotes.map(n => n.noteId).sort(), 'the first level reads every chunk note once');
+
+	// The obligation is judged once, on notes that stand, through their provenance, for every chunk note and atom.
+	const obligation = model.calls.filter(c => c.role === 'obligation' && c.carries.key === 'k1');
+	assert.equal(obligation.length, 1);
+	const expand = (id: string): string[] => (job.noteProvenance[id] ?? [id]).flatMap(x => (job.noteProvenance[x] !== undefined ? expand(x) : [x]));
+	assert.deepEqual(obligation[0]!.carries.noteIds.flatMap(expand).sort(), chunkNotes.map(n => n.noteId).sort(), 'provenance kept');
+	assert.deepEqual([...obligation[0]!.carries.atomIds].sort(), atoms.map(a => a.id).sort(), 'and so are the atoms each note stands for');
+	// An obligation no chunk gave evidence for is still adjudicated, on no notes.
+	const empty = model.calls.filter(c => c.role === 'obligation' && c.carries.key === 'k2');
+	assert.equal(empty.length, 1);
+	assert.deepEqual(empty[0]!.carries.noteIds, []);
+
+	// The result: the chunk results merged with each obligation's part, and the calls per role.
+	const r = result<ToyResult>(job);
+	assert.deepEqual(r.gatheredParts!.map(g => [g.role, g.key]), [['obligation', 'k1'], ['obligation', 'k2']]);
+	assert.equal(r.seen.length, atoms.length);
+	assert.deepEqual(r.pipelineCalls, { chunk: job.counts.chunk, obligation: 2, relation: 0, merge: 0 });
+	// A single-chunk review passes straight through: no gather call at all.
+	const small = toySnapshot([atom(1)], [], ['k1']);
+	const one = await drive(createReviewJob(rebuild(small), 'daemon', small, LIMIT), rebuild, gatherModel(10, 10).answer);
+	assert.equal(one.sent.length, 1);
+	assert.equal(result<ToyResult>(one.job).gatheredParts, undefined);
+});
+
+test('a relation judged by two calls is complete only when both are answered', () => {
+	// Two files, each a chunk's worth; a1 (first file) references a12 (second): the plan must cut it.
+	const atoms = Array.from({ length: 20 }, (_, i) => atom(i, 400, i < 10 ? 'src/x.ts' : 'src/y.ts'));
+	// Stated twice in the material (two references from a1 to a12): still one relation to judge.
+	const rel: ReviewRelation[] = [{ from: 'a1', to: 'a12', kind: 'references' }, { from: 'a1', to: 'a12', kind: 'references' }];
+	for (let i = 0; i < 20; i++) for (let j = i + 1; j < 20; j++) if (atoms[i]!.file === atoms[j]!.file) rel.push({ from: atoms[i]!.id, to: atoms[j]!.id, kind: 'same-file' });
+	const snap = toySnapshot(atoms, rel);
+	let offered = 0;
+	const rebuild = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => toyAdapter(s, { gatherLimit: LIMIT, relationCalls: 2, onRelationCall: () => { offered++; } });
+	const model = gatherModel(10, 10);
+	let job = createReviewJob(rebuild(snap), 'daemon', snap, LIMIT);
+	assert.ok(job.plan.crossRelations.length > 0 && job.plan.crossRelations.every(r => r.from === 'a1' && r.to === 'a12'), 'the relation is cut');
+	while (job.pending.some(c => c.role === 'chunk')) {
+		const c = job.pending.find(x => x.role === 'chunk')!;
+		job = applyOutput(job, rebuild(job.snapshot), c.callId, model.answer(c));
+	}
+	assert.equal(offered, 1, 'the relation is offered to relationCall once');
+	const key = Object.keys(job.relationPlan)[0]!;
+	const relCalls = job.pending.filter(c => c.role === 'relation');
+	assert.equal(relCalls.length, 2);
+	assert.ok(relCalls.every(c => c.carries.key === key && c.chars <= LIMIT));
+	assert.deepEqual(relCalls[0]!.carries.atomIds, ['a1', 'a12']);
+	// One answered: not judged, the review not finished.
+	job = applyOutput(job, rebuild(job.snapshot), relCalls[0]!.callId, model.answer(relCalls[0]!));
+	assert.equal(relationJudged(job, key), false);
+	assert.equal(job.phase, 'gather');
+	assert.throws(() => result(job), /not complete/);
+	// Both answered: judged, and the result holds both answers.
+	job = applyOutput(job, rebuild(job.snapshot), relCalls[1]!.callId, model.answer(relCalls[1]!));
+	assert.equal(relationJudged(job, key), true);
+	assert.equal(job.phase, 'done');
+	const r = result<ToyResult>(job);
+	assert.deepEqual(r.gatheredParts!.map(g => [g.role, g.key]), [['relation', key], ['relation', key]]);
+	assert.equal((r.pipelineCalls as { relation: number }).relation, 2);
+	assert.equal(offered, 1);
+
+	// A relation call that does not fit the limit is named, never sent.
+	const wide = toySnapshot([atom(1, 3_500), atom(2, 3_500)], [{ from: 'a1', to: 'a2', kind: 'references' }]);
+	const wa = toyAdapter(wide, { gatherLimit: LIMIT, relationCalls: 1 });
+	let wj = createReviewJob(wa, 'daemon', wide, LIMIT);
+	const first = wj.pending[0]!;
+	wj = applyOutput(wj, wa, first.callId, model.answer(first));
+	const second = wj.pending[0]!;
+	assert.throws(() => applyOutput(wj, wa, second.callId, model.answer(second)), (e: unknown) => e instanceof AtomTooLargeError && /relation a1 references a2/.test(e.message));
 });

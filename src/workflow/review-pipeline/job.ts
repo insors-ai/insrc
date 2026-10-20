@@ -87,7 +87,7 @@ export function createReviewJob(
 		reviewId: opts.reviewId ?? randomUUID(), path, snapshot: freeze(structuredClone(snapshot)),
 		kind: adapter.kind, dimension: adapter.dimension, phase: 'review',
 		plan: { limitChars, single: true, chunks: [], crossRelations: [] },
-		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], gathered: [], notes: [], noteProvenance: {}, notJudged: [],
+		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], gathered: [], relationPlan: {}, gatherLevels: {}, notes: [], noteProvenance: {}, notJudged: [],
 		issuedHashes: [], counts: { single: 0, chunk: 0, reduce: 0, obligation: 0, relation: 0, merge: 0 },
 		materialHash: materialHash(adapter.material()), seq: 0,
 	};
@@ -387,7 +387,87 @@ export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<u
 	const next: ReviewPipelineJob = { ...job, phase: job.phase === 'done' ? 'done' : 'gather' };
 	if (sentChars(prompt) <= job.plan.limitChars) return issue(next, [{ prompt, role, carries: noteCarries(key, notes) }]);
 	const b = budgets(job.plan.limitChars);
-	return issue(next, reduceBatches(gather, key, notes, b.soft, b.hard));
+	const batches = reduceBatches(gather, key, notes, b.soft, b.hard);
+	// A level that reduces each note alone, when every note is already within the cap, cannot shrink the evidence.
+	if (batches.every(c => c.carries.noteIds.length === 1) && notes.every(n => n.text.length <= gather.noteCapChars)) {
+		throw new Error(`review ${job.dimension}: the evidence for ${key} cannot be reduced to fit one call (${notes.length} notes)`);
+	}
+	const level = (next.gatherLevels[key] ?? 0) + 1;
+	if (level > MAX_GATHER_LEVELS) throw new Error(`review ${job.dimension}: the evidence for ${key} did not fit one call after ${MAX_GATHER_LEVELS} reduction levels`);
+	log.info({ dimension: job.dimension, key, level, notes: notes.length, calls: batches.length }, 'review pipeline: an obligation\'s evidence is over the limit; reducing it');
+	return issue({ ...next, gatherLevels: { ...next.gatherLevels, [key]: level } }, batches);
+}
+
+/** Reduction levels an obligation's evidence may go through before the review fails. */
+const MAX_GATHER_LEVELS = 16;
+
+/** The key of a cross-chunk relation; never an obligation key. */
+const relationKey = (r: { readonly from: string; readonly to: string; readonly kind: string }): string => `relation:${r.kind}:${r.from}->${r.to}`;
+
+/**
+ * Gather a divided review: the keyed notes every chunk answer carries become
+ * evidence; every obligation is adjudicated on all of its evidence (reduced level
+ * by level when it does not fit one call); every relation the plan cut is judged
+ * by the calls relationCall returns. Each gather call fits the limit.
+ */
+function startGather(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): ReviewPipelineJob {
+	const gather = gatherOf(job, adapter);
+	const material = readMaterial(job, adapter);
+	let seq = job.seq;
+	const notes: EvidenceNote[] = [...job.notes];
+	for (const out of Object.values(job.outputs)) {
+		if (!Array.isArray(out)) continue;
+		for (const a of out as StageAnswer[]) {
+			if (a.chunkId === undefined) continue;
+			for (const n of gather.notesFrom?.(a) ?? []) {
+				notes.push({ noteId: `n${++seq}`, key: n.key, text: n.text, atomIds: n.atomIds ?? a.atomIds });
+			}
+		}
+	}
+	let next: ReviewPipelineJob = { ...job, phase: 'gather', seq, notes };
+	for (const o of material.obligations) next = requestNoteCall(next, adapter, 'obligation', o.key, activeNotes(next, o.key).map(n => n.noteId));
+
+	// Each cut relation is offered to relationCall once.
+	const byId = new Map(material.atoms.map(a => [a.id, a] as const));
+	const relationPlan: Record<string, number> = {};
+	const calls: NewCall[] = [];
+	for (const r of next.plan.crossRelations) {
+		const key = relationKey(r);
+		if (relationPlan[key] !== undefined || gather.relationCall === undefined) continue;
+		const prompts = gather.relationCall([byId.get(r.from)!, byId.get(r.to)!]);
+		relationPlan[key] = prompts.length;
+		for (const prompt of prompts) {
+			const chars = sentChars(prompt);
+			if (chars > next.plan.limitChars) throw new AtomTooLargeError(`the relation ${r.from} ${r.kind} ${r.to}`, chars, next.plan.limitChars);
+			calls.push({ prompt, role: 'relation', carries: { key, atomIds: [r.from, r.to], noteIds: [] } });
+		}
+	}
+	next = issue({ ...next, relationPlan }, calls);
+	return next.pending.length === 0 ? finishJob(next, adapter) : next;
+}
+
+/** After a gather answer: an obligation whose reductions are all in is asked again on its reduced evidence; the job finishes when nothing is left. */
+function advanceGather(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): ReviewPipelineJob {
+	if (job.phase !== 'gather') return job;
+	let next = job;
+	for (const o of readMaterial(job, adapter).obligations) {
+		const waiting = next.pending.some(c => c.carries.key === o.key);
+		const judged = next.gathered.some(g => g.role === 'obligation' && g.key === o.key);
+		if (!waiting && !judged) next = requestNoteCall(next, adapter, 'obligation', o.key, activeNotes(next, o.key).map(n => n.noteId));
+	}
+	return next.pending.length === 0 ? finishJob(next, adapter) : next;
+}
+
+/** A key's evidence: its notes not yet reduced into another. */
+function activeNotes(job: ReviewPipelineJob, key: string): EvidenceNote[] {
+	const reduced = new Set(Object.values(job.noteProvenance).flat());
+	return job.notes.filter(n => n.key === key && !reduced.has(n.noteId));
+}
+
+/** A relation is judged once every call relationCall returned for it is answered. */
+export function relationJudged(job: ReviewPipelineJob, key: string): boolean {
+	const planned = job.relationPlan[key];
+	return planned !== undefined && job.gathered.filter(g => g.role === 'relation' && g.key === key).length === planned;
 }
 
 /** A refused note call: its notes re-packed into smaller reduce calls; never resent. */
@@ -429,10 +509,12 @@ function applyGatherAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknow
 		pending: job.pending.filter(c => c.callId !== call.callId),
 		answered: [...job.answered, { callId: call.callId, stage: call.stage, answer }],
 	};
-	if (call.role !== 'reduce') return { ...base, gathered: [...base.gathered, { role: call.role, key: call.carries.key, answer }] };
+	if (call.role === 'obligation' || call.role === 'relation') {
+		return advanceGather({ ...base, gathered: [...base.gathered, { role: call.role, key: call.carries.key ?? '', atomIds: call.carries.atomIds, answer }] }, adapter);
+	}
 	const noteId = `n${base.seq + 1}`;
 	const note: EvidenceNote = { noteId, key: call.carries.key ?? '', text: text as string, atomIds: call.carries.atomIds };
-	return { ...base, seq: base.seq + 1, notes: [...base.notes, note], noteProvenance: { ...base.noteProvenance, [noteId]: call.carries.noteIds } };
+	return advanceGather({ ...base, seq: base.seq + 1, notes: [...base.notes, note], noteProvenance: { ...base.noteProvenance, [noteId]: call.carries.noteIds } }, adapter);
 }
 
 function gatherOf(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): GatherPlan<unknown> {
@@ -471,13 +553,26 @@ function commit(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, stage: 
 	const index = stages.findIndex(s => s.id === stage.id);
 	if (index + 1 < stages.length) return enterStage(next, adapter, index + 1, now);
 
-	const divided = !next.plan.single;
-	let finished = adapter.finish(next.outputs, { notJudged: next.notJudged, divided });
+	// A divided review is gathered; one chunk passes straight through.
+	if (!next.plan.single && adapter.gather !== undefined) return startGather({ ...next, stage: '' }, adapter);
+	return finishJob(next, adapter);
+}
+
+/** The adapter's result: one chunk's `finish` as is; a divided review's parts merged. */
+function finishJob(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): ReviewPipelineJob {
+	const divided = !job.plan.single;
+	let finished = adapter.finish(job.outputs, { notJudged: job.notJudged, divided });
+	if (divided && adapter.gather !== undefined) {
+		const gather = adapter.gather;
+		const obligations = adapter.material().obligations.flatMap(o => job.gathered.filter(g => g.role === 'obligation' && g.key === o.key));
+		const relations = Object.keys(job.relationPlan).flatMap(k => job.gathered.filter(g => g.role === 'relation' && g.key === k));
+		finished = gather.merge([finished, ...[...obligations, ...relations].map(g => gather.partOf(g))]);
+	}
 	if (divided && finished !== null && typeof finished === 'object') {
-		const pipelineCalls: PipelineCalls = { chunk: next.counts.chunk, obligation: next.counts.obligation, relation: next.counts.relation, merge: next.counts.merge };
+		const pipelineCalls: PipelineCalls = { chunk: job.counts.chunk, obligation: job.counts.obligation, relation: job.counts.relation, merge: job.counts.merge };
 		finished = { ...(finished as Record<string, unknown>), pipelineCalls };
 	}
-	return { ...next, phase: 'done', stage: '', result: finished };
+	return { ...job, phase: 'done', stage: '', pending: [], result: finished };
 }
 
 // -- helpers -----------------------------------------------------------------

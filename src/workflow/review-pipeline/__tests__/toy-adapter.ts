@@ -13,20 +13,23 @@ import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import { applyFailure, applyOutput, nextCalls, runStage } from '../job.js';
 import type {
-	AdapterStage, EvidenceNote, ExecutionMode, FailurePolicy, NeighbourSummary, ReviewAdapter, ReviewAtom, ReviewCall, ReviewMaterialSnapshot,
+	AdapterStage, EvidenceNote, ExecutionMode, FailurePolicy, GatherAnswer, NeighbourSummary, ReviewAdapter, ReviewAtom, ReviewCall, ReviewMaterialSnapshot,
 	ReviewPipelineJob, ReviewRelation, StageAnswer,
 } from '../types.js';
 
 export const TOY_SCHEMA = {
 	type: 'object', required: ['seen'], additionalProperties: false,
-	properties: { seen: { type: 'array', items: { type: 'string' } } },
+	properties: {
+		seen: { type: 'array', items: { type: 'string' } },
+		notes: { type: 'array', items: { type: 'object', required: ['key', 'text'], properties: { key: { type: 'string' }, text: { type: 'string' } } } },
+	},
 } as unknown as StructuredSchema;
 
 export const atom = (i: number, size = 400, file = `src/f${i}.ts`, module = 'src'): ReviewAtom =>
 	({ id: `a${i}`, label: `src/f${i}.ts#fn${i}`, text: `body-${i}-${'x'.repeat(size)}`, file, module });
 
-export function toySnapshot(atoms: readonly ReviewAtom[], relations: readonly ReviewRelation[] = []): ReviewMaterialSnapshot {
-	return { kind: 'code-review', documentText: JSON.stringify({ atoms, relations }) };
+export function toySnapshot(atoms: readonly ReviewAtom[], relations: readonly ReviewRelation[] = [], obligations: readonly string[] = []): ReviewMaterialSnapshot {
+	return { kind: 'code-review', documentText: JSON.stringify({ atoms, relations, obligations }) };
 }
 
 /** Today's single prompt for the toy review. */
@@ -42,7 +45,13 @@ export interface ToyOpts {
 	readonly deadlineMessage?: boolean | undefined;
 	/** Give the adapter a gather plan whose note calls render the notes they carry. */
 	readonly gatherLimit?: number | undefined;
+	/** Calls relationCall returns per relation (absent: no relation checks). */
+	readonly relationCalls?: 1 | 2 | undefined;
+	/** Counts relationCall invocations. */
+	readonly onRelationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => void) | undefined;
 }
+
+export const RELATION_SCHEMA = { type: 'object', required: ['holds'], properties: { holds: { type: 'boolean' } } } as unknown as StructuredSchema;
 
 export const NOTE_SCHEMA = { type: 'object', required: ['text'], properties: { text: { type: 'string' } } } as unknown as StructuredSchema;
 export const VERDICT_SCHEMA = { type: 'object', required: ['verdict'], properties: { verdict: { type: 'string' } } } as unknown as StructuredSchema;
@@ -53,13 +62,15 @@ export interface ToyResult {
 	readonly notJudged: readonly unknown[];
 	readonly divided: boolean;
 	readonly pipelineCalls?: unknown;
+	/** The obligation and relation answers merged in, in merge order. */
+	readonly gatheredParts?: readonly GatherAnswer[] | undefined;
 }
 
 /** One model stage, 'judge', reading the atoms in the snapshot's document text. */
 export function toyAdapter(snapshot: ReviewMaterialSnapshot, opts: ToyOpts = {}): ReviewAdapter<ToyResult> {
-	const { atoms, relations } = JSON.parse(snapshot.documentText ?? '{"atoms":[],"relations":[]}') as { atoms: ReviewAtom[]; relations: ReviewRelation[] };
+	const { atoms, relations, obligations = [] } = JSON.parse(snapshot.documentText ?? '{"atoms":[],"relations":[]}') as { atoms: ReviewAtom[]; relations: ReviewRelation[]; obligations?: string[] };
 	const byId = new Map(atoms.map(a => [a.id, a] as const));
-	const material = { atoms, relations, obligations: [] };
+	const material = { atoms, relations, obligations: obligations.map(key => ({ key, kind: 'clause' as const, text: `obligation ${key}` })) };
 	const execution = opts.execution ?? { mode: 'structured', cwd: '/repo' };
 	const render = (ids: readonly string[], neighbours: readonly NeighbourSummary[]): string => JSON.stringify({
 		atoms: ids.map(id => ({ id, text: byId.get(id)!.text })),
@@ -87,7 +98,16 @@ export function toyAdapter(snapshot: ReviewMaterialSnapshot, opts: ToyOpts = {})
 			obligationCall: (key, ev) => ({ messages: [{ role: 'system', content: 'Judge the obligation on this evidence.' }, { role: 'user', content: renderNotes(key, ev) }], schema: VERDICT_SCHEMA, execution }),
 			reduceCall: (key, batch) => ({ messages: [{ role: 'system', content: 'Reduce this evidence to one note.' }, { role: 'user', content: renderNotes(key, batch) }], schema: NOTE_SCHEMA, execution }),
 			noteCapChars: Math.floor(opts.gatherLimit / 4),
-			merge: parts => parts[0]!,
+			notesFrom: (a: StageAnswer) => (a.answer as { notes?: { key: string; text: string }[] }).notes ?? [],
+			...(opts.relationCalls !== undefined ? { relationCall: (pair: readonly [ReviewAtom, ReviewAtom]) => {
+				opts.onRelationCall?.(pair);
+				const one = (a: ReviewAtom, b: ReviewAtom, dir: string) => ({ messages: [{ role: 'system' as const, content: `Does ${a.id} use ${b.id} correctly (${dir})?` }, { role: 'user' as const, content: JSON.stringify({ a: a.text, b: b.text }) }], schema: RELATION_SCHEMA, execution });
+				return opts.relationCalls === 1 ? [one(pair[0], pair[1], 'both')] : [one(pair[0], pair[1], 'forward'), one(pair[1], pair[0], 'backward')];
+			} } : {}),
+			partOf: (g: GatherAnswer): ToyResult => ({ seen: [], notJudged: [], divided: true, gatheredParts: [g] }),
+			merge: (parts: readonly ToyResult[]): ToyResult => ({
+				seen: parts.flatMap(p => p.seen), notJudged: parts[0]!.notJudged, divided: true, gatheredParts: parts.flatMap(p => p.gatheredParts ?? []),
+			}),
 		} } : {}),
 		...(opts.deadlineMessage === true ? { deadlineError: (ms: number) => new Error(`The design review passed its time limit of ${ms / 60_000} minutes. No review was recorded.`) } : {}),
 	};

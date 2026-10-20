@@ -119,7 +119,20 @@ export interface GatherPlan<R> {
 	readonly noteCapChars:   number;
 	/** One or more calls that together judge a cross-chunk relation. */
 	readonly relationCall?:  ((pair: readonly [ReviewAtom, ReviewAtom]) => readonly ChunkPrompt[]) | undefined;
+	/** The keyed notes a chunk answer carries; a note names atoms of its call, else stands for all of them. */
+	readonly notesFrom?:     ((answer: StageAnswer) => readonly { readonly key: string; readonly text: string; readonly atomIds?: readonly string[] | undefined }[]) | undefined;
+	/** An obligation's or a relation call's answer as one part for `merge`. */
+	readonly partOf:         (answer: GatherAnswer) => R;
+	/** The divided review's result: the chunk results (`finish`), then every obligation, then every relation part. */
 	readonly merge:          (parts: readonly R[]) => R;
+}
+
+/** One answered obligation or relation call. */
+export interface GatherAnswer {
+	readonly role:    'obligation' | 'relation';
+	readonly key:     string;
+	readonly atomIds: readonly string[];
+	readonly answer:  unknown;
 }
 
 /** What the adapter's finish step gets beside the outputs. */
@@ -247,8 +260,12 @@ export interface ReviewPipelineJob {
 	readonly answered:   readonly { readonly callId: string; readonly stage: string; readonly answer: unknown }[];
 	/** The current model stage's answers so far. */
 	readonly stageAnswers: readonly StageAnswer[];
-	/** Answers of gather calls that do not become notes (obligation, relation, merge). */
-	readonly gathered:   readonly { readonly role: CallRole; readonly key?: string | undefined; readonly answer: unknown }[];
+	/** Answers of gather calls that do not become notes (obligation, relation), in answer order. */
+	readonly gathered:   readonly GatherAnswer[];
+	/** Calls planned per cross-chunk relation: it is judged when all are answered. */
+	readonly relationPlan: Readonly<Record<string, number>>;
+	/** Reduction levels run per obligation key. */
+	readonly gatherLevels: Readonly<Record<string, number>>;
 	readonly notes:      readonly EvidenceNote[];
 	readonly noteProvenance: Readonly<Record<string, readonly string[]>>;
 	readonly notJudged:  readonly NotJudged[];

@@ -59,7 +59,7 @@ obligations: readonly ReviewObligation[]; context?: readonly ReviewAtom[]  // ad
 ### 2.2 `AdapterStage.chunkCalls (code-review dimensions)`
 
 ```typescript
-chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[]
+chunkCalls(chunk: ReviewChunk, prior: StageOutputs, snapshot: ReviewMaterialSnapshot): readonly ChunkPrompt[]
 ```
 
 **Parameters:**
@@ -82,12 +82,13 @@ chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[]
 ### 2.3 `GatherPlan.obligationCall / reduceCall (code review)`
 
 ```typescript
-obligationCall(key: string, evidence: readonly EvidenceNote[]): ChunkPrompt; reduceCall(key: string, batch: readonly EvidenceNote[]): ChunkPrompt
+obligationCall(key: string, evidence: readonly EvidenceNote[], context: readonly ReviewAtom[]): ChunkPrompt; reduceCall(key: string, batch: readonly EvidenceNote[]): ChunkPrompt
 ```
 
 **Parameters:**
 - `key: string` — An obligation key of the dimension.
 - `evidence: readonly EvidenceNote[]` — Every note for that key from every chunk, reduced by s1 until it fits.
+- `context: readonly ReviewAtom[]` — The obligation's own context atoms as s1 supplies them (the material.context entries its atomIds name). Empty once s1 has reduced oversized context into notes (contextReduced): obligationCall renders only what it is given and never re-attaches the obligation's context itself, so a reduced call stays within the limit.
 
 **Returns:** `ChunkPrompt` — obligationCall judges one key with today's rules for that dimension, on all its notes and the obligation's own context atoms, and returns today's findings shape. adherence: departures (located at the atoms the notes name) and unimplemented clauses, with expectationRef. functional coverage: unrealized or partial FRs. coverage: missing or failing promised tests, judged on the full record evidence of that test. conventions: the module's idiom and its deviations, with today's too-few-examples rule. Chunk calls make no conventions findings, so a candidate deviation the module judgement rejects never appears. reduceCall returns one note under the same key, at most noteCapChars (a quarter of the limit), keeping the atom ids it stands for. With zero atoms (s1's divided-with-no-atoms rule), every key is judged on its context alone.
 
@@ -96,15 +97,17 @@ obligationCall(key: string, evidence: readonly EvidenceNote[]): ChunkPrompt; red
 
 **Postconditions:**
 - A key with no notes is adjudicated on the statement that no chunk showed evidence for it.
+- obligationCall renders exactly the context it is passed; after s1 reduces an obligation's context into notes it is passed none, and the call carries those notes instead.
 
 ### 2.4 `GatherPlan.relationCall (code review)`
 
 ```typescript
-relationCall(pair: readonly [ReviewAtom, ReviewAtom]): readonly ChunkPrompt[]
+relationCall(pair: readonly [ReviewAtom, ReviewAtom], maxChars?: number): readonly ChunkPrompt[]
 ```
 
 **Parameters:**
 - `pair: readonly [ReviewAtom, ReviewAtom]` — A caller and callee joined by a 'calls' relation in ChunkPlan.crossRelations (held in different chunks).
+- `maxChars: number` _(optional)_ — Set by s1 when a relation call was refused for its size: every returned call must fit it. The two one-row-against-summary calls are returned and each is measured; a row that cannot fit even so is named by AtomTooLargeError, never cut.
 
 **Returns:** `readonly ChunkPrompt[]` — For the quality and adherence dimensions: one call carrying both full summaries when they fit together, otherwise two calls, one full summary against the other's neighbour summary in each direction (the amended s1 GatherPlan.relationCall). Each judges whether the caller's use matches the callee (arguments, return use, error contract; for adherence, the approved clauses either one carries) and returns today's findings shape, a mismatch located at the caller.
 
@@ -134,13 +137,13 @@ stages 'compare' and 'pair' after 'chunk': chunkCalls/singleCalls as for Adapter
 ### 2.6 `GatherPlan.merge / ReviewAdapter.finish (code review)`
 
 ```typescript
-merge(parts: readonly DimensionResult[]): DimensionResult; finish(outputs: StageOutputs): DimensionResult
+finish(outputs: StageOutputs, context: FinishContext): DimensionResult; merge(parts: readonly DimensionResult[]): DimensionResult
 ```
 
 **Parameters:**
 - `parts: readonly DimensionResult[]` — The chunk, obligation, relation and pair results.
 
-**Returns:** `DimensionResult` — Findings concatenated in stage order. Identical findings (every field equal) kept once. Every finding is located at file:line, as today's single call locates it: an obligation or relation call lists the symbols its notes or pair name, with their files, and gather.validate rejects a finding located at a note id (or anything not file:line), so it is re-asked once with that reason and then fails the review; merge never rewrites a location (amended 2026-10-20 by the stakeholder's decision: s1's merge does not see the job's notes, and a real location is today's behaviour). Findings outside the changed set are handled as each path does today: the daemon judges drop them (for example src/workflow/code-review/dimensions/quality.ts:124) and the controller step keeps them in outOfScope (src/daemon/steps/code-review-step/handler.ts). For coverage, normalizeCoverageFindings runs once over the merged result with the prepared grounding (src/workflow/code-review/dimensions/coverage.ts:185). pipelineCalls { chunk, obligation, relation, merge } is set; it is absent on a single-chunk review. Each dimension's finish also keeps every result filter that dimension's judge applies today. In particular, functional coverage keeps only findings whose expectationRef is absent or a known FR id (src/workflow/code-review/dimensions/functional-coverage.ts), so an invented FR reference cannot reach the verdict.
+**Returns:** `DimensionResult` — Findings concatenated in stage order. Identical findings (every field equal) kept once. Every finding is located at file:line, as today's single call locates it: an obligation or relation call lists the symbols its notes or pair name, with their files, and gather.validate rejects a finding located at a note id (or anything not file:line), so it is re-asked once with that reason and then fails the review; merge never rewrites a location (amended 2026-10-20 by the stakeholder's decision: s1's merge does not see the job's notes, and a real location is today's behaviour). Findings outside the changed set are handled as each path does today: the daemon judges drop them (for example src/workflow/code-review/dimensions/quality.ts:124) and the controller step keeps them in outOfScope (src/daemon/steps/code-review-step/handler.ts). For coverage, normalizeCoverageFindings runs once over the merged result with the prepared grounding (src/workflow/code-review/dimensions/coverage.ts:185). pipelineCalls { chunk, obligation, relation, merge } is set; it is absent on a single-chunk review. Who applies what (amended 2026-10-20, after review): s1 calls finish(outputs, { divided }) first and then merge([finish's result, ...obligation parts, ...relation parts]), so finish never sees the gather's findings. On a single-chunk review finish maps today's answer through the dimension's toResult, as today. On a divided review finish returns the chunks' own findings only, unfiltered (coverage's symbol findings, quality's findings, then its pair findings), and merge applies the dimension's result filters ONCE over the whole merged list through its toResult: the changed-set filter, the known-FR filter and coverage's normalisation; on the controller path the out-of-set findings are also kept in outOfScope. So every gather finding passes the same filters a single call's findings do. In particular, functional coverage keeps only findings whose expectationRef is absent or a known FR id (src/workflow/code-review/dimensions/functional-coverage.ts), so an invented FR reference cannot reach the verdict.
 
 **Postconditions:**
 - runCodeReview folds the merged results with foldVerdict unchanged (src/workflow/code-review/runner.ts:257).
@@ -195,7 +198,7 @@ A JSON file beside S003 (docs/epics/chunked-review-pipeline-every-review-E202610
 
 - **A chunk answer names an obligation key that does not exist, or an atom id outside its chunk.** (recoverable)
   - Detection: The chunk stage's validate(answer, call) (amended s1 AdapterStage.validate) checks every note key against material.obligations, and every atomId and symbolId against call.carries.atomIds.
-  - Response: Invalid answer: s1 re-issues the call once under a new callId with the reasons as the correction note. A second failure applies fail-review.
+  - Response: Invalid answer: s1 re-issues the call once under a new callId with the reasons as the correction note. A second failure applies fail-review. The reasons have a fixed size (a made-up value is located by count and position, never quoted back). As s1 rules, when a call already fills the limit and leaves no room for the correction, it is re-issued as planned with the omission logged; a second invalid answer still fails the review.
   - User impact: None when the re-issue succeeds; otherwise the review fails and records nothing, as today.
 - **A coverage chunk answer carries a finding that is not a symbol-coverage finding of a symbol it was given.** (recoverable)
   - Detection: validate(answer, call) rejects any coverage chunk finding whose findingKind is not 'symbol-coverage', or whose symbolId is not in call.carries.atomIds. The adherence, functional-coverage and conventions chunk schemas have no findings field at all, so their absences cannot be expressed.

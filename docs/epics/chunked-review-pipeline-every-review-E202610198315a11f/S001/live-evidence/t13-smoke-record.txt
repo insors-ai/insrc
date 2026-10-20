@@ -1,0 +1,21 @@
+t13 smoke record: the installed daemon runs the new build, and an under-limit code review and design review complete on it (Epic 8315a11f s1).
+
+1. The running daemon is this build
+   - Installed checkout ~/.insrc/daemon HEAD: 973fc8bd (2026-10-20T18:25:15+05:30), which contains the whole review pipeline and ISSUE-f431a442.
+   - Build output written 2026-10-20 18:26:28 IST (out/workflow/review-pipeline/driver.js, out/workflow/runners/build/story-commits.js; the latter contains storyLines, added in 973fc8bd).
+   - Daemon process (pid file ~/.insrc/daemon.pid): pid 43853, started Tue Oct 20 18:26:30 2026, command: node --import tsx/esm /Users/subhagho/.insrc/daemon/out/daemon/index.js. Started 2 s after the build and not restarted since: the process runs this build.
+
+2. A real under-limit code review on it
+   - CR-f431a4420d03374f-S001 (Story of ISSUE-f431a442), reviewed by the daemon, model codex:gpt-6-astra, grounding full, verdict pass, counts {'high': 0, 'med': 0, 'low': 0}, dimensions ['adherence', 'conventions', 'coverage', 'quality'].
+   - Changed files: ['src/workflow/runners/build/__tests__/story-commits-trailer.test.ts', 'src/workflow/runners/build/story-commits.ts'] (two files; each dimension's single call is far under 384,000 characters, so the review ran as one chunk: no pipelineCalls on any dimension).
+   - Daemon log (/tmp/.insrc/daemon.log, UTC) line: see below.
+
+3. A real under-limit design review on it
+   - Template review of a temp copy of LLD-8315a11f29fd2812-s5 (36,594-character document, under the 384,000-character limit): one reviewer session, done in 169 s, verdict block, counts H1 M1 L10, template design-spec, reviewedBy daemon. Log: smoke-template-review-installed-daemon-973fc8bd.txt.
+   - Earlier, on the previous build 99ae70fc of the same pipeline: a premise review (ISSUE-748edb69 copy, 28 verify calls, verdict block H0 M17 L11, one premise not judged after two codex stalls) and a template review: smoke-premise-review-installed-daemon.txt, smoke-template-review-installed-daemon.txt.
+
+Daemon log lines (UTC; 12:57 UTC = 18:27 IST, 13:04 UTC = 18:34 IST, both after the 18:26:30 IST start):
+[12:57:11] INFO: [code-review:runner] code-review record written
+[13:04:26] INFO: [daemon:workflow-review-rpc] workflow.review: reviewed
+
+All results have today's shape: a design review gives verdict + counts (+ template), a code review gives a CodeReviewArtifact with per-dimension findings, verdict and counts.

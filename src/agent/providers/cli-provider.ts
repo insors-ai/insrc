@@ -451,7 +451,10 @@ export class CliProvider implements LLMProvider {
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs()), prompt, exec);
 			if (envelope.is_error) {
-				throw new Error(`claude review session failed: ${envelope.result ?? 'no error message'}`);
+				// A size refusal is classified as completeStructured classifies it, so the
+				// pipeline re-divides the call instead of resending it (Epic 8315a11f s1).
+				const message = `claude review session failed: ${envelope.result ?? 'no error message'}`;
+				throw sizeRefusalOr(message, envelope.result ?? '', () => new Error(message));
 			}
 			if (envelope.structured_output === undefined) {
 				throw new Error('claude review session returned no structured_output');

@@ -19,7 +19,7 @@ import { dirname, join } from 'node:path';
 
 import { assembleDiffCodeReviewGrounding, realDiffGroundingDeps } from '../../../code-review/grounding.js';
 import { changedFiles } from '../changed-files.js';
-import { storyChangeSet } from '../story-commits.js';
+import { storyChangeSet, storyLines } from '../story-commits.js';
 
 const STORY = 'b47dadc7cf0cccb1/S001';
 const OTHER = '748edb69bd23f767/S001';
@@ -130,4 +130,41 @@ test("a file one Story changed and another Story reverted stays in the first Sto
 		assert.deepEqual([...diff.changedFiles].sort(), ['src/flip.ts', 'src/keep.ts']);
 		assert.match(diff.grounding.symbols.find(s => s.file === 'src/flip.ts')?.signature ?? '', /^\+mine$/m);
 	} finally { cleanup(); }
+});
+
+test("a commit counts as the Story's when its Insrc-Story line is in any paragraph, never when the key is only mentioned (ISSUE-f431a442)", () => {
+	const { repo: r, base, cleanup } = repo();
+	const raw = (files: Readonly<Record<string, string>>, msg: string): string => {
+		for (const [f, body] of Object.entries(files)) { mkdirSync(dirname(join(r, f)), { recursive: true }); writeFileSync(join(r, f), body); }
+		git(r, 'add', '-A');
+		git(r, 'commit', '-q', '-m', msg);
+		return git(r, 'rev-parse', 'HEAD').trim();
+	};
+	try {
+		// The shape that was dropped: the Story line, a blank line, then a co-author block.
+		const own = raw({ 'src/own.ts': '1\n' }, `feat: own paragraph\n\nBody.\n\nInsrc-Story: ${STORY}\n\nCo-Authored-By: A <a@example.com>\n`);
+		// The shape that always counted: the Story line in the final trailer block.
+		const block = raw({ 'src/block.ts': '1\n' }, `feat: final block\n\nBody.\n\nInsrc-Story: ${STORY}\nCo-Authored-By: A <a@example.com>\n`);
+		// The Story line in the middle of the message.
+		const middle = raw({ 'src/middle.ts': '1\n' }, `feat: middle\n\nInsrc-Story: ${STORY}\n\nMore text after it.\n`);
+		// Not the Story's: the key only mentioned, another Story's key, a key with a suffix.
+		raw({ 'src/mention.ts': '1\n' }, `docs: mention\n\nSee the line Insrc-Story: ${STORY} in the other commits.\n`);
+		raw({ 'src/other.ts': '1\n' }, `feat: other\n\nInsrc-Story: ${OTHER}\n\nCo-Authored-By: A <a@example.com>\n`);
+		raw({ 'src/suffix.ts': '1\n' }, `feat: suffix\n\nInsrc-Story: ${STORY}-extra\n`);
+
+		// The dropped shape is what git's own trailer parser misses.
+		assert.equal(git(r, 'log', '-1', '--format=%(trailers:key=Insrc-Story,valueonly)', own).trim(), '');
+
+		const set = storyChangeSet(r, base, { storyKey: STORY });
+		assert.equal(set.attribution, 'story-trailer');
+		assert.deepEqual(set.units.map(u => u.ref), [own, block, middle]);
+		assert.deepEqual(set.paths, ['src/block.ts', 'src/middle.ts', 'src/own.ts']);
+	} finally { cleanup(); }
+});
+
+test('storyLines reads every whole Insrc-Story line and nothing else', () => {
+	assert.deepEqual(storyLines(`s\n\nInsrc-Story: ${STORY}\n\nCo-Authored-By: x\n`), [STORY]);
+	assert.deepEqual(storyLines(`s\n\n  Insrc-Story:   ${STORY}  \n`), [STORY], 'surrounding spaces are trimmed');
+	assert.deepEqual(storyLines(`s\n\nsee Insrc-Story: ${STORY}\nInsrc-Storyline: x\n`), [], 'a mention or another key is not a Story line');
+	assert.deepEqual(storyLines(`Insrc-Story: ${STORY}\nInsrc-Story: ${OTHER}\n`), [STORY, OTHER]);
 });

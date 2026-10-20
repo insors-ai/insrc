@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import type { LLMMessage, LLMProvider, LLMResponse, StructuredSchema } from '../../../shared/types.js';
 import { CALIBRATION_FIXTURES, renderCalibrationReport, runCalibration } from '../calibration.js';
 import type { Severity } from '../types.js';
+import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
 
 const SEVS = new Set<Severity>(['HIGH', 'MED', 'LOW']);
 
@@ -30,7 +31,7 @@ test('calibration fixtures are well-formed ground truth', () => {
 /** A fake provider that returns a canned severity per verify call, in order. */
 function fakeProvider(sequence: readonly Severity[]): LLMProvider {
 	let i = 0;
-	return {
+	return envelopeProvider({
 		supportsTools: false,
 		capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
 		async complete(): Promise<LLMResponse> { return { text: '', stopReason: 'end_turn' }; },
@@ -41,7 +42,7 @@ function fakeProvider(sequence: readonly Severity[]): LLMProvider {
 			i += 1;
 			return { severity: sev, evidence: 'e', action: 'a', fixability: 'manual' } as T;
 		},
-	};
+	});
 }
 
 test('runCalibration scores agreement + directional errors against the fixtures', async () => {

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>vs code extension — insrc</title>
-<meta name="description" content="The insrc VS Code extension: a thin orchestrator that installs and manages the insrc daemon, wires insrc's MCP tools into your AI host, registers your workspace, and edits the daemon config from native VS Code Settings. Install, first-run onboarding, how it works, clean removal, and building from source.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<meta name="description" content="Use insrc in VS Code: Claude/Codex chat preview, pending-document review, delivery board, grounded MCP analysis, daemon management, and model settings.">
+<link rel="icon" type="image/png" href="insrc-icon-transparent-128.png">
 <link rel="stylesheet" href="css/tui.css">
 </head>
 <body>
@@ -33,26 +33,29 @@
 <div class="wrap"><main id="main">
 
   <h1>VS Code extension</h1>
-  <p class="lead">Grounded code-knowledge and the tracked insrc workflow, wired into your AI assistant — the VS Code counterpart to the insrc <a href="plugin.html">JetBrains plugin</a>. Like it, the extension is a <strong>thin orchestrator that owns no reasoning</strong>: it installs and manages the backing daemon, wires insrc into your AI host's MCP config, and registers your workspace — so your assistant answers from a citation-grounded model of <em>your</em> codebase.</p>
+  <p class="lead">Use grounded code knowledge and tracked delivery inside VS Code. The extension
+    manages the daemon, connects MCP-capable assistants, and adds a chat preview over your own
+    Claude / Codex CLI, pending-document review, and a delivery board.</p>
 
   <h2 id="overview">What it is</h2>
-  <p>All the reasoning still runs through the insrc MCP server that your host's assistant invokes — the extension opens no cloud path of its own. Its whole job is orchestration at editor lifecycle moments (activation, install, uninstall):</p>
+  <p>The extension provides editor surfaces and manages local integration. Models run through
+    the configured local provider or your existing CLI sessions; the daemon owns indexing and storage.</p>
   <ul>
     <li><strong>Installs &amp; manages the daemon.</strong> It ensures the <a href="architecture.html">insrc daemon</a> is present and current, delegating to the same installer the CLI uses, and exposes its whole lifecycle as commands.</li>
     <li><strong>Wires your AI host.</strong> It registers the insrc MCP server plus the tracked-workflow steering into your agentic host's own config and rules files (Claude Code, Cursor, …).</li>
     <li><strong>Registers your workspace.</strong> It adds the open workspace to the daemon through the strict <code>repo.add</code> contract so it gets indexed, scoping every capability call to that repo.</li>
     <li><strong>Edits the daemon config in native Settings.</strong> The daemon's configuration is a set of typed, machine-scoped <code>insrc.*</code> settings — no hand-edited JSON, and it never syncs off this machine.</li>
   </ul>
-  <div class="tip"><strong>Privacy.</strong> The extension stores no secrets and opens no cloud path — all reasoning routes through your assistant's existing CLI / OAuth sessions. Every write into a host-owned config or rules file is marker-delimited and replace-only, so it preserves your surrounding content and is fully reversed on uninstall.</div>
+  <div class="tip"><strong>Privacy.</strong> Graph storage and embeddings are local. Cloud reasoning, including configured background summaries, sends context through the Claude / Codex CLI; authentication stays with those CLI sessions. Every write into a host-owned config or rules file is marker-delimited and replace-only, so it preserves your surrounding content and is fully reversed on uninstall.</div>
 
   <h2 id="requirements">Requirements</h2>
   <div class="tablewrap"><table>
     <thead><tr><th>Requirement</th><th>Why</th></tr></thead>
     <tbody>
-      <tr><td><strong>VS Code 1.75+</strong></td><td>Stock Visual Studio Code (or a compatible fork such as Cursor). The extension activates on startup and stays dormant until you accept its onboarding prompts.</td></tr>
-      <tr><td><strong>An MCP-capable AI host</strong></td><td>The agentic assistant that invokes the insrc MCP server — e.g. Claude Code or Cursor. The extension writes the MCP registration into that host's config; without one, insrc's tools simply aren't wired.</td></tr>
+      <tr><td><strong>VS Code 1.141+</strong></td><td>Stock Visual Studio Code (or a compatible fork such as Cursor). The extension activates on startup; daemon installation and workspace setup are offered through onboarding.</td></tr>
+      <tr><td><strong>An AI host or CLI</strong></td><td>Use an authenticated Claude / Codex CLI for the built-in chat preview, or an MCP-capable host for external assistant integration. The extension can register insrc's MCP tools with supported hosts.</td></tr>
       <tr><td><strong>The insrc daemon</strong></td><td>The backend the extension talks to. It is installed on first use (see onboarding below); no manual step needed.</td></tr>
-      <tr><td><strong>Node + git</strong></td><td>Used by the daemon and its installer to clone and build the daemon into <code>~/.insrc/</code>.</td></tr>
+      <tr><td><strong>Node ≥22.13.0 + git</strong></td><td>Used by the daemon and its installer to clone and build the daemon into <code>~/.insrc/</code>.</td></tr>
     </tbody>
   </table></div>
 
@@ -72,7 +75,7 @@
     <li><strong>Register this workspace</strong> with the daemon (<code>repo.add</code>) so it gets indexed.</li>
     <li><strong>Wire your AI host</strong> (Claude Code, Cursor, …) so insrc's MCP tools are available to your assistant.</li>
   </ol>
-  <div class="note">Skipped a prompt? Every action is also a durable Command-Palette command: <code>insrc: Install daemon</code> / <code>Start</code> / <code>Stop</code> / <code>Restart</code> / <code>Update daemon</code>, <code>insrc: Wire AI hosts</code>, and <code>insrc: Register workspace</code>. Nothing happens without your explicit consent.</div>
+  <div class="note">Skipped a prompt? Every action is also a durable Command-Palette command: <code>insrc: Install daemon</code> / <code>Start</code> / <code>Stop</code> / <code>Restart</code> / <code>Update daemon</code>, <code>insrc: Wire AI hosts</code>, and <code>insrc: Register workspace</code>. Skipped setup actions remain available from the Command Palette.</div>
 
   <h2 id="usage">How it works</h2>
   <p>Once a workspace is registered, you keep using your assistant exactly as before — the extension just makes it far more grounded:</p>
@@ -89,7 +92,15 @@
     <li><strong>Model-tier picker.</strong> <code>insrc: Set model tier</code> walks you through a tier → provider → model picker whose list is exactly what the daemon offers for that tier's provider (Ollama's installed models, or the curated Claude / Codex catalog) — no typing raw model ids.</li>
     <li><strong>Status-bar panels.</strong> The status-bar <strong>insrc</strong> item opens <strong>Open Detailed Status</strong> — a tabbed panel over the running daemon (<strong>Daemon</strong> state, the per-work-item <strong>Workflows</strong> chain, and a <strong>Debug</strong> tab with attached MCP clients, a live daemon-log tail, and a consent-gated cleanup of stray insrc processes) — and <strong>Open Repo Configuration</strong>, a form editor for any registered repo's per-repo model-tier overrides.</li>
   </ul>
-  <div class="note">These surfaces are read/edit views over the local daemon socket — no background polling (only the Debug log tails while its tab is open), and no cloud path. The only state-changing controls are explicit and, where they matter, consent-gated: config edits, the daemon lifecycle commands, the Debug stray-process cleanup, and repo-config writes.</div>
+  <h3 id="chat">Chat preview</h3>
+  <p>Run <code>insrc: Open chat</code> to work through your own Claude / Codex CLI in an editor panel.
+    The preview is enabled by default through <code>insrc.chat.enabled</code>.
+    Choose where edit diffs appear with <code>insrc.chat.diffView</code>.</p>
+  <h3 id="document-review">Pending-document review</h3>
+  <p>Run <code>insrc: Review pending documents</code> to read tracked artifacts and leave review comments.
+    Review and approval remain explicit steps in the tracked workflow.</p>
+  <h3 id="delivery">Delivery board</h3>
+  <p>Run <code>insrc: Open delivery board</code> to inspect tracked work and its delivery state inside the editor.</p>
 
   <h2 id="update">Keeping the daemon current</h2>
   <p>On activation (only when the daemon is already reachable) the extension compares the installed daemon's commit against its upstream and, on drift, offers an <strong>Update / Dismiss</strong> notification that updates the daemon in place on your OK; updating the extension itself brings the daemon current automatically. A failed update surfaces once with the reason — nothing is retried or rolled back, because the daemon owns its own state.</p>
@@ -125,7 +136,7 @@
 
 <footer class="foot"><div class="foot-inner">
   <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
-  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">TypeScript · ESM · Node ≥22.13.0</span>
   <span class="seg">LMDB + Lance + DuckDB</span>
   <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
   <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>

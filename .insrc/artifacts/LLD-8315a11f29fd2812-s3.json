@@ -1,0 +1,1110 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792401350307-1gkpsq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-19T09:19:39.699Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 229377,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicHash": "8315a11f29fd2812",
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1792389266411-gvxl8y",
+    "hldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S003 covers its upstream obligations: merged obligation judgements, cross-chunk relationship checks, duplicate detection, and the installed-daemon smoke.",
+          "evidence": "DEF S003/ac1–ac4 and HLD §5.3 assign exactly these outcomes. The proposed obligation, relation, compare/pair, finish, and smoke procedures address each outcome. The design retains the existing verdict fold and delegates serial execution to S001, consistent with the DEF non-goals. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/code-review/runner.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Adherence makes no provider call without an approved LLD or PLAN, and functional coverage drops unknown FR references.",
+          "evidence": "judgeAdherence returns empty findings before constructing the call when both artifacts are null. judgeFunctionalCoverage applies `.filter(f => f.expectationRef === undefined || frIds.has(f.expectationRef))` after changed-file filtering. [files: src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/functional-coverage.ts]",
+          "action": "Preserve these guards in the adapters as specified.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Coverage currently uses builder-reported smoke results, excludes symbols in degraded mode, and normalizes findings once on each execution path.",
+          "evidence": "testRecordView collects named reported results with latest-run and fail-on-tie handling. buildCoveragePrompt explicitly says a reported pass means present and passed. prepareCoverageGrounding returns empty symbols for degraded reviews. judgeCoverage normalizes its result; handleJudgements separately normalizes controller coverage before injecting completed results into the runner. [files: src/workflow/code-review/dimensions/test-record-view.ts, src/workflow/code-review/dimensions/coverage.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "Retain the complete test-record evidence and the separate path-specific normalization boundaries.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Per-obligation adjudication and cross-chunk comparison are new work; the existing review job supplies reusable batching and deterministic finding deduplication.",
+          "evidence": "The existing ReviewJob supports only `JobStage = 'whole' | 'map'`. jobResult deduplicates using every finding field and writes `parts: { map, reduce: 0, compare: 0 }`. It contains no obligation, relation, or duplicate-comparison stages. Current dimension judges still directly call completeStructured. [files: src/workflow/code-review/review-job.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/runner.ts]",
+          "action": "Reuse the existing primitives through S001 rather than treating its current map-only job as a completed gather implementation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The unchanged runner signature and path-specific finding filters match the current integration points.",
+          "evidence": "runCodeReview has the stated four-parameter signature. code-review-rpc invokes it for full and degraded reviews; the controller injects completed dimension results. judgeQuality drops findings outside changedFiles, while validateJudgements retains dropped findings in outOfScope. Both paths reach the runner's existing count and verdict fold. [files: src/workflow/code-review/runner.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/dimensions/quality.ts]",
+          "action": "Keep adapter finish behavior path-aware as §2.6 specifies.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The amended shared hooks required by S003 are available in the upstream design.",
+          "evidence": "S001 §2.19 defines `validate?(answer: unknown, call: ReviewCall): readonly string[]`; §2.22 explicitly refines relationCall to return `readonly ChunkPrompt[]` and counts each returned call under relation. These match S003's semantic validation and two-direction relationship fallback. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md]",
+          "action": "Implement against the amended S001 contract, rather than the older single-return sketch in the HLD.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "An optional pipelineCalls field can be added without rewriting existing DimensionResult records or changing the parts shape.",
+          "evidence": "DimensionResult already has optional parts, outOfScope, and lowered fields. validateArtifact checks dimension identities, findings-derived counts, and verdict consistency; it does not require telemetry fields. S001 explicitly reserves optional pipelineCalls and retains the existing parts shape. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
+          "action": "Keep pipelineCalls optional and retain parts when reading older records.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S003 consumes shared pipeline and material contracts without taking over the neighboring stories' responsibilities.",
+          "evidence": "HLD §5 assigns shared execution to S001, material relations and neighbor summaries to S002, gather to S003, design review to S004, and controller transport to S005. S002 explicitly leaves obligations and context to S003. S001 owns the validate and multi-call relation amendments that S003 consumes. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A dimension failure can propagate through runCodeReview without writing a partial review.",
+          "evidence": "The runner awaits every judge before building, validating, or writing the artifact. A thrown judge error reaches the catch returning `{ ok: false, error: msg }`. Its existing test explicitly checks that a throwing second judge writes nothing and prevents later judges from running. [files: src/workflow/code-review/runner.ts, src/workflow/code-review/__tests__/runner.test.ts]",
+          "action": "Route exhausted gather failures through this existing failure boundary.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S001's implementation guarantees bounded gather calls, provenance preservation, and one semantic-validation retry under a fresh identifier.",
+          "evidence": "S001 documents these guarantees, but the repository has no implemented src/workflow/review-pipeline module. The existing review-job.ts has only whole/map stages and uses MAX_ATTEMPTS = 3. The analyzer also failed with shaper-llm-unavailable following a provider schema rejection. The future driver's behavior therefore cannot be confirmed from current code. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, src/workflow/code-review/review-job.ts]",
+          "action": "Require S001 integration tests for bounded reduction, context-only obligations, provenance, and semantic-validation retries before accepting S003.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every upstream S003 acceptance criterion maps to a proposed test.",
+          "evidence": "DEF S003/ac1–ac4 and HLD §5.3 require complete gathered judgements, cross-chunk mismatch detection, duplicate detection, and an installed-daemon review. The supplied §6 maps these respectively to divided-versus-single parity, caller/callee mismatch, compare/pair duplication, and the live smoke. Existing runner and reported-test tests support the stated baseline behavior. This verifies the test plan, not execution of the proposed tests. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/code-review/__tests__/runner.test.ts, src/workflow/code-review/dimensions/__tests__/reported-tests-view.test.ts]",
+          "action": "Execute the proposed suites and record the installed-daemon smoke before claiming acceptance.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-19T10:31:48.742Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-19T10:45:51.280Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story makes a code review that was split into chunks come back as one complete result. Each model-judged dimension reviews its chunks with today's prompt plus short notes keyed by what it must judge: each approved design clause and plan task, each functional requirement, each promised test, and each touched module's conventions. The gather then judges each of those on the notes from every chunk. Two related functions held in different chunks get an explicit relationship check, and quality compares symbol descriptions across chunks to find duplicated logic. The merged findings fold into today's DimensionResult and verdict. Finally, Epic c2ba6fa6 Story s1, whose review was refused for size, is reviewed on the installed daemon as the acceptance smoke.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A new shared module, the review pipeline (proposed at src/workflow/review-pipeline), owns the three stages for every review. It is a serialisable job: the daemon drives it to the end; the controller is handed its calls one frame at a time and answers them by call identifier. Prepare measures material at 3 characters per token against review.chunkTokens (default 128,000 tokens); at or under the limit it emits one chunk whose prompt is the adapter's current single-call prompt, otherwise it groups the adapter's atoms by the adapter's relations and packs whole groups into chunks that each fit, adding a short summary of each related atom held in another chunk. Review issues one call per chunk serially; every call carries a fresh UUID that the answer must echo inside an envelope, an answer whose identifier is missing or wrong is rejected and retried under a new UUID, and a size refusal re-divides the chunk instead of resending it. Gather passes a single chunk's answer through unchanged and otherwise applies the adapter's gather rules (keyed obligations judged on all chunks' evidence, cross-chunk relationships, cross-chunk duplicates), each gather call itself bounded by the chunk limit. ISSUE-aef82b03's delivered InputTooLargeError, LLMProvider.inputBudgetChars, packIntoBatches and ReviewJob loop are moved under the pipeline as its core. A review kind is a series of stages, each a model stage or a deterministic one, preserving today's execution exactly: code review runs one stage per dimension exactly as today on each path: on the daemon, adherence (no call at all when there is neither an approved LLD nor an approved plan), conventions, coverage, quality and functional coverage are model calls, ux is deterministic and provider-free, and diagram keeps its registered handlers (some deterministic, such as the component handler) with today's per-handler isolation, a failing handler still recorded as a LOW observation; on the controller path the ux and diagram prompts are offered to the controller as today; HLD/LLD template review is one reviewer-session stage; DEF/plan premise review is extract (model), probe (deterministic) and verify, where the daemon path verifies one premise per call and the controller path verifies every premise in one batched call, as each does today; an adapter therefore declares its stage plan per path (daemon or controller). A review under the limit therefore makes exactly today's calls in today's order. Each call names its execution mode: a structured call run in the repository as its working directory (as today's code-review judges pass subject.repoPath; for the premise review's verify calls, which pass no working directory today, this is an additive change), each with its own per-call time limit where it has one today (the premise verify call keeps its 3-minute VERIFY_CALL_TIMEOUT_MS from ISSUE-d4b2cd1c), or a read-only reviewer session with the repository as working directory, the review's remaining deadline and its cancellation signal. Ollama gains a reviewer session through a generic read-only tool loop extracted from the analyzer's runShaperToolLoop, taking caller-supplied messages, answer schema, deadline, signal and retry policy, while the analyzer keeps its own wrapper unchanged. The pipeline owns every retry of a review call: every provider is called with internalRetry: false (CliProvider's transient retry and reviewer-session retry, and both providers' structured-output retry, make exactly one attempt), and the pipeline re-issues a transient failure, a stall, an invalid answer or an identifier mismatch once, under a new UUID: two attempts in all per call. Failure policy is per stage: a cancelled review always ends at once; a premise-review verify call that fails both attempts records that premise as not judged (MED, never a pass) and keeps the rest, as ISSUE-d4b2cd1c delivered; a diagram handler failure stays a LOW observation, as today; any other failed call (premise extraction included) fails the review and records nothing, as today. Gather is bounded at every step: an obligation's evidence (notes from every chunk, each keyed by the obligation and carrying the atom ids it stands for) is packed into the final adjudication call when it fits the limit; when it does not, it is reduced level by level, each reduction call reading one batch of that key's evidence and returning one note of at most a quarter of the limit under the same key, the job keeping which atoms and earlier notes each note stands for, until the key's evidence fits one adjudication call; a gather call refused for its size is re-planned like a chunk. Scope of the identifier and limit rules (stakeholder decision 2026-10-19 [[c14]]): they apply to every request the pipeline sends. A reviewer session's internal tool turns belong to the session, as they already do inside the claude and codex CLIs, where insrc cannot see them; the Ollama session's tool loop is likewise not identified or measured per turn. Every call records which material it carries (its chunk, atom ids and evidence-note ids), and the job keeps an immutable snapshot of the review's material taken once at prepare: for code review, today's grounding snapshot (the controller step already saves subject and grounding) plus every fact a deterministic stage reads from disk today, recorded at prepare (the ux stage's companion-mock existence checks); for design review, the document text and, for the premise review, the extracted claims and their gathered evidence. The adapter is rebuilt on every turn from the saved subject plus that snapshot and never re-queries the code graph or the files, so a refused call is re-divided from exactly the material it carried and a controller review resumes on the same material. A controller reports a call it could not complete as a failure outcome keyed by the call's identifier (size refusal with the reported limit, stall, transient error), which the driver handles exactly as a daemon-side failure: a size refusal re-divides the call, the others are re-issued once under a new identifier.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ReviewMaterial",
+          "purpose": "What an adapter hands the pipeline to prepare: whole indivisible atoms, the relations between them, and the obligations a gather must judge.",
+          "interfaceSketch": "interface ReviewAtom { readonly id: string; readonly label: string; readonly text: string; readonly file?: string | undefined; readonly module?: string | undefined; }\ninterface ReviewRelation { readonly from: string; readonly to: string; readonly kind: 'calls' | 'same-file' | 'same-module' | 'references'; }\ninterface ReviewObligation { readonly key: string; readonly kind: 'clause' | 'requirement' | 'promised-test' | 'module-conventions' | 'check-item'; readonly text: string; readonly atomIds?: readonly string[] | undefined; }\ninterface ReviewMaterial { readonly atoms: readonly ReviewAtom[]; readonly relations: readonly ReviewRelation[]; readonly obligations: readonly ReviewObligation[]; readonly context?: readonly ReviewAtom[] | undefined; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ReviewAdapter",
+          "purpose": "How a review kind plugs into the pipeline: its material, its ordered stages (model or deterministic) with each stage's own failure policy, each stage's calls for the whole review and for one chunk, and the gather rules for a divided review.",
+          "interfaceSketch": "interface ChunkPrompt { readonly messages: readonly LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode; }\ntype ExecutionMode =\n  | { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined }\n  | { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only' };\ntype StageOutputs = Readonly<Record<string, unknown>>;\ninterface AdapterStage {\n  readonly id: string;\n  readonly kind: 'model' | 'deterministic';\n  readonly after: readonly string[];\n  singleCalls(prior: StageOutputs): readonly ChunkPrompt[];\n  chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[];\n  run?(prior: StageOutputs): Promise<unknown>;\n  readonly onCallFailure: 'fail-review' | 'record-not-judged' | 'record-observation';\n}\ninterface ReviewAdapter<R> {\n  readonly kind: 'code-review' | 'design-review';\n  readonly dimension: string;\n  material(): ReviewMaterial;\n  stagesFor(path: 'daemon' | 'controller'): readonly AdapterStage[];\n  finish(outputs: StageOutputs): R;\n  readonly gather: GatherPlan<R>;\n}\ninterface EvidenceNote { readonly noteId: string; readonly key: string; readonly text: string; readonly atomIds: readonly string[]; }\ninterface GatherPlan<R> {\n  readonly obligationCall: (key: string, evidence: readonly EvidenceNote[]) => ChunkPrompt;\n  readonly reduceCall: (key: string, batch: readonly EvidenceNote[]) => ChunkPrompt; // answer: one EvidenceNote under the same key\n  readonly noteCapChars: number; // a quarter of the limit\n  readonly relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => ChunkPrompt) | undefined;\n  readonly merge: (parts: readonly R[]) => R;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c9"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "ReviewChunk and ChunkPlan",
+          "purpose": "The output of prepare: the chunks a review is read in, each within the limit, with summaries of related atoms held elsewhere.",
+          "interfaceSketch": "interface NeighbourSummary { readonly atomId: string; readonly label: string; readonly summary: string; readonly heldInChunk: string; }\ninterface ReviewChunk { readonly id: string; readonly atomIds: readonly string[]; readonly neighbours: readonly NeighbourSummary[]; readonly chars: number; }\ninterface ChunkPlan { readonly limitChars: number; readonly single: boolean; readonly chunks: readonly ReviewChunk[]; readonly crossRelations: readonly ReviewRelation[]; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "CallEnvelope",
+          "purpose": "Every model call of every review carries a fresh identifier the answer must echo, and every retry is the pipeline's own re-issue under a new identifier; one rule for daemon and controller. The rule covers every request the pipeline sends; a reviewer session's internal tool turns are the session's own.",
+          "interfaceSketch": "interface ReviewCall { readonly callId: string; readonly attempt: number; readonly stage: string; readonly role: 'single' | 'chunk' | 'reduce' | 'obligation' | 'relation' | 'merge'; readonly messages: readonly LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode; readonly chars: number; readonly carries: { readonly chunkId?: string | undefined; readonly atomIds: readonly string[]; readonly noteIds: readonly string[]; readonly key?: string | undefined }; }\ninterface EnvelopedAnswer { readonly callId: string; readonly answer: unknown; }\n// schema sent to the model: { type: 'object', required: ['callId', 'answer'], properties: { callId: { const: <callId> }, answer: <adapter schema> } }\n// provider options the pipeline sets on every call (additive, optional):\ninterface StructuredCompletionOpts { readonly internalRetry?: boolean | undefined; /* false: the provider makes exactly one attempt */ }\ninterface ReviewSessionOpts { readonly internalRetry?: boolean | undefined; readonly signal?: AbortSignal | undefined; }\ninterface LLMProvider { runReviewSession?<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "ReviewPipelineJob",
+          "purpose": "The serialisable state of one review's pipeline run, driven to the end by the daemon or one frame at a time by the controller.",
+          "interfaceSketch": "interface ReviewPipelineJob { readonly reviewId: string; readonly path: 'daemon' | 'controller'; readonly snapshot: ReviewMaterialSnapshot; readonly kind: 'code-review' | 'design-review'; readonly dimension: string; readonly phase: 'prepare' | 'review' | 'reduce' | 'gather' | 'done'; readonly plan: ChunkPlan; readonly stage: string; readonly outputs: StageOutputs; readonly pending: readonly ReviewCall[]; readonly answered: readonly { readonly callId: string; readonly stage: string; readonly answer: unknown }[]; readonly notes: readonly EvidenceNote[]; readonly noteProvenance: Readonly<Record<string, readonly string[]>>; readonly notJudged: readonly { readonly stage: string; readonly key: string; readonly cause: string }[]; readonly issuedHashes: readonly string[]; }\n// taken once at prepare, never re-queried: code review = the saved grounding; design review = the document text, and for the premise review its claims and gathered evidence\ninterface ReviewMaterialSnapshot { readonly kind: 'code-review' | 'design-review'; readonly grounding?: unknown; readonly fileFacts?: Readonly<Record<string, { readonly exists: boolean }>> | undefined; readonly documentText?: string | undefined; readonly claims?: readonly unknown[] | undefined; readonly evidence?: readonly unknown[] | undefined; }\n// runtime state, never serialised: the AbortSignal; the adapter is rebuilt from the review's subject on every turn\ninterface ReviewPipelineDriver { nextCalls(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): readonly ReviewCall[]; applyAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, answer: EnvelopedAnswer): ReviewPipelineJob; applyFailure(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, callId: string, cause: 'size-refusal' | 'transient' | 'stall' | 'identifier-mismatch' | 'invalid-answer', maxChars?: number | undefined): ReviewPipelineJob; result<R>(job: ReviewPipelineJob): R; }\n// additive, optional record fields under a NEW name, absent when a review was one chunk:\n// DimensionResult.pipelineCalls?: { chunk: number; obligation: number; relation: number; merge: number }\n// ReviewReport.pipelineCalls?: the same shape.\n// The existing DimensionResult.parts ({ map, reduce, compare }) is left as it is and is no longer written.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c9"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "Chunk limit setting",
+          "purpose": "One limit for every provider and every review kind.",
+          "interfaceSketch": "// config catalog entry\n{ path: 'review.chunkTokens', type: 'number', default: 128000 }\n// fixed conversion\nconst REVIEW_CHARS_PER_TOKEN = 3; // limitChars = review.chunkTokens * REVIEW_CHARS_PER_TOKEN = 384000",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "The code-review adapter's gather: per-dimension chunk prompts, obligation keys and their adjudication over all chunks' evidence, the cross-chunk relationship check, the cross-chunk duplicate comparison for quality, and the fold into today's DimensionResult and verdict. It also owns the acceptance smoke: Epic c2ba6fa6 Story s1's code review runs on the installed daemon, completes and records a verdict, with the chunk plan and calls per stage written to the smoke record. Tests: S003/ac1 a divided review and the same material reviewed in one call under a raised limit give the same obligation verdicts on fixtures that fit both ways; ac2 a mismatch between related functions in different chunks is reported; ac3 a cross-chunk duplicate is reported; ac4 the installed-daemon smoke above."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "The pipeline module itself: measurement, the generic grouping that packs related atoms together within the limit, staged execution with deterministic stages, the envelope schema wrapping, identifier generation and checking, the pipeline-owned retry policy (providers called with internalRetry: false; one re-issue under a new UUID, two attempts in all), per-stage failure policies, refusal re-division, the serial daemon driver, single-chunk pass-through, the bounded gather machinery (evidence notes keyed by obligation, level-by-level reduction under a note cap, provenance kept in the job, refused gather calls re-planned), and the adoption of ISSUE-aef82b03's InputTooLargeError, inputBudgetChars, packIntoBatches and ReviewJob loop. Change sites beyond the new module: CliProvider (internalRetry honoured by withTransientRetry, runReviewSession and its structured-output retry; a size refusal in the claude reviewer-session error envelope and the codex session classified as InputTooLargeError, as completeStructured already does), OllamaProvider (internalRetry: false maps completeStructured to one attempt; a read-only reviewer session over a generic tool loop extracted from runShaperToolLoop in src/analyze/context/driver.ts, the analyzer keeping its own wrapper), and the single-chunk adapters for both review kinds, so every review takes the pipeline path from s1 on with today's calls and working directory (structured calls run in the repository, as today for code review; the premise review's verify calls gain it as an additive change): one model stage per model-judged code-review dimension, adherence making no call without an approved LLD or plan, ux deterministic on the daemon and diagram's handlers as today (deterministic ones stay deterministic, a failing handler stays a LOW observation); one reviewer session for HLD/LLD; extract, probe, then one verify per premise for DEF/plan, with ISSUE-d4b2cd1c's not-judged recording kept. Tests: S001/ac1 an under-limit code review, template review and premise review each make today's calls and give today's result (recorded fixtures), the diagram dimension included; ac2 a missing or wrong identifier is retried once under a new UUID and no prompt hash repeats, including transient errors, stalls and invalid answers on both CliProvider and OllamaProvider; premise extraction failing fails the review while a verify call failing twice records the premise as not judged; ac3 the default limit is 384,000 characters for every provider; ac4 a size refusal from completeStructured, the claude session envelope and the codex session re-divides the call and never resends it; ac5 a review on an Ollama provider completes through both execution modes; plus a live probe of the envelope schema on claude and codex. Also tested: an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits, and the final verdict keeps every atom's provenance; every structured review call runs in the repository working directory. Also tested: a premise verify call keeps its 3-minute limit through the pipeline; a refused call is re-divided from exactly the atoms and notes it carried; the controller premise review under the limit still sends one batched verify prompt. Also tested: refusal re-planning reads only the job's material snapshot, never the graph or files, so a reindex between turns cannot change the material a call is re-divided from. The ux stage reads companion-mock existence from the snapshot's file facts recorded at prepare, not from disk; tested: adding or removing a mock after prepare does not change the review result."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "The code-review adapter's material: changed-symbol atoms, call relations from the grounding's callers and callees among changed symbols, file and module relations, and how neighbour summaries are written for a changed symbol held in another chunk. Tests: S002/ac1 related changed symbols land in the same chunk before file and module grouping; ac2 a call relation cut between chunks yields a neighbour summary on both sides; ac3 every changed symbol appears whole in some chunk and one over the limit is named, never cut."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The design-review adapter: document sections as atoms, cross-reference relations, section summaries for neighbours, chunk prompts for the template checklist and the premise pipeline, and the gather of checklist answers or premise verdicts into today's ReviewReport and verdict rules. Tests: S004/ac1 every section appears whole in some chunk with the sections it references; ac2 a cross-chunk reference yields a section summary; ac3 a divided HLD/LLD review and a divided DEF/plan review each give one ReviewReport under today's verdict rules, and a premise whose call fails twice is still recorded as not judged. Its controller stage plan keeps today's single batched verify prompt under the limit; over the limit it batches premises per chunk."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The two controller steps' use of the job, and the MCP boundary that admits it: the new answers phase in the insrc_review_step and insrc_code_review_step input schemas in src/mcp/server.ts, their registered schema contracts and tool descriptions, with schema and surface tests (src/mcp/__tests__/schema-registry.test.ts); keeping it in step state, frame sizing, answer validation by call identifier, and offering a review under the limit today's prompts as identified calls in the same frame shape. Compatibility: the controller step states gain an optional pipeline field; a state without it (saved before the change) is resumed on today's path; both stores are memory-only, so, as today, a state does not survive a daemon restart. Tests: S005/ac1 a controller review over the limit is handed the daemon's chunks one frame at a time and records the same kind of result; ac2 a missing or wrong identifier in an answer is rejected and the call offered again under a new UUID; ac3 a new controller review under the limit is offered today's prompts, each as an identified call, and gives today's result; a pre-change state resumes on today's emit_judgements / judgements (code review), emit_claims / claims and emit_verdicts / verdicts (DEF/plan premise review) and emit_findings / findings (HLD/LLD template review) frames, each path tested. The answers phase also accepts a failure outcome per call (size refusal with the reported limit, stall, transient error), mapped to the driver's failure handling and admitted by both MCP input schemas; tested: a controller-reported size refusal re-divides the call, a reported stall or transient error re-issues it once under a new identifier."
+        }
+      ],
+      "rolloutPhase": "Phase B — divided code review and divided design review",
+      "nonFunctional": {
+        "performance": "Calls are serial (k6). A review under the limit makes the same number of calls as today. Every prompt sent, chunk or gather, is at most review.chunkTokens x 3 characters.",
+        "security": "No new transport: calls go through the existing LLMProvider and the installed CLIs (k7). Reviewer sessions keep their read-only tool sets.",
+        "observability": "Each review logs its plan (single or N chunks, chars per chunk), every call's identifier, stage and size, every identifier mismatch and refusal, and the gather's obligation count; DimensionResult and ReviewReport record the number of calls per stage when a review was divided.",
+        "durability": "The job is serialisable, so the controller path survives across turns in the existing step state (memory-only, so not across a daemon restart, as today). A daemon review whose call fails after its retries records nothing, as today, except the premise review, which records that premise as not judged and keeps the rest (ISSUE-d4b2cd1c). New record fields (pipelineCalls) are optional, under a new name, and absent on one-chunk reviews; the existing parts field keeps its shape; so existing records keep validating."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "ReviewMaterial.obligations and context (code review, per dimension)",
+          "signature": "obligations: readonly ReviewObligation[]; context?: readonly ReviewAtom[]  // added to s2's codeReviewMaterial output by each dimension's adapter",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "The saved subject: approved LLD, PLAN, test record and changed files, as today's prompt builders read them.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewMaterial (sc1)",
+            "meaning": "adherence: one 'clause' obligation per approved LLD clause and PLAN task, and the clause text as a context atom; none (and no call) without an approved LLD or plan, as today. functional coverage: one 'requirement' obligation per FR. coverage: one 'promised-test' obligation per promised test. Its context is ALL the record evidence today's coverage prompt reads for that test (testRecordView, src/workflow/code-review/dimensions/test-record-view.ts:140): its reportedTests entry (a reported smoke or live pass counts as present and passed, as buildCoveragePrompt says), the build tasks, the record notes, and the status and title atoms of every test file that names it. This is chosen by the test's name, never by which symbols reach it, so a promised test with no test file or reaching edge still gets its evidence. The same holds with empty grounding. conventions: one 'module-conventions' obligation per touched module (the atoms' module values). quality: no obligations. Every obligation exists at prepare, so one with no evidence is still adjudicated."
+          },
+          "errors": [],
+          "preconditions": [
+            "Built from the saved subject and the snapshot only."
+          ],
+          "postconditions": [
+            "The obligation set equals what today's single prompt asks the model to judge."
+          ]
+        },
+        {
+          "name": "AdapterStage.chunkCalls (code-review dimensions)",
+          "signature": "chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[]",
+          "parameters": [
+            {
+              "name": "chunk",
+              "type": "ReviewChunk",
+              "purpose": "The chunk's atom ids and neighbour summaries (sc3).",
+              "optional": false
+            },
+            {
+              "name": "prior",
+              "type": "StageOutputs",
+              "purpose": "Earlier stages' outputs (unused by the first stage).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly ChunkPrompt[]",
+            "meaning": "One structured call per chunk, with the repo as cwd, over the chunk's rows, its neighbour summaries and the context atoms it needs. The answer schema depends on the dimension. adherence, functional coverage and conventions: notes only, [{ key, atomIds, note }], with NO findings array. The note records how the chunk's code realises, partly realises or departs from that obligation (for conventions, the idiom examples and candidate deviations seen in the module), so every finding of these three dimensions comes from the per-obligation judgement over all chunks. coverage: findings restricted to findingKind 'symbol-coverage', each with a symbolId the call carries, plus notes per promised test; promised-test findings come only from gather. quality: today's findings plus descriptions [{ atomId, description }]. A chunk schema cannot express an absence, an unrealized FR or a module verdict, so none can reach the result from a chunk."
+          },
+          "errors": [
+            {
+              "type": "AtomTooLargeError (s1)",
+              "condition": "A chunk's rendered call cannot fit with its minimum context; s1 names the atom."
+            }
+          ],
+          "preconditions": [
+            "Used only when the plan is not single; the single path keeps today's prompt."
+          ],
+          "postconditions": [
+            "No chunk answer can carry an absence finding, an obligation verdict or a conventions verdict: the chunk schemas have no field for one.",
+            "Under the limit, s1's single path sends today's prompt and schema unchanged.",
+            "A quality chunk answer carries exactly one description for every atom the call carries, and no other, so every symbol reaches the cross-chunk comparison."
+          ]
+        },
+        {
+          "name": "GatherPlan.obligationCall / reduceCall (code review)",
+          "signature": "obligationCall(key: string, evidence: readonly EvidenceNote[]): ChunkPrompt; reduceCall(key: string, batch: readonly EvidenceNote[]): ChunkPrompt",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string",
+              "purpose": "An obligation key of the dimension.",
+              "optional": false
+            },
+            {
+              "name": "evidence",
+              "type": "readonly EvidenceNote[]",
+              "purpose": "Every note for that key from every chunk, reduced by s1 until it fits.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChunkPrompt",
+            "meaning": "obligationCall judges one key with today's rules for that dimension, on all its notes and the obligation's own context atoms, and returns today's findings shape. adherence: departures (located at the atoms the notes name) and unimplemented clauses, with expectationRef. functional coverage: unrealized or partial FRs. coverage: missing or failing promised tests, judged on the full record evidence of that test. conventions: the module's idiom and its deviations, with today's too-few-examples rule. Chunk calls make no conventions findings, so a candidate deviation the module judgement rejects never appears. reduceCall returns one note under the same key, at most noteCapChars (a quarter of the limit), keeping the atom ids it stands for. With zero atoms (s1's divided-with-no-atoms rule), every key is judged on its context alone."
+          },
+          "errors": [],
+          "preconditions": [
+            "Keys come from material.obligations."
+          ],
+          "postconditions": [
+            "A key with no notes is adjudicated on the statement that no chunk showed evidence for it."
+          ]
+        },
+        {
+          "name": "GatherPlan.relationCall (code review)",
+          "signature": "relationCall(pair: readonly [ReviewAtom, ReviewAtom]): readonly ChunkPrompt[]",
+          "parameters": [
+            {
+              "name": "pair",
+              "type": "readonly [ReviewAtom, ReviewAtom]",
+              "purpose": "A caller and callee joined by a 'calls' relation in ChunkPlan.crossRelations (held in different chunks).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly ChunkPrompt[]",
+            "meaning": "For the quality and adherence dimensions: one call carrying both full summaries when they fit together, otherwise two calls, one full summary against the other's neighbour summary in each direction (the amended s1 GatherPlan.relationCall). Each judges whether the caller's use matches the callee (arguments, return use, error contract; for adherence, the approved clauses either one carries) and returns today's findings shape, a mismatch located at the caller."
+          },
+          "errors": [],
+          "preconditions": [
+            "Only 'calls' relations whose ends sit in different chunks."
+          ],
+          "postconditions": [
+            "Each cut call relation is judged once per dimension that uses relationCall."
+          ]
+        },
+        {
+          "name": "AdapterStage (quality compare and pair stages)",
+          "signature": "stages 'compare' and 'pair' after 'chunk': chunkCalls/singleCalls as for AdapterStage, kind 'model', onCallFailure 'fail-review'",
+          "parameters": [
+            {
+              "name": "prior",
+              "type": "StageOutputs",
+              "purpose": "The chunk stage's descriptions (compare) or compare's candidate pairs (pair).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly ChunkPrompt[]",
+            "meaning": "compare: descriptions from different chunks are packed into batches of at most half the limit, and every pair of batches from different chunks is one call that returns candidate duplicate pairs. pair: each candidate pair is judged on both full summaries when they fit together, else full against description in each direction, returning today's quality findings with counterpartRef."
+          },
+          "errors": [],
+          "preconditions": [
+            "Runs only when the plan is not single."
+          ],
+          "postconditions": [
+            "Every two symbols in different chunks are compared through their descriptions."
+          ]
+        },
+        {
+          "name": "GatherPlan.merge / ReviewAdapter.finish (code review)",
+          "signature": "merge(parts: readonly DimensionResult[]): DimensionResult; finish(outputs: StageOutputs): DimensionResult",
+          "parameters": [
+            {
+              "name": "parts",
+              "type": "readonly DimensionResult[]",
+              "purpose": "The chunk, obligation, relation and pair results.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DimensionResult",
+            "meaning": "Findings concatenated in stage order. Identical findings (every field equal) kept once. A finding naming a note id is expanded to that note's atoms through the job's provenance. Findings outside the changed set are handled as each path does today: the daemon judges drop them (for example src/workflow/code-review/dimensions/quality.ts:124) and the controller step keeps them in outOfScope (src/daemon/steps/code-review-step/handler.ts). For coverage, normalizeCoverageFindings runs once over the merged result with the prepared grounding (src/workflow/code-review/dimensions/coverage.ts:185). pipelineCalls { chunk, obligation, relation, merge } is set; it is absent on a single-chunk review. Each dimension's finish also keeps every result filter that dimension's judge applies today. In particular, functional coverage keeps only findings whose expectationRef is absent or a known FR id (src/workflow/code-review/dimensions/functional-coverage.ts), so an invented FR reference cannot reach the verdict."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "runCodeReview folds the merged results with foldVerdict unchanged (src/workflow/code-review/runner.ts:257)."
+          ]
+        },
+        {
+          "name": "runCodeReview",
+          "signature": "runCodeReview(subject: CodeReviewSubject, provider: LLMProvider, opts: RunCodeReviewOpts, deps: CodeReviewRunnerDeps = DEFAULT_DEPS): Promise<CodeReviewOutcome>",
+          "parameters": [
+            {
+              "name": "subject",
+              "type": "CodeReviewSubject",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<CodeReviewOutcome>",
+            "meaning": "Unchanged signature and record shape. Over the limit, each dimension's result is the merged DimensionResult above."
+          },
+          "errors": [
+            {
+              "type": "CodeReviewOutcome { ok: false, error }",
+              "condition": "A call in a fail-review stage fails both attempts, as s1 defines."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "The verdict rule is unchanged."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DimensionResult.pipelineCalls",
+        "change": "field-add",
+        "details": "Defined by s1 (sc5); this Story writes it for a divided dimension: { chunk, obligation, relation, merge }, where compare and pair calls count under relation. Absent for one call; parts is not written.",
+        "callSites": [
+          "src/workflow/code-review/types.ts:73"
+        ]
+      },
+      {
+        "entity": "Smoke record for Epic c2ba6fa6 Story s1",
+        "change": "new",
+        "details": "A JSON file beside S003 (docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/smoke-c2ba6fa6-s1.json) recording the run date, the installed daemon commit, the verdict and counts, and per dimension the chunk plan (chunk count, chars per chunk) and calls per stage. The review record itself is written by the daemon as today (.insrc/artifacts/CR-c2ba6fa62a148ed1-s1.json).",
+        "callSites": [
+          ".insrc/artifacts/BUILD-c2ba6fa62a148ed1-s1.json"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Adds each dimension's obligations and context atoms to s2's material."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Implements the code-review dimensions' chunkCalls, gather plan (obligationCall, reduceCall, relationCall, merge), quality's extra compare and pair stages, and finish."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Reads ChunkPlan.crossRelations for the relation checks and each chunk's neighbours for its prompt."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Every chunk, obligation, reduce, relation, compare and pair call is sent by s1's enveloped driver."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Uses the job's note provenance to expand note ids, and writes pipelineCalls."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Every call it builds is measured by s1 against limitChars; the relation and pair fallbacks keep each within it."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A chunk answer names an obligation key that does not exist, or an atom id outside its chunk.",
+          "detection": "The chunk stage's validate(answer, call) (amended s1 AdapterStage.validate) checks every note key against material.obligations, and every atomId and symbolId against call.carries.atomIds.",
+          "response": "Invalid answer: s1 re-issues the call once under a new callId with the reasons as the correction note. A second failure applies fail-review.",
+          "userImpact": "None when the re-issue succeeds; otherwise the review fails and records nothing, as today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A coverage chunk answer carries a finding that is not a symbol-coverage finding of a symbol it was given.",
+          "detection": "validate(answer, call) rejects any coverage chunk finding whose findingKind is not 'symbol-coverage', or whose symbolId is not in call.carries.atomIds. The adherence, functional-coverage and conventions chunk schemas have no findings field at all, so their absences cannot be expressed.",
+          "response": "Invalid answer: one re-issue under a new callId with the reasons, then fail-review.",
+          "userImpact": "No false 'missing' or verdict finding from a chunk that saw only part of the change.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A pair or relation answer names a counterpart that is not one of the two symbols it was given.",
+          "detection": "validate(answer, call) compares counterpartRef and the finding's location with the two atoms in call.carries.atomIds.",
+          "response": "Invalid answer: one re-issue, then fail-review.",
+          "userImpact": "No invented counterpart is recorded.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An obligation, relation, compare or pair call fails both attempts.",
+          "detection": "s1's driver applies the stage's onCallFailure, which is fail-review for every gather stage of code review.",
+          "response": "The review fails and records nothing; runCodeReview returns { ok: false, error }, as today for a failed dimension.",
+          "userImpact": "As today: no partial code-review record.",
+          "recoverable": false
+        },
+        {
+          "scenario": "The smoke's code review does not complete on the installed daemon (a refusal, a failure, or an atom too large).",
+          "detection": "The smoke reads the code-review RPC outcome; anything other than a recorded verdict fails it.",
+          "response": "The smoke fails with the outcome and the plan logged; Story s3's ac4 is not met and the Story is not completed.",
+          "userImpact": "Acceptance is withheld until the review completes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A quality chunk answer omits a description for a carried symbol, repeats one, or describes a symbol it was not given.",
+          "detection": "validate(answer, call) compares the set of description atomIds with call.carries.atomIds; they must be equal and without duplicates.",
+          "response": "Invalid answer: one re-issue under a new callId naming the missing, duplicate or foreign ids, then fail-review.",
+          "userImpact": "No symbol silently drops out of duplicate detection.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An obligation answer for functional coverage names an FR that does not exist.",
+          "detection": "finish applies today's FR-reference filter (expectationRef must be absent or a known FR id).",
+          "response": "The finding is dropped, as today's judge drops it.",
+          "userImpact": "As today.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A divided review in which an obligation has no notes from any chunk.",
+          "expected": "Adjudicated on the statement that no chunk showed evidence, so a missing clause, FR or promised test is reported as one call would report it."
+        },
+        {
+          "input": "A degraded (diff) review with promised tests and a large test record.",
+          "expected": "Coverage has no symbol atoms. Its rendered single call does not fit, so s1 divides it with zero atoms. Every promised test is judged in an obligation call on its full record evidence (reported tests, build tasks, notes, file atoms), packed to fit, and nothing is reported as symbol coverage."
+        },
+        {
+          "input": "Two related functions whose full summaries do not fit one call together.",
+          "expected": "relationCall returns two calls, one full summary against the other's neighbour summary in each direction; both are counted under relation, and the relation is judged when both are answered."
+        },
+        {
+          "input": "Two symbols with identical findings reported by two chunks.",
+          "expected": "Kept once."
+        },
+        {
+          "input": "A conventions module whose examples are spread across chunks with fewer than today's minimum examples in each.",
+          "expected": "Judged once at gather on all examples, under today's too-few-examples rule."
+        },
+        {
+          "input": "A review under the limit.",
+          "expected": "s1's single-chunk path: today's prompts and result; no chunk, obligation, relation or compare call, and no pipelineCalls."
+        },
+        {
+          "input": "Adherence with neither an approved LLD nor a plan.",
+          "expected": "No obligations and no call, as today."
+        },
+        {
+          "input": "A promised test passed only as a reported smoke or live run, with no test file and no symbol reaching it.",
+          "expected": "Its obligation context holds the reported result, so it is judged present and passed, not missing."
+        },
+        {
+          "input": "A conventions candidate deviation seen in one chunk that the module judgement rejects.",
+          "expected": "It never appears: chunks make no conventions findings, only notes."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "foldVerdict's rule is unchanged: any HIGH blocks, any MED warns, otherwise pass, capped at warn on request.",
+          "source": "c1"
+        },
+        {
+          "text": "Coverage is normalised once over the dimension's whole result on both paths, the daemon (judgeCoverage) and the controller step (src/daemon/steps/code-review-step/handler.ts:534).",
+          "source": "c1"
+        },
+        {
+          "text": "Absence findings come only from a judgement over all the evidence, as in ISSUE-aef82b03's approved design.",
+          "source": "c2"
+        },
+        {
+          "text": "The DimensionResult and DimensionFinding shapes are unchanged apart from the optional pipelineCalls s1 defines.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test), as the existing code-review tests (src/daemon/__tests__/code-review-rpc.test.ts); providers faked with scripted answers",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Each dimension's gather pieces in isolation: obligations, chunk validation, obligation and relation prompts, compare and pair, merge and finish.",
+          "subjects": [
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key with no notes is adjudicated on the no-evidence statement'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a pair answer naming a counterpart outside its two symbols is rejected'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, expands note ids to atoms, moves out-of-set findings to outOfScope, and normalises coverage once'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a conventions candidate rejected by the module judgement is absent from the merged result'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by finish, as today'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review'"
+          ],
+          "fixturesNeeded": [
+            "a grounding and subject that divide under a small test limit",
+            "scripted provider answers keyed by stage and callId"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "A divided review end to end through runCodeReview, compared with the same material in one call under a raised limit; cross-chunk mismatch and duplicate detection.",
+          "subjects": [
+            "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways'",
+            "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller'",
+            "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef'",
+            "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence'",
+            "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a gather call failing twice fails the review and records nothing'"
+          ],
+          "fixturesNeeded": [
+            "recorded or scripted answers for the divided and single runs",
+            "a fixture pair of related functions with a mismatched contract",
+            "a fixture pair of duplicated functions with unrelated names"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Epic c2ba6fa6 Story s1's code review on the installed daemon (ac4).",
+          "subjects": [
+            "src/workflow/review-pipeline/__tests__/smoke-c2ba6fa6-s1.live.test.ts: 'Epic c2ba6fa6 Story s1's code review completes on the installed daemon, records a verdict, and writes the chunk plan and calls per stage to the smoke record'"
+          ],
+          "fixturesNeeded": [
+            "INSRC_LIVE_TESTS=1",
+            "the installed daemon updated to the s3 build",
+            "Epic c2ba6fa6 Story s1's BUILD, LLD, PLAN and TESTS records"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key with no notes is adjudicated on the no-evidence statement'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, expands note ids to atoms, moves out-of-set findings to outOfScope, and normalises coverage once'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a conventions candidate rejected by the module judgement is absent from the merged result'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by finish, as today'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/smoke-c2ba6fa6-s1.live.test.ts: 'Epic c2ba6fa6 Story s1's code review completes on the installed daemon, records a verdict, and writes the chunk plan and calls per stage to the smoke record'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "After s1 and s2, a code review over the limit is divided into chunks of related code (s2), but no dimension has chunk prompts, obligations or a gather plan, so it cannot be judged across chunks. Today each dimension judges once (src/workflow/code-review/runner.ts:171), coverage is prepared and normalised once on both paths (src/workflow/code-review/dimensions/coverage.ts:135, src/workflow/code-review/dimensions/coverage.ts:185, src/daemon/steps/code-review-step/handler.ts:534), and foldVerdict folds the counts (src/workflow/code-review/runner.ts:257). ISSUE-aef82b03's per-dimension gather design was approved but not built. Epic c2ba6fa6 Story s1 has no code-review record because its review was refused for size.",
+      "stateAfter": "Each model-judged dimension's adapter has obligations and context, chunk prompts that return findings plus keyed notes, an obligation adjudication per key, relation checks for cut call relations (quality, adherence), quality's compare and pair stages, and a merge and finish that fold into today's DimensionResult with pipelineCalls. A divided review gives one result per dimension and today's verdict rule. Epic c2ba6fa6 Story s1's code review completes on the installed daemon and its smoke record is written.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the per-dimension obligations, context and chunk prompts, with each chunk stage's validate.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add each dimension's gather plan (obligationCall, reduceCall, relationCall for quality and adherence, merge) and quality's compare and pair stages; finish normalises coverage once and sets pipelineCalls.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Run the unit and integration suites, including the divided-versus-single comparison on fixtures that fit both ways.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Rebuild and update the installed daemon, then run the smoke: Epic c2ba6fa6 Story s1's code review through the daemon's code-review RPC, writing the smoke record beside S003.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public signature, IPC payload or record shape changes beyond s1's optional pipelineCalls. Under the limit every dimension keeps s1's single-chunk path and today's prompt. Existing code-review records stay valid; DimensionResult.parts is left as it is and not written.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Per-dimension gather plans on s1's GatherPlan, carried over from ISSUE-aef82b03's strategies",
+        "oneLineSummary": "Each model-judged dimension's adapter gets chunk prompts (today's prompt over the chunk's rows, neighbour lines and its context) that return today's findings plus evidence notes keyed by obligation; s1's gather adjudicates every obligation key on all notes, judges each cut call relation in a relation call, and quality adds a compare stage for cross-chunk duplicates; finish folds into today's DimensionResult.",
+        "approach": "Obligations per dimension, all created at prepare so a key with no evidence is still adjudicated: adherence keys each approved LLD clause and PLAN task; functional coverage each FR; coverage each promised test; conventions each touched module. Each dimension's chunkCalls build today's prompt over the chunk's rows (the s2 material), with the chunk's neighbour summaries and the context atoms the chunk needs (clauses, FRs, test-record atoms of the files its symbols reach). The answer schema is today's findings plus notes [{key, atomIds, note}]. Chunk answers never emit absence findings (unimplemented clause, unrealized FR, missing promised test, module idiom verdict); only obligation adjudication does. GatherPlan.obligationCall adjudicates one key on its notes and its own context atom, with today's rules (conventions keeps today's too-few-examples rule and confirms or drops chunk-level candidate deviations). reduceCall merges a key's notes under the quarter-limit cap. GatherPlan.relationCall judges each 'calls' relation in ChunkPlan.crossRelations once, on the two symbols' full summaries, and reports a mismatch between caller and callee as a finding at the caller's location; it is used by quality and adherence, the dimensions that judge behaviour. Quality's adapter adds a model stage 'compare' after its chunk stage: chunk answers include a one-line description per symbol, descriptions from different chunks are packed into batch pairs within the limit, and each pair call names duplicate candidates, which a 'pair' stage judges on both full summaries, reporting duplication with counterpartRef. merge concatenates findings, keeps identical ones once, expands note ids to their atoms through the job's provenance, and drops any finding outside the changed set as today. finish runs normalizeCoverageFindings once over coverage's merged result, and DimensionResult gets pipelineCalls. foldVerdict is unchanged. The smoke runs Epic c2ba6fa6 Story s1's code review through the installed daemon's code-review RPC and writes the verdict, chunk plan and calls per stage to a smoke record beside S003.",
+        "pros": [
+          "Reuses ISSUE-aef82b03's approved per-dimension design (keys, absence findings only from adjudication, digest-free pair checks), now on s1's bounded gather.",
+          "Every obligation is judged once on all chunks' evidence, as one call would judge it.",
+          "The relationship and duplicate checks are explicit gather calls with their own findings, so ac2 and ac3 are each provable.",
+          "Uses only sc2 members (stages, chunkCalls, gather) and adds no contract."
+        ],
+        "cons": [
+          "Five chunk prompts, five obligation prompts, a relation prompt and quality's compare and pair prompts: the largest prompt surface.",
+          "A relation call per cut call relation can be many calls on a dense change; calls stay serial and bounded but the review takes longer."
+        ],
+        "costEstimate": "L",
+        "winnerRank": 1,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies",
+            "notes": "Keys are created at prepare and adjudicated on all notes; absence findings come only from adjudication."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "relationCall judges each cut call relation on both full summaries."
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies",
+            "notes": "Quality's compare and pair stages."
+          },
+          {
+            "constraintId": "ac4",
+            "verdict": "satisfies",
+            "notes": "Smoke on the installed daemon writes the verdict, plan and calls per stage."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies",
+            "notes": "Fills material.obligations and context."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies",
+            "notes": "Uses chunkCalls, extra model stages, GatherPlan and finish."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies",
+            "notes": "Reads crossRelations and neighbours."
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies",
+            "notes": "Every gather call goes through the enveloped driver."
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies",
+            "notes": "Note provenance expands note ids to atoms; pipelineCalls is recorded."
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies",
+            "notes": "Every chunk and gather call is measured by s1 against limitChars."
+          },
+          {
+            "constraintId": "k5",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies",
+            "notes": "Same criteria and verdict rules; under the limit, s1's single-chunk path is untouched."
+          }
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "One synthesis gather per dimension",
+        "oneLineSummary": "Chunks return today's findings plus free-form notes; one gather call per dimension (reduced level by level when too large) reads all chunks' findings and notes and judges obligations, cross-chunk relationships and duplicates together.",
+        "approach": "No per-obligation keys: every note goes under one key per dimension, the gather call receives all notes (reduced under the quarter cap when needed) plus the dimension's context, and returns the dimension's final findings. Relations and duplicates are judged from notes, not from the full summaries.",
+        "pros": [
+          "Few prompts: one chunk prompt and one gather prompt per dimension.",
+          "Fewer gather calls on a dense change."
+        ],
+        "cons": [
+          "Reduction squeezes all obligations into notes under one cap, so an obligation's evidence can be lost in a summary: weaker than a per-key adjudication (k5).",
+          "Relationships and duplicates are judged on notes, not on the two symbols' full summaries, so a mismatch in detail can be missed (ac2, ac3)."
+        ],
+        "costEstimate": "M",
+        "winnerRank": 2,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "partial",
+            "notes": "Obligations share one reduced note pool, so evidence can be lost in a summary."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "partial",
+            "notes": "Judged on notes, not on the summaries."
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "partial",
+            "notes": "Duplicates are inferred from notes."
+          },
+          {
+            "constraintId": "ac4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "partial",
+            "notes": "Obligations are not keyed."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k5",
+            "verdict": "partial"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies"
+          }
+        ],
+        "reasonRejected": "Cheaper, but one note pool per dimension and judgements on notes weaken ac1-ac3."
+      },
+      {
+        "id": "a3",
+        "name": "Deterministic union, no gather calls",
+        "oneLineSummary": "The gather concatenates chunk findings and treats an obligation as met when any chunk reports evidence for it; no relation or duplicate check.",
+        "approach": "Chunks return findings plus obligation evidence flags; merge unions findings and reports an obligation unmet only if no chunk flagged it. No model call at gather.",
+        "pros": [
+          "Smallest: no gather prompts or calls."
+        ],
+        "cons": [
+          "A partial realization split across chunks is never judged as a whole (ac1).",
+          "No cross-chunk relationship or duplication check, so ac2 and ac3 fail."
+        ],
+        "costEstimate": "S",
+        "winnerRank": 3,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "partial",
+            "notes": "No whole-obligation judgement."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "violates"
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "violates"
+          },
+          {
+            "constraintId": "ac4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "partial"
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "partial",
+            "notes": "The gather plan goes unused."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k5",
+            "verdict": "violates"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "partial",
+            "notes": "Obligations would be judged differently from a single call."
+          }
+        ],
+        "reasonRejected": "No gather judgement at all; fails ac2 and ac3."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]: How per-dimension results fold into the verdict and where coverage is prepared and normalised, with every caller (insrc_analyze_step how-does-it-work, plus a gr"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]: The per-dimension gather already designed in ISSUE-aef82b03's approved LLD, which this Story carries into the pipeline (t5-t14 there were superseded, not built)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[2]: Upstream s1 and s2 LLD contracts this Story consumes, and the smoke subject."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD-8315a11f29fd2812"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "DEF-8315a11f29fd2812"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s2 alternatives"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s3 judge"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s4 contract"
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s5 error paths"
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s6 test strategy"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s7 migration"
+    },
+    {
+      "id": "c12",
+      "kind": "step-output",
+      "ref": "s8 checklist"
+    }
+  ]
+}

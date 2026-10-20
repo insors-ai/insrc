@@ -54,6 +54,7 @@ import {
 import { specArtifactPaths, writeAtomic } from '../storage.js';
 import type { ReviewReport } from '../review/types.js';
 import type { LLMProvider } from '../../shared/types.js';
+import { envelopeProvider } from '../review-pipeline/__tests__/enveloped.js';
 
 const SPEC_HASH = 'abcd1234ef567890';
 
@@ -120,13 +121,13 @@ function withRepo(fn: (repo: string) => void | Promise<void>): void | Promise<vo
  *  review pipeline runs end-to-end offline (no probes, no LLM verify) and the
  *  only thing under test is that a brainstorm artifact is reviewed generically. */
 function zeroClaimsProvider(): LLMProvider {
-	return {
+	return envelopeProvider({
 		complete: async () => { throw new Error('not used'); },
 		stream:   async function* () { /* not used */ },
 		embed:    async () => [],
 		supportsTools: false,
 		completeStructured: async <T>() => ({ claims: [] } as unknown as T),
-	} as unknown as LLMProvider;
+	} as unknown as LLMProvider);
 }
 
 // ---------------------------------------------------------------------------

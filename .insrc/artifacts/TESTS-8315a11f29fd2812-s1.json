@@ -1,0 +1,1506 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "createdAt": "2026-10-20T08:14:23.816Z",
+    "updatedAt": "2026-10-20T13:05:18.377Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "28bc836c",
+        "ranAt": "2026-10-20T08:19:05.922Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/internal-retry.test.ts: 'internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/internal-retry.test.ts",
+                "title": "internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/internal-retry.test.ts",
+                "title": "a relaunch after a failed launch (ENOENT) delivers the prompt exactly once, even with internalRetry false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/internal-retry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7496,
+            "titles": [
+              {
+                "title": "internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts",
+                "result": "pass"
+              },
+              {
+                "title": "a relaunch after a failed launch (ENOENT) delivers the prompt exactly once, even with internalRetry false",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "5a9dc90e",
+        "ranAt": "2026-10-20T08:21:33.249Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/cli-review-session.test.ts: 'a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14306,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "12d09cd5",
+        "ranAt": "2026-10-20T08:28:16.797Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 416,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c45d8658",
+        "ranAt": "2026-10-20T08:48:36.717Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/abort-in-flight.test.ts: 'aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/abort-in-flight.test.ts",
+                "title": "aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/abort-in-flight.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 979,
+            "titles": [
+              {
+                "title": "aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "7b70ffa1",
+        "ranAt": "2026-10-20T09:00:30.302Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/context/__tests__/driver-unit.test.ts (existing, still passes)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "stable stringify produces identical output for object key permutations",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "stable stringify is order-stable for Maps with reverse insertion",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "stable stringify treats different values as distinct",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "stable stringify is deterministic for arrays (insertion order matters)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(\"Ollama is not running. Start it...\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(\"Model not found ...\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(\"fetch failed\") -> ShaperLlmUnavailableError (retries exhausted by provider)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(\"Did not receive done...\") -> ShaperLlmUnavailableError (retries exhausted)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(\"ECONNRESET\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(\"socket hang up\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(arbitrary other Error) -> original error",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError(non-Error value) -> wraps in Error",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "deriveEmptyLayers on an all-empty bundle returns every layer",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "deriveEmptyLayers on a fully-populated bundle returns []",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "deriveEmptyLayers treats whitespace-only bodies as empty",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "deriveEmptyLayers preserves the spec render order in its return",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "ShaperLlmUnavailableError carries the call and the cause in its message",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "ShaperToolLoopExhausted carries the turn count in its message",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "ShaperSchemaUnrecoverable carries the retry count + reasons in its message",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "ShaperPromptMissingError carries the absolute prompt path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "renderUpstreamSection: classification mode returns empty string",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "renderUpstreamSection: run mode returns empty string",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "renderUpstreamSection: task mode with empty upstream map returns empty string",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "renderUpstreamSection: task mode with one populated upstream renders a JSON block",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "renderUpstreamSection: null upstream value renders [unavailable: ...] marker",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "renderUpstreamSection: undefined upstream value also renders unavailable marker",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "renderUpstreamSection: mixed populated + null upstream renders both",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "renderUpstreamSection: upstream task ids are sorted alphabetically",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+                "title": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/context/__tests__/run-shaper-wiring.test.ts (existing, still passes)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper's run-mode bundle carries the report derived from the executed lookups",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: a cache hit on a code run whose recorded repository the index no longer holds is refused as not indexed, as the same request is from a cold cache",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold (in no registered repository, or in a registered repository with no stored entities) is refused as not indexed before any lookup or model call, cold and warm, with the run's message; a caller that checked the scope already is not checked again",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/context/__tests__/shaper-errors.test.ts (existing, still passes)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+                "title": "ShaperLlmUnavailableError message names the call, never a provider",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+                "title": "ShaperAnswerStepFailedError states its reason, keeps what the lookups found, and never reports retries",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+                "title": "the other new errors carry their detail and their own name",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+                "title": "a tool's output with no JSON form is described as text and never thrown into the tool loop",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1009,
+            "titles": [
+              {
+                "title": "a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed",
+                "result": "pass"
+              },
+              {
+                "title": "cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/driver-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 703,
+            "titles": [
+              {
+                "title": "stable stringify produces identical output for object key permutations",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify is order-stable for Maps with reverse insertion",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify treats different values as distinct",
+                "result": "pass"
+              },
+              {
+                "title": "stable stringify is deterministic for arrays (insertion order matters)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(ECONNREFUSED) -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Ollama is not running. Start it...\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Model not found ...\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"fetch failed\") -> ShaperLlmUnavailableError (retries exhausted by provider)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"Did not receive done...\") -> ShaperLlmUnavailableError (retries exhausted)",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"ECONNRESET\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(\"socket hang up\") -> ShaperLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(arbitrary other Error) -> original error",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError(non-Error value) -> wraps in Error",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers on an all-empty bundle returns every layer",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers on a fully-populated bundle returns []",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers treats whitespace-only bodies as empty",
+                "result": "pass"
+              },
+              {
+                "title": "deriveEmptyLayers preserves the spec render order in its return",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperLlmUnavailableError carries the call and the cause in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperToolLoopExhausted carries the turn count in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperSchemaUnrecoverable carries the retry count + reasons in its message",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperPromptMissingError carries the absolute prompt path",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: classification mode returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: run mode returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: task mode with empty upstream map returns empty string",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: task mode with one populated upstream renders a JSON block",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: null upstream value renders [unavailable: ...] marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: undefined upstream value also renders unavailable marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: mixed populated + null upstream renders both",
+                "result": "pass"
+              },
+              {
+                "title": "renderUpstreamSection: upstream task ids are sorted alphabetically",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError: a CLI provider's failure in the tool loop reads 'The model call for the tool loop failed: ...' and does not mention Ollama; an Ollama failure's own detail is kept",
+                "result": "pass"
+              },
+              {
+                "title": "classifyOllamaError from runFinalStructuredEmit reads 'The model call for the final structured emit failed: ...'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3136,
+            "titles": [
+              {
+                "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper's run-mode bundle carries the report derived from the executed lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report",
+                "result": "pass"
+              },
+              {
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+                "result": "pass"
+              },
+              {
+                "title": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit on a code run whose recorded repository the index no longer holds is refused as not indexed, as the same request is from a cold cache",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold (in no registered repository, or in a registered repository with no stored entities) is refused as not indexed before any lookup or model call, cold and warm, with the run's message; a caller that checked the scope already is not checked again",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/shaper-errors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 611,
+            "titles": [
+              {
+                "title": "ShaperLlmUnavailableError message names the call, never a provider",
+                "result": "pass"
+              },
+              {
+                "title": "ShaperAnswerStepFailedError states its reason, keeps what the lookups found, and never reports retries",
+                "result": "pass"
+              },
+              {
+                "title": "the other new errors carry their detail and their own name",
+                "result": "pass"
+              },
+              {
+                "title": "a tool's output with no JSON form is described as text and never thrown into the tool loop",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "7f60f593",
+        "ranAt": "2026-10-20T09:38:32.008Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "a tool input is anchored at the session repo: relative paths resolve there and an absent optional root defaults to it",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "every read-only tool argument that looks like a path is classified as a filesystem location or not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+                "title": "a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3195,
+            "titles": [
+              {
+                "title": "an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline",
+                "result": "pass"
+              },
+              {
+                "title": "a tool input is anchored at the session repo: relative paths resolve there and an absent optional root defaults to it",
+                "result": "pass"
+              },
+              {
+                "title": "every read-only tool argument that looks like a path is classified as a filesystem location or not",
+                "result": "pass"
+              },
+              {
+                "title": "a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed",
+                "result": "pass"
+              },
+              {
+                "title": "cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "55f92c0f",
+        "ranAt": "2026-10-20T10:13:26.096Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts and src/workflow/review-pipeline/__tests__/review-job-core.test.ts: the delivered ISSUE-aef82b03 tests, moved and rewritten to the new API",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts",
+                "title": "every item in exactly one batch, every batch fits, and an item that alone does not fit raises AtomTooLargeError naming it",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/review-job-core.test.ts",
+                "title": "a fitting review is one call with today's prompt and schema",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/review-job-core.test.ts",
+                "title": "every call the job issues fits the limit, for material many times the limit, and every atom is read whole",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/review-job-core.test.ts",
+                "title": "a refused call is re-planned and the job completes, sending no prompt twice",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 421,
+            "titles": [
+              {
+                "title": "every item in exactly one batch, every batch fits, and an item that alone does not fit raises AtomTooLargeError naming it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/review-job-core.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "a fitting review is one call with today's prompt and schema",
+                "result": "pass"
+              },
+              {
+                "title": "every call the job issues fits the limit, for material many times the limit, and every atom is read whole",
+                "result": "pass"
+              },
+              {
+                "title": "a refused call is re-planned and the job completes, sending no prompt twice",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "54ad73c1",
+        "ranAt": "2026-10-20T10:31:10.771Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a relation judged by two calls is complete only when both are answered'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 747,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "53cfbb82",
+        "ranAt": "2026-10-20T10:40:14.387Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 753,
+            "titles": [
+              {
+                "title": "the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens",
+                "result": "pass"
+              },
+              {
+                "title": "a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope",
+                "result": "pass"
+              },
+              {
+                "title": "a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats",
+                "result": "pass"
+              },
+              {
+                "title": "a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt",
+                "result": "pass"
+              },
+              {
+                "title": "refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material",
+                "result": "pass"
+              },
+              {
+                "title": "runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message",
+                "result": "pass"
+              },
+              {
+                "title": "a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)",
+                "result": "pass"
+              },
+              {
+                "title": "a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded",
+                "result": "pass"
+              },
+              {
+                "title": "an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a relation judged by two calls is complete only when both are answered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "5c3d41db",
+        "ranAt": "2026-10-20T10:56:02.613Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'adherence makes no call without an approved LLD or plan'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "adherence makes no call without an approved LLD or plan",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'a mock added or removed after prepare does not change the ux result'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "a mock added or removed after prepare does not change the ux result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 695,
+            "titles": [
+              {
+                "title": "an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included",
+                "result": "pass"
+              },
+              {
+                "title": "adherence makes no call without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a mock added or removed after prepare does not change the ux result",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "ae59e798",
+        "ranAt": "2026-10-20T11:21:41.024Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit HLD review makes one reviewer-session call and gives today's report'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "an under-limit HLD review makes one reviewer-session call and gives today's report",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+                "title": "an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1164,
+            "titles": [
+              {
+                "title": "an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included",
+                "result": "pass"
+              },
+              {
+                "title": "adherence makes no call without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a mock added or removed after prepare does not change the ux result",
+                "result": "pass"
+              },
+              {
+                "title": "an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged",
+                "result": "pass"
+              },
+              {
+                "title": "an under-limit HLD review makes one reviewer-session call and gives today's report",
+                "result": "pass"
+              },
+              {
+                "title": "the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema",
+                "result": "pass"
+              },
+              {
+                "title": "an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "adad384c",
+        "ranAt": "2026-10-20T12:03:27.154Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'claude and codex accept the envelope around every review answer schema and echo the callId'",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/envelope-cli-20261020T171730.log (INSRC_LIVE_TESTS=1, ok 1, EXIT=0)"
+            }
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline'",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/ollama-20261020T172812.log (INSRC_LIVE_TESTS=1, qwen3.8:27b, ok 1, EXIT=0; template review verdict warn after 475 s; the session called file_read, search_grep/glob and graph tools, none refused)"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t13",
+        "commit": "55426c36",
+        "ranAt": "2026-10-20T13:05:18.377Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Installed daemon: a real under-limit code review and a real design review complete with today's result shape (manual smoke recorded in the BUILD record)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt (process-to-build linkage, input sizes, daemon log lines), docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/smoke-template-review-installed-daemon-973fc8bd.txt, .insrc/artifacts/CR-f431a4420d03374f-S001.json"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

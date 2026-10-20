@@ -25,11 +25,10 @@
  */
 
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
-import { validateAgainstSchema, type StructuredCall, type StructuredValidator } from '../../../agent/providers/structured-output.js';
-import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, ReviewDimension } from '../types.js';
+import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
+import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
 
 const DIMENSION: ReviewDimension = 'adherence';
-const MAX_ATTEMPTS = 3;
 
 /** The model's raw adherence output, validated against ADHERENCE_FINDINGS_SCHEMA.
  *  Its per-finding shape maps 1:1 onto sc3 DimensionFinding minus the fixed
@@ -123,47 +122,42 @@ function fileOf(location: string): string {
 	return i >= 0 ? location.slice(0, i) : location;
 }
 
+/** Today's adherence judgement as a pipeline spec: the prompt, schema and the mapping
+ *  that keeps only findings inside the Story's changed set. With neither an approved
+ *  LLD nor an approved plan there is no contract to judge against, so no call is made
+ *  and the result is empty (the model can never invent a departure). */
+export function adherenceSpec(subject: CodeReviewSubject): ModelDimensionSpec<AdherenceOutput> {
+	const changed = new Set(subject.changedFiles);
+	return {
+		dimension: DIMENSION,
+		schema:    ADHERENCE_FINDINGS_SCHEMA,
+		prompt:    (grounding, _mode, note) => buildAdherencePrompt(subject, grounding, note),
+		toResult:  output => ({
+			dimension: DIMENSION,
+			findings: output.findings
+				.filter(f => changed.has(fileOf(f.location)))   // scope to the Story's own changes
+				.map((f): DimensionFinding => ({
+					dimension: DIMENSION,
+					severity:  f.severity,
+					location:  f.location,
+					message:   f.message,
+					...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
+				})),
+		}),
+		...(subject.approvedLld === null && subject.approvedPlan === null ? { skip: () => ({ dimension: DIMENSION, findings: [] }) } : {}),
+	};
+}
+
 /**
- * The adherence judge (t2). One serial completeStructured call via
- * withStructuredRetry; maps the validated findings onto the sc3 DimensionResult
- * and drops any finding outside the Story's changed set. Propagates on failure.
+ * The adherence judge: one review-pipeline job (Epic 8315a11f), whose single call
+ * is today's prompt and schema with the repo as cwd. The pipeline re-issues a
+ * failed call once and propagates a second failure (never a fabricated pass).
  */
 export async function judgeAdherence(
 	subject:   CodeReviewSubject,
 	grounding: CodeReviewGrounding,
 	provider:  LLMProvider,
+	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	// Mode C — NO approved LLD and NO approved plan: there is no design contract
-	// to assess adherence against. Short-circuit to an EMPTY result WITHOUT any
-	// provider call, so the model can never fabricate a departure from a
-	// contract that does not exist (accuracy-first; guaranteed-empty).
-	if (subject.approvedLld === null && subject.approvedPlan === null) {
-		return { dimension: DIMENSION, findings: [] };
-	}
-
-	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
-
-	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildAdherencePrompt(subject, grounding, note), ADHERENCE_FINDINGS_SCHEMA, { cwd: subject.repoPath });
-
-	const validate: StructuredValidator<AdherenceOutput> = (raw) =>
-		validateAgainstSchema<AdherenceOutput>(ADHERENCE_FINDINGS_SCHEMA, raw);
-
-	// Exactly one logical judgement; withStructuredRetry re-issues the SAME
-	// serial call on validation failure and throws (never a fabricated pass)
-	// once the attempt cap is exhausted.
-	const output = await withStructuredRetry(call, validate, MAX_ATTEMPTS);
-
-	const changed = new Set(subject.changedFiles);
-	const findings: DimensionFinding[] = output.findings
-		.filter(f => changed.has(fileOf(f.location)))   // scope to the Story's own changes
-		.map(f => ({
-			dimension: DIMENSION,
-			severity:  f.severity,
-			location:  f.location,
-			message:   f.message,
-			...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
-		}));
-
-	return { dimension: DIMENSION, findings };
+	return runDimensionJob(s => modelDimensionAdapter(adherenceSpec(subject), subject, s), subject, grounding, provider, ctx);
 }

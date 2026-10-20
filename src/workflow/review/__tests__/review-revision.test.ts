@@ -11,6 +11,7 @@
  * Run: npx tsx --test src/workflow/review/__tests__/review-revision.test.ts
  */
 
+import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, mkdtempSync as mkdtempRaw, rmSync as rmRaw } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -52,7 +53,7 @@ function verify(autoFix: boolean): unknown {
 }
 
 function provider(autoFix: boolean): LLMProvider {
-	return {
+	return envelopeProvider({
 		supportsTools: false,
 		capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
 		async complete(): Promise<LLMResponse> { return { text: '', stopReason: 'end_turn' }; },
@@ -62,7 +63,7 @@ function provider(autoFix: boolean): LLMProvider {
 			const props = (schema as { properties?: Record<string, unknown> }).properties ?? {};
 			return ('claims' in props ? EXTRACT_JSON : verify(autoFix)) as T;
 		},
-	};
+	});
 }
 
 type Doc = { meta: Record<string, unknown>; body: unknown; citations?: unknown };

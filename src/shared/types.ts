@@ -98,6 +98,9 @@ export interface CompletionOpts {
    * CLI inherits the daemon's working directory. Ignored by `OllamaProvider`.
    */
   cwd?: string | undefined;
+  /** Cancels the call, including one already running: the CLI's process group is
+   *  killed or the Ollama request aborted, and the call throws AbortError. */
+  signal?: AbortSignal | undefined;
   /**
    * Strict-output hint. Three forms:
    *
@@ -227,7 +230,25 @@ export interface LLMProvider {
     schema:   StructuredSchema,
     opts?:    StructuredCompletionOpts,
   ): Promise<T>;
+  /**
+   * A reviewer session: the model reads the repository at `opts.cwd` with
+   * read-only tools, then answers against `schema`. Optional: the claude and
+   * codex CLIs and Ollama have one (Epic 8315a11f s1).
+   */
+  runReviewSession?<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>;
   readonly capabilities: ProviderCapabilities;
+}
+
+/** Options for {@link LLMProvider.runReviewSession}. */
+export interface ReviewSessionOpts {
+  /** The repo root the session reads. */
+  readonly cwd:        string;
+  /** Time allowed for the whole call, its one possible retry included. */
+  readonly deadlineMs: number;
+  /** `false`: exactly one attempt, no transient or stall retry; the caller owns retries. */
+  readonly internalRetry?: boolean | undefined;
+  /** Cancels the session. */
+  readonly signal?: AbortSignal | undefined;
 }
 
 /**
@@ -298,7 +319,10 @@ export interface StructuredCompletionOpts {
   readonly cwd?: string | undefined;
   /** Wall-clock cap in milliseconds for one call of a subprocess-backed provider;
    *  the provider's own default when unset. ISSUE-d4b2cd1c. */
-  readonly timeoutMs?: number | undefined;
+  readonly timeoutMs?: number | undefined;  /** `false`: the provider makes exactly ONE attempt (no transient, stall or
+   *  structured-output retry); the caller owns every retry. Absent or `true`:
+   *  today's retries. The review pipeline sets it (Epic 8315a11f s1). */
+  readonly internalRetry?: boolean | undefined;
 }
 
 // ---------------------------------------------------------------------------

@@ -34,6 +34,7 @@ import type { IpcStreamMessage, LLMProvider } from '../../shared/types.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../../workflow/review/template.js';
 import { workflowReviewStart } from '../workflow-review-rpc.js';
 import type { WorkflowReviewDeps, WorkflowReviewDone } from '../workflow-review-rpc.js';
+import { envelopeProvider } from '../../workflow/review-pipeline/__tests__/enveloped.js';
 
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 
@@ -54,7 +55,7 @@ function countingProvider() {
 			};
 		},
 	} as unknown as LLMProvider;
-	return { provider, calls };
+	return { provider: envelopeProvider(provider), calls };
 }
 
 function fixture(kind: 'DEF' | 'LLD', authorMeta: Record<string, unknown>) {

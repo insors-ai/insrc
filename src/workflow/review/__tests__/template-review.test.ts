@@ -42,6 +42,7 @@ import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewDeadlineMs, reviewTemplateFor } f
 // configured limit of each kind instead of assuming the shipped defaults.
 const LIMIT = { issue: reviewDeadlineMs('issue'), feature: reviewDeadlineMs('feature'), epic: reviewDeadlineMs('epic') };
 import type { ReviewTemplate } from '../template.js';
+import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
 
 const MIN = 60_000;
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
@@ -82,7 +83,7 @@ function fakeProvider(script: readonly unknown[], opts: { takesMs?: number; with
 			return step;
 		},
 	};
-	const provider = (opts.withSession === false ? base : { ...base, ...session }) as unknown as LLMProvider;
+	const provider = envelopeProvider((opts.withSession === false ? base : { ...base, ...session }) as unknown as LLMProvider);
 	return { provider, sessions, oneShot, nowMs: () => clock };
 }
 
@@ -175,7 +176,9 @@ test('T10 a second invalid answer fails the review', async () => {
 test('T11 a session failure fails the review', async () => {
 	const f = fakeProvider([new Error('claude review session failed: boom')]);
 	await assert.rejects(run(f), /boom/);
-	assert.equal(f.sessions.length, 1);
+	// The provider makes one attempt (internalRetry false); the review pipeline re-issues
+	// a failed session once, then fails the review (Epic 8315a11f): two sessions in all.
+	assert.equal(f.sessions.length, 2);
 	assert.deepEqual(f.oneShot, []);
 });
 
@@ -224,7 +227,7 @@ test('T12 a DEF review and an ISSUE review still run extract, probe and verify w
 	for (const stage of ['define', 'issue', 'plan']) {
 		const calls: { system: string; user: string }[] = [];
 		let sessions = 0;
-		const provider = {
+		const provider = envelopeProvider({
 			capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
 			async complete() { throw new Error('unused'); },
 			// The provider CAN run a session; a non-design review must still not use it.
@@ -236,7 +239,7 @@ test('T12 a DEF review and an ISSUE review still run extract, probe and verify w
 					? { claims: [{ id: 'p1', kind: 'semantic', text: 'a premise', anchors: [], probe: {} }] }
 					: { severity: 'LOW', evidence: 'ok', action: 'none', fixability: 'manual' };
 			},
-		} as unknown as LLMProvider;
+		} as unknown as LLMProvider);
 		const report = await runReview('# BODY', { repo: tmpdir(), stage, provider, model: 'm', reviewedAt: '2026-10-05T00:00:00.000Z' });
 
 		assert.equal(sessions, 0, `${stage}: no reviewer session`);
@@ -311,7 +314,8 @@ test('a design answering an ISSUE is reviewed once with the ISSUE template and t
 		})]);
 		const res = await reviewFile(d, f);
 		assert.equal(f.sessions.length, 1, 'one session, no second pass');
-		assert.equal(f.sessions[0]!.deadlineMs, LIMIT.issue);
+		// Real clock: the session gets the ISSUE limit less the moment before it starts, never more.
+		assert.ok(f.sessions[0]!.deadlineMs <= LIMIT.issue && f.sessions[0]!.deadlineMs > LIMIT.issue - 1_000, `${f.sessions[0]!.deadlineMs} of ${LIMIT.issue}`);
 		assert.equal(f.sessions[0]!.cwd, d.repo);
 		assert.equal(res.report.template, 'design-issue');
 		assert.equal(res.report.verdict, 'warn');
@@ -339,7 +343,11 @@ test('a design under an Epic gets the SPEC template and the Epic limit; a standa
 			const f = fakeProvider([answer(SPEC)]);
 			const res = await reviewFile(d, f);
 			assert.equal(res.report.template, 'design-spec');
-			assert.equal(f.sessions[0]!.deadlineMs, limit);
+			// The real clock runs between the review's start and its first session (the
+			// injected-clock T16 tests pin the exact arithmetic): the session gets the limit
+			// less that moment, never more.
+			const given = f.sessions[0]!.deadlineMs;
+			assert.ok(given <= limit && given > limit - 1_000, `${given} of ${limit}`);
 		} finally { d.cleanup(); }
 	}
 });
@@ -367,11 +375,11 @@ test('T4 reviewArtifactFile stamps the daemon on its pipeline path too (a DEF)',
 		writeFileSync(md, '# DEF\n\nThe definition.\n');
 		// The pipeline's extract step finds no premises, so no probe or verify call follows.
 		const sessions: string[] = [];
-		const provider = {
+		const provider = envelopeProvider({
 			capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
 			async completeStructured() { return { claims: [] }; },
 			async runReviewSession() { sessions.push('session'); throw new Error('a DEF is not reviewed in a session'); },
-		} as unknown as LLMProvider;
+		} as unknown as LLMProvider);
 		const res = await reviewArtifactFile({ mdPath: md, jsonPath: json, repo, provider, model: 'cli-claude:opus' });
 		assert.equal(res.report.stage, 'define');
 		assert.equal(res.report.template, undefined, 'the pipeline path, not a template review');

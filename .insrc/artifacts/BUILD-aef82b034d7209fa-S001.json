@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "aef82b034d7209fa",
+    "storyId": "S001",
+    "createdAt": "2026-10-18T20:09:36.932Z",
+    "updatedAt": "2026-10-18T20:28:25.244Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-18T14:08:16.121Z",
+    "epicSlug": "review-every-changed-symbol-story-too"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": false
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/review-every-changed-symbol-story-too-E20261018aef82b03/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/input-budget.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/input-too-large-cli.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/input-too-large.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/pack-into-batches.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/review-job.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/pack-into-batches.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/review-job.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-18T20:28:25.244Z"
+      }
+    ],
+    "commit": "f398d2cd",
+    "summary": "ReviewJob core: one whole call when it fits the provider (or the budget is unknown), else MAP over context x symbol batches within the reserved budget; an unsplittable unit may use the hard budget (provider's whole input, or the size reported in a refusal). A size refusal re-plans symbols and context together and is never resent; a validation failure is retried as today (LLD: 'retried as today'), with the correction note only when the noted prompt still fits the hard budget. No atom is dropped; one over the hard budget raises AtomTooLargeError. packIntoBatches (t3) is unchanged."
+  }
+}

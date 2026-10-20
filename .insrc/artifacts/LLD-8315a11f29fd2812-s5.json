@@ -1,0 +1,1100 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792482128526-tvx5yf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-20T07:45:29.969Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 201421,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicHash": "8315a11f29fd2812",
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "storyId": "s5",
+    "hldBaseRunId": "wf-1792389266411-gvxl8y",
+    "hldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S005 covers controller chunk traversal, identifier matching, and under-limit parity without changing review criteria.",
+          "evidence": "DEF §6.5 specifies these three acceptance criteria. The design supplies emit_calls/answers, callId recovery, and existing result folding; DEF §3 excludes changes to review criteria and verdict rules. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/workflow/code-review/runner.ts]",
+          "action": "Preserve these constraints during implementation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Controller code review currently emits dimension prompts together, including conditional diagram and ux prompts, and preserves degraded fallback metadata.",
+          "evidence": "emitJudgementsResult builds the base prompts plus conditional functional-coverage, diagram and ux prompts. Decline, freshness timeout and hollow grounding all call beginDiffOnlyReview, which saves groundingMode:'degraded' and fallbackReason. driveRunner passes capVerdictAtWarn:true. [files: src/daemon/steps/code-review-step/handler.ts]",
+          "action": "Retain all these branches and finalization options.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Controller premise review uses extraction followed by deterministic probing and one batched verification prompt; template review uses one findings prompt.",
+          "evidence": "handleStart returns emit_claims or emit_findings according to isDesignStage. handleClaims awaits gatherEvidence, saves claims/evidence, and calls buildBatchedVerifyPrompt over all claims before returning emit_verdicts. [files: src/daemon/steps/review-step/phases/start.ts, src/daemon/steps/review-step/phases/claims.ts]",
+          "action": "Use these prompt builders and schemas as parity fixtures.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The consumed shared pipeline APIs and adapters are available with the proposed signatures.",
+          "evidence": "Tool discovery for insrc analyze failed, so inspection continued through repository reads. No src/workflow/review-pipeline implementation exists in this checkout. S001 documents the required APIs, but the implemented createReviewJob takes (strategy: DimensionStrategy, providerBudget: number | undefined), and nextCalls takes only a ReviewJob. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, src/workflow/code-review/review-job.ts]",
+          "action": "Verify S001–S004 implementations and exported contracts before building S005; treat these as planned dependencies, not verified runtime capabilities.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's code-review runner can persist controller-supplied dimension results through injected judges.",
+          "evidence": "handleJudgements injects judges returning supplied results and an assembleGrounding function returning saved grounding. runCodeReview awaits those judges serially, folds their results, validates the artifact and writes the JSON and Markdown records. [files: src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts]",
+          "action": "Preserve this finalization seam and its validation when integrating pipeline results.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Updating handlers, state types, MCP schemas and tool descriptions covers the controller protocol's change sites.",
+          "evidence": "The inventory omits the canonical workflow guides. src/prompts/steering-block.md instructs: \"Your review loop ... phase:'start' → claims → verdicts\" and \"start returns emit_judgements\" for code review. guideGetResult returns these sections through insrc_guide, independently of server.ts tool descriptions. Following those guides on new pipeline states would select rejected legacy phases. [files: src/prompts/steering-block.md, src/daemon/guide-sections.ts, src/mcp/guide/handler.ts, src/mcp/__tests__/schema-registry.test.ts]",
+          "action": "Add the review and code-review guide sections to the change inventory, document emit_calls/answers and legacy-only continuation, and test the served guidance.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both existing state stores are memory-only, capped at 100 entries, with opportunistic one-hour idle sweeping on save.",
+          "evidence": "Both stores use a module-local Map, MAX_ENTRIES = 100 and TTL_MS = 60 * 60 * 1_000. saveState calls sweep before insertion; loadState only checks membership and refreshes touchedAt. Neither persists state across restart. [files: src/daemon/steps/code-review-step/state-store.ts, src/daemon/steps/review-step/state-store.ts]",
+          "action": "Keep the optional pipeline discriminator and explicitly retain the restart limitation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S005 owns controller frames and consumes pipeline planning, validation, retries and adapter stage plans from other stories.",
+          "evidence": "HLD §4.7 assigns sc7 to s5, while §§4.1–4.6 assign sc1–sc6 to s1. S001 §2.3 defines nextCalls/applyAnswer/applyFailure/result and §2.17 defines runStage. The proposed controller delegates those operations rather than implementing another retry or chunking engine. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
+          "action": "Keep frame packing and answer classification local; leave job transitions and refusal replanning with the shared driver.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Unknown review-step state tokens currently become internal errors, unlike code-review-step tokens.",
+          "evidence": "Both loadState implementations throw StateTokenNotFound. Code-review dispatch explicitly maps that class to 'state-not-found'; review dispatch maps only SamePartyReviewError specially and otherwise returns 'internal'. [files: src/daemon/steps/review-step/handler.ts, src/daemon/steps/review-step/state-store.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "Implement the proposed explicit StateTokenNotFound mapping in review dispatch.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Permissive array entries at the MCP boundary are necessary for malformed individual answers to reach handler-level recovery.",
+          "evidence": "The installed SDK's validateToolInput runs safeParseAsync and throws McpError(ErrorCode.InvalidParams) when parsing fails, before invoking the tool handler. The current server registers actual Zod input shapes; therefore strict per-entry validation would reject the entire turn. [files: node_modules/@modelcontextprotocol/sdk/dist/esm/server/mcp.js, src/mcp/server.ts]",
+          "action": "Use z.array(z.unknown()) as proposed and test recovery through an actual MCP invocation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each upstream S005 acceptance criterion has a proposed test mapping.",
+          "evidence": "DEF §6.5 defines ac1 chunk traversal/result parity, ac2 missing or wrong identifier recovery, and ac3 under-limit behavior. The supplied test strategy maps these to divided-review integration tests, identifier recovery and MCP boundary tests, and under-limit parity tests. It also proposes legacy continuation tests for all existing controller paths. These are planned tests, not verified passing tests. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/mcp/__tests__/schema-registry.test.ts, src/mcp/__tests__/schema-handler.test.ts]",
+          "action": "Implement the mapped tests; use the existing schema-registry integration harness for real schemas, and add MCP transport coverage rather than relying solely on schema-handler's hand-built registry fixtures.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 1,
+        "low": 10,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-20T07:51:24.125Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-20T07:59:54.634Z",
+    "reviewOverride": {
+      "reason": "Round-3 MED fixed without re-review: the review and code-review guide sections in src/prompts/steering-block.md (served by insrc_guide, stamped into CLAUDE.md by the steering refresh) added to the change inventory, with a guide-handler test. Inventory addition only; the protocol was checked in rounds 1-2. User approved the override in chat 2026-10-20.",
+      "at": "2026-10-20T07:59:54.628Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story moves the two controller review tools onto the review pipeline, so a review run from the controller side walks the same calls the daemon would make. Every new controller review is handed emit_calls frames: the review's pending calls, each with its own identifier, packed up to the chunk limit. The controller answers each one, by identifier, in a new answers phase, or reports that it could not complete it (too large, stalled, transient error). Under the limit a review gets today's prompts in one frame and gives today's result. A divided review is handed its chunks about one at a time, and a state saved before this change still finishes on today's frames.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A new shared module, the review pipeline (proposed at src/workflow/review-pipeline), owns the three stages for every review. It is a serialisable job: the daemon drives it to the end; the controller is handed its calls one frame at a time and answers them by call identifier. Prepare measures material at 3 characters per token against review.chunkTokens (default 128,000 tokens); at or under the limit it emits one chunk whose prompt is the adapter's current single-call prompt, otherwise it groups the adapter's atoms by the adapter's relations and packs whole groups into chunks that each fit, adding a short summary of each related atom held in another chunk. Review issues one call per chunk serially; every call carries a fresh UUID that the answer must echo inside an envelope, an answer whose identifier is missing or wrong is rejected and retried under a new UUID, and a size refusal re-divides the chunk instead of resending it. Gather passes a single chunk's answer through unchanged and otherwise applies the adapter's gather rules (keyed obligations judged on all chunks' evidence, cross-chunk relationships, cross-chunk duplicates), each gather call itself bounded by the chunk limit. ISSUE-aef82b03's delivered InputTooLargeError, LLMProvider.inputBudgetChars, packIntoBatches and ReviewJob loop are moved under the pipeline as its core. A review kind is a series of stages, each a model stage or a deterministic one, preserving today's execution exactly: code review runs one stage per dimension exactly as today on each path: on the daemon, adherence (no call at all when there is neither an approved LLD nor an approved plan), conventions, coverage, quality and functional coverage are model calls, ux is deterministic and provider-free, and diagram keeps its registered handlers (some deterministic, such as the component handler) with today's per-handler isolation, a failing handler still recorded as a LOW observation; on the controller path the ux and diagram prompts are offered to the controller as today; HLD/LLD template review is one reviewer-session stage; DEF/plan premise review is extract (model), probe (deterministic) and verify, where the daemon path verifies one premise per call and the controller path verifies every premise in one batched call, as each does today; an adapter therefore declares its stage plan per path (daemon or controller). A review under the limit therefore makes exactly today's calls in today's order. Each call names its execution mode: a structured call run in the repository as its working directory (as today's code-review judges pass subject.repoPath; for the premise review's verify calls, which pass no working directory today, this is an additive change), each with its own per-call time limit where it has one today (the premise verify call keeps its 3-minute VERIFY_CALL_TIMEOUT_MS from ISSUE-d4b2cd1c), or a read-only reviewer session with the repository as working directory, the review's remaining deadline and its cancellation signal. Ollama gains a reviewer session through a generic read-only tool loop extracted from the analyzer's runShaperToolLoop, taking caller-supplied messages, answer schema, deadline, signal and retry policy, while the analyzer keeps its own wrapper unchanged. The pipeline owns every retry of a review call: every provider is called with internalRetry: false (CliProvider's transient retry and reviewer-session retry, and both providers' structured-output retry, make exactly one attempt), and the pipeline re-issues a transient failure, a stall, an invalid answer or an identifier mismatch once, under a new UUID: two attempts in all per call. Failure policy is per stage: a cancelled review always ends at once; a premise-review verify call that fails both attempts records that premise as not judged (MED, never a pass) and keeps the rest, as ISSUE-d4b2cd1c delivered; a diagram handler failure stays a LOW observation, as today; any other failed call (premise extraction included) fails the review and records nothing, as today. Gather is bounded at every step: an obligation's evidence (notes from every chunk, each keyed by the obligation and carrying the atom ids it stands for) is packed into the final adjudication call when it fits the limit; when it does not, it is reduced level by level, each reduction call reading one batch of that key's evidence and returning one note of at most a quarter of the limit under the same key, the job keeping which atoms and earlier notes each note stands for, until the key's evidence fits one adjudication call; a gather call refused for its size is re-planned like a chunk. Scope of the identifier and limit rules (stakeholder decision 2026-10-19 [[c14]]): they apply to every request the pipeline sends. A reviewer session's internal tool turns belong to the session, as they already do inside the claude and codex CLIs, where insrc cannot see them; the Ollama session's tool loop is likewise not identified or measured per turn. Every call records which material it carries (its chunk, atom ids and evidence-note ids), and the job keeps an immutable snapshot of the review's material taken once at prepare: for code review, today's grounding snapshot (the controller step already saves subject and grounding) plus every fact a deterministic stage reads from disk today, recorded at prepare (the ux stage's companion-mock existence checks); for design review, the document text and, for the premise review, the extracted claims and their gathered evidence. The adapter is rebuilt on every turn from the saved subject plus that snapshot and never re-queries the code graph or the files, so a refused call is re-divided from exactly the material it carried and a controller review resumes on the same material. A controller reports a call it could not complete as a failure outcome keyed by the call's identifier (size refusal with the reported limit, stall, transient error), which the driver handles exactly as a daemon-side failure: a size refusal re-divides the call, the others are re-issued once under a new identifier.",
+      "ownedContracts": [
+        {
+          "id": "sc7",
+          "name": "Controller call frames",
+          "purpose": "The one frame shape both controller steps use for every new controller review, one chunk or many: the review's calls, each with its identifier, and the controller's answers matched by call identifier. Only a controller state saved before the change resumes on today's emit_judgements / judgements (code review), emit_claims / claims and emit_verdicts / verdicts (DEF/plan premise review) and emit_findings / findings (HLD/LLD template review) frames.",
+          "interfaceSketch": "interface EmitCallsFrame { readonly next: 'emit_calls'; readonly calls: readonly ReviewCall[]; readonly state: string; }\ninterface CallFailure { readonly callId: string; readonly failure: { readonly cause: 'size-refusal' | 'stall' | 'transient'; readonly maxChars?: number | undefined; readonly detail?: string | undefined } }\ninterface AnswersInput { readonly phase: 'answers'; readonly answers: readonly (EnvelopedAnswer | CallFailure)[]; readonly state: string; }\n// a CallFailure maps to ReviewPipelineDriver.applyFailure(job, adapter, callId, cause, maxChars)\n// a new controller review under the limit gets the same prompts as today, one ReviewCall per today's prompt, each enveloped",
+          "ownedByStory": "s5",
+          "consumedByStories": [],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ReviewMaterial",
+          "purpose": "What an adapter hands the pipeline to prepare: whole indivisible atoms, the relations between them, and the obligations a gather must judge.",
+          "interfaceSketch": "interface ReviewAtom { readonly id: string; readonly label: string; readonly text: string; readonly file?: string | undefined; readonly module?: string | undefined; }\ninterface ReviewRelation { readonly from: string; readonly to: string; readonly kind: 'calls' | 'same-file' | 'same-module' | 'references'; }\ninterface ReviewObligation { readonly key: string; readonly kind: 'clause' | 'requirement' | 'promised-test' | 'module-conventions' | 'check-item'; readonly text: string; readonly atomIds?: readonly string[] | undefined; }\ninterface ReviewMaterial { readonly atoms: readonly ReviewAtom[]; readonly relations: readonly ReviewRelation[]; readonly obligations: readonly ReviewObligation[]; readonly context?: readonly ReviewAtom[] | undefined; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ReviewAdapter",
+          "purpose": "How a review kind plugs into the pipeline: its material, its ordered stages (model or deterministic) with each stage's own failure policy, each stage's calls for the whole review and for one chunk, and the gather rules for a divided review.",
+          "interfaceSketch": "interface ChunkPrompt { readonly messages: readonly LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode; }\ntype ExecutionMode =\n  | { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined }\n  | { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only' };\ntype StageOutputs = Readonly<Record<string, unknown>>;\ninterface AdapterStage {\n  readonly id: string;\n  readonly kind: 'model' | 'deterministic';\n  readonly after: readonly string[];\n  singleCalls(prior: StageOutputs): readonly ChunkPrompt[];\n  chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[];\n  run?(prior: StageOutputs): Promise<unknown>;\n  readonly onCallFailure: 'fail-review' | 'record-not-judged' | 'record-observation';\n}\ninterface ReviewAdapter<R> {\n  readonly kind: 'code-review' | 'design-review';\n  readonly dimension: string;\n  material(): ReviewMaterial;\n  stagesFor(path: 'daemon' | 'controller'): readonly AdapterStage[];\n  finish(outputs: StageOutputs): R;\n  readonly gather: GatherPlan<R>;\n}\ninterface EvidenceNote { readonly noteId: string; readonly key: string; readonly text: string; readonly atomIds: readonly string[]; }\ninterface GatherPlan<R> {\n  readonly obligationCall: (key: string, evidence: readonly EvidenceNote[]) => ChunkPrompt;\n  readonly reduceCall: (key: string, batch: readonly EvidenceNote[]) => ChunkPrompt; // answer: one EvidenceNote under the same key\n  readonly noteCapChars: number; // a quarter of the limit\n  readonly relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => ChunkPrompt) | undefined;\n  readonly merge: (parts: readonly R[]) => R;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c9"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "ReviewChunk and ChunkPlan",
+          "purpose": "The output of prepare: the chunks a review is read in, each within the limit, with summaries of related atoms held elsewhere.",
+          "interfaceSketch": "interface NeighbourSummary { readonly atomId: string; readonly label: string; readonly summary: string; readonly heldInChunk: string; }\ninterface ReviewChunk { readonly id: string; readonly atomIds: readonly string[]; readonly neighbours: readonly NeighbourSummary[]; readonly chars: number; }\ninterface ChunkPlan { readonly limitChars: number; readonly single: boolean; readonly chunks: readonly ReviewChunk[]; readonly crossRelations: readonly ReviewRelation[]; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "CallEnvelope",
+          "purpose": "Every model call of every review carries a fresh identifier the answer must echo, and every retry is the pipeline's own re-issue under a new identifier; one rule for daemon and controller. The rule covers every request the pipeline sends; a reviewer session's internal tool turns are the session's own.",
+          "interfaceSketch": "interface ReviewCall { readonly callId: string; readonly attempt: number; readonly stage: string; readonly role: 'single' | 'chunk' | 'reduce' | 'obligation' | 'relation' | 'merge'; readonly messages: readonly LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode; readonly chars: number; readonly carries: { readonly chunkId?: string | undefined; readonly atomIds: readonly string[]; readonly noteIds: readonly string[]; readonly key?: string | undefined }; }\ninterface EnvelopedAnswer { readonly callId: string; readonly answer: unknown; }\n// schema sent to the model: { type: 'object', required: ['callId', 'answer'], properties: { callId: { const: <callId> }, answer: <adapter schema> } }\n// provider options the pipeline sets on every call (additive, optional):\ninterface StructuredCompletionOpts { readonly internalRetry?: boolean | undefined; /* false: the provider makes exactly one attempt */ }\ninterface ReviewSessionOpts { readonly internalRetry?: boolean | undefined; readonly signal?: AbortSignal | undefined; }\ninterface LLMProvider { runReviewSession?<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "ReviewPipelineJob",
+          "purpose": "The serialisable state of one review's pipeline run, driven to the end by the daemon or one frame at a time by the controller.",
+          "interfaceSketch": "interface ReviewPipelineJob { readonly reviewId: string; readonly path: 'daemon' | 'controller'; readonly snapshot: ReviewMaterialSnapshot; readonly kind: 'code-review' | 'design-review'; readonly dimension: string; readonly phase: 'prepare' | 'review' | 'reduce' | 'gather' | 'done'; readonly plan: ChunkPlan; readonly stage: string; readonly outputs: StageOutputs; readonly pending: readonly ReviewCall[]; readonly answered: readonly { readonly callId: string; readonly stage: string; readonly answer: unknown }[]; readonly notes: readonly EvidenceNote[]; readonly noteProvenance: Readonly<Record<string, readonly string[]>>; readonly notJudged: readonly { readonly stage: string; readonly key: string; readonly cause: string }[]; readonly issuedHashes: readonly string[]; }\n// taken once at prepare, never re-queried: code review = the saved grounding; design review = the document text, and for the premise review its claims and gathered evidence\ninterface ReviewMaterialSnapshot { readonly kind: 'code-review' | 'design-review'; readonly grounding?: unknown; readonly fileFacts?: Readonly<Record<string, { readonly exists: boolean }>> | undefined; readonly documentText?: string | undefined; readonly claims?: readonly unknown[] | undefined; readonly evidence?: readonly unknown[] | undefined; }\n// runtime state, never serialised: the AbortSignal; the adapter is rebuilt from the review's subject on every turn\ninterface ReviewPipelineDriver { nextCalls(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): readonly ReviewCall[]; applyAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, answer: EnvelopedAnswer): ReviewPipelineJob; applyFailure(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, callId: string, cause: 'size-refusal' | 'transient' | 'stall' | 'identifier-mismatch' | 'invalid-answer', maxChars?: number | undefined): ReviewPipelineJob; result<R>(job: ReviewPipelineJob): R; }\n// additive, optional record fields under a NEW name, absent when a review was one chunk:\n// DimensionResult.pipelineCalls?: { chunk: number; obligation: number; relation: number; merge: number }\n// ReviewReport.pipelineCalls?: the same shape.\n// The existing DimensionResult.parts ({ map, reduce, compare }) is left as it is and is no longer written.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c9"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "Chunk limit setting",
+          "purpose": "One limit for every provider and every review kind.",
+          "interfaceSketch": "// config catalog entry\n{ path: 'review.chunkTokens', type: 'number', default: 128000 }\n// fixed conversion\nconst REVIEW_CHARS_PER_TOKEN = 3; // limitChars = review.chunkTokens * REVIEW_CHARS_PER_TOKEN = 384000",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s5",
+        "owns": [
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "The two controller steps' use of the job, and the MCP boundary that admits it: the new answers phase in the insrc_review_step and insrc_code_review_step input schemas in src/mcp/server.ts, their registered schema contracts and tool descriptions, with schema and surface tests (src/mcp/__tests__/schema-registry.test.ts); keeping it in step state, frame sizing, answer validation by call identifier, and offering a review under the limit today's prompts as identified calls in the same frame shape. Compatibility: the controller step states gain an optional pipeline field; a state without it (saved before the change) is resumed on today's path; both stores are memory-only, so, as today, a state does not survive a daemon restart. Tests: S005/ac1 a controller review over the limit is handed the daemon's chunks one frame at a time and records the same kind of result; ac2 a missing or wrong identifier in an answer is rejected and the call offered again under a new UUID; ac3 a new controller review under the limit is offered today's prompts, each as an identified call, and gives today's result; a pre-change state resumes on today's emit_judgements / judgements (code review), emit_claims / claims and emit_verdicts / verdicts (DEF/plan premise review) and emit_findings / findings (HLD/LLD template review) frames, each path tested. The answers phase also accepts a failure outcome per call (size refusal with the reported limit, stall, transient error), mapped to the driver's failure handling and admitted by both MCP input schemas; tested: a controller-reported size refusal re-divides the call, a reported stall or transient error re-issues it once under a new identifier."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "The pipeline module itself: measurement, the generic grouping that packs related atoms together within the limit, staged execution with deterministic stages, the envelope schema wrapping, identifier generation and checking, the pipeline-owned retry policy (providers called with internalRetry: false; one re-issue under a new UUID, two attempts in all), per-stage failure policies, refusal re-division, the serial daemon driver, single-chunk pass-through, the bounded gather machinery (evidence notes keyed by obligation, level-by-level reduction under a note cap, provenance kept in the job, refused gather calls re-planned), and the adoption of ISSUE-aef82b03's InputTooLargeError, inputBudgetChars, packIntoBatches and ReviewJob loop. Change sites beyond the new module: CliProvider (internalRetry honoured by withTransientRetry, runReviewSession and its structured-output retry; a size refusal in the claude reviewer-session error envelope and the codex session classified as InputTooLargeError, as completeStructured already does), OllamaProvider (internalRetry: false maps completeStructured to one attempt; a read-only reviewer session over a generic tool loop extracted from runShaperToolLoop in src/analyze/context/driver.ts, the analyzer keeping its own wrapper), and the single-chunk adapters for both review kinds, so every review takes the pipeline path from s1 on with today's calls and working directory (structured calls run in the repository, as today for code review; the premise review's verify calls gain it as an additive change): one model stage per model-judged code-review dimension, adherence making no call without an approved LLD or plan, ux deterministic on the daemon and diagram's handlers as today (deterministic ones stay deterministic, a failing handler stays a LOW observation); one reviewer session for HLD/LLD; extract, probe, then one verify per premise for DEF/plan, with ISSUE-d4b2cd1c's not-judged recording kept. Tests: S001/ac1 an under-limit code review, template review and premise review each make today's calls and give today's result (recorded fixtures), the diagram dimension included; ac2 a missing or wrong identifier is retried once under a new UUID and no prompt hash repeats, including transient errors, stalls and invalid answers on both CliProvider and OllamaProvider; premise extraction failing fails the review while a verify call failing twice records the premise as not judged; ac3 the default limit is 384,000 characters for every provider; ac4 a size refusal from completeStructured, the claude session envelope and the codex session re-divides the call and never resends it; ac5 a review on an Ollama provider completes through both execution modes; plus a live probe of the envelope schema on claude and codex. Also tested: an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits, and the final verdict keeps every atom's provenance; every structured review call runs in the repository working directory. Also tested: a premise verify call keeps its 3-minute limit through the pipeline; a refused call is re-divided from exactly the atoms and notes it carried; the controller premise review under the limit still sends one batched verify prompt. Also tested: refusal re-planning reads only the job's material snapshot, never the graph or files, so a reindex between turns cannot change the material a call is re-divided from. The ux stage reads companion-mock existence from the snapshot's file facts recorded at prepare, not from disk; tested: adding or removing a mock after prepare does not change the review result."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "The code-review adapter's material: changed-symbol atoms, call relations from the grounding's callers and callees among changed symbols, file and module relations, and how neighbour summaries are written for a changed symbol held in another chunk. Tests: S002/ac1 related changed symbols land in the same chunk before file and module grouping; ac2 a call relation cut between chunks yields a neighbour summary on both sides; ac3 every changed symbol appears whole in some chunk and one over the limit is named, never cut."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The code-review adapter's gather: per-dimension chunk prompts, obligation keys and their adjudication over all chunks' evidence, the cross-chunk relationship check, the cross-chunk duplicate comparison for quality, and the fold into today's DimensionResult and verdict. It also owns the acceptance smoke: Epic c2ba6fa6 Story s1's code review runs on the installed daemon, completes and records a verdict, with the chunk plan and calls per stage written to the smoke record. Tests: S003/ac1 a divided review and the same material reviewed in one call under a raised limit give the same obligation verdicts on fixtures that fit both ways; ac2 a mismatch between related functions in different chunks is reported; ac3 a cross-chunk duplicate is reported; ac4 the installed-daemon smoke above."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The design-review adapter: document sections as atoms, cross-reference relations, section summaries for neighbours, chunk prompts for the template checklist and the premise pipeline, and the gather of checklist answers or premise verdicts into today's ReviewReport and verdict rules. Tests: S004/ac1 every section appears whole in some chunk with the sections it references; ac2 a cross-chunk reference yields a section summary; ac3 a divided HLD/LLD review and a divided DEF/plan review each give one ReviewReport under today's verdict rules, and a premise whose call fails twice is still recorded as not judged. Its controller stage plan keeps today's single batched verify prompt under the limit; over the limit it batches premises per chunk."
+        }
+      ],
+      "rolloutPhase": "Phase C — the controller walks the same chunks",
+      "nonFunctional": {
+        "performance": "Calls are serial (k6). A review under the limit makes the same number of calls as today. Every prompt sent, chunk or gather, is at most review.chunkTokens x 3 characters.",
+        "security": "No new transport: calls go through the existing LLMProvider and the installed CLIs (k7). Reviewer sessions keep their read-only tool sets.",
+        "observability": "Each review logs its plan (single or N chunks, chars per chunk), every call's identifier, stage and size, every identifier mismatch and refusal, and the gather's obligation count; DimensionResult and ReviewReport record the number of calls per stage when a review was divided.",
+        "durability": "The job is serialisable, so the controller path survives across turns in the existing step state (memory-only, so not across a daemon restart, as today). A daemon review whose call fails after its retries records nothing, as today, except the premise review, which records that premise as not judged and keeps the rest (ISSUE-d4b2cd1c). New record fields (pipelineCalls) are optional, under a new name, and absent on one-chunk reviews; the existing parts field keeps its shape; so existing records keep validating."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": [
+        {
+          "name": "EmitCallsFrame (sc7)",
+          "signature": "interface EmitCallsFrame { readonly next: 'emit_calls'; readonly guidance: string; readonly calls: readonly ReviewCall[]; readonly progress: { readonly stage: string; readonly answered: number; readonly pending: number }; readonly state: string }",
+          "parameters": [
+            {
+              "name": "calls",
+              "type": "readonly ReviewCall[]",
+              "purpose": "Every currently pending call of the review's jobs that fits, in a fixed order (code review: today's dimension order; design review: stage order). Packed so that the summed rendered size of the calls (messages, envelope schema and execution) is at most limitChars; a call is never split. Each carries a fresh callId and the envelope schema { callId (const), answer }.",
+              "optional": false
+            },
+            {
+              "name": "progress",
+              "type": "{ stage: string; answered: number; pending: number }",
+              "purpose": "Where the review stands, for the controller and the log.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "EmitCallsFrame",
+            "meaning": "Returned by phase='start' for every new controller review, and by phase='answers' while calls remain. Under the limit, a code review's calls are today's emit_judgements prompts, one call each. They share ONE frame when their summed rendered size fits limitChars, as today's frame does for ordinary reviews; if several single-chunk dimension calls each fit but not together, they are spread over as many frames as needed, never split; a premise review's frames hold the extract call, then the single batched verify call; a template review's frame holds the one findings call."
+          },
+          "errors": [],
+          "preconditions": [
+            "The step state holds the review's jobs in its pipeline field."
+          ],
+          "postconditions": [
+            "The frame fits limitChars.",
+            "Only the stages that each adapter's stagesFor('controller') marks 'deterministic' are run daemon-side with runStage before a frame is built: the premise review's probe and the deterministic diagram handlers. The code review's ux and diagram prompts are offered to the controller as calls, as today's emit_judgements frame offers them (src/daemon/steps/code-review-step/handler.ts:439)."
+          ]
+        },
+        {
+          "name": "AnswersInput / CallFailure (sc7) and the 'answers' phase handler",
+          "signature": "interface AnswersInput { readonly phase: 'answers'; readonly answers: readonly (EnvelopedAnswer | CallFailure)[]; readonly state: string }; interface CallFailure { readonly callId?: string | undefined; readonly failure: { readonly cause: 'size-refusal' | 'stall' | 'transient'; readonly maxChars?: number | undefined; readonly detail?: string | undefined } }; handleAnswers(input: AnswersInput): Promise<EmitCallsFrame | <tool>Done | <tool>Error>",
+          "parameters": [
+            {
+              "name": "answers",
+              "type": "readonly (EnvelopedAnswer | CallFailure)[]",
+              "purpose": "One entry per call of the last frame: { callId, answer } or { callId, failure }.",
+              "optional": false
+            },
+            {
+              "name": "state",
+              "type": "string",
+              "purpose": "The token the last frame returned.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "EmitCallsFrame | <tool>Done | <tool>Error",
+            "meaning": "Each EnvelopedAnswer goes to applyAnswer and each CallFailure to applyFailure (size-refusal with maxChars re-divides the call; stall or transient re-issues it once under a new callId). Entries are classified inside handleAnswers (the MCP schema admits any entry). A malformed entry, an entry with no callId or a non-string one, an unknown callId, or a repeated one is matched to no call: it is ignored and logged. Every call of the last frame without exactly one valid entry is applied as identifier-mismatch, so it is re-issued once under a new callId. A missing identifier therefore reaches the same recovery as a wrong one (S005/ac2). Then the next frame is returned, or, when every job is done, the tool's record is written exactly as today (code review: the CR record through today's runner path, with coverage normalised once; design review: the report stamped as today) and today's done frame is returned."
+          },
+          "errors": [
+            {
+              "type": "<tool>Error { code: 'bad-input' }",
+              "condition": "answers is missing or not an array. Individual malformed entries are not an error; they leave their call unanswered, which is re-issued."
+            },
+            {
+              "type": "<tool>Error { code: 'state-not-found' }",
+              "condition": "The token is unknown, as today for code review. For insrc_review_step this is a deliberate change: today its dispatch turns StateTokenNotFound into 'internal' (src/daemon/steps/review-step/handler.ts). It now catches StateTokenNotFound and returns 'state-not-found' like code review."
+            },
+            {
+              "type": "<tool>Error (review failed)",
+              "condition": "A call in a fail-review stage failed both attempts; nothing is recorded, as today."
+            }
+          ],
+          "preconditions": [
+            "The state's pipeline field is present."
+          ],
+          "postconditions": [
+            "No answer is applied to a call it does not name."
+          ]
+        },
+        {
+          "name": "handleStart (insrc_code_review_step and insrc_review_step)",
+          "signature": "handleStart(step, deps): Promise<EmitCallsFrame | <existing outputs>>",
+          "parameters": [
+            {
+              "name": "step",
+              "type": "CodeReviewStepInputStart | ReviewStepInputStart",
+              "purpose": "Unchanged input.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<EmitCallsFrame | existing outputs>",
+            "meaning": "Unchanged routing (daemon reviewer vs controller reviewer, confirm_wait, errors). When the controller is the reviewer, it now builds the review's jobs (createReviewJob with path 'controller' for each code-review dimension, or one design-review job), saves them in the state's pipeline field with the subject and snapshot, and returns the first EmitCallsFrame instead of emit_judgements, emit_claims or emit_findings. Every place that today creates a controller review state switches to the pipeline. For code review that is BOTH the fresh-grounding branch AND beginDiffOnlyReview (src/daemon/steps/code-review-step/handler.ts:382), reached from a decline (:263), a freshness timeout (:313) and hollow grounding (:353). The diff-only state keeps its diff-scoped subject, groundingMode 'degraded', fallbackReason, and the warn cap applied when the record is written (capVerdictAtWarn)."
+          },
+          "errors": [
+            {
+              "type": "existing errors",
+              "condition": "As today; AtomTooLargeError from prepare is returned as an error naming the item."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "New controller reviews always use emit_calls."
+          ]
+        },
+        {
+          "name": "CodeReviewStepStatePayload / ReviewStepStatePayload",
+          "signature": "readonly pipeline?: { readonly jobs: readonly ReviewPipelineJob[]; readonly limitChars: number; readonly lastFrameCallIds: readonly string[] } | undefined",
+          "parameters": [
+            {
+              "name": "pipeline",
+              "type": "{ jobs; limitChars; lastFrameCallIds }",
+              "purpose": "Present for every review started after this change. Absent: the state was saved before it, and resumes on today's phases.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "state payload",
+            "meaning": "Kept in the existing memory-only stores, unchanged: at most 100 entries, with idle entries older than one hour swept opportunistically when a state is saved, so a token idle longer than an hour can still load if no save has swept it. A state does not survive a daemon restart, as today."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "handleJudgements / handleClaims / handleVerdicts / handleFindings",
+          "signature": "unchanged",
+          "parameters": [
+            {
+              "name": "step",
+              "type": "existing inputs",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "unchanged",
+            "meaning": "Kept only for states without a pipeline field (saved before the change). Called with a pipeline state, they return bad-phase naming 'answers'."
+          },
+          "errors": [
+            {
+              "type": "<tool>Error { code: 'bad-phase' }",
+              "condition": "A legacy phase used on a pipeline state."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "MCP input schemas and registry (src/mcp/server.ts)",
+          "signature": "insrc_review_step phase: z.enum(['start','claims','verdicts','findings','answers']) + answers?: z.array(z.unknown()); insrc_code_review_step phase: z.enum(['start','judgements','answers']) + answers?: z.array(z.unknown())",
+          "parameters": [
+            {
+              "name": "answers",
+              "type": "array",
+              "purpose": "Only for phase=answers.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "registry entries",
+            "meaning": "The tool registry's phase lists gain 'answers' (src/mcp/server.ts:81, src/mcp/server.ts:87), and both tool descriptions describe the emit_calls / answers loop and the failure outcomes, so insrc_schema returns them."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The MCP boundary admits any array entries. The installed SDK rejects the whole call when its zod schema fails (validateToolInput), so entry shapes are NOT checked there. handleAnswers classifies each entry instead: a well-formed answer ({ callId: string, answer }), a well-formed failure ({ callId: string, failure: { cause in size-refusal | stall | transient, maxChars?: positive integer, detail?: string } }), or malformed (anything else, including no or a non-string callId and an unknown cause). A malformed entry is ignored and logged, and its call is re-issued as identifier-mismatch, so one bad entry never rejects the turn.",
+            "The tool description documents both entry shapes, so insrc_schema shows them even though the schema is permissive."
+          ]
+        },
+        {
+          "name": "Review and code-review guide sections (src/prompts/steering-block.md)",
+          "signature": "the 'review' and 'code-review' sections served by insrc_guide (guideGetResult) and stamped into marked repos' CLAUDE.md by the boot steering refresh",
+          "parameters": [
+            {
+              "name": "section text",
+              "type": "markdown",
+              "purpose": "The step-by-step loop each guide gives a controller.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "guide text",
+            "meaning": "Rewritten so a NEW review follows start, then emit_calls and answers (each entry { callId, answer } or { callId, failure }) until done. The old claims / verdicts, findings and judgements loops are described only as continuing a state saved before the change. This is the only copy outside src/mcp/server.ts and the step handlers that names the old frames (checked by grep across src/, vscode-plugin/src and jetbrains-plugin/src)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "insrc_guide({ workflow: 'review' }) and insrc_guide({ workflow: 'code-review' }) return the emit_calls / answers loop."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "CodeReviewStepStatePayload.pipeline / ReviewStepStatePayload.pipeline",
+        "change": "field-add",
+        "details": "Optional { jobs, limitChars, lastFrameCallIds }. Absent marks a pre-change state, resumed on today's phases.",
+        "callSites": [
+          "src/daemon/steps/code-review-step/types.ts:150",
+          "src/daemon/steps/review-step/types.ts:167"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc7",
+        "role": "implements",
+        "howDetails": "EmitCallsFrame, AnswersInput and CallFailure, the answers phase in both tools, frame packing, and pre-change resume."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "Keeps the jobs in step state and drives them with nextCalls, applyAnswer, applyFailure, runStage and result."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Hands the controller enveloped ReviewCalls; answers are matched by callId."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Uses each adapter's controller stage plan (code review offers ux and diagram prompts as today; premise review batches verify)."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Frames follow the jobs' chunk plans."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Material comes from the adapters, built from the saved subject and snapshot."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "limitChars bounds both each call and each frame."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An answers entry has no callId, an unknown callId, or a callId already used in the same answers turn.",
+          "detection": "handleAnswers checks every entry's callId against the state's lastFrameCallIds, and counts entries per callId.",
+          "response": "The unknown entry is ignored and logged. Every call of the last frame without exactly one valid entry is applied as identifier-mismatch and re-issued once under a new callId.",
+          "userImpact": "No answer is ever taken for another call; the call is offered again.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An answer's inner content fails the call's schema or the stage's validate.",
+          "detection": "applyAnswer validates the envelope's answer against the call schema, then the stage's validate(answer, call).",
+          "response": "invalid-answer: one re-issue with the correction note, then the stage's failure policy.",
+          "userImpact": "As on the daemon path.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The controller reports a size refusal.",
+          "detection": "A CallFailure with cause 'size-refusal' (and maxChars when the controller knows it).",
+          "response": "applyFailure re-divides the call's carried atoms and notes within maxChars, or half the refused size, and the new, smaller calls appear in the next frame. The refused prompt is never offered again.",
+          "userImpact": "More, smaller calls.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The controller reports a stall or a transient error.",
+          "detection": "A CallFailure with cause 'stall' or 'transient'.",
+          "response": "Re-issued once under a new callId; a second failure applies the stage's policy (fail-review, record-not-judged or record-observation).",
+          "userImpact": "As on the daemon path.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A legacy phase (judgements, claims, verdicts, findings) is called on a pipeline state.",
+          "detection": "The phase handler sees state.pipeline present.",
+          "response": "bad-phase error naming 'answers' as the expected phase; the state is kept, so the controller can retry.",
+          "userImpact": "A clear message; nothing lost.",
+          "recoverable": true
+        },
+        {
+          "scenario": "phase='answers' on a pre-change state (no pipeline field).",
+          "detection": "handleAnswers sees state.pipeline absent.",
+          "response": "bad-phase error naming the legacy phase the state expects; the state is kept.",
+          "userImpact": "A clear message; nothing lost.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The state token is unknown: swept after an hour idle (sweeps run when a state is saved) or lost in a daemon restart.",
+          "detection": "loadState throws StateTokenNotFound. Both tools' dispatch catches it; insrc_review_step newly maps it to 'state-not-found' instead of 'internal'.",
+          "response": "Today's state-not-found error; the review must be started again.",
+          "userImpact": "As today.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A code review under the limit, started from the controller.",
+          "expected": "Today's dimension prompts (ux and diagram included, as today), each an identified call, in one frame when they fit together, otherwise in consecutive frames. The record equals today's for the same answers."
+        },
+        {
+          "input": "A DEF review under the limit from the controller.",
+          "expected": "Frame 1 holds the extract call. The probe runs daemon-side. Frame 2 holds today's single batched verify call. Today's report."
+        },
+        {
+          "input": "An HLD review under the limit from the controller.",
+          "expected": "One frame with the findings call; today's report."
+        },
+        {
+          "input": "A divided code review from the controller.",
+          "expected": "Frames of one chunk call each (a chunk nearly fills the limit), then gather calls; the record has the same shape as the daemon's, with pipelineCalls."
+        },
+        {
+          "input": "Several small gather calls pending at once (for example obligation calls).",
+          "expected": "Packed into one frame up to the limit."
+        },
+        {
+          "input": "A pre-change state resumed after the update, within the same daemon process.",
+          "expected": "Today's emit_judgements / judgements, emit_claims / claims, emit_verdicts / verdicts or emit_findings / findings frames, as before."
+        },
+        {
+          "input": "A code review that falls back to the diff (declined wait, freshness timeout, hollow grounding), reviewed by the controller.",
+          "expected": "emit_calls frames from a pipeline state carrying the diff subject, groundingMode 'degraded' and fallbackReason; the record is capped at warn as today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Routing by author is unchanged: the daemon reviews controller-authored work, and the controller reviews daemon-authored work.",
+          "source": "c1"
+        },
+        {
+          "text": "The record written at the end is today's: the CR record with coverage normalised once, and the design report stamped through today's path.",
+          "source": "c1"
+        },
+        {
+          "text": "Step states stay memory-only, with today's 100-entry cap and opportunistic one-hour sweep on save.",
+          "source": "c1"
+        },
+        {
+          "text": "The start, confirm_wait and error frames of both tools are unchanged.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test), as the existing step and MCP tests",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Frame packing, answer matching and failure mapping in isolation.",
+          "subjects": [
+            "src/daemon/steps/__tests__/pipeline-frames.test.ts: 'pending calls are packed in a fixed order into a frame whose summed rendered size fits limitChars, and no call is split'",
+            "src/daemon/steps/__tests__/pipeline-frames.test.ts: 'an answers entry with an unknown or duplicated callId is ignored, and the unanswered call is re-issued once under a new callId'",
+            "src/daemon/steps/__tests__/pipeline-frames.test.ts: 'a CallFailure size-refusal re-divides the call and the refused prompt is never offered again; stall and transient re-issue once'",
+            "src/daemon/steps/__tests__/pipeline-frames.test.ts: 'single-chunk dimension calls that each fit but not together are offered in consecutive frames, none split'"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Both controller steps end to end with scripted controller answers, under and over the limit, plus pre-change resume.",
+          "subjects": [
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'a code review under the limit is offered today's dimension prompts as identified calls in one frame and writes today's record'",
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'a code review over the limit is handed the daemon's chunks about one call per frame and records the same kind of result as the daemon path'",
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'a pre-change state resumes on emit_judgements and judgements'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'a DEF review under the limit: extract call, daemon-side probe, then today's single batched verify call, and today's report'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'an HLD review under the limit: one findings call and today's report'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'a divided design review is handed its chunks call by call and gives one report'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'pre-change states resume on emit_claims and claims, emit_verdicts and verdicts, and emit_findings and findings'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'a missing or wrong callId in an answer is rejected and the call offered again under a new identifier'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'a legacy phase on a pipeline state, or answers on a pre-change state, returns bad-phase and keeps the state'",
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'each diff-only entry (declined, freshness timeout, hollow grounding) starts a pipeline review that keeps the degraded mode, fallback reason and warn cap'",
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'the controller is offered the ux and diagram prompts as calls, as today; only deterministic controller stages run daemon-side'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'an unknown state token returns state-not-found from insrc_review_step'"
+          ],
+          "fixturesNeeded": [
+            "a Story fixture with a BUILD record authored by the daemon (so the controller reviews)",
+            "daemon-authored DEF and HLD fixtures",
+            "scripted controller answers keyed by callId"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The MCP boundary admits the answers phase.",
+          "subjects": [
+            "src/mcp/__tests__/schema-registry.test.ts: 'insrc_review_step and insrc_code_review_step list the answers phase, and their input schemas accept answer and failure entries with no union at the root'",
+            "src/mcp/__tests__/schema-handler.test.ts: 'insrc_schema returns the answers phase and its entry shapes for both tools'",
+            "src/mcp/__tests__/schema-handler.test.ts: 'through the MCP boundary, an answer with no callId is accepted by the schema and its call is re-issued under a new identifier'",
+            "src/mcp/__tests__/schema-handler.test.ts: 'through the MCP boundary, an answers turn mixing valid entries with a null, a numeric callId and an unknown failure cause is accepted; the valid answers apply and the malformed entries' calls are re-issued'",
+            "src/mcp/__tests__/guide-handler.test.ts: 'insrc_guide review and code-review sections describe the emit_calls / answers loop, and name the legacy phases only for pre-change states'"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'a code review over the limit is handed the daemon's chunks about one call per frame and records the same kind of result as the daemon path'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'a divided design review is handed its chunks call by call and gives one report'",
+            "src/daemon/steps/__tests__/pipeline-frames.test.ts: 'a CallFailure size-refusal re-divides the call and the refused prompt is never offered again; stall and transient re-issue once'",
+            "src/mcp/__tests__/guide-handler.test.ts: 'insrc_guide review and code-review sections describe the emit_calls / answers loop, and name the legacy phases only for pre-change states'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'a missing or wrong callId in an answer is rejected and the call offered again under a new identifier'",
+            "src/daemon/steps/__tests__/pipeline-frames.test.ts: 'an answers entry with an unknown or duplicated callId is ignored, and the unanswered call is re-issued once under a new callId'",
+            "src/mcp/__tests__/schema-handler.test.ts: 'through the MCP boundary, an answer with no callId is accepted by the schema and its call is re-issued under a new identifier'",
+            "src/mcp/__tests__/schema-handler.test.ts: 'through the MCP boundary, an answers turn mixing valid entries with a null, a numeric callId and an unknown failure cause is accepted; the valid answers apply and the malformed entries' calls are re-issued'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'a code review under the limit is offered today's dimension prompts as identified calls in one frame and writes today's record'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'a DEF review under the limit: extract call, daemon-side probe, then today's single batched verify call, and today's report'",
+            "src/daemon/steps/review-step/__tests__/controller-pipeline.test.ts: 'an HLD review under the limit: one findings call and today's report'",
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'a pre-change state resumes on emit_judgements and judgements'",
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'each diff-only entry (declined, freshness timeout, hollow grounding) starts a pipeline review that keeps the degraded mode, fallback reason and warn cap'",
+            "src/daemon/steps/code-review-step/__tests__/controller-pipeline.test.ts: 'the controller is offered the ux and diagram prompts as calls, as today; only deterministic controller stages run daemon-side'",
+            "src/daemon/steps/__tests__/pipeline-frames.test.ts: 'single-chunk dimension calls that each fit but not together are offered in consecutive frames, none split'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "A controller review today gets fixed frames (s1 bundle). Code review gets emit_judgements, all dimension prompts in one frame, answered once with judgements (src/daemon/steps/code-review-step/handler.ts:439, src/daemon/steps/code-review-step/handler.ts:496). Premise review gets emit_claims, then emit_verdicts with one batched prompt; template review gets emit_findings (src/daemon/steps/review-step/phases/start.ts:36, src/daemon/steps/review-step/phases/claims.ts:28). No answer carries a call identifier, nothing is divided, and the MCP registry lists only those phases (src/mcp/server.ts:81, src/mcp/server.ts:87).",
+      "stateAfter": "Every new controller review is driven by emit_calls frames packed up to the limit and an answers phase matched by callId, with per-call failure outcomes. Under the limit, a review gets today's prompts in today's single frame (or today's two frames for a premise review) and gives today's result. Over the limit, the controller walks the daemon's chunks about one call per frame. States saved before the change resume on today's phases.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional pipeline field to both step state payloads, the shared frame packing and answer matching, and handleAnswers in both tools, with unit tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Switch every controller-review entry to build the jobs and return emit_calls: both handleStart paths, and beginDiffOnlyReview for the declined, freshness-timeout and hollow-grounding fallbacks. Keep the legacy phase handlers for states without the pipeline field, and make them return bad-phase on pipeline states. Map StateTokenNotFound to state-not-found in insrc_review_step's dispatch.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add 'answers' to both tools' input schemas, the registry phase lists and the tool descriptions in src/mcp/server.ts, with schema-registry and schema-handler tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Update the review and code-review sections of src/prompts/steering-block.md (served by insrc_guide, and re-stamped into marked repos' CLAUDE.md steering blocks by the boot steering refresh after the daemon update).",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Rebuild and update the installed daemon and the MCP server, so controllers re-read the tool schemas (the plugins' existing post-update MCP reload nudge covers this).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The MCP tools keep their names and existing phases; 'answers' and the answers field are additive. The start, confirm_wait, done and error outputs are unchanged. A controller that still sends today's judgements, claims, verdicts or findings on a NEW review gets a bad-phase error naming 'answers', because new reviews always use emit_calls. States saved before the change keep today's phases until they expire or the daemon restarts. Stored records keep their shape.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Strictly one call per frame",
+        "oneLineSummary": "Every new controller review is driven one ReviewCall per emit_calls frame, in a fixed order across all of the review's jobs; the controller answers that one call (answer or failure) per answers turn.",
+        "approach": "Each step's state gains an optional pipeline field: { jobs: ReviewPipelineJob[] } (one per code-review dimension, or one design-review job) plus the saved subject and snapshot. Each turn the step rebuilds the adapters, runs any deterministic stage with runStage, collects the pending calls of all jobs with nextCalls, and offers exactly the next one. The answers turn takes that call's EnvelopedAnswer or CallFailure and maps it to applyAnswer or applyFailure. Under the limit a code review becomes one frame per dimension prompt instead of today's single emit_judgements frame.",
+        "pros": [
+          "Simplest frame rule: one call per frame.",
+          "Every frame is bounded by one call's size."
+        ],
+        "cons": [
+          "A review under the limit takes several turns where today it takes one, so 'proceeds as today' (ac3) holds only for prompts and results, not for turn count.",
+          "More turns mean more state saves and round trips for small reviews."
+        ],
+        "costEstimate": "M",
+        "winnerRank": 2,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "partial",
+            "notes": "Same prompts and result, but one turn per call instead of today's one frame."
+          },
+          {
+            "constraintId": "sc7",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies"
+          }
+        ],
+        "reasonRejected": "Correct, but under the limit it multiplies turns compared with today."
+      },
+      {
+        "id": "a2",
+        "name": "Frames packed with the pending calls up to the limit",
+        "oneLineSummary": "Each emit_calls frame offers every currently pending call of the review's jobs that fits, packed in a fixed order up to limitChars of rendered calls. The controller answers every call in the frame, each with an answer or a failure outcome.",
+        "approach": "State as in a1. Each turn the step rebuilds the adapters, runs deterministic stages with runStage, and gathers pending calls from every job with nextCalls in a fixed order (code review: today's dimension order; design review: stage order). It packs them into one frame whose summed rendered size (messages, schema and envelope of each call) stays within limitChars, never splitting a call. Under the limit a code review's dimension calls normally fit one frame, as today's emit_judgements does, and a premise review offers extract, then the single batched verify, as today. Over the limit a chunk call nearly fills the limit, so frames carry one call at a time. The answers phase must cover every call in the frame: an EnvelopedAnswer goes to applyAnswer, and a CallFailure to applyFailure with its cause and maxChars. A call left unanswered, or answered under an unknown or wrong callId, is treated as an identifier mismatch and re-issued under a new callId. When every job is done, the step writes today's record (code review) or report (design review). A state without the pipeline field resumes on today's frames.",
+        "pros": [
+          "A review under the limit keeps today's single-frame turns where today's frame held several prompts (ac3).",
+          "Over the limit the controller is handed the daemon's chunks about one at a time (ac1).",
+          "One frame shape and one answers phase for every new review (sc7).",
+          "Every frame stays within the limit, so the controller's own context is bounded."
+        ],
+        "cons": [
+          "Packing adds one rule (fit by summed rendered size) and the obligation to answer every offered call."
+        ],
+        "costEstimate": "M",
+        "winnerRank": 1,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies",
+            "notes": "Over the limit, each chunk call nearly fills a frame, so the daemon's chunks are handed about one at a time."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "A missing, unknown or wrong callId is an identifier mismatch, re-issued under a new id."
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies",
+            "notes": "Today's prompts in today's single frame, each enveloped; today's result."
+          },
+          {
+            "constraintId": "sc7",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies",
+            "notes": "Uses the controller stage plans."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies",
+            "notes": "Jobs kept in step state; driven by nextCalls, applyAnswer, applyFailure and runStage."
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies",
+            "notes": "A frame's summed rendered calls stay within limitChars."
+          },
+          {
+            "constraintId": "k4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies"
+          }
+        ]
+      },
+      {
+        "id": "a3",
+        "name": "Today's frames under the limit, new frames only when divided",
+        "oneLineSummary": "New controller reviews under the limit keep emit_judgements, emit_claims, emit_verdicts and emit_findings; only a divided review switches to emit_calls.",
+        "approach": "The step chooses the frame by the chunk plan: single uses today's frames and phases unchanged, divided uses emit_calls and answers.",
+        "pros": [
+          "The under-limit path is byte-for-byte today's."
+        ],
+        "cons": [
+          "Two frame shapes for new reviews, which the HLD rejects (sc7: one frame shape for every new controller review).",
+          "Answers under the limit carry no call identifier, which breaks k4."
+        ],
+        "costEstimate": "S",
+        "winnerRank": 3,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "partial",
+            "notes": "Only the divided path identifies answers."
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc7",
+            "verdict": "violates",
+            "notes": "Requires one frame shape for every new controller review."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "partial"
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "partial",
+            "notes": "Jobs only on the divided path."
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k4",
+            "verdict": "violates"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies"
+          }
+        ],
+        "reasonRejected": "Two frame shapes and unidentified answers under the limit."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]: How the two controller review steps work today (insrc_analyze_step how-does-it-work, plus a direct read of the state payloads and the MCP registry)."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]: What the approved s1-s4 LLDs give the controller path."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "HLD-8315a11f29fd2812"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "DEF-8315a11f29fd2812"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s2 alternatives"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s3 judge"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s4 contract"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s5 error paths"
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s6 test strategy"
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s7 migration"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s8 checklist"
+    }
+  ]
+}

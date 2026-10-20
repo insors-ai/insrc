@@ -27,12 +27,11 @@
  */
 
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
-import { validateAgainstSchema, type StructuredCall, type StructuredValidator } from '../../../agent/providers/structured-output.js';
-import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, ReviewDimension } from '../types.js';
+import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
+import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
 import type { FunctionalRequirement } from '../../artifacts/functional-definition.js';
 
 const DIMENSION: ReviewDimension = 'functional-coverage';
-const MAX_ATTEMPTS = 3;
 
 /** The model's raw functional-coverage output, validated against the schema.
  *  Per-finding shape maps 1:1 onto sc3 DimensionFinding minus the fixed
@@ -132,40 +131,42 @@ function fileOf(location: string): string {
 	return i >= 0 ? location.slice(0, i) : location;
 }
 
+/** Today's functional-coverage judgement as a pipeline spec: prompt, schema and the
+ *  mapping that keeps findings inside the changed set and never an unknown FR id. */
+export function functionalCoverageSpec(subject: CodeReviewSubject): ModelDimensionSpec<FunctionalCoverageOutput> {
+	const changed = new Set(subject.changedFiles);
+	const frIds = new Set(functionalRequirementsOf(subject).map(r => r.id));
+	return {
+		dimension: DIMENSION,
+		schema:    FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA,
+		prompt:    (grounding, _mode, note) => buildFunctionalCoveragePrompt(subject, grounding, note),
+		toResult:  output => ({
+			dimension: DIMENSION,
+			findings: output.findings
+				.filter(f => changed.has(fileOf(f.location)))                              // scope to the Story's own changes
+				.filter(f => f.expectationRef === undefined || frIds.has(f.expectationRef)) // never reference an unknown FR id
+				.map((f): DimensionFinding => ({
+					dimension: DIMENSION,
+					severity:  f.severity,
+					location:  f.location,
+					message:   f.message,
+					...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
+					...(f.confidence     !== undefined ? { confidence:     f.confidence     } : {}),
+				})),
+		}),
+	};
+}
+
 /**
- * The functional-coverage judge. One serial completeStructured call via
- * withStructuredRetry; maps the validated findings onto the sc3 DimensionResult,
- * drops any finding outside the Story's changed set, and drops any finding whose
- * expectationRef is not one of the declared FR ids. Propagates on failure.
+ * The functional-coverage judge: one review-pipeline job (Epic 8315a11f), whose single call
+ * is today's prompt and schema with the repo as cwd. The pipeline re-issues a
+ * failed call once and propagates a second failure (never a fabricated pass).
  */
 export async function judgeFunctionalCoverage(
 	subject:   CodeReviewSubject,
 	grounding: CodeReviewGrounding,
 	provider:  LLMProvider,
+	ctx?:      JudgeContext,
 ): Promise<DimensionResult> {
-	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
-
-	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildFunctionalCoveragePrompt(subject, grounding, note), FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA, { cwd: subject.repoPath });
-
-	const validate: StructuredValidator<FunctionalCoverageOutput> = (raw) =>
-		validateAgainstSchema<FunctionalCoverageOutput>(FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA, raw);
-
-	const output = await withStructuredRetry(call, validate, MAX_ATTEMPTS);
-
-	const changed = new Set(subject.changedFiles);
-	const frIds = new Set(functionalRequirementsOf(subject).map(r => r.id));
-	const findings: DimensionFinding[] = output.findings
-		.filter(f => changed.has(fileOf(f.location)))                              // scope to the Story's own changes
-		.filter(f => f.expectationRef === undefined || frIds.has(f.expectationRef)) // never reference an unknown FR id
-		.map(f => ({
-			dimension: DIMENSION,
-			severity:  f.severity,
-			location:  f.location,
-			message:   f.message,
-			...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
-			...(f.confidence     !== undefined ? { confidence:     f.confidence     } : {}),
-		}));
-
-	return { dimension: DIMENSION, findings };
+	return runDimensionJob(s => modelDimensionAdapter(functionalCoverageSpec(subject), subject, s), subject, grounding, provider, ctx);
 }

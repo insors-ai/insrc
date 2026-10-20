@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>tracker — insrc</title>
 <meta name="description" content="Mirror the define → design → plan → build chain into an issue tracker: native Epic/Story/Task issues, sub-issue links, status sync, and design-summary comments. GitHub today (via the gh CLI), provider-pluggable for Jira and others.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="icon" type="image/png" href="insrc-icon-transparent-128.png">
 <link rel="stylesheet" href="css/tui.css">
 </head>
 <body>
@@ -114,7 +114,7 @@
   <h2>Usage</h2>
 
   <h3>Automatic — on approval</h3>
-  <p>Once a repo has a <code>github</code> config, approving an artifact pushes the matching issue with no extra command (the deterministic path — used by a human <code>insrc workflow approve</code> or a non-GitHub-capable model):</p>
+  <p>Once a repo has a <code>github</code> config, approving an artifact pushes the matching issue with no extra command (the deterministic path — used by a human the TUI command bar's <code>workflow approve</code> or a non-GitHub-capable model):</p>
   <ul>
     <li><strong>Approve the HLD</strong> → create/adopt the <strong>Epic</strong> issue.</li>
     <li><strong>Approve an LLD</strong> → create/adopt the <strong>Story</strong> issue and splice it into the Epic's task list.</li>
@@ -123,7 +123,7 @@
   <div class="tip"><strong>Idempotent + fail-open.</strong> An existing ref (in meta, or discoverable by label) is adopted, never duplicated; a missing <code>gh</code> / config / auth simply skips the push without undoing the approval.</div>
 
   <h3>Manual — the <code>tracker.*</code> workflows</h3>
-  <p>For explicit control (e.g. a batch push, a status refresh, or attaching a design summary), the three tracker workflows run via <code>insrc_workflow_run</code> (or the CLI):</p>
+  <p>For explicit control (e.g. a batch push, a status refresh, or attaching a design summary), the three tracker workflows run via <code>insrc_workflow_step</code>, driven turn by turn in-session:</p>
 
   <div class="tablewrap"><table>
     <thead><tr><th>Workflow</th><th>Does</th><th>Params</th></tr></thead>
@@ -144,7 +144,7 @@
 
 <footer class="foot"><div class="foot-inner">
   <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
-  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">TypeScript · ESM · Node ≥22.13.0</span>
   <span class="seg">LMDB + Lance + DuckDB</span>
   <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
   <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>

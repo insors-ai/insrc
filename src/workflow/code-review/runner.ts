@@ -57,6 +57,7 @@ import { judgeFunctionalCoverage } from './dimensions/functional-coverage.js';
 import { judgeDiagram } from './dimensions/diagram/index.js';
 import { judgeUx } from './dimensions/ux/index.js';
 import { computeExpectedDimensions } from './expected-dimensions.js';
+import { codeReviewSnapshot } from '../review-pipeline/code-review.js';
 import type { Party } from '../review/party.js';
 
 const log = getLogger('code-review:runner');
@@ -205,7 +206,10 @@ export async function runCodeReview(
 		//    propagates to the catch below (=> {ok:false}, no write, later judges
 		//    never run).
 		const judges = effectiveJudges(deps.judges, subject);
-		const ctx: JudgeContext = { groundingMode: opts.groundingMode ?? 'full' };
+		// One snapshot for the whole review (Epic 8315a11f): the grounding and every
+		// companion file's existence, taken now; no judge reads the disk afterwards.
+		const groundingMode = opts.groundingMode ?? 'full';
+		const ctx: JudgeContext = { groundingMode, snapshot: codeReviewSnapshot(subject, grounding, groundingMode), signal: opts.signal };
 		const dimensions: DimensionResult[] = [];
 		for (const slot of judges) {
 			if (opts.signal?.aborted) return fail('aborted', emit);

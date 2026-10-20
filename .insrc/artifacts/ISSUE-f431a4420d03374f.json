@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792500392568-g8gtka",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-20T12:47:09.806Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 37235,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "f431a4420d03374f",
+    "epicSlug": "count-commit-story-s-when-its",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-20T12:48:29.473Z",
+    "parentRef": {
+      "slug": "count-commit-story-s-when-its"
+    }
+  },
+  "body": {
+    "title": "Count a commit as the Story's when its Insrc-Story line is in any paragraph",
+    "reproduction": "1. Make Story commits whose message ends with the Story line, a blank line, then a co-author line:\n\n    feat(build): s1/t5 ...\n\n    Insrc-Story: 8315a11f29fd2812/s1\n\n    Co-Authored-By: Name <mail>\n\n2. Run the Story's code review (insrc_code_review_step phase=start).\n\nObserved: the review's change set leaves those commits out. For Epic 8315a11f Story s1 the review covered 11 changed files, those of the four commits whose Story line sat in the final block (t1-t4); the 18 commits for t5-t12 were dropped and 54 of the Story's 65 changed source files were never reviewed. `git log -1 --format='%(trailers:key=Insrc-Story,valueonly)' <commit>` prints nothing for such a commit. Expected: every commit whose message has the line `Insrc-Story: 8315a11f29fd2812/s1` counts as the Story's work, wherever in the message the line is.",
+    "rootCause": "scanTrailers in src/workflow/runners/build/story-commits.ts:109 reads the Story key with git's `%(trailers:key=Insrc-Story,valueonly,...)` placeholder (src/workflow/runners/build/story-commits.ts:112). Git parses trailers only from the last paragraph of a message, so a commit whose Insrc-Story line is followed by a blank line and another paragraph (here a Co-Authored-By line) yields no value. The commit is not added to `carrying` (src/workflow/runners/build/story-commits.ts:125-128), so its paths are not part of the Story's change set, and the review silently covers less than the Story.",
+    "fixIntent": "Treat a commit as the Story's when any whole line of its message is `Insrc-Story: <storyKey>`, in whichever paragraph it sits, matching the key exactly as today. Commits whose final trailer block carries the key keep counting as before; a commit that merely mentions the key inside other text does not count. A test pins both message shapes and the non-matching ones."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/story-commits.ts:107-131",
+      "quotedText": "out = git(repoPath, ['log', '--first-parent', `--format=%H%x1f%h%x1f%s%x1f%(trailers:key=${STORY_TRAILER_KEY},valueonly,separator=%x1f)%x1e`, `${base}..HEAD`]);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/story-commits.ts:125",
+      "quotedText": "if (values.some(v => v.trim() === storyKey)) {"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/CR.md",
+      "quotedText": "**Changed files:** 11"
+    }
+  ]
+}

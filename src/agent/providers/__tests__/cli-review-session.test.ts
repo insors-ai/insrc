@@ -17,7 +17,7 @@ import { test } from 'node:test';
 
 import {
 	claudeReviewSessionArgs, CliProvider, codexReviewSessionArgs, REVIEW_SESSION_ANALYZE_TOOLS,
-	REVIEW_SESSION_READ_TOOLS, ReviewSessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS,
+	REVIEW_SESSION_READ_TOOLS, ReviewSessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } } };
@@ -257,4 +257,25 @@ test('only the reviewer session is watched: a one-shot codex call that is silent
 		assert.deepEqual(await p.completeStructured([{ role: 'user', content: 'hi' }], SCHEMA), { ok: true });
 		assert.equal(f.calls().length, 1);
 	} finally { f.cleanup(); }
+});
+
+test('a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is', async () => {
+	const refusal = 'Error: turn/start: turn/start failed: Input exceeds the maximum length of 1048576 characters. (code -32602), data: {"input_error_code":"input_too_large","max_chars":1048576,"actual_chars":1247701}';
+	// claude: an is_error envelope saying the prompt is too long.
+	const claude = fakeCli([{ out: JSON.stringify({ type: 'result', is_error: true, result: 'Prompt is too long' }) }]);
+	try {
+		const p = new CliProvider({ kind: 'claude', binPath: claude.bin });
+		const err = await p.runReviewSession('P', SCHEMA, { cwd: claude.dir, deadlineMs: 20_000 }).then(() => null, (e: unknown) => e);
+		assert.ok(err instanceof InputTooLargeError, `claude: got ${String(err)}`);
+		assert.equal(claude.calls().length, 1, 'a size refusal is never resent');
+	} finally { claude.cleanup(); }
+	// codex: an error event carrying the refusal.
+	const codex = fakeCli([{ out: `${JSON.stringify({ type: 'thread.started', thread_id: 't-big' })}\n${JSON.stringify({ type: 'error', message: refusal })}\n` }]);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: codex.bin });
+		const err = await p.runReviewSession('P', SCHEMA, { cwd: codex.dir, deadlineMs: 20_000 }).then(() => null, (e: unknown) => e);
+		assert.ok(err instanceof InputTooLargeError, `codex: got ${String(err)}`);
+		assert.equal(err.maxChars, 1048576);
+		assert.equal(codex.calls().length, 1, 'a size refusal is never resent');
+	} finally { codex.cleanup(); }
 });

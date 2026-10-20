@@ -1,0 +1,4 @@
+[0s] progress template
+[119s] progress done
+[119s] DONE {"verdict":"block","counts":{"high":1,"med":2,"low":7,"unverified":0},"template":"design-spec","model":"cli-codex:gpt-6-astra","reviewedBy":"daemon"}
+EXIT

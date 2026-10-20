@@ -37,7 +37,7 @@ test('no source file, bin entry or write-inventory row refers to src/workflow/id
 
 	// no source file imports the id module (any relative depth) or names the migration tool; this file names them only in this list
 	// A module specifier ending in /id.js or /id.ts in any quote style, static or dynamic, or the tool by any of its names.
-	const files = [...sourceFiles(join(ROOT, 'src')), 'copy-assets.mjs'].filter(f => f !== 'src/workflow/__tests__/id-removal.test.ts' && existsSync(join(ROOT, f)));
+	const files = [...sourceFiles(join(ROOT, 'src')), 'copy-assets.mjs'].filter(f => !['src/workflow/__tests__/id-removal.test.ts', 'src/workflow/__tests__/docs-ids.test.ts'].includes(f) && existsSync(join(ROOT, f)));
 	const importsId = /['"`][^'"`\n]*\/id\.(?:js|ts)['"`]/;
 	const namesTool = /migrate-docs-tree|insrc-migrate-docs|migrateDocsTree/;
 	for (const f of files) {

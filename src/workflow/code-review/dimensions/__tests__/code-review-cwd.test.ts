@@ -18,6 +18,7 @@ import { judgeFunctionalCoverage } from '../functional-coverage.js';
 import { judgeQuality } from '../quality.js';
 import type { CodeReviewSubject, CodeReviewGrounding } from '../../types.js';
 import type { LLMProvider, StructuredCompletionOpts } from '../../../../shared/types.js';
+import { enveloped, unenveloped } from '../../../review-pipeline/__tests__/enveloped.js';
 
 const REPO = '/work/the-reviewed-repo';
 
@@ -36,7 +37,7 @@ const grounding: CodeReviewGrounding = {
 function recordingProvider(): { provider: LLMProvider; seen: (StructuredCompletionOpts | undefined)[] } {
 	const seen: (StructuredCompletionOpts | undefined)[] = [];
 	const provider = {
-		completeStructured: async (_m: unknown, _s: unknown, opts?: StructuredCompletionOpts) => { seen.push(opts); return { findings: [] }; },
+		completeStructured: async (_m: unknown, s: unknown, opts?: StructuredCompletionOpts) => { seen.push(opts); return enveloped(s, { findings: [] }); },
 	} as unknown as LLMProvider;
 	return { provider, seen };
 }

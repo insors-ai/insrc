@@ -1,0 +1,1158 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792407378592-2za9aw",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-19T11:00:15.767Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 237157,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicHash": "8315a11f29fd2812",
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1792389266411-gvxl8y",
+    "hldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers S004's section grouping, neighbour summaries and single-result acceptance criteria.",
+          "evidence": "DEF §6.4 requires coherent section chunks (ac1), summaries across chunk boundaries (ac2), and one result using today's verdict rules (ac3). The proposed material builder, neighbourSummary and merge/finish address these three requirements. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "HLD/LLD use one template reviewer session; other stages extract claims and verify each claim separately.",
+          "evidence": "runReview dispatches through `if (isDesignStage(opts.stage)) return runTemplateReview(...)`; otherwise it calls extractClaims, gatherEvidence and a serial verifyOrRecord loop. runTemplateReview sends the whole document and permits one correction after invalid output. HARD_REVIEW_DEADLINE_MS is 30 minutes. [files: src/workflow/review/review.ts, src/workflow/review/template-review.ts, src/workflow/review/template.ts, src/workflow/review/extract.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "buildBatchedVerifyPrompt is private to claims.ts, has the stated signature, and has only handleClaims as its caller.",
+          "evidence": "Repository search found its declaration and sole invocation in claims.ts. Its body accepts readonly Claim[] and Evidence[], builds an evidence map by claimId, and returns `{ system, user }` using buildVerifyPrompt and renderEvidence. [files: src/daemon/steps/review-step/phases/claims.ts, src/workflow/review/verify.ts]",
+          "action": "Move the helper and update the import as proposed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A new parsed answer representation is needed to retain file sets and notApplicable reasons before merging.",
+          "evidence": "validateTemplateAnswer currently converts directly to Finding[]. It omits notApplicable items and embeds files into evidence using `[files: ...]`; Finding has no files field. Searches found no existing parseTemplateAnswer implementation. [files: src/workflow/review/template.ts, src/workflow/review/types.ts]",
+          "action": "Preserve the existing validation and finding conversion semantics in the new parser.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Using the heading-path slug as an atom ID is sufficient to identify every section independently.",
+          "evidence": "S004 specifies `id = the heading path slug`, without collision handling. HLD sc3 represents chunk membership as `atomIds: readonly string[]`, and sc1 references endpoints only through `from` and `to`. Two sibling sections with identical headings therefore receive the same identity, making membership and reference resolution ambiguous and potentially reviewing the wrong section. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S004/LLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md]",
+          "action": "Assign deterministic occurrence-qualified atom IDs, separate them from anchor slugs, and test repeated headings and slug collisions.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Prefixing a raw claim ID with its chunk makes every raw claim ID job-unique.",
+          "evidence": "normalizeClaims preserves every supplied nonempty ID: `const id = typeof c.id === 'string' && c.id.length > 0 ? c.id : ...`; it performs no uniqueness check. Two distinct claims with local ID c1 in the same chunk both become `c<chunk>-c1`. S004 explicitly promises distinct raw IDs for this case, but its formula produces colliding source identifiers and ambiguous provenance. [files: src/workflow/review/extract.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S004/LLD.md]",
+          "action": "Include the claim's occurrence index in rawId, retaining the model's local ID separately. Test duplicate IDs within one chunk as well as across chunks.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S001 already provides the multi-answer snapshot commit behavior required by the divided extraction stage.",
+          "evidence": "S001 §2.17 says claims are saved 'the moment the extract stage's answer is applied' and written once. S004 requires accumulating multiple answers and committing only after the last. No review-pipeline implementation was found to establish how stage completion, aggregation and snapshot writes interact. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S004/LLD.md]",
+          "action": "Make S001's stage-completion contract explicitly cover multiple extraction answers and the merged claim/evidence output, then verify resume between answers.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Returning multiple relation prompts and using semantic validation and neighbour summaries are supported S001 contract extensions.",
+          "evidence": "Although HLD sc2 sketches a single relation prompt, S001 §2.22 explicitly refines it to `readonly ChunkPrompt[]`. Sections 2.19 and 2.21 also define optional AdapterStage.validate and ReviewAdapter.neighbourSummary. S004 consumes these owner-defined extensions. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A premise that fails verification twice is retained as MED not judged and blocks under the default policy.",
+          "evidence": "verifyOrRecord makes two attempts, propagates AbortError, and then returns severity MED with evidence beginning `Not judged`. DEFAULT_BLOCK_ON is ['HIGH', 'MED']. verifyClaim passes VERIFY_CALL_TIMEOUT_MS = 180000. Existing tests assert that other findings survive and the resulting verdict blocks. [files: src/workflow/review/review.ts, src/workflow/review/verify.ts, src/workflow/review/verdict.ts, src/workflow/review/__tests__/review.test.ts]",
+          "action": "Preserve these behaviors through the pipeline failure policy.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Invalid checklist answers are detectable with existing validation and fail the review after one corrective retry.",
+          "evidence": "validateTemplateAnswer rejects missing, repeated or unknown items, excess premises, and does-not-hold premises without files. runTemplateReview adds correction text, retries once, and throws `No review was recorded` after a second invalid answer. [files: src/workflow/review/template.ts, src/workflow/review/template-review.ts]",
+          "action": "Keep relation-answer validation distinct from full-checklist validation when relation calls return only selected items.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every upstream S004 acceptance criterion maps to a proposed test.",
+          "evidence": "Compared DEF §6.4 with the supplied acceptance mapping: ac1 maps to whole-section splitting and coherent chunk integration tests; ac2 to reference-summary tests; ac3 to divided template/premise report and verdict tests. Existing template and premise tests provide concrete validation, severity and retry expectations. This verifies test-plan coverage, not execution of the proposed tests. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S004/LLD.md, src/workflow/review/__tests__/template.test.ts, src/workflow/review/__tests__/review.test.ts]",
+          "action": "Add the atom-ID and raw-claim-ID collision cases identified above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 2,
+        "med": 0,
+        "low": 9,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-20T07:30:14.247Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-20T07:41:57.418Z",
+    "reviewOverride": {
+      "reason": "Cycle-2 round-3 HIGHs fixed without re-review, both mechanical id-uniqueness fixes: section atom ids are occurrence-based (sec<n>) with anchor slugs kept separately; raw claim ids use the claim's position in its chunk's answer (r<chunk>-<k>) with the model's localId kept apart. User approved the override in chat 2026-10-20.",
+      "at": "2026-10-20T07:41:57.414Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story lets a design document too long for one call be reviewed in coherent parts that still give one result. The document is split at its headings into whole sections. A section is kept with the sections it links to or whose ids it uses, and with its sibling sections, and each chunk gets the document's outline and a short summary of every related section held in another chunk. An HLD or LLD review then runs one reviewer session per chunk under today's checklist and merges the answers item by item, with extra checks that sections in different chunks agree. A DEF or plan review extracts its premises chunk by chunk and verifies them one by one as today. Under the limit, every review is exactly today's.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A new shared module, the review pipeline (proposed at src/workflow/review-pipeline), owns the three stages for every review. It is a serialisable job: the daemon drives it to the end; the controller is handed its calls one frame at a time and answers them by call identifier. Prepare measures material at 3 characters per token against review.chunkTokens (default 128,000 tokens); at or under the limit it emits one chunk whose prompt is the adapter's current single-call prompt, otherwise it groups the adapter's atoms by the adapter's relations and packs whole groups into chunks that each fit, adding a short summary of each related atom held in another chunk. Review issues one call per chunk serially; every call carries a fresh UUID that the answer must echo inside an envelope, an answer whose identifier is missing or wrong is rejected and retried under a new UUID, and a size refusal re-divides the chunk instead of resending it. Gather passes a single chunk's answer through unchanged and otherwise applies the adapter's gather rules (keyed obligations judged on all chunks' evidence, cross-chunk relationships, cross-chunk duplicates), each gather call itself bounded by the chunk limit. ISSUE-aef82b03's delivered InputTooLargeError, LLMProvider.inputBudgetChars, packIntoBatches and ReviewJob loop are moved under the pipeline as its core. A review kind is a series of stages, each a model stage or a deterministic one, preserving today's execution exactly: code review runs one stage per dimension exactly as today on each path: on the daemon, adherence (no call at all when there is neither an approved LLD nor an approved plan), conventions, coverage, quality and functional coverage are model calls, ux is deterministic and provider-free, and diagram keeps its registered handlers (some deterministic, such as the component handler) with today's per-handler isolation, a failing handler still recorded as a LOW observation; on the controller path the ux and diagram prompts are offered to the controller as today; HLD/LLD template review is one reviewer-session stage; DEF/plan premise review is extract (model), probe (deterministic) and verify, where the daemon path verifies one premise per call and the controller path verifies every premise in one batched call, as each does today; an adapter therefore declares its stage plan per path (daemon or controller). A review under the limit therefore makes exactly today's calls in today's order. Each call names its execution mode: a structured call run in the repository as its working directory (as today's code-review judges pass subject.repoPath; for the premise review's verify calls, which pass no working directory today, this is an additive change), each with its own per-call time limit where it has one today (the premise verify call keeps its 3-minute VERIFY_CALL_TIMEOUT_MS from ISSUE-d4b2cd1c), or a read-only reviewer session with the repository as working directory, the review's remaining deadline and its cancellation signal. Ollama gains a reviewer session through a generic read-only tool loop extracted from the analyzer's runShaperToolLoop, taking caller-supplied messages, answer schema, deadline, signal and retry policy, while the analyzer keeps its own wrapper unchanged. The pipeline owns every retry of a review call: every provider is called with internalRetry: false (CliProvider's transient retry and reviewer-session retry, and both providers' structured-output retry, make exactly one attempt), and the pipeline re-issues a transient failure, a stall, an invalid answer or an identifier mismatch once, under a new UUID: two attempts in all per call. Failure policy is per stage: a cancelled review always ends at once; a premise-review verify call that fails both attempts records that premise as not judged (MED, never a pass) and keeps the rest, as ISSUE-d4b2cd1c delivered; a diagram handler failure stays a LOW observation, as today; any other failed call (premise extraction included) fails the review and records nothing, as today. Gather is bounded at every step: an obligation's evidence (notes from every chunk, each keyed by the obligation and carrying the atom ids it stands for) is packed into the final adjudication call when it fits the limit; when it does not, it is reduced level by level, each reduction call reading one batch of that key's evidence and returning one note of at most a quarter of the limit under the same key, the job keeping which atoms and earlier notes each note stands for, until the key's evidence fits one adjudication call; a gather call refused for its size is re-planned like a chunk. Scope of the identifier and limit rules (stakeholder decision 2026-10-19 [[c14]]): they apply to every request the pipeline sends. A reviewer session's internal tool turns belong to the session, as they already do inside the claude and codex CLIs, where insrc cannot see them; the Ollama session's tool loop is likewise not identified or measured per turn. Every call records which material it carries (its chunk, atom ids and evidence-note ids), and the job keeps an immutable snapshot of the review's material taken once at prepare: for code review, today's grounding snapshot (the controller step already saves subject and grounding) plus every fact a deterministic stage reads from disk today, recorded at prepare (the ux stage's companion-mock existence checks); for design review, the document text and, for the premise review, the extracted claims and their gathered evidence. The adapter is rebuilt on every turn from the saved subject plus that snapshot and never re-queries the code graph or the files, so a refused call is re-divided from exactly the material it carried and a controller review resumes on the same material. A controller reports a call it could not complete as a failure outcome keyed by the call's identifier (size refusal with the reported limit, stall, transient error), which the driver handles exactly as a daemon-side failure: a size refusal re-divides the call, the others are re-issued once under a new identifier.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ReviewMaterial",
+          "purpose": "What an adapter hands the pipeline to prepare: whole indivisible atoms, the relations between them, and the obligations a gather must judge.",
+          "interfaceSketch": "interface ReviewAtom { readonly id: string; readonly label: string; readonly text: string; readonly file?: string | undefined; readonly module?: string | undefined; }\ninterface ReviewRelation { readonly from: string; readonly to: string; readonly kind: 'calls' | 'same-file' | 'same-module' | 'references'; }\ninterface ReviewObligation { readonly key: string; readonly kind: 'clause' | 'requirement' | 'promised-test' | 'module-conventions' | 'check-item'; readonly text: string; readonly atomIds?: readonly string[] | undefined; }\ninterface ReviewMaterial { readonly atoms: readonly ReviewAtom[]; readonly relations: readonly ReviewRelation[]; readonly obligations: readonly ReviewObligation[]; readonly context?: readonly ReviewAtom[] | undefined; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ReviewAdapter",
+          "purpose": "How a review kind plugs into the pipeline: its material, its ordered stages (model or deterministic) with each stage's own failure policy, each stage's calls for the whole review and for one chunk, and the gather rules for a divided review.",
+          "interfaceSketch": "interface ChunkPrompt { readonly messages: readonly LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode; }\ntype ExecutionMode =\n  | { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined }\n  | { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only' };\ntype StageOutputs = Readonly<Record<string, unknown>>;\ninterface AdapterStage {\n  readonly id: string;\n  readonly kind: 'model' | 'deterministic';\n  readonly after: readonly string[];\n  singleCalls(prior: StageOutputs): readonly ChunkPrompt[];\n  chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[];\n  run?(prior: StageOutputs): Promise<unknown>;\n  readonly onCallFailure: 'fail-review' | 'record-not-judged' | 'record-observation';\n}\ninterface ReviewAdapter<R> {\n  readonly kind: 'code-review' | 'design-review';\n  readonly dimension: string;\n  material(): ReviewMaterial;\n  stagesFor(path: 'daemon' | 'controller'): readonly AdapterStage[];\n  finish(outputs: StageOutputs): R;\n  readonly gather: GatherPlan<R>;\n}\ninterface EvidenceNote { readonly noteId: string; readonly key: string; readonly text: string; readonly atomIds: readonly string[]; }\ninterface GatherPlan<R> {\n  readonly obligationCall: (key: string, evidence: readonly EvidenceNote[]) => ChunkPrompt;\n  readonly reduceCall: (key: string, batch: readonly EvidenceNote[]) => ChunkPrompt; // answer: one EvidenceNote under the same key\n  readonly noteCapChars: number; // a quarter of the limit\n  readonly relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => ChunkPrompt) | undefined;\n  readonly merge: (parts: readonly R[]) => R;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c9"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "ReviewChunk and ChunkPlan",
+          "purpose": "The output of prepare: the chunks a review is read in, each within the limit, with summaries of related atoms held elsewhere.",
+          "interfaceSketch": "interface NeighbourSummary { readonly atomId: string; readonly label: string; readonly summary: string; readonly heldInChunk: string; }\ninterface ReviewChunk { readonly id: string; readonly atomIds: readonly string[]; readonly neighbours: readonly NeighbourSummary[]; readonly chars: number; }\ninterface ChunkPlan { readonly limitChars: number; readonly single: boolean; readonly chunks: readonly ReviewChunk[]; readonly crossRelations: readonly ReviewRelation[]; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "CallEnvelope",
+          "purpose": "Every model call of every review carries a fresh identifier the answer must echo, and every retry is the pipeline's own re-issue under a new identifier; one rule for daemon and controller. The rule covers every request the pipeline sends; a reviewer session's internal tool turns are the session's own.",
+          "interfaceSketch": "interface ReviewCall { readonly callId: string; readonly attempt: number; readonly stage: string; readonly role: 'single' | 'chunk' | 'reduce' | 'obligation' | 'relation' | 'merge'; readonly messages: readonly LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode; readonly chars: number; readonly carries: { readonly chunkId?: string | undefined; readonly atomIds: readonly string[]; readonly noteIds: readonly string[]; readonly key?: string | undefined }; }\ninterface EnvelopedAnswer { readonly callId: string; readonly answer: unknown; }\n// schema sent to the model: { type: 'object', required: ['callId', 'answer'], properties: { callId: { const: <callId> }, answer: <adapter schema> } }\n// provider options the pipeline sets on every call (additive, optional):\ninterface StructuredCompletionOpts { readonly internalRetry?: boolean | undefined; /* false: the provider makes exactly one attempt */ }\ninterface ReviewSessionOpts { readonly internalRetry?: boolean | undefined; readonly signal?: AbortSignal | undefined; }\ninterface LLMProvider { runReviewSession?<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        },
+        {
+          "id": "sc5",
+          "name": "ReviewPipelineJob",
+          "purpose": "The serialisable state of one review's pipeline run, driven to the end by the daemon or one frame at a time by the controller.",
+          "interfaceSketch": "interface ReviewPipelineJob { readonly reviewId: string; readonly path: 'daemon' | 'controller'; readonly snapshot: ReviewMaterialSnapshot; readonly kind: 'code-review' | 'design-review'; readonly dimension: string; readonly phase: 'prepare' | 'review' | 'reduce' | 'gather' | 'done'; readonly plan: ChunkPlan; readonly stage: string; readonly outputs: StageOutputs; readonly pending: readonly ReviewCall[]; readonly answered: readonly { readonly callId: string; readonly stage: string; readonly answer: unknown }[]; readonly notes: readonly EvidenceNote[]; readonly noteProvenance: Readonly<Record<string, readonly string[]>>; readonly notJudged: readonly { readonly stage: string; readonly key: string; readonly cause: string }[]; readonly issuedHashes: readonly string[]; }\n// taken once at prepare, never re-queried: code review = the saved grounding; design review = the document text, and for the premise review its claims and gathered evidence\ninterface ReviewMaterialSnapshot { readonly kind: 'code-review' | 'design-review'; readonly grounding?: unknown; readonly fileFacts?: Readonly<Record<string, { readonly exists: boolean }>> | undefined; readonly documentText?: string | undefined; readonly claims?: readonly unknown[] | undefined; readonly evidence?: readonly unknown[] | undefined; }\n// runtime state, never serialised: the AbortSignal; the adapter is rebuilt from the review's subject on every turn\ninterface ReviewPipelineDriver { nextCalls(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): readonly ReviewCall[]; applyAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, answer: EnvelopedAnswer): ReviewPipelineJob; applyFailure(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, callId: string, cause: 'size-refusal' | 'transient' | 'stall' | 'identifier-mismatch' | 'invalid-answer', maxChars?: number | undefined): ReviewPipelineJob; result<R>(job: ReviewPipelineJob): R; }\n// additive, optional record fields under a NEW name, absent when a review was one chunk:\n// DimensionResult.pipelineCalls?: { chunk: number; obligation: number; relation: number; merge: number }\n// ReviewReport.pipelineCalls?: the same shape.\n// The existing DimensionResult.parts ({ map, reduce, compare }) is left as it is and is no longer written.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c9"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "Chunk limit setting",
+          "purpose": "One limit for every provider and every review kind.",
+          "interfaceSketch": "// config catalog entry\n{ path: 'review.chunkTokens', type: 'number', default: 128000 }\n// fixed conversion\nconst REVIEW_CHARS_PER_TOKEN = 3; // limitChars = review.chunkTokens * REVIEW_CHARS_PER_TOKEN = 384000",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "The design-review adapter: document sections as atoms, cross-reference relations, section summaries for neighbours, chunk prompts for the template checklist and the premise pipeline, and the gather of checklist answers or premise verdicts into today's ReviewReport and verdict rules. Tests: S004/ac1 every section appears whole in some chunk with the sections it references; ac2 a cross-chunk reference yields a section summary; ac3 a divided HLD/LLD review and a divided DEF/plan review each give one ReviewReport under today's verdict rules, and a premise whose call fails twice is still recorded as not judged. Its controller stage plan keeps today's single batched verify prompt under the limit; over the limit it batches premises per chunk."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "The pipeline module itself: measurement, the generic grouping that packs related atoms together within the limit, staged execution with deterministic stages, the envelope schema wrapping, identifier generation and checking, the pipeline-owned retry policy (providers called with internalRetry: false; one re-issue under a new UUID, two attempts in all), per-stage failure policies, refusal re-division, the serial daemon driver, single-chunk pass-through, the bounded gather machinery (evidence notes keyed by obligation, level-by-level reduction under a note cap, provenance kept in the job, refused gather calls re-planned), and the adoption of ISSUE-aef82b03's InputTooLargeError, inputBudgetChars, packIntoBatches and ReviewJob loop. Change sites beyond the new module: CliProvider (internalRetry honoured by withTransientRetry, runReviewSession and its structured-output retry; a size refusal in the claude reviewer-session error envelope and the codex session classified as InputTooLargeError, as completeStructured already does), OllamaProvider (internalRetry: false maps completeStructured to one attempt; a read-only reviewer session over a generic tool loop extracted from runShaperToolLoop in src/analyze/context/driver.ts, the analyzer keeping its own wrapper), and the single-chunk adapters for both review kinds, so every review takes the pipeline path from s1 on with today's calls and working directory (structured calls run in the repository, as today for code review; the premise review's verify calls gain it as an additive change): one model stage per model-judged code-review dimension, adherence making no call without an approved LLD or plan, ux deterministic on the daemon and diagram's handlers as today (deterministic ones stay deterministic, a failing handler stays a LOW observation); one reviewer session for HLD/LLD; extract, probe, then one verify per premise for DEF/plan, with ISSUE-d4b2cd1c's not-judged recording kept. Tests: S001/ac1 an under-limit code review, template review and premise review each make today's calls and give today's result (recorded fixtures), the diagram dimension included; ac2 a missing or wrong identifier is retried once under a new UUID and no prompt hash repeats, including transient errors, stalls and invalid answers on both CliProvider and OllamaProvider; premise extraction failing fails the review while a verify call failing twice records the premise as not judged; ac3 the default limit is 384,000 characters for every provider; ac4 a size refusal from completeStructured, the claude session envelope and the codex session re-divides the call and never resends it; ac5 a review on an Ollama provider completes through both execution modes; plus a live probe of the envelope schema on claude and codex. Also tested: an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits, and the final verdict keeps every atom's provenance; every structured review call runs in the repository working directory. Also tested: a premise verify call keeps its 3-minute limit through the pipeline; a refused call is re-divided from exactly the atoms and notes it carried; the controller premise review under the limit still sends one batched verify prompt. Also tested: refusal re-planning reads only the job's material snapshot, never the graph or files, so a reindex between turns cannot change the material a call is re-divided from. The ux stage reads companion-mock existence from the snapshot's file facts recorded at prepare, not from disk; tested: adding or removing a mock after prepare does not change the review result."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "The code-review adapter's material: changed-symbol atoms, call relations from the grounding's callers and callees among changed symbols, file and module relations, and how neighbour summaries are written for a changed symbol held in another chunk. Tests: S002/ac1 related changed symbols land in the same chunk before file and module grouping; ac2 a call relation cut between chunks yields a neighbour summary on both sides; ac3 every changed symbol appears whole in some chunk and one over the limit is named, never cut."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The code-review adapter's gather: per-dimension chunk prompts, obligation keys and their adjudication over all chunks' evidence, the cross-chunk relationship check, the cross-chunk duplicate comparison for quality, and the fold into today's DimensionResult and verdict. It also owns the acceptance smoke: Epic c2ba6fa6 Story s1's code review runs on the installed daemon, completes and records a verdict, with the chunk plan and calls per stage written to the smoke record. Tests: S003/ac1 a divided review and the same material reviewed in one call under a raised limit give the same obligation verdicts on fixtures that fit both ways; ac2 a mismatch between related functions in different chunks is reported; ac3 a cross-chunk duplicate is reported; ac4 the installed-daemon smoke above."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The two controller steps' use of the job, and the MCP boundary that admits it: the new answers phase in the insrc_review_step and insrc_code_review_step input schemas in src/mcp/server.ts, their registered schema contracts and tool descriptions, with schema and surface tests (src/mcp/__tests__/schema-registry.test.ts); keeping it in step state, frame sizing, answer validation by call identifier, and offering a review under the limit today's prompts as identified calls in the same frame shape. Compatibility: the controller step states gain an optional pipeline field; a state without it (saved before the change) is resumed on today's path; both stores are memory-only, so, as today, a state does not survive a daemon restart. Tests: S005/ac1 a controller review over the limit is handed the daemon's chunks one frame at a time and records the same kind of result; ac2 a missing or wrong identifier in an answer is rejected and the call offered again under a new UUID; ac3 a new controller review under the limit is offered today's prompts, each as an identified call, and gives today's result; a pre-change state resumes on today's emit_judgements / judgements (code review), emit_claims / claims and emit_verdicts / verdicts (DEF/plan premise review) and emit_findings / findings (HLD/LLD template review) frames, each path tested. The answers phase also accepts a failure outcome per call (size refusal with the reported limit, stall, transient error), mapped to the driver's failure handling and admitted by both MCP input schemas; tested: a controller-reported size refusal re-divides the call, a reported stall or transient error re-issues it once under a new identifier."
+        }
+      ],
+      "rolloutPhase": "Phase B — divided code review and divided design review",
+      "nonFunctional": {
+        "performance": "Calls are serial (k6). A review under the limit makes the same number of calls as today. Every prompt sent, chunk or gather, is at most review.chunkTokens x 3 characters.",
+        "security": "No new transport: calls go through the existing LLMProvider and the installed CLIs (k7). Reviewer sessions keep their read-only tool sets.",
+        "observability": "Each review logs its plan (single or N chunks, chars per chunk), every call's identifier, stage and size, every identifier mismatch and refusal, and the gather's obligation count; DimensionResult and ReviewReport record the number of calls per stage when a review was divided.",
+        "durability": "The job is serialisable, so the controller path survives across turns in the existing step state (memory-only, so not across a daemon restart, as today). A daemon review whose call fails after its retries records nothing, as today, except the premise review, which records that premise as not judged and keeps the rest (ISSUE-d4b2cd1c). New record fields (pipelineCalls) are optional, under a new name, and absent on one-chunk reviews; the existing parts field keeps its shape; so existing records keep validating."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "ReviewAdapter.material (design review)",
+          "signature": "material(): ReviewMaterial  // built by designReviewMaterial(documentText: string, fits: (atomText: string) => boolean): ReviewMaterial",
+          "parameters": [
+            {
+              "name": "documentText",
+              "type": "string",
+              "purpose": "The document markdown in the job's snapshot (snapshot.documentText); never re-read from disk.",
+              "optional": false
+            },
+            {
+              "name": "fits",
+              "type": "(atomText: string) => boolean",
+              "purpose": "Supplied by the adapter for its review kind: renders the minimal real call holding just this atom (the template session prompt with the resolved template and stage, or the extract prompt for the stage, plus the outline, title and envelope) and measures it against limitChars. designReviewMaterial stays a pure text parser and asks fits() only to decide subdivision.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewMaterial (sc1)",
+            "meaning": "atoms: one per level-2 section (heading line plus body up to the next level-2 heading), in document order. A level-2 section for which fits() is false is replaced by its level-3 subsections (then level 4), each atom labelled with its heading path. The text between a parent heading and its first child heading travels with the first child. id = `sec<n>`, the section's occurrence index in document order (unique even when two sections share a heading), label = the heading path. The heading's anchor slug is kept separately and used only to resolve #anchor links; where two headings share a slug, the slug resolves the way markdown renderers do (the second gets the -1 suffix). The text before the first level-2 heading (title, metadata, summary and any body) is itself a reviewed atom, 'preamble', placed in the first chunk, so its premises are judged like any section's. A document with no level-2 heading is one atom: the whole document; if it does not fit, it is split at level-3 headings, and with none it is reported by AtomTooLargeError as 'the whole document (no headings)'. context: an 'outline' atom (every heading with its number) and the document's title line, carried by every chunk. relations: 'references' from a section to each section it links (#anchor links), cites by number (§2.4, section 2.4), or uses an id defined there (sc3, s2, k5, ac1, c14, t3, a1 and the like, resolved to the first section that defines the id as a heading, table row or list item); 'same-module' between sections under the same parent heading. obligations: ALWAYS empty, for both design adapters: s1 makes no obligation calls for a design review. The checklist is resolved once at prepare (resolveDesignReview, then reviewTemplateFor, as today), and the WHOLE resolved template ({ id, intent, maxPremises, items[{ id, dimension, check }] }) is saved with the job's subject, together with the review kind and stage. A rebuilt adapter uses that saved template and never re-reads the artifact store or readDesignReviewSettings, so a configuration change mid-review cannot alter it. The template's check items are never ReviewMaterial obligations: they are the checklist each chunk session answers, merged per item by the template adapter's merge."
+          },
+          "errors": [
+            {
+              "type": "AtomTooLargeError (s1)",
+              "condition": "A section with no smaller subsections for which fits() is false; named by its heading path."
+            }
+          ],
+          "preconditions": [
+            "Built from the snapshot's document text only."
+          ],
+          "postconditions": [
+            "Every character of the document belongs to exactly one reviewed atom; nothing is context-only.",
+            "Deterministic: the same text gives the same atoms, relations and order."
+          ]
+        },
+        {
+          "name": "ReviewAdapter.neighbourSummary (design review)",
+          "signature": "neighbourSummary(atom: ReviewAtom, material: ReviewMaterial): string",
+          "parameters": [
+            {
+              "name": "atom",
+              "type": "ReviewAtom",
+              "purpose": "A related section held in another chunk.",
+              "optional": false
+            },
+            {
+              "name": "material",
+              "type": "ReviewMaterial",
+              "purpose": "To list the ids the section defines.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The heading path, the ids the section defines, and its first sentences up to 300 characters, with no model call."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The section itself is reviewed whole in its own chunk; only this extra line is shortened."
+          ]
+        },
+        {
+          "name": "AdapterStage.chunkCalls (template review: one reviewer session per chunk)",
+          "signature": "chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[]  // execution: { mode: 'reviewer-session', cwd: repo, deadlineMs, tools: 'read-only' }",
+          "parameters": [
+            {
+              "name": "chunk",
+              "type": "ReviewChunk",
+              "purpose": "The chunk's sections and neighbour summaries.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly ChunkPrompt[]",
+            "meaning": "One reviewer session per chunk: today's buildTemplateReviewPrompt system text (src/workflow/review/template.ts:182) and checklist, preceded by a note that this is part k of n of the document. The DESIGN part carries the preamble, the outline, the chunk's sections whole, and a 'related sections held in other parts' block of neighbour summaries. The reviewer judges premises found in these sections and answers every check item, using notApplicable for an item with nothing in these sections. The schema is today's TEMPLATE_ANSWER_SCHEMA."
+          },
+          "errors": [],
+          "preconditions": [
+            "Used only when the plan is not single; under the limit the stage keeps today's single prompt."
+          ],
+          "postconditions": [
+            "Each chunk answer passes validateTemplateAnswer (src/workflow/review/template.ts:310), with maxPremises as a ceiling per session."
+          ]
+        },
+        {
+          "name": "AdapterStage.validate (template chunk answers)",
+          "signature": "validate(answer: unknown, call: ReviewCall): readonly string[]",
+          "parameters": [
+            {
+              "name": "answer",
+              "type": "unknown",
+              "purpose": "A chunk's template answer.",
+              "optional": false
+            },
+            {
+              "name": "call",
+              "type": "ReviewCall",
+              "purpose": "The session call it answers.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly string[]",
+            "meaning": "The errors from validating a chunk answer with today's rules (the same checks validateTemplateAnswer makes). An invalid answer is re-issued once by the pipeline with today's correction text. A valid answer is kept as a ValidatedChunkAnswer, not converted to findings: { items: [{ item, notApplicable?: string, premises: [{ premise, outcome, severity, evidence, action, files: string[] }] }] }, produced by a new parseTemplateAnswer in src/workflow/review/template.ts. validateTemplateAnswer keeps its signature and result, implemented over the same parse."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "AdapterStage.chunkCalls (premise review extract stage)",
+          "signature": "chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[]  // execution: { mode: 'structured', cwd: repo }",
+          "parameters": [
+            {
+              "name": "chunk",
+              "type": "ReviewChunk",
+              "purpose": "The chunk's sections and neighbour summaries.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly ChunkPrompt[]",
+            "meaning": "One extract call per chunk: today's buildExtractPrompt (src/workflow/review/extract.ts:136) system text and EXTRACT_SCHEMA, over the outline and title, the chunk's sections and neighbour summaries, extracting the premises of these sections only. Chunk answers accumulate in the job's answered list, NOT in the snapshot. When the stage's last chunk answer has been applied, the stage output is written ONCE to snapshot.claims (s1's rule): every chunk's claims in chunk order, each re-keyed to a job-unique raw id `r<chunk>-<k>`, where k is the claim's position in that chunk's answer. The model's own id is kept separately as localId, because it can repeat within a chunk and across chunks. The deterministic probe stage (runStage) merges raw claims with the same normalised text and anchors into a MergedClaim: { id: `p<n>` numbered in first-appearance order, text, kind, anchors (union), probe (union of greps and reads, de-duplicated), sources: [{ rawId, localId, chunkId, ref? }], owningChunk: the first source's chunkId }. It gathers evidence for each merged claim, keyed by the merged id as Evidence is today, and outputs [{ claim, evidence }], which s1 writes once to snapshot.evidence. Verify, the controller's per-chunk batches (grouped by owningChunk) and any resumed or re-planned job read the merged claims from snapshot.evidence, never the raw snapshot.claims. MergedClaim is a Claim (same fields, id unique) plus sources and owningChunk, so verifyClaim, normalizeFinding and the id-keyed maps in runReview and handleVerdicts work unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Premise extraction failing in any chunk after two attempts fails the review, as today (fail-review)."
+          ]
+        },
+        {
+          "name": "GatherPlan.relationCall (design review)",
+          "signature": "relationCall(pair: readonly [ReviewAtom, ReviewAtom]): readonly ChunkPrompt[]",
+          "parameters": [
+            {
+              "name": "pair",
+              "type": "readonly [ReviewAtom, ReviewAtom]",
+              "purpose": "A 'references' relation cut between chunks: the referring section and the referenced one.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly ChunkPrompt[]",
+            "meaning": "Template review only. For a cut 'references' relation, the call carries the FACTS on both sides, quoted whole and never shortened. From the referenced section: the definition excerpt of each id, anchor or number the referring section uses (the heading block, table row, list item or paragraph that defines it). From the referring section: every paragraph, row or list item that mentions it. Facts beyond either section's opening are therefore always compared. When all of a pair's excerpts do not fit one call, they are split per referenced id. For each id, its usage excerpts are packed by the s1 packer into batches that each fit WITH that id's definition excerpt, giving one call per batch, so every returned call fits limitChars. If the definition excerpt and a single usage excerpt cannot fit together, AtomTooLargeError names the pair (the id, the defining heading and the using heading); a single excerpt larger than the limit is named the same way. Each call records its provenance: the two section ids, the referenced id, and the excerpts it carries. Each call asks whether the uses agree with the definition (names, signatures, ids, numbers, rules) and returns premises in today's template premise shape, each under a check item id of the template. A premise review makes no relation calls."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Every relation call fits limitChars.",
+            "Each cut reference is checked on its full definition and every usage excerpt, across as many calls as needed.",
+            "The provenance of each relation premise is kept in the job."
+          ]
+        },
+        {
+          "name": "GatherPlan.merge / ReviewAdapter.finish (design review)",
+          "signature": "template adapter, R = ValidatedChunkAnswer: merge(parts: readonly ValidatedChunkAnswer[]): ValidatedChunkAnswer; finish(outputs: StageOutputs): ValidatedChunkAnswer. premise adapter, R = readonly Finding[]: merge and finish over findings",
+          "parameters": [
+            {
+              "name": "parts",
+              "type": "readonly ValidatedChunkAnswer[]",
+              "purpose": "Every chunk's validated answer and every relation call's premises, in chunk order then relation order.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "R (ValidatedChunkAnswer for the template adapter; readonly Finding[] for the premise adapter)",
+            "meaning": "This satisfies sc2 as written: merge(parts: R[]) => R and finish => R, each with one R per adapter. Template adapter: merge per check item as before (premises unioned; identical premises, by normalised text and normalised file set, kept once with does-not-hold over could-not-verify over holds and HIGH over MED over LOW; notApplicable only when unanimous). It has no obligations, so s1 never calls its obligationCall or reduceCall (which return the empty-gather prompts) and makes no obligation calls. runTemplateReview takes the job's R and builds today's ReviewReport from it: it converts to findings exactly as validateTemplateAnswer does, assigns report-wide unique claimIds (`${item}.${n}` across each item's merged premises, relation premises included), and runs computeVerdict with today's blockOn, tally and the template id, setting pipelineCalls when divided. Premise adapter: R is the findings of every verified or not-judged premise; runReview folds them as today. The merged premise count may exceed maxPremises, which stays a per-session ceiling."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Satisfies sc2's merge(parts: R[]) => R and finish => R.",
+            "The verdict rules are unchanged.",
+            "claimIds are unique across the whole report."
+          ]
+        },
+        {
+          "name": "runReview / runTemplateReview",
+          "signature": "runReview(artifactMarkdown: string, opts: RunReviewOpts): Promise<ReviewReport>; runTemplateReview(artifactMarkdown: string, opts: RunReviewOpts): Promise<ReviewReport>",
+          "parameters": [
+            {
+              "name": "artifactMarkdown",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ReviewReport>",
+            "meaning": "Unchanged signatures and report shape. Over the limit, the design-review adapter's divided path runs."
+          },
+          "errors": [
+            {
+              "type": "Error (time limit)",
+              "condition": "The job's deadline passes, with today's message. A divided template review's budget is the per-session limit times its planned sessions, each session capped at 30 minutes (s1's amended deadline rule, decided 2026-10-20)."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "buildBatchedVerifyPrompt (controller premise stage plan)",
+          "signature": "buildBatchedVerifyPrompt(claims: readonly Claim[], evidence: readonly Evidence[]): { system: string; user: string }",
+          "parameters": [
+            {
+              "name": "claims",
+              "type": "readonly Claim[]",
+              "purpose": "One chunk's de-duplicated claims when divided; all claims under the limit, as today.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ system: string; user: string }",
+            "meaning": "Today it is a private function in src/daemon/steps/review-step/phases/claims.ts:64, called only by handleClaims there. This Story moves it, unchanged, to src/workflow/review/verify.ts as an export beside buildVerifyPrompt, so the workflow-layer adapter can use it without importing from the daemon. handleClaims imports it from there and keeps its behaviour. The controller stage plan offers one batched verify call per chunk's claims when divided, and today's single batch otherwise; s5 offers the frames."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewReport.pipelineCalls",
+        "change": "field-add",
+        "details": "Defined by s1 (sc5); this Story writes it for a divided design review: chunk (sessions or extract calls), obligation (0), relation (relation calls), merge (0). Absent when single.",
+        "callSites": [
+          "src/workflow/review/types.ts:144"
+        ]
+      },
+      {
+        "entity": "ValidatedChunkAnswer",
+        "change": "new",
+        "details": "Internal to the design-review adapter: a chunk's checklist answer after validation, keeping items, notApplicable reasons and premises with their file sets, so merge can de-duplicate before findings are made. Produced by parseTemplateAnswer (new, src/workflow/review/template.ts); validateTemplateAnswer is re-expressed over it with no change to its signature or results.",
+        "callSites": [
+          "src/workflow/review/template.ts:310"
+        ]
+      },
+      {
+        "entity": "MergedClaim (design review, divided premise path)",
+        "change": "new",
+        "details": "A Claim with a job-unique id `p<n>` plus sources [{ rawId, localId, chunkId, ref? }] and owningChunk. It lives only in snapshot.evidence; existing Claim and Evidence consumers read it as a Claim.",
+        "callSites": [
+          "src/workflow/review/types.ts:93"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Produces design-review material: section atoms (the preamble included), outline and title context, and references and same-module relations. obligations is always empty for design review."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Implements the design adapters within sc2 as written: the template adapter with R = ValidatedChunkAnswer and no obligations (so no obligation calls), the premise adapter with R = findings; material with a review-kind fits() measure, neighbourSummary, chunkCalls, validate, relationCall, merge and finish. runTemplateReview and runReview build today's ReviewReport from R."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Uses the chunk plan, crossRelations and neighbours."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Every session, extract, relation and verify call is enveloped by s1."
+      },
+      {
+        "contractId": "sc5",
+        "role": "consumes",
+        "howDetails": "snapshot.claims holds the raw extraction, written once when the extract stage completes. The deterministic probe stage merges duplicates (union of probes, all source refs kept) and its output [{ claim, evidence }] is written once to snapshot.evidence, the only claim set verify and resumed jobs read. Also writes pipelineCalls and keeps not-judged premises."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Section splitting and every call are measured against limitChars."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A section with no subsections is too large for any call.",
+          "detection": "designReviewMaterial measures the section's minimal call (instructions, preamble, outline, the section alone, the envelope) against limitChars after splitting down to its leaf headings.",
+          "response": "AtomTooLargeError naming the heading path, before any provider call. The section is never cut.",
+          "userImpact": "The review stops and names the section, rather than judging part of it.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A chunk's template answer breaks the checklist (an item missing or doubled, too many premises, a does-not-hold premise without files).",
+          "detection": "AdapterStage.validate runs validateTemplateAnswer on the chunk answer.",
+          "response": "Re-issued once under a new callId with today's correction text, then fail-review: no review is recorded, as today.",
+          "userImpact": "As today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A relation answer names a check item id the template does not have.",
+          "detection": "validate(answer, call) checks every premise's item against the template's item ids.",
+          "response": "Invalid answer: one re-issue, then fail-review.",
+          "userImpact": "No premise is filed under an invented item.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Extraction fails twice in one chunk of a premise review.",
+          "detection": "The extract stage's onCallFailure is fail-review.",
+          "response": "The review fails and records nothing, as today.",
+          "userImpact": "As today.",
+          "recoverable": false
+        },
+        {
+          "scenario": "A premise's verify call fails twice in a divided review.",
+          "detection": "The verify stage's onCallFailure is record-not-judged.",
+          "response": "That premise is recorded as a MED not-judged finding; the rest are kept (ISSUE-d4b2cd1c).",
+          "userImpact": "The review blocks under the default policy, but is recorded.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The divided template review runs past its time limit.",
+          "detection": "s1's driver compares now with job.deadlineAt before each session, and each session runs with the remaining time.",
+          "response": "The review fails with today's time-limit message and records nothing.",
+          "userImpact": "Rare: the budget is the per-session limit times the planned sessions (s1's amended rule), so only sessions that each run near their limit exhaust it.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Two chunks produce findings for the same check item.",
+          "detection": "finish numbers claimIds across the merged premises of each item.",
+          "response": "Every finding gets a unique claimId, so a resolution recorded against one never applies to another.",
+          "userImpact": "Resolving one finding leaves the others blocking as they should.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A document under the limit.",
+          "expected": "s1's single path: today's one session or one extract call, unchanged."
+        },
+        {
+          "input": "A level-2 section with no subsections that alone fills most of a chunk.",
+          "expected": "It is one atom, with its references as neighbour summaries if they do not fit with it."
+        },
+        {
+          "input": "A reference to an id the document never defines (for example an id from another document).",
+          "expected": "No relation; the text stays as written."
+        },
+        {
+          "input": "The same premise extracted from two chunks (a section and the section it references, summarised in both).",
+          "expected": "Merged into one claim in the probe stage. Its probes are the union of both extractions' greps and reads, so evidence either asked for is gathered, and both source refs are kept."
+        },
+        {
+          "input": "A check item that only one chunk finds premises for.",
+          "expected": "The item carries that chunk's premises; the other chunks' notApplicable is dropped for it."
+        },
+        {
+          "input": "A plan or DEF whose sections reference HLD contract ids defined in another document.",
+          "expected": "Unresolved ids give no relation; same-module relations still keep sibling sections together."
+        },
+        {
+          "input": "Text before the first level-2 heading that makes design claims.",
+          "expected": "It is the 'preamble' atom, reviewed in the first chunk; its premises are judged like any section's."
+        },
+        {
+          "input": "A document with no level-2 headings.",
+          "expected": "One atom; under the limit, today's single review. Over the limit it is split at level-3 headings, and without any it is named too large."
+        },
+        {
+          "input": "Two sections in different chunks that conflict in facts stated deep in both.",
+          "expected": "The relation call carries the definition and usage excerpts, wherever they sit, so the conflict is compared."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Each template answer is validated by today's validateTemplateAnswer, on both the daemon session and the controller findings phase.",
+          "source": "c1"
+        },
+        {
+          "text": "The verdict is computeVerdict over the findings with today's blockOn, and counts come from tally, unverified included on template reviews.",
+          "source": "c1"
+        },
+        {
+          "text": "Premise verification stays one call per premise on the daemon, with its 3-minute limit, and records a premise that fails twice as not judged.",
+          "source": "c1"
+        },
+        {
+          "text": "The controller premise review under the limit sends today's single batched verify prompt.",
+          "source": "c1"
+        },
+        {
+          "text": "The material is built from the snapshot's document text only.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test), as src/workflow/review/__tests__/template.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Section atoms, references, neighbour summaries, the per-item merge, claim de-duplication and validation.",
+          "subjects": [
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'a document splits at level-2 headings, an oversized section into its subsections, and every character belongs to one atom or the preamble'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'anchor links, numbered section references and defined ids give references relations to the defining section; an undefined id gives none'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'sections under one parent heading get same-module relations'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'a leaf section whose minimal call exceeds the limit raises AtomTooLargeError naming its heading path'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'a neighbour summary carries the heading path, defined ids and first sentences, deterministically'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'chunk answers merge per check item: premises unioned, identical premises kept once at the worst outcome, notApplicable only when every chunk says so'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'a relation answer naming an unknown check item is rejected'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'duplicate claims from several chunks are merged in the probe stage with the union of their probes, so complementary and contradictory evidence are both gathered'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'a preamble with design claims is a reviewed atom; a heading-free document is one atom'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'merge works on validated chunk answers: files normalised, outcome and severity precedence applied, notApplicable kept only when unanimous'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'two chunks' findings under the same item get unique claimIds, and resolving one leaves the other blocking'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'chunk answers accumulate outside the snapshot; snapshot.claims is written once after the last extract answer, including when the job is resumed between answers'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'an id with many usages is checked in usage batches that each fit with its definition'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'a definition and one usage that cannot fit together raise AtomTooLargeError naming the id and both headings'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'template obligations come from the template resolved at prepare and saved with the subject; designReviewMaterial has no obligations'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'subdivision follows the adapter's fits(): the same text splits differently for a template session and an extract call when their prompts differ in size'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'the template adapter makes no obligation calls and its R is the merged validated answer; runTemplateReview turns it into today's ReviewReport'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'verify and a resumed job read the merged claims from snapshot.evidence; snapshot.claims keeps the raw extraction'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'distinct claims repeating a local id within one chunk and across chunks get distinct raw ids; duplicate claims with different probes merge with both probes'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'a rebuilt adapter uses the saved resolved template, maxPremises and items included, even after the design-review settings change'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'design-review material has no obligations, so a divided design review makes no obligation calls'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'two sections with the same heading get distinct atom ids, and #anchor links resolve to the right one'"
+          ],
+          "fixturesNeeded": [
+            "markdown fixtures: an HLD and a DEF with cross-references, made to divide under a small test limit"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Divided template and premise reviews end to end under a small limit, compared with the same document in one call.",
+          "subjects": [
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a divided HLD review keeps each section with the sections it references, runs one session per chunk and gives one ReviewReport under today's verdict rules'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a chunk whose section references a section in another chunk carries that section's summary'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'two sections in different chunks that disagree are reported by the relation check'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a divided DEF review extracts per chunk, verifies each premise, records a premise whose verify fails twice as not judged, and folds one verdict'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'the controller plan under the limit offers one batched verify prompt; over the limit one per chunk'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a document under the limit is reviewed exactly as today'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a divided HLD review with three planned sessions gets three per-session limits of budget, and no session runs past 30 minutes'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a conflict between facts stated beyond both sections' openings is found by the relation call's definition and usage excerpts'",
+            "src/daemon/steps/review-step/__tests__/review-step.test.ts: 'handleClaims still sends one batched verify prompt after buildBatchedVerifyPrompt moves to src/workflow/review/verify.ts'"
+          ],
+          "fixturesNeeded": [
+            "scripted reviewer-session and structured answers keyed by stage and callId"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a divided HLD review keeps each section with the sections it references, runs one session per chunk and gives one ReviewReport under today's verdict rules'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'a document splits at level-2 headings, an oversized section into its subsections, and every character belongs to one atom or the preamble'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'a leaf section whose minimal call exceeds the limit raises AtomTooLargeError naming its heading path'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'a preamble with design claims is a reviewed atom; a heading-free document is one atom'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'subdivision follows the adapter's fits(): the same text splits differently for a template session and an extract call when their prompts differ in size'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a chunk whose section references a section in another chunk carries that section's summary'",
+            "src/workflow/review-pipeline/__tests__/design-review-material.test.ts: 'anchor links, numbered section references and defined ids give references relations to the defining section; an undefined id gives none'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a divided HLD review keeps each section with the sections it references, runs one session per chunk and gives one ReviewReport under today's verdict rules'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a divided DEF review extracts per chunk, verifies each premise, records a premise whose verify fails twice as not judged, and folds one verdict'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'chunk answers merge per check item: premises unioned, identical premises kept once at the worst outcome, notApplicable only when every chunk says so'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a divided HLD review with three planned sessions gets three per-session limits of budget, and no session runs past 30 minutes'",
+            "src/workflow/review-pipeline/__tests__/design-review-divided.test.ts: 'a conflict between facts stated beyond both sections' openings is found by the relation call's definition and usage excerpts'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'merge works on validated chunk answers: files normalised, outcome and severity precedence applied, notApplicable kept only when unanimous'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'two chunks' findings under the same item get unique claimIds, and resolving one leaves the other blocking'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'an id with many usages is checked in usage batches that each fit with its definition'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'a definition and one usage that cannot fit together raise AtomTooLargeError naming the id and both headings'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'the template adapter makes no obligation calls and its R is the merged validated answer; runTemplateReview turns it into today's ReviewReport'",
+            "src/workflow/review-pipeline/__tests__/design-review-gather.test.ts: 'verify and a resumed job read the merged claims from snapshot.evidence; snapshot.claims keeps the raw extraction'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "After s1, a design review over the limit has no material to divide (s1 bundles). runTemplateReview sends the whole document in one reviewer session (src/workflow/review/template.ts:182) under one limit capped at 30 minutes (src/workflow/review/template.ts:62). extractClaims sends the whole document in one extract call (src/workflow/review/extract.ts:136). verifyClaim works per premise without the document (src/workflow/review/verify.ts:214), and computeVerdict folds the findings (src/workflow/review/verdict.ts:44).",
+      "stateAfter": "A design review over the limit is divided into heading sections kept with the sections they reference and their siblings. Template reviews run one reviewer session per chunk and merge per check item, with relation checks for cut references. Premise reviews extract per chunk, de-duplicate and verify per premise. One ReviewReport under today's verdict rules. Under the limit, unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Move buildBatchedVerifyPrompt unchanged from src/daemon/steps/review-step/phases/claims.ts to src/workflow/review/verify.ts as an export, and import it in handleClaims.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add designReviewMaterial and its neighbourSummary under src/workflow/review-pipeline/adapters, as pure functions of the document text, with unit tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the template adapter's per-chunk session prompt, validation, relation calls and per-item merge, and the premise adapter's per-chunk extract with claim de-duplication and the per-chunk controller verify batches.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Run the divided-review integration tests against single-call runs of the same fixtures, then rebuild and update the installed daemon.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "runReview and runTemplateReview keep their signatures; ReviewReport keeps its shape apart from s1's optional pipelineCalls. validateTemplateAnswer, verifyClaim, computeVerdict and buildBatchedVerifyPrompt are unchanged. Under the limit, every design review is exactly today's.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Sections as atoms with reference relations; per-chunk sessions and extraction; deterministic merge plus relation checks",
+        "oneLineSummary": "A design-review material builder turns the snapshot's document text into heading-section atoms with 'references' and 'same-module' relations and a deterministic outline context. Divided template reviews run one reviewer session per chunk and merge the checklist answers per item, with relation calls checking cut references. Divided premise reviews extract claims per chunk, de-duplicate them, and verify as today.",
+        "approach": "Material: the document is split at level-2 headings. A level-2 section larger than the limit is split into its level-3 subsections (then level 4), each atom keeping its heading path, and a leaf section still too large raises s1's AtomTooLargeError naming its heading. The text before the first level-2 heading is itself a reviewed atom ('preamble', in the first chunk), and a generated outline of every heading plus the title line is context carried by every chunk; a heading-free document is one atom. Relations: 'references' from a section to each section it links (#anchor links, numbered references such as §2.4, and ids such as sc3, s2, k5, ac1 or c14, resolved to the section that defines them); 'same-module' between sections under the same parent heading. neighbourSummary writes the heading path, the ids the section defines and its first sentences up to 300 characters, with no model call. Template review over the limit: one reviewer-session call per chunk with today's checklist rules, the outline and preamble, the chunk's sections and their neighbour summaries. The reviewer judges the premises of these sections and answers every check item (premises, or notApplicable meaning 'nothing in these sections'). Each chunk answer is validated by validateTemplateAnswer, with maxPremises as a per-session ceiling. Gather merges per check item: the union of premises, with identical premises (same normalised text and files) kept once at their worst outcome; an item is notApplicable only if every chunk says so. relationCall checks each cut 'references' relation on the full definition excerpts of the referenced ids and every usage excerpt in the referring section (batched per id so each call fits), reporting a premise under the check item it names (validated against the template's ids) when the two sections disagree. Premise review over the limit: the extract stage runs per chunk with the outline and neighbour summaries; claims from all chunks are de-duplicated (same normalised text and anchors) and given ids in chunk order before they enter the snapshot; probe and verify run per claim as today, since a verify prompt holds the claim and evidence, not the document. Controller path: one batched verify prompt per chunk's claims over the limit, today's single batch under it. finish merges validated chunk answers per item, assigns report-wide unique claimIds, and folds the findings with computeVerdict and today's blockOn, tally and the template id; pipelineCalls is set when divided.",
+        "pros": [
+          "Every section is reviewed whole, with the sections it references or their summaries.",
+          "Reuses today's checklist, validator, verify and verdict code unchanged; only the chunk prompts and the merge are new.",
+          "Cross-chunk consistency is checked explicitly by relation calls.",
+          "The premise path changes only extraction; verification stays per claim."
+        ],
+        "cons": [
+          "A divided template review runs several reviewer sessions, so the review's time budget must cover them. s1 caps a review's limit at 30 minutes (HARD_REVIEW_DEADLINE_MS), so a long document can run out of time. Settling the budget is s1's deadline rule, raised as an open question.",
+          "Reference resolution relies on recognisable links and ids; a reference written in plain prose is not seen, though same-module relations keep sibling sections together."
+        ],
+        "costEstimate": "M",
+        "winnerRank": 1,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies",
+            "notes": "Heading sections are whole atoms, grouped by references and parent heading; an oversized leaf is named."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "neighbourSummary for each referenced section held elsewhere."
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies",
+            "notes": "Per-item merge and per-claim verify fold through computeVerdict and today's blockOn."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies",
+            "notes": "Claims are de-duplicated before entering the snapshot."
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k5",
+            "verdict": "partial",
+            "notes": "Complete only if the review's time budget covers every session (open question on s1's deadline)."
+          },
+          {
+            "constraintId": "k8",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies"
+          }
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "One reviewer session that reads the document from disk",
+        "oneLineSummary": "For template reviews, send the outline and the document path instead of its text and let one reviewer session read the sections it needs; premise reviews divide extraction as in a1.",
+        "approach": "The reviewer session already has read-only tools, so the prompt carries the checklist, the outline and the path, and the session reads sections itself. The session's own context management handles size. Premise extraction is divided as in a1.",
+        "pros": [
+          "One session and one deadline, as today; no merge for template reviews."
+        ],
+        "cons": [
+          "Nothing ensures every section is read: the reviewer may skip sections, which breaks ac1 and k5.",
+          "The session's internal reads are not measured, so it can still overflow its own context, with no division to fall back on.",
+          "Departs from the HLD's prepare, review and gather for design review."
+        ],
+        "costEstimate": "S",
+        "winnerRank": 2,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "violates",
+            "notes": "No guarantee every section is reviewed."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "partial"
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "partial",
+            "notes": "No atoms for template reviews."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "partial"
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "violates",
+            "notes": "No chunk plan for template reviews."
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "violates",
+            "notes": "Session reads are unmeasured."
+          },
+          {
+            "constraintId": "k5",
+            "verdict": "violates"
+          },
+          {
+            "constraintId": "k8",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies"
+          }
+        ],
+        "reasonRejected": "Simple, but cannot guarantee every section is read, and the session can still overflow."
+      },
+      {
+        "id": "a3",
+        "name": "Sequential section packing without references",
+        "oneLineSummary": "Sections are packed in document order until a chunk is full; no relations, no neighbour summaries, no relation checks.",
+        "approach": "Atoms as in a1, but chunks are consecutive sections packed by size, and gather is the per-item union only.",
+        "pros": [
+          "Simplest material: no reference parsing."
+        ],
+        "cons": [
+          "A section can land apart from the sections it references with no summary of them, which fails ac1 and ac2.",
+          "No cross-chunk consistency check."
+        ],
+        "costEstimate": "S",
+        "winnerRank": 3,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "violates",
+            "notes": "References are not kept together."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "violates"
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "partial",
+            "notes": "No relations."
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "partial"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc5",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k5",
+            "verdict": "partial"
+          },
+          {
+            "constraintId": "k8",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies"
+          }
+        ],
+        "reasonRejected": "Divides by size alone, which the Epic rules out."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]: How design documents become a ReviewReport on the template (HLD/LLD) and premise (DEF/plan) paths, and who calls them, including the controller step (insrc_anal"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]: What the approved s1 LLD gives the design-review adapter."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[2]: Tests to extend."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD-8315a11f29fd2812"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "DEF-8315a11f29fd2812"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s2 alternatives"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s3 judge"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s4 contract"
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s5 error paths"
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s6 test strategy"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s7 migration"
+    },
+    {
+      "id": "c12",
+      "kind": "step-output",
+      "ref": "s8 checklist"
+    }
+  ]
+}

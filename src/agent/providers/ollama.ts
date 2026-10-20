@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { Ollama } from 'ollama';
 import { Agent, fetch as undiciFetch } from 'undici';
 import type {
@@ -6,13 +8,17 @@ import type {
   LLMResponse,
   CompletionOpts,
   ProviderCapabilities,
+  ReviewSessionOpts,
   StructuredCompletionOpts,
   StructuredSchema,
   ToolDefinition,
   ToolCall,
 } from '../../shared/types.js';
+import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from '../../analyze/context/tool-surface.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { getLogger } from '../../shared/logger.js';
+import { emitStructuredAnswer, runReadOnlyToolLoop, ToolLoopDeadlineError } from '../read-only-tool-loop.js';
+import { ReviewSessionTimeoutError } from './cli-provider.js';
 import { ModelCallFailedError } from './model-call-error.js';
 import { validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 
@@ -39,8 +45,14 @@ export interface LocalModelInfo {
   readonly displayName?: string;
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+/** Wait `ms`; a fired `signal` ends the wait at once with AbortError. */
+function sleep(ms: number, signal?: AbortSignal | undefined): Promise<void> {
+  if (signal?.aborted === true) return Promise.reject(abortError());
+  return new Promise((resolve, reject) => {
+    const onAbort = (): void => { clearTimeout(t); reject(abortError()); };
+    const t = setTimeout(() => { signal?.removeEventListener('abort', onAbort); resolve(); }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 }
 
 // Some Ollama models (qwen3.6 in particular) occasionally wrap their
@@ -165,6 +177,8 @@ export class OllamaProvider implements LLMProvider {
     embeddings:       true,
   };
   private readonly client: Ollama;
+  /** Builds a client whose requests carry `signal` (Epic 8315a11f s1); see {@link clientFor}. */
+  private readonly signalledClient: (signal: AbortSignal) => Ollama;
   private readonly model: string;
   /**
    * Effective Ollama `num_ctx` for this provider. Callers that decide
@@ -211,6 +225,21 @@ export class OllamaProvider implements LLMProvider {
     const longTimeoutFetch = ((input: any, init?: any) =>
       undiciFetch(input, { ...init, dispatcher: agent })) as unknown as typeof globalThis.fetch;
     this.client = new Ollama({ host, fetch: longTimeoutFetch });
+    // A cancellable call gets its own client over the SAME agent, whose fetch
+    // carries the call's signal, so aborting ends that request (and its stream).
+    this.signalledClient = (signal: AbortSignal) => new Ollama({
+      host,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fetch: ((input: any, init?: any) => undiciFetch(input, { ...init, dispatcher: agent, signal })) as unknown as typeof globalThis.fetch,
+    });
+  }
+
+  /** The client for one call: the shared one, or, when the call can be cancelled,
+   *  one whose requests carry its signal. An already-aborted signal throws at once. */
+  private clientFor(signal: AbortSignal | undefined): Ollama {
+    if (signal === undefined) return this.client;
+    if (signal.aborted) throw abortError();
+    return this.signalledClient(signal);
   }
 
   async ping(): Promise<boolean> {
@@ -327,6 +356,9 @@ export class OllamaProvider implements LLMProvider {
         // for large-context calls on CPU-only machines.
         return await this.completeStreaming(ollamaMessages, tools, opts);
       } catch (err) {
+        // A cancelled call is AbortError whatever the fetch rejected with (an abort
+        // with a custom reason rejects with that reason). Never retried.
+        if (opts.signal?.aborted === true) throw abortError();
         lastErr = err;
         if (attempt < MAX_TRANSIENT_RETRIES && isTransientOllamaError(err)) {
           const delayMs = TRANSIENT_RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
@@ -336,7 +368,8 @@ export class OllamaProvider implements LLMProvider {
             delayMs,
             err:      err instanceof Error ? err.message : String(err),
           }, 'ollama: transient stream error -- retrying');
-          await sleep(delayMs);
+          // A cancelled call stops waiting: the backoff never outlives the signal.
+          await sleep(delayMs, opts.signal);
           continue;
         }
         throw wrapOllamaError(err);
@@ -396,7 +429,7 @@ export class OllamaProvider implements LLMProvider {
     // maps to OpenAI-shape; whether the local model actually honors
     // it is per-family (no enforcement guarantees).
     const ollamaToolChoice = toOllamaToolChoice(opts.toolChoice, tools);
-    const response = await this.client.chat({
+    const response = await this.clientFor(opts.signal).chat({
       model: this.model,
       messages: ollamaMessages,
       ...(tools ? { tools } : {}),
@@ -559,7 +592,7 @@ export class OllamaProvider implements LLMProvider {
           // 'length' the num_predict cap cut the model off mid-JSON
           // and we surface a distinct 'response-truncated' error the
           // retry-loop feedback names explicitly (ISSUES.md I-003).
-          const response = await this.client.chat({
+          const response = await this.clientFor(opts?.signal).chat({
             model:    this.model,
             messages: msgs,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -616,6 +649,8 @@ export class OllamaProvider implements LLMProvider {
             throw new Error(`ollama.completeStructured: response was not valid JSON: ${(err as Error).message}. Got: ${stripped.slice(0, 200)}`);
           }
         } catch (err) {
+          // A cancelled call is AbortError whatever the fetch rejected with.
+          if (opts?.signal?.aborted === true) throw abortError();
           if (err instanceof Error && err.message.startsWith('ollama.completeStructured:')) {
             throw err;
           }
@@ -623,10 +658,60 @@ export class OllamaProvider implements LLMProvider {
         }
       },
       (raw) => validateAgainstSchema<T>(schema, raw),
-      opts?.maxAttempts ?? 3,
+      // internalRetry false: one attempt; the caller owns retries (Epic 8315a11f s1).
+      opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
     );
   }
+
+  /**
+   * A reviewer session on a local model (Epic 8315a11f s1): the model reads the
+   * repository at `opts.cwd` through the read-only tool loop, whose allowlist is
+   * checked where each tool runs, then gives a structured answer checked against
+   * `schema`. `opts.deadlineMs` bounds the whole session: passing it aborts the
+   * turn in flight and throws {@link ReviewSessionTimeoutError}, never retried.
+   * `opts.signal` cancels it with AbortError.
+   */
+  async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+    const deadlineAt = Date.now() + opts.deadlineMs;
+    const timer = new AbortController();
+    const handle = setTimeout(() => timer.abort(), opts.deadlineMs);
+    const signal = opts.signal !== undefined ? AbortSignal.any([opts.signal, timer.signal]) : timer.signal;
+    const timedOut = (): boolean => timer.signal.aborted && opts.signal?.aborted !== true;
+    try {
+      const loop = await runReadOnlyToolLoop({
+        provider: this,
+        messages: [{ role: 'user', content: prompt }],
+        tools:    getReadOnlyTools(),
+        allow:    new Set(READ_ONLY_TOOL_IDS),
+        deps:     { sessionId: `review-session-${randomUUID()}`, repoPath: opts.cwd, closureRepos: [opts.cwd], send: () => {}, requestId: 0, ollamaProvider: this },
+        // The repository is the session's working directory, as it is for the CLI sessions.
+        root:     opts.cwd,
+        maxTurns: REVIEW_SESSION_MAX_TURNS,
+        signal,
+        deadlineAt,
+      });
+      // Out of turns: the model still answers from what it has read.
+      if (!loop.done) log.warn({ model: this.model, turns: REVIEW_SESSION_MAX_TURNS }, 'ollama review session: tool turns ran out; asking for the answer');
+      return await emitStructuredAnswer<T>({
+        provider:    this,
+        messages:    loop.messages,
+        // Structural reference trails the prompt.
+        instruction: 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema),
+        schema,
+        ...(opts.internalRetry !== undefined ? { internalRetry: opts.internalRetry } : {}),
+        signal,
+      });
+    } catch (err) {
+      if (timedOut() || err instanceof ToolLoopDeadlineError) throw new ReviewSessionTimeoutError(opts.deadlineMs);
+      throw err;
+    } finally {
+      clearTimeout(handle);
+    }
+  }
 }
+
+/** Tool turns an Ollama reviewer session may take; its deadline is the real bound. */
+const REVIEW_SESSION_MAX_TURNS = 40;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -755,6 +840,13 @@ function toOllamaToolChoice(
     return { type: 'function', function: { name: toolChoice.name } };
   }
   return toolChoice;
+}
+
+/** The error a call cancelled before it started throws. */
+function abortError(): Error {
+  const err = new Error('the call was cancelled');
+  err.name = 'AbortError';
+  return err;
 }
 
 /** The error a cancelled request raises (fetch's DOMException, the Ollama client's own AbortError). */

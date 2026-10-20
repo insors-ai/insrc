@@ -1,0 +1,803 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "createdAt": "2026-10-20T08:14:23.816Z",
+    "updatedAt": "2026-10-20T13:05:18.377Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": false
+      },
+      {
+        "id": "t12",
+        "passed": true
+      },
+      {
+        "id": "t13",
+        "passed": true
+      }
+    ],
+    "summary": "t13 smoke record (BUILD record entry): see docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt. The installed daemon runs the new build: checkout 973fc8bd, built 18:26:28 IST; the daemon process (pid 43853, from ~/.insrc/daemon.pid) started 18:26:30 IST running ~/.insrc/daemon/out/daemon/index.js and has not restarted. On that process: an under-limit code review (CR-f431a4420d03374f-S001: 2 changed files, one chunk, verdict pass, daemon, full grounding; daemon log 12:57:11 UTC 'code-review record written') and an under-limit template design review (36,594-character LLD copy against the 384,000-character limit; one session, 169 s, verdict block H1 M1 L10, design-spec; daemon log 13:04:26 UTC 'workflow.review: reviewed'), both in today's result shape. Earlier premise and template smokes on the previous build 99ae70fc are kept as well.",
+    "testRecord": {
+      "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-f431a4420d03374f-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-f431a4420d03374f-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-f431a4420d03374f.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-f431a4420d03374f-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/envelope-cli-20261020T171730.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/ollama-20261020T172812.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/smoke-premise-review-installed-daemon.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/smoke-template-review-installed-daemon-973fc8bd.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/smoke-template-review-installed-daemon.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/t13-smoke-record.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-editor.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-mocks.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-source/ontology.template.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-source/render.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-viewer.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/ontology-builder-prd.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/ontology-builder-prd.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/count-commit-story-s-when-its-E20261020f431a442/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/count-commit-story-s-when-its-E20261020f431a442/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/count-commit-story-s-when-its-E20261020f431a442/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/count-commit-story-s-when-its-E20261020f431a442/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/analyze.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/architecture.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/cli.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/css/tui.css"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/getting-started.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/index.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/insrc-icon-transparent-128.png"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/insrc-icon-transparent.png"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/philosophy.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/plugin.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/settings.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/tools.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/tracker.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/vscode.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "site/workflow.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/abort-in-flight.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-review-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/internal-retry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/ollama-review-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/ollama.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/read-only-tool-loop.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/workflow-review-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/review-step/phases/claims.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/review-step/schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/process-group.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/spec-review-approve.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/__tests__/review-job.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/adherence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/code-review-cwd.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/conventions.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/functional-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/__tests__/quality.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/adherence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/conventions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/diagram/handlers/er.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/diagram/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/diagram/registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/quality.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/ux/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/pack-into-batches.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/review-job.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/runner.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/enveloped.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/review-job-core.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/toy-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/design-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/envelope.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/job.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/limit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/pack-into-batches.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/prepare.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/calibration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/review.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/same-party-refusal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/source-root-reader.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/template-review.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/template-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/verify.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/story-commits.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:05:18.377Z"
+      }
+    ],
+    "commit": "55426c36"
+  }
+}

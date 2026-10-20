@@ -4,7 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The batched verdicts schema for `insrc_review_step`'s `emit_verdicts` turn.
+ * The batched verdicts schema for `insrc_review_step`'s `emit_verdicts` turn. It
+ * now lives beside the engine's VERIFY_SCHEMA (src/workflow/review/verify.ts, Epic
+ * 8315a11f), so the review pipeline can offer it too; re-exported here.
  *
  * The engine judges premises ONE at a time (`VERIFY_SCHEMA` = one Finding
  * without its `claimId`). To keep the controller loop to a single turn, the
@@ -13,25 +15,4 @@
  * `VERIFY_SCHEMA` item shape (unchanged) with a required `claimId`.
  */
 
-import { VERIFY_SCHEMA } from '../../../workflow/review/index.js';
-
-const verifyItem = VERIFY_SCHEMA as { readonly required?: readonly string[]; readonly properties?: Record<string, unknown> };
-
-const VERDICT_ITEM_SCHEMA: Record<string, unknown> = {
-	type:                 'object',
-	additionalProperties: false,
-	required:             ['claimId', ...(verifyItem.required ?? [])],
-	properties:           {
-		claimId: { type: 'string', minLength: 1 },
-		...(verifyItem.properties ?? {}),
-	},
-};
-
-export const VERDICTS_SCHEMA: Record<string, unknown> = {
-	type:                 'object',
-	additionalProperties: false,
-	required:             ['verdicts'],
-	properties:           {
-		verdicts: { type: 'array', items: VERDICT_ITEM_SCHEMA },
-	},
-};
+export { VERDICTS_SCHEMA } from '../../../workflow/review/index.js';

@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "f431a4420d03374f",
+    "storyId": "S001",
+    "createdAt": "2026-10-20T12:55:36.414Z",
+    "updatedAt": "2026-10-20T12:55:36.414Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-20T12:47:09.806Z",
+    "epicSlug": "count-commit-story-s-when-its"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "973fc8bd",
+        "ranAt": "2026-10-20T12:55:36.414Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2222,
+            "titles": [
+              {
+                "title": "with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not",
+                "result": "pass"
+              },
+              {
+                "title": "two standalone Stories both S001 are told apart by the trailer's epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range",
+                "result": "pass"
+              },
+              {
+                "title": "a file one Story changed and another Story reverted stays in the first Story's subject and diff",
+                "result": "pass"
+              },
+              {
+                "title": "a commit counts as the Story's when its Insrc-Story line is in any paragraph, never when the key is only mentioned (ISSUE-f431a442)",
+                "result": "pass"
+              },
+              {
+                "title": "storyLines reads every whole Insrc-Story line and nothing else",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

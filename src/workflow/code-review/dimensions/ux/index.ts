@@ -27,11 +27,10 @@
  * (mirrors hasFunctionalDefinition/hasDiagramReferences).
  */
 
-import { existsSync } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
 
 import type { LLMMessage, LLMProvider } from '../../../../shared/types.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult } from '../../types.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult, JudgeContext } from '../../types.js';
+import { deterministicDimensionAdapter, fileExisted, runDimensionJob, type DeterministicDimensionSpec } from '../../../review-pipeline/code-review.js';
 import type { CompanionArtifactRef } from '../../../artifacts/companion/types.js';
 import type { UxDefinition } from '../../../artifacts/companion/ux.js';
 import { uxCompletenessFindings, validateUxDefinition } from '../../../artifacts/companion/ux.js';
@@ -91,11 +90,12 @@ function breach(location: string, message: string): DimensionFinding {
  * member. The findings ride the un-forked verdict reducer (k4).
  */
 // eslint-disable-next-line @typescript-eslint/require-await
-export async function judgeUx(
-	subject:    CodeReviewSubject,
-	_grounding: CodeReviewGrounding,
-	_provider:  LLMProvider,
-): Promise<DimensionResult> {
+/**
+ * Today's ux judgement: the recorded adherence selection, the authored uxDefinition,
+ * and every referenced ux-mock companion, whose existence `exists` answers from the
+ * review's snapshot. Deterministic; no model call.
+ */
+export function uxResult(subject: CodeReviewSubject, exists: (relPath: string) => boolean): DimensionResult {
 	const body = bodyOf(subject);
 	const findings: DimensionFinding[] = [];
 
@@ -124,8 +124,7 @@ export async function judgeUx(
 	// (3) A referenced-but-absent ux-mock companion file — a doc claiming a UX mock
 	//     it does not ship. Checks existence only (not the file's content).
 	for (const ref of mocks) {
-		const abs = isAbsolute(ref.relPath) ? ref.relPath : join(subject.repoPath, ref.relPath);
-		if (!existsSync(abs)) {
+		if (!exists(ref.relPath)) {
 			findings.push(breach(
 				ref.relPath,
 				`referenced UX mock '${ref.title}' is missing at ${ref.relPath} — the document references a UX mock it does not ship`,
@@ -134,6 +133,27 @@ export async function judgeUx(
 	}
 
 	return { dimension: DIMENSION, findings };
+}
+
+/** The ux dimension as a pipeline spec: on the daemon path one deterministic stage
+ *  over the snapshot; the controller is offered today's prompt. */
+export function uxSpec(subject: CodeReviewSubject): DeterministicDimensionSpec {
+	return {
+		dimension: DIMENSION,
+		run: async snapshot => uxResult(subject, relPath => fileExisted(snapshot, relPath)),
+		controllerPrompt: grounding => buildUxPrompt(subject, grounding, undefined),
+	};
+}
+
+/** The ux judge: one review-pipeline job (Epic 8315a11f); its mock checks read the
+ *  file facts taken at prepare, so a mock added or removed afterwards changes nothing. */
+export async function judgeUx(
+	subject:   CodeReviewSubject,
+	grounding: CodeReviewGrounding,
+	provider:  LLMProvider,
+	ctx?:      JudgeContext,
+): Promise<DimensionResult> {
+	return runDimensionJob(s => deterministicDimensionAdapter(uxSpec(subject), subject, s), subject, grounding, provider, ctx);
 }
 
 /**

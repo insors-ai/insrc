@@ -1,0 +1,892 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792398246645-7x3wlt",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-19T08:27:53.900Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 227249,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicHash": "8315a11f29fd2812",
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1792389266411-gvxl8y",
+    "hldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers S002's three acceptance criteria without adding review criteria.",
+          "evidence": "DEF §6.2 requires call/file/module grouping, summaries across chunk boundaries, and whole-symbol review with named oversize failures. The proposed relations, neighbourSummary and prepare integration address these; verdict and gather changes remain outside S002. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Graph grounding contains structured summaries with caller/callee names; diff grounding contains file rows with hunks and empty edges.",
+          "evidence": "assembleCodeReviewGrounding assigns 'callers: callers.map(c => c.name)' and the analogous callees array. buildDiffSymbols assigns 'kind: file', 'signature: hunks + truncNote', and empty callers/callees arrays. ChangedSymbolSummary has no module field. [files: src/workflow/code-review/grounding.ts, src/workflow/code-review/types.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The delivered review job packs whole atoms by rendered prompt size without relationship grouping or neighbour summaries.",
+          "evidence": "DimensionStrategy supplies symbols and context without relations. planMap measures 'promptChars(strategy.map.messages(syms, ctx, undefined))' and invokes packWithin; packIntoBatches greedily batches items in order. [files: src/workflow/code-review/review-job.ts, src/workflow/code-review/pack-into-batches.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "prepareCoverageGrounding is reusable with the stated signature and produces precisely the coverage rows supplied to today's prompt.",
+          "evidence": "The function accepts subject, grounding and groundingMode; degraded mode returns empty symbols. Otherwise it filters eligibility and adds coverageEvidence. judgeCoverage and the controller's emitJudgementsResult both pass its output to buildCoveragePrompt. [files: src/workflow/code-review/dimensions/coverage.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed material builder and neighbour writer add capabilities absent from the current implementation.",
+          "evidence": "Source searches found no codeReviewMaterial or neighbourSummary implementation. The existing Atom/DimensionStrategy contracts and packing implementation contain neither relationship metadata nor neighbour rendering. The proposed review-pipeline directory is not yet implemented. [files: src/workflow/code-review/review-job.ts, src/workflow/code-review/pack-into-batches.ts]",
+          "action": "Treat S001's pipeline as a prerequisite, not delivered code.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed material and neighbour-summary functions fit the upstream shared contracts without changing the grounding assembler or its callers.",
+          "evidence": "HLD sc1 defines atoms with id, label, text and optional file/module, plus relations and obligations. S001 §2.21 defines 'neighbourSummary?(atom: ReviewAtom, material: ReviewMaterial): string'. assembleCodeReviewGrounding has the stated three-argument signature; runner and daemon IPC callers consume its unchanged CodeReviewGrounding result. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts, src/daemon/index.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Building material from existing summary fields requires no grounding migration and preserves compatibility with summaries lacking coverage eligibility.",
+          "evidence": "The required identity, file, kind, name, signature and edge arrays already exist. coverageEligible and coverageEvidence are optional. prepareCoverageGrounding uses 's.coverageEligible ?? isCoverageEligible(s.kind, s.file)', and existing fixtures exercise legacy rows without the flag. [files: src/workflow/code-review/types.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts]",
+          "action": "Retain the legacy-row coverage fixture when testing the material builder.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S002 owns material relationships and neighbour text while S001 owns packing and S003 owns obligations, prompts and gather.",
+          "evidence": "HLD §5.2 explicitly assigns 'changed-symbol atoms' and 'how neighbour summaries are written' to S002. S001 specifies grouping order and direction-independent grouping. S003 specifies obligations/context 'added to s2’s codeReviewMaterial output by each dimension’s adapter'. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/LLD.md]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The upstream implementation guarantees the specified neighbour-free lower-bound oversize check before provider calls.",
+          "evidence": "The existing packer throws AtomTooLargeError with atom, size and budget, and S001's design promises named oversize failures. However, the shared pipeline is not implemented, so its neighbour-aware packing and the claimed lower-bound check cannot be verified in code. The analyzer also failed with shaper-llm-unavailable after a provider schema rejection. [files: src/workflow/code-review/pack-into-batches.ts, src/workflow/code-review/review-job.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md]",
+          "action": "Make the specified singleton and neighbour-co-location regression tests prerequisites for accepting S001/S002 integration.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each upstream S002 acceptance criterion maps to an explicit proposed test.",
+          "evidence": "Compared DEF S002/ac1–ac3 with the LLD mapping: ac1 has relation-priority and rendered-fit tests; ac2 has summaries on both sides of a cut; ac3 has whole-atom conservation and named oversize tests. Existing grounding and coverage tests use node:test and node:assert/strict as proposed. This verifies the test plan, not passing implementation tests. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/LLD.md, src/workflow/code-review/__tests__/grounding.test.ts, src/workflow/code-review/dimensions/__tests__/coverage-evidence.test.ts]",
+          "action": "Implement and run the mapped tests after the S001 prepare seam is available.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 10,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-19T10:30:19.861Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "reviewOverride": {
+      "reason": "Round-3 MED (diff-review grounding carries diff text in signature) corrected in the invariant and state-before wording; no design change. User approved the override in chat 2026-10-19.",
+      "at": "2026-10-19T09:11:30.687Z"
+    },
+    "approvedAt": "2026-10-19T10:51:06.278Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story gives the code-review adapter its material, so a large code review is divided along the lines of the code itself. Each changed symbol in the review's grounding becomes one whole atom. Changed symbols are related when one calls the other, when they share a file and when they share a directory, so the pipeline keeps related code together in that order. A changed symbol held in another chunk is described to the reviewer by a short line written from its signature and its related names, with no model call. Nothing in the grounding, the IPC or today's prompts changes.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "A new shared module, the review pipeline (proposed at src/workflow/review-pipeline), owns the three stages for every review. It is a serialisable job: the daemon drives it to the end; the controller is handed its calls one frame at a time and answers them by call identifier. Prepare measures material at 3 characters per token against review.chunkTokens (default 128,000 tokens); at or under the limit it emits one chunk whose prompt is the adapter's current single-call prompt, otherwise it groups the adapter's atoms by the adapter's relations and packs whole groups into chunks that each fit, adding a short summary of each related atom held in another chunk. Review issues one call per chunk serially; every call carries a fresh UUID that the answer must echo inside an envelope, an answer whose identifier is missing or wrong is rejected and retried under a new UUID, and a size refusal re-divides the chunk instead of resending it. Gather passes a single chunk's answer through unchanged and otherwise applies the adapter's gather rules (keyed obligations judged on all chunks' evidence, cross-chunk relationships, cross-chunk duplicates), each gather call itself bounded by the chunk limit. ISSUE-aef82b03's delivered InputTooLargeError, LLMProvider.inputBudgetChars, packIntoBatches and ReviewJob loop are moved under the pipeline as its core. A review kind is a series of stages, each a model stage or a deterministic one, preserving today's execution exactly: code review runs one stage per dimension exactly as today on each path: on the daemon, adherence (no call at all when there is neither an approved LLD nor an approved plan), conventions, coverage, quality and functional coverage are model calls, ux is deterministic and provider-free, and diagram keeps its registered handlers (some deterministic, such as the component handler) with today's per-handler isolation, a failing handler still recorded as a LOW observation; on the controller path the ux and diagram prompts are offered to the controller as today; HLD/LLD template review is one reviewer-session stage; DEF/plan premise review is extract (model), probe (deterministic) and verify, where the daemon path verifies one premise per call and the controller path verifies every premise in one batched call, as each does today; an adapter therefore declares its stage plan per path (daemon or controller). A review under the limit therefore makes exactly today's calls in today's order. Each call names its execution mode: a structured call run in the repository as its working directory (as today's code-review judges pass subject.repoPath; for the premise review's verify calls, which pass no working directory today, this is an additive change), each with its own per-call time limit where it has one today (the premise verify call keeps its 3-minute VERIFY_CALL_TIMEOUT_MS from ISSUE-d4b2cd1c), or a read-only reviewer session with the repository as working directory, the review's remaining deadline and its cancellation signal. Ollama gains a reviewer session through a generic read-only tool loop extracted from the analyzer's runShaperToolLoop, taking caller-supplied messages, answer schema, deadline, signal and retry policy, while the analyzer keeps its own wrapper unchanged. The pipeline owns every retry of a review call: every provider is called with internalRetry: false (CliProvider's transient retry and reviewer-session retry, and both providers' structured-output retry, make exactly one attempt), and the pipeline re-issues a transient failure, a stall, an invalid answer or an identifier mismatch once, under a new UUID: two attempts in all per call. Failure policy is per stage: a cancelled review always ends at once; a premise-review verify call that fails both attempts records that premise as not judged (MED, never a pass) and keeps the rest, as ISSUE-d4b2cd1c delivered; a diagram handler failure stays a LOW observation, as today; any other failed call (premise extraction included) fails the review and records nothing, as today. Gather is bounded at every step: an obligation's evidence (notes from every chunk, each keyed by the obligation and carrying the atom ids it stands for) is packed into the final adjudication call when it fits the limit; when it does not, it is reduced level by level, each reduction call reading one batch of that key's evidence and returning one note of at most a quarter of the limit under the same key, the job keeping which atoms and earlier notes each note stands for, until the key's evidence fits one adjudication call; a gather call refused for its size is re-planned like a chunk. Scope of the identifier and limit rules (stakeholder decision 2026-10-19 [[c14]]): they apply to every request the pipeline sends. A reviewer session's internal tool turns belong to the session, as they already do inside the claude and codex CLIs, where insrc cannot see them; the Ollama session's tool loop is likewise not identified or measured per turn. Every call records which material it carries (its chunk, atom ids and evidence-note ids), and the job keeps an immutable snapshot of the review's material taken once at prepare: for code review, today's grounding snapshot (the controller step already saves subject and grounding) plus every fact a deterministic stage reads from disk today, recorded at prepare (the ux stage's companion-mock existence checks); for design review, the document text and, for the premise review, the extracted claims and their gathered evidence. The adapter is rebuilt on every turn from the saved subject plus that snapshot and never re-queries the code graph or the files, so a refused call is re-divided from exactly the material it carried and a controller review resumes on the same material. A controller reports a call it could not complete as a failure outcome keyed by the call's identifier (size refusal with the reported limit, stall, transient error), which the driver handles exactly as a daemon-side failure: a size refusal re-divides the call, the others are re-issued once under a new identifier.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ReviewMaterial",
+          "purpose": "What an adapter hands the pipeline to prepare: whole indivisible atoms, the relations between them, and the obligations a gather must judge.",
+          "interfaceSketch": "interface ReviewAtom { readonly id: string; readonly label: string; readonly text: string; readonly file?: string | undefined; readonly module?: string | undefined; }\ninterface ReviewRelation { readonly from: string; readonly to: string; readonly kind: 'calls' | 'same-file' | 'same-module' | 'references'; }\ninterface ReviewObligation { readonly key: string; readonly kind: 'clause' | 'requirement' | 'promised-test' | 'module-conventions' | 'check-item'; readonly text: string; readonly atomIds?: readonly string[] | undefined; }\ninterface ReviewMaterial { readonly atoms: readonly ReviewAtom[]; readonly relations: readonly ReviewRelation[]; readonly obligations: readonly ReviewObligation[]; readonly context?: readonly ReviewAtom[] | undefined; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "ReviewAdapter",
+          "purpose": "How a review kind plugs into the pipeline: its material, its ordered stages (model or deterministic) with each stage's own failure policy, each stage's calls for the whole review and for one chunk, and the gather rules for a divided review.",
+          "interfaceSketch": "interface ChunkPrompt { readonly messages: readonly LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode; }\ntype ExecutionMode =\n  | { readonly mode: 'structured'; readonly cwd?: string | undefined; readonly timeoutMs?: number | undefined }\n  | { readonly mode: 'reviewer-session'; readonly cwd: string; readonly deadlineMs: number; readonly tools: 'read-only' };\ntype StageOutputs = Readonly<Record<string, unknown>>;\ninterface AdapterStage {\n  readonly id: string;\n  readonly kind: 'model' | 'deterministic';\n  readonly after: readonly string[];\n  singleCalls(prior: StageOutputs): readonly ChunkPrompt[];\n  chunkCalls(chunk: ReviewChunk, prior: StageOutputs): readonly ChunkPrompt[];\n  run?(prior: StageOutputs): Promise<unknown>;\n  readonly onCallFailure: 'fail-review' | 'record-not-judged' | 'record-observation';\n}\ninterface ReviewAdapter<R> {\n  readonly kind: 'code-review' | 'design-review';\n  readonly dimension: string;\n  material(): ReviewMaterial;\n  stagesFor(path: 'daemon' | 'controller'): readonly AdapterStage[];\n  finish(outputs: StageOutputs): R;\n  readonly gather: GatherPlan<R>;\n}\ninterface EvidenceNote { readonly noteId: string; readonly key: string; readonly text: string; readonly atomIds: readonly string[]; }\ninterface GatherPlan<R> {\n  readonly obligationCall: (key: string, evidence: readonly EvidenceNote[]) => ChunkPrompt;\n  readonly reduceCall: (key: string, batch: readonly EvidenceNote[]) => ChunkPrompt; // answer: one EvidenceNote under the same key\n  readonly noteCapChars: number; // a quarter of the limit\n  readonly relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => ChunkPrompt) | undefined;\n  readonly merge: (parts: readonly R[]) => R;\n}",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c9"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "ReviewChunk and ChunkPlan",
+          "purpose": "The output of prepare: the chunks a review is read in, each within the limit, with summaries of related atoms held elsewhere.",
+          "interfaceSketch": "interface NeighbourSummary { readonly atomId: string; readonly label: string; readonly summary: string; readonly heldInChunk: string; }\ninterface ReviewChunk { readonly id: string; readonly atomIds: readonly string[]; readonly neighbours: readonly NeighbourSummary[]; readonly chars: number; }\ninterface ChunkPlan { readonly limitChars: number; readonly single: boolean; readonly chunks: readonly ReviewChunk[]; readonly crossRelations: readonly ReviewRelation[]; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc4",
+          "name": "CallEnvelope",
+          "purpose": "Every model call of every review carries a fresh identifier the answer must echo, and every retry is the pipeline's own re-issue under a new identifier; one rule for daemon and controller. The rule covers every request the pipeline sends; a reviewer session's internal tool turns are the session's own.",
+          "interfaceSketch": "interface ReviewCall { readonly callId: string; readonly attempt: number; readonly stage: string; readonly role: 'single' | 'chunk' | 'reduce' | 'obligation' | 'relation' | 'merge'; readonly messages: readonly LLMMessage[]; readonly schema: StructuredSchema; readonly execution: ExecutionMode; readonly chars: number; readonly carries: { readonly chunkId?: string | undefined; readonly atomIds: readonly string[]; readonly noteIds: readonly string[]; readonly key?: string | undefined }; }\ninterface EnvelopedAnswer { readonly callId: string; readonly answer: unknown; }\n// schema sent to the model: { type: 'object', required: ['callId', 'answer'], properties: { callId: { const: <callId> }, answer: <adapter schema> } }\n// provider options the pipeline sets on every call (additive, optional):\ninterface StructuredCompletionOpts { readonly internalRetry?: boolean | undefined; /* false: the provider makes exactly one attempt */ }\ninterface ReviewSessionOpts { readonly internalRetry?: boolean | undefined; readonly signal?: AbortSignal | undefined; }\ninterface LLMProvider { runReviewSession?<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>; }",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        },
+        {
+          "id": "sc6",
+          "name": "Chunk limit setting",
+          "purpose": "One limit for every provider and every review kind.",
+          "interfaceSketch": "// config catalog entry\n{ path: 'review.chunkTokens', type: 'number', default: 128000 }\n// fixed conversion\nconst REVIEW_CHARS_PER_TOKEN = 3; // limitChars = review.chunkTokens * REVIEW_CHARS_PER_TOKEN = 384000",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5"
+          ],
+          "assumptions": [
+            "c4",
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc6"
+        ],
+        "internal": "The code-review adapter's material: changed-symbol atoms, call relations from the grounding's callers and callees among changed symbols, file and module relations, and how neighbour summaries are written for a changed symbol held in another chunk. Tests: S002/ac1 related changed symbols land in the same chunk before file and module grouping; ac2 a call relation cut between chunks yields a neighbour summary on both sides; ac3 every changed symbol appears whole in some chunk and one over the limit is named, never cut."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "The pipeline module itself: measurement, the generic grouping that packs related atoms together within the limit, staged execution with deterministic stages, the envelope schema wrapping, identifier generation and checking, the pipeline-owned retry policy (providers called with internalRetry: false; one re-issue under a new UUID, two attempts in all), per-stage failure policies, refusal re-division, the serial daemon driver, single-chunk pass-through, the bounded gather machinery (evidence notes keyed by obligation, level-by-level reduction under a note cap, provenance kept in the job, refused gather calls re-planned), and the adoption of ISSUE-aef82b03's InputTooLargeError, inputBudgetChars, packIntoBatches and ReviewJob loop. Change sites beyond the new module: CliProvider (internalRetry honoured by withTransientRetry, runReviewSession and its structured-output retry; a size refusal in the claude reviewer-session error envelope and the codex session classified as InputTooLargeError, as completeStructured already does), OllamaProvider (internalRetry: false maps completeStructured to one attempt; a read-only reviewer session over a generic tool loop extracted from runShaperToolLoop in src/analyze/context/driver.ts, the analyzer keeping its own wrapper), and the single-chunk adapters for both review kinds, so every review takes the pipeline path from s1 on with today's calls and working directory (structured calls run in the repository, as today for code review; the premise review's verify calls gain it as an additive change): one model stage per model-judged code-review dimension, adherence making no call without an approved LLD or plan, ux deterministic on the daemon and diagram's handlers as today (deterministic ones stay deterministic, a failing handler stays a LOW observation); one reviewer session for HLD/LLD; extract, probe, then one verify per premise for DEF/plan, with ISSUE-d4b2cd1c's not-judged recording kept. Tests: S001/ac1 an under-limit code review, template review and premise review each make today's calls and give today's result (recorded fixtures), the diagram dimension included; ac2 a missing or wrong identifier is retried once under a new UUID and no prompt hash repeats, including transient errors, stalls and invalid answers on both CliProvider and OllamaProvider; premise extraction failing fails the review while a verify call failing twice records the premise as not judged; ac3 the default limit is 384,000 characters for every provider; ac4 a size refusal from completeStructured, the claude session envelope and the codex session re-divides the call and never resends it; ac5 a review on an Ollama provider completes through both execution modes; plus a live probe of the envelope schema on claude and codex. Also tested: an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits, and the final verdict keeps every atom's provenance; every structured review call runs in the repository working directory. Also tested: a premise verify call keeps its 3-minute limit through the pipeline; a refused call is re-divided from exactly the atoms and notes it carried; the controller premise review under the limit still sends one batched verify prompt. Also tested: refusal re-planning reads only the job's material snapshot, never the graph or files, so a reindex between turns cannot change the material a call is re-divided from. The ux stage reads companion-mock existence from the snapshot's file facts recorded at prepare, not from disk; tested: adding or removing a mock after prepare does not change the review result."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The code-review adapter's gather: per-dimension chunk prompts, obligation keys and their adjudication over all chunks' evidence, the cross-chunk relationship check, the cross-chunk duplicate comparison for quality, and the fold into today's DimensionResult and verdict. It also owns the acceptance smoke: Epic c2ba6fa6 Story s1's code review runs on the installed daemon, completes and records a verdict, with the chunk plan and calls per stage written to the smoke record. Tests: S003/ac1 a divided review and the same material reviewed in one call under a raised limit give the same obligation verdicts on fixtures that fit both ways; ac2 a mismatch between related functions in different chunks is reported; ac3 a cross-chunk duplicate is reported; ac4 the installed-daemon smoke above."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The design-review adapter: document sections as atoms, cross-reference relations, section summaries for neighbours, chunk prompts for the template checklist and the premise pipeline, and the gather of checklist answers or premise verdicts into today's ReviewReport and verdict rules. Tests: S004/ac1 every section appears whole in some chunk with the sections it references; ac2 a cross-chunk reference yields a section summary; ac3 a divided HLD/LLD review and a divided DEF/plan review each give one ReviewReport under today's verdict rules, and a premise whose call fails twice is still recorded as not judged. Its controller stage plan keeps today's single batched verify prompt under the limit; over the limit it batches premises per chunk."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "The two controller steps' use of the job, and the MCP boundary that admits it: the new answers phase in the insrc_review_step and insrc_code_review_step input schemas in src/mcp/server.ts, their registered schema contracts and tool descriptions, with schema and surface tests (src/mcp/__tests__/schema-registry.test.ts); keeping it in step state, frame sizing, answer validation by call identifier, and offering a review under the limit today's prompts as identified calls in the same frame shape. Compatibility: the controller step states gain an optional pipeline field; a state without it (saved before the change) is resumed on today's path; both stores are memory-only, so, as today, a state does not survive a daemon restart. Tests: S005/ac1 a controller review over the limit is handed the daemon's chunks one frame at a time and records the same kind of result; ac2 a missing or wrong identifier in an answer is rejected and the call offered again under a new UUID; ac3 a new controller review under the limit is offered today's prompts, each as an identified call, and gives today's result; a pre-change state resumes on today's emit_judgements / judgements (code review), emit_claims / claims and emit_verdicts / verdicts (DEF/plan premise review) and emit_findings / findings (HLD/LLD template review) frames, each path tested. The answers phase also accepts a failure outcome per call (size refusal with the reported limit, stall, transient error), mapped to the driver's failure handling and admitted by both MCP input schemas; tested: a controller-reported size refusal re-divides the call, a reported stall or transient error re-issues it once under a new identifier."
+        }
+      ],
+      "rolloutPhase": "Phase B — divided code review and divided design review",
+      "nonFunctional": {
+        "performance": "Calls are serial (k6). A review under the limit makes the same number of calls as today. Every prompt sent, chunk or gather, is at most review.chunkTokens x 3 characters.",
+        "security": "No new transport: calls go through the existing LLMProvider and the installed CLIs (k7). Reviewer sessions keep their read-only tool sets.",
+        "observability": "Each review logs its plan (single or N chunks, chars per chunk), every call's identifier, stage and size, every identifier mismatch and refusal, and the gather's obligation count; DimensionResult and ReviewReport record the number of calls per stage when a review was divided.",
+        "durability": "The job is serialisable, so the controller path survives across turns in the existing step state (memory-only, so not across a daemon restart, as today). A daemon review whose call fails after its retries records nothing, as today, except the premise review, which records that premise as not judged and keeps the rest (ISSUE-d4b2cd1c). New record fields (pipelineCalls) are optional, under a new name, and absent on one-chunk reviews; the existing parts field keeps its shape; so existing records keep validating."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "ReviewAdapter.material (code review)",
+          "signature": "material(): ReviewMaterial  // built by codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMaterial",
+          "parameters": [
+            {
+              "name": "grounding",
+              "type": "CodeReviewGrounding",
+              "purpose": "The dimension's own grounding, exactly as today's prompt builder receives it, derived deterministically from the snapshot's subject and grounding. For most dimensions it is the snapshot grounding itself. For coverage it is prepareCoverageGrounding(subject, grounding, groundingMode) (src/workflow/code-review/dimensions/coverage.ts:135), which both narrows to eligible symbols and adds coverageEvidence. s3's per-dimension adapter supplies it. Never re-queried.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewMaterial (sc1)",
+            "meaning": "atoms: one ReviewAtom per ChangedSymbolSummary of that grounding, in grounding order, with id = entityId, label = file#name, file = the summary's file, module = the file's directory, and text = the row's own JSON serialisation (its content, which the chunk prompt carries; it is not a size measure). relations: 'calls' between symbols A and B when B.name is in A.callees or A.name is in B.callers (a name matching several rows of the grounding relates to each of them); 'same-file' between atoms with the same file; 'same-module' between atoms with the same directory. obligations: empty (s3 supplies the dimension's obligations). context: absent (s3 supplies the dimension's context atoms)."
+          },
+          "errors": [],
+          "preconditions": [
+            "The grounding is the dimension's prepared grounding, derived from the snapshot (s1 sc5) as today's prompt builder derives it.",
+            "s1's prepare groups by relation kind in the order the s1 LLD fixes (createReviewJob postcondition): calls, then same-file, then same-module, splitting an oversized group along the next-weaker kind.",
+            "Whether a chunk fits is decided by s1, which measures each fully rendered chunk call (instructions, the chunk's rows in the prompt's array form, neighbour summaries, context and the envelope) against limitChars, as the delivered job measures promptChars of the rendered messages (src/workflow/code-review/review-job.ts:175). Atom text is never used as the size of a prompt."
+          ],
+          "postconditions": [
+            "Every row of the given grounding appears exactly once as a whole atom; none is cut or dropped.",
+            "A diff review's rows (kind 'file', empty callers and callees, src/workflow/code-review/grounding.ts:339) yield no 'calls' relations and no 'same-file' relations beyond themselves, only 'same-module' ones.",
+            "Deterministic: the same grounding and filter always give the same material, in the same order."
+          ]
+        },
+        {
+          "name": "ReviewAdapter.neighbourSummary (code review)",
+          "signature": "neighbourSummary(atom: ReviewAtom, material: ReviewMaterial): string",
+          "parameters": [
+            {
+              "name": "atom",
+              "type": "ReviewAtom",
+              "purpose": "A changed-symbol atom held in another chunk that is related to an atom in this chunk.",
+              "optional": false
+            },
+            {
+              "name": "material",
+              "type": "ReviewMaterial",
+              "purpose": "The same material, used to name the atom's related changed symbols.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "One deterministic line, with no model call: '<kind> <name> in <file>: <the signature's first line, at most 200 characters>; calls: <related changed callee names>; called by: <related changed caller names>'. It implements the optional sc2 member ReviewAdapter.neighbourSummary that the s1 LLD defines; s1's prepare puts it in NeighbourSummary.summary and sets atomId, label and heldInChunk."
+          },
+          "errors": [],
+          "preconditions": [
+            "The atom came from codeReviewMaterial."
+          ],
+          "postconditions": [
+            "Only this extra line is shortened. The atom itself is reviewed whole in the chunk that holds it (k8).",
+            "The same atom always gives the same line, so a re-plan reproduces it."
+          ]
+        },
+        {
+          "name": "assembleCodeReviewGrounding",
+          "signature": "assembleCodeReviewGrounding(repoPath: string, changedFiles: readonly string[], deps: GroundingDeps): Promise<CodeReviewGrounding>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "changedFiles",
+              "type": "readonly string[]",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "GroundingDeps",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<CodeReviewGrounding>",
+            "meaning": "Consumed unchanged; it remains the source of the snapshot this Story's material is built from."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Not modified by this Story."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Produces ReviewMaterial for code review from the dimension's prepared grounding: atoms from its rows, and relations of kinds calls, same-file and same-module. Obligations and context are left to s3."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Supplies the code-review adapter's material() body and its neighbourSummary member, the optional ReviewAdapter.neighbourSummary the s1 LLD defines. Stages, chunk prompts and gather stay with s1 and s3."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Its relations drive s1's grouping into ReviewChunks; its writer fills NeighbourSummary.summary for each related atom held in another chunk."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Adds no model call, so it issues nothing under the envelope. Its atom ids are what ReviewCall.carries.atomIds records."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Fitting a chunk within limitChars (review.chunkTokens x 3) is s1's measurement of the rendered chunk call; this Story's atoms only supply the content."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "One changed symbol's summary alone exceeds the chunk limit (in practice a diff review row whose signature holds a whole file's hunks).",
+          "detection": "s1's prepare computes a lower bound for any chunk holding that atom: the minimal valid call with the atom alone and NO neighbour summaries (the dimension's instructions, the atom as a one-row array, the context it must carry, and the envelope). Neighbour summaries describe atoms held elsewhere and only ever add to a chunk, so every chunk containing the atom is at least this size. The atom is reported only when this lower bound exceeds limitChars. A chunk that fits without neighbours but not with them is s1's packing problem (it groups related atoms together, which removes their neighbour lines), never an oversize atom.",
+          "response": "AtomTooLargeError naming the atom by its label (file#name, or the file path for a diff row), raised before any provider call. The atom is never cut and no review is recorded, as s1 defines.",
+          "userImpact": "The review stops and names the oversized symbol, rather than judging part of it silently.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Two atoms would share an id (the grounding lists the same entity twice).",
+          "detection": "codeReviewMaterial checks entityId uniqueness while building atoms.",
+          "response": "Throws an Error naming the duplicate entityId and both labels. Material with a duplicate atom id would make carries and provenance ambiguous.",
+          "userImpact": "The review fails before any call, with the duplicate named.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two changed symbols named the same in different files, one calling a third changed symbol.",
+          "expected": "The name match relates the third symbol to both. Grouping keeps all three together when they fit, and over-relating never drops the true relation."
+        },
+        {
+          "input": "A caller or callee name that matches no row of the dimension's grounding (an unchanged entity, or a symbol coverage's preparation excluded).",
+          "expected": "No relation; the name stays in the atom's own text as today."
+        },
+        {
+          "input": "A diff review (kind 'file' rows with empty callers and callees).",
+          "expected": "Only same-module relations, so files in the same directory are kept together."
+        },
+        {
+          "input": "A symbol calling itself (its own name among its callees).",
+          "expected": "No self-relation."
+        },
+        {
+          "input": "A file at the repository root.",
+          "expected": "module is '.', so root files share one module."
+        },
+        {
+          "input": "The dimension's prepared grounding is empty (for example coverage on a degraded review, where prepareCoverageGrounding lists no symbols).",
+          "expected": "Empty atoms and relations. If the dimension's rendered single call fits the limit, s1's single-chunk path applies as today. If it does not fit (for example coverage on a diff review with a large test record), s1 divides the review with zero atoms and every obligation is judged on its own context atoms (s1 createReviewJob postcondition); s3 supplies those obligations."
+        },
+        {
+          "input": "Material under the limit.",
+          "expected": "s1's single-chunk path is used; the relations and neighbour summaries are not used, so today's prompt is unchanged."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The grounding's shape, the IPC payload and assembleCodeReviewGrounding are unchanged. A graph grounding holds structured summaries with no file text. A diff review's grounding keeps its existing diff text: each changed file's hunks in its row's signature (src/workflow/code-review/grounding.ts:339).",
+          "source": "c1"
+        },
+        {
+          "text": "Each dimension prompt serialises its grounding as today. A chunk's prompt fit is measured on the rendered call by s1, never on atom text.",
+          "source": "c1"
+        },
+        {
+          "text": "The material is built from the job's snapshot only, never from a graph or file re-query.",
+          "source": "c2"
+        },
+        {
+          "text": "Coverage's narrowing and its coverageEvidence enrichment stay in prepareCoverageGrounding; coverage material is built from its output, so a coverage chunk carries the same rows today's prompt does.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test), as the grounding and review-job tests in s1's third bundle",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "codeReviewMaterial and neighbourSummary on hand-built groundings: atoms, relations, determinism, edge cases.",
+          "subjects": [
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON'",
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none'",
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only'",
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence'",
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a duplicate entityId throws an error naming it'",
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'the same grounding gives identical material and identical neighbour summaries every time'",
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names'"
+          ],
+          "fixturesNeeded": [
+            "hand-built CodeReviewGrounding rows covering call chains, same-named symbols, shared files and directories, and diff rows"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The material through s1's prepare with a small limit: grouping order, neighbour summaries on both sides of a cut, whole atoms, and an oversized atom named.",
+          "subjects": [
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'under the limit the plan is one chunk and the dimension prompt is unchanged'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'"
+          ],
+          "fixturesNeeded": [
+            "the s1 prepare entry point with a test limitChars",
+            "groundings large enough to divide under that limit"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'",
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol'",
+            "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'",
+            "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "After s1, a code review over the limit has no code-review material to divide (s1 bundles). The grounding (src/workflow/code-review/types.ts:133) holds ChangedSymbolSummary rows whose callers and callees are names only (src/workflow/code-review/grounding.ts:103), with no module field; a graph grounding carries no source text, while a diff review's rows are files whose signature holds their diff hunks, with no edges (src/workflow/code-review/grounding.ts:339). The delivered review job packed symbol atoms by size alone (src/workflow/code-review/review-job.ts:40), with no relation between them and no neighbour summaries.",
+      "stateAfter": "The code-review adapter's material() is built by codeReviewMaterial from the snapshot's grounding: one whole atom per included changed symbol, plus calls, same-file and same-module relations. s1's prepare groups by them and attaches a deterministic neighbour summary for each related atom held in another chunk. Under the limit nothing changes: one chunk and today's prompt.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add codeReviewMaterial and neighbourSummary under src/workflow/review-pipeline/adapters, as pure functions of the grounding, with their unit tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Point the code-review adapter's material() and neighbour-summary slot at them, so a review over the limit is divided by relations. Under the limit the single-chunk path is unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Rebuild and update the installed daemon. No stored record, grounding or config changes.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API, IPC payload, grounding shape, prompt or stored record changes. assembleCodeReviewGrounding and ChangedSymbolSummary are untouched. The new functions are internal to the pipeline module. A review under the limit sends exactly today's prompt.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Material derived from today's grounding, call relations matched by name",
+        "oneLineSummary": "A pure function turns the snapshot's CodeReviewGrounding into sc1 ReviewMaterial (one atom per changed-symbol summary; calls, same-file and same-module relations), plus a deterministic neighbour-summary writer; nothing in the grounding changes.",
+        "approach": "A new codeReviewMaterial(grounding) in src/workflow/review-pipeline/adapters/code-review-material.ts builds the material. Each ChangedSymbolSummary of the dimension's prepared grounding (s3 supplies it; for coverage, prepareCoverageGrounding's output) becomes one ReviewAtom: id entityId, label file#name, file, module = the file's directory, and text = the row's JSON as content; s1 measures each rendered chunk call for fit. A 'calls' relation joins changed symbols A and B when B's name is in A's callees or A's name is in B's callers. A name that matches several changed symbols relates to all of them, so a true relation is never missed and an ambiguous one only keeps more code together. 'same-file' and 'same-module' relations join atoms sharing a file or a directory; s1's generic grouping consumes them in the kind order calls, same-file, same-module. A diff review's rows (kind 'file', no callers or callees) get same-module relations only. neighbourSummary(atom) writes a short deterministic line with no model call: kind, name, file, the signature's first line cut at 200 characters, and the related changed names. It fills s1's neighbour-summary slot. The material is a function of the snapshot alone.",
+        "pros": [
+          "Smallest shape: no grounding, IPC or prompt change, so s1's single-chunk parity (today's prompts byte-for-byte) is untouched.",
+          "Reads only the snapshot's grounding, as the HLD requires for re-planning and controller resume.",
+          "Name over-matching errs towards keeping code together; the only false relations come from same-named symbols, which merely enlarge a group.",
+          "Deterministic neighbour summaries add no model calls and are reproducible across re-plans."
+        ],
+        "cons": [
+          "Same-named changed symbols in different files are related even when they do not call each other.",
+          "A call edge the graph lacks is not seen; the HLD's mitigation (file and module relations) is the only fallback."
+        ],
+        "costEstimate": "S",
+        "winnerRank": 1,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies",
+            "notes": "calls, then same-file, then same-module relations feed s1's grouping; name matching never misses a relation the grounding records."
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies",
+            "notes": "neighbourSummary fills s1's slot on both sides of a cut call relation."
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies",
+            "notes": "One atom per summary, whole. s1's AtomTooLargeError names an oversized atom by its file#name label."
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies",
+            "notes": "Supplies material() and the neighbour-summary hook only; stages and gather stay with s1 and s3."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies",
+            "notes": "Adds no model call, so there is nothing new to envelope."
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies",
+            "notes": "Atom text is the prompt's own serialisation, so measuring against limitChars is exact."
+          },
+          {
+            "constraintId": "k1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k8",
+            "verdict": "satisfies",
+            "notes": "Atoms are never cut. The 200-character cut applies only to the extra neighbour line, whose atom is reviewed whole in its own chunk."
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies",
+            "notes": "No prompt or grounding change under the limit."
+          }
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "Add caller and callee ids to the grounding",
+        "oneLineSummary": "assembleCodeReviewGrounding also records callerIds and calleeIds (deps.callersOf and deps.calleesOf already return GroundedEntity.id), and call relations are matched by id, with a name match as fallback for older snapshots and diff rows.",
+        "approach": "ChangedSymbolSummary gains optional callerIds and calleeIds, filled at grounding time from the GroundedEntity ids the graph seams already return. codeReviewMaterial builds 'calls' relations by id when they are present and by name otherwise. Atoms, file and module relations, and neighbour summaries are as in a1. Because today's dimension prompts serialise grounding.symbols whole, each prompt builder must strip the new fields to keep s1's single-chunk prompts unchanged, or accept that today's prompts grow.",
+        "pros": [
+          "Exact call relations: no false relation between same-named symbols."
+        ],
+        "cons": [
+          "Changes the IPC-served grounding shape (src/workflow/code-review/__tests__/grounding-ipc.test.ts) and the saved controller grounding.",
+          "Either breaks s1's prompt parity (the new fields appear in every dimension prompt) or adds a stripping step to five prompt builders.",
+          "Needs the name fallback anyway for snapshots and diff rows without ids, so a1's logic is kept in addition."
+        ],
+        "costEstimate": "M",
+        "winnerRank": 2,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "partial",
+            "notes": "If the prompts strip the ids, the atom text must strip them too, or measurement drifts from the prompt."
+          },
+          {
+            "constraintId": "k1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k8",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "partial",
+            "notes": "Today's prompts change unless every builder strips the new fields."
+          }
+        ],
+        "reasonRejected": "Exact call relations, but it changes the IPC grounding and either today's prompts or five prompt builders, and it still needs a1's name fallback."
+      },
+      {
+        "id": "a3",
+        "name": "Model-written neighbour summaries",
+        "oneLineSummary": "As a1 for atoms and relations, but each neighbour summary is produced by a short model call summarising the related symbol.",
+        "approach": "Prepare issues one summarise call per atom that is cut from a related atom, through the pipeline's enveloped calls, and stores the answers in the snapshot so that re-plans reuse them. The chunk prompts then carry model-written summaries.",
+        "pros": [
+          "Summaries can describe behaviour, not just signature and names."
+        ],
+        "cons": [
+          "Adds model calls to prepare, which the HLD keeps deterministic; summaries become another failure path with its own retry and failure policy.",
+          "A summary of a structured summary adds little: the grounding has no source text to summarise beyond the signature and edges."
+        ],
+        "costEstimate": "M",
+        "winnerRank": 3,
+        "constraintScore": [
+          {
+            "constraintId": "ac1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "ac2",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "ac3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc2",
+            "verdict": "partial",
+            "notes": "Prepare gains model stages that sc2 keeps deterministic."
+          },
+          {
+            "constraintId": "sc3",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "sc4",
+            "verdict": "partial",
+            "notes": "The extra summarise calls need their own envelope and failure policy."
+          },
+          {
+            "constraintId": "sc6",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k1",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k8",
+            "verdict": "satisfies"
+          },
+          {
+            "constraintId": "k10",
+            "verdict": "satisfies"
+          }
+        ],
+        "reasonRejected": "Model-written summaries put model calls and a new failure path into prepare, with little to summarise beyond the signature."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]: How the code-review grounding represents changed symbols and their callers/callees, and the delivered atom shape (insrc_",
+      "quotedText": "callers and callees are entity NAMES only, not ids"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]: What the approved upstream designs leave for s2 to fill (HLD and s1 LLD).",
+      "quotedText": "the generic grouping and neighbour-summary slots exist for s2/s4 to fill"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[2]: Tests that cover the grounding and the delivered job, to extend."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "HLD-8315a11f29fd2812"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD-8315a11f29fd2812-s1"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s2 alternatives"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s3 judge"
+    },
+    {
+      "id": "c8",
+      "kind": "step-output",
+      "ref": "s4 contract"
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s5 error paths"
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s6 test strategy"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s7 migration"
+    },
+    {
+      "id": "c12",
+      "kind": "step-output",
+      "ref": "s8 checklist"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:103"
+    }
+  ]
+}

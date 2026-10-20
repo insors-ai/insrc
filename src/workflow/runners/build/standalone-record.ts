@@ -27,7 +27,7 @@ import { execFileSync } from 'node:child_process';
 
 import { writeArtifact, writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, folderIdentityMeta, inheritedStoryStandalone } from '../../storage.js';
 import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bindings.js';
-import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
+import type { FileChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
 import { readTestRecord } from './test-record.js';
 import { resolveStoryRangeBase } from './range-base.js';
@@ -92,7 +92,7 @@ export interface BuildRecord {
 		/** S002 (provenance/feedback): the file-level change-log of the build's
 		 *  changed set, collected at the validate phase. Absent → no `## Changes`
 		 *  section (omit-slot, byte-identity preserved for a no-change build). */
-		readonly changeLog?:   ChangeLog | undefined;
+		readonly changeLog?:   FileChangeLog | undefined;
 		/** S002 (provenance/feedback): append-only, human-authored feedback on the
 		 *  build's changed code (populated out-of-band via `appendFeedback`, never by
 		 *  this writer). Absent → no `## Feedback` section (omit-slot). S003 starts

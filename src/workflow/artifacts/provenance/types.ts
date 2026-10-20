@@ -67,10 +67,10 @@ export interface FeedbackEntry extends ProvenanceAuthorship {
 }
 
 /** One change-log entry (declared for s2 — unused in s1). */
-export interface ChangeLogEntry extends ProvenanceAuthorship {
+export interface FileChangeEntry extends ProvenanceAuthorship {
 	readonly target:   ProvenanceTarget;
 	readonly summary?: string | undefined;
 }
 
 export type FeedbackRecord = readonly FeedbackEntry[];
-export type ChangeLog      = readonly ChangeLogEntry[];
+export type FileChangeLog      = readonly FileChangeEntry[];

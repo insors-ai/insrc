@@ -29,7 +29,7 @@ import {
 	type BuildRecord,
 } from '../standalone-record.js';
 import { appendFeedback } from '../../../artifacts/provenance/writer.js';
-import type { ChangeLog, FeedbackRecord } from '../../../artifacts/provenance/types.js';
+import type { FileChangeLog, FeedbackRecord } from '../../../artifacts/provenance/types.js';
 
 const HASH = 'abc123def4567890';
 
@@ -42,7 +42,7 @@ function withRepo(fn: (repo: string) => void): void {
 
 const readJson = (p: string): BuildRecord => JSON.parse(readFileSync(p, 'utf8')) as BuildRecord;
 
-const CHANGELOG: ChangeLog = [
+const CHANGELOG: FileChangeLog = [
 	{ target: { file: 'src/a.ts', version: 'abc123' }, author: 'insrc-build', timestamp: '2026-09-28T00:00:00.000Z' },
 ];
 

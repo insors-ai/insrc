@@ -16,7 +16,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { feedbackBodyLines, changeLogBodyLines } from '../bindings.js';
-import type { FeedbackRecord, ChangeLog } from '../../provenance/types.js';
+import type { FeedbackRecord, FileChangeLog } from '../../provenance/types.js';
 
 test('feedbackBodyLines: absent → []', () => {
 	assert.deepEqual(feedbackBodyLines(undefined), []);
@@ -55,7 +55,7 @@ test('changeLogBodyLines: empty → []', () => {
 });
 
 test('changeLogBodyLines: present → one bullet per entry with target file/author/timestamp (+ optional segment + summary)', () => {
-	const cl: ChangeLog = [
+	const cl: FileChangeLog = [
 		{ target: { file: 'src/a.ts', version: 'abc123' }, author: 'insrc-build', timestamp: '2026-09-28T00:00:00Z' },
 		{ target: { file: 'src/b.ts', segment: { startLine: 10, endLine: 20 } }, author: 'insrc-build', timestamp: '2026-09-28T01:00:00Z', summary: 'refactor loop' },
 	];

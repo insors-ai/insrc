@@ -13,7 +13,7 @@
  * this helper and re-exports `NoBuildChangesError`, so its behaviour (and tests)
  * are unchanged.
  *
- * `collectBuildChangeLog` maps that changed set into a file-level {@link ChangeLog}
+ * `collectBuildChangeLog` maps that changed set into a file-level {@link FileChangeLog}
  * for the BUILD ledger record (S002 t3). It SWALLOWS a git derivation failure and
  * returns `[]` — a build must never fail because the change-log could not be
  * collected.
@@ -25,7 +25,7 @@ import { gitDiffTool } from '../../../daemon/tools/builtins/git/diff.js';
 import type { GitDiffData } from '../../../daemon/tools/builtins/git/diff.js';
 import type { ToolDeps } from '../../../daemon/tools/types.js';
 import { getLogger } from '../../../shared/logger.js';
-import type { ChangeLog, ChangeLogEntry } from '../../artifacts/provenance/types.js';
+import type { FileChangeLog, FileChangeEntry } from '../../artifacts/provenance/types.js';
 import { storyChangeSet } from './story-commits.js';
 import type { StoryAttribution } from './story-commits.js';
 
@@ -194,8 +194,8 @@ function toRepoRelative(repoPath: string, p: string): string {
 }
 
 /**
- * Build a file-level {@link ChangeLog} for the BUILD ledger record: one
- * {@link ChangeLogEntry} per changed path (segment OMITTED — file-level), stamped
+ * Build a file-level {@link FileChangeLog} for the BUILD ledger record: one
+ * {@link FileChangeEntry} per changed path (segment OMITTED — file-level), stamped
  * with the supplied author/timestamp and, when given, the commit `version`.
  *
  * A git derivation failure is CAUGHT internally and yields `[]` (never thrown out
@@ -216,7 +216,7 @@ export async function collectBuildChangeLog(
 	 *  stub it. Additive/optional — the mandated 2-arg call sites are unchanged, and
 	 *  a 1-parameter stub stays assignable, so existing stubs compile untouched. */
 	listChanged: (repoPath: string, opts?: ChangedFilesOptions) => Promise<readonly string[]> = changedFiles,
-): Promise<ChangeLog> {
+): Promise<FileChangeLog> {
 	// Built conditionally so a ctx carrying neither field passes `undefined` rather
 	// than `{ base: undefined, exclude: undefined }` — keeping the seam call, and
 	// any recording stub's view of it, identical to today.
@@ -234,7 +234,7 @@ export async function collectBuildChangeLog(
 		);
 		return [];
 	}
-	return files.map((file): ChangeLogEntry => ({
+	return files.map((file): FileChangeEntry => ({
 		target:    { file, ...(ctx.version !== undefined && ctx.version.length > 0 ? { version: ctx.version } : {}) },
 		author:    ctx.author,
 		timestamp: ctx.timestamp,

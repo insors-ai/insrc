@@ -13,7 +13,7 @@ import type { Citation } from '../../types.js';
 import type { FunctionalDefinition } from '../functional-definition.js';
 import { renderFunctionalRequirementsSection } from '../functional-definition.js';
 import type { CompanionArtifactRef } from '../companion/types.js';
-import type { ChangeLog, FeedbackRecord } from '../provenance/types.js';
+import type { FileChangeLog, FeedbackRecord } from '../provenance/types.js';
 
 /**
  * S001's FR section content WITHOUT its own '## Functional requirements' heading
@@ -105,7 +105,7 @@ export function feedbackBodyLines(feedback: FeedbackRecord | undefined): string[
  * absent-safe/forward-only), so a build with no recorded changes renders
  * byte-identically to before. Mirrors {@link feedbackBodyLines}.
  */
-export function changeLogBodyLines(changeLog: ChangeLog | undefined): string[] {
+export function changeLogBodyLines(changeLog: FileChangeLog | undefined): string[] {
 	if (changeLog === undefined || changeLog.length === 0) return [];
 	return changeLog.map(c => {
 		const seg = c.target.segment !== undefined ? `:${c.target.segment.startLine}-${c.target.segment.endLine}` : '';

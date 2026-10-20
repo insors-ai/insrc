@@ -68,6 +68,10 @@ test('same-file and same-module relations join atoms sharing a file or directory
 		row('src/n/three.ts', 'src/n/three.ts', 'src/n/three.ts', [], [], 'file'),
 	);
 	assert.deepEqual(rels(diff), ['same-module src/m/one.ts~src/m/two.ts'], 'only same-module relations');
+	// Ids holding the separator characters (diff ids are paths) never collide: every pair is kept.
+	// (x, y:z) and (x:y, z) would both join to 'same-module:x:y:z'.
+	const odd = ['x', 'y:z', 'x:y', 'z'].map(p => row(p, p, p, [], [], 'file'));
+	assert.equal(codeReviewMaterial(grounding(...odd)).relations.filter(r => r.kind === 'same-module').length, 6, 'all six root-level pairs');
 });
 
 test('a duplicate entityId throws an error naming it', () => {

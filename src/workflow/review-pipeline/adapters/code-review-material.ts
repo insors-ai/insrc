@@ -45,7 +45,8 @@ export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMateri
 	const relate = (from: string, to: string, kind: ReviewRelation['kind']): void => {
 		if (from === to) return;
 		const [a, b] = from < to ? [from, to] : [to, from];
-		const key = `${kind}:${a}:${b}`;
+		// Ids can hold any character (a diff row's id is its path): an unambiguous key, never a joined string.
+		const key = JSON.stringify([kind, a, b]);
 		if (seenPair.has(key)) return;
 		seenPair.add(key);
 		relations.push({ from, to, kind });

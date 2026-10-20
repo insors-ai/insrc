@@ -10,7 +10,7 @@
  * never stored on the parent.
  */
 
-import { createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -179,11 +179,10 @@ export class ArtifactStore {
 		const prepared = prepareArtifactWrite(path, build(first.revision), kind);
 		if (priorBytes === prepared.bytes) return;       // nothing changes: no staged operation, no log entry
 
-		// The id is a hash of the artifact, the prior revision, the prepared bytes and the time of the write, so the same
-		// transition made twice (references A to B, back to A, to B again) logs twice. A retry does not recompute it: it
-		// finds the staged operation in the journal and reuses that id.
+		// A fresh id per staged operation, so the same transition made twice (references A to B, back to A, to B again)
+		// is logged twice. A retry does not mint another: it finds the staged operation in the journal and reuses its id.
 		const timestamp = (this.deps.now ?? (() => new Date()))().toISOString();
-		const operationId = createHash('sha256').update(`${a.id}\n${priorRevision}\n${prepared.bytes}\n${timestamp}`).digest('hex').slice(0, 32);
+		const operationId = randomUUID().replace(/-/g, '');
 		const entry: ChangeLogEntry = {
 			id: operationId,
 			actor: by,

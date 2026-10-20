@@ -30,6 +30,8 @@ describe('History', () => {
 			['lines out of order', fb('b6', { anchor: { lines: [5, 3] } })],
 			['lines not integers', fb('b7', { anchor: { lines: [1.5, 3] } })],
 			['no id', fb('')],
+			['actor without kind and properties', { ...fb('b10'), actor: { id: 'github:alice' } as never }],
+			['actor of an unknown kind', { ...fb('b11'), actor: { ...actor, kind: 'robot' } as never }],
 			['lines not a list', fb('b8', { anchor: { lines: 42 as never } })],
 			['lines of one', fb('b9', { anchor: { lines: [1] as never } })],
 		];

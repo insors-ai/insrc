@@ -77,7 +77,15 @@ describe('decodeArtifactHead', () => {
 			assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ review }) })), ArtifactShapeError, why);
 		}
 		assert.equal(decodeArtifactHead(LLD, head({ lifecycle: lc({ review: okReview }) })).artifact.lifecycle.review?.verdict, 'pass');
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ review: { ...okReview, counts: { high: 'invalid' } } }) })), ArtifactShapeError, 'counts must be numbers');
+		assert.equal(decodeArtifactHead(LLD, head({ lifecycle: lc({ review: { ...okReview, counts: { high: 1, med: 0 } } }) })).artifact.lifecycle.review?.counts['high'], 1);
 		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ stale: { upstream: okRef, upstreamRevision: 1 } }) })), ArtifactShapeError, 'staleness with no since');
+		const withLink = (pendingLink: unknown) => head({ envelope: { binding: { reference: okRef, createdAtRevision: 1, posted: [], pendingLink } } });
+		assert.throws(() => decodeArtifactHead(LLD, withLink({})), ArtifactShapeError, 'pendingLink: {}');
+		assert.throws(() => decodeArtifactHead(LLD, withLink({ parent: okRef, child: {} })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, withLink({ parent: okRef, childId: 1.5 })), ArtifactShapeError);
+		assert.equal(decodeArtifactHead(LLD, withLink({ parent: okRef, child: okRef, childId: 3 })).artifact.binding?.pendingLink?.childId, 3);
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ approval: { revision: 1, by: { id: 'github:alice' }, at: 't' } }) })), ArtifactShapeError, 'an actor needs kind and properties');
 		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ approval: { revision: 1, by: actor, at: 't', override: 'x' } }) })), ArtifactShapeError, 'override is an object with a reason');
 		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ stale: { upstream: okRef } }) })), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { binding: { reference: okRef } } })), ArtifactShapeError, 'binding with only a reference');

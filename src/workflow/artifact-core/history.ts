@@ -10,6 +10,7 @@
  */
 
 import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
+import { isActor } from './decode.js';
 import { HistoryEntryError, HistoryReadError } from './types.js';
 import type { ChangeLogEntry, Feedback, Operation } from './types.js';
 import type { SidecarIo, SidecarFile } from './sidecar.js';
@@ -38,7 +39,7 @@ function nonEmpty(v: unknown): v is string {
 
 function validateCommon(e: Record<string, unknown>, what: string): void {
 	if (!nonEmpty(e['id'])) throw new HistoryEntryError(`${what} has no id`);
-	if (!isObject(e['actor']) || !nonEmpty(e['actor']['id'])) throw new HistoryEntryError(`${what} ${String(e['id'])} has no actor`);
+	if (!isActor(e['actor'])) throw new HistoryEntryError(`${what} ${String(e['id'])} has no valid actor (id, kind and properties)`);
 	if (!nonEmpty(e['timestamp'])) throw new HistoryEntryError(`${what} ${String(e['id'])} has no timestamp`);
 }
 

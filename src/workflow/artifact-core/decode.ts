@@ -40,15 +40,20 @@ export function emptyLifecycle(revision: number): Lifecycle {
 }
 
 const isStr = (v: unknown): v is string => typeof v === 'string';
-const isActor = (v: unknown): boolean => isObject(v) && isStr(v['id']) && isStr(v['kind']) && isObject(v['properties']);
+/** An actor with a non-empty id, one of the three kinds and a properties object. Shared by heads and sidecar entries. */
+export const isActor = (v: unknown): boolean => isObject(v) && isStr(v['id']) && v['id'].length > 0
+	&& (v['kind'] === 'person' || v['kind'] === 'agent' || v['kind'] === 'system') && isObject(v['properties']);
 const isReference = (v: unknown): boolean => isObject(v) && isStr(v['entityId']) && isStr(v['type']) && isStr(v['relation']);
 const isInt = (v: unknown): boolean => typeof v === 'number' && Number.isInteger(v);
 const isSignoff = (v: unknown): boolean => isObject(v) && isInt(v['revision']) && isReference(v['request'])
 	&& (v['state'] === 'open' || v['state'] === 'changes-requested' || v['state'] === 'completed')
 	&& Array.isArray(v['actors']) && v['actors'].every(isActor) && isStr(v['at']);
 const isAttachment = (v: unknown): boolean => isObject(v) && isReference(v['target']) && isInt(v['revision']) && isStr(v['at']);
+const isPendingLink = (v: unknown): boolean => isObject(v) && isReference(v['parent'])
+	&& (v['child'] === undefined || isReference(v['child'])) && (v['childId'] === undefined || isInt(v['childId']));
 const isBinding = (v: unknown): boolean => isObject(v) && isReference(v['reference']) && isInt(v['createdAtRevision'])
-	&& Array.isArray(v['posted']) && v['posted'].every(p => isObject(p) && isStr(p['kind']) && isStr(p['at']));
+	&& Array.isArray(v['posted']) && v['posted'].every(p => isObject(p) && isStr(p['kind']) && isStr(p['at']))
+	&& (v['pendingLink'] === undefined || isPendingLink(v['pendingLink']));
 
 /** The reason a lifecycle part is malformed, or undefined when it is well formed. */
 function lifecycleProblem(v: unknown): string | undefined {
@@ -64,7 +69,7 @@ function lifecycleProblem(v: unknown): string | undefined {
 	if (review !== undefined && !(isObject(review) && isInt(review['revision']) && isActor(review['reviewer'])
 		&& (review['party'] === 'controller' || review['party'] === 'daemon')
 		&& (review['verdict'] === 'pass' || review['verdict'] === 'warn' || review['verdict'] === 'block')
-		&& isObject(review['counts']) && isStr(review['at'])
+		&& isObject(review['counts']) && Object.values(review['counts']).every(n => typeof n === 'number') && isStr(review['at'])
 		&& (review['report'] === undefined || isReference(review['report'])))) return 'has a malformed review';
 	const stale = v['stale'];
 	if (stale !== undefined && !(isObject(stale) && isReference(stale['upstream']) && isInt(stale['upstreamRevision']) && isStr(stale['since']))) return 'has a malformed staleness record';

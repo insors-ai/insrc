@@ -116,7 +116,7 @@ test('an unparseable storyId keeps its own :R(<raw>) item and raises identity-am
 test('a standalone story with no head is a root with no invented epic, dated from its own LLD', () => {
 	const graph = buildWorkItemGraph(recordSet([
 		lldRecord('bbbbbbbbbbbbbbbb', 'S001', { standalone: true, createdAt: '2026-09-01T10:00:00.000Z', epicSlug: 'a-standalone-thing' }),
-		buildRecord('bbbbbbbbbbbbbbbb', 'S001', [{ id: 't1', passed: true }], { createdAt: '2026-09-03T10:00:00.000Z' }),
+		buildRecord('bbbbbbbbbbbbbbbb', 'S001', [{ id: 't1', passed: true }], { createdAt: '2026-09-03T10:00:00.000Z', epicCreatedAt: '2026-09-01T10:00:00.000Z' }),
 	]));
 	assert.deepEqual(storyIds(graph), ['E20260901bbbbbbbb:S001']);
 	const story = item(graph, 'E20260901bbbbbbbb:S001');

@@ -281,11 +281,11 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 				: lld !== null ? lld.meta['standalone'] === true
 				: builds.some(b => b.meta['standalone'] === true);
 
-			// Anchor follows buildRecordFolderArgs: an epic story is dated by its head; a
-			// standalone story by its LLD, else its head, else its earliest BUILD.
-			const anchor = standalone
-				? lldAnchorOf(lld) ?? head?.createdAt ?? earliestStamp(builds) ?? earliestStamp(records)
-				: head?.createdAt ?? lldAnchorOf(lld) ?? earliestStamp(builds) ?? earliestStamp(records);
+			// The anchor is the one the folder resolver uses (buildRecordFolderArgs): a persisted BUILD
+			// record's stamp, then the work item's head (a DEF or ISSUE's own createdAt, or the stamp of
+			// a standalone LLD head), then the Story's own LLD stamp, then any record's stamp. A record's
+			// own createdAt is never an anchor, so the reader and the writers cannot disagree.
+			const anchor = earliestStamp(builds) ?? head?.createdAt ?? lldAnchorOf(lld) ?? earliestStamp(records);
 
 			const isRaw = storyKey.startsWith('R(');
 			const ordinal = isRaw ? null : Number(storyKey);

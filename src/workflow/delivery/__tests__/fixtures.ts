@@ -346,15 +346,28 @@ export function realRecords(fileNames: readonly string[] = Object.keys(REAL_STOR
 	}).sort((a, b) => a.artifactId.localeCompare(b.artifactId));
 }
 
-/** The same real-shape files as the delivery reader sees them after the s9 conversion, which stamps each
- *  record with the day the old derivation gave it (its own createdAt). */
+/** The same real-shape files as the delivery reader sees them after the s9 conversion, which stamps every
+ *  record of a work item with the work item's earliest day. */
 export function stampedRealRecords(fileNames: readonly string[] = Object.keys(REAL_STORE)): ArtifactRecord[] {
+	const hashOf = (f: string): string => f.replace(/\.json$/, '').split('-')[1] ?? f;
+	const createdOf = (f: string): string | undefined => {
+		const c = ((REAL_STORE[f] as { meta?: Record<string, unknown> } | undefined)?.meta)?.['createdAt'];
+		return typeof c === 'string' ? c : undefined;
+	};
+	// The conversion stamps every record of a work item with the work item's earliest day.
+	const earliest = new Map<string, string>();
+	for (const f of fileNames) {
+		const c = createdOf(f);
+		const h = hashOf(f);
+		if (c !== undefined && (earliest.get(h) === undefined || c < earliest.get(h)!)) earliest.set(h, c);
+	}
 	return fileNames.map(f => {
 		const raw = REAL_STORE[f];
 		if (raw === undefined) throw new Error(`fixtures: no REAL_STORE file '${f}'`);
 		const meta = (raw as { meta?: Record<string, unknown> }).meta;
-		const stamped = meta !== undefined && meta['epicCreatedAt'] === undefined && typeof meta['createdAt'] === 'string'
-			? { ...raw, meta: { ...meta, epicCreatedAt: meta['createdAt'] } } as RawStoreFile
+		const stamp = earliest.get(hashOf(f));
+		const stamped = meta !== undefined && meta['epicCreatedAt'] === undefined && stamp !== undefined
+			? { ...raw, meta: { ...meta, epicCreatedAt: stamp } } as RawStoreFile
 			: raw;
 		return recordFromFile(f, stamped);
 	}).sort((a, b) => a.artifactId.localeCompare(b.artifactId));

@@ -26,9 +26,9 @@ test('epic, standalone and issue ids equal deriveWorkItemIdentity over the ancho
 			'ISSUE-2d9e9e694a94116b.json',
 		]),
 		defRecord('761a43a6fa645815', ['s9'], { createdAt: '2026-08-03T06:51:25.695Z' }),
-		// A sized bugfix: the ISSUE on the 1st, its standalone LLD on the 2nd.
+		// A sized bugfix: the ISSUE on the 1st, its standalone LLD written on the 2nd and stamped with the ISSUE's day.
 		issueRecord('9999999999999999', { slug: 'some-other-work' }, { createdAt: '2026-10-01T23:30:00.000Z', magnitude: 'sized' }),
-		lldRecord('9999999999999999', 'S001', { standalone: true, createdAt: '2026-10-02T08:00:00.000Z' }),
+		lldRecord('9999999999999999', 'S001', { standalone: true, createdAt: '2026-10-02T08:00:00.000Z', epicCreatedAt: '2026-10-01T23:30:00.000Z' }),
 	]));
 
 	const expected: [id: string, hash: string, anchor: string, storyId?: string][] = [
@@ -40,7 +40,7 @@ test('epic, standalone and issue ids equal deriveWorkItemIdentity over the ancho
 		['E202609292d9e9e69',      '2d9e9e694a94116b', '2026-09-29T07:46:38.613Z'],
 		['E20260803761a43a6',      '761a43a6fa645815', '2026-08-03T06:51:25.695Z'],
 		['E20261001' + '99999999', '9999999999999999', '2026-10-01T23:30:00.000Z'],
-		['E20261002' + '99999999' + ':S001', '9999999999999999', '2026-10-02T08:00:00.000Z', 'S001'],
+		['E20261001' + '99999999' + ':S001', '9999999999999999', '2026-10-01T23:30:00.000Z', 'S001'],
 	];
 	for (const [id, hash, anchor, storyId] of expected) {
 		assert.equal(deriveWorkItemIdentity(hash, anchor, storyId).canonical, id);
@@ -56,7 +56,7 @@ test('epic, standalone and issue ids equal deriveWorkItemIdentity over the ancho
 		assert.ok([...graph.items.keys()].some(id => id === segment || id.startsWith(`${segment}:`)), `no item in folder ${segment}`);
 	}
 
-	// The sized bugfix's story keeps its own day, not its ISSUE's.
-	assert.ok(graph.items.has('E2026100299999999:S001'));
-	assert.equal(graph.items.has('E2026100199999999:S001'), false);
+	// The sized bugfix's story is dated by its ISSUE, the day the folder resolver files it under, not by the day its LLD was written.
+	assert.ok(graph.items.has('E2026100199999999:S001'));
+	assert.equal(graph.items.has('E2026100299999999:S001'), false);
 });

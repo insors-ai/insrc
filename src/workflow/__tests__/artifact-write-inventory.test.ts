@@ -124,3 +124,51 @@ test('the detector flags raw, aliased and injected writers and accepts the posit
 	assert.deepEqual(checkInventoryEntry(mixedSrc, entry('mixed', { via: 'writeArtifact', sites: [{ fn: 'approve', kind: 'content' }] })), []);
 	assert.match(checkInventoryEntry(mixedSrc, entry('mixed', { via: 'writeArtifact' })).join(), /must name its write sites/);
 });
+
+test('the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry', () => {
+	const none = undefined;
+	// appendFileSync: raw, aliased, renamed, namespace, injected
+	const raw = "import { appendFileSync } from 'node:fs';\nexport function f(p: string) { appendFileSync(p, 'x'); }\n";
+	assert.match(checkInventoryEntry(raw, none).join(), /no inventory entry/, 'raw appendFileSync');
+	const aliased = "import { appendFileSync } from 'node:fs';\nconst a = appendFileSync;\nexport function f(p: string) { a(p, 'x'); }\n";
+	assert.match(checkInventoryEntry(aliased, none).join(), /no inventory entry/, 'aliased appendFileSync');
+	const renamed = "import { appendFileSync as add } from 'node:fs';\nexport function f(p: string) { add(p, 'x'); }\n";
+	assert.match(checkInventoryEntry(renamed, none).join(), /no inventory entry/, 'renamed appendFileSync');
+	const namespaced = "import * as fs from 'node:fs';\nexport function f(p: string) { fs.appendFileSync(p, 'x'); }\n";
+	assert.match(checkInventoryEntry(namespaced, none).join(), /no inventory entry/, 'namespace appendFileSync');
+	const injected = "import { appendFileSync } from 'node:fs';\nexport const DEPS = { append: appendFileSync };\n";
+	assert.match(checkInventoryEntry(injected, none).join(), /no inventory entry/, 'injected appendFileSync');
+
+	// appendSidecarLine without an entry
+	const sidecar = "import { appendSidecarLine } from './artifact-core/sidecar.js';\nexport function f(p: string) { appendSidecarLine(p, { artifactId: 'a', entry: 1 }); }\n";
+	assert.match(checkInventoryEntry(sidecar, none).join(), /no inventory entry/, 'unlisted appendSidecarLine');
+
+	// a store write in a file with no entry, and the same write once it has one
+	const store = "import { ArtifactStore } from './artifact-core/store.js';\nexport async function f(s: ArtifactStore, a: object, by: object) { await s.write(a, by); }\n";
+	assert.match(checkInventoryEntry(store, none).join(), /no inventory entry/, 'store write');
+	const storeEntry = { file: 'x.ts', class: 'content', via: 'both', note: 'control' } as InventoryEntry;
+	assert.deepEqual(checkInventoryEntry(store, storeEntry), [], 'the store mints the revision, so a content file may use it instead of writeArtifact');
+	// a .write on a value in a file that does not import the store is not a store write
+	assert.deepEqual(checkInventoryEntry("export function f(w: { write(s: string): void }) { w.write('x'); }\n", none), []);
+
+	// an annotated append in a content file is accepted, an unannotated one is flagged
+	const content = { file: 'x.ts', class: 'content', via: 'both', note: 'control' } as InventoryEntry;
+	const mixedAppend = "import { writeArtifact } from './storage.js';\nimport { appendFileSync } from 'node:fs';\nexport function f(p: string) { writeArtifact(p, {meta:{}}, 'content');\n// raw-write: log\nappendFileSync(p, 'x'); }\n";
+	assert.deepEqual(checkInventoryEntry(mixedAppend, content), []);
+	assert.match(checkInventoryEntry(mixedAppend.replace('// raw-write: log\n', ''), content).join(), /raw appendFileSync without a 'raw-write/);
+
+	// the five existing writers are found exactly as before
+	for (const w of ['writeArtifact', 'writeRecordFile', 'writeAtomic', 'writeFileSync', 'renameSync']) {
+		const src = `import { ${w} } from './w.js';\nexport function f(p: string) { ${w}(p, 'x'); }\n`;
+		assert.deepEqual(scanWriters(src).calls.map(c => c.name), [w], w);
+	}
+
+	// every file that now holds an appendFileSync has an entry
+	for (const f of [
+		'src/daemon/fatal.ts', 'src/daemon/shutdown.ts', 'src/daemon/steps/analyze-step/handler.ts', 'src/daemon/steps/build-step/handler.ts',
+		'src/daemon/steps/workflow-step/handler.ts', 'src/daemon/steps/review-step/handler.ts', 'src/config/feedback.ts', 'src/workflow/storage.ts',
+	]) {
+		assert.ok(byFile.has(f), `${f} has an inventory entry`);
+		assert.ok(scanWriters(read(f)).calls.some(c => c.name === 'appendFileSync'), `${f} calls appendFileSync`);
+	}
+});

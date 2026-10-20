@@ -10,7 +10,8 @@ import ts from 'typescript';
  * The inventory of artifact write paths (sc3) and the detector that checks it.
  *
  * Every production file that writes a file with `writeArtifact`, `writeAtomic`,
- * `writeFileSync` or `renameSync`, or passes one of them on as a value (a
+ * `writeFileSync`, `renameSync`, `appendFileSync` or `appendSidecarLine`, calls the
+ * artifact store's `write`, or passes one of them on as a value (a
  * default parameter such as `write: writeAtomic`, an alias, an argument), has
  * one entry in {@link ARTIFACT_WRITE_INVENTORY} saying what it writes. The
  * rules are enforced by `__tests__/artifact-write-inventory.test.ts`:
@@ -92,7 +93,14 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/daemon/steps/workflow-step/resume.ts', class: 'migration', via: 'raw', note: 'a resume puts a parker\'s draft files back byte for byte, meta.revision included: it restores, it does not author, so it mints no revision' },
 
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---
-	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact' },
+	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact; appendRunLog and appendProgressLog append to the jsonl run traces' },
+	{ file: 'src/daemon/fatal.ts', class: 'non-artifact', via: 'raw', note: 'appends the crash trace to daemon.crash.log' },
+	{ file: 'src/daemon/shutdown.ts', class: 'non-artifact', via: 'raw', note: 'appends the last line (reason and health) to the shutdown record' },
+	{ file: 'src/daemon/steps/analyze-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },
+	{ file: 'src/daemon/steps/build-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },
+	{ file: 'src/daemon/steps/workflow-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },
+	{ file: 'src/daemon/steps/review-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },
+	{ file: 'src/config/feedback.ts', class: 'non-artifact', via: 'raw', note: 'appends feedback entries to the configuration feedback file' },
 	{ file: 'src/agent/providers/cli-provider.ts', class: 'non-artifact', via: 'raw', note: 'temporary prompt and schema files for the CLI subprocess' },
 	{ file: 'src/analyze/context/cache.ts', class: 'non-artifact', via: 'raw', note: 'analyze context cache' },
 	{ file: 'src/analyze/context/driver.ts', class: 'non-artifact', via: 'raw', note: 'analyze context scratch output' },
@@ -122,7 +130,8 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 // ---------------------------------------------------------------------------
 
 // writeRecordFile is the code-review runner's revision-minting writer (it calls writeArtifact).
-const WRITER_NAMES = ['writeArtifact', 'writeRecordFile', 'writeAtomic', 'writeFileSync', 'renameSync'] as const;
+// appendFileSync and appendSidecarLine (the sidecar history primitive) are raw appends.
+const WRITER_NAMES = ['writeArtifact', 'writeRecordFile', 'writeAtomic', 'writeFileSync', 'renameSync', 'appendFileSync', 'appendSidecarLine'] as const;
 type WriterName = (typeof WRITER_NAMES)[number];
 
 export interface WriterCall  { readonly name: WriterName; readonly line: number; readonly annotated: boolean }
@@ -132,7 +141,12 @@ export interface WriterScan {
 	readonly values: readonly WriterValue[];
 	readonly usesWriteArtifact: boolean;
 	readonly rawCalls: readonly WriterCall[];
+	/** Calls of `.write(...)` on a value in a file that imports the artifact store (it mints revisions). */
+	readonly storeWrites: readonly number[];
 }
+
+/** An import specifier that names the artifact store module. */
+const STORE_MODULE = /(?:^|\/)artifact-core\/store(?:\.js)?$/;
 
 /** Find the writers a source file calls, passes on as a value, or aliases. Syntax-aware:
  *  it follows `import { writeAtomic as save }`, `const w = writeAtomic`, namespace
@@ -144,11 +158,13 @@ export function scanWriters(source: string): WriterScan {
 	const names = new Map<string, WriterName>();          // local name -> the writer it stands for
 	const namespaces = new Set<string>();                 // `import * as fs` / `import fs from`, for fs.writeFileSync
 	const isWriter = (n: string): n is WriterName => (WRITER_NAMES as readonly string[]).includes(n);
+	let importsStore = false;
 
 	for (const o of WRITER_NAMES) names.set(o, o);
 	// imports: a renamed writer keeps its meaning, and the original name stops standing for it
 	sf.forEachChild(function visitImports(node) {
 		if (ts.isImportDeclaration(node)) {
+			if (ts.isStringLiteral(node.moduleSpecifier) && STORE_MODULE.test(node.moduleSpecifier.text)) importsStore = true;
 			const clause = node.importClause;
 			if (clause?.name !== undefined) namespaces.add(clause.name.text);
 			const nb = clause?.namedBindings;
@@ -179,6 +195,7 @@ export function scanWriters(source: string): WriterScan {
 
 	const calls: WriterCall[] = [];
 	const values: WriterValue[] = [];
+	const storeWrites: number[] = [];
 	const noted = (line: number): boolean => /raw-write:/.test(original[line] ?? '') || /raw-write:/.test(original[line - 1] ?? '');
 	const seenCallees = new Set<ts.Node>();
 
@@ -189,6 +206,7 @@ export function scanWriters(source: string): WriterScan {
 			let name: WriterName | undefined;
 			if (ts.isIdentifier(callee)) name = names.get(callee.text);
 			else if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.expression) && namespaces.has(callee.expression.text) && isWriter(callee.name.text)) name = callee.name.text;
+			if (importsStore && ts.isPropertyAccessExpression(callee) && callee.name.text === 'write') storeWrites.push(lineOf(node) + 1);
 			if (name !== undefined) {
 				seenCallees.add(callee);
 				const line = lineOf(node);
@@ -217,13 +235,13 @@ export function scanWriters(source: string): WriterScan {
 
 	const mints = (n: WriterName): boolean => n === 'writeArtifact' || n === 'writeRecordFile';
 	const rawCalls = calls.filter(c => !mints(c.name));
-	const usesWriteArtifact = calls.some(c => mints(c.name)) || values.some(v => mints(v.name));
-	return { calls, values, usesWriteArtifact, rawCalls };
+	const usesWriteArtifact = calls.some(c => mints(c.name)) || values.some(v => mints(v.name)) || storeWrites.length > 0;
+	return { calls, values, usesWriteArtifact, rawCalls, storeWrites };
 }
 
-/** True when the file calls a raw writer, or passes a writer on as a value. */
+/** True when the file calls a raw writer, calls the store's write, or passes a writer on as a value. */
 export function writesAnything(scan: WriterScan): boolean {
-	return scan.calls.length > 0 || scan.values.length > 0;
+	return scan.calls.length > 0 || scan.values.length > 0 || scan.storeWrites.length > 0;
 }
 
 /** The text of one top-level function, from its declaration to the next one. */

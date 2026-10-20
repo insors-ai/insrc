@@ -30,7 +30,7 @@ Run at 2026-10-20T16:45:32.296Z on commit `aecee5ff`. Tests check: **passed**. 2
 
 ## t2
 
-Run at 2026-10-20T16:54:56.125Z on commit `7de06bfd`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-20T17:15:21.014Z on commit `27e08db1`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk'**
 
@@ -54,7 +54,7 @@ Run at 2026-10-20T16:54:56.125Z on commit `7de06bfd`. Tests check: **passed**. 3
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 5 | 0.7 s |  |
+| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 10 | 0.7 s |  |
 
 ## t3
 

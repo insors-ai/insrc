@@ -21,8 +21,9 @@
  *   quality   today's findings, plus one description per symbol the chunk holds, so
  *             every symbol reaches the cross-chunk duplicate comparison.
  *
- * Each validator gives at most one reason per kind of problem, naming each distinct
- * value once, so the correction stays small beside the call.
+ * Each validator gives at most one reason per kind of problem, of a fixed size: a value
+ * the model made up is located by count and position, never repeated back, so the
+ * correction always fits beside the call (s1 leaves out one that would not).
  */
 
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
@@ -158,19 +159,25 @@ export function chunkCall(spec: ChunkSpec, chunk: ReviewChunk, material: ReviewM
 
 const quoted = (values: readonly string[]): string => [...new Set(values)].map(v => JSON.stringify(v)).join(', ');
 
+/** Answer entries at fault, by count and position: a value the model made up is never repeated
+ *  back, so a reason has a fixed size however long the value, and the correction always fits. */
+function atFault(what: string, positions: readonly string[]): string {
+	return `${positions.length} ${what} (first: ${positions[0]})`;
+}
+
 /** The notes' problems: keys that are not obligations, atoms the call did not carry. */
 function noteReasons(notes: readonly ChunkNote[], call: ReviewCall, material: ReviewMaterial): string[] {
 	const keys = new Set(material.obligations.map(o => o.key));
 	const carried = new Set(call.carries.atomIds);
-	const badKeys = notes.map(n => n.key).filter(k => !keys.has(k));
-	const badAtoms = notes.flatMap(n => n.atomIds).filter(id => !carried.has(id));
+	const badKeys = notes.flatMap((n, i) => keys.has(n.key) ? [] : [`notes[${i}].key`]);
+	const badAtoms = notes.flatMap((n, i) => n.atomIds.flatMap((id, j) => carried.has(id) ? [] : [`notes[${i}].atomIds[${j}]`]));
 	return [
-		...(badKeys.length > 0 ? [`notes use keys that are not listed obligation keys: ${quoted(badKeys)}`] : []),
-		...(badAtoms.length > 0 ? [`notes name atomIds that are not symbols in this chunk: ${quoted(badAtoms)}`] : []),
+		...(badKeys.length > 0 ? [`${atFault('notes use a key that is not one of the listed obligation keys', badKeys)}; use only the keys listed`] : []),
+		...(badAtoms.length > 0 ? [`${atFault('atomIds name no symbol in this chunk', badAtoms)}; name only the entityIds of the symbols in this chunk: ${quoted(call.carries.atomIds)}`] : []),
 	];
 }
 
-/** A chunk answer's problems, beyond its schema. Empty: valid. */
+/** A chunk answer's problems, beyond its schema. Empty: valid. One fixed-size reason per kind. */
 export function validateChunk(spec: ChunkSpec, answer: unknown, call: ReviewCall, material: ReviewMaterial): string[] {
 	const a = answer as { notes?: readonly ChunkNote[]; findings?: readonly { findingKind?: string; symbolId?: string }[]; descriptions?: readonly { atomId: string }[] };
 	const carried = new Set(call.carries.atomIds);
@@ -179,23 +186,25 @@ export function validateChunk(spec: ChunkSpec, answer: unknown, call: ReviewCall
 			return noteReasons(a.notes ?? [], call, material);
 		case 'coverage': {
 			const findings = a.findings ?? [];
+			// findingKind is one of the schema's three values, so it is named.
 			const kinds = findings.map(f => f.findingKind ?? '(none)').filter(k => k !== 'symbol-coverage');
-			const symbols = findings.filter(f => f.findingKind === 'symbol-coverage').map(f => f.symbolId ?? '(none)').filter(id => !carried.has(id));
+			const symbols = findings.flatMap((f, i) => f.findingKind === 'symbol-coverage' && !carried.has(f.symbolId ?? '') ? [`findings[${i}].symbolId`] : []);
 			return [
 				...(kinds.length > 0 ? [`a chunk may report only symbol-coverage findings (each promised test is judged at gather); found findingKind ${quoted(kinds)}`] : []),
-				...(symbols.length > 0 ? [`symbol-coverage findings name symbolIds that are not symbols in this chunk: ${quoted(symbols)}`] : []),
+				...(symbols.length > 0 ? [`${atFault('symbol-coverage findings name a symbolId that is no symbol in this chunk', symbols)}; name only: ${quoted(call.carries.atomIds)}`] : []),
 				...noteReasons(a.notes ?? [], call, material),
 			];
 		}
 		case 'quality': {
 			const ids = (a.descriptions ?? []).map(d => d.atomId);
+			// The missing ids are the chunk's own symbols, so they are named.
 			const missing = call.carries.atomIds.filter(id => !ids.includes(id));
-			const repeated = ids.filter((id, i) => ids.indexOf(id) !== i);
-			const foreign = ids.filter(id => !carried.has(id));
+			const repeated = ids.flatMap((id, i) => ids.indexOf(id) !== i ? [`descriptions[${i}]`] : []);
+			const foreign = ids.flatMap((id, i) => carried.has(id) ? [] : [`descriptions[${i}]`]);
 			return [
 				...(missing.length > 0 ? [`descriptions are missing for symbols in this chunk: ${quoted(missing)}`] : []),
-				...(repeated.length > 0 ? [`descriptions repeat symbols: ${quoted(repeated)}`] : []),
-				...(foreign.length > 0 ? [`descriptions name atomIds that are not symbols in this chunk: ${quoted(foreign)}`] : []),
+				...(repeated.length > 0 ? [`${atFault('descriptions repeat a symbol already described', repeated)}`] : []),
+				...(foreign.length > 0 ? [`${atFault('descriptions name an atomId that is no symbol in this chunk', foreign)}; describe exactly: ${quoted(call.carries.atomIds)}`] : []),
 			];
 		}
 	}

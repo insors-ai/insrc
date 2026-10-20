@@ -228,12 +228,22 @@ test("a chunk answer with an unknown key, an atom outside its call's carries, or
 		assert.equal(again.carries.chunkId, first.carries.chunkId, `${name}: the same chunk`);
 		assert.deepEqual(again.prompt.schema, NOTES_CHUNK_SCHEMA, `${name}: still the chunk call`);
 		const system = again.prompt.messages[0]!.content as string;
-		assert.ok(system.includes('REJECTED') && system.includes('keys that are not listed obligation keys: "no-such-key"'), `${name}: the correction names the reason`);
+		assert.ok(system.includes('REJECTED') && system.includes('1 notes use a key that is not one of the listed obligation keys (first: notes[0].key)'), `${name}: the correction names the reason`);
 		assert.ok((again.prompt.messages[1]!.content as string) === (first.prompt.messages[1]!.content as string), `${name}: the chunk's payload is unchanged`);
-		// Many bad notes give one short reason per kind, each value once.
-		const many = Array.from({ length: 200 }, () => ({ key: 'no-such-key', atomIds: [outside], note: 'x' }));
+		// Many bad notes, and made-up values of any length, give one fixed-size reason per kind:
+		// the value is located, never repeated back, so the correction always fits beside the call.
+		const huge = 'k'.repeat(SMALL * 2);
+		const many = Array.from({ length: 200 }, () => ({ key: huge, atomIds: [huge], note: 'x' }));
 		const reasons = adapter.stagesFor('daemon')[0]!.validate!({ notes: many }, first);
-		assert.deepEqual(reasons, ['notes use keys that are not listed obligation keys: "no-such-key"', `notes name atomIds that are not symbols in this chunk: "${outside}"`], name);
+		assert.equal(reasons.length, 2, name);
+		assert.ok(reasons.every(r => !r.includes(huge.slice(0, 50)) && r.length < 2_000), `${name}: fixed size`);
+		assert.match(reasons[0]!, /^200 notes use a key that is not one of the listed obligation keys \(first: notes\[0\]\.key\)/);
+		assert.match(reasons[1]!, /^200 atomIds name no symbol in this chunk \(first: notes\[0\]\.atomIds\[0\]\)/);
+		// Re-issued with that answer, the correction is in the call, and the call fits the limit.
+		const hugeNext = applyOutput(job, adapter, first.callId, echo(first, { notes: many }));
+		const corrected = hugeNext.pending.find(c => c.attempt === 2)!;
+		assert.match(corrected.prompt.messages[0]!.content as string, /REJECTED[\s\S]*200 notes use a key/, `${name}: the correction is sent`);
+		assert.ok(corrected.chars <= SMALL, `${name}: and fits`);
 		// An atom outside the call's carries on the re-issue: the review fails.
 		assert.throws(() => applyOutput(next, adapter, again.callId, echo(again, { notes: [{ key, atomIds: [outside], note: 'x' }] })),
 			(e: unknown) => e instanceof ReviewCallFailedError && /invalid-answer/.test(e.message), name);
@@ -310,8 +320,8 @@ test('a quality chunk answer missing, repeating or adding a description is rejec
 	const d = (atomId: string) => ({ atomId, description: `what ${atomId} does` });
 	const cases: [string, unknown[], RegExp][] = [
 		['missing', ids.slice(1).map(d), /descriptions are missing for symbols in this chunk: "[^"]+"/],
-		['repeated', [...ids.map(d), d(ids[0]!)], /descriptions repeat symbols: "[^"]+"/],
-		['foreign', [...ids.map(d), d(outside)], /descriptions name atomIds that are not symbols in this chunk: "[^"]+"/],
+		['repeated', [...ids.map(d), d(ids[0]!)], new RegExp(`1 descriptions repeat a symbol already described \\(first: descriptions\\[${ids.length}\\]\\)`)],
+		['foreign', [...ids.map(d), d(outside)], new RegExp(`1 descriptions name an atomId that is no symbol in this chunk \\(first: descriptions\\[${ids.length}\\]\\); describe exactly: "${ids[0]}"`)],
 	];
 	for (const [name, descriptions, reason] of cases) {
 		const next = applyOutput(job, adapter, first.callId, echo(first, { findings: [], descriptions }));

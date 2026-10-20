@@ -192,7 +192,7 @@
       {
         "id": "t6",
         "title": "Quality's compare and pair stages for cross-chunk duplicates",
-        "summary": "Quality's adapter adds model stages 'compare' and 'pair' after its chunk stage, onCallFailure 'fail-review', run only when the plan is divided. s1 issues every later stage per chunk, so compare's chunkCalls for chunk i packs the chunk's descriptions (from the chunk stage's output) into batches of at most half the limit and pairs each with the batches of every later chunk; each call returns candidate duplicate pairs. pair's chunkCalls for chunk i judges each candidate pair whose first symbol chunk i holds, on both full rows when they fit together, else full against description in each direction, returning today's quality findings with counterpartRef; validate rejects a counterpart outside the pair. The role these calls are counted under in pipelineCalls is the plan's open question (s1's job counts them under 'chunk'; the LLD's data-model note says 'relation').",
+        "summary": "Quality's adapter adds model stages 'compare' and 'pair' after its chunk stage, onCallFailure 'fail-review', run only when the plan is divided. s1 issues every later stage per chunk, so compare's chunkCalls for chunk i packs the chunk's descriptions (from the chunk stage's output) into batches of at most half the limit and pairs each with the batches of every later chunk; each call returns candidate duplicate pairs. pair's chunkCalls for chunk i judges each candidate pair whose first symbol chunk i holds, on both full rows when they fit together, else full against description in each direction, returning today's quality findings with counterpartRef; validate rejects a counterpart outside the pair. Both stages set countAs: 'relation' (s1's AdapterStage.countAs, added by the stakeholder's decision of 2026-10-20), so their calls are counted under pipelineCalls.relation as the LLD's data-model note says, while keeping role 'chunk' for retry and re-division.",
         "size": "M",
         "order": 6,
         "dependsOn": [
@@ -203,7 +203,7 @@
           "Two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef.",
           "A pair answer naming a counterpart outside its two symbols is rejected, re-issued once, then fails the review.",
           "Under the limit no compare or pair call is made.",
-          "Every compare and pair call is counted in pipelineCalls, under the role the open question settles."
+          "Every compare and pair call, re-issues and re-divisions included, is counted under pipelineCalls.relation (countAs: 'relation'), not under chunk."
         ],
         "derivedFrom": [
           "c5",
@@ -218,6 +218,10 @@
           {
             "level": "unit",
             "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'compare and pair calls are counted under pipelineCalls.relation, not chunk'"
           }
         ]
       },

@@ -99,6 +99,9 @@ export interface AdapterStage {
 	/** The re-issued prompt for an invalid answer. Absent: the reasons are appended to the
 	 *  first system message (or prepended as one). */
 	withCorrection?(prompt: ChunkPrompt, reasons: readonly string[]): ChunkPrompt;
+	/** The pipelineCalls role a divided review counts this stage's chunk calls under (their
+	 *  re-issues and re-divisions included). Counting only: the calls keep role 'chunk'. Default 'chunk'. */
+	readonly countAs?: 'chunk' | 'relation' | undefined;
 	/** A stage whose committed output completes the snapshot (premise claims, probe evidence). */
 	readonly snapshotField?: 'claims' | 'evidence' | undefined;
 	/** The output's snapshot form when `snapshotField` is set. Default: the output itself. */

@@ -1086,3 +1086,41 @@ test('an invalid answer whose correction would not fit the limit is re-issued on
 	// A second invalid answer fails the review, as for any invalid answer.
 	assert.throws(() => applyOutput(job, adapter, second.callId, { callId: second.callId, answer: { seen: ['a1'] } }), (e: unknown) => e instanceof ReviewCallFailedError);
 });
+
+test("a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'", () => {
+	const many = Array.from({ length: 24 }, (_, i) => atom(i));
+	const snap = toySnapshot(many);
+	// A second model stage, as quality's compare: one call per chunk, counted under relation.
+	const rebuild = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => {
+		const a = toyAdapter(s);
+		const judge = a.stagesFor('daemon')[0]!;
+		const cross: AdapterStage = {
+			...judge, id: 'cross', after: ['judge'], countAs: 'relation',
+			singleCalls: () => [],
+			chunkCalls: (chunk, prior, snapshot) => judge.chunkCalls(chunk, prior, snapshot).map(p => ({ ...p, messages: [{ role: 'system' as const, content: 'Compare these atoms across chunks.' }, ...p.messages.slice(1)] })),
+		};
+		return { ...a, stagesFor: () => [judge, cross] } as ReviewAdapter<unknown>;
+	};
+	const adapter = rebuild(snap);
+	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
+	assert.equal(job.plan.single, false, 'divided');
+	const issued: ReviewCall[] = [];
+	let mismatched = false, refused = false;
+	for (let guard = 0; job.phase !== 'done'; guard++) {
+		assert.ok(guard < 1_000, 'progress');
+		const call = nextCalls(job, adapter)[0];
+		if (call === undefined) break;
+		if (!issued.some(c => c.callId === call.callId)) issued.push(call);
+		if (call.stage === 'cross' && !mismatched) { mismatched = true; job = applyOutput(job, adapter, call.callId, { callId: 'wrong', answer: { seen: [] } }); continue; }
+		if (call.stage === 'cross' && !refused && call.carries.atomIds.length > 1) { refused = true; job = applyFailure(job, adapter, call.callId, 'size-refusal', call.chars - 1); continue; }
+		job = applyOutput(job, adapter, call.callId, { callId: call.callId, answer: { seen: atomIdsIn(asSent(call.messages)) } });
+	}
+	assert.ok(mismatched && refused, 'a cross call was re-issued and one re-divided');
+	const of = (stage: string) => issued.filter(c => c.stage === stage);
+	assert.ok(of('cross').every(c => c.role === 'chunk'), "the calls keep role 'chunk'");
+	assert.ok(of('cross').some(c => c.attempt === 2), 'the re-issue is among them');
+	const calls = pipelineCallsOf(job)!;
+	assert.equal(calls.relation, of('cross').length, 'every cross call, re-issue and re-division included, counted under relation');
+	assert.equal(calls.chunk, of('judge').length, 'the judge stage, without countAs, counted under chunk');
+	assert.ok(calls.relation > job.plan.chunks.length, 'more than one per chunk: the re-issue and the re-division counted');
+});

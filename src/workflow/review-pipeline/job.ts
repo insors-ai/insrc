@@ -142,7 +142,7 @@ function issueChunkCalls(job: ReviewPipelineJob, stage: AdapterStage, chunks: re
 	for (const chunk of chunks) {
 		for (const prompt of stage.chunkCalls(chunk, job.outputs, job.snapshot)) {
 			if (only !== undefined && prompt.key !== only.key) continue;
-			calls.push({ prompt, role: 'chunk', carries: { chunkId: chunk.id, atomIds: chunk.atomIds, noteIds: [], key: prompt.key } });
+			calls.push({ prompt, role: 'chunk', countAs: stage.countAs, carries: { chunkId: chunk.id, atomIds: chunk.atomIds, noteIds: [], key: prompt.key } });
 		}
 	}
 	return issue(job, calls);
@@ -155,6 +155,8 @@ interface NewCall {
 	readonly role:     CallRole;
 	readonly carries:  CallCarries;
 	readonly attempt?: number | undefined;
+	/** The pipelineCalls role the call is counted under; default its role. */
+	readonly countAs?: CallRole | undefined;
 }
 
 /** A call's size as sent, under an id of a real id's length. */
@@ -174,7 +176,7 @@ function issue(job: ReviewPipelineJob, calls: readonly NewCall[]): ReviewPipelin
 		const hash = promptHash(messages, schema);
 		if (issuedHashes.includes(hash)) throw new Error(`review ${job.dimension}: a planned ${job.stage} call repeats a prompt already sent`);
 		issuedHashes.push(hash);
-		counts[c.role]++;
+		counts[c.countAs ?? c.role]++;
 		made.push({
 			callId, attempt: c.attempt ?? 1, stage: job.stage, role: c.role, messages, schema,
 			execution: c.prompt.execution, chars: promptChars(messages), carries: c.carries, prompt: c.prompt,
@@ -293,7 +295,7 @@ export function applyFailure(
 			else log.warn({ dimension: job.dimension, stage: stage.id, callId, reasons: more.reasons }, 'review pipeline: the correction does not fit beside the call; re-issuing it as planned, without the correction');
 		}
 		log.warn({ dimension: job.dimension, stage: stage.id, cause, callId }, 'review pipeline: re-issuing a call once under a new callId');
-		return issue(rest, [{ prompt, role: call.role, carries: call.carries, attempt: call.attempt + 1 }]);
+		return issue(rest, [{ prompt, role: call.role, countAs: call.role === 'chunk' ? currentStage(job, adapter).countAs : undefined, carries: call.carries, attempt: call.attempt + 1 }]);
 	}
 
 	const detail = more.detail ?? (more.reasons !== undefined ? more.reasons.join('; ') : undefined);

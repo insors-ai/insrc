@@ -38,6 +38,11 @@ describe('kind codecs', () => {
 			assert.equal(def.meta['elapsedMs'], 0);
 			assert.equal(def.meta['repoIndexedAt'], null);
 			assert.equal(def.meta['schemaVersion'], 1);
+			// exactly the meta an existing writer (finalizeDefine) stamps on a first Define
+			assert.deepEqual(def.meta, {
+				workflow: 'define', runId: 'run-1', repoPath: repo, createdAt: NOW.toISOString(), epicCreatedAt: NOW.toISOString(),
+				elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1, epicHash: H, epicSlug: 'a-slug',
+			});
 			assert.equal(workItemAnchorCreatedAt(def.meta as { epicCreatedAt?: string }), NOW.toISOString());
 			const md = renderDefineMarkdown(def as unknown as DefineArtifact);
 			assert.equal(md, renderDefineMarkdown({ meta: def.meta, body, citations: [] } as unknown as DefineArtifact), 'the renderer reads the created head');
@@ -58,6 +63,15 @@ describe('kind codecs', () => {
 			assert.equal(lld.meta['storyId'], 's1');
 			assert.equal(lld.meta['epicCreatedAt'], '2026-10-01T00:00:00.000Z');
 			assert.equal(lld.meta['createdAt'], NOW.toISOString());
+
+			// a standalone LLD is the first head of its feature: it stamps the anchor itself, and extra identity meta is kept
+			const standalone = creationContextProvider(repo, { now: () => NOW, runId: 'run-2', standalone: true, extraMeta: { seededFromSpec: 'SPEC-89abcdef', workflow: 'ignored' } });
+			const soloKey = ArtifactIds.parse(`LLD-fedcba9876543210-s1`)!;
+			const solo = codecFor('LLD').encode({ body: {}, citations: [] }, soloKey, standalone(soloKey));
+			assert.equal(solo.meta['epicCreatedAt'], NOW.toISOString());
+			assert.equal(solo.meta['standalone'], true);
+			assert.equal(solo.meta['seededFromSpec'], 'SPEC-89abcdef');
+			assert.equal(solo.meta['workflow'], 'design.story', 'extraMeta never overrides the identity fields');
 
 			// SPEC and ISSUE carry their own run hash, not an epic hash
 			const specKey = ArtifactIds.parse('SPEC-89abcdef')!;

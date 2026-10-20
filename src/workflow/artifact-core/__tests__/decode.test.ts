@@ -67,6 +67,15 @@ describe('decodeArtifactHead', () => {
 		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { attachments: [{}] } })), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { parent: 'x' } })), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { binding: {} } })), ArtifactShapeError);
+		const okRef = { entityId: 'o/r#1', type: 'github:issue', relation: 'tracked-by' };
+		const lc = (extra: object) => ({ status: 'draft', revision: goodRev, signoffs: [], ...extra });
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ signoffs: [null] }) })), ArtifactShapeError, 'signoffs: [null]');
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ approval: {} }) })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ review: { revision: 1 } }) })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: lc({ stale: { upstream: okRef } }) })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { binding: { reference: okRef } } })), ArtifactShapeError, 'binding with only a reference');
+		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { attachments: [{ target: okRef }] } })), ArtifactShapeError, 'attachment with only a target');
+		assert.equal(decodeArtifactHead(LLD, head({ envelope: { binding: { reference: okRef, createdAtRevision: 1, posted: [{ kind: 'plan', at: 't' }] }, attachments: [{ target: okRef, revision: 1, at: 't' }] } })).artifact.attachments.length, 1);
 		// the AMD codec refuses a flat record on its own as well
 		assert.throws(() => codecFor('AMD').decode({ id: 'x' } as never), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(`TASK-${H}-s1-t1`, head({})), UnknownArtifactKindError);

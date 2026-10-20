@@ -47,6 +47,8 @@ export interface CodecContext {
 	readonly schemaVersion: number;
 	readonly epicSlug?:     string | undefined;
 	readonly standalone?:   boolean | undefined;
+	/** Other identity fields a kind's readers use (`seededFromSpec`, `sizeClass`, `parentRef`, ...). Never overrides the fields above. */
+	readonly extraMeta?:    Readonly<Record<string, unknown>> | undefined;
 }
 
 /** Supplies the context for a create. Called only when the id has no head. */
@@ -64,6 +66,7 @@ export interface KindCodec {
 function identityMeta(key: ArtifactKey, ctx: CodecContext): Record<string, unknown> {
 	const hashField = key.kind === 'SPEC' ? 'specHash' : key.kind === 'ISSUE' ? 'issueHash' : 'epicHash';
 	return {
+		...(ctx.extraMeta ?? {}),
 		workflow:      ctx.workflow,
 		runId:         ctx.runId,
 		repoPath:      ctx.repoPath,
@@ -114,19 +117,26 @@ export function registeredKinds(): readonly ArtifactIdKind[] {
 /**
  * The default creation context for a repository: the kind's workflow name, a fresh run id, the clock for
  * `createdAt`, no elapsed time and no index watermark (the store does not run a workflow), schema version 1,
- * and the work item's anchor — the record's own `createdAt` for a root kind (a Define keeps an anchor already stamped), else the stamped anchor of the
+ * and the work item's anchor — the record's own `createdAt` for a root kind (a Define or a standalone LLD keeps an anchor already stamped), else the stamped anchor of the
  * work item (a record with no anchor raises `MissingAnchorError` before anything is written).
  */
 export function creationContextProvider(
 	repoPath: string,
-	opts: { readonly now?: (() => Date) | undefined; readonly runId?: string | undefined; readonly epicSlug?: string | undefined; readonly standalone?: boolean | undefined } = {},
+	opts: {
+		readonly now?:        (() => Date) | undefined;
+		readonly runId?:      string | undefined;
+		readonly epicSlug?:   string | undefined;
+		readonly standalone?: boolean | undefined;
+		readonly extraMeta?:  Readonly<Record<string, unknown>> | undefined;
+	} = {},
 ): CreationContextProvider {
 	return key => {
 		const createdAt = (opts.now ?? (() => new Date()))().toISOString();
-		// A Define keeps an anchor already stamped for its hash. A SPEC or ISSUE is keyed by its own run hash,
+		// A Define, or a standalone LLD (the first head of a feature with no Epic), keeps an anchor already stamped for its hash. A SPEC or ISSUE is keyed by its own run hash,
 		// has no earlier head, and starts the work item, so its own clock is the anchor. Every other kind reads
 		// the stamp.
-		const epicCreatedAt = key.kind === 'DEF' ? stampRootAnchor(repoPath, key.epicHash, createdAt)
+		const isRoot = key.kind === 'DEF' || (key.kind === 'LLD' && opts.standalone === true);
+		const epicCreatedAt = isRoot ? stampRootAnchor(repoPath, key.epicHash, createdAt)
 			: key.kind === 'SPEC' || key.kind === 'ISSUE' ? createdAt
 			: requireEpicAnchor(repoPath, key.epicHash);
 		return {
@@ -140,6 +150,7 @@ export function creationContextProvider(
 			schemaVersion: 1,
 			epicSlug:      opts.epicSlug,
 			standalone:    opts.standalone,
+			extraMeta:     opts.extraMeta,
 		};
 	};
 }

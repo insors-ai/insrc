@@ -42,6 +42,13 @@ export function emptyLifecycle(revision: number): Lifecycle {
 const isStr = (v: unknown): v is string => typeof v === 'string';
 const isActor = (v: unknown): boolean => isObject(v) && isStr(v['id']) && isStr(v['kind']) && isObject(v['properties']);
 const isReference = (v: unknown): boolean => isObject(v) && isStr(v['entityId']) && isStr(v['type']) && isStr(v['relation']);
+const isInt = (v: unknown): boolean => typeof v === 'number' && Number.isInteger(v);
+const isSignoff = (v: unknown): boolean => isObject(v) && isInt(v['revision']) && isReference(v['request'])
+	&& (v['state'] === 'open' || v['state'] === 'changes-requested' || v['state'] === 'completed')
+	&& Array.isArray(v['actors']) && v['actors'].every(isActor) && isStr(v['at']);
+const isAttachment = (v: unknown): boolean => isObject(v) && isReference(v['target']) && isInt(v['revision']) && isStr(v['at']);
+const isBinding = (v: unknown): boolean => isObject(v) && isReference(v['reference']) && isInt(v['createdAtRevision'])
+	&& Array.isArray(v['posted']) && v['posted'].every(p => isObject(p) && isStr(p['kind']) && isStr(p['at']));
 
 /** The reason a lifecycle part is malformed, or undefined when it is well formed. */
 function lifecycleProblem(v: unknown): string | undefined {
@@ -49,7 +56,10 @@ function lifecycleProblem(v: unknown): string | undefined {
 	if (!(STATUSES as readonly unknown[]).includes(v['status'])) return `has an unknown status '${String(v['status'])}'`;
 	const r = v['revision'];
 	if (!isObject(r) || !Number.isInteger(r['number']) || !isStr(r['contentHash']) || !isStr(r['at']) || !isActor(r['by'])) return 'has a malformed revision';
-	if (!Array.isArray(v['signoffs'])) return 'has no signoffs list';
+	if (!Array.isArray(v['signoffs']) || !v['signoffs'].every(isSignoff)) return 'has no signoffs list, or a malformed signoff';
+	if (v['approval'] !== undefined && !(isObject(v['approval']) && isInt(v['approval']['revision']) && isActor(v['approval']['by']) && isStr(v['approval']['at']))) return 'has a malformed approval';
+	if (v['review'] !== undefined && !(isObject(v['review']) && isInt(v['review']['revision']) && isActor(v['review']['reviewer']) && isObject(v['review']['counts']))) return 'has a malformed review';
+	if (v['stale'] !== undefined && !(isObject(v['stale']) && isReference(v['stale']['upstream']) && isInt(v['stale']['upstreamRevision']))) return 'has a malformed staleness record';
 	return undefined;
 }
 
@@ -86,11 +96,11 @@ export function decodeArtifactHead(id: string, raw: string): DecodedHead {
 		throw new ArtifactShapeError(`meta.envelope of ${id} has references or attachments that are not lists`);
 	}
 	if (Array.isArray(references) && !references.every(isReference)) throw new ArtifactShapeError(`meta.envelope of ${id} has a reference without an entityId, type and relation`);
-	if (Array.isArray(attachments) && !attachments.every(a => isObject(a) && isReference(a['target']))) throw new ArtifactShapeError(`meta.envelope of ${id} has an attachment without a target`);
+	if (Array.isArray(attachments) && !attachments.every(isAttachment)) throw new ArtifactShapeError(`meta.envelope of ${id} has a malformed attachment`);
 	const parentRef = envelope?.['parent'];
 	if (parentRef !== undefined && !isReference(parentRef)) throw new ArtifactShapeError(`meta.envelope of ${id} has a parent that is not a reference`);
 	const bindingRef = envelope?.['binding'];
-	if (bindingRef !== undefined && !(isObject(bindingRef) && isReference(bindingRef['reference']))) throw new ArtifactShapeError(`meta.envelope of ${id} has a binding without a reference`);
+	if (bindingRef !== undefined && !isBinding(bindingRef)) throw new ArtifactShapeError(`meta.envelope of ${id} has a malformed binding`);
 	const revision = typeof meta['revision'] === 'number' && Number.isInteger(meta['revision']) && meta['revision'] >= 0 ? meta['revision'] : 0;
 	const description = envelope?.['description'];
 

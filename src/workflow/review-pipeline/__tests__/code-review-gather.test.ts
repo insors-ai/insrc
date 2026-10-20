@@ -761,7 +761,7 @@ test('out-of-set findings are dropped on the daemon path and kept in outOfScope 
 	assert.deepEqual(controller.outOfScope?.map(f => f.location), ['src/price/price.ts:2'], 'kept in outOfScope, as the controller step does today');
 });
 
-test('a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by finish, as today', () => {
+test('a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today', () => {
 	const at = 'src/order/order.ts:1';
 	const { result: r, calls } = divided(functionalCoverageSpec, 'daemon', call => {
 		if (call.role === 'chunk') return { notes: [] };

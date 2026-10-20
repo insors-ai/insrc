@@ -24,8 +24,7 @@
     "lldRunId": "wf-1792401350307-1gkpsq",
     "lldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
     "authoredBy": "controller",
-    "rangeBase": "9d1bbf1a2f0d01e4bcaa843af7aab66e7c7fd5e4",
-    "approvedAt": "2026-10-20T18:01:49.239Z"
+    "rangeBase": "9d1bbf1a2f0d01e4bcaa843af7aab66e7c7fd5e4"
   },
   "body": {
     "summary": {
@@ -126,7 +125,7 @@
       {
         "id": "t4",
         "title": "Obligation adjudication and reduction per dimension",
-        "summary": "Each model dimension with obligations gets a gather plan: obligationCall(key, evidence, context) judges one key with today's rules for that dimension on all its notes and the obligation's own context atoms, returning today's findings shape (adherence: departures located at the atoms the notes name, and unimplemented clauses, with expectationRef; functional coverage: unrealized or partial FRs; coverage: missing or failing promised tests on the test's full record evidence; conventions: the module's idiom and deviations with today's too-few-examples rule). A key with no notes is judged on the statement that no chunk showed evidence for it; with zero atoms every key is judged on its context alone. reduceCall returns one note under the same key within noteCapChars (a quarter of the limit), keeping its atom ids. partOf maps an obligation answer to a DimensionResult part. Locations are governed by today's per-dimension filters in finish (t7), not by a gather validate.",
+        "summary": "Each model dimension with obligations gets a gather plan: obligationCall(key, evidence, context) judges one key with today's rules for that dimension on all its notes and the obligation's own context atoms, returning today's findings shape (adherence: departures located at the atoms the notes name, and unimplemented clauses, with expectationRef; functional coverage: unrealized or partial FRs; coverage: missing or failing promised tests on the test's full record evidence; conventions: the module's idiom and deviations with today's too-few-examples rule). A key with no notes is judged on the statement that no chunk showed evidence for it; with zero atoms every key is judged on its context alone. reduceCall returns one note under the same key within noteCapChars (a quarter of the limit), keeping its atom ids. partOf maps an obligation answer to a DimensionResult part. Locations are governed by today's per-dimension filters, applied by merge (t7), not by a gather validate.",
         "size": "M",
         "order": 4,
         "dependsOn": [
@@ -261,7 +260,7 @@
           },
           {
             "level": "unit",
-            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by finish, as today'"
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today'"
           },
           {
             "level": "unit",
@@ -409,7 +408,7 @@
         ]
       },
       {
-        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by finish, as today'",
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today'",
         "coveredByTaskIds": [
           "t7"
         ]

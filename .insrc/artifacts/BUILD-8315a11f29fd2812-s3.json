@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s3",
+    "createdAt": "2026-10-20T16:44:27.482Z",
+    "updatedAt": "2026-10-20T16:45:32.296Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Each model code-review dimension's material() now carries its obligations and context atoms, built from the saved subject and the snapshot only. The builders live in the new src/workflow/review-pipeline/adapters/code-review-obligations.ts; code-review.ts gains an optional ModelDimensionSpec.obligations hook that material() applies. Each dimension attaches its builder with one line in its own spec (adherenceSpec, conventionsSpec, coverageSpec, functionalCoverageSpec): those specs ARE each dimension's adapter definition, which is where the s3 LLD contract 2.1 puts the obligations ('added to s2's codeReviewMaterial output by each dimension's adapter'), and the task's own wording is 'each model dimension's material() adds obligations'. Choosing the builder by dimension inside code-review.ts instead would make it import the judges' helpers (functionalRequirementsOf, promisedTestsOf, testRecordView), while every judge imports code-review.ts: an import cycle. No prompt, schema, filter or judge behaviour changed in those files.",
+    "testRecord": {
+      "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/adherence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:45:32.296Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/conventions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:45:32.296Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:45:32.296Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:45:32.296Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:45:32.296Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/adapters/code-review-obligations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:45:32.296Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:45:32.296Z"
+      }
+    ],
+    "commit": "aecee5ff"
+  }
+}

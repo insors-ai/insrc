@@ -23,6 +23,7 @@ import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOp
 import { runReviewJob } from '../driver.js';
 import { applyFailure, applyOutput, createReviewJob, MAX_GATHER_LEVELS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
+import { getLogger } from '../../../shared/logger.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { AdapterStage, EvidenceNote, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
 import { asSent, atom, atomIdsIn, callIdIn, drive, NOTE_SCHEMA, RELATION_SCHEMA, seeingModel, todayMessages, TOY_SCHEMA, toyAdapter, toySnapshot, VERDICT_SCHEMA, type ToyOpts, type ToyResult } from './toy-adapter.js';
@@ -1060,4 +1061,28 @@ test('a refused obligation call that carried its raw context reduces that contex
 		for (const c of reductions) assert.ok(c.chars <= 1_400);
 		assert.ok(!job.pending.some(c => c.role === 'obligation'), 'the refused call is not resent');
 	}
+});
+
+test('an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged', () => {
+	// A call that fills the limit: the correction note would push it over.
+	const snap = toySnapshot([atom(1, LIMIT - 900)]);
+	const validate = (): readonly string[] => ['x'.repeat(2_000)];
+	const adapter = toyAdapter(snap, { validate });
+	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
+	const first = nextCalls(job, adapter)[0]!;
+	assert.equal(first.role, 'single');
+	const warnings: unknown[] = [];
+	const logger = getLogger('review-pipeline:job') as unknown as { warn: (...a: unknown[]) => void };
+	const original = logger.warn;
+	logger.warn = (...a: unknown[]) => { warnings.push(a); return original.apply(logger, a as never); };
+	try {
+		job = applyOutput(job, adapter, first.callId, { callId: first.callId, answer: { seen: ['a1'] } });
+	} finally { logger.warn = original; }
+	const second = nextCalls(job, adapter)[0]!;
+	assert.equal(second.attempt, 2, 're-issued once');
+	assert.equal(content(second), content(first), 'as planned: the correction is not in it');
+	assert.ok(second.chars <= LIMIT);
+	assert.ok(warnings.some(w => JSON.stringify(w).includes('without the correction')), 'the omission is logged');
+	// A second invalid answer fails the review, as for any invalid answer.
+	assert.throws(() => applyOutput(job, adapter, second.callId, { callId: second.callId, answer: { seen: ['a1'] } }), (e: unknown) => e instanceof ReviewCallFailedError);
 });

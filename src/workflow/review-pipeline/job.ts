@@ -287,8 +287,10 @@ export function applyFailure(
 		let prompt = call.prompt;
 		if (cause === 'invalid-answer' && more.reasons !== undefined && more.reasons.length > 0) {
 			const corrected = (stage.withCorrection ?? withCorrectionNote)(call.prompt, more.reasons);
-			// A correction that would not fit is left out; the call is re-issued as planned.
+			// A correction that would not fit the limit is left out (never cut down): the call is
+			// re-issued once as planned, and the omission is logged with the reasons.
 			if (sentChars(corrected) <= job.plan.limitChars) prompt = corrected;
+			else log.warn({ dimension: job.dimension, stage: stage.id, callId, reasons: more.reasons }, 'review pipeline: the correction does not fit beside the call; re-issuing it as planned, without the correction');
 		}
 		log.warn({ dimension: job.dimension, stage: stage.id, cause, callId }, 'review pipeline: re-issuing a call once under a new callId');
 		return issue(rest, [{ prompt, role: call.role, carries: call.carries, attempt: call.attempt + 1 }]);

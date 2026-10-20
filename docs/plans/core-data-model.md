@@ -258,3 +258,12 @@ The s1 LLD was regenerated six times over two review cycles of three rounds each
 3. **Lesson.** Do not emit `hld.amendmentProposal` in `contract.detail` when an amendment already records the change.
 
 Binding build requirements for s1 still to be recorded when the LLD is approved: the `refFromDocPath` / locate mapping in `src/workflow/locate/infer.ts` and `infer-daemon.ts` must stop parsing folder names into ids; the `ResolvedRef.workflowId` and `slug` outputs consumed by `locate-parent.ts` and `bugfix/tracker.ts` need defined values and a conversion of stored `parentRef.slug`, tested with several epics; plus the review items from rounds 1 to 6 (AMD ids, write-intent paths, validate error handling, `fr-id` test updates, exact-token matching).
+
+## s2 LLD approved with an override (2026-10-20)
+
+`LLD-2f27754d4ad00b8e-s2` was authored three times (review blocks: 10 HIGH, then 3 HIGH and 1 MED, then 1 HIGH) and approved on the owner's explicit yes with an override. The Lifecycle, TrackerBinding and Attachment shapes are the HLD's sc4 and sc6, unchanged; `readWithHistory` is filed as `AMD-2f27754d4ad00b8e-7` (pending). Binding requirements for the s2 plan and build:
+
+1. **The write journal stages the whole `ChangeLogEntry`** (actor, timestamp, operation id) with the prepared head. Recovery appends that entry idempotently even when the head already equals the staged bytes, then replaces the head if needed and clears the journal. Tests: restart before append, a retry by a different actor, an append failure on an identical-head write.
+2. **The codec creation context is defined**: its type, its provider, and how each kind obtains `workflow`, `runId`, `repoPath`, `createdAt`, `elapsedMs`, `repoIndexedAt` and `schemaVersion` when no prior head exists. Test: a create without a prior head.
+3. **AMD-7 is resolved** (approved or rejected by the owner) before the s2 plan is written.
+4. s9 inputs from this LLD: convert the 53 flat amendment files; add `meta.envelope` and `meta.lifecycle` to every head; turn `body.feedback` into sidecar lines through the legacy conversion (absent kind becomes comment, author becomes `unknown:<author>`, unmapped `target.version` is reported); set the marker to version 2.

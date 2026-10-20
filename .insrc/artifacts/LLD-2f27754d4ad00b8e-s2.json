@@ -1,0 +1,2277 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1792513058992-7t1vmw",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-20T16:23:39.302Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 360290,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1792406752203-whj6zi",
+    "hldEffectiveHash": "07908de0d9650221de8ca49c9500a84b37fd4f28d11eb08263626e6924497b79",
+    "hldAmendmentsApplied": [
+      "AMD-2f27754d4ad00b8e-5",
+      "AMD-2f27754d4ad00b8e-6"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers s2's ac4–ac6 and the mandatory ER definition.",
+          "evidence": "The stored DEF assigns s2 the common read shape, empty lifecycle parts, references and parent-derived children. These map to readWithHistory, decoder defaults and childrenOf. The stored LLD contains an erDefinition with Artifact, the lifecycle family, Actor, Reference, history, feedback, TaskSet, Task and RepoSchema, including ownership relationships. [files: .insrc/artifacts/DEF-2f27754d4ad00b8e.json, .insrc/artifacts/LLD-2f27754d4ad00b8e-s2.json, docs/plans/core-data-model.md]",
+          "action": "Retain this coverage while resolving the contract gaps below.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "writeArtifact currently preserves revisions for identical writes and meta-only writes, carries tracker metadata on content writes, and atomically replaces the head.",
+          "evidence": "The complete writer calls sameApartFromRevision, carries meta.tracker through carryTracker, copies the prior revision for meta-only writes, and writes JSON through writeAtomic. The existing tests explicitly cover these behaviors. Identical comparison currently excludes only top-level meta.revision. [files: src/workflow/storage.ts, src/workflow/__tests__/artifact-writer.test.ts]",
+          "action": "Preserve these exact semantics in the extraction; distinguish them from the new store's content classification.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The four gates readers are synchronous JSON readers with ArtifactMissingError for absent files.",
+          "evidence": "Each complete reader uses existsSync, readFileSync and JSON.parse without promises. requireApprovedEpic, requireApprovedHld, requireApprovedLld and requireApprovedPlan consume their results synchronously and inspect the existing metadata. [files: src/workflow/gates.ts]",
+          "action": "Keep the synchronous wrappers and return the original parsed head to existing callers.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The s1 identity API exists with strict parsing and a parent-key function suitable for reuse.",
+          "evidence": "ArtifactIds.parse validates by round-tripping through make and rejects uppercase story ids. parentOf returns an ArtifactKey: TASK/TASKS/DIAG map to STORY, STORY maps to EPIC, and other kinds return undefined. [files: src/workflow/artifact-ids.ts]",
+          "action": "Compare parent.entityId with ArtifactIds.make(parentKey), and explicitly handle undefined parents.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed common store and decoder are new capabilities rather than existing implementations being duplicated.",
+          "evidence": "Source searches found no ArtifactStore, decodeArtifactHead, RepoSchemaGate or WriteJournal implementation. Reading storage.ts, gates.ts and provenance/writer.ts confirmed separate head writing, per-type JSON readers and body.feedback mutation, rather than the proposed common envelope/history API. [files: src/workflow/storage.ts, src/workflow/gates.ts, src/workflow/artifacts/provenance/writer.ts]",
+          "action": "Reuse the existing primitives through the proposed adapters.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The creation contract supplies enough context for codecs to construct metadata required by existing readers and renderers.",
+          "evidence": "ArtifactMetaBase requires workflow, runId, repoPath, createdAt, elapsedMs, repoIndexedAt and schemaVersion. The design names encode(payload, ctx), but does not define ctx or how write(a, by) obtains these fields when no prior head exists. The anchor helpers do not supply workflow-run provenance. Insrc analysis discovery was unavailable; direct reads established the requirements but found no proposed context-provider contract. [files: src/workflow/types.ts, src/workflow/storage.ts, src/workflow/artifacts/define.ts, .insrc/artifacts/LLD-2f27754d4ad00b8e-s2.json]",
+          "action": "Specify the codec context type, its constructor/provider, and how each kind obtains required creation metadata. Include a create-without-prior-head test.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Renaming the provenance ChangeLogEntry and ChangeLog types can preserve the BUILD record's stored shape.",
+          "evidence": "collectBuildChangeLog emits target, author and timestamp; StandaloneBuildRecord stores the resulting array in body.changeLog; changeLogBodyLines reads target, author, timestamp and optional summary. None serializes the TypeScript type name. Searches also identified type imports in three test files. [files: src/workflow/artifacts/provenance/types.ts, src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/artifacts/format/bindings.ts, src/workflow/runners/build/__tests__/provenance-build.test.ts, src/workflow/artifacts/provenance/__tests__/types.test.ts, src/workflow/artifacts/format/__tests__/bindings.test.ts]",
+          "action": "Rename the production and test imports together without altering serialized fields.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Flat amendments can remain untouched until s9 while existing amendment commands continue using them.",
+          "evidence": "proposeAmendment writes the record directly with JSON.stringify(record); readAmendment and transition validate the flat AmendmentRecord. The actual AMD-7 file has top-level id, amendment and status, with no meta/body envelope. [files: src/workflow/amendments/store.ts, .insrc/artifacts/AMD-2f27754d4ad00b8e-7.json]",
+          "action": "Keep the existing amendment path independent until the coordinated conversion.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Declaring the lifecycle and tracker shapes unchanged, while deferring their behavior, respects the approved ownership boundaries.",
+          "evidence": "HLD sc4 assigns lifecycle transitions, hashing and roll-up to s3; sc6 assigns tracker binding behavior to s6. The LLD's listed fields match those sketches and explicitly defer those behaviors. The prefix/suffix extension is explicitly required by binding requirement 5. [files: .insrc/artifacts/HLD-2f27754d4ad00b8e.json, docs/plans/core-data-model.md]",
+          "action": "Preserve the exact HLD field types when implementing the abbreviated sketches.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The readWithHistory contract addition is approved for downstream consumption.",
+          "evidence": "AMD-7 contains the stated sc2 methodAdd, so the claim that it was filed is correct. Its status is 'pending'. approvedInApplyOrder explicitly filters for status === 'approved', so it is not part of the effective approved contract yet. [files: .insrc/artifacts/AMD-2f27754d4ad00b8e-7.json, src/workflow/amendments/store.ts]",
+          "action": "Resolve AMD-7 before treating the extended sc2 interface as approved.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The specified journal record is sufficient to recover the original logged operation after an append failure or restart.",
+          "evidence": "The LLD persists only '{ operationId, priorRevision, bytes }'. HLD sc3 requires each ChangeLogEntry to contain 'actor' and 'timestamp'. For a metadata-only write, the actor passed as by need not appear in the staged head because lifecycle is persisted as supplied. After a crash before append, recovery cannot reconstruct the original actor or timestamp. Further, an identical-head write whose append fails meets the recovery condition 'head already equals the staged bytes', causing clear-only recovery despite the missing log entry. [files: .insrc/artifacts/LLD-2f27754d4ad00b8e-s2.json, .insrc/artifacts/HLD-2f27754d4ad00b8e.json, docs/plans/core-data-model.md, src/workflow/storage.ts]",
+          "action": "Stage the complete immutable ChangeLogEntry with the prepared head. On recovery, ensure that entry is appended idempotently even when head bytes already match, then replace the head if needed and clear the journal. Test restart before append, a different retry actor, and an identical-head append failure.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion assigned to s2 has a named proving test in the design.",
+          "evidence": "The actual DEF assigns ac4, ac5 and ac6 to s2. The LLD maps them respectively to combined history/envelope reads and round trips, empty lifecycle reads, and reference/parent/children tests. Existing artifact-writer and inventory tests provide relevant regression controls; the proposed tests are plans, not executed evidence. [files: .insrc/artifacts/DEF-2f27754d4ad00b8e.json, .insrc/artifacts/LLD-2f27754d4ad00b8e-s2.json, src/workflow/__tests__/artifact-writer.test.ts, src/workflow/__tests__/artifact-write-inventory.test.ts]",
+          "action": "Retain the acceptance mapping and add the recovery tests identified above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 0,
+        "low": 11,
+        "unverified": 2
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-20T16:23:47.727Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-20T16:31:47.090Z",
+    "reviewOverride": {
+      "reason": "Owner approved the s2 LLD with an override after three review rounds (10 HIGH, then 3 HIGH + 1 MED, then 1 HIGH). Binding build requirements recorded: (1) the write journal stages the complete immutable ChangeLogEntry (actor, timestamp, operation id) with the prepared head, and recovery appends it idempotently even when the head already matches, with tests for restart before append, a different retry actor and an identical-head append failure; (2) the codec creation context type and its provider are defined, with a create-without-prior-head test covering workflow, runId, repoPath, elapsedMs, repoIndexedAt and schemaVersion; (3) AMD-2f27754d4ad00b8e-7 (readWithHistory) is resolved before the plan is written.",
+      "at": "2026-10-20T16:31:47.089Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story gives every stored artifact one shape and one reader and writer. An Artifact carries an identity from the s1 id module, a description, an optional parent, references, the lifecycle and tracker binding shapes the HLD already approved (declared here unchanged, with their behaviour left to s3 and s6), attachments and its own payload. One synchronous decoder reads a head; ArtifactStore.read wraps it, readWithHistory adds the change log and feedback, and the old Define, HLD, LLD and Plan readers delegate to it. A write prepares the head so the authoritative revision and a recoverable operation id are known, stages it in a required write journal, records it in the change log, then replaces the head. A repository version marker lets the new tools refuse an unconverted repository."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Chosen framework (a1): a shared artifact envelope with typed payloads, stored as a head file plus two append-only sidecar files whose lines carry the owning artifact id, behind a single identity module, with one upfront conversion and no compatibility code. The envelope carries identity, description, parent, references, a typed lifecycle (revision, approval, review, signoffs, staleness, status) and a tracker binding or attachments; the change log and feedback are separate append-only line files; each existing artifact type shrinks to a payload codec and a renderer. Tracker comment reading and attaching are added to the port and implemented for the GitHub adapter only.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "ArtifactEnvelope",
+          "purpose": "The common shape of every stored entity and the one reader and writer for it, with References and namespaced Actors.",
+          "interfaceSketch": "interface Actor { id: string; kind: 'person'|'agent'|'system'; name?: string; properties: Record<string, unknown> }\ninterface Reference { entityId: string; type: string; relation: 'derived-from'|'depends-on'|'tracked-by'|'supersedes'|'documents'|'implements'|'cites'|'reviews'; fragment?: string; quote?: string }\ninterface Artifact<P> { id: string; description: string; parent?: Reference; references: Reference[]; lifecycle: Lifecycle; binding?: TrackerBinding; attachments: Attachment[]; payload: P }\ninterface ArtifactStore { read(id: string): Promise<Artifact<unknown>>; write(a: Artifact<unknown>, by: Actor): Promise<void>; childrenOf(id: string): Promise<string[]> }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "HistoryRecords",
+          "purpose": "The change log entry and the Feedback entry shapes, the persisted sidecar record that carries the owning artifact id, and the append and read API, including how an update says which feedback it addressed.",
+          "interfaceSketch": "type Operation = 'create'|'update'|'delete'|'reparent'|'request-review'|'review'|'approve'|'reject'|'open-signoff'|'signoff-changes'|'signed-off'|'complete'|'reopen'|'withdraw'|'supersede'|'mark-stale'|'ack-stale';\ninterface ChangeLogEntry { id: string; actor: Actor; timestamp: string; operation: Operation; revision?: { number: number; contentHash: string }; status?: { from: string; to: string }; outcome?: { result: string; summary: string; data?: unknown }; references?: Reference[]; addresses?: 'all' | string[] }\ninterface Feedback { id: string; text: string; actor: Actor; timestamp: string; feedback: Feedback[]; kind: 'comment'|'suggestion'|'revision-request'; anchor?: { quote?: string; section?: string; lines?: [number, number] }; revision?: number; source?: { system: string; externalId: string; url?: string }; batchId?: string }\ninterface SidecarRecord<E> { artifactId: string; entry: E }\ninterface History { appendLog(id: string, e: ChangeLogEntry): Promise<void>; appendFeedback(id: string, f: Feedback): Promise<void>; log(id: string): Promise<ChangeLogEntry[]>; logTail(id: string): Promise<ChangeLogEntry | undefined>; feedback(id: string): Promise<Feedback[]>; openFeedback(id: string): Promise<Feedback[]> }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        },
+        {
+          "id": "sc8",
+          "name": "RepoSchemaVersion",
+          "purpose": "The repository-level marker that records whether a repository has been converted, so the conversion is repeatable and the new tools refuse an unconverted repository.",
+          "interfaceSketch": "interface RepoSchema { version: number; convertedAt?: string }\ninterface RepoSchemaGate { read(repo: string): RepoSchema; require(repo: string, atLeast: number): { ok: true } | { ok: false; message: string } }",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s9"
+          ],
+          "assumptions": [
+            "c7"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ArtifactIdScheme",
+          "purpose": "The single place artifact ids are made and recognised: the existing hierarchical typed ids extended for Epic, Story, Task, the Tasks file and diagrams, one story and task form, the folder-name date source, and the functional-requirement id helpers that live in id.ts today.",
+          "interfaceSketch": "type ArtifactKind = 'DEF'|'HLD'|'LLD'|'PLAN'|'BUILD'|'CR'|'TESTS'|'EXT'|'AMD'|'SPEC'|'ISSUE'|'EPIC'|'STORY'|'TASK'|'TASKS'|'DIAG';\ninterface ArtifactKey { kind: ArtifactKind; epicHash: string; story?: string; task?: string; seq?: number }\ninterface ArtifactIds { make(key: ArtifactKey): string; parse(id: string): ArtifactKey | undefined; parentOf(key: ArtifactKey): ArtifactKey | undefined }\ninterface RequirementIds { mint(epicHash: string, createdAt: string, ordinal: number, storyId?: string): string; parse(id: string): { epicHash: string; ordinal: number; storyId?: string } | undefined; isRequirementId(s: string): boolean }\n  // + RequirementIds.parse result: { date: string; hash8: string; story?: number | undefined; fr: number } | undefined;  // SUPERSEDES the return type of RequirementIds.parse declared in this sketch ({ epicHash; ordinal; storyId? }): a stored requirement id carries only the date and the first 8 hash characters, so parse returns these parts, story and fr as numbers (amend:AMD-2f27754d4ad00b8e-5)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc2",
+          "sc3",
+          "sc8"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The envelope model, the one reader and writer, the History API and the sidecar record shape as a contract, and the repository version marker. Private to this Story are the head-file schema, the per-type payload codec registry and how the old per-type read functions delegate to the reader."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The id module and its removal of the second scheme: the folder-name formatter moved into the path scheme, the date source fixed to the epic's creation time, the functional-requirement id helpers and their callers moved with stored FR ids staying valid, issue titles switched to the artifact id, and the delivery module's ordinals. The old issue-body marker is not read. Private to this Story are the exact text of the issue title and the relocation of the helpers."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The lifecycle rules: status transitions, the revision and content-hash computation, the staleness record, the completion roll-up and the integrity check against the log tail on approve, review and complete. Private to this Story are the hash canonicalisation and how a roll-up is cached or recomputed."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The physical sidecar storage: file layout, the merge attributes for the line files, per-artifact filtering, read-time ordering and de-duplication, and the write order of log entry before head with the repair of a log that is ahead of its head. Private to this Story are the line format and the file naming beside a head."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc5"
+          ],
+          "internal": "People-facing feedback: adding feedback and replies from a client, listing open feedback, the addresses rule at revision time, and the per-user identity declaration with alias linking. Private to this Story are the identity file format and the display of linked identities."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "The typed binding and attachments, the tracker port additions implemented for GitHub, the retry of pending links and posts, and the switch of unit-issue bookkeeping to the binding. Private to this Story are the permalink construction and the retry bookkeeping."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Task artifacts: creation of the Tasks file and the Task issues at plan approval, direct edits of a Task's own content with local re-approval, refusal of structural edits, and the re-plan reconciliation. Private to this Story are the diff of a Task against the new plan and the build-round recording in a Task's history."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Comment sync: reading human comments into feedback at implement, validate or on request, classifying a revision request or a suggestion from the first line, and posting feedback once. Private to this Story are the first-line commands, the derived since point and the filter for the framework's own posts."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8"
+          ],
+          "internal": "The conversion command: previews, repeats, back-fills history, renames standalone S001 to s1 rewriting the references it can with no alias, creates Epic, Story and Task artifacts for what exists, verifies through the delivery reader, and sets the repository version. Private to this Story are the per-type conversion mappings and the verification report."
+        }
+      ],
+      "rolloutPhase": "Phase A — identity and the common model",
+      "nonFunctional": {
+        "performance": "Reading an artifact reads its head; the log tail is read only on approve, review and complete, and counts, open feedback and status are computed on read. The delivery loader still reads each artifact once. Loading a repository of about a thousand artifacts must stay within twice today's load time on the same machine.",
+        "security": "Gates use the live tracker identity only; declared aliases are never trusted for a decision. The identity file is local and read for attribution. Tracker comments are read through the existing gh path of the GitHub adapter, with no new credential and no direct REST call.",
+        "observability": "Every state change appends a change log entry with actor, operation and, where relevant, revision and status; a conflict, a log-ahead-of-head repair, a failed attach and a pending link are logged and surfaced in the unit's result, not hidden.",
+        "durability": "Heads are replaced atomically as today; sidecar lines are append-only and de-duplicated by (artifactId, entry id) so a repeated append is harmless; a write appends its log entry before it replaces the head so a failure between the two leaves a detectable, repairable gap; the conversion is one commit, repeatable, and reverts with one git revert."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ArtifactStore.read",
+          "signature": "read(id: string): Promise<Artifact<unknown>>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "An artifact id that ArtifactIds.parse accepts, for example LLD-<h16>-s1.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Artifact<unknown>>",
+            "meaning": "The envelope with every part filled from the head by the shared decoder: id, description, parent, references, lifecycle, binding, attachments and the payload decoded by the codec of the id's kind."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "the id is not an artifact id in the s1 strict form (including an upper-case story)"
+            },
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "no head file exists for the id"
+            },
+            {
+              "type": "ArtifactShapeError",
+              "condition": "the head is not valid JSON, or has no meta and body objects (an unconverted amendment fails here with a message that names the s9 conversion)"
+            },
+            {
+              "type": "UnknownArtifactKindError",
+              "condition": "no codec is registered for the id's kind"
+            }
+          ],
+          "preconditions": [
+            "reading does not call RepoSchemaGate; the caller that needs the converted layout does"
+          ],
+          "postconditions": [
+            "an artifact type with no use for a lifecycle part reads an empty lifecycle part (draft, revision from meta.revision or 0, no approval, no review, no signoffs, no stale record) and nothing fails (ac5)",
+            "the parent is read from the head, never derived from stored children (ac6)",
+            "a read writes nothing and calls no History method"
+          ]
+        },
+        {
+          "name": "ArtifactStore.readWithHistory",
+          "signature": "readWithHistory(id: string): Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "An artifact id that ArtifactIds.parse accepts.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Artifact<unknown> & { changeLog: ChangeLogEntry[]; feedback: Feedback[] }>",
+            "meaning": "The result of read plus the artifact's change log and all its feedback, in reader order."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "as for read"
+            },
+            {
+              "type": "ArtifactNotFoundError",
+              "condition": "as for read"
+            },
+            {
+              "type": "ArtifactShapeError",
+              "condition": "as for read"
+            },
+            {
+              "type": "HistoryReadError",
+              "condition": "the sidecar reader fails or a line is not a SidecarRecord"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "one shape exposes identity, description, parent, references, change log, feedback and lifecycle (ac4)",
+            "an artifact with no sidecar lines returns empty arrays"
+          ]
+        },
+        {
+          "name": "ArtifactStore.write",
+          "signature": "write(a: Artifact<unknown>, by: Actor): Promise<void>",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "Artifact<unknown>",
+              "purpose": "The whole envelope to store. Its lifecycle is persisted as supplied except lifecycle.revision.number, which the store sets from the prepared write; transitions and the content hash are s3's.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The actor recorded on the change log entry.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the head is replaced; a failure to clear the journal afterwards is logged and does not fail the write."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "a.id is not a valid artifact id"
+            },
+            {
+              "type": "UnknownArtifactKindError",
+              "condition": "no codec for the kind"
+            },
+            {
+              "type": "ArtifactShapeError",
+              "condition": "the codec rejects the payload, the parent is not an artifact id matching ArtifactIds.parentOf, or a reference whose type is an artifact type names an invalid artifact id"
+            }
+          ],
+          "preconditions": [
+            "by is an Actor with a namespaced non-empty id",
+            "the store was built with a WriteJournal (only the explicitly non-durable test constructor omits it)"
+          ],
+          "postconditions": [
+            "any pending operation the journal reports for this id is completed first: if the head already equals the staged bytes the journal is only cleared, otherwise the staged bytes are written under the SAME operation id; only then is the new write accepted",
+            "the head is prepared by the pure prepareArtifactWrite, so the revision and the exact bytes are known before any file changes",
+            "the kind is content when the payload (body or citations) or the description changed, and meta-only when only references, parent, attachments, binding or lifecycle changed, so only a content change moves the revision (k3)",
+            "the operation id is a hash of the artifact id, the prior revision number and the prepared bytes; the journal records { operationId, priorRevision, bytes } so a retry reuses it even after the head moved on",
+            "the order is stage in the journal, append the change log entry with that id and the authoritative revision, replace the head, clear the journal",
+            "meta.lifecycle.revision.number and the log entry's revision carry the number the prepare step returned",
+            "the merged meta keeps the prior head's meta and replaces only meta.envelope, meta.lifecycle and meta.revision; on create the kind's codec supplies the identity meta",
+            "children are not stored on the parent"
+          ]
+        },
+        {
+          "name": "ArtifactStore.childrenOf",
+          "signature": "childrenOf(id: string): Promise<string[]>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The parent artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<string[]>",
+            "meaning": "The ids of every artifact whose parent reference names id, sorted by id."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "id is not a valid artifact id"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "derived by reading the parent link of each head once; nothing about children is stored on the parent",
+            "an unreadable head and an unconverted amendment are skipped and logged, they do not fail the call"
+          ]
+        },
+        {
+          "name": "readDefineArtifact",
+          "signature": "readDefineArtifact(repoPath: string, epicHash: string): DefineArtifact",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository path.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "The Epic hash.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DefineArtifact",
+            "meaning": "The stored artifact in its current shape."
+          },
+          "errors": [
+            {
+              "type": "ArtifactMissingError",
+              "condition": "no head exists, as today"
+            },
+            {
+              "type": "ArtifactShapeError",
+              "condition": "the head fails the shared decoder"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "stays synchronous: it passes the file text to the shared synchronous decoder and returns the stored artifact, so no caller becomes asynchronous",
+            "return shape and messages are unchanged for a well-formed head"
+          ]
+        },
+        {
+          "name": "readHldArtifact",
+          "signature": "readHldArtifact(repoPath: string, epicHash: string): HldArtifact",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository path.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "The Epic hash.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "HldArtifact",
+            "meaning": "The stored artifact in its current shape."
+          },
+          "errors": [
+            {
+              "type": "ArtifactMissingError",
+              "condition": "no head exists, as today"
+            },
+            {
+              "type": "ArtifactShapeError",
+              "condition": "the head fails the shared decoder"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "delegates to the shared synchronous decoder; unchanged return shape"
+          ]
+        },
+        {
+          "name": "readLldArtifact",
+          "signature": "readLldArtifact(repoPath: string, epicHash: string, storyId: string): LldArtifact",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository path.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "The Epic hash.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "The s<n> story id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "LldArtifact",
+            "meaning": "The stored artifact in its current shape."
+          },
+          "errors": [
+            {
+              "type": "ArtifactMissingError",
+              "condition": "no head exists, as today"
+            },
+            {
+              "type": "ArtifactShapeError",
+              "condition": "the head fails the shared decoder"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "delegates to the shared synchronous decoder; unchanged return shape"
+          ]
+        },
+        {
+          "name": "readPlanArtifact",
+          "signature": "readPlanArtifact(repoPath: string, epicHash: string, storyId: string): PlanArtifact",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository path.",
+              "optional": false
+            },
+            {
+              "name": "epicHash",
+              "type": "string",
+              "purpose": "The Epic hash.",
+              "optional": false
+            },
+            {
+              "name": "storyId",
+              "type": "string",
+              "purpose": "The s<n> story id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "PlanArtifact",
+            "meaning": "The stored artifact in its current shape."
+          },
+          "errors": [
+            {
+              "type": "ArtifactMissingError",
+              "condition": "no head exists, as today"
+            },
+            {
+              "type": "ArtifactShapeError",
+              "condition": "the head fails the shared decoder"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "delegates to the shared synchronous decoder; unchanged return shape"
+          ]
+        },
+        {
+          "name": "History.appendLog",
+          "signature": "appendLog(id: string, e: ChangeLogEntry): Promise<void>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The owning artifact id.",
+              "optional": false
+            },
+            {
+              "name": "e",
+              "type": "ChangeLogEntry",
+              "purpose": "The entry; its own id is its de-duplication key.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves after the sidecar line is written."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "id is not a valid artifact id"
+            },
+            {
+              "type": "HistoryEntryError",
+              "condition": "the entry has no id, actor, timestamp or operation, or names an unknown operation"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "one line { artifactId, entry } is appended through appendSidecarLine to the path the SidecarStore names",
+            "appending the same (artifactId, entry id) twice is harmless: readers de-duplicate"
+          ]
+        },
+        {
+          "name": "History.appendFeedback",
+          "signature": "appendFeedback(id: string, f: Feedback): Promise<void>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The owning artifact id.",
+              "optional": false
+            },
+            {
+              "name": "f",
+              "type": "Feedback",
+              "purpose": "The feedback entry, immutable once written (k4). Replies are the entries in f.feedback.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves after the sidecar line is written."
+          },
+          "errors": [
+            {
+              "type": "InvalidArtifactKeyError",
+              "condition": "id is not a valid artifact id"
+            },
+            {
+              "type": "HistoryEntryError",
+              "condition": "text is empty, kind is unknown, or the anchor breaks its limits (quote over 500, prefix or suffix over 40 characters, lines not an ordered pair)"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "the anchor keeps quote, prefix, suffix, section and lines as given",
+            "there is no way to edit or delete an entry"
+          ]
+        },
+        {
+          "name": "History.log",
+          "signature": "log(id: string): Promise<ChangeLogEntry[]>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ChangeLogEntry[]>",
+            "meaning": "The artifact's log entries as the SidecarStore reader returns them (filtered, ordered and de-duplicated, which is s4's)."
+          },
+          "errors": [
+            {
+              "type": "HistoryReadError",
+              "condition": "the reader fails or a line is not a SidecarRecord; the line number is named"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "an artifact with no log returns an empty array"
+          ]
+        },
+        {
+          "name": "History.logTail",
+          "signature": "logTail(id: string): Promise<ChangeLogEntry | undefined>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ChangeLogEntry | undefined>",
+            "meaning": "The last entry in reader order, or undefined when the log is empty."
+          },
+          "errors": [
+            {
+              "type": "HistoryReadError",
+              "condition": "as for log"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "History.feedback",
+          "signature": "feedback(id: string): Promise<Feedback[]>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Feedback[]>",
+            "meaning": "All feedback entries of the artifact in reader order."
+          },
+          "errors": [
+            {
+              "type": "HistoryReadError",
+              "condition": "as for log"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "History.openFeedback",
+          "signature": "openFeedback(id: string): Promise<Feedback[]>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Feedback[]>",
+            "meaning": "The feedback entries no later change log entry addresses."
+          },
+          "errors": [
+            {
+              "type": "HistoryReadError",
+              "condition": "as for log"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "an entry is open when no log entry after it in reader order lists its id in addresses or has addresses 'all'",
+            "feedback carries no state of its own: openness is computed on every call (k4)"
+          ]
+        },
+        {
+          "name": "RepoSchemaGate.read",
+          "signature": "read(repo: string): RepoSchema",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repository path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RepoSchema",
+            "meaning": "The version marker; a repository with no marker file reads as version 1, unconverted."
+          },
+          "errors": [
+            {
+              "type": "RepoSchemaError",
+              "condition": "the marker file exists but is not valid JSON with an integer version of at least 1"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "the call writes nothing"
+          ]
+        },
+        {
+          "name": "RepoSchemaGate.require",
+          "signature": "require(repo: string, atLeast: number): { ok: true } | { ok: false; message: string }",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repository path.",
+              "optional": false
+            },
+            {
+              "name": "atLeast",
+              "type": "number",
+              "purpose": "The least version the caller can work with.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ ok: true } | { ok: false; message: string }",
+            "meaning": "ok when the repository version is at least atLeast; otherwise a message naming the version found, the one needed and that the s9 conversion has to run."
+          },
+          "errors": [
+            {
+              "type": "RepoSchemaError",
+              "condition": "the marker file is unreadable, as for read"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "an unconverted repository is refused with a message, never treated as converted"
+          ]
+        },
+        {
+          "name": "writeArtifact",
+          "signature": "writeArtifact(path: string, next: unknown, kind: WriteKind, opts?: { replaceUnreadable?: boolean }): number",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "purpose": "Absolute path of the head file.",
+              "optional": false
+            },
+            {
+              "name": "next",
+              "type": "unknown",
+              "purpose": "The artifact object with a meta object; unchanged from today.",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "WriteKind",
+              "purpose": "content or meta-only; unchanged.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ replaceUnreadable?: boolean }",
+              "purpose": "Unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "number",
+            "meaning": "The meta.revision now on disk, as today."
+          },
+          "errors": [
+            {
+              "type": "TypeError",
+              "condition": "next is not an object with a meta object, as today"
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "behaviour is byte-for-byte what it is today: it now calls the pure prepareArtifactWrite and then writeAtomic with the prepared bytes",
+            "an existing writeArtifact test passes unchanged"
+          ]
+        },
+        {
+          "name": "scanWriters",
+          "signature": "scanWriters(source: string): WriterScan",
+          "parameters": [
+            {
+              "name": "source",
+              "type": "string",
+              "purpose": "A TypeScript source file's text.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "WriterScan",
+            "meaning": "The writers the file calls, passes on as values or aliases, now including appendFileSync, appendSidecarLine and a write on the ArtifactStore."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "appendFileSync and appendSidecarLine are detected under the same alias, rename, namespace and value rules as the existing names",
+            "a file that imports the store module and calls a member named write is reported as an ArtifactStore.write call; this import-based rule is how an instance call is recognised without type information",
+            "the existing writers are detected exactly as before"
+          ]
+        },
+        {
+          "name": "checkInventoryEntry",
+          "signature": "checkInventoryEntry(source: string, entry: InventoryEntry | undefined): string[]",
+          "parameters": [
+            {
+              "name": "source",
+              "type": "string",
+              "purpose": "The file's text.",
+              "optional": false
+            },
+            {
+              "name": "entry",
+              "type": "InventoryEntry | undefined",
+              "purpose": "The file's inventory entry.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string[]",
+            "meaning": "The problems found; empty when the file is correctly inventoried."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "a file that appends or calls the store's write with no inventory entry is reported",
+            "every file the new detector newly flags (src/daemon/fatal.ts, src/daemon/shutdown.ts, the analyze-step, build-step, workflow-step and review-step handlers, src/config/feedback.ts and src/workflow/storage.ts appendRunLog) has an entry in the same change"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Artifact<P>",
+        "change": "new",
+        "details": "The envelope: { id, description, parent?, references, lifecycle, binding?, attachments, payload }. Stored in the head under meta.envelope (description, parent, references, binding, attachments) and meta.lifecycle, beside the existing identity and anchor meta; the payload is body plus citations. The outer { meta, body, citations } shape is kept so writeArtifact and every raw reader keep working. Kind-specific payload shapes stay in src/workflow/artifacts and are reached through the codec registry.",
+        "schemaDiff": "meta.envelope = { description: string; parent?: Reference; references: Reference[]; binding?: TrackerBinding; attachments: Attachment[] }; meta.lifecycle = Lifecycle",
+        "callSites": [
+          "src/workflow/types.ts",
+          "src/workflow/storage.ts:134-185"
+        ]
+      },
+      {
+        "entity": "decodeArtifactHead",
+        "change": "new",
+        "details": "A pure synchronous function decodeArtifactHead(id, raw) in src/workflow/artifact-core that parses the head text, selects the codec by the kind ArtifactIds.parse returns, and returns the Artifact plus the parsed head. ArtifactStore.read is an asynchronous wrapper over it and the four gates readers call it, so there is one decoder. A head with no meta.envelope or meta.lifecycle decodes with empty parts.",
+        "callSites": [
+          "src/workflow/gates.ts:141-151",
+          "src/workflow/gates.ts:236-245",
+          "src/workflow/gates.ts:281-289",
+          "src/workflow/gates.ts:377-385"
+        ]
+      },
+      {
+        "entity": "Lifecycle family (Status, Revision, Approval, Review, Signoff, Staleness, Lifecycle)",
+        "change": "new",
+        "details": "Declared in src/workflow/artifact-core/types.ts exactly as HLD sc4 (owned by s3) defines them: Status draft | pending-review | approved | in-signoff | changes-requested | signed-off | rejected | completed | withdrawn | superseded; Revision { number, contentHash, at, by }; Approval { revision, by, at, override? }; Review { revision, reviewer, party, verdict, counts, at, report? }; Signoff { revision, request, state, actors, at }; Staleness { upstream, upstreamRevision, since }; Lifecycle { status, revision, approval?, review?, signoffs, stale? }. s2 stores and reads the shape; transitions, the content hash and the roll-up are s3's. An empty lifecycle is { status: draft, revision: { number: 0, contentHash: '', at: '', by: <system actor> }, signoffs: [] }.",
+        "callSites": [
+          "src/workflow/types.ts",
+          "src/workflow/gates.ts:141-151"
+        ]
+      },
+      {
+        "entity": "TrackerBinding and Attachment",
+        "change": "new",
+        "details": "Declared exactly as HLD sc6 (owned by s6) defines them: TrackerBinding { reference, createdAtRevision, posted[], pendingLink? } and Attachment { target, revision, at, externalId? }. s2 validates only that references are well formed; their behaviour is s6's. A tracker issue is never an artifact (k6): the binding points at it.",
+        "callSites": [
+          "src/workflow/tracker/refs.ts"
+        ]
+      },
+      {
+        "entity": "Actor and Reference",
+        "change": "new",
+        "details": "Actor { id, kind, name?, properties } with a namespaced lower-case id (github:alice, insrc:daemon); Reference { entityId, type, relation, fragment?, quote? } where type is the target's type and relation says why the link exists. entityId is an artifact id or an external id (owner/repo#N, a code path, a URL) with a namespaced type, as Gap 7 allows; ArtifactIds.parse checks it only when type is an artifact type. The parent is a Reference with relation derived-from whose entityId must be an artifact id equal to ArtifactIds.parentOf of the artifact's own key, so the Epic, Story and Task chain is given by each artifact's parent (ac6).",
+        "callSites": [
+          "src/workflow/artifact-ids.ts"
+        ]
+      },
+      {
+        "entity": "ChangeLogEntry (artifact operation log)",
+        "change": "new",
+        "details": "As in HLD sc3: { id, actor, timestamp, operation, revision?, status?, outcome?, references?, addresses? } with the seventeen operations. It is a new type in src/workflow/artifact-core/types.ts and is distinct from the build file-change entry.",
+        "callSites": [
+          "src/workflow/artifacts/provenance/types.ts"
+        ]
+      },
+      {
+        "entity": "FileChangeEntry (renamed build change-log entry)",
+        "change": "field-modify",
+        "details": "The existing provenance ChangeLogEntry { target, summary?, author, timestamp } and ChangeLog are used by the BUILD record's file-level change log, so they are kept and renamed FileChangeEntry and FileChangeLog to avoid a clash with the artifact operation log. Consumers are updated: collectBuildChangeLog, StandaloneBuildRecord.body.changeLog and changeLogBodyLines. Stored data is unchanged because only the TypeScript names move.",
+        "schemaDiff": "ChangeLogEntry -> FileChangeEntry; ChangeLog -> FileChangeLog (type names only)",
+        "callSites": [
+          "src/workflow/artifacts/provenance/types.ts",
+          "src/workflow/runners/build/changed-files.ts",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/artifacts/format/bindings.ts"
+        ]
+      },
+      {
+        "entity": "Feedback and its legacy conversion",
+        "change": "new",
+        "details": "{ id, text, actor, timestamp, feedback (replies), kind: comment | suggestion | revision-request, anchor?, revision?, source?, batchId? }. The anchor is { quote?, prefix?, suffix?, section?, lines? } (binding requirement 5): prefix and suffix are kept, limits stay 500 for the quote and 40 for prefix and suffix, section carries the nearest heading slug. A pure function converts a stored FeedbackEntry for s9: comment becomes text; author becomes Actor { id: unknown:<author>, kind: person, properties: {} } because the legacy string has no namespace; an absent kind becomes comment, feedback and comment become comment, suggestion stays suggestion; quote, prefix and suffix copy across; sectionSlug becomes section with the same value; target.segment becomes anchor.lines; target.version, when it is an integer revision, becomes revision, and any other value is reported in the conversion result as unmapped rather than dropped; target.file is dropped when it is the owning artifact's own document and reported otherwise; batchId copies; decision is not a Feedback field and becomes the approve, reject or feedback outcome of the change log entry of that batch.",
+        "schemaDiff": "FeedbackAnchor.sectionSlug -> Feedback.anchor.section; FeedbackEntry.comment -> Feedback.text; FeedbackEntry.kind (optional) -> Feedback.kind (required, default comment)",
+        "callSites": [
+          "src/workflow/artifacts/provenance/types.ts",
+          "src/workflow/artifacts/provenance/writer.ts"
+        ]
+      },
+      {
+        "entity": "PreparedWrite and prepareArtifactWrite",
+        "change": "new",
+        "details": "A pure function in src/workflow/storage.ts that takes the same inputs as writeArtifact and returns { bytes, revision, changed } without touching the file system except to read the prior head. writeArtifact is rewritten as prepare then writeAtomic, so the revision rule has one implementation.",
+        "callSites": [
+          "src/workflow/storage.ts:134-185"
+        ]
+      },
+      {
+        "entity": "WriteJournal port",
+        "change": "new",
+        "details": "{ stage(id, op: { operationId, priorRevision, bytes }): Promise<void>; pending(id): Promise<{ operationId, priorRevision, bytes } | undefined>; clear(id, operationId): Promise<void> }. The store requires one; s2 ships an in-memory implementation for tests and for an explicitly named non-durable constructor, and s4 implements the durable pending-head file and the start-up recovery. pending lets a retry find the staged operation and reuse its operation id and bytes, including after the head was already replaced.",
+        "callSites": [
+          "src/workflow/storage.ts:134-185"
+        ]
+      },
+      {
+        "entity": "Kind codec and its context",
+        "change": "new",
+        "details": "Each kind registers a codec { decode(head), encode(payload, ctx) } over the { meta, body, citations } head. encode returns { meta, body, citations }; on create the codec builds the kind's identity meta from ctx (epicHash, epicSlug, createdAt, epicCreatedAt obtained through the s1 stampRootAnchor and resolveEpicAnchor helpers, standalone, sizeClass and the other fields the existing readers use), and on update the prior head's meta is kept. The store merges the prior meta first and replaces only meta.envelope, meta.lifecycle and meta.revision, so workItemAnchorCreatedAt and the path and renderer code keep reading the same fields. The AMD codec requires the converted head and refuses a flat amendment with a pointer to the s9 conversion.",
+        "callSites": [
+          "src/workflow/storage.ts:207-225",
+          "src/workflow/artifacts/define.ts",
+          "src/workflow/amendments/store.ts"
+        ]
+      },
+      {
+        "entity": "SidecarRecord and the append primitive",
+        "change": "new",
+        "details": "{ artifactId, entry } is one line of a sidecar file. s2 provides appendSidecarLine(path, record), the one function that appends a JSON line with appendFileSync to the path it is given, and an in-memory reader and appender for tests. Which path, the line format beyond a JSON object per line, ordering, de-duplication and repair are s4's through sc5's SidecarStore.",
+        "callSites": [
+          "src/workflow/artifact-write-inventory.ts:125-282"
+        ]
+      },
+      {
+        "entity": "RepoSchema",
+        "change": "new",
+        "details": "{ version: number; convertedAt?: string } stored in .insrc/schema.json. Absent means version 1 (unconverted). The version s9 sets is 2. s2 only reads and requires; s9 writes.",
+        "callSites": [
+          "src/workflow/storage.ts:134-185"
+        ]
+      },
+      {
+        "entity": "WRITER_NAMES in the write inventory",
+        "change": "field-modify",
+        "details": "WRITER_NAMES gains appendFileSync and appendSidecarLine, and a store-write rule is added. The detector keeps recognising the existing five writers exactly as before (invariant from bundle 4). Negative controls cover a raw, an aliased, a renamed, a namespace and an injected appendFileSync, and a store write with no entry. The store file's inventory entry is added in the same task as the store file, because the inventory test rejects an entry whose file does not exist.",
+        "callSites": [
+          "src/workflow/artifact-write-inventory.ts:125-282",
+          "src/workflow/__tests__/artifact-write-inventory.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "Implements the Artifact types, ArtifactStore (read, write, childrenOf), the shared decoder and codec registry and the head layout; the head is written through the unchanged writeArtifact rule via the pure prepare step. readWithHistory is recorded by the sc2 methodAdd amendment already filed."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "Implements the ChangeLogEntry, Feedback and SidecarRecord shapes, the History API and the append primitive. The anchor keeps prefix and suffix; section replaces sectionSlug with the stated conversion."
+      },
+      {
+        "contractId": "sc8",
+        "role": "implements",
+        "howDetails": "Implements RepoSchemaGate.read and require over .insrc/schema.json; s9 sets and checks the version."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Uses ArtifactIds.parse for every id the store receives and ArtifactIds.parentOf for the parent reference; adds no id rule."
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Declares the Lifecycle family exactly as sc4 defines it and stores it; the rules that move it are s3's."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Declares TrackerBinding and Attachment exactly as sc6 defines them and stores them; their behaviour is s6's."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The head file is not valid JSON, or has no meta or body object",
+          "detection": "The shared decoder parses the text and checks that meta and body are plain objects; a parse error or a failed check raises ArtifactShapeError naming the id and path",
+          "response": "Throw ArtifactShapeError from ArtifactStore.read or from the delegating Define, HLD, LLD or Plan reader; no part is guessed and nothing is written",
+          "userImpact": "The artifact cannot be read until the file is repaired by hand; other artifacts are unaffected",
+          "recoverable": true
+        },
+        {
+          "scenario": "An unconverted amendment (a flat AMD file with no meta and body) is read through the store",
+          "detection": "The AMD codec finds no meta object in the parsed file",
+          "response": "Throw ArtifactShapeError whose message names the s9 amendment conversion; childrenOf skips it and logs",
+          "userImpact": "Amendments cannot be read through the store until s9 converts them; the existing amendment commands are unaffected until then",
+          "recoverable": true
+        },
+        {
+          "scenario": "A read or write names an id the s1 module does not accept, for example LLD-<h16>-S001",
+          "detection": "ArtifactIds.parse returns undefined for the id",
+          "response": "Throw InvalidArtifactKeyError; the message points to the s9 conversion for an upper-case story",
+          "userImpact": "Old upper-case artifacts fail until the conversion runs",
+          "recoverable": true
+        },
+        {
+          "scenario": "No head exists for the id on read",
+          "detection": "existsSync on the head path is false",
+          "response": "Throw ArtifactNotFoundError for the store, or ArtifactMissingError for the gates readers, as today",
+          "userImpact": "A caller that expected the artifact sees a clear not-found error",
+          "recoverable": true
+        },
+        {
+          "scenario": "A kind has no registered payload codec",
+          "detection": "The codec registry lookup by ArtifactIds.parse(id).kind finds nothing",
+          "response": "Throw UnknownArtifactKindError; the store never passes a payload through untyped",
+          "userImpact": "A new artifact kind cannot be stored until its codec is registered",
+          "recoverable": true
+        },
+        {
+          "scenario": "The parent is not an artifact id, or differs from ArtifactIds.parentOf of the artifact's own key, or a reference whose type is an artifact type names an invalid artifact id",
+          "detection": "ArtifactStore.write checks the parent with ArtifactIds.parse and parentOf, and checks each reference's entityId with ArtifactIds.parse only when its type is an artifact type",
+          "response": "Throw ArtifactShapeError naming the reference; an external reference (owner/repo#N, a code path, a URL) is accepted without a check",
+          "userImpact": "A malformed parent or artifact link is refused before anything is written; valid tracker and code references are never blocked",
+          "recoverable": true
+        },
+        {
+          "scenario": "Preparing the head fails (unreadable prior head, a codec rejecting the payload)",
+          "detection": "prepareArtifactWrite throws before any file is touched",
+          "response": "Throw the error; no journal entry, no log line and no head change exist",
+          "userImpact": "The write fails cleanly with nothing to repair",
+          "recoverable": true
+        },
+        {
+          "scenario": "Staging the prepared head in the WriteJournal fails",
+          "detection": "WriteJournal.stage rejects",
+          "response": "Rethrow before the log append, so nothing is logged and the head is unchanged",
+          "userImpact": "The write fails visibly and can be retried",
+          "recoverable": true
+        },
+        {
+          "scenario": "The log append fails after the head was staged",
+          "detection": "appendSidecarLine or History.appendLog throws (disk full, permission)",
+          "response": "Rethrow; the staged operation stays in the journal and the head file is unchanged; the next write for this id finds it through pending and completes it under the same operation id",
+          "userImpact": "The write is reported failed; a retry reuses the staged operation id",
+          "recoverable": true
+        },
+        {
+          "scenario": "The head replace fails or the process stops after the log append",
+          "detection": "writeAtomic throws, or WriteJournal.pending still reports the operation at the next write or start",
+          "response": "Rethrow and log the artifact id and operation id at warn; the next write replays the staged bytes under the same operation id, which readers de-duplicate",
+          "userImpact": "The log never names a revision the head cannot reach, and no second entry is made for the same write",
+          "recoverable": true
+        },
+        {
+          "scenario": "The head was replaced but clearing the journal failed",
+          "detection": "WriteJournal.clear rejects after writeAtomic succeeded",
+          "response": "Log the failure at warn and let the write succeed; the next write finds the pending operation, sees the head already equals the staged bytes and only clears it, reusing the staged operation id",
+          "userImpact": "The caller sees success; the leftover journal entry is cleaned on the next write",
+          "recoverable": true
+        },
+        {
+          "scenario": "A write is made while a different operation is pending for the same id",
+          "detection": "WriteJournal.pending returns an operation whose bytes are neither the current head nor the new write",
+          "response": "Complete the pending operation first, then run the new write against the resulting head",
+          "userImpact": "Unrelated writes cannot overtake a staged one, so the log stays in order",
+          "recoverable": true
+        },
+        {
+          "scenario": "A feedback entry has an empty text, an unknown kind or an anchor over its limits",
+          "detection": "History.appendFeedback validates the entry before the append",
+          "response": "Throw HistoryEntryError naming the field; nothing is appended",
+          "userImpact": "The caller learns exactly what to fix",
+          "recoverable": true
+        },
+        {
+          "scenario": "A sidecar line is not a valid SidecarRecord when read",
+          "detection": "The reader port or History.log fails to parse a line or finds a missing artifactId or entry",
+          "response": "Throw HistoryReadError with the line number; no partial list is returned",
+          "userImpact": "History for that artifact is unavailable until the line is fixed",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repository marker file exists but holds invalid JSON or a non-integer version",
+          "detection": "RepoSchemaGate.read validates the parsed value",
+          "response": "Throw RepoSchemaError naming the file; require rethrows rather than treating it as unconverted",
+          "userImpact": "The new tools refuse to run until the marker is fixed",
+          "recoverable": true
+        },
+        {
+          "scenario": "The repository is unconverted (no marker, version 1) when a tool needs the common model",
+          "detection": "RepoSchemaGate.require(repo, 2) returns ok:false",
+          "response": "Return a message naming the found version, the needed one and the s9 conversion; the caller stops",
+          "userImpact": "The tool refuses with an actionable message instead of reading old shapes wrongly",
+          "recoverable": true
+        },
+        {
+          "scenario": "A legacy feedback entry cannot be mapped completely (a non-numeric target.version, or a target.file other than the artifact's own document)",
+          "detection": "The conversion function checks those fields and records each unmapped one in its result",
+          "response": "Return the converted Feedback plus a report entry for the unmapped field; nothing is silently dropped",
+          "userImpact": "s9's report lists what could not be carried over so a person can decide",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A head with no meta.envelope and no meta.lifecycle (every artifact today)",
+          "expected": "the shared decoder returns description '', no parent, no references, an empty lifecycle (draft, revision from meta.revision or 0, no approval or review, no signoffs, no stale record), no binding, no attachments, and does not fail (ac5); the gates readers keep returning the stored artifact"
+        },
+        {
+          "input": "write where only the description changed",
+          "expected": "the kind is content, so the revision moves by one"
+        },
+        {
+          "input": "write where only references, attachments, the binding or the parent changed",
+          "expected": "the kind is meta-only, the revision does not move, and a log entry with operation update is still appended"
+        },
+        {
+          "input": "write of identical content twice",
+          "expected": "the second prepare keeps the revision and produces the same bytes, so the operation id is the same only if the prior revision is the same; an exact replay of a staged write reuses the staged id"
+        },
+        {
+          "input": "write of an artifact that has no head yet",
+          "expected": "the operation is create, revision 1; the codec supplies the identity meta from the context including epicCreatedAt; the entry is appended before the head is written"
+        },
+        {
+          "input": "write of an existing artifact",
+          "expected": "the prior head's identity meta (epicHash, epicSlug, epicCreatedAt, createdAt, standalone and the rest) is kept and only meta.envelope, meta.lifecycle and meta.revision are replaced, so workItemAnchorCreatedAt and the Define renderer still read the stored head"
+        },
+        {
+          "input": "A store built without a journal",
+          "expected": "it can only be built through the explicitly named non-durable test constructor; the production constructor requires a journal"
+        },
+        {
+          "input": "childrenOf an id with no children, or with an unreadable head in the directory",
+          "expected": "an empty array, or the readable children only, with the unreadable head logged"
+        },
+        {
+          "input": "The same ChangeLogEntry id appended twice for one artifact",
+          "expected": "both lines may exist; every reader returns it once"
+        },
+        {
+          "input": "A feedback anchor with a quote of exactly 500 characters and a 40 character prefix",
+          "expected": "accepted; 501 or 41 is HistoryEntryError"
+        },
+        {
+          "input": "A feedback anchor with only a quote, or with only lines",
+          "expected": "accepted; every anchor field is optional"
+        },
+        {
+          "input": "A legacy feedback entry with no kind",
+          "expected": "converted with kind comment"
+        },
+        {
+          "input": "A legacy feedback author such as Subho Ghosh",
+          "expected": "the actor id is unknown:Subho Ghosh with kind person, never an unnamespaced id"
+        },
+        {
+          "input": "openFeedback when a later log entry has addresses 'all', or lists one feedback id",
+          "expected": "all earlier feedback, or only the listed one, is closed; feedback written after that entry is open"
+        },
+        {
+          "input": "A repository with no .insrc/schema.json",
+          "expected": "read returns version 1 and require(repo, 1) is ok"
+        },
+        {
+          "input": "A reference to owner/repo#12 with type github:issue, to a code path, or to a URL",
+          "expected": "accepted on a reference; only an artifact-typed reference is checked with ArtifactIds"
+        },
+        {
+          "input": "appendFileSync imported under another name, called as fs.appendFileSync, or passed as a default parameter; a file that imports the store module and calls write",
+          "expected": "the inventory detector reports each as a writer, and the files it newly flags already have entries"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "writeArtifact mints meta.revision on content writes only, keeps it for an identical rewrite and copies it on a meta-only write; its signature and result are unchanged by the prepare split",
+          "source": "c1"
+        },
+        {
+          "text": "A content write carries the whole prior meta.tracker block; the envelope's binding does not drop meta.tracker",
+          "source": "c1"
+        },
+        {
+          "text": "workItemAnchorCreatedAt requires meta.epicCreatedAt, so a store write keeps the head's identity meta and never drops it",
+          "source": "c1"
+        },
+        {
+          "text": "The head keeps the { meta, body, citations } outer shape and is replaced atomically with writeAtomic",
+          "source": "c1"
+        },
+        {
+          "text": "The Lifecycle, TrackerBinding and Attachment shapes are exactly the ones HLD sc4 and sc6 define, and a Reference may name an artifact or an external id",
+          "source": "c2"
+        },
+        {
+          "text": "The build change log keeps its stored shape: only the TypeScript names of ChangeLogEntry and ChangeLog move",
+          "source": "c3"
+        },
+        {
+          "text": "Feedback quote is at most 500 characters and prefix and suffix at most 40, and the anchor keeps its prefix and suffix",
+          "source": "c3"
+        },
+        {
+          "text": "The detector recognises writeArtifact, writeRecordFile, writeAtomic, writeFileSync and renameSync exactly as before, and every writer file has an inventory entry",
+          "source": "c4"
+        },
+        {
+          "text": "Amendment files keep their flat stored shape until the s9 conversion",
+          "source": "c5"
+        },
+        {
+          "text": "readDefineArtifact, readHldArtifact, readLldArtifact and readPlanArtifact stay synchronous and keep their return shapes and missing-file errors",
+          "source": "c6"
+        },
+        {
+          "text": "Artifact ids are the strict s1 form and the parent chain comes from ArtifactIds.parentOf; the delivery loader reads each artifact once",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test via npx tsx --test, with node:assert/strict; tests live beside the code in __tests__ directories",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the prepare step, the shared decoder, the envelope read and write rules, History validation, the gate and the legacy feedback conversion in isolation over temporary directories and in-memory ports.",
+          "subjects": [
+            "prepareArtifactWrite returns the same bytes and revision that writeArtifact writes for content, meta-only, identical and first writes, and writeArtifact keeps its existing results",
+            "decodeArtifactHead fills every envelope part from a head with and without meta.envelope and meta.lifecycle, and rejects a malformed head, an unknown kind and an unconverted amendment",
+            "ArtifactStore.write chooses content for a payload or description change and meta-only for references, parent, attachments, binding or lifecycle changes",
+            "reference validation: an artifact-typed reference with a bad id and a parent that differs from ArtifactIds.parentOf are refused; github:issue, code-path and URL references are accepted",
+            "the operation id is the same for a replayed staged write and different when the prior revision or the bytes differ",
+            "History.appendFeedback validation of text, kind and the anchor limits, and that prefix, suffix, section and lines survive a round trip",
+            "History.openFeedback closing by addresses 'all' and by listed ids",
+            "RepoSchemaGate.read and require over no marker, a valid marker and an invalid marker",
+            "the legacy feedback conversion: absent kind, namespaced unknown: actor, sectionSlug to section, segment to lines, integer and non-integer target.version, foreign target.file, decision to the batch log outcome"
+          ],
+          "fixturesNeeded": [
+            "a temporary repository with .insrc/artifacts",
+            "heads written with and without the envelope parts",
+            "a flat amendment file",
+            "an in-memory SidecarStore reader and appender and an in-memory WriteJournal"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the store, the journal order, the append primitive and the delegating readers together on real files, and the inventory gate over the real source tree.",
+          "subjects": [
+            "write then read round trip for each registered kind keeps the revision rule: identical rewrite keeps it, a reference change keeps it, a description change moves it, a payload change moves it by one",
+            "a store write followed by workItemAnchorCreatedAt and the Define renderer over the stored head returns the same anchor and markdown as before the write",
+            "retry BEFORE replacement: a failure injected at stage, at the log append and at the head replace leaves the documented state and the next write completes the staged operation under the same operation id with the log showing it once",
+            "retry AFTER replacement: the head replace succeeds and clear fails, the write still resolves, and the next write finds the pending operation, only clears it and appends no second entry",
+            "an unrelated write while an operation is pending completes the pending one first",
+            "a fresh store over the same directory and a persisted journal replays a staged write after a simulated restart",
+            "readWithHistory returns a non-empty change log and non-empty feedback together with the lifecycle for an artifact that has both",
+            "readDefineArtifact, readHldArtifact, readLldArtifact and readPlanArtifact return the same artifact and the same missing-file error as before, synchronously, for a head with no envelope parts",
+            "appendSidecarLine appends one JSON line per call to a path it is given",
+            "the write inventory test over the real src tree: every file the new detector flags has an entry, the store and primitive files have entries, and the negative controls for raw, aliased, renamed, namespace, injected appendFileSync and a store write with no entry are reported",
+            "the build change log tests pass unchanged apart from the renamed type names"
+          ],
+          "fixturesNeeded": [
+            "a temporary repository",
+            "a fault-injecting head writer and journal that throw once at a chosen boundary",
+            "a copy of the real inventory input list"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Pin the shapes other Stories build on: the exported types and the stored head layout.",
+          "subjects": [
+            "the Lifecycle, Revision, Approval, Review, Signoff, Staleness, TrackerBinding and Attachment types accept the sc4 and sc6 sketches exactly",
+            "the Artifact, ChangeLogEntry, Feedback and SidecarRecord types accept the sc2 and sc3 sketches plus the stated anchor extension",
+            "the stored head keeps { meta, body, citations } with envelope parts only under meta.envelope and meta.lifecycle"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/store-read.test.ts: readWithHistory exposes identity, description, parent, references, change log, feedback and lifecycle in one shape for an artifact with non-empty history and feedback",
+            "src/workflow/artifact-core/__tests__/store-write.test.ts: write then read round trip keeps the revision rule for every registered kind",
+            "src/workflow/artifact-core/__tests__/store-read.test.ts: the gates readers and the store read the same head through one decoder"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/store-read.test.ts: a head with no envelope or lifecycle part reads an empty part and does not fail"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "src/workflow/artifact-core/__tests__/store-read.test.ts: a reference names its target, type and relation, external targets are accepted, and the parent chain is given by the parent link",
+            "src/workflow/artifact-core/__tests__/store-children.test.ts: children are derived from the parent link and are never stored on the parent"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Each artifact type keeps cross-cutting facts as loose optional meta fields and its feedback inside body.feedback. writeArtifact builds and writes the head in one function and returns the revision only after the write. gates.ts readDefineArtifact, readHldArtifact, readLldArtifact and readPlanArtifact each parse the head JSON themselves and are synchronous. The write inventory recognises five writers and several existing files call appendFileSync unseen. The build change log uses ChangeLogEntry and ChangeLog from the provenance types. Amendments are flat files. (bundles c1 to c6)",
+      "stateAfter": "src/workflow/artifact-core holds the envelope types (including the sc4 and sc6 shapes unchanged), the shared synchronous decoder, the codec registry, ArtifactStore with readWithHistory and a required WriteJournal, History, appendSidecarLine and RepoSchemaGate. storage.ts has a pure prepareArtifactWrite and writeArtifact is prepare then write. The four gates readers delegate to the shared decoder and stay synchronous. The build change log types are renamed FileChangeEntry and FileChangeLog. The inventory detector knows appendFileSync, appendSidecarLine and the store write, with negative controls, and every file it newly flags has an entry. No stored data is converted: s3 to s8 build on the store and s9 converts, including amendments.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add src/workflow/artifact-core/types.ts declaring the envelope, Actor, Reference, ChangeLogEntry, Feedback, SidecarRecord, RepoSchema, the errors, and the sc4 Lifecycle family and sc6 TrackerBinding and Attachment exactly as the HLD defines them. Rename the provenance ChangeLogEntry and ChangeLog to FileChangeEntry and FileChangeLog and update collectBuildChangeLog, StandaloneBuildRecord and changeLogBodyLines. Stored data does not change.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Split writeArtifact in src/workflow/storage.ts into a pure prepareArtifactWrite returning the bytes, the revision and whether content changed, and a writeArtifact that calls it and then writeAtomic. Its signature and results stay identical; the existing writeArtifact tests must pass unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add src/workflow/artifact-core/sidecar.ts with appendSidecarLine and the in-memory reader and appender, and src/workflow/artifact-core/history.ts implementing History with entry validation including the anchor limits. In the same change extend the inventory detector for appendFileSync and appendSidecarLine, add the negative controls, give an inventory entry to the sidecar file, and add entries for every existing file the detector newly flags (src/daemon/fatal.ts, src/daemon/shutdown.ts, the analyze-step, build-step, workflow-step and review-step handlers, src/config/feedback.ts, and the appendRunLog call in src/workflow/storage.ts). The inventory test must pass at the end of this step.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1"
+          ]
+        },
+        {
+          "order": 4,
+          "action": "Add the kind codec registry and a codec for each existing kind except AMD, each owning encode(payload, ctx) and the kind's identity meta, plus the pure synchronous decodeArtifactHead. The AMD codec requires the converted head and throws a pointer to the s9 conversion for a flat amendment.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Delegate readDefineArtifact, readHldArtifact, readLldArtifact and readPlanArtifact in src/workflow/gates.ts to decodeArtifactHead. They stay synchronous, keep their return shapes and their missing-file errors, and a head without envelope parts decodes with empty parts, so the delegation is safe before the conversion. The existing gates tests must pass unchanged.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 4"
+          ]
+        },
+        {
+          "order": 6,
+          "action": "Add src/workflow/artifact-core/store.ts with ArtifactStore (read, readWithHistory, write, childrenOf) and the WriteJournal port with pending, using prepareArtifactWrite, the codecs and History in the order: complete any pending operation, stage, append log, replace head, clear. Extend the inventory detector with the store-write rule and add the store file's inventory entry in this same step, since the inventory test rejects an entry for a file that does not exist.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 2",
+            "step 3",
+            "step 4"
+          ]
+        },
+        {
+          "order": 7,
+          "action": "Add RepoSchemaGate over .insrc/schema.json: read (absent means version 1) and require.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Add the pure legacy feedback conversion with its report of unmapped fields so s9 can run it.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 1"
+          ]
+        },
+        {
+          "order": 9,
+          "action": "Record for s9 in docs/plans/core-data-model.md: convert every flat amendment to the enveloped head; add meta.envelope and meta.lifecycle to every head (moving approvedAt, rejectedAt, rejectReason, review, reviewOverride, reviewResolutions and the staleness comparisons into the lifecycle and tracker into the binding); turn body.feedback entries into sidecar feedback lines through step 8; set the repository marker to version 2. None of this runs in this Story.",
+          "rollbackable": false,
+          "prerequisiteFlags": [
+            "s9"
+          ]
+        }
+      ],
+      "backwardCompat": "None is kept, by the owner's ruling. The changes to existing modules are internal: writeArtifact is split with identical behaviour, the four gates readers delegate to the shared decoder with unchanged return shapes and errors, the build change log types are renamed (type names only, stored data unchanged), and the detector gains writers. The store and ports are additive. A repository that has not been converted reads as schema version 1 and the new tools refuse it through RepoSchemaGate.require, and an unconverted amendment is refused by the store with a pointer to s9 while the existing amendment commands keep working.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Store with a required journal, a recoverable operation id, a shared synchronous decoder and codec-owned metadata",
+        "oneLineSummary": "ArtifactStore over a pure prepare step with a REQUIRED WriteJournal whose pending(id) lets a retry reuse the staged operation id; one synchronous decodeArtifactHead that the async read and the gates readers share; codecs own the kind's identity meta; sc4 and sc6 shapes declared unchanged.",
+        "approach": "New module group src/workflow/artifact-core. types.ts declares the envelope, Actor, Reference, ChangeLogEntry, Feedback, SidecarRecord, RepoSchema and, unchanged from the HLD, the sc4 Lifecycle family and the sc6 TrackerBinding and Attachment. storage.ts splits writeArtifact into a pure prepareArtifactWrite and writeArtifact calls it then writeAtomic. decodeArtifactHead(id, raw) is a pure synchronous decoder over the { meta, body, citations } head; ArtifactStore.read and readWithHistory wrap it, and readDefineArtifact, readHldArtifact, readLldArtifact and readPlanArtifact in gates.ts call it and keep returning the stored artifact in their current shapes, so no caller becomes asynchronous; a head with no envelope parts decodes with empty parts, so this is safe before the conversion. ArtifactStore is built with a required WriteJournal (a journal-free store exists only through an explicitly named non-durable test constructor). write(): first completes any pending operation the journal reports for the id (head already equal to the staged bytes: clear only; otherwise replay the staged bytes under the SAME operation id); then chooses the kind (content when the payload or the description changed, meta-only otherwise), prepares the head, derives the operation id from the artifact id, the prior revision and the prepared bytes, stages { operationId, priorRevision, bytes } in the journal, appends the change log entry with that id and the authoritative revision, replaces the head, and clears the journal; a clear failure after a successful replace is logged and does not fail the write. Each kind's codec owns encode(payload, ctx) and supplies the kind's identity meta from ctx on create (epicHash, epicSlug, epicCreatedAt through the s1 anchor helpers, createdAt, standalone and the other fields existing readers use) and takes it from the prior head on update; the store merges the prior meta first and replaces only meta.envelope, meta.lifecycle and meta.revision. A Reference target is checked with ArtifactIds only when its type is an artifact type; external targets are allowed; only the parent must be an artifact id. readWithHistory adds the change log and feedback (already filed as an sc2 methodAdd). The AMD codec refuses an unconverted flat amendment. The provenance ChangeLogEntry is renamed FileChangeEntry. The inventory detector adds appendFileSync, appendSidecarLine and an import-based store-write rule, and every existing appender it newly flags gets an entry.",
+        "pros": [
+          "A retry after any boundary, including head replaced but clear failed, reuses the staged operation id and appends the same entry",
+          "Production writes cannot silently skip durable staging",
+          "The old readers move onto the one decoder without turning any caller asynchronous",
+          "Identity meta is owned by each kind's codec, so the existing anchor and path code keeps working over a stored head"
+        ],
+        "cons": [
+          "More surface: a journal port with pending, a shared decoder and a codec context",
+          "Edits gates.ts readers (thin delegation) and renames a type used by the build change log"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Same store with an optional journal and re-derived operation id",
+        "oneLineSummary": "As a1 but the journal is optional and the operation id is re-derived on every attempt.",
+        "approach": "ArtifactStore.write appends the log entry and replaces the head; a WriteJournal may be supplied; the operation id is recomputed from the prior revision and bytes each attempt; gates readers are left as they are.",
+        "pros": [
+          "Smaller",
+          "No change to gates.ts"
+        ],
+        "cons": [
+          "An absent journal leaves no durable pending content, so binding requirement 3 is not met in production",
+          "A retry after the head was replaced reads a new prior revision and derives a different operation id, so the log can hold two entries for one write",
+          "Leaves four independent JSON readers, which is the second reader the Story is meant to remove"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Smaller but fails binding requirement 3 and leaves the second reader."
+      },
+      {
+        "id": "a3",
+        "name": "Store plus a real file-backed sidecar and journal inside s2",
+        "oneLineSummary": "As a1 but s2 also implements the sidecar files, ordering and the durable pending head itself.",
+        "approach": "The a1 store with History over fixed file names beside each head, read-time filtering and de-duplication, and a durable pending-head file with replay at startup, all in s2.",
+        "pros": [
+          "Works end to end in one Story",
+          "Crash recovery is testable with real files immediately"
+        ],
+        "cons": [
+          "Takes file layout, ordering, de-duplication and repair from s4, which owns sc5 and binding requirement 3",
+          "Fixes a line format s4 has not designed, so s4 would rewrite shipped code"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Complete but crosses into s4's boundary."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "dm1: new entities under src/workflow/artifact-core cite the nearest existing module as a call site because the new files do not exist yet; confirm this is acceptable",
+      "sbdry3: the WriteJournal port and the Feedback anchor prefix and suffix extension are additions with no HLD amendment; readWithHistory is filed as AMD-7; confirm whether the journal port and the anchor change need amendments too",
+      "sbdry5: s2 defines the WriteJournal port and the appendSidecarLine primitive because binding requirements 1 and 3 touch the write path, while s4 implements the durable journal, layout, ordering, de-duplication and repair; confirm this edge with s4"
+    ],
+    "erDefinition": {
+      "id": "artifact-envelope-er",
+      "narrative": "The common artifact model: an Artifact owns one Lifecycle (the shapes approved for the lifecycle Story), may bind to one tracker issue, and has references and attachments; its change log and feedback are separate sidecar records that carry the owning artifact id. A Task set holds Task artifacts, and a repository has one schema version.",
+      "classes": {
+        "Artifact": {
+          "description": "Any stored entity: an Epic, Story, Task, design document, plan, build or review record.",
+          "attributes": {
+            "id": {
+              "description": "The artifact id from the s1 identity module.",
+              "range": "string",
+              "required": true,
+              "identifier": true
+            },
+            "description": {
+              "description": "A short human description; part of the content.",
+              "range": "string",
+              "required": true
+            },
+            "parent": {
+              "description": "The artifact this one derives from; the Epic, Story and Task chain is given by it.",
+              "range": "Reference",
+              "required": false
+            },
+            "references": {
+              "description": "Links to other artifacts or external things.",
+              "range": "Reference",
+              "multivalued": true
+            },
+            "lifecycle": {
+              "description": "The one lifecycle of this artifact.",
+              "range": "Lifecycle",
+              "required": true
+            },
+            "binding": {
+              "description": "The tracker issue this artifact is one to one with.",
+              "range": "TrackerBinding",
+              "required": false
+            },
+            "attachments": {
+              "description": "Supporting items attached to the artifact.",
+              "range": "Attachment",
+              "multivalued": true
+            },
+            "payload": {
+              "description": "The kind-specific content owned by its payload codec.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "Lifecycle": {
+          "description": "Status, revision, approval, review, signoffs and staleness of one artifact; exactly one per artifact.",
+          "attributes": {
+            "status": {
+              "description": "draft, pending-review, approved, in-signoff, changes-requested, signed-off, rejected, completed, withdrawn or superseded.",
+              "range": "string",
+              "required": true
+            },
+            "revision": {
+              "description": "The current content revision.",
+              "range": "Revision",
+              "required": true
+            },
+            "approval": {
+              "description": "The latest approval of a revision.",
+              "range": "Approval",
+              "required": false
+            },
+            "review": {
+              "description": "The latest review of a revision.",
+              "range": "Review",
+              "required": false
+            },
+            "signoffs": {
+              "description": "Signoff rounds on a revision.",
+              "range": "Signoff",
+              "multivalued": true
+            },
+            "stale": {
+              "description": "Set when an upstream artifact moved on.",
+              "range": "Staleness",
+              "required": false
+            }
+          }
+        },
+        "Revision": {
+          "description": "A content revision with the hash of the content it names and who made it.",
+          "attributes": {
+            "number": {
+              "description": "Moves only when content changes.",
+              "range": "integer",
+              "required": true
+            },
+            "contentHash": {
+              "description": "Hash of the canonical content, computed by the lifecycle rules.",
+              "range": "string",
+              "required": true
+            },
+            "at": {
+              "description": "When the revision was made.",
+              "range": "string",
+              "required": true
+            },
+            "by": {
+              "description": "Who made it.",
+              "range": "Actor",
+              "required": true
+            }
+          }
+        },
+        "Approval": {
+          "description": "An approval of one revision.",
+          "attributes": {
+            "revision": {
+              "description": "The revision number approved.",
+              "range": "integer",
+              "required": true
+            },
+            "by": {
+              "description": "Who approved.",
+              "range": "Actor",
+              "required": true
+            },
+            "at": {
+              "description": "When.",
+              "range": "string",
+              "required": true
+            },
+            "override": {
+              "description": "The reason given when a blocking review was overridden.",
+              "range": "string",
+              "required": false
+            }
+          }
+        },
+        "Review": {
+          "description": "A review verdict on one revision.",
+          "attributes": {
+            "revision": {
+              "description": "The revision number reviewed.",
+              "range": "integer",
+              "required": true
+            },
+            "reviewer": {
+              "description": "Who or what reviewed.",
+              "range": "Actor",
+              "required": true
+            },
+            "party": {
+              "description": "controller or daemon.",
+              "range": "string",
+              "required": true
+            },
+            "verdict": {
+              "description": "pass, warn or block.",
+              "range": "string",
+              "required": true
+            },
+            "counts": {
+              "description": "Finding counts by severity.",
+              "range": "string",
+              "required": true
+            },
+            "at": {
+              "description": "When.",
+              "range": "string",
+              "required": true
+            },
+            "report": {
+              "description": "The review record.",
+              "range": "Reference",
+              "required": false
+            }
+          }
+        },
+        "Signoff": {
+          "description": "One signoff round on a revision.",
+          "attributes": {
+            "revision": {
+              "description": "The revision number.",
+              "range": "integer",
+              "required": true
+            },
+            "request": {
+              "description": "The tracker comment or issue that asked for it.",
+              "range": "Reference",
+              "required": true
+            },
+            "state": {
+              "description": "open, changes-requested or completed.",
+              "range": "string",
+              "required": true
+            },
+            "actors": {
+              "description": "Who has signed.",
+              "range": "Actor",
+              "multivalued": true
+            },
+            "at": {
+              "description": "When it opened.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "Staleness": {
+          "description": "The record that an artifact was built on an upstream revision that has since changed.",
+          "attributes": {
+            "upstream": {
+              "description": "The upstream artifact that moved.",
+              "range": "Reference",
+              "required": true
+            },
+            "upstreamRevision": {
+              "description": "The upstream revision now current.",
+              "range": "integer",
+              "required": true
+            },
+            "since": {
+              "description": "When the upstream moved.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "TrackerBinding": {
+          "description": "The link to one tracker issue and what has been posted to it.",
+          "attributes": {
+            "reference": {
+              "description": "The issue.",
+              "range": "Reference",
+              "required": true
+            },
+            "createdAtRevision": {
+              "description": "The revision current when the issue was created.",
+              "range": "integer",
+              "required": true
+            },
+            "posted": {
+              "description": "What the framework posted to the issue.",
+              "range": "Posting",
+              "multivalued": true
+            },
+            "pendingLink": {
+              "description": "A parent link not yet made.",
+              "range": "PendingLink",
+              "required": false
+            }
+          }
+        },
+        "Posting": {
+          "description": "One post to a tracker issue.",
+          "attributes": {
+            "kind": {
+              "description": "milestone, task-list, design, review or plan.",
+              "range": "string",
+              "required": true
+            },
+            "at": {
+              "description": "When.",
+              "range": "string",
+              "required": true
+            },
+            "externalId": {
+              "description": "The tracker's id for the post.",
+              "range": "string",
+              "required": false
+            }
+          }
+        },
+        "PendingLink": {
+          "description": "A parent and child link waiting to be made.",
+          "attributes": {
+            "parent": {
+              "description": "The parent issue.",
+              "range": "Reference",
+              "required": true
+            },
+            "child": {
+              "description": "The child issue.",
+              "range": "Reference",
+              "required": false
+            },
+            "childId": {
+              "description": "The child's tracker id.",
+              "range": "integer",
+              "required": false
+            }
+          }
+        },
+        "Attachment": {
+          "description": "A supporting artifact attached to the issue of the unit it describes.",
+          "attributes": {
+            "target": {
+              "description": "The attached artifact.",
+              "range": "Reference",
+              "required": true
+            },
+            "revision": {
+              "description": "The revision attached.",
+              "range": "integer",
+              "required": true
+            },
+            "at": {
+              "description": "When.",
+              "range": "string",
+              "required": true
+            },
+            "externalId": {
+              "description": "The tracker's id for the attachment.",
+              "range": "string",
+              "required": false
+            }
+          }
+        },
+        "Reference": {
+          "description": "A typed link from one artifact to another or to an external thing.",
+          "attributes": {
+            "entityId": {
+              "description": "The artifact id or external id linked to.",
+              "range": "string",
+              "required": true
+            },
+            "type": {
+              "description": "What kind of thing the target is.",
+              "range": "string",
+              "required": true
+            },
+            "relation": {
+              "description": "Why the link exists.",
+              "range": "string",
+              "required": true
+            },
+            "fragment": {
+              "description": "A section or line range inside the target.",
+              "range": "string",
+              "required": false
+            },
+            "quote": {
+              "description": "A quoted passage from the target.",
+              "range": "string",
+              "required": false
+            }
+          }
+        },
+        "Actor": {
+          "description": "A person, agent or system that acts on an artifact; the id is namespaced by its source.",
+          "attributes": {
+            "id": {
+              "description": "Namespaced id such as github:alice or insrc:daemon.",
+              "range": "string",
+              "required": true,
+              "identifier": true
+            },
+            "kind": {
+              "description": "person, agent or system.",
+              "range": "string",
+              "required": true
+            },
+            "name": {
+              "description": "Display name.",
+              "range": "string",
+              "required": false
+            },
+            "properties": {
+              "description": "Source-specific facts.",
+              "range": "string",
+              "required": false
+            }
+          }
+        },
+        "ChangeLogEntry": {
+          "description": "One append-only record of an operation on an artifact.",
+          "attributes": {
+            "id": {
+              "description": "The operation id; the de-duplication key within the artifact.",
+              "range": "string",
+              "required": true,
+              "identifier": true
+            },
+            "actor": {
+              "description": "Who did it.",
+              "range": "Actor",
+              "required": true
+            },
+            "timestamp": {
+              "description": "When.",
+              "range": "string",
+              "required": true
+            },
+            "operation": {
+              "description": "create, update, approve, review, complete and the others.",
+              "range": "string",
+              "required": true
+            },
+            "revision": {
+              "description": "The revision the operation produced or acted on.",
+              "range": "Revision",
+              "required": false
+            },
+            "references": {
+              "description": "Links the operation relied on.",
+              "range": "Reference",
+              "multivalued": true
+            },
+            "addresses": {
+              "description": "The feedback entries this update addressed, or all.",
+              "range": "string",
+              "multivalued": true
+            }
+          }
+        },
+        "Feedback": {
+          "description": "An immutable comment, suggestion or revision request on an artifact, with its replies.",
+          "attributes": {
+            "id": {
+              "description": "Unique within the artifact.",
+              "range": "string",
+              "required": true,
+              "identifier": true
+            },
+            "text": {
+              "description": "The comment.",
+              "range": "string",
+              "required": true
+            },
+            "actor": {
+              "description": "Who wrote it.",
+              "range": "Actor",
+              "required": true
+            },
+            "timestamp": {
+              "description": "When.",
+              "range": "string",
+              "required": true
+            },
+            "kind": {
+              "description": "comment, suggestion or revision-request.",
+              "range": "string",
+              "required": true
+            },
+            "anchor": {
+              "description": "The quote, its prefix and suffix, the section and the lines it was made on.",
+              "range": "string",
+              "required": false
+            },
+            "replies": {
+              "description": "Replies, themselves feedback entries.",
+              "range": "Feedback",
+              "multivalued": true
+            }
+          }
+        },
+        "SidecarRecord": {
+          "description": "One line of a sidecar file: an entry and the id of the artifact that owns it.",
+          "attributes": {
+            "artifactId": {
+              "description": "The owning artifact.",
+              "range": "Artifact",
+              "required": true
+            },
+            "changeLogEntry": {
+              "description": "Set on a change log line.",
+              "range": "ChangeLogEntry",
+              "required": false
+            },
+            "feedback": {
+              "description": "Set on a feedback line.",
+              "range": "Feedback",
+              "required": false
+            }
+          }
+        },
+        "TaskSet": {
+          "description": "The Tasks file of a Story: the Task artifacts of its plan.",
+          "attributes": {
+            "id": {
+              "description": "The TASKS artifact id.",
+              "range": "string",
+              "required": true,
+              "identifier": true
+            },
+            "tasks": {
+              "description": "Its Task artifacts.",
+              "range": "Task",
+              "multivalued": true
+            }
+          }
+        },
+        "Task": {
+          "description": "One Task of a plan: an artifact with its own lifecycle and issue.",
+          "attributes": {
+            "artifact": {
+              "description": "The envelope of the Task.",
+              "range": "Artifact",
+              "required": true
+            },
+            "payload": {
+              "description": "The Task content.",
+              "range": "TaskPayload",
+              "required": true
+            },
+            "taskSet": {
+              "description": "The set it belongs to.",
+              "range": "TaskSet",
+              "required": true
+            }
+          }
+        },
+        "TaskPayload": {
+          "description": "The content of a Task artifact.",
+          "attributes": {
+            "title": {
+              "description": "Task title.",
+              "range": "string",
+              "required": true
+            },
+            "summary": {
+              "description": "What the Task does.",
+              "range": "string",
+              "required": true
+            },
+            "size": {
+              "description": "S, M or L.",
+              "range": "string",
+              "required": true
+            },
+            "order": {
+              "description": "Position in the plan.",
+              "range": "integer",
+              "required": true
+            },
+            "acceptanceChecks": {
+              "description": "Checks that must hold.",
+              "range": "string",
+              "multivalued": true
+            },
+            "tests": {
+              "description": "Named tests with their level.",
+              "range": "string",
+              "multivalued": true
+            }
+          }
+        },
+        "RepoSchema": {
+          "description": "The repository-level version marker.",
+          "attributes": {
+            "version": {
+              "description": "1 is unconverted; 2 is the common model.",
+              "range": "integer",
+              "required": true
+            },
+            "convertedAt": {
+              "description": "When the conversion set it.",
+              "range": "string",
+              "required": false
+            }
+          }
+        }
+      }
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/one-common-model-every-artifact-E202610192f27754d/S002/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "write path and revision rule: src/workflow/storage.ts writeArtifact and workItemAnchorCreatedAt"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "HLD sc4, sc5, sc6 contracts and Gap 7: .insrc/artifacts/HLD-2f27754d4ad00b8e.json and docs/plans/core-data-model.md"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "provenance types in use: src/workflow/artifacts/provenance/types.ts and the build change log"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "write inventory and existing appenders: src/workflow/artifact-write-inventory.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "flat amendment files: src/workflow/amendments/store.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "gates readers: src/workflow/gates.ts readDefineArtifact, readHldArtifact, readLldArtifact, readPlanArtifact"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 identity module and the tests the model extends: src/workflow/artifact-ids.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md#binding-requirement-7-the-s2-lld-carries-the-er-definition-2026-10-19"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "HLD-2f27754d4ad00b8e sc2 ArtifactEnvelope, sc3 HistoryRecords, sc8 RepoSchemaVersion"
+    }
+  ]
+}

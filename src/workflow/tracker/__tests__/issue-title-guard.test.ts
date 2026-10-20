@@ -184,6 +184,22 @@ test('a Task issue found by its title alone is adopted, and a Story with two uni
 	}
 });
 
+test('two Epic issues carrying the Epic labels are refused on both paths and nothing is created', () => {
+	for (const mode of ['team', 'legacy'] as const) {
+		const fx = seed();
+		try {
+			const labels = ['insrc:epic', `epic:${SLUG}`, unitLabel(epic(fx.repo))];
+			const t = fakeTracker([
+				{ ref: 'acme/demo#7', spec: { title: 'an old epic', body: 'x', labels } as IssueSpec },
+				{ ref: 'acme/demo#9', spec: { title: 'another old epic', body: 'x', labels } as IssueSpec },
+			]);
+			const results = pushAll(fx, t, mode);
+			assert.equal(results[0]!.status, 'failed', `${mode}: ${JSON.stringify(results[0])}`);
+			assert.equal(t.issues.length, 2, `${mode}: nothing was created`);
+		} finally { fx.cleanup(); }
+	}
+});
+
 test('a failed Epic label lookup on the legacy path creates no Epic issue', () => {
 	const fx = seed();
 	try {

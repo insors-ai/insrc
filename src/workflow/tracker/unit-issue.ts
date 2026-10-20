@@ -281,17 +281,11 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 	}
 
 	// Lookup by the per-unit label (a failed lookup is a failure, never "not found").
-	const found = port.findIssue([membership, label]);
+	const found = findSingleIssue(port, [membership, label]);
 	if (!found.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${found.reason}`, found.kind);
 	let adopted: string | undefined = found.value ?? undefined;
-	if (adopted !== undefined && typeof port.findIssues === 'function') {
-		// findIssue answers the first match only: a unit that already has several issues is refused, not bound to one of them.
-		const all = port.findIssues([membership, label]);
-		if (!all.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${all.reason}`, all.kind);
-		if (all.value.length > 1) return before(`${all.value.length} issues carry the label '${label}' (${all.value.join(', ')}); keep one, close the others and retry`, 'rejected');
-	}
 	if (adopted === undefined && unit.unit === 'epic') {
-		const old = port.findIssue([cfg.epicLabel, membership]);
+		const old = findSingleIssue(port, [cfg.epicLabel, membership]);
 		if (!old.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${old.reason}`, old.kind);
 		adopted = old.value ?? undefined;
 	}
@@ -440,6 +434,16 @@ function tieBreak(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef
  * title starts with. One match is the issue; none means create; several matches, or a lookup that
  * failed, mean the caller must create nothing.
  */
+/** The one issue carrying every label, none, or a failure: findIssue answers the first match only, so a second is looked for. */
+export function findSingleIssue(port: TrackerPort, labels: string[]): PortResult<IssueRef | null> {
+	const first = port.findIssue(labels);
+	if (!first.ok || first.value === null || typeof port.findIssues !== 'function') return first;
+	const all = port.findIssues(labels);
+	if (!all.ok) return all;
+	if (all.value.length > 1) return { ok: false, reason: `${all.value.length} issues carry the labels ${labels.join(', ')} (${all.value.join(', ')}); keep one, close the others and retry`, kind: 'rejected' };
+	return first;
+}
+
 export function findExistingUnitIssue(
 	port: TrackerPort, membership: string, label: string, token: string,
 ): { readonly ok: true; readonly issue: IssueRef | null } | { readonly ok: false; readonly reason: string; readonly kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected' } {

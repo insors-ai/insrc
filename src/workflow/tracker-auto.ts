@@ -45,7 +45,7 @@ import {
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
 } from './tracker/conventions.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitRef } from './tracker/refs.js';
-import { ensureUnitIssueDetailed, findExistingUnitIssue, runUnitExtras, unitLabel, type ExtraStep } from './tracker/unit-issue.js';
+import { ensureUnitIssueDetailed, findExistingUnitIssue, findSingleIssue, runUnitExtras, unitLabel, type ExtraStep } from './tracker/unit-issue.js';
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
 import { renderReviewReport } from './review/index.js';
@@ -162,7 +162,7 @@ function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	// epic-membership labels) rather than creating a second one.
 	const membership = epicMembershipLabel(epicSlug);
 	// A failed lookup is a failure: nothing is created on a guess that the Epic is not there.
-	const found = port.findIssue([cfg.epicLabel, membership]);
+	const found = findSingleIssue(port, [cfg.epicLabel, membership]);
 	if (!found.ok) return { status: 'failed', reason: `cannot look up the Epic issue: ${found.reason}` };
 	let adopted = found.value ?? undefined;
 	// The guard in front of the create: the unit label, then the title's artifact id. Several matches, or a

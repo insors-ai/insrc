@@ -616,8 +616,8 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
   - User impact: Only providers that are neither CLI nor Ollama.
 - **The template review's time limit passes, possibly during a re-issue.** (terminal)
   - Detection: Before issuing, the driver compares now with job.deadlineAt; a session call already running is bounded by deadlineMs = deadlineAt - now.
-  - Response: ReviewSessionTimeoutError; no further call; the review fails with today's message and records nothing.
-  - User impact: As today: one limit for the whole review.
+  - Response: The adapter's deadlineError (the template review: today's plain Error with today's time-limit message), else ReviewSessionTimeoutError; no further call; the review fails and records nothing.
+  - User impact: As today for a single-session review: one limit, retries included. A divided review's budget is the per-session limit times its planned sessions, each session capped at 30 minutes (2.20).
 - **An Ollama reviewer session is cancelled mid tool loop.** (terminal)
   - Detection: The signal reaches the in-flight complete or completeStructured request and is checked before each turn and tool run.
   - Response: AbortError at once; no further turn; nothing recorded.

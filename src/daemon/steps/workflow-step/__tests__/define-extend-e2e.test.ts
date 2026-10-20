@@ -202,6 +202,47 @@ test('define EXTEND: scope=extend → skip frame/compose → append Story + pend
 	}
 });
 
+test('define EXTEND: a Define that carries a stamp but no creation time fails with no Epic anchor and appends nothing', async () => {
+	registerWorkflowRunners();
+	_clearWorkflowStateStoreForTests();
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-extend-noanchor-'));
+	try {
+		seed(repo);
+		// the head's own creation time is what anchors the Epic: take it away (the stamp alone does not)
+		const defineJson = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json;
+		const before = JSON.parse(readFileSync(defineJson, 'utf8')) as { meta: Record<string, unknown> };
+		delete before.meta['createdAt'];
+		writeFileSync(defineJson, JSON.stringify(before, null, 2));
+		const defineBefore = readFileSync(defineJson, 'utf8');
+
+		const startOut = payload(await handleWorkflowStep({ phase: 'start', workflow: 'define', focus: 'add a clear-filter button to tag filtering', repo }));
+		let state = startOut['state'] as string;
+		const planOut = payload(await handleWorkflowStep({
+			phase: 'plan',
+			plan: { workflow: 'define', steps: [
+				{ id: 's1', runner: 'scope.assess',     params: {} },
+				{ id: 's2', runner: 'epic.frame',       params: {} },
+				{ id: 's3', runner: 'stories.compose',  params: {} },
+				{ id: 's4', runner: 'checklist.verify', params: {} },
+			] },
+			state,
+		}));
+		state = planOut['state'] as string;
+		const afterS1 = payload(await handleWorkflowStep({ phase: 'step', stepId: 's1', response: s1Extend, state }));
+		state = afterS1['state'] as string;
+		const afterS4 = payload(await handleWorkflowStep({ phase: 'step', stepId: 's4', response: s4Passed, state }));
+		state = afterS4['state'] as string;
+
+		const out = payload(await handleWorkflowStep({ phase: 'synthesize', artifact: { acknowledged: true }, state }));
+		assert.notEqual(out['next'], 'done', JSON.stringify(out));
+		assert.match(JSON.stringify(out), /no Epic anchor/);
+		assert.equal(readFileSync(defineJson, 'utf8'), defineBefore, 'no Story was appended to the Define');
+		assert.equal(readdirSync(join(repo, ARTIFACTS_DIR)).filter(n => n.startsWith(`AMD-${HASH}-`) || n.startsWith('EXT-')).length, 0, 'no amendment and no extend record was written');
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 test('define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)', async () => {
 	registerWorkflowRunners();
 	_clearWorkflowStateStoreForTests();

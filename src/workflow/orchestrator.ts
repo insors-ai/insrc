@@ -1313,6 +1313,9 @@ function finalizeDefineExtend(
 	} catch (e) {
 		return { ok: false, failure: schemaFailure(`extend target invalid: ${(e as Error).message}`) };
 	}
+	// The Epic's anchor is needed by the extend record: resolve it now, before the Define is appended to, an
+	// amendment is proposed or anything is cached, so a work item with none changes nothing.
+	const epicCreatedAt = requireEpicAnchor(intent.repoPath, epicHash);
 	const epicSlug = define.meta.epicSlug ?? s1.target?.epicSlug ?? epicHash;
 	const storyId  = nextStoryId(define);
 	const story: DefineStory = {
@@ -1377,7 +1380,7 @@ function finalizeDefineExtend(
 			createdAt:     new Date().toISOString(),
 			// Work-item folder anchor (sc2): an extend Story belongs to the parent
 			// Epic, so its folder is keyed on the Epic's define createdAt.
-			epicCreatedAt: requireEpicAnchor(intent.repoPath, epicHash),
+			epicCreatedAt: epicCreatedAt,
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,

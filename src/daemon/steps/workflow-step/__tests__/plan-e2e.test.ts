@@ -196,6 +196,25 @@ test('plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
+test('plan: synthesize with a Define that carries no creation time fails with no Epic anchor and writes no PLAN', async () => {
+	_clearWorkflowStateStoreForTests();
+	registerWorkflowRunners();
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-plan-e2e-noanchor-'));
+	try {
+		seed(repo, { lldApproved: true });
+		// the Define is the head and its creation time anchors the Epic: take it away
+		const defineJson = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering').json;
+		const define = JSON.parse(readFileSync(defineJson, 'utf8')) as { meta: Record<string, unknown> };
+		delete define.meta['createdAt'];
+		writeFileSync(defineJson, JSON.stringify(define, null, 2));
+		const state = await walkToSynthesize(repo);
+		const out = payload(await handleWorkflowStep({ phase: 'synthesize', artifact: synthArtifact, state }));
+		assert.notEqual(out['next'], 'done', JSON.stringify(out));
+		assert.match(JSON.stringify(out), /no Epic anchor/);
+		assert.equal(existsSync(join(repo, '.insrc', 'artifacts', `PLAN-${HASH}-s1.json`)), false, 'no PLAN record was written');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
 test('plan: refuses when the Story LLD is unapproved (gate)', async () => {
 	_clearWorkflowStateStoreForTests();
 	registerWorkflowRunners();

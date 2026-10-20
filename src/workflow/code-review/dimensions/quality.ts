@@ -123,6 +123,11 @@ export function qualitySpec(subject: CodeReviewSubject): ModelDimensionSpec<Qual
 		dimension: DIMENSION,
 		schema:    QUALITY_FINDINGS_SCHEMA,
 		prompt:    (grounding, _mode, note) => buildQualityPrompt(subject, grounding, note),
+		// A divided review: chunks report today's findings and describe every symbol they hold.
+		chunk: {
+			kind: 'quality', findings: QUALITY_FINDINGS_SCHEMA,
+			framing: 'You are an independent code reviewer judging QUALITY: the correctness, complexity, duplication, and error-handling risks a Story\'s changed code carries. Report each of the four risk classes as a finding with a `file:line` location and a severity; a matter of TASTE is LOW and never HIGH; a genuine risk is MED or HIGH as warranted. Never manufacture findings.',
+		},
 		toResult:  output => ({
 			dimension: DIMENSION,
 			findings: output.findings

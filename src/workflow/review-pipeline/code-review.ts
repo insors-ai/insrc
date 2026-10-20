@@ -25,7 +25,7 @@ import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/typ
 import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
-import { notesChunkCall, validateNotesChunk, type NotesChunkSpec } from './adapters/code-review-chunk.js';
+import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
 import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
 import { createReviewJob, withCorrectionNote } from './job.js';
@@ -82,9 +82,10 @@ export interface ModelDimensionSpec<O> {
 	/** What a divided review must judge (Story s3): the obligations and their context atoms,
 	 *  from the saved subject and the material's atoms only. Absent: none. */
 	readonly obligations?: ((material: ReviewMaterial) => DimensionObligations) | undefined;
-	/** A divided review's chunk call that writes notes only (adherence, functional coverage,
-	 *  conventions; Story s3). Absent: the dimension has no notes-only chunk call. */
-	readonly notesChunk?: NotesChunkSpec | undefined;
+	/** A divided review's chunk call (Story s3): notes only (adherence, functional coverage,
+	 *  conventions), symbol coverage plus notes (coverage), or findings plus descriptions
+	 *  (quality). Absent: the dimension has no chunk call. */
+	readonly chunk?: ChunkSpec | undefined;
 }
 
 /** A deterministic dimension: run on the snapshot alone on the daemon path; the controller is offered its prompt. */
@@ -143,13 +144,13 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 			return [{ id: 'skip', kind: 'deterministic', after: [], onCallFailure: 'fail-review', singleCalls: () => [], chunkCalls: () => [], run: async () => spec.skip!() }];
 		}
 		void path;
-		const notes = spec.notesChunk;
+		const chunkSpec = spec.chunk;
 		return [{
 			id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review',
 			singleCalls: () => [{ messages: spec.prompt(grounding, groundingMode, undefined), schema: spec.schema, execution }],
-			chunkCalls: chunk => notes !== undefined ? [notesChunkCall(notes, chunk, material(), execution)] : [],
+			chunkCalls: chunk => chunkSpec !== undefined ? [chunkCall(chunkSpec, chunk, material(), execution)] : [],
 			// A chunk answer is checked against the obligations and the atoms its call carried.
-			validate: (answer, call) => call.role === 'chunk' && notes !== undefined ? validateNotesChunk(answer, call, material()) : [],
+			validate: (answer, call) => call.role === 'chunk' && chunkSpec !== undefined ? validateChunk(chunkSpec, answer, call, material()) : [],
 			// Today's correction for today's call: the prompt rebuilt with withStructuredRetry's note.
 			// A chunk call keeps its own prompt, with the reasons appended.
 			withCorrection: (prompt, reasons) => JSON.stringify(prompt.schema) === singleSchema

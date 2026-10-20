@@ -299,6 +299,11 @@ export function coverageSpec(subject: CodeReviewSubject): ModelDimensionSpec<Cov
 		materialGrounding: (grounding, mode) => prepareCoverageGrounding(subject, grounding, mode),
 		// Each promised test, with its record evidence; with no symbols (a diff review) too.
 		obligations: () => coverageObligations(promisedTestsOf(subject), testRecordView(subject)),
+		// A divided review: chunks grade the symbols they hold and note the promised tests; each test is judged at gather.
+		chunk: {
+			kind: 'coverage', findings: COVERAGE_FINDINGS_SCHEMA,
+			framing: 'You are an independent code reviewer judging COVERAGE: whether a Story\'s new/changed behaviour is actually exercised by passing tests. Each listed symbol carries its entityId and a coverageEvidence class: "no-edge-no-tests" is a not-exercised gap (HIGH, confidence "breach"); "no-edge-story-tests-pass" may be reported only as an observation (LOW/MED), because the graph may have missed the edge; "reached-passing" needs no finding; "reached-not-passing" is present-but-failing or unverified (confidence "observation"). Coverage is scoped to THIS Story\'s changed behaviour; never report a pre-existing gap, and never assert a pass-state the test record does not support.',
+		},
 		toResult:  (output, grounding, mode) => normalizeCoverageFindings({
 			dimension: DIMENSION,
 			findings: output.findings

@@ -242,6 +242,31 @@ test("a chunk answer with an unknown key, an atom outside its call's carries, or
 		// The gather reads the keyed notes from the recorded answer.
 		assert.deepEqual(chunkNotesFrom(next.stageAnswers[0]!), [{ key, text: 'realised here', atomIds: [first.carries.atomIds[0]!] }], name);
 	}
+	// Coverage: a chunk may report only symbol-coverage findings about the symbols it holds.
+	{
+		const { job, adapter } = dividedJob(coverageSpec);
+		const first = nextCalls(job, adapter)[0]!;
+		const mine = first.carries.atomIds[0]!;
+		const outside = DIVIDING.symbols.map(x => x.entityId).find(id => !first.carries.atomIds.includes(id))!;
+		const finding = (findingKind: string, symbolId: string) => ({ severity: 'HIGH', location: 'src/order/order.ts:1', message: 'm', findingKind, symbolId });
+		// A promised-test finding from a chunk: re-issued with the reason, the same chunk call.
+		const next = applyOutput(job, adapter, first.callId, echo(first, { findings: [finding('promised-test', mine)], notes: [] }));
+		const again = next.pending.find(c => c.attempt === 2)!;
+		assert.ok(again !== undefined && again.carries.chunkId === first.carries.chunkId, 'coverage: re-issued');
+		assert.match(again.prompt.messages[0]!.content as string, /REJECTED[\s\S]*only symbol-coverage findings[\s\S]*"promised-test"/);
+		assert.deepEqual(again.prompt.schema, first.prompt.schema, 'coverage: still the chunk call');
+		// A symbol-coverage finding about a symbol this chunk does not hold, on the re-issue: the review fails.
+		assert.throws(() => applyOutput(next, adapter, again.callId, echo(again, { findings: [finding('symbol-coverage', outside)], notes: [] })),
+			(e: unknown) => e instanceof ReviewCallFailedError && /invalid-answer/.test(e.message));
+		// A symbol-coverage finding about a symbol it holds, and a note on a promised test, are recorded.
+		const ok = applyOutput(job, adapter, first.callId, echo(first, { findings: [finding('symbol-coverage', mine)], notes: [{ key: `test:${UNIT}`, atomIds: [mine], note: 'exercised' }] }));
+		assert.equal(ok.stageAnswers.length, 1);
+		// Under the limit: today's coverage prompt and schema.
+		const single = dividedJob(coverageSpec, subject(), 384_000).job;
+		assert.equal(single.plan.single, true);
+		assert.deepEqual(single.pending[0]!.prompt.messages, coverageSpec(subject()).prompt(DIVIDING, 'full', undefined));
+		assert.deepEqual(single.pending[0]!.prompt.schema, coverageSpec(subject()).schema);
+	}
 });
 
 test("a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's", () => {
@@ -273,4 +298,33 @@ test("a notes-only chunk call carries the chunk's rows, neighbour lines and cont
 	// Conventions' chunk calls carry its documented rules, as today's prompt does.
 	const conv = dividedJob(conventionsSpec).job.pending[0]!.prompt.messages[1]!.content as string;
 	assert.ok(conv.includes('## Documented rules'));
+});
+
+test('a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review', () => {
+	const { job, adapter } = dividedJob(qualitySpec);
+	const first = nextCalls(job, adapter)[0]!;
+	const ids = first.carries.atomIds;
+	assert.ok(ids.length >= 2, 'a chunk with two symbols');
+	const outside = DIVIDING.symbols.map(x => x.entityId).find(id => !ids.includes(id))!;
+	const d = (atomId: string) => ({ atomId, description: `what ${atomId} does` });
+	const cases: [string, unknown[], RegExp][] = [
+		['missing', ids.slice(1).map(d), /descriptions are missing for symbols in this chunk: "[^"]+"/],
+		['repeated', [...ids.map(d), d(ids[0]!)], /descriptions repeat symbols: "[^"]+"/],
+		['foreign', [...ids.map(d), d(outside)], /descriptions name atomIds that are not symbols in this chunk: "[^"]+"/],
+	];
+	for (const [name, descriptions, reason] of cases) {
+		const next = applyOutput(job, adapter, first.callId, echo(first, { findings: [], descriptions }));
+		const again = next.pending.find(c => c.attempt === 2)!;
+		assert.ok(again !== undefined && again.carries.chunkId === first.carries.chunkId, `${name}: re-issued once, the same chunk`);
+		assert.match(again.prompt.messages[0]!.content as string, reason, `${name}: the reason names the ids`);
+		assert.throws(() => applyOutput(next, adapter, again.callId, echo(again, { findings: [], descriptions })),
+			(e: unknown) => e instanceof ReviewCallFailedError && /invalid-answer/.test(e.message), `${name}: a second time fails the review`);
+	}
+	// Exactly one description per carried symbol is recorded.
+	assert.equal(applyOutput(job, adapter, first.callId, echo(first, { findings: [], descriptions: ids.map(d) })).stageAnswers.length, 1);
+	// Under the limit: today's quality prompt and schema.
+	const single = dividedJob(qualitySpec, subject(), 384_000).job;
+	assert.equal(single.plan.single, true);
+	assert.deepEqual(single.pending[0]!.prompt.messages, qualitySpec(subject()).prompt(DIVIDING, 'full', undefined));
+	assert.deepEqual(single.pending[0]!.prompt.schema, qualitySpec(subject()).schema);
 });

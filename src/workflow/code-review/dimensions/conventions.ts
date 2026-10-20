@@ -150,7 +150,8 @@ export function conventionsSpec(subject: CodeReviewSubject): ModelDimensionSpec<
 		prompt:    (grounding, _mode, note) => buildConventionsPrompt(subject, grounding, note),
 		obligations: material => conventionsObligations(material.atoms),
 		// A divided review: chunks note idiom examples and candidate deviations per module; the gather judges each module.
-		notesChunk: {
+		chunk: {
+			kind: 'notes',
 			framing: 'You are an independent code reviewer gathering evidence on CONVENTIONS: whether a Story\'s changed code obeys the repo\'s DOCUMENTED coding rules (listed below) and the local idioms of the modules it touched. For a module, note the idiom examples you see and any candidate deviation, naming a breached documented rule by its id.',
 			reference: ['## Documented rules (the baseline — name a breached rule by its id)', '```json', JSON.stringify(DOCUMENTED_RULES, null, 2), '```'].join('\n'),
 		},

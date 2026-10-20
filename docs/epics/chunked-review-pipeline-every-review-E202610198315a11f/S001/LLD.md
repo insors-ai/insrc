@@ -473,6 +473,43 @@ countAs?: 'chunk' | 'relation' | undefined
 - Counting only: the call's role stays 'chunk', so its retry, refusal re-division, carries and validation are unchanged.
 - Story s3 sets 'relation' on quality's compare and pair stages, which check symbols across chunks, so pipelineCalls.relation counts them beside the gather's relation calls, as s3's LLD data-model note says.
 
+### 2.24 `ChunkPrompt.carries`
+
+```typescript
+carries?: { readonly atomIds: readonly string[] } | undefined
+```
+
+**Returns:** `{ atomIds }` — The atoms a chunk-stage call actually carries, when that is not its whole chunk (a later stage that reads across chunks, such as Story s3's quality compare and pair calls). Absent: the chunk's atoms, as today.
+
+**Preconditions:**
+- Optional member of sc2's ChunkPrompt, owned by s1 (amended 2026-10-20 at Story s3's LLD review, by the stakeholder's decision). Every id names an atom of the material.
+
+**Postconditions:**
+- issueChunkCalls records call.carries.atomIds from prompt.carries when present, else from the chunk; the chunkId stays the chunk's.
+- Validation (AdapterStage.validate) and refusal re-planning read the call's recorded carries, so they see exactly the material the call sent.
+
+### 2.25 `AdapterStage.redivide`
+
+```typescript
+redivide?(call: ReviewCall, maxChars: number, prior: StageOutputs, snapshot: ReviewMaterialSnapshot): readonly ChunkPrompt[]
+```
+
+**Parameters:**
+- `call: ReviewCall` — The chunk-stage call refused for its size, with its recorded carries.
+- `maxChars: number` — The size every replacement must fit: the refusal's reported limit, else half the refused call, never above limitChars and always below the refused call's size.
+
+**Returns:** `readonly ChunkPrompt[]` — Replacement calls that together judge what the refused call carried, each within maxChars (for example one full atom against the other's summary, or smaller batches). Absent member: the generic re-division of the call's carried atoms into smaller chunks, as today.
+
+**Errors:**
+- `AtomTooLargeError` when A replacement does not fit maxChars: the material is named, never cut, and the review fails, as for any atom no call can hold.
+
+**Preconditions:**
+- Optional member of sc2's AdapterStage, owned by s1 (amended 2026-10-20 at Story s3's LLD review, by the stakeholder's decision). Read only for a chunk-stage call's size refusal.
+
+**Postconditions:**
+- applyFailure on a size refusal of a call whose stage has redivide replaces the refused call with the returned calls: role 'chunk', the same chunkId, each counted under the stage's countAs; the refused prompt is never resent.
+- The stage completes when every replacement is answered; their answers are the stage's answers for that material.
+
 ## 3. Data model changes
 
 ### 3.1 `config review.chunkTokens` — new
@@ -712,21 +749,3 @@ Nothing delivered moves.
 - **[[c12]]** `step-output` `s8 checklist`
 - **[[c13]]** `code` `src/analyze/context/__tests__/run-shaper-wiring.test.ts`
 - **[[c14]]** `code` `src/workflow/code-review/review-job.ts:321`
-
-<!-- insrc:review -->
-
-## Review
-
-### ✅ Review `PASS` — design.story (design.story)
-
-**0 do not hold · 0 could not be verified · 11 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-20T16:23:26.611Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._

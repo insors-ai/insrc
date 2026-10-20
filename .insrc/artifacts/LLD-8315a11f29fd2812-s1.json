@@ -177,8 +177,7 @@
     "reviewOverride": {
       "reason": "User approved with override (2026-10-20, option A). Two full review cycles ran on the amended s1 LLD (six daemon rounds). Cycle 1: H2 M4 -> M1 -> M2; cycle 2: H3 -> H1 M1 -> M1. Every HIGH and MED was fixed in code, tests and the LLD (commits 9043c695, bfad6524, ada98c63, a3e09ee2, b6b2f216, 31fc6bf2, edfd803b). The last round's only finding (an invalid answer's correction silently dropped when it would not fit) was fixed in edfd803b without a further review: the correction is left out, never cut, the omission is logged, and a test pins it.",
       "at": "2026-10-20T15:47:19.136Z"
-    },
-    "approvedAt": "2026-10-20T16:30:20.107Z"
+    }
   },
   "body": {
     "summary": {
@@ -1103,6 +1102,58 @@
             "Every call issued for the stage's chunks, including its re-issue under a new callId and the calls a size refusal re-divides it into, adds one to pipelineCalls[countAs ?? 'chunk'].",
             "Counting only: the call's role stays 'chunk', so its retry, refusal re-division, carries and validation are unchanged.",
             "Story s3 sets 'relation' on quality's compare and pair stages, which check symbols across chunks, so pipelineCalls.relation counts them beside the gather's relation calls, as s3's LLD data-model note says."
+          ]
+        },
+        {
+          "name": "ChunkPrompt.carries",
+          "signature": "carries?: { readonly atomIds: readonly string[] } | undefined",
+          "parameters": [],
+          "returns": {
+            "type": "{ atomIds }",
+            "meaning": "The atoms a chunk-stage call actually carries, when that is not its whole chunk (a later stage that reads across chunks, such as Story s3's quality compare and pair calls). Absent: the chunk's atoms, as today."
+          },
+          "errors": [],
+          "preconditions": [
+            "Optional member of sc2's ChunkPrompt, owned by s1 (amended 2026-10-20 at Story s3's LLD review, by the stakeholder's decision). Every id names an atom of the material."
+          ],
+          "postconditions": [
+            "issueChunkCalls records call.carries.atomIds from prompt.carries when present, else from the chunk; the chunkId stays the chunk's.",
+            "Validation (AdapterStage.validate) and refusal re-planning read the call's recorded carries, so they see exactly the material the call sent."
+          ]
+        },
+        {
+          "name": "AdapterStage.redivide",
+          "signature": "redivide?(call: ReviewCall, maxChars: number, prior: StageOutputs, snapshot: ReviewMaterialSnapshot): readonly ChunkPrompt[]",
+          "parameters": [
+            {
+              "name": "call",
+              "type": "ReviewCall",
+              "purpose": "The chunk-stage call refused for its size, with its recorded carries.",
+              "optional": false
+            },
+            {
+              "name": "maxChars",
+              "type": "number",
+              "purpose": "The size every replacement must fit: the refusal's reported limit, else half the refused call, never above limitChars and always below the refused call's size.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly ChunkPrompt[]",
+            "meaning": "Replacement calls that together judge what the refused call carried, each within maxChars (for example one full atom against the other's summary, or smaller batches). Absent member: the generic re-division of the call's carried atoms into smaller chunks, as today."
+          },
+          "errors": [
+            {
+              "type": "AtomTooLargeError",
+              "condition": "A replacement does not fit maxChars: the material is named, never cut, and the review fails, as for any atom no call can hold."
+            }
+          ],
+          "preconditions": [
+            "Optional member of sc2's AdapterStage, owned by s1 (amended 2026-10-20 at Story s3's LLD review, by the stakeholder's decision). Read only for a chunk-stage call's size refusal."
+          ],
+          "postconditions": [
+            "applyFailure on a size refusal of a call whose stage has redivide replaces the refused call with the returned calls: role 'chunk', the same chunkId, each counted under the stage's countAs; the refused prompt is never resent.",
+            "The stage completes when every replacement is answered; their answers are the stage's answers for that material."
           ]
         }
       ]

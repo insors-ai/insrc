@@ -34,7 +34,7 @@ import { renderDefineMarkdown, type DefineArtifact } from './artifacts/define.js
 import { renderHldMarkdown } from './artifacts/hld.js';
 import { renderLldMarkdown } from './artifacts/lld.js';
 import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
-import { MissingAnchorError } from './artifact-ids.js';
+import { ArtifactIds, MissingAnchorError, type ArtifactKey } from './artifact-ids.js';
 import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactId, lldArtifactPaths, requireEpicAnchor, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
 import { GhCommandError, ghAuthOk } from './tracker/github.js';
@@ -45,10 +45,9 @@ import {
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
 } from './tracker/conventions.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitRef } from './tracker/refs.js';
-import { ensureUnitIssueDetailed, runUnitExtras, type ExtraStep } from './tracker/unit-issue.js';
+import { ensureUnitIssueDetailed, findExistingUnitIssue, runUnitExtras, unitLabel, type ExtraStep } from './tracker/unit-issue.js';
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
-import { epicWorkflowId, storyWorkflowId, taskWorkflowId, safeCanonical } from './id.js';
 import { renderReviewReport } from './review/index.js';
 import type { ReviewReport } from './review/types.js';
 import { renderResolvedQuestionsSection } from './questions.js';
@@ -114,6 +113,25 @@ function anchorOrFailed(repoPath: string, epicHash: string): { readonly anchor: 
 	}
 }
 
+/** The tracker for the legacy pushes: the GitHub one, or the test seam's. */
+function legacyTracker(cfg: Extract<ResolvedGithubConfig, { type: 'github' }>): TrackerPort {
+	return (testDeps.createTracker ?? createGithubTracker)(cfg.owner, cfg.repo);
+}
+
+/** The unit label an issue is found by, and the artifact id its title and marker start with. */
+function unitIdentity(unit: UnitRef): { readonly label: string; readonly token: string } | { readonly failed: string } {
+	try {
+		const key: ArtifactKey = unit.unit === 'epic'
+			? { kind: 'EPIC', epicHash: unit.epicHash }
+			: unit.unit === 'story'
+				? { kind: 'STORY', epicHash: unit.epicHash, story: unit.storyId }
+				: { kind: 'TASK', epicHash: unit.epicHash, story: unit.storyId, task: unit.taskId };
+		return { label: unitLabel(unit), token: ArtifactIds.make(key) };
+	} catch (err) {
+		return { failed: `no issue identity for ${unit.unit} ${unit.storyId ?? ''}${unit.taskId ?? ''}: ${(err as Error).message}` };
+	}
+}
+
 function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	const meta = readMeta(hldJsonPath);
 	if (typeof meta.tracker?.epicRef === 'string' && meta.tracker.epicRef.length > 0) {
@@ -127,7 +145,7 @@ function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	const g = gate(repoPath);
 	if ('skip' in g) return g.skip;
 	const cfg = g.cfg;
-	const port = createGithubTracker(cfg.owner, cfg.repo);
+	const port = legacyTracker(cfg);
 	const ops = port.issueOps;
 
 	let define: DefineArtifact;
@@ -136,29 +154,38 @@ function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	const anchored = anchorOrFailed(repoPath, epicHash);
 	if ('failed' in anchored) return anchored.failed;
 	const anchor = anchored.anchor;
+	const epicUnit: UnitRef = { unit: 'epic', repoPath, epicHash };
+	const epicIdent = unitIdentity(epicUnit);
+	if ('failed' in epicIdent) return { status: 'failed', reason: epicIdent.failed };
 
 	// Duplicate guard: adopt an existing Epic issue (unique by epic +
 	// epic-membership labels) rather than creating a second one.
 	const membership = epicMembershipLabel(epicSlug);
 	// A failed lookup reads as "not found" (as before), so the Epic is created.
 	const found = port.findIssue([cfg.epicLabel, membership]);
-	const adopted = found.ok ? found.value ?? undefined : undefined;
+	let adopted = found.ok ? found.value ?? undefined : undefined;
+	// The guard in front of the create: the unit label, then the title's artifact id. Several matches, or a
+	// failed lookup, create nothing.
+	if (adopted === undefined) {
+		const guard = findExistingUnitIssue(port, membership, epicIdent.label, epicIdent.token);
+		if (!guard.ok) return { status: 'failed', reason: guard.reason };
+		adopted = guard.issue ?? undefined;
+	}
 	let epicRef: string;
 	let created: string[] = [];
 	if (adopted !== undefined) {
 		epicRef = adopted;
 	} else {
-		for (const label of allTrackerLabels(cfg.epicLabel, cfg.storyLabel, epicSlug)) {
+		for (const label of [...allTrackerLabels(cfg.epicLabel, cfg.storyLabel, epicSlug), epicIdent.label]) {
 			if (ops.ensureLabel(label)) created.push(label);
 		}
 		try {
-			const epicWid = safeCanonical(() => epicWorkflowId(epicHash, define.meta.createdAt));
-			const title = epicWid !== undefined ? `${epicWid} — ${firstSentence(define.body.problem)}` : `Epic: ${firstSentence(define.body.problem)}`;
+			const title = `${epicIdent.token} \u2014 ${firstSentence(define.body.problem)}`;
 			// ghCreateIssueTyped applies the native `Epic` issue type (fail-open to
 			// untyped if the org lacks it).
 			epicRef = unwrap(ops.create({
-				title, body: renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo }, epicWid),
-				labels: [cfg.epicLabel, membership], issueType: cfg.epicIssueType,
+				title, body: renderEpicBody(define, epicSlug, { owner: cfg.owner, repo: cfg.repo }, epicIdent.token),
+				labels: [cfg.epicLabel, membership, epicIdent.label], issueType: cfg.epicIssueType,
 			})).ref;
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		if (cfg.useMilestones) bestEffort('milestone', () => { ops.ensureMilestone(epicSlug); unwrap(ops.attachMilestone(epicRef, epicSlug)); });
@@ -198,7 +225,7 @@ function legacyPushStory(lldJsonPath: string): AutoPushResult {
 	const g = gate(repoPath);
 	if ('skip' in g) return g.skip;
 	const cfg = g.cfg;
-	const port = createGithubTracker(cfg.owner, cfg.repo);
+	const port = legacyTracker(cfg);
 	const ops = port.issueOps;
 
 	let define: DefineArtifact;
@@ -218,21 +245,30 @@ function legacyPushStory(lldJsonPath: string): AutoPushResult {
 		return { status: 'skipped', reason: 'Epic not pushed yet; approve the HLD (with tracker) first' };
 	}
 
-	// Duplicate guard: adopt from the Epic's storyRefs map if present.
-	const adopted = defineTracker?.storyRefs?.[storyId];
+	// Duplicate guard: adopt from the Epic's storyRefs map if present, then by the unit label or the title's
+	// artifact id. Several matches, or a failed lookup, create nothing.
+	const storyUnit: UnitRef = { unit: 'story', repoPath, epicHash, storyId };
+	const storyIdent = unitIdentity(storyUnit);
+	if ('failed' in storyIdent) return { status: 'failed', reason: storyIdent.failed };
+	let adopted = defineTracker?.storyRefs?.[storyId];
+	if (typeof adopted !== 'string' || adopted.length === 0) {
+		const guard = findExistingUnitIssue(port, epicMembershipLabel(epicSlug), storyIdent.label, storyIdent.token);
+		if (!guard.ok) return { status: 'failed', reason: guard.reason };
+		adopted = guard.issue ?? undefined;
+	}
 	let storyRef: string;
 	if (typeof adopted === 'string' && adopted.length > 0) {
 		storyRef = adopted;
 	} else {
 		let created: CreatedIssue;
+		ops.ensureLabel(storyIdent.label);
 		try {
-			const storyWid = safeCanonical(() => storyWorkflowId(epicHash, define.meta.createdAt, storyId));
-			const title = storyWid !== undefined ? `${storyWid} — ${story.title}` : `${storyId}: ${story.title}`;
+			const title = `${storyIdent.token} \u2014 ${story.title}`;
 			// ghCreateIssueTyped (REST) returns the DB id needed to link a
 			// native sub-issue; stories stay untyped (no issueType passed).
 			created = unwrap(ops.create({
-				title, body: renderStoryBody(epicRef, story, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, storyWid),
-				labels: [cfg.storyLabel, epicMembershipLabel(epicSlug)], issueType: cfg.storyIssueType,
+				title, body: renderStoryBody(epicRef, story, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, storyIdent.token),
+				labels: [cfg.storyLabel, epicMembershipLabel(epicSlug), storyIdent.label], issueType: cfg.storyIssueType,
 			}));
 		} catch (err) { return { status: 'failed', reason: `gh issue create failed: ${(err as Error).message}` }; }
 		storyRef = created.ref;
@@ -281,7 +317,7 @@ function legacyPushTasks(planJsonPath: string): AutoPushResult {
 	const g = gate(repoPath);
 	if ('skip' in g) return g.skip;
 	const cfg = g.cfg;
-	const port = createGithubTracker(cfg.owner, cfg.repo);
+	const port = legacyTracker(cfg);
 	const ops = port.issueOps;
 	if (!cfg.pushTasks) {
 		return { status: 'skipped', reason: 'task push disabled (set "pushTasks": true in ~/.insrc/github.json to enable)' };
@@ -326,14 +362,22 @@ function legacyPushTasks(planJsonPath: string): AutoPushResult {
 	for (const task of [...tasks].sort((a, b) => a.order - b.order)) {
 		const existing = taskRefs[task.id];
 		if (typeof existing === 'string' && existing.length > 0) continue;   // adopt
+		const taskUnit: UnitRef = { unit: 'task', repoPath, epicHash, storyId, taskId: task.id };
+		const taskIdent = unitIdentity(taskUnit);
+		if ('failed' in taskIdent) return { status: 'failed', reason: taskIdent.failed };
+		// The guard: a Task issue made earlier is found by its unit label or its title's artifact id. Several
+		// matches, or a failed lookup, create nothing.
+		const guard = findExistingUnitIssue(port, membership, taskIdent.label, taskIdent.token);
+		if (!guard.ok) return { status: 'failed', reason: `task ${task.id}: ${guard.reason}` };
+		if (guard.issue !== null) { taskRefs[task.id] = guard.issue; continue; }
+		ops.ensureLabel(taskIdent.label);
 		let issue: CreatedIssue;
 		try {
-			const taskWid = safeCanonical(() => taskWorkflowId(epicHash, define.meta.createdAt, storyId, task.id));
-			const taskTitle = taskWid !== undefined ? `${taskWid} — ${task.title}` : `${storyId}/${task.id}: ${task.title}`;
+			const taskTitle = `${taskIdent.token} \u2014 ${task.title}`;
 			issue = unwrap(ops.create({
 				title: taskTitle,
-				body: renderTaskBody(parentStoryRef, storyId, task, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, taskWid),
-				labels: [cfg.taskLabel, membership], issueType: cfg.taskIssueType,
+				body: renderTaskBody(parentStoryRef, storyId, task, epicSlug, epicHash, define.meta.createdAt, { owner: cfg.owner, repo: cfg.repo }, taskIdent.token),
+				labels: [cfg.taskLabel, membership, taskIdent.label], issueType: cfg.taskIssueType,
 			}));
 		} catch (err) { return { status: 'failed', reason: `gh issue create (task ${task.id}) failed: ${(err as Error).message}` }; }
 		taskRefs[task.id] = issue.ref;
@@ -358,6 +402,8 @@ export interface AutoPushDeps {
 	readonly policy?: PolicyReader | undefined;
 	/** A tracker port to use instead of the GitHub one (its auth check is skipped). */
 	readonly port?:   TrackerPort | undefined;
+	/** Makes the tracker the legacy pushes use (the GitHub one by default), so the legacy mode is testable. */
+	readonly createTracker?: ((owner: string, repo: string) => TrackerPort) | undefined;
 }
 
 let testDeps: AutoPushDeps = {};

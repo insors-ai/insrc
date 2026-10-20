@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../../storage.js';
 import type { ResolvedGithubConfig } from '../../config/github.js';
-import type { CreatedIssue, IssueRef, IssueSpec, PortResult, TrackerPort } from '../port.js';
+import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../port.js';
 import type { UnitRef } from '../refs.js';
 import { ensureUnitIssue, ensureUnitIssueDetailed, isUnitSettled, resolveUnitIssueLocal, unitKey, unitLabel } from '../unit-issue.js';
 
@@ -46,6 +46,8 @@ function fakeTracker(over: {
 	withListing?: boolean; failList?: boolean; failClose?: boolean; failLink?: number;
 	/** Answer this many findIssue calls with "not found" whatever exists (a stale read of two daemons). */
 	staleFinds?: number;
+	/** Answer every title lookup with "none" whatever exists (a lagging title index). */
+	staleTitle?: boolean;
 	/** Runs after a findIssue lookup with what it found (a file changing between the lookup and the record). */
 	afterFind?: (hit: IssueRef | null) => void;
 	/** Fail this many resolveIssueId calls (with `failResolveKind`), and leave resolveIssueId off the tracker altogether. */
@@ -111,6 +113,7 @@ function fakeTracker(over: {
 				return { ok: true, value: undefined };
 			},
 		},
+		findIssuesByTitleToken: (token: string): PortResult<IssueRef[]> => ({ ok: true, value: over.staleTitle === true ? [] : issues.filter(i => titleMatchesToken(i.spec.title, token)).sort((a, b) => a.number - b.number).map(i => i.ref) }),
 		...(over.withListing !== false ? {
 			findIssues: (labels: string[]): PortResult<IssueRef[]> => {
 				calls.list += 1;
@@ -373,9 +376,9 @@ test('two simulated daemons that both create converge on the lowest issue', () =
 	const b = seed();
 	try {
 		const shared = { issues: [] as Issue[], next: { n: 1 } };
-		// Daemon B does its whole call (both its lookups stale, so it creates, lists, and breaks the tie) in the gap
+		// Daemon B does its whole call (its label lookups and the title lookup all stale, so it creates, lists, and breaks the tie) in the gap
 		// after daemon A's create and before A's listing: both have created before either lists.
-		const second = fakeTracker({ withListing: true, staleFinds: 2, shared });
+		const second = fakeTracker({ withListing: true, staleFinds: 3, staleTitle: true, shared });
 		let rb: ReturnType<typeof ensureUnitIssueDetailed> | undefined;
 		const first = fakeTracker({ withListing: true, shared, afterCreate: () => { rb = ensureUnitIssueDetailed(epic(b.repo), second.port, deps); } });
 		const ra = ensureUnitIssueDetailed(epic(a.repo), first.port, deps);

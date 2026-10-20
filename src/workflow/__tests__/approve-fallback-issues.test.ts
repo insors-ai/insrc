@@ -21,7 +21,7 @@ import { join } from 'node:path';
 import { _setAutoPushDepsForTests, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
 import { _setTrackerExecForTests, type TrackerExec } from '../tracker/github.js';
-import type { CreatedIssue, IssueRef, IssueSpec, PortResult, TrackerPort } from '../tracker/port.js';
+import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../tracker/port.js';
 import { ensureUnitIssueDetailed } from '../tracker/unit-issue.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
 
@@ -47,6 +47,7 @@ function fakeTracker(over: { failFind?: boolean; failComment?: string } = {}) {
 	const port = {
 		kind: 'github', capabilities: new Set(['issue-create']),
 		findIssues: (labels: string[]): PortResult<IssueRef[]> => ({ ok: true, value: issues.filter(i => labels.every(l => i.spec.labels.includes(l))).map(i => i.ref) }),
+		findIssuesByTitleToken: (token: string): PortResult<IssueRef[]> => ({ ok: true, value: issues.filter(i => titleMatchesToken(i.spec.title, token)).map(i => i.ref) }),
 		findIssue: (labels: string[]): PortResult<IssueRef | null> => {
 			if (over.failFind === true) return { ok: false, reason: 'gh timed out', kind: 'unreachable' };
 			return { ok: true, value: issues.find(i => labels.every(l => i.spec.labels.includes(l)))?.ref ?? null };

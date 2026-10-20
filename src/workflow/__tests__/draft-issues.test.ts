@@ -21,7 +21,7 @@ import { ensureDraftIssues, readinessFields, type DraftHookDeps } from '../draft
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, writeArtifact } from '../storage.js';
 import { _setTrackerExecForTests } from '../tracker/github.js';
 import type { ResolvedGithubConfig } from '../config/github.js';
-import type { CreatedIssue, IssueRef, IssueSpec, PortFailureKind, PortResult, TrackerPort } from '../tracker/port.js';
+import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortFailureKind, type PortResult, type TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -48,6 +48,7 @@ function harness(over: Over = {}) {
 	const port = {
 		kind: 'github', capabilities: new Set(['issue-create']),
 		findIssues: (labels: string[]): PortResult<IssueRef[]> => ({ ok: true, value: issues.filter(i => labels.every(l => i.spec.labels.includes(l))).map(i => i.ref) }),
+		findIssuesByTitleToken: (token: string): PortResult<IssueRef[]> => ({ ok: true, value: issues.filter(i => titleMatchesToken(i.spec.title, token)).map(i => i.ref) }),
 		findIssue: (labels: string[]): PortResult<IssueRef | null> => {
 			seen.finds += 1;
 			if (over.failFind === true) return { ok: false, reason: 'gh timed out', kind: 'unreachable' };

@@ -308,6 +308,16 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 	catch (err) { return before(`cannot build the issue for ${unitKey(unit)}: ${(err as Error).message}`); }
 	if ('error' in spec) return before(spec.error);
 
+	// The guard: the issue may exist without our record or label (an older one, or another daemon's). Found by its
+	// title's artifact id, it is adopted; several, or a failed lookup, create nothing.
+	const titled = findExistingUnitIssue(port, membership, label, spec.token);
+	if (!titled.ok) return before(titled.reason, titled.kind);
+	if (titled.issue !== null) {
+		recordUnit(unit, titled.issue, now());
+		if (parentRef !== undefined) linkAdopted(unit, port, parentRef, titled.issue);
+		return { ok: true, value: { issue: titled.issue, created: false, duplicateCheck: 'clean' } };
+	}
+
 	const created = port.issueOps.create(spec.value);
 	if (!created.ok) {
 		return { ok: false, reason: created.reason, kind: created.kind, phase: 'create' };
@@ -418,10 +428,31 @@ function tieBreak(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef
 	return { issue: lowest, created: false, duplicateCheck: 'adopted-other' };
 }
 
+/**
+ * The guard in front of every issue create: an issue for the unit that already exists is found, never
+ * made twice. By the unit label first (with the epic membership label), then by the artifact id the
+ * title starts with. One match is the issue; none means create; several matches, or a lookup that
+ * failed, mean the caller must create nothing.
+ */
+export function findExistingUnitIssue(
+	port: TrackerPort, membership: string, label: string, token: string,
+): { readonly ok: true; readonly issue: IssueRef | null } | { readonly ok: false; readonly reason: string; readonly kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected' } {
+	const byLabel = port.findIssue([membership, label]);
+	if (!byLabel.ok) return { ok: false, reason: `cannot look up the issue by its label '${label}': ${byLabel.reason}`, kind: byLabel.kind };
+	if (byLabel.value !== null) return { ok: true, issue: byLabel.value };
+	if (typeof port.findIssuesByTitleToken !== 'function') return { ok: false, reason: `this tracker cannot look an issue up by its title ${token}`, kind: 'rejected' };
+	const byTitle = port.findIssuesByTitleToken(token);
+	if (!byTitle.ok) return { ok: false, reason: `cannot look up the issue titled ${token}: ${byTitle.reason}`, kind: byTitle.kind };
+	if (byTitle.value.length > 1) {
+		return { ok: false, reason: `${byTitle.value.length} issues are titled ${token} (${byTitle.value.join(', ')}); keep one, close the others and retry`, kind: 'rejected' };
+	}
+	return { ok: true, issue: byTitle.value[0] ?? null };
+}
+
 function buildSpec(
 	unit: UnitRef, cfg: GithubCfg, define: DefineArtifact, epicSlug: string, membership: string, label: string,
 	kindLabel: string, parentRef: IssueRef | undefined, repo: { owner: string; repo: string },
-): { value: Parameters<TrackerPort['issueOps']['create']>[0] } | { error: string } {
+): { value: Parameters<TrackerPort['issueOps']['create']>[0]; token: string } | { error: string } {
 	const labels = [kindLabel, membership, label];
 	const createdAt = define.meta.createdAt;
 	// The title and the body marker both start with the artifact id, so the issue maps back to its artifact
@@ -434,7 +465,7 @@ function buildSpec(
 		const made = idOf({ kind: 'EPIC', epicHash: unit.epicHash });
 		if ('error' in made) return made;
 		const problem = firstSentence(define.body.problem);
-		return { value: { title: `${made.id} \u2014 ${problem}`, body: renderEpicBody(define, epicSlug, repo, made.id), labels, issueType: cfg.epicIssueType } };
+		return { token: made.id, value: { title: `${made.id} \u2014 ${problem}`, body: renderEpicBody(define, epicSlug, repo, made.id), labels, issueType: cfg.epicIssueType } };
 	}
 	const storyId = unit.storyId ?? '';
 	const story = define.body.stories.find(s => s.id === storyId || s.id.toLowerCase() === storyId.toLowerCase());
@@ -442,7 +473,7 @@ function buildSpec(
 	if (unit.unit === 'story') {
 		const made = idOf({ kind: 'STORY', epicHash: unit.epicHash, story: story.id });
 		if ('error' in made) return made;
-		return { value: { title: `${made.id} \u2014 ${story.title}`, body: renderStoryBody(parentRef ?? '', story, epicSlug, unit.epicHash, createdAt, repo, made.id), labels, issueType: cfg.storyIssueType } };
+		return { token: made.id, value: { title: `${made.id} \u2014 ${story.title}`, body: renderStoryBody(parentRef ?? '', story, epicSlug, unit.epicHash, createdAt, repo, made.id), labels, issueType: cfg.storyIssueType } };
 	}
 	let plan: PlanArtifact;
 	try { plan = JSON.parse(readFileSync(planJson(unit), 'utf8')) as PlanArtifact; }
@@ -452,7 +483,7 @@ function buildSpec(
 	if (task === undefined) return { error: `Task '${taskId}' is not in the plan of Story '${storyId}'` };
 	const made = idOf({ kind: 'TASK', epicHash: unit.epicHash, story: story.id, task: task.id });
 	if ('error' in made) return made;
-	return { value: { title: `${made.id} \u2014 ${task.title}`, body: renderTaskBody(parentRef ?? '', story.id, task, epicSlug, unit.epicHash, createdAt, repo, made.id), labels, issueType: cfg.taskIssueType } };
+	return { token: made.id, value: { title: `${made.id} \u2014 ${task.title}`, body: renderTaskBody(parentRef ?? '', story.id, task, epicSlug, unit.epicHash, createdAt, repo, made.id), labels, issueType: cfg.taskIssueType } };
 }
 
 /**

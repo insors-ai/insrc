@@ -26,6 +26,7 @@ import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
 import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
+import { compareStage, pairStage } from './adapters/code-review-duplicates.js';
 import { codeReviewGather } from './adapters/code-review-gather.js';
 import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
@@ -146,7 +147,7 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 		}
 		void path;
 		const chunkSpec = spec.chunk;
-		return [{
+		const judge: AdapterStage = {
 			id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review',
 			singleCalls: () => [{ messages: spec.prompt(grounding, groundingMode, undefined), schema: spec.schema, execution }],
 			chunkCalls: chunk => chunkSpec !== undefined ? [chunkCall(chunkSpec, chunk, material(), execution)] : [],
@@ -157,7 +158,11 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 			withCorrection: (prompt, reasons) => JSON.stringify(prompt.schema) === singleSchema
 				? { ...prompt, messages: spec.prompt(grounding, groundingMode, buildRetryNote(reasons)) }
 				: withCorrectionNote(prompt, reasons),
-		}];
+		};
+		// Story s3: quality compares descriptions across chunks, then judges each candidate pair.
+		if (chunkSpec?.kind !== 'quality') return [judge];
+		const dup = { material, execution, limitChars, schema: spec.schema, chunkStage: judge.id };
+		return [judge, compareStage(dup), pairStage(dup)];
 	};
 	return {
 		kind: 'code-review', dimension: spec.dimension,

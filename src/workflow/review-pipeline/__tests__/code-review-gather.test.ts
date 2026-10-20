@@ -486,9 +486,14 @@ test('a key whose notes exceed the limit is reduced into notes within noteCapCha
 
 // -- relation checks (t5) ------------------------------------------------------
 
-const chunkAnswer = (spec: 'notes' | 'quality', call: ReviewCall) => spec === 'quality'
-	? { findings: [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: `what ${atomId} does` })) }
-	: { notes: [] };
+const chunkAnswer = (spec: 'notes' | 'quality', call: ReviewCall): unknown => {
+	// Quality's later stages (t6) are issued per chunk too: no candidates, no duplication.
+	if (call.stage === 'compare') return { candidates: [] };
+	if (call.stage === 'pair') return { findings: [] };
+	return spec === 'quality'
+		? { findings: [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: `what ${atomId} does` })) }
+		: { notes: [] };
+};
 
 test('a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits', () => {
 	const s = subject();
@@ -605,7 +610,7 @@ test('a caller and callee in different chunks whose contract disagrees: the job 
 		if (!/dividing a code review is not available yet/.test(String(e))) throw e;
 	}
 	// No chunk could see both contracts; the relation call the job issued did, and the mismatch it reports is at the caller.
-	assert.ok(answered.filter(a => a.call.role === 'chunk').every(a => (a.answer as { findings: unknown[] }).findings.length === 0));
+	assert.ok(answered.filter(a => a.call.stage === 'judge').every(a => (a.answer as { findings: unknown[] }).findings.length === 0));
 	const relation = answered.find(a => a.call.role === 'relation')!;
 	assert.deepEqual(relation.call.carries.atomIds, ['id-placeOrder', 'id-fill']);
 	assert.deepEqual(adapter.gather!.validate!(relation.answer, relation.call), [], 'accepted: at the caller');
@@ -615,4 +620,93 @@ test('a caller and callee in different chunks whose contract disagrees: the job 
 	assert.match(part.findings[0]!.message, /^placeOrder /);
 	assert.equal(part.findings[0]!.counterpartRef, 'fill');
 	assert.equal(part.findings[0]!.dimension, 'quality');
+});
+
+// -- quality's cross-chunk duplicates (t6) ---------------------------------------
+
+/** A quality reviewer for a divided job: long descriptions (so compare batches split), and `candidates` for compare. */
+function qualityReviewer(candidates: (call: ReviewCall) => { a: string; b: string; why: string }[], pair: (call: ReviewCall) => unknown = () => ({ findings: [] })) {
+	return (call: ReviewCall): unknown => {
+		if (call.stage === 'judge' && call.role === 'chunk') return { findings: [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: `${atomId} totals a basket ${'d'.repeat(1_800)}` })) };
+		if (call.stage === 'compare') return { candidates: candidates(call) };
+		if (call.stage === 'pair') return pair(call);
+		return { findings: [] };
+	};
+}
+/** The two atom-id lists a compare call carries. */
+const listsOf = (call: ReviewCall): [string[], string[]] => {
+	const blocks = [...userOf(call).matchAll(/```json\n([\s\S]*?)\n```/g)].map(m => (JSON.parse(m[1]!) as { atomId: string }[]).map(d => d.atomId));
+	return [blocks[0] ?? [], blocks[1] ?? []];
+};
+
+test('every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit', () => {
+	const { job, adapter } = dividedJob(qualitySpec);
+	const ownerOf = new Map(job.plan.chunks.flatMap(c => c.atomIds.map(id => [id, c.id] as const)));
+	const { calls } = drive(job, adapter, qualityReviewer(() => []));
+	const compares = calls.filter(c => c.stage === 'compare');
+	assert.ok(compares.length > job.plan.chunks.length - 1, 'batches split: more calls than chunk pairs alone would need');
+	const seen: string[] = [];
+	for (const c of compares) {
+		assert.ok(c.chars <= SMALL, `a compare call of ${c.chars}`);
+		assert.match(userOf(c), /totals a basket d{1800}/, 'it compares the descriptions the chunks wrote');
+		const [first, second] = listsOf(c);
+		for (const a of first) for (const b of second) seen.push([a, b].sort().join('|'));
+	}
+	// Exactly the pairs of symbols held in different chunks, each once.
+	const ids = DIVIDING.symbols.map(x => x.entityId);
+	const expected = ids.flatMap((a, i) => ids.slice(i + 1).filter(b => ownerOf.get(a) !== ownerOf.get(b)).map(b => [a, b].sort().join('|')));
+	assert.deepEqual([...seen].sort(), [...expected].sort());
+	assert.equal(new Set(seen).size, seen.length, 'each pair once');
+	// Under the limit: today's single call, and no compare or pair call.
+	const single = dividedJob(qualitySpec, subject(), 384_000);
+	const { calls: one } = drive(single.job, single.adapter, () => ({ findings: [] }));
+	assert.deepEqual(one.map(c => [c.role, c.stage]), [['single', 'judge']]);
+});
+
+test('a pair answer naming a counterpart outside its two symbols is rejected', () => {
+	const { job, adapter } = dividedJob(qualitySpec);
+	const chunkOfId = (id: string) => job.plan.chunks.find(c => c.atomIds.includes(id))!.id;
+	assert.notEqual(chunkOfId('id-cancelOrder'), chunkOfId('id-discount'), 'held in different chunks');
+	// compare names cancelOrder and discount as a candidate, from whichever call carries both.
+	let j = job;
+	let pair: ReviewCall | undefined;
+	const review = qualityReviewer(c => { const [f, s] = listsOf(c); return f.includes('id-cancelOrder') && s.includes('id-discount') ? [{ a: 'id-cancelOrder', b: 'id-discount', why: 'both total a basket' }] : f.includes('id-discount') && s.includes('id-cancelOrder') ? [{ a: 'id-discount', b: 'id-cancelOrder', why: 'both total a basket' }] : []; });
+	for (let guard = 0; pair === undefined; guard++) {
+		assert.ok(guard < 200);
+		const call = nextCalls(j, adapter)[0]!;
+		if (call.stage === 'pair') { pair = call; break; }
+		j = applyOutput(j, adapter, call.callId, echo(call, review(call)));
+	}
+	assert.match(pair.carries.key!, /^pair:id-(cancelOrder\|id-discount|discount\|id-cancelOrder)$/);
+	const text = userOf(pair);
+	assert.ok(text.includes(JSON.stringify(DIVIDING.symbols.find(x => x.entityId === 'id-cancelOrder')!.signature)) && text.includes(JSON.stringify(DIVIDING.symbols.find(x => x.entityId === 'id-discount')!.signature)), 'judged on both full rows');
+	const dup = { severity: 'MED', location: 'src/order/cancel.ts:1', message: 'cancelOrder duplicates discount', confidence: 'breach' };
+	// A counterpart outside the pair: re-issued once with the reason, then the review fails.
+	const outside = applyOutput(j, adapter, pair.callId, echo(pair, { findings: [{ ...dup, counterpartRef: 'fill' }] }));
+	const again = outside.pending.find(c => c.attempt === 2)!;
+	assert.ok(again !== undefined && again.stage === 'pair');
+	assert.match(again.prompt.messages[0]!.content as string, /1 findings name a counterpart that is not one of the two symbols judged \(first: findings\[0\]\.counterpartRef\)/);
+	assert.throws(() => applyOutput(outside, adapter, again.callId, echo(again, { findings: [{ ...dup, counterpartRef: 'price' }] })), (e: unknown) => e instanceof ReviewCallFailedError);
+	// The other symbol of the pair, by name, located in one of the two files: accepted.
+	const pairStage = adapter.stagesFor('daemon').find(st => st.id === 'pair')!;
+	assert.deepEqual(pairStage.validate!({ findings: [{ ...dup, counterpartRef: 'discount' }] }, pair), []);
+	assert.equal(pairStage.validate!({ findings: [{ ...dup, counterpartRef: 'discount', location: 'src/basket/basket.ts:1' }] }, pair).length, 1, 'not located at either symbol');
+});
+
+test('compare and pair calls are counted under pipelineCalls.relation, not chunk', () => {
+	const { job, adapter } = dividedJob(qualitySpec);
+	let rejectedOnce = false;
+	const review = qualityReviewer(c => { const [f, s] = listsOf(c); return f.includes('id-cancelOrder') && s.includes('id-discount') ? [{ a: 'id-cancelOrder', b: 'id-discount', why: 'same' }] : []; });
+	const { job: last, calls } = drive(job, adapter, call => {
+		// One compare answer names a symbol outside its lists: rejected and re-issued, and counted again.
+		if (call.stage === 'compare' && !rejectedOnce) { rejectedOnce = true; return { candidates: [{ a: 'id-nope', b: 'id-nope2', why: 'x' }] }; }
+		return review(call);
+	});
+	const by = (stage: string) => calls.filter(c => c.stage === stage).length;
+	assert.ok(by('compare') > 0 && by('pair') > 0, 'both stages made calls');
+	assert.ok(calls.some(c => c.stage === 'compare' && c.attempt === 2), 'a re-issued compare call');
+	assert.ok(calls.filter(c => c.stage === 'compare' || c.stage === 'pair').every(c => c.role === 'chunk'), "role 'chunk' for retry and re-division");
+	const relationCalls = calls.filter(c => c.role === 'relation').length;
+	assert.equal(last.counts.relation, by('compare') + by('pair') + relationCalls, 'compare and pair under relation, re-issue included');
+	assert.equal(last.counts.chunk, by('judge'), 'chunk counts only the chunk reads');
 });

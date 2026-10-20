@@ -119,7 +119,7 @@ test('gate: the author definition object is not mutated (k2 / ac4)', () => {
 
 function minimalLldBody(): Record<string, unknown> {
 	return {
-		hldContextSlice: { frameworkSummary: 'standalone', ownedContracts: [], consumedContracts: [], boundary: { storyId: 'S001', owns: [], depends: [], internal: 'x' }, adjacentBoundaries: [], rolloutPhase: 'standalone', nonFunctional: {} },
+		hldContextSlice: { frameworkSummary: 'standalone', ownedContracts: [], consumedContracts: [], boundary: { storyId: 's1', owns: [], depends: [], internal: 'x' }, adjacentBoundaries: [], rolloutPhase: 'standalone', nonFunctional: {} },
 		contractDetails: { surfaceLevel: 'internal', api: [] },
 		dataModelChanges: [],
 		interactionWithShared: [],
@@ -133,7 +133,7 @@ function minimalLldBody(): Record<string, unknown> {
 function standaloneLldIntent(repo: string): WorkflowIntent {
 	return {
 		workflow: 'design.story', focus: 'a standalone feature', repoPath: repo, repoIndexedAt: null,
-		params: { standalone: true, epicHash: EPIC_HASH, storyId: 'S001', sizeClass: 'feature' },
+		params: { standalone: true, epicHash: EPIC_HASH, storyId: 's1', sizeClass: 'feature' },
 	} as unknown as WorkflowIntent;
 }
 const citations = [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }];

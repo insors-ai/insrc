@@ -36,18 +36,18 @@ function deps(over: Partial<SubjectDeps> = {}): SubjectDeps {
 test('resolveCodeReviewSubject: changedFiles equals the git set exactly, build record not mutated', async () => {
 	const record = { meta: { workflow: 'build' } } as never;
 	let recordArg: unknown;
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 		readBuildRecord: (...a) => { recordArg = a; return record; },
 	}));
 	assert.equal(res.ok, true);
 	if (!res.ok) return;
 	assert.deepEqual(res.subject.changedFiles, ['src/a.ts', 'src/b.ts']);
 	assert.equal(res.subject.buildRecord, record);   // consumed for identity, same object
-	assert.deepEqual(recordArg, ['/repo', 'epic', 's1']);
+	assert.deepEqual(recordArg, ['/repo', 'e1e1e1e1e1e1e1e1', 's1']);
 });
 
 test('resolveCodeReviewSubject: empty diff is a valid trivial subject (not an error)', async () => {
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({ changedFiles: async () => [] }));
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({ changedFiles: async () => [] }));
 	assert.equal(res.ok, true);
 	if (!res.ok) return;
 	assert.deepEqual(res.subject.changedFiles, []);
@@ -56,7 +56,7 @@ test('resolveCodeReviewSubject: empty diff is a valid trivial subject (not an er
 // ---- S001: LLD + PLAN both OPTIONAL — three modes keyed on presence ----
 
 test('resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)', async () => {
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps());
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps());
 	assert.equal(res.ok, true);
 	if (!res.ok) return;
 	assert.equal(res.subject.approvedLld, fakeLld);
@@ -64,7 +64,7 @@ test('resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)',
 });
 
 test('resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)', async () => {
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 		requireApprovedPlan: () => { throw new ArtifactNotApprovedError('plan not approved'); },
 	}));
 	assert.equal(res.ok, true);
@@ -74,7 +74,7 @@ test('resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true
 });
 
 test('resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)', async () => {
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 		requireApprovedLld: () => { throw new ArtifactMissingError('no LLD'); },
 	}));
 	assert.equal(res.ok, true);
@@ -84,7 +84,7 @@ test('resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedL
 });
 
 test('resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)', async () => {
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 		requireApprovedLld:  () => { throw new ArtifactMissingError('no LLD'); },
 		requireApprovedPlan: () => { throw new ArtifactNotApprovedError('plan not approved'); },
 	}));
@@ -97,7 +97,7 @@ test('resolveCodeReviewSubject: both missing/unapproved but changed files presen
 
 test('resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)', async () => {
 	await assert.rejects(
-		() => resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+		() => resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 			requireApprovedPlan: () => { throw new TypeError('corrupt artifact'); },
 		})),
 		(err: unknown) => err instanceof TypeError,
@@ -107,7 +107,7 @@ test('resolveCodeReviewSubject: non-Artifact error while resolving a contract pr
 // ---- no-build-record: git derivation fails — now the ONLY ok:false reason ----
 
 test('resolveCodeReviewSubject: git derivation failure -> no-build-record', async () => {
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 		changedFiles: async () => { throw new NoBuildChangesError('not a git repo'); },
 	}));
 	assert.deepEqual(res, { ok: false, reason: 'no-build-record' });
@@ -117,7 +117,7 @@ test('resolveCodeReviewSubject: git derivation failure -> no-build-record', asyn
 
 test('resolveCodeReviewSubject: UnregisteredRepoError propagates (not collapsed to a reason)', async () => {
 	await assert.rejects(
-		() => resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+		() => resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 			requireApprovedLld: () => { throw new UnregisteredRepoError('/repo'); },
 		})),
 		(err: unknown) => err instanceof UnregisteredRepoError,
@@ -128,7 +128,7 @@ test('resolveCodeReviewSubject: UnregisteredRepoError propagates (not collapsed 
 
 test('resolveCodeReviewSubject: read-only — only the injected read seams are called', async () => {
 	const calls: string[] = [];
-	await resolveCodeReviewSubject('/repo', 'epic', 's1', {
+	await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', {
 		requireApprovedLld:  () => { calls.push('lld'); return fakeLld; },
 		requireApprovedPlan: () => { calls.push('plan'); return fakePlan; },
 		changedFiles:        async () => { calls.push('diff'); return []; },
@@ -155,7 +155,7 @@ function mkStoryRepo(storyFiles: readonly string[]): GitFx {
 	git('init', '-q'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
 	const put = (rel: string, body: string): void => { mkdirSync(dirname(join(repo, rel)), { recursive: true }); writeFileSync(join(repo, rel), body); };
 	put('before.ts', 'export const b = 1;\n');
-	put('.insrc/artifacts/PLAN-x-S001.json', '{"v":1}\n');
+	put('.insrc/artifacts/PLAN-x-s1.json', '{"v":1}\n');
 	git('add', '-A'); git('commit', '-qm', 'before the Story');
 	const base = git('rev-parse', 'HEAD');
 	for (const f of storyFiles) put(f, `${f}\n`);
@@ -181,11 +181,11 @@ async function warningsDuring(fn: () => Promise<unknown>): Promise<unknown[][]> 
 test('T39: the Story committed and ONLY an approval-stamped artifact json dirty -> changedFiles is exactly the Story\'s source files', async () => {
 	const fx = mkStoryRepo(['src/a.ts', 'src/b.ts']);
 	try {
-		writeFileSync(join(fx.repo, '.insrc/artifacts/PLAN-x-S001.json'), '{"v":2,"approvedAt":"now"}\n');
-		assert.deepEqual([...await realChangedFiles(fx.repo)], ['.insrc/artifacts/PLAN-x-S001.json'],
+		writeFileSync(join(fx.repo, '.insrc/artifacts/PLAN-x-s1.json'), '{"v":2,"approvedAt":"now"}\n');
+		assert.deepEqual([...await realChangedFiles(fx.repo)], ['.insrc/artifacts/PLAN-x-s1.json'],
 			'fixture precondition: the old derivation reviewed the one dirty ledger file and nothing else');
 
-		const res = await resolveCodeReviewSubject(fx.repo, 'epic', 'S001', realDeps(fx.base));
+		const res = await resolveCodeReviewSubject(fx.repo, 'e1e1e1e1e1e1e1e1', 's1', realDeps(fx.base));
 		assert.equal(res.ok, true);
 		if (!res.ok) return;
 		assert.deepEqual([...res.subject.changedFiles].sort(), ['src/a.ts', 'src/b.ts']);
@@ -193,9 +193,9 @@ test('T39: the Story committed and ONLY an approval-stamped artifact json dirty 
 });
 
 test('T39: the Story\'s committed ledger files (artifact json, build-start, rendered docs) are not in the reviewed set either', async () => {
-	const fx = mkStoryRepo(['src/a.ts', '.insrc/artifacts/BUILD-x-S001.json', '.insrc/build-start/x-S001.json', 'docs/standalone/x-E1/S001/BUILD.md', 'docs/epics/y-E1/S001/LLD.md']);
+	const fx = mkStoryRepo(['src/a.ts', '.insrc/artifacts/BUILD-x-s1.json', '.insrc/build-start/x-s1.json', 'docs/standalone/x-E1/S001/BUILD.md', 'docs/epics/y-E1/S001/LLD.md']);
 	try {
-		const res = await resolveCodeReviewSubject(fx.repo, 'epic', 'S001', realDeps(fx.base));
+		const res = await resolveCodeReviewSubject(fx.repo, 'e1e1e1e1e1e1e1e1', 's1', realDeps(fx.base));
 		assert.equal(res.ok, true);
 		if (!res.ok) return;
 		assert.deepEqual([...res.subject.changedFiles], ['src/a.ts']);
@@ -206,7 +206,7 @@ test('T40: a Story that edited .insrc/artifacts/templates/t.json (and other user
 	const user = ['.insrc/artifacts/formats/f.md', '.insrc/artifacts/templates/t.json', '.insrc/conventions/c.md', '.insrc/feedback/fb.md', '.insrc/templates/tp.md'];
 	const fx = mkStoryRepo([...user, 'src/a.ts']);
 	try {
-		const res = await resolveCodeReviewSubject(fx.repo, 'epic', 'S001', realDeps(fx.base));
+		const res = await resolveCodeReviewSubject(fx.repo, 'e1e1e1e1e1e1e1e1', 's1', realDeps(fx.base));
 		assert.equal(res.ok, true);
 		if (!res.ok) return;
 		assert.deepEqual([...res.subject.changedFiles].sort(), [...user, 'src/a.ts'].sort());
@@ -218,7 +218,7 @@ test('T41: a base naming a commit that does not exist -> ok, the same set today\
 	try {
 		const todays = [...await realChangedFiles(fx.repo)];
 		let res: Awaited<ReturnType<typeof resolveCodeReviewSubject>> | undefined;
-		const warned = await warningsDuring(async () => { res = await resolveCodeReviewSubject(fx.repo, 'epic', 'S001', realDeps('1'.repeat(40))); });
+		const warned = await warningsDuring(async () => { res = await resolveCodeReviewSubject(fx.repo, 'e1e1e1e1e1e1e1e1', 's1', realDeps('1'.repeat(40))); });
 		assert.ok(res !== undefined && res.ok, 'the review must still be able to start');
 		if (res === undefined || !res.ok) return;
 		assert.deepEqual([...res.subject.changedFiles], todays, 'a clean tree with an unusable base reviews what it reviewed before');
@@ -229,7 +229,7 @@ test('T41: a base naming a commit that does not exist -> ok, the same set today\
 
 test('T41: with NO resolvable base the first attempt is the ledger-exclusion one — no base is invented', async () => {
 	const calls: unknown[] = [];
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 		resolveRangeBase: () => undefined,
 		changedFiles: async (_r, opts) => { calls.push(opts); return ['src/a.ts']; },
 	}));
@@ -240,14 +240,14 @@ test('T41: with NO resolvable base the first attempt is the ledger-exclusion one
 test('the resolver is asked for THIS Story\'s base, and that base plus the ledger globs reach the seam', async () => {
 	const asked: unknown[] = [];
 	const calls: unknown[] = [];
-	await resolveCodeReviewSubject('/repo', 'epic-h', 'S007', deps({
+	await resolveCodeReviewSubject('/repo', 'epic-h', 's7', deps({
 		resolveRangeBase: (...a) => { asked.push(a); return 'abc'; },
 		changedFiles: async (_r, opts) => { calls.push(opts); return []; },
 	}));
-	assert.deepEqual(asked, [['/repo', 'epic-h', 'S007']]);
+	assert.deepEqual(asked, [['/repo', 'epic-h', 's7']]);
 	assert.equal(calls.length, 1);
 	const { onAttribution, ...rest } = calls[0] as { onAttribution?: unknown };
-	assert.deepEqual(rest, { base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: 'epic-h/S007' });
+	assert.deepEqual(rest, { base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: 'epic-h/s7' });
 	assert.equal(typeof onAttribution, 'function');
 });
 
@@ -255,7 +255,7 @@ test('T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attem
 	const calls: unknown[][] = [];
 	let res: Awaited<ReturnType<typeof resolveCodeReviewSubject>> | undefined;
 	const warned = await warningsDuring(async () => {
-		res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+		res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 			resolveRangeBase: () => 'abc',
 			changedFiles: async (...a: unknown[]) => {
 				calls.push(a);
@@ -269,7 +269,7 @@ test('T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attem
 	assert.equal(typeof first?.onAttribution, 'function');
 	const { onAttribution: _cb, ...firstOpts } = first ?? {};
 	assert.deepEqual([calls[0]?.[0], firstOpts, ...calls.slice(1)], [
-		'/repo', { base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: 'epic/s1' },
+		'/repo', { base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: 'e1e1e1e1e1e1e1e1/s1' },
 		['/repo', { excludeGlobs: LEDGER_EXCLUDE_GLOBS }],
 		['/repo'],                                   // exactly the old call: one argument
 	]);
@@ -281,7 +281,7 @@ test('T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attem
 
 test('T43: a seam that ALWAYS throws -> no-build-record, after all three attempts', async () => {
 	let n = 0;
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+	const res = await resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 		resolveRangeBase: () => 'abc',
 		changedFiles: async () => { n++; throw new NoBuildChangesError('not a git repo'); },
 	}));
@@ -292,7 +292,7 @@ test('T43: a seam that ALWAYS throws -> no-build-record, after all three attempt
 test('T43: an error that is NOT a derivation failure propagates from the first attempt — it is not swallowed by the fallback', async () => {
 	let n = 0;
 	await assert.rejects(
-		() => resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
+		() => resolveCodeReviewSubject('/repo', 'e1e1e1e1e1e1e1e1', 's1', deps({
 			resolveRangeBase: () => 'abc',
 			changedFiles: async () => { n++; throw new TypeError('a bug, not a git failure'); },
 		})),
@@ -310,42 +310,42 @@ test('the default deps read the Story\'s BUILD and TESTS records onto the subjec
 	const fx = mkStoryRepo(['src/story.ts']);
 	try {
 		const artifacts = join(fx.repo, '.insrc', 'artifacts');
-		const build = { meta: { workflow: 'build', epicHash: 'x', storyId: 'S009', createdAt: '2026-10-17T00:00:00.000Z' }, body: { tasks: [{ id: 't1', passed: true }] } };
-		const tests = { meta: { workflow: 'tests', epicHash: 'x', storyId: 'S009', createdAt: '2026-10-17T00:00:00.000Z', updatedAt: '2026-10-17T00:00:00.000Z' },
+		const build = { meta: { workflow: 'build', epicHash: '1111111111111111', storyId: 's9', createdAt: '2026-10-17T00:00:00.000Z' }, body: { tasks: [{ id: 't1', passed: true }] } };
+		const tests = { meta: { workflow: 'tests', epicHash: '1111111111111111', storyId: 's9', createdAt: '2026-10-17T00:00:00.000Z', updatedAt: '2026-10-17T00:00:00.000Z' },
 			body: { tasks: [{ taskId: 't1', ranAt: '2026-10-17T00:00:00.000Z', testsPassed: true, tests: [], files: [] }] } };
-		writeFileSync(join(artifacts, 'BUILD-x-S009.json'), JSON.stringify(build));
-		writeFileSync(join(artifacts, 'TESTS-x-S009.json'), JSON.stringify(tests));
+		writeFileSync(join(artifacts, 'BUILD-1111111111111111-s9.json'), JSON.stringify(build));
+		writeFileSync(join(artifacts, 'TESTS-1111111111111111-s9.json'), JSON.stringify(tests));
 
 		// No deps argument: the production defaults (S009 has no LLD or PLAN, so both are null).
-		const res = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+		const res = await resolveCodeReviewSubject(fx.repo, '1111111111111111', 's9');
 		assert.ok(res.ok);
 		assert.deepEqual(res.subject.buildRecord, build);
 		assert.deepEqual(res.subject.testRecord, tests);
 
 		// Misshapen BUILD json, each way, is null; an unreadable TESTS json is null; the subject is still built.
-		writeFileSync(join(artifacts, 'TESTS-x-S009.json'), '{ not json');
+		writeFileSync(join(artifacts, 'TESTS-1111111111111111-s9.json'), '{ not json');
 		const meta = build.meta;
 		for (const [label, rec] of [
 			['no epicHash/storyId', { meta: { workflow: 'build' }, body: {} }],
 			['an array body', { meta, body: [] }],
-			['another Story', { meta: { ...meta, storyId: 'S010' }, body: {} }],
+			['another Story', { meta: { ...meta, storyId: 's10' }, body: {} }],
 			['not a build record', { meta: { ...meta, workflow: 'tests' }, body: {} }],
 			['tasks not an array', { meta, body: { tasks: {} } }],
 			['a task without an id', { meta, body: { tasks: [{ passed: true }] } }],
 			['a non-boolean passed', { meta, body: { tasks: [{ id: 't1', passed: 'yes' }] } }],
 		] as const) {
-			writeFileSync(join(artifacts, 'BUILD-x-S009.json'), JSON.stringify(rec));
-			const bad = await resolveCodeReviewSubject(fx.repo, 'x', 'S009');
+			writeFileSync(join(artifacts, 'BUILD-1111111111111111-s9.json'), JSON.stringify(rec));
+			const bad = await resolveCodeReviewSubject(fx.repo, '1111111111111111', 's9');
 			assert.ok(bad.ok, label);
 			assert.equal(bad.subject.buildRecord, null, label);
 			assert.equal(bad.subject.testRecord, null, label);
 		}
 
 		// Absent records are null too, and the absent BUILD record is warned about.
-		rmSync(join(artifacts, 'BUILD-x-S009.json'));
-		rmSync(join(artifacts, 'TESTS-x-S009.json'));
+		rmSync(join(artifacts, 'BUILD-1111111111111111-s9.json'));
+		rmSync(join(artifacts, 'TESTS-1111111111111111-s9.json'));
 		let none!: Awaited<ReturnType<typeof resolveCodeReviewSubject>>;
-		const warned = await warningsDuring(async () => { none = await resolveCodeReviewSubject(fx.repo, 'x', 'S009'); });
+		const warned = await warningsDuring(async () => { none = await resolveCodeReviewSubject(fx.repo, '1111111111111111', 's9'); });
 		assert.ok(warned.some(w => String(w[1] ?? w[0]).includes('no BUILD record')), 'an absent BUILD record is warned about');
 		assert.ok(none.ok);
 		assert.equal(none.subject.buildRecord, null);

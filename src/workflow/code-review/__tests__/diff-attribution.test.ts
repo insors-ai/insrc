@@ -40,7 +40,7 @@ import { _clearCodeReviewStateStoreForTests } from '../../../daemon/steps/code-r
 import type { CodeReviewStepOutput } from '../../../daemon/steps/code-review-step/types.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
-const STORY = 'S001';
+const STORY = 's1';
 const KEY = `${EPIC}/${STORY}`;
 const CREATED = '2026-10-18T00:00:00.000Z';
 const LINES = (edit: Readonly<Record<number, string>> = {}): string =>

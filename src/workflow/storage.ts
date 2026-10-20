@@ -40,6 +40,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renam
 import { dirname, join } from 'node:path';
 
 import { PATHS } from '../shared/paths.js';
+import { ArtifactIds } from './artifact-ids.js';
 import { deriveWorkItemIdentity, storyIdToOrdinal } from './id.js';
 import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme.js';
 
@@ -242,33 +243,33 @@ export function appendProgressLog(runId: string, op: string, phase: string, deta
 
 /** Canonical `.json` basename ID for a Define artifact (hash-based —
  *  this is the stable identity, independent of the display slug). */
-export function defineArtifactId(epicHash: string): string { return `DEF-${epicHash}`; }
+export function defineArtifactId(epicHash: string): string { return ArtifactIds.make({ kind: 'DEF', epicHash }); }
 /** Canonical `.json` basename ID for an HLD artifact. */
-export function hldArtifactId(epicHash: string): string { return `HLD-${epicHash}`; }
+export function hldArtifactId(epicHash: string): string { return ArtifactIds.make({ kind: 'HLD', epicHash }); }
 /** Canonical `.json` basename ID for an LLD artifact. */
 export function lldArtifactId(epicHash: string, storyId: string): string {
-	return `LLD-${epicHash}-${storyId}`;
+	return ArtifactIds.make({ kind: 'LLD', epicHash, story: storyId });
 }
 /** Canonical `.json` basename ID for a Plan artifact — one per Story. */
 export function planArtifactId(epicHash: string, storyId: string): string {
-	return `PLAN-${epicHash}-${storyId}`;
+	return ArtifactIds.make({ kind: 'PLAN', epicHash, story: storyId });
 }
 /** Canonical `.json` basename ID for a Build artifact — one per Story. */
 export function buildArtifactId(epicHash: string, storyId: string): string {
-	return `BUILD-${epicHash}-${storyId}`;
+	return ArtifactIds.make({ kind: 'BUILD', epicHash, story: storyId });
 }
 /** Canonical `.json` basename ID for a brainstorm SpecArtifact (S006/sc1) —
  *  hash-based identity, independent of the display slug. Not Epic-scoped. */
-export function specArtifactId(specHash: string): string { return `SPEC-${specHash}`; }
+export function specArtifactId(specHash: string): string { return ArtifactIds.make({ kind: 'SPEC', epicHash: specHash }); }
 /** Canonical `.json` basename ID for a bugfix IssueArtifact (sc2 / S002) —
  *  hash-based identity, independent of the display slug. Like a SPEC, the issue
  *  is its own first-stage work item, keyed by its own run-derived `issueHash`. */
-export function issueArtifactId(issueHash: string): string { return `ISSUE-${issueHash}`; }
+export function issueArtifactId(issueHash: string): string { return ArtifactIds.make({ kind: 'ISSUE', epicHash: issueHash }); }
 /** Canonical `.json` basename ID for a code-review record (code-review S006 /
  *  sc4) — one per Story, in its OWN `CR-` namespace so it never collides with
  *  or overwrites the design-artifact review or the `BUILD-` record. */
 export function codeReviewArtifactId(epicHash: string, storyId: string): string {
-	return `CR-${epicHash}-${storyId}`;
+	return ArtifactIds.make({ kind: 'CR', epicHash, story: storyId });
 }
 
 /** The id prefix of a Story's test record. */
@@ -278,7 +279,7 @@ export const TESTS_ID_PREFIX = 'TESTS-';
  *  what each test case did. Its own namespace, like `CR-`: it is a record, not
  *  an approvable artifact. */
 export function testsArtifactId(epicHash: string, storyId: string): string {
-	return `${TESTS_ID_PREFIX}${epicHash}-${storyId}`;
+	return ArtifactIds.make({ kind: 'TESTS', epicHash, story: storyId });
 }
 
 /** The work item's stable anchor createdAt — `meta.epicCreatedAt` when the
@@ -897,7 +898,7 @@ export function codeReviewArtifactPaths(
 /** Canonical id + paths for an Extend artifact (`define` extend branch).
  *  One per (Epic, new Story). Md at the nested `S<nnn>/EXT.md` (sc2), JSON
  *  under `.insrc/artifacts/` (hash). */
-export function extendArtifactId(epicHash: string, storyId: string): string { return `EXT-${epicHash}-${storyId}`; }
+export function extendArtifactId(epicHash: string, storyId: string): string { return ArtifactIds.make({ kind: 'EXT', epicHash, story: storyId }); }
 export function extendArtifactPaths(
 	repoPath:     string,
 	epicHash:     string,

@@ -23,7 +23,7 @@ import { buildArtifactPaths, buildRecordFolderArgs, codeReviewArtifactPaths, wri
 import type { CodeReviewSubject } from '../types.js';
 
 const HASH = 'c0ffee00d15ea5e5';
-const STORY = 'S001';
+const STORY = 's1';
 const ISSUE_CREATED = '2026-10-01T11:34:59.990Z';
 const BUILD_CREATED = '2026-10-04T09:40:27.183Z';
 
@@ -59,7 +59,7 @@ test('0855311b — a subject holding NO LLD and NO build record still files the 
 		seedMeta(repo, `BUILD-${HASH}-${STORY}`, { createdAt: BUILD_CREATED, standalone: true, sizeClass: 'trivial' });
 
 		const md = crMd(subject(repo));
-		assert.equal(md, join(repo, 'docs/standalone', `bug-docs-review-pane-E20261001${HASH.slice(0, 8)}`, STORY, 'CR.md'));
+		assert.equal(md, join(repo, 'docs/standalone', `bug-docs-review-pane-E20261001${HASH.slice(0, 8)}`, 'S001', 'CR.md'));
 		assert.equal(dirname(md), dirname(buildMd(repo, true, BUILD_CREATED)), 'the review sits beside the BUILD record');
 	});
 });
@@ -85,7 +85,7 @@ test('0855311b — an LLD-only Small story: the review lands beside the LLD', ()
 		const approvedLld = { meta: { epicSlug: 'lock-insrc-chat', createdAt: lldCreated, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'];
 		assert.equal(
 			crMd(subject(repo, { approvedLld })),
-			join(repo, 'docs/standalone', `lock-insrc-chat-E20261004${HASH.slice(0, 8)}`, STORY, 'CR.md'),
+			join(repo, 'docs/standalone', `lock-insrc-chat-E20261004${HASH.slice(0, 8)}`, 'S001', 'CR.md'),
 		);
 	});
 });
@@ -97,7 +97,7 @@ test('an epic-parented story is unchanged: epic split, the DEF\'s label and anch
 		const approvedLld = { meta: { epicSlug: 'tag-filtering', createdAt: '2026-07-19T00:00:00.000Z', epicCreatedAt: defCreated }, body: {} } as unknown as CodeReviewSubject['approvedLld'];
 		assert.equal(
 			crMd(subject(repo, { approvedLld })),
-			join(repo, 'docs/epics', `tag-filtering-E20260718${HASH.slice(0, 8)}`, STORY, 'CR.md'),
+			join(repo, 'docs/epics', `tag-filtering-E20260718${HASH.slice(0, 8)}`, 'S001', 'CR.md'),
 		);
 	});
 });

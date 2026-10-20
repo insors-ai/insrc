@@ -55,7 +55,7 @@ const componentDependencyDefinition = { components: [{ id: 'ui' }, { id: 'api' }
 function minimalLldBody(): Record<string, unknown> {
 	return {
 		summary: { prose: 'Customers place orders through one screen. More detail follows.' },
-		hldContextSlice: { frameworkSummary: 'standalone', ownedContracts: [], consumedContracts: [], boundary: { storyId: 'S001', owns: [], depends: [], internal: 'Order intake' }, adjacentBoundaries: [], rolloutPhase: 'standalone', nonFunctional: {} },
+		hldContextSlice: { frameworkSummary: 'standalone', ownedContracts: [], consumedContracts: [], boundary: { storyId: 's1', owns: [], depends: [], internal: 'Order intake' }, adjacentBoundaries: [], rolloutPhase: 'standalone', nonFunctional: {} },
 		contractDetails: { surfaceLevel: 'internal', api: [] },
 		dataModelChanges: [],
 		interactionWithShared: [],
@@ -71,7 +71,7 @@ function standaloneLldIntent(repo: string): WorkflowIntent {
 	return {
 		workflow: 'design.story', focus: 'a standalone feature with a data model', repoPath: repo,
 		repoIndexedAt: null,
-		params: { standalone: true, epicHash: EPIC_HASH, storyId: 'S001', sizeClass: 'feature', storyTitle: 'Order intake screen' },
+		params: { standalone: true, epicHash: EPIC_HASH, storyId: 's1', sizeClass: 'feature', storyTitle: 'Order intake screen' },
 	} as unknown as WorkflowIntent;
 }
 
@@ -114,8 +114,8 @@ test('finalize[standalone-LLD]: all four companions carry the header with the LL
 		// A first-time standalone LLD heads its own work item, anchored on its own write.
 		const anchor = workItemAnchorCreatedAt(artifact.meta);
 		assert.deepEqual(headers[0], {
-			'Work item':  deriveWorkItemIdentity(EPIC_HASH, anchor, 'S001').canonical,
-			'Source doc': `<a href="./LLD.md">LLD-${EPIC_HASH}-S001</a>`,
+			'Work item':  deriveWorkItemIdentity(EPIC_HASH, anchor, 's1').canonical,
+			'Source doc': `<a href="./LLD.md">LLD-${EPIC_HASH}-s1</a>`,
 			'Date':       '2026-10-11 14:32',
 			'User':       'Subho Ghosh',
 		});

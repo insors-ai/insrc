@@ -27,14 +27,14 @@ const ANCHOR = '2026-10-01T09:00:00.000Z';
 function withRepo(fn: (repo: string) => Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-cr-revision-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-	writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-S001.json`), JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 'S001', createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: 'cr-rev', standalone: true }, body: {} }, null, 2) + '\n');
+	writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: 'cr-rev', standalone: true }, body: {} }, null, 2) + '\n');
 	return fn(repo).finally(() => rmSync(repo, { recursive: true, force: true }));
 }
 
 async function review(repo: string, runId: string, write: CodeReviewRunnerDeps['write']): Promise<string> {
 	const subject: CodeReviewSubject = {
-		repoPath: repo, epicHash: HASH, storyId: 'S001', changedFiles: ['src/a.ts'],
-		approvedLld: { meta: { epicHash: HASH, storyId: 'S001', epicSlug: 'cr-rev', createdAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
+		repoPath: repo, epicHash: HASH, storyId: 's1', changedFiles: ['src/a.ts'],
+		approvedLld: { meta: { epicHash: HASH, storyId: 's1', epicSlug: 'cr-rev', createdAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 		approvedPlan: null as unknown as CodeReviewSubject['approvedPlan'],
 		buildRecord: null,
 	};

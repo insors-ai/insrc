@@ -25,11 +25,11 @@ function fixture(name: string, meta: Record<string, unknown>) {
 	const dir = join(repo, '.insrc', 'artifacts');
 	mkdirSync(dir, { recursive: true });
 	const json = join(dir, name);
-	writeFileSync(json, JSON.stringify({ meta: { epicHash: HASH, storyId: 'S001', ...meta }, body: { keep: 'me' }, citations: [] }, null, 2));
+	writeFileSync(json, JSON.stringify({ meta: { epicHash: HASH, storyId: 's1', ...meta }, body: { keep: 'me' }, citations: [] }, null, 2));
 	return { dir, json, read: () => JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown>; body: unknown }, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
-const DESIGN = [['DEF', `DEF-${HASH}.json`, 'define'], ['HLD', `HLD-${HASH}.json`, 'design.epic'], ['LLD', `LLD-${HASH}-S001.json`, 'design.story']] as const;
+const DESIGN = [['DEF', `DEF-${HASH}.json`, 'define'], ['HLD', `HLD-${HASH}.json`, 'design.epic'], ['LLD', `LLD-${HASH}-s1.json`, 'design.story']] as const;
 
 for (const [kind, name, workflow] of DESIGN) {
 	for (const [author, reviewer] of [['controller', 'daemon'], ['daemon', 'controller']] as const) {
@@ -72,18 +72,18 @@ test('T18 an older fixture is read by its attribution labels: written by `client
 
 for (const [author, reviewer] of [['controller', 'daemon'], ['daemon', 'controller'], [undefined, 'daemon']] as const) {
 	test(`T18 a BUILD record (author: ${author ?? 'none'}) gets a passing code-review record beside it, by the ${reviewer}`, () => {
-		const f = fixture(`BUILD-${HASH}-S001.json`, { workflow: 'build', ...(author !== undefined ? { authoredBy: author } : {}) });
+		const f = fixture(`BUILD-${HASH}-s1.json`, { workflow: 'build', ...(author !== undefined ? { authoredBy: author } : {}) });
 		try {
 			const before = readFileSync(f.json, 'utf8');
 			const out = stampOtherPartyReview(f.json);
-			const crPath = join(f.dir, `CR-${HASH}-S001.json`);
+			const crPath = join(f.dir, `CR-${HASH}-s1.json`);
 			assert.deepEqual(out, { reviewedBy: reviewer, path: crPath });
 			assert.ok(existsSync(crPath));
 			const cr = JSON.parse(readFileSync(crPath, 'utf8')) as { meta: Record<string, unknown>; body: Record<string, unknown> };
 			assert.equal(reviewerPartyOf(cr.meta), reviewer);
 			assert.equal(cr.meta['workflow'], 'code-review');
 			assert.equal(cr.meta['epicHash'], HASH);
-			assert.equal(cr.meta['storyId'], 'S001');
+			assert.equal(cr.meta['storyId'], 's1');
 			assert.equal(cr.body['kind'], 'code-review');
 			assert.equal(cr.body['verdict'], 'pass');
 			assert.equal(readFileSync(f.json, 'utf8'), before, 'the BUILD record itself is not rewritten');

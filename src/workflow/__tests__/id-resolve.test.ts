@@ -351,18 +351,18 @@ function setupBugfixRepo(opts: { withIssue?: boolean } = {}): { repo: string; di
 			citations: [],
 		});
 	}
-	writeJson(join(dir, `LLD-${BUG_HASH}-S001.json`), {
+	writeJson(join(dir, `LLD-${BUG_HASH}-s1.json`), {
 		meta: {
 			workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: BUG_HASH,
-			epicSlug: 'resolver-blocked', storyId: 'S001', createdAt: CREATED, schemaVersion: 1,
+			epicSlug: 'resolver-blocked', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
 			tracker: { adapter: 'github', storyRef: 'acme/demo#77' },
 		},
 		body: {},
 	});
-	writeJson(join(dir, `PLAN-${BUG_HASH}-S001.json`), {
+	writeJson(join(dir, `PLAN-${BUG_HASH}-s1.json`), {
 		meta: {
 			workflow: 'plan', runId: 'p1', repoPath: repo, epicHash: BUG_HASH,
-			epicSlug: 'resolver-blocked', storyId: 'S001', createdAt: CREATED, schemaVersion: 1,
+			epicSlug: 'resolver-blocked', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
 			tracker: { adapter: 'github', taskRefs: { t1: 'acme/demo#78' } },
 		},
 		body: { tasks: [TASK_T1], testStrategyCoverage: [] },
@@ -371,13 +371,13 @@ function setupBugfixRepo(opts: { withIssue?: boolean } = {}): { repo: string; di
 	return { repo, dir, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
-test("resolver — a DEF-less bugfix epic resolves 'S001/t1' to its PlanTask (was null: unresolved-target)", () => {
+test("resolver — a DEF-less bugfix epic resolves 's1/t1' to its PlanTask (was null: unresolved-target)", () => {
 	const s = setupBugfixRepo();
 	try {
-		const r = resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH });
-		assert.notEqual(r, null, "'S001/t1' must resolve from the ISSUE anchor when no DEF exists");
+		const r = resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH });
+		assert.notEqual(r, null, "'s1/t1' must resolve from the ISSUE anchor when no DEF exists");
 		assert.equal(r!.level, 'task');
-		assert.equal(r!.storyId, 'S001');
+		assert.equal(r!.storyId, 's1');
 		assert.equal(r!.taskId, 't1');
 		assert.equal(r!.epicSlug, 'resolver-blocked', 'epicSlug comes off the ISSUE meta');
 		assert.equal(r!.createdAt, CREATED, 'createdAt comes off the ISSUE meta');
@@ -394,13 +394,13 @@ test('resolver — MUTATION (INVERTED at ISSUE-c00559b7): delete the ISSUE and t
 		// This used to assert null: a work item with neither DEF nor ISSUE was
 		// unaddressable, which is exactly the defect that blocked every standalone
 		// feature's plan from building. The LLD now heads such a work item.
-		const r = resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH });
+		const r = resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH });
 		assert.equal(r?.task?.id, 't1', 'with no DEF or ISSUE, the LLD anchors the work item');
 		assert.equal(r?.epicSlug, 'resolver-blocked', 'identity comes off the LLD meta');
 
-		rmSync(join(s.dir, `LLD-${BUG_HASH}-S001.json`));
+		rmSync(join(s.dir, `LLD-${BUG_HASH}-s1.json`));
 		assert.equal(
-			resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH }), null,
+			resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH }), null,
 			'with no head at all the work item is unaddressable — proving a head is what makes the positive case pass',
 		);
 	} finally { s.cleanup(); }
@@ -409,22 +409,22 @@ test('resolver — MUTATION (INVERTED at ISSUE-c00559b7): delete the ISSUE and t
 test('resolver — an uppercase S001 story is resolvable by ISSUE NUMBER (the lowercase-only PLAN_RE/LLD_RE defect)', () => {
 	const s = setupBugfixRepo();
 	try {
-		assert.equal(resolveWorkflowRef(s.repo, '#78')?.taskId, 't1', 'taskRefs under a PLAN-<hash>-S001.json must be scanned');
-		assert.equal(resolveWorkflowRef(s.repo, '#78')?.storyId, 'S001');
-		assert.equal(resolveWorkflowRef(s.repo, '#77')?.level, 'story', 'storyRef under an LLD-<hash>-S001.json must be scanned');
+		assert.equal(resolveWorkflowRef(s.repo, '#78')?.taskId, 't1', 'taskRefs under a PLAN-<hash>-s1.json must be scanned');
+		assert.equal(resolveWorkflowRef(s.repo, '#78')?.storyId, 's1');
+		assert.equal(resolveWorkflowRef(s.repo, '#77')?.level, 'story', 'storyRef under an LLD-<hash>-s1.json must be scanned');
 	} finally { s.cleanup(); }
 });
 
 test('resolver — the hierarchical id form also resolves for a DEF-less epic', () => {
 	const s = setupBugfixRepo();
 	try {
-		const byLabel = resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH });
+		const byLabel = resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH });
 		assert.notEqual(byLabel, null);
 		const byHier = resolveWorkflowRef(s.repo, byLabel!.workflowId);
 		assert.notEqual(byHier, null, 'the canonical id must resolve too — it shares the DEF-only enumeration gate, and its date match read the DEF directly');
 		assert.equal(byHier!.taskId, 't1');
 		// The PlanTask must be attached even though the hier form yields the
-		// LOWERCASE label while the artifacts on disk are named `-S001.json`.
+		// LOWERCASE label while the artifacts on disk are named `-s1.json`.
 		assert.equal(byHier!.task?.id, 't1', 'the story artifact must be found across the two story-id spellings');
 		// NOTE the spelling: a hierarchical id denotes a story by ORDINAL, and
 		// ordinalToStoryId renders ordinal 1 as `s1`. So the resolved ref reports
@@ -448,13 +448,13 @@ test('resolver — ADDITIVE: when BOTH a DEF and an ISSUE exist for one hash, th
 			body: { flavor: 'new-capability', problem: 'x.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
 			citations: [],
 		});
-		const r = resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH });
+		const r = resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH });
 		assert.notEqual(r, null);
 		assert.equal(r!.epicSlug, 'def-wins', 'the DEF is consulted first and wins outright — the ISSUE is a fallback, not a competitor');
 		// The hash must be enumerated ONCE despite matching both the DEF and the
 		// ISSUE pattern. If it were double-counted, this single-epic dir would
 		// look like two epics and an UNSCOPED label would turn ambiguous.
-		const unscoped = resolveWorkflowRef(s.repo, 'S001/t1');
+		const unscoped = resolveWorkflowRef(s.repo, 's1/t1');
 		assert.notEqual(unscoped, null, 'one epic with two anchors must enumerate once, not become a false multi-epic');
 		assert.equal(unscoped!.epicSlug, 'def-wins');
 	} finally { s.cleanup(); }

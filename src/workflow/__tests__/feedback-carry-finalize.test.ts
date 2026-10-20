@@ -143,12 +143,12 @@ function seedHld(repo: string): void {
 /** An approved standalone LLD, the upstream a PLAN needs. */
 function seedStandaloneLld(repo: string): void {
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-	writeFileSync(artifactJsonPath(repo, lldArtifactId(HASH, 'S001')), JSON.stringify({
+	writeFileSync(artifactJsonPath(repo, lldArtifactId(HASH, 's1')), JSON.stringify({
 		meta: {
-			workflow: 'design.story', epicHash: HASH, storyId: 'S001', epicSlug: 'carry-item', standalone: true,
+			workflow: 'design.story', epicHash: HASH, storyId: 's1', epicSlug: 'carry-item', standalone: true,
 			createdAt: CREATED, epicCreatedAt: CREATED, approvedAt: '2026-07-17T09:00:00.000Z', runId: 'wf-seed-lld',
 		},
-		body: lldBody('S001'),
+		body: lldBody('s1'),
 	}));
 }
 
@@ -177,14 +177,14 @@ const CASES: readonly CarryCase[] = [
 		seed: repo => { seedEpic(repo); seedHld(repo); },
 	},
 	{
-		name: 'standalone LLD', artifactId: lldArtifactId(HASH, 'S001'),
-		intent: repo => intent('design.story', repo, { standalone: true, epicHash: HASH, storyId: 'S001', sizeClass: 'small' }),
-		emit: () => ({ body: lldBody('S001'), citations: CODE_CITE }),
+		name: 'standalone LLD', artifactId: lldArtifactId(HASH, 's1'),
+		intent: repo => intent('design.story', repo, { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' }),
+		emit: () => ({ body: lldBody('s1'), citations: CODE_CITE }),
 		seed: repo => { mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true }); },
 	},
 	{
-		name: 'PLAN', artifactId: planArtifactId(HASH, 'S001'),
-		intent: repo => intent('plan', repo, { standalone: true, epicHash: HASH, storyId: 'S001' }),
+		name: 'PLAN', artifactId: planArtifactId(HASH, 's1'),
+		intent: repo => intent('plan', repo, { standalone: true, epicHash: HASH, storyId: 's1' }),
 		emit: () => ({ body: planBody(), citations: CODE_CITE }),
 		seed: seedStandaloneLld,
 	},

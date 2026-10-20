@@ -31,7 +31,7 @@ function subject(opts: { files?: readonly ReturnType<typeof run>[] | 'none' | 'm
 		: files === 'malformed' ? { meta: {}, body: { tasks: [{ taskId: 't1', ranAt: '2026-10-18T00:00:00.000Z', tests: [], files: [{ file: 'src/a.test.ts', titles: 'garbage' }] }] } }
 		: { meta: {}, body: { tasks: [{ taskId: 't1', ranAt: '2026-10-18T00:00:00.000Z', testsPassed: true, tests: [], files }] } };
 	return {
-		repoPath: '/repo', epicHash: 'b47dadc7cf0cccb1', storyId: 'S001', changedFiles: ['src/a.ts', 'src/b.ts', 'docs/x.md'],
+		repoPath: '/repo', epicHash: 'b47dadc7cf0cccb1', storyId: 's1', changedFiles: ['src/a.ts', 'src/b.ts', 'docs/x.md'],
 		approvedLld: { meta: { epicSlug: 'x', createdAt: '2026-10-18T00:00:00.000Z', epicCreatedAt: '2026-10-18T00:00:00.000Z' }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 		approvedPlan: opts.plan === false ? null : { body: { tasks: [{ tests: [{ level: 'unit', name: PROMISED }] }] } } as unknown as CodeReviewSubject['approvedPlan'],
 		buildRecord: null,

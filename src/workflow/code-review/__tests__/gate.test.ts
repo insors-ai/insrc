@@ -13,7 +13,7 @@ import { enforceCodeReviewGate, type CodeReviewGateResult } from '../gate.js';
 import { artifactJsonPath, codeReviewArtifactId } from '../../storage.js';
 import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 
-const EPIC = 'e1';
+const EPIC = 'e1e1e1e1e1e1e1e1';
 const STORY = 's7';
 
 /** A tmp repo dir with an optional CR-<epic>-<story>.json written under it. */

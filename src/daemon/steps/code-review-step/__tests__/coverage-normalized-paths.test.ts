@@ -35,7 +35,7 @@ import type { CodeReviewArtifact, CodeReviewGrounding, CodeReviewSubject, Dimens
 import { codeReviewRunStart, type CodeReviewRunDeps } from '../../../code-review-rpc.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
-const STORY = 'S001';
+const STORY = 's1';
 const CREATED = '2026-10-18T00:00:00.000Z';
 
 const subject = (): CodeReviewSubject => ({

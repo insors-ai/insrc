@@ -213,7 +213,7 @@ test('defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-un
 		assert.deepEqual(after.body, original.body, 'body untouched (k4)');
 		// readIssue round-trips the same file
 		assert.ok(deps.readIssue(repo, hash));
-		assert.equal(deps.readIssue(repo, 'missinghash00000000'), null);
+		assert.equal(deps.readIssue(repo, 'deadbeef00000000'), null);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}
@@ -275,8 +275,8 @@ const isApproved = (p: string): boolean =>
 
 test('ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)', async () => {
 	await withRepo(async (repo, dir) => {
-		const p = writeBuild(dir, 's4bf');
-		writeCR(repo, 's4bf', 'pass');
+		const p = writeBuild(dir, 's4');
+		writeCR(repo, 's4', 'pass');
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.equal(out.skipped.length, 0);
 		assert.ok(isApproved(p), 'a bugfix build completes when its CR passes under enforce');
@@ -285,7 +285,7 @@ test('ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTa
 
 test('ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved', async () => {
 	await withRepo(async (repo, dir) => {
-		const p = writeBuild(dir, 's4bf');
+		const p = writeBuild(dir, 's4');
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: true });
 		assert.ok(out.skipped.length >= 1, 'no CR under enforce withholds completion');
 		assert.ok(!isApproved(p));
@@ -297,11 +297,11 @@ test('ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not 
 // the enforcement setting. This used to assert the opposite for enforce OFF.
 test('ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)', async () => {
 	await withRepo(async (repo, dir) => {
-		const p = writeBuild(dir, 's4bf');
+		const p = writeBuild(dir, 's4');
 		const out = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
 		assert.deepEqual(out.skipped.map(s => s.reason), ['completion requires a code review; none was run']);
 		assert.ok(!isApproved(p));
-		writeCR(repo, 's4bf', 'pass');
+		writeCR(repo, 's4', 'pass');
 		const reviewed = await approveWorkflowTarget({ repoPath: repo, artifactPath: p }, { enforce: false });
 		assert.equal(reviewed.skipped.length, 0);
 		assert.ok(isApproved(p), 'and completes once its code review exists');

@@ -41,7 +41,7 @@ function withItem(fn: (repo: string) => void | Promise<void>): Promise<void> {
 	const seed = (id: string, meta: Record<string, unknown>): void =>
 		writeFileSync(join(repo, '.insrc', 'artifacts', `${id}.json`), JSON.stringify({ meta, body: {} }, null, 2) + '\n');
 	seed(`ISSUE-${HASH}`, { workflow: 'issue', issueHash: HASH, createdAt: ANCHOR, epicSlug: LABEL, standalone: true });
-	seed(`LLD-${HASH}-S001`, { workflow: 'design.story', epicHash: HASH, storyId: 'S001', createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: LABEL, standalone: true });
+	seed(`LLD-${HASH}-s1`, { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: LABEL, standalone: true });
 	return Promise.resolve(fn(repo)).finally(() => rmSync(repo, { recursive: true, force: true }));
 }
 
@@ -53,7 +53,7 @@ function derivedFrom(json: string, kind: ArtifactKind, repo: string): string {
 test('764b88ed — a BUILD record stores the label, anchor and kind it was filed under', async () => {
 	await withItem((repo) => {
 		const { json, md } = persistBuildRecord(repo, {
-			meta: { workflow: 'build', epicHash: HASH, storyId: 'S001', createdAt: LATER },
+			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: LATER },
 			body: { tasks: [{ id: 't1', passed: true }] },
 		});
 		assert.equal(md, join(repo, FOLDER, 'BUILD.md'));
@@ -65,7 +65,7 @@ test('764b88ed — a BUILD record stores the label, anchor and kind it was filed
 
 test('764b88ed — a TESTS record stores the label, anchor and kind it was filed under', async () => {
 	await withItem((repo) => {
-		const { json, md } = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: LATER }, {
+		const { json, md } = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: LATER }, {
 			taskId: 't1', commit: 'abc1234', ranAt: LATER, testsPassed: true, tests: [], files: [],
 		});
 		assert.equal(md, join(repo, FOLDER, 'TESTS.md'));
@@ -76,8 +76,8 @@ test('764b88ed — a TESTS record stores the label, anchor and kind it was filed
 test('764b88ed — a code-review record stores the label, anchor and kind it was filed under', async () => {
 	await withItem(async (repo) => {
 		const subject: CodeReviewSubject = {
-			repoPath: repo, epicHash: HASH, storyId: 'S001', changedFiles: ['src/a.ts'],
-			approvedLld:  { meta: { epicHash: HASH, storyId: 'S001', epicSlug: LABEL, createdAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
+			repoPath: repo, epicHash: HASH, storyId: 's1', changedFiles: ['src/a.ts'],
+			approvedLld:  { meta: { epicHash: HASH, storyId: 's1', epicSlug: LABEL, createdAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 			approvedPlan: null as unknown as CodeReviewSubject['approvedPlan'],
 			buildRecord:  null,
 		};

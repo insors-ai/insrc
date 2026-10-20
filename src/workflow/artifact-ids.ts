@@ -112,10 +112,10 @@ function check(key: ArtifactKey): void {
 	field('task', shape.task, key.task !== undefined);
 	field('seq', shape.seq, key.seq !== undefined);
 	if (key.story !== undefined && !STORY_RE.test(key.story)) {
-		throw new InvalidArtifactKeyError(`${kind}: story must be s<n> (got '${key.story}')`);
+		throw new InvalidArtifactKeyError(`${kind}: story must be s<n> (got '${key.story}'); an uppercase S<nnn> id is converted by the s9 conversion`);
 	}
 	if (key.task !== undefined && !TASK_RE.test(key.task)) {
-		throw new InvalidArtifactKeyError(`${kind}: task must be t<n> (got '${key.task}')`);
+		throw new InvalidArtifactKeyError(`${kind}: task must be t<n> (got '${key.task}'); an uppercase T<nnn> id is converted by the s9 conversion`);
 	}
 	if (key.seq !== undefined && (!Number.isInteger(key.seq) || key.seq < 1)) {
 		throw new InvalidArtifactKeyError(`${kind}: seq must be an integer from 1 (got ${String(key.seq)})`);

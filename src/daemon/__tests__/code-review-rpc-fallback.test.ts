@@ -34,7 +34,7 @@ import { _clearCodeReviewStateStoreForTests } from '../steps/code-review-step/st
 import type { CodeReviewStepOutput } from '../steps/code-review-step/types.js';
 
 const EPIC = 'abcd1234ef567890';
-const STORY = 'S001';
+const STORY = 's1';
 const CREATED = '2026-07-18T00:00:00.000Z';
 const TIMED_OUT: CodeReviewFallbackReason = { kind: 'freshness-timeout', waitedMs: 3000, inFlight: false, pendingCodeIndexJobs: 4, staleFiles: ['src/a.ts'] };
 

@@ -97,28 +97,28 @@ test("the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md i
 	});
 	// A standalone Story with a design: the LLD dates the folder.
 	await withRepo((repo) => {
-		writeArtifact(repo, `LLD-${HASH}-S001`, { standalone: true, epicSlug: 'small-thing', createdAt: '2026-02-10T00:00:00.000Z' });
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: T0, standalone: true }, task('S001'));
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 'S001', createdAt: T1, updatedAt: T1 }, body: { tasks: [{ id: 'S001', passed: true }] } });
+		writeArtifact(repo, `LLD-${HASH}-s1`, { standalone: true, epicSlug: 'small-thing', createdAt: '2026-02-10T00:00:00.000Z' });
+		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task('s1'));
+		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 's1', createdAt: T1, updatedAt: T1 }, body: { tasks: [{ id: 's1', passed: true }] } });
 		assert.equal(dirname(tests.md), dirname(build.md));
 		assert.match(tests.md, /docs\/standalone\/small-thing-E20260210abc123de\/S001\/TESTS\.md$/);
-		assert.equal(readTestRecord(repo, HASH, 'S001')!.meta.standalone, true);
+		assert.equal(readTestRecord(repo, HASH, 's1')!.meta.standalone, true);
 	});
 	// No build record and nothing else to anchor on: the folder comes from the
 	// test record's own persisted createdAt and flag, also on a later day ...
 	await withRepo((repo) => {
-		const first = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: T0, standalone: true }, task('S001'));
+		const first = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task('s1'));
 		assert.match(first.md, /docs\/standalone\/[^/]*E20260301abc123de\/S001\/TESTS\.md$/);
-		const later = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: T2 }, task('S001'));
+		const later = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('s1'));
 		assert.equal(later.md, first.md);
 		// ... and the shared derivation hands the same anchor to any other record writer.
-		const fa = storyRecordFolderArgs(repo, HASH, 'S001', { ownCreatedAt: T2 });
+		const fa = storyRecordFolderArgs(repo, HASH, 's1', { ownCreatedAt: T2 });
 		assert.deepEqual([fa.createdAtISO, fa.workItemKind], [T0, 'standalone']);
 	});
 	// A build record that already exists stays the anchor, and the test record follows it.
 	await withRepo((repo) => {
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 'S001', createdAt: T0, updatedAt: T0 }, body: { focus: 'x' } });
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: T2 }, task('S001'));
+		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { focus: 'x' } });
+		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('s1'));
 		assert.equal(dirname(tests.md), dirname(build.md));
 	});
 });

@@ -21,6 +21,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { ArtifactIds } from '../artifact-ids.js';
 import {
 	amendmentArtifactPath,
 	amendmentFilenamePrefix,
@@ -64,7 +65,7 @@ export class AmendmentIdConflictError extends Error {
 export function nextAmendmentId(repoPath: string, epicHash: string): string {
 	const dir = amendmentsRootDir(repoPath);
 	const prefix = amendmentFilenamePrefix(epicHash);
-	if (!existsSync(dir)) return `${prefix}1`;
+	if (!existsSync(dir)) return ArtifactIds.make({ kind: 'AMD', epicHash, seq: 1 });
 	let max = 0;
 	for (const name of readdirSync(dir)) {
 		if (!name.endsWith('.json')) continue;
@@ -73,7 +74,7 @@ export function nextAmendmentId(repoPath: string, epicHash: string): string {
 		const n = Number(rest);
 		if (Number.isInteger(n) && n > max) max = n;
 	}
-	return `${prefix}${max + 1}`;
+	return ArtifactIds.make({ kind: 'AMD', epicHash, seq: max + 1 });
 }
 
 // ---------------------------------------------------------------------------

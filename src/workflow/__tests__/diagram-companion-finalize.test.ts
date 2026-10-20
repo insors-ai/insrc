@@ -41,7 +41,7 @@ const componentDependencyDefinition = {
 
 function minimalLldBody(): Record<string, unknown> {
 	return {
-		hldContextSlice: { frameworkSummary: 'standalone', ownedContracts: [], consumedContracts: [], boundary: { storyId: 'S003', owns: [], depends: [], internal: 'x' }, adjacentBoundaries: [], rolloutPhase: 'standalone', nonFunctional: {} },
+		hldContextSlice: { frameworkSummary: 'standalone', ownedContracts: [], consumedContracts: [], boundary: { storyId: 's3', owns: [], depends: [], internal: 'x' }, adjacentBoundaries: [], rolloutPhase: 'standalone', nonFunctional: {} },
 		contractDetails: { surfaceLevel: 'internal', api: [] },
 		dataModelChanges: [],
 		interactionWithShared: [],
@@ -57,7 +57,7 @@ function intent(repo: string): WorkflowIntent {
 	return {
 		workflow: 'design.story', focus: 'a standalone feature with diagrams', repoPath: repo,
 		repoIndexedAt: null,
-		params: { standalone: true, epicHash: EPIC_HASH, storyId: 'S003', sizeClass: 'feature' },
+		params: { standalone: true, epicHash: EPIC_HASH, storyId: 's3', sizeClass: 'feature' },
 	} as unknown as WorkflowIntent;
 }
 

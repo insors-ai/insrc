@@ -28,7 +28,7 @@ import type { CodeReviewSubject, DimensionResult, ReviewDimension } from '../typ
 import type { LLMProvider } from '../../../shared/types.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
-const STORY = `${EPIC}/S001`;
+const STORY = `${EPIC}/s1`;
 
 function git(repo: string, ...args: string[]): string {
 	return execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -77,7 +77,7 @@ test("the review subject holds only the Story's own files and records attributio
 	const { repo: r, base, cleanup } = repo();
 	try {
 		interleaved(r);
-		const res = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base));
+		const res = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base));
 		assert.ok(res.ok);
 		if (!res.ok) return;
 		assert.deepEqual([...res.subject.changedFiles].sort(), ['src/mine.ts', 'src/mine2.ts', 'src/shared.ts'],
@@ -91,7 +91,7 @@ test('a dirty tree gives attribution working-tree and the step-down order is unc
 	try {
 		interleaved(r);
 		write(r, { 'README.md': 'uncommitted edit\n' });
-		const dirty = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base));
+		const dirty = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base));
 		assert.ok(dirty.ok);
 		if (!dirty.ok) return;
 		assert.deepEqual([...dirty.subject.changedFiles], ['README.md']);
@@ -100,7 +100,7 @@ test('a dirty tree gives attribution working-tree and the step-down order is unc
 
 		// A clean tree with no trailered commit: the first-parent range, as before.
 		git(r, 'checkout', '-q', '--', 'README.md');
-		const untrailed = await resolveCodeReviewSubject(r, 'ffffffffffffffff', 'S001', deps(base));
+		const untrailed = await resolveCodeReviewSubject(r, 'ffffffffffffffff', 's1', deps(base));
 		assert.ok(untrailed.ok);
 		if (!untrailed.ok) return;
 		assert.equal(untrailed.subject.changeSetAttribution, 'first-parent-range');
@@ -108,7 +108,7 @@ test('a dirty tree gives attribution working-tree and the step-down order is unc
 
 		// Step down: the range attempt fails, then the ledger-only one, then the plain call.
 		const labels: string[] = [];
-		const stepping = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base, async (repoPath: string, opts?: ChangedFilesOptions) => {
+		const stepping = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base, async (repoPath: string, opts?: ChangedFilesOptions) => {
 			labels.push(opts === undefined ? 'plain' : opts.base !== undefined ? 'range' : 'ledger');
 			if (opts !== undefined) throw new NoBuildChangesError('refused');
 			return changedFiles(repoPath);
@@ -124,7 +124,7 @@ test("a file another Story's excluded commit also changed is listed in sharedWit
 	const { repo: r, base, cleanup } = repo();
 	try {
 		interleaved(r);
-		const res = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base));
+		const res = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base));
 		assert.ok(res.ok);
 		if (!res.ok) return;
 		assert.deepEqual(res.subject.sharedWithExcluded, ['src/shared.ts']);

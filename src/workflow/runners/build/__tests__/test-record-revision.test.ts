@@ -22,13 +22,13 @@ import { persistTestRecordTask, TestRecordInconsistentError } from '../test-reco
 
 const HASH = '5a6b7c8d9e0f1a2b';
 const ANCHOR = '2026-10-01T09:00:00.000Z';
-const ident = (now: string) => ({ epicHash: HASH, storyId: 'S001', now });
+const ident = (now: string) => ({ epicHash: HASH, storyId: 's1', now });
 const task = (taskId: string, commit: string) => ({ taskId, commit, ranAt: ANCHOR, testsPassed: true, tests: [], files: [] });
 
 function withRepo(fn: (repo: string) => void): void {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tests-revision-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-	writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-S001.json`), JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 'S001', createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: 'tests-rev', standalone: true }, body: {} }, null, 2) + '\n');
+	writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: 'tests-rev', standalone: true }, body: {} }, null, 2) + '\n');
 	try { fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 

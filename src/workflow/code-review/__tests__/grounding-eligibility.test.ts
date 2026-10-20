@@ -73,7 +73,7 @@ test('sections, documents, config, types, interfaces and every entity of a test 
 });
 
 const subject: CodeReviewSubject = {
-	repoPath: '/repo', epicHash: 'b47dadc7cf0cccb1', storyId: 'S001', changedFiles: FILES,
+	repoPath: '/repo', epicHash: 'b47dadc7cf0cccb1', storyId: 's1', changedFiles: FILES,
 	approvedLld: { meta: { epicSlug: 'x', createdAt: '2026-10-18T00:00:00.000Z', epicCreatedAt: '2026-10-18T00:00:00.000Z' }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 	approvedPlan: null, buildRecord: null, testRecord: null,
 };
@@ -115,7 +115,7 @@ test("every judge slot receives the run's groundingMode and the non-coverage jud
 			runCodeReview(s, p, o, { judges: spyJudges(seen), assembleGrounding: d!.assembleGrounding, write: d!.write })) as never,
 	};
 	const frames: IpcStreamMessage[] = [];
-	await codeReviewRunStart({ repo: '/repo', epicHash: subject.epicHash, storyId: 'S001', groundingMode: 'degraded' }, m => frames.push(m), new AbortController().signal, rpcDeps);
+	await codeReviewRunStart({ repo: '/repo', epicHash: subject.epicHash, storyId: 's1', groundingMode: 'degraded' }, m => frames.push(m), new AbortController().signal, rpcDeps);
 	assert.equal(frames[frames.length - 1]!.stream, 'done', JSON.stringify(frames[frames.length - 1]!.data));
 	assert.deepEqual(seen.map(s => s.ctx?.groundingMode), ['degraded', 'degraded', 'degraded', 'degraded']);
 });

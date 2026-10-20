@@ -56,7 +56,7 @@ const ISSUE_MADE = '2026-04-09T08:30:00.000Z';
 
 function minimalLldBody(): Record<string, unknown> {
 	return {
-		hldContextSlice: { frameworkSummary: 'standalone', ownedContracts: [], consumedContracts: [], boundary: { storyId: 'S001', owns: [], depends: [], internal: 'x' }, adjacentBoundaries: [], rolloutPhase: 'standalone', nonFunctional: {} },
+		hldContextSlice: { frameworkSummary: 'standalone', ownedContracts: [], consumedContracts: [], boundary: { storyId: 's1', owns: [], depends: [], internal: 'x' }, adjacentBoundaries: [], rolloutPhase: 'standalone', nonFunctional: {} },
 		contractDetails: { surfaceLevel: 'internal', api: [] },
 		dataModelChanges: [],
 		interactionWithShared: [],
@@ -72,7 +72,7 @@ function standaloneLldIntent(repo: string): WorkflowIntent {
 	return {
 		workflow: 'design.story', focus: STAGE_FOCUS, repoPath: repo,
 		repoIndexedAt: null,
-		params: { standalone: true, epicHash: HASH, storyId: 'S001', sizeClass: 'small' },
+		params: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' },
 	} as unknown as WorkflowIntent;
 }
 
@@ -109,7 +109,7 @@ test('t8/t3 CALL SITE: a finalized standalone LLD PERSISTS the definition head\'
 		);
 		// The folder follows from the label, which is the whole point. Composed by
 		// the shipping builder from the metadata the finalizer actually wrote.
-		const folder = folderFor(repo, artifact.meta, 'S001');
+		const folder = folderFor(repo, artifact.meta, 's1');
 		assert.ok(folder.includes(`${HEAD_SLUG}-E`), `must land in the head's folder, got ${folder}`);
 		assert.ok(folder.includes('/docs/standalone/'), `a standalone item belongs under docs/standalone, got ${folder}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -158,7 +158,7 @@ test('ISSUE-0b2faed8: a standalone LLD written on a later day than its ISSUE per
 		// The finalizer returns the artifact, not a path: the writer composes the
 		// path from this persisted metadata, so the shipping builder over the
 		// metadata the finalizer wrote IS where the document lands.
-		const folder = folderFor(repo, artifact.meta, 'S001');
+		const folder = folderFor(repo, artifact.meta, 's1');
 		assert.ok(folder.includes(`${HEAD_SLUG}-E20260409`), `the LLD must be filed under the ISSUE's day, got ${folder}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -173,7 +173,7 @@ test('ISSUE-0b2faed8: with NO definition head the standalone LLD carries no anch
 		const meta = artifact.meta as { createdAt: string; epicCreatedAt?: string };
 		assert.equal('epicCreatedAt' in meta, false, 'no definition head means no inherited anchor, not a defaulted one');
 		const day = meta.createdAt.slice(0, 10).replace(/-/g, '');
-		const folder = folderFor(repo, artifact.meta, 'S001');
+		const folder = folderFor(repo, artifact.meta, 's1');
 		assert.ok(folder.includes(`-E${day}`), `the LLD files under its own day, got ${folder}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -188,7 +188,7 @@ test('t8/t3 CALL SITE: an EMPTY label on the definition head is treated as absen
 		const slug = String(artifact.meta.epicSlug ?? '');
 		assert.ok(slug.length > 0, 'an empty stored label must not become the folder name');
 		assert.ok(!slug.startsWith('-'), `no folder name may begin with a separator, got ${slug}`);
-		const folder = folderFor(repo, artifact.meta, 'S001');
+		const folder = folderFor(repo, artifact.meta, 's1');
 		assert.ok(!folder.includes('/-'), `no path segment may begin with a separator, got ${folder}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -221,7 +221,7 @@ function planIntent(repo: string): WorkflowIntent {
 	return {
 		workflow: 'plan', focus: STAGE_FOCUS, repoPath: repo,
 		repoIndexedAt: null,
-		params: { standalone: true, epicHash: HASH, storyId: 'S001' },
+		params: { standalone: true, epicHash: HASH, storyId: 's1' },
 	} as unknown as WorkflowIntent;
 }
 
@@ -229,7 +229,7 @@ function planIntent(repo: string): WorkflowIntent {
  *  standalone so there is no parent HLD to be stale against. */
 function seedApprovedLld(repo: string, over: Record<string, unknown> = {}): void {
 	const meta = {
-		workflow: 'design.story', epicHash: HASH, storyId: 'S001',
+		workflow: 'design.story', epicHash: HASH, storyId: 's1',
 		epicSlug: HEAD_SLUG, standalone: true,
 		createdAt: ISSUE_MADE, epicCreatedAt: ISSUE_MADE,
 		approvedAt: '2026-04-09T09:00:00.000Z',
@@ -237,7 +237,7 @@ function seedApprovedLld(repo: string, over: Record<string, unknown> = {}): void
 		...over,
 	};
 	writeFileSync(
-		join(repo, '.insrc', 'artifacts', `LLD-${HASH}-S001.json`),
+		join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`),
 		JSON.stringify({ meta, body: minimalLldBody() }),
 	);
 }
@@ -255,7 +255,7 @@ test('t8/t4a CALL SITE: a finalized PLAN for a standalone work item PERSISTS the
 		// carried no `standalone` at all, so a standalone story's PLAN.md landed
 		// under docs/epics while its own LLD.md sat under docs/standalone.
 		assert.equal(meta.standalone, true, 'the written PLAN must carry the placement flag');
-		const folder = folderFor(repo, result.finalized.artifact.meta as never, 'S001');
+		const folder = folderFor(repo, result.finalized.artifact.meta as never, 's1');
 		assert.ok(folder.includes('/docs/standalone/'), `the PLAN belongs under docs/standalone, got ${folder}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -280,7 +280,7 @@ test('t8/t4a CALL SITE: an epic-parented PLAN still writes NO placement key at a
 
 		const meta = result.finalized.artifact.meta as Record<string, unknown>;
 		assert.ok(!('standalone' in meta), `an epic-parented PLAN must write no standalone key, got ${JSON.stringify(meta['standalone'])}`);
-		const folder = folderFor(repo, meta as never, 'S001');
+		const folder = folderFor(repo, meta as never, 's1');
 		assert.ok(folder.includes('/docs/epics/'), `an epic item belongs under docs/epics, got ${folder}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -311,7 +311,7 @@ test('3a98d279 — a PLAN whose LLD carries a DIFFERENT label still takes the de
 		assert.equal(meta.epicSlug, HEAD_SLUG, 'the PLAN must carry the head\'s label');
 		assert.notEqual(meta.epicSlug, LLD_OWN_SLUG, 'and must NOT inherit the LLD\'s own');
 
-		const folder = folderFor(repo, result.finalized.artifact.meta as never, 'S001');
+		const folder = folderFor(repo, result.finalized.artifact.meta as never, 's1');
 		assert.ok(folder.includes(`${HEAD_SLUG}-E`), `must land in the head's folder, got ${folder}`);
 		assert.ok(!folder.includes(LLD_OWN_SLUG), `the LLD's label must name no folder, got ${folder}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -346,7 +346,7 @@ test('c00559b7 — finalizePlan writes PLAN.md into the anchor LLD\'s folder', a
 		// stamps a first-time LLD's own anchor.
 		const lldCreated = '2026-04-10T08:30:00.000Z';
 		seedApprovedLld(repo, { epicSlug: LLD_OWN_SLUG, createdAt: lldCreated, epicCreatedAt: ISSUE_MADE });
-		const lldFolder = folderFor(repo, { epicHash: HASH, epicSlug: LLD_OWN_SLUG, createdAt: lldCreated, epicCreatedAt: ISSUE_MADE, standalone: true }, 'S001');
+		const lldFolder = folderFor(repo, { epicHash: HASH, epicSlug: LLD_OWN_SLUG, createdAt: lldCreated, epicCreatedAt: ISSUE_MADE, standalone: true }, 's1');
 
 		const emit = { body: minimalPlanBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
 		const result = await finalizeArtifact(planIntent(repo), {}, 'wf-c005-plan', 5, emit, 'client');
@@ -356,7 +356,7 @@ test('c00559b7 — finalizePlan writes PLAN.md into the anchor LLD\'s folder', a
 		assert.equal(meta.epicSlug, LLD_OWN_SLUG, 'the PLAN inherits the LLD head\'s label, not its own focus');
 		assert.equal(meta.epicCreatedAt, ISSUE_MADE, 'and the LLD\'s anchor, not the plan stage\'s clock');
 		assert.equal(meta.standalone, true);
-		assert.equal(folderFor(repo, meta as never, 'S001'), lldFolder, 'one folder for the LLD and its PLAN');
+		assert.equal(folderFor(repo, meta as never, 's1'), lldFolder, 'one folder for the LLD and its PLAN');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -371,6 +371,6 @@ test('c00559b7 — a PLAN for a legacy UNFLAGGED LLD-only item is still placed u
 		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
 		const meta = result.finalized.artifact.meta as { standalone?: boolean };
 		assert.equal(meta.standalone, true);
-		assert.ok(folderFor(repo, meta as never, 'S001').includes('/docs/standalone/'));
+		assert.ok(folderFor(repo, meta as never, 's1').includes('/docs/standalone/'));
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

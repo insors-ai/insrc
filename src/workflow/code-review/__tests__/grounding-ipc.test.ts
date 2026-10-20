@@ -52,7 +52,7 @@ const groundingDeps: GroundingDeps = {
 };
 
 test('codeReview.grounding: returns { ok:true, grounding } with structured summaries when the subject resolves', async () => {
-	const res = await handlerCompose('/repo', 'epic', 's1', okSubjectDeps, groundingDeps);
+	const res = await handlerCompose('/repo', 'e1e1e1e1e1e1e1e1', 's1', okSubjectDeps, groundingDeps);
 	assert.equal(res.ok, true);
 	if (!res.ok) return;
 	assert.equal(res.grounding.symbols.length, 1);
@@ -61,7 +61,7 @@ test('codeReview.grounding: returns { ok:true, grounding } with structured summa
 });
 
 test('codeReview.grounding: a missing contract (S001) is NOT a decline — the subject resolves (mode B) and a grounding is still produced', async () => {
-	const res = await handlerCompose('/repo', 'epic', 's1', {
+	const res = await handlerCompose('/repo', 'e1e1e1e1e1e1e1e1', 's1', {
 		...okSubjectDeps,
 		requireApprovedLld: () => { throw new ArtifactMissingError('missing LLD'); },
 	}, groundingDeps);
@@ -72,7 +72,7 @@ test('codeReview.grounding: a missing contract (S001) is NOT a decline — the s
 });
 
 test('codeReview.grounding: no build yields { ok:false, reason:no-build-record }, never a grounding', async () => {
-	const res = await handlerCompose('/repo', 'epic', 's1', {
+	const res = await handlerCompose('/repo', 'e1e1e1e1e1e1e1e1', 's1', {
 		...okSubjectDeps,
 		changedFiles: async () => { throw new NoBuildChangesError('not a git repo'); },
 	}, groundingDeps);

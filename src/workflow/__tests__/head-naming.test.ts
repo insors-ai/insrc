@@ -135,7 +135,7 @@ test('c00559b7 — a first-time standalone LLD is labelled from storyTitle; a re
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-head-naming-'));
 	try {
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-		const params = { standalone: true, epicHash: '7e7e7e7e7e7e7e7e', storyId: 'S001', sizeClass: 'feature', storyTitle: TITLE };
+		const params = { standalone: true, epicHash: '7e7e7e7e7e7e7e7e', storyId: 's1', sizeClass: 'feature', storyTitle: TITLE };
 		const emit = { body: lldBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
 
 		// First time: nothing heads the work item yet, so the Story title names it.
@@ -145,7 +145,7 @@ test('c00559b7 — a first-time standalone LLD is labelled from storyTitle; a re
 
 		// Re-finalized: the earlier LLD is on disk and heads the work item, so its
 		// label holds even though this run carries a different Story title.
-		writeFileSync(join(repo, '.insrc', 'artifacts', 'LLD-7e7e7e7e7e7e7e7e-S001.json'),
+		writeFileSync(join(repo, '.insrc', 'artifacts', 'LLD-7e7e7e7e7e7e7e7e-s1.json'),
 			JSON.stringify({ meta: { epicSlug: 'the-label-it-already-has', createdAt: '2026-10-01T00:00:00.000Z', standalone: true }, body: {} }));
 		assert.equal(
 			await slugOf(intent('design.story', { ...params, storyTitle: 'A wholly different story title' }, repo), emit),

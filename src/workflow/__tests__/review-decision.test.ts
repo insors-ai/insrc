@@ -30,7 +30,7 @@ import type { FeedbackEntry } from '../artifacts/provenance/types.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = '8d4b90c9ab301e66';
-const ID = `LLD-${HASH}-S001`;
+const ID = `LLD-${HASH}-s1`;
 const DIR_REL = 'docs/standalone/demo-E202610138d4b90c9/S001';
 const MD_REL = `${DIR_REL}/LLD.md`;
 const HTML_REL = `${DIR_REL}/sequence-diagram.html`;
@@ -52,7 +52,7 @@ function makeFixture(opts: { meta?: Record<string, unknown>; reviewed?: boolean;
 	const jsonPath = join(repo, ARTIFACTS_DIR, `${ID}.json`);
 	writeFileSync(jsonPath, JSON.stringify({
 		meta: {
-			workflow: 'design.story', runId: 'wf-lld', schemaVersion: 1, epicHash: HASH, storyId: 'S001',
+			workflow: 'design.story', runId: 'wf-lld', schemaVersion: 1, epicHash: HASH, storyId: 's1',
 			standalone: true, createdAt: '2026-10-13T08:00:00.000Z', ...(opts.meta ?? {}),
 		},
 		body: {
@@ -435,15 +435,15 @@ test("handleReviewDecision on a BUILD record: approve goes through the same appr
 	const { listPendingArtifacts } = await import('../pending.js');
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-review-decision-build-'));
 	try {
-		const id = `BUILD-${HASH}-S001`;
+		const id = `BUILD-${HASH}-s1`;
 		const mdRel = `${DIR_REL}/BUILD.md`;
-		const meta = { workflow: 'build', epicHash: HASH, storyId: 'S001', standalone: true, epicSlug: 'demo', createdAt: '2026-10-13T08:00:00.000Z', epicCreatedAt: '2026-10-13T08:00:00.000Z' };
+		const meta = { workflow: 'build', epicHash: HASH, storyId: 's1', standalone: true, epicSlug: 'demo', createdAt: '2026-10-13T08:00:00.000Z', epicCreatedAt: '2026-10-13T08:00:00.000Z' };
 		mkdirSync(join(repo, DIR_REL), { recursive: true });
 		writeFileSync(join(repo, mdRel), `<!-- insrc:artifact ${id} -->\n\n# Build — Story S001\n`);
 		mkdirSync(join(repo, ARTIFACTS_DIR), { recursive: true });
 		const jsonPath = join(repo, ARTIFACTS_DIR, `${id}.json`);
 		writeFileSync(jsonPath, JSON.stringify({ meta, body: { summary: 'built' }, citations: [] }, null, 2) + '\n');
-		writeFileSync(join(repo, ARTIFACTS_DIR, `CR-${HASH}-S001.json`), JSON.stringify({ meta: { ...meta, workflow: 'code-review' }, body: { verdict: 'pass' } }));
+		writeFileSync(join(repo, ARTIFACTS_DIR, `CR-${HASH}-s1.json`), JSON.stringify({ meta: { ...meta, workflow: 'code-review' }, body: { verdict: 'pass' } }));
 		const listed = (): boolean => listPendingArtifacts(repo).some(a => a.artifactId === id);
 		assert.equal(listed(), true);
 		const ask = async (req: Record<string, unknown>, deps: ReviewDecisionDeps): Promise<ReviewDecisionResult | { error: string }> =>

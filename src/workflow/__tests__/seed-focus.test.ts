@@ -200,7 +200,7 @@ function standaloneLldIntent(params: Record<string, unknown>): WorkflowIntent {
 	return {
 		workflow: 'design.story', focus: 'a standalone feature seeded from a spec', repoPath: '/tmp/x',
 		repoIndexedAt: null,
-		params: { standalone: true, epicHash: 'b33a91366899e169', storyId: 'S001', sizeClass: 'feature', ...params },
+		params: { standalone: true, epicHash: 'b33a91366899e169', storyId: 's1', sizeClass: 'feature', ...params },
 	};
 }
 

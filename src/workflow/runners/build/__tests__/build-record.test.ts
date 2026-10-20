@@ -659,7 +659,7 @@ test('t4 — a record carrying standalone true is placed under docs/standalone',
 	const r = t4Repo();
 	try {
 		const { md } = persistBuildRecord(r.repo, {
-			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 'S001', createdAt: T4_CREATED, updatedAt: T4_CREATED, standalone: true },
+			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 's1', createdAt: T4_CREATED, updatedAt: T4_CREATED, standalone: true },
 			body: { tasks: [] },
 		});
 		assert.ok(md.includes('/docs/standalone/'), `expected a standalone placement, got ${md}`);
@@ -672,7 +672,7 @@ test('t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the f
 	try {
 		// First write: the flag is true, so the record is placed as standalone.
 		const first = persistBuildRecord(r.repo, {
-			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 'S001', createdAt: T4_CREATED, updatedAt: T4_CREATED, standalone: true },
+			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 's1', createdAt: T4_CREATED, updatedAt: T4_CREATED, standalone: true },
 			body: { tasks: [] },
 		});
 		assert.ok(first.md.includes('/docs/standalone/'));
@@ -681,7 +681,7 @@ test('t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the f
 		// write takes when the definition artifact is unreadable. mergeWithPrior
 		// must carry the prior true forward.
 		const second = persistBuildRecord(r.repo, {
-			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 'S001', createdAt: T4_CREATED, updatedAt: T4_CREATED },
+			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 's1', createdAt: T4_CREATED, updatedAt: T4_CREATED },
 			body: { tasks: [], summary: 'second write' },
 		});
 		assert.equal(second.md, first.md,
@@ -698,7 +698,7 @@ test('t4 — an omitted flag on a FIRST write still reads as epic, so nothing is
 	const r = t4Repo();
 	try {
 		const { md } = persistBuildRecord(r.repo, {
-			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 'S001', createdAt: T4_CREATED, updatedAt: T4_CREATED },
+			meta: { workflow: 'build', epicHash: T4_HASH, storyId: 's1', createdAt: T4_CREATED, updatedAt: T4_CREATED },
 			body: { tasks: [] },
 		});
 		assert.ok(md.includes('/docs/epics/'), 'absent means epic — only an explicit true is standalone');
@@ -708,7 +708,7 @@ test('t4 — an omitted flag on a FIRST write still reads as epic, so nothing is
 test('t5 — a standalone record renders the standalone heading and "Standalone: yes", not the plan-driven title', () => {
 	const md = renderBuildRecordMd({
 		meta: {
-			workflow: 'build', epicHash: T4_HASH, storyId: 'S001',
+			workflow: 'build', epicHash: T4_HASH, storyId: 's1',
 			createdAt: T4_CREATED, updatedAt: T4_CREATED,
 			standalone: true, sizeClass: 'bugfix',
 		},
@@ -725,7 +725,7 @@ test('t5 — the render keys on sizeClass, so it survives a record whose flag is
 	// change does not quietly reintroduce the flag-dependent dispatch.
 	const md = renderBuildRecordMd({
 		meta: {
-			workflow: 'build', epicHash: T4_HASH, storyId: 'S001',
+			workflow: 'build', epicHash: T4_HASH, storyId: 's1',
 			createdAt: T4_CREATED, updatedAt: T4_CREATED, sizeClass: 'bugfix',
 		},
 		body: { tasks: [] },
@@ -810,31 +810,31 @@ test('a build record with testRecord renders a line that links to TESTS.md, carr
 test('with a test record on disk and no build record, a first build record written by each of its three writers takes the test record\'s createdAt and lands in its folder', async () => {
 	const T0 = '2026-03-01T10:00:00.000Z';   // the test record's first write
 	const LATER = '2026-03-05T09:00:00.000Z'; // the build record's own clock, four days on
-	const testTask = { taskId: 'S001', ranAt: T0, testsPassed: true, tests: [], files: [] };
+	const testTask = { taskId: 's1', ranAt: T0, testsPassed: true, tests: [], files: [] };
 	const folderOf = (p: string): string => p.slice(0, p.lastIndexOf('/'));
 
 	// 1. The validate turn's write (the general writer), on a Story with no other anchor.
 	await withRepo(async (repo) => {
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: T0, standalone: true }, testTask);
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 'S001', createdAt: LATER, updatedAt: LATER }, body: { tasks: [{ id: 'S001', passed: true }] } });
+		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
+		const build = persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: LATER, updatedAt: LATER }, body: { tasks: [{ id: 's1', passed: true }] } });
 		assert.equal(readJson(build.json).meta['createdAt'], T0);
 		assert.equal(readJson(build.json).meta['standalone'], true, 'the route flag is taken when the write states none');
 		assert.equal(readJson(build.json).meta['updatedAt'], LATER);
 		assert.equal(folderOf(build.md), folderOf(tests.md));
 		assert.match(build.md, /E20260301abc123de\/S001\/BUILD\.md$/);
-		assert.equal(readTestRecord(repo, HASH, 'S001')!.meta.createdAt, T0);
+		assert.equal(readTestRecord(repo, HASH, 's1')!.meta.createdAt, T0);
 	});
 	// 2. The implement turn of the trivial route (the standalone wrapper).
 	await withRepo(async (repo) => {
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: T0, standalone: true }, testTask);
-		const build = persistStandaloneBuildRecord(repo, { meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 'S001', createdAt: LATER }, body: { focus: 'x', producesLld: false } });
+		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
+		const build = persistStandaloneBuildRecord(repo, { meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: HASH, storyId: 's1', createdAt: LATER }, body: { focus: 'x', producesLld: false } });
 		assert.equal(readJson(build.json).meta['createdAt'], T0);
 		assert.equal(folderOf(build.md), folderOf(tests.md));
 	});
 	// 3. The completion path.
 	await withRepo(async (repo) => {
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: T0, standalone: true }, testTask);
-		const build = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 'S001' }, async () => []);
+		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
+		const build = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' }, async () => []);
 		assert.ok(build !== undefined);
 		assert.equal(readJson(build.json).meta['createdAt'], T0);
 		assert.equal(folderOf(build.md), folderOf(tests.md));
@@ -847,9 +847,9 @@ test('with a test record on disk and no build record, a first build record writt
 		assert.equal(readJson(build.json).meta['standalone'], false);
 	});
 	await withRepo(async (repo) => {
-		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 'S001', createdAt: LATER, updatedAt: LATER }, body: { tasks: [] } });
-		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 'S001', now: T0, standalone: true }, testTask);
-		persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 'S001', createdAt: T0, updatedAt: T0 }, body: { tasks: [] } });
+		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 's1', createdAt: LATER, updatedAt: LATER }, body: { tasks: [] } });
+		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, testTask);
+		persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: T0, updatedAt: T0 }, body: { tasks: [] } });
 		assert.equal(readJson(build.json).meta['createdAt'], LATER);
 		assert.equal(folderOf(tests.md), folderOf(build.md));
 	});

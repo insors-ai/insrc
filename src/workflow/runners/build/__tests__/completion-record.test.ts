@@ -140,8 +140,8 @@ test('parse round-trip: buildArtifactId round-trips through parseBuildArtifactRe
 		{ epicHash: HASH, storyId: 's2' },
 	);
 	assert.deepEqual(
-		parseBuildArtifactRef(join(dir, buildArtifactId('abc', 's2-x') + '.json')),
-		{ epicHash: 'abc', storyId: 's2-x' },
+		parseBuildArtifactRef(join(dir, buildArtifactId('abc123abc123abc1', 's2') + '.json')),
+		{ epicHash: 'abc123abc123abc1', storyId: 's2' },
 	);
 	// a non-BUILD basename and a missing story component yield undefined
 	assert.equal(parseBuildArtifactRef(join(dir, `LLD-${HASH}-s2.json`)), undefined);
@@ -215,10 +215,10 @@ test('t4 — an ISSUE-anchored work item gets standalone true and lands under do
 			JSON.stringify({ meta: { createdAt: '2026-10-02T12:00:00.000Z', epicSlug: 'a-real-label', standalone: true } }),
 		);
 
-		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: T4_ISSUE_HASH, storyId: 'S001' }, async () => ['x.ts']);
+		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: T4_ISSUE_HASH, storyId: 's1' }, async () => ['x.ts']);
 		assert.ok(out !== undefined);
 
-		const rec = readJson(artifactJsonPath(repo, buildArtifactId(T4_ISSUE_HASH, 'S001')));
+		const rec = readJson(artifactJsonPath(repo, buildArtifactId(T4_ISSUE_HASH, 's1')));
 		assert.equal(rec.meta['standalone'], true, 'the placement is inherited from the ISSUE, not omitted');
 		assert.ok(out.md.includes('/docs/standalone/'), `expected a standalone placement, got ${out.md}`);
 		assert.ok(!out.md.includes('/docs/epics/'));

@@ -53,7 +53,7 @@ function mkRepo(): { repo: string; dir: string; cleanup: () => void } {
 
 /** A standalone feature: an LLD (optionally unflagged, as legacy ones are) and its PLAN. */
 function seedStandalone(dir: string, hash: string, slug: string, opts: { flagged?: boolean | undefined; storyId?: string | undefined } = {}): void {
-	const storyId = opts.storyId ?? 'S001';
+	const storyId = opts.storyId ?? 's1';
 	writeJson(join(dir, `LLD-${hash}-${storyId}.json`), {
 		meta: {
 			workflow: 'design.story', epicHash: hash, epicSlug: slug, storyId,
@@ -100,7 +100,7 @@ test('c00559b7 — an LLD-only work item is enumerated and its identity comes fr
 		seedStandalone(r.dir, LLD_HASH, 'standalone-feature');
 		// An epic-level reference is minted from the identity alone, so it isolates
 		// readEpicIdentity: slug from the LLD, anchor from its stamped epicCreatedAt.
-		const story = resolveWorkflowRef(r.repo, 'S001', { epicHash: LLD_HASH });
+		const story = resolveWorkflowRef(r.repo, 's1', { epicHash: LLD_HASH });
 		assert.equal(story?.epicSlug, 'standalone-feature');
 		assert.equal(story?.createdAt, LLD_ANCHOR);
 		assert.equal(story?.workflowId, `E20261009${LLD_HASH.slice(0, 8)}:S001`);
@@ -134,7 +134,7 @@ test('c00559b7 — with no head at all a hash is not enumerated', () => {
 	const r = mkRepo();
 	try {
 		// A PLAN alone heads nothing.
-		writeJson(join(r.dir, `PLAN-${LLD_HASH}-S001.json`), { meta: { epicHash: LLD_HASH, storyId: 'S001', createdAt: LLD_MADE }, body: { tasks: [TASK] } });
+		writeJson(join(r.dir, `PLAN-${LLD_HASH}-s1.json`), { meta: { epicHash: LLD_HASH, storyId: 's1', createdAt: LLD_MADE }, body: { tasks: [TASK] } });
 		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1', { epicHash: LLD_HASH }), null);
 		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1'), null);
 	} finally { r.cleanup(); }
@@ -190,8 +190,8 @@ test('c00559b7 — the bugfix\'s implied S001 still outranks an LLD-only item th
 	const r = mkRepo();
 	try {
 		seedBugfix(r.dir);
-		writeJson(join(r.dir, `PLAN-${ISSUE_HASH}-S001.json`), {
-			meta: { workflow: 'plan', epicHash: ISSUE_HASH, storyId: 'S001', createdAt: ISSUE_MADE },
+		writeJson(join(r.dir, `PLAN-${ISSUE_HASH}-s1.json`), {
+			meta: { workflow: 'plan', epicHash: ISSUE_HASH, storyId: 's1', createdAt: ISSUE_MADE },
 			body: { tasks: [{ ...TASK, title: 'The bugfix task' }] },
 		});
 		// Without the PLAN the ISSUE's evidence would be 'implied'; with it,
@@ -199,8 +199,8 @@ test('c00559b7 — the bugfix\'s implied S001 still outranks an LLD-only item th
 		seedStandalone(r.dir, LLD_HASH, 'standalone-feature');
 		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1')?.task?.title, 'The bugfix task');
 
-		rmSync(join(r.dir, `PLAN-${ISSUE_HASH}-S001.json`));
-		assert.equal(resolveWorkflowRef(r.repo, 'S001')?.epicHash, ISSUE_HASH, 'the implied tier still ranks above LLD heads');
+		rmSync(join(r.dir, `PLAN-${ISSUE_HASH}-s1.json`));
+		assert.equal(resolveWorkflowRef(r.repo, 's1')?.epicHash, ISSUE_HASH, 'the implied tier still ranks above LLD heads');
 	} finally { r.cleanup(); }
 });
 

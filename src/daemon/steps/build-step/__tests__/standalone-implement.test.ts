@@ -19,14 +19,14 @@ import type { BuildStepImplement, BuildStepError } from '../types.js';
 // ---------------------------------------------------------------------------
 
 test('admitStandaloneBuild: trivial (no LLD) is admitted directly', () => {
-	const v = admitStandaloneBuild('/repo', '0123456789abcdef', 'S001', false);
+	const v = admitStandaloneBuild('/repo', '0123456789abcdef', 's1', false);
 	assert.equal(v.admitted, true);
 });
 
 test('admitStandaloneBuild: Small with a missing LLD refuses (plan-missing)', () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-sa-'));
 	try {
-		const v = admitStandaloneBuild(dir, standaloneEpicHashFromFocus('x'), 'S001', true);
+		const v = admitStandaloneBuild(dir, standaloneEpicHashFromFocus('x'), 's1', true);
 		assert.equal(v.admitted, false);
 		if (!v.admitted) assert.equal(v.refusal.reason, 'plan-missing');
 	} finally {
@@ -57,7 +57,7 @@ test('trivial standalone build: admits, renders a scope-driven prompt, and persi
 
 		// The tracking record is on disk (the trivial change's only ledger entry).
 		const hash = standaloneEpicHashFromFocus('Fix a typo in the status log line');
-		const json = join(dir, '.insrc/artifacts', `BUILD-${hash}-S001.json`);
+		const json = join(dir, '.insrc/artifacts', `BUILD-${hash}-s1.json`);
 		assert.ok(existsSync(json), 'standalone BUILD record json written');
 		const rec = JSON.parse(readFileSync(json, 'utf8'));
 		assert.equal(rec.meta.standalone, true);

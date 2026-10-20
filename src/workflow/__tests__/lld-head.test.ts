@@ -51,7 +51,7 @@ test('c00559b7 — a DEF beats an ISSUE and an LLD, and reports headKind DEF wit
 	try {
 		r.seed(`DEF-${HASH}`,        { createdAt: DEF_MADE, epicSlug: 'the-def', tracker: TRACKER });
 		r.seed(`ISSUE-${HASH}`,      { createdAt: ISSUE_MADE, epicSlug: 'the-issue', standalone: true });
-		r.seed(`LLD-${HASH}-S001`,   { createdAt: LLD_MADE, epicSlug: 'the-lld', standalone: true });
+		r.seed(`LLD-${HASH}-s1`,   { createdAt: LLD_MADE, epicSlug: 'the-lld', standalone: true });
 		const core = readEpicDefinitionCore(r.repo, HASH);
 		assert.equal(core.headKind, 'DEF');
 		assert.equal(core.epicSlug, 'the-def');
@@ -65,7 +65,7 @@ test('c00559b7 — an ISSUE beats an LLD, keeps its own fields and carries its t
 	const r = repo();
 	try {
 		r.seed(`ISSUE-${HASH}`,    { createdAt: ISSUE_MADE, epicSlug: 'the-issue', standalone: true, tracker: TRACKER });
-		r.seed(`LLD-${HASH}-S001`, { createdAt: LLD_MADE, epicSlug: 'the-lld', standalone: true });
+		r.seed(`LLD-${HASH}-s1`, { createdAt: LLD_MADE, epicSlug: 'the-lld', standalone: true });
 		const core = readEpicDefinitionCore(r.repo, HASH);
 		assert.deepEqual(core, { createdAt: ISSUE_MADE, epicSlug: 'the-issue', standalone: true, tracker: TRACKER, headKind: 'ISSUE' });
 	} finally { r.cleanup(); }
@@ -74,7 +74,7 @@ test('c00559b7 — an ISSUE beats an LLD, keeps its own fields and carries its t
 test('c00559b7 — a lone flagged LLD heads its work item, anchored on its epicCreatedAt', () => {
 	const r = repo();
 	try {
-		r.seed(`LLD-${HASH}-S001`, { createdAt: LLD_MADE, epicCreatedAt: LLD_ANCHOR, epicSlug: 'the-lld', standalone: true });
+		r.seed(`LLD-${HASH}-s1`, { createdAt: LLD_MADE, epicCreatedAt: LLD_ANCHOR, epicSlug: 'the-lld', standalone: true });
 		const core = readEpicDefinitionCore(r.repo, HASH);
 		assert.equal(core.headKind, 'LLD');
 		assert.equal(core.epicSlug, 'the-lld');
@@ -86,7 +86,7 @@ test('c00559b7 — a lone flagged LLD heads its work item, anchored on its epicC
 test('c00559b7 — a legacy UNFLAGGED lone LLD still heads its work item and reports standalone: true', () => {
 	const r = repo();
 	try {
-		r.seed(`LLD-${HASH}-S001`, { createdAt: LLD_MADE, epicSlug: 'the-lld' });
+		r.seed(`LLD-${HASH}-s1`, { createdAt: LLD_MADE, epicSlug: 'the-lld' });
 		const core = readEpicDefinitionCore(r.repo, HASH);
 		assert.equal(core.headKind, 'LLD');
 		assert.equal(core.standalone, true, 'a work item with no DEF is never an epic');
@@ -98,11 +98,11 @@ test('c00559b7 — the lowest-ordinal Story\'s LLD wins, compared numerically', 
 	const r = repo();
 	try {
 		r.seed(`LLD-${HASH}-S010`, { createdAt: LLD_MADE, epicSlug: 'story-ten' });
-		r.seed(`LLD-${HASH}-S002`, { createdAt: LLD_MADE, epicSlug: 'story-two' });
-		r.seed(`LLD-${HASH}-S009`, { createdAt: LLD_MADE, epicSlug: 'story-nine' });
+		r.seed(`LLD-${HASH}-s2`, { createdAt: LLD_MADE, epicSlug: 'story-two' });
+		r.seed(`LLD-${HASH}-s9`, { createdAt: LLD_MADE, epicSlug: 'story-nine' });
 		assert.equal(readEpicDefinitionCore(r.repo, HASH).epicSlug, 'story-two');
 		// Another work item's LLD is never consulted.
-		r.seed(`LLD-ffffffffffffffff-S001`, { createdAt: LLD_MADE, epicSlug: 'someone-else' });
+		r.seed(`LLD-ffffffffffffffff-s1`, { createdAt: LLD_MADE, epicSlug: 'someone-else' });
 		assert.equal(readEpicDefinitionCore(r.repo, HASH).epicSlug, 'story-two');
 	} finally { r.cleanup(); }
 });
@@ -110,11 +110,11 @@ test('c00559b7 — the lowest-ordinal Story\'s LLD wins, compared numerically', 
 test('c00559b7 — a malformed lowest-ordinal LLD is no head: the result is {}', () => {
 	const r = repo();
 	try {
-		writeAtomic(join(r.repo, '.insrc/artifacts', `LLD-${HASH}-S001.json`), '{ not json');
-		r.seed(`LLD-${HASH}-S002`, { createdAt: LLD_MADE, epicSlug: 'story-two' });
+		writeAtomic(join(r.repo, '.insrc/artifacts', `LLD-${HASH}-s1.json`), '{ not json');
+		r.seed(`LLD-${HASH}-s2`, { createdAt: LLD_MADE, epicSlug: 'story-two' });
 		assert.deepEqual(readEpicDefinitionCore(r.repo, HASH), {});
 		// And an LLD that parses but carries none of the head fields is no head either.
-		r.seed(`LLD-${HASH}-S001`, { workflow: 'design.story' });
+		r.seed(`LLD-${HASH}-s1`, { workflow: 'design.story' });
 		assert.deepEqual(readEpicDefinitionCore(r.repo, HASH), {});
 	} finally { r.cleanup(); }
 });
@@ -142,32 +142,32 @@ test('c00559b7 — a non-object tracker is ignored rather than passed through', 
 test('c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS records under docs/standalone, in the LLD\'s folder', () => {
 	const r = repo();
 	try {
-		r.seed(`LLD-${HASH}-S001`, { createdAt: LLD_MADE, epicSlug: 'legacy-feature' });
+		r.seed(`LLD-${HASH}-s1`, { createdAt: LLD_MADE, epicSlug: 'legacy-feature' });
 		const folder = join(r.repo, 'docs/standalone', `legacy-feature-E20260903${HASH.slice(0, 8)}`, 'S001');
 
-		assert.equal(inheritedStoryStandalone(r.repo, HASH, 'S001'), true);
+		assert.equal(inheritedStoryStandalone(r.repo, HASH, 's1'), true);
 		assert.deepEqual(
-			storyRecordFolderArgs(r.repo, HASH, 'S001', { ownCreatedAt: '2026-10-11T00:00:00.000Z' }),
+			storyRecordFolderArgs(r.repo, HASH, 's1', { ownCreatedAt: '2026-10-11T00:00:00.000Z' }),
 			{ createdAtISO: LLD_MADE, workItemKind: 'standalone', epicSlug: 'legacy-feature' },
 		);
 
 		// The BUILD record exactly as the shared validate persist writes it: no
 		// standalone key, created today.
 		const build = buildRecordPathsFor(r.repo, {
-			meta: { workflow: 'build', epicHash: HASH, storyId: 'S001', createdAt: '2026-10-11T00:00:00.000Z' },
+			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-10-11T00:00:00.000Z' },
 			body: { tasks: [] },
 		} as never);
 		assert.equal(build.md, join(folder, 'BUILD.md'));
 
-		const tests = testRecordPaths(r.repo, HASH, 'S001', { now: '2026-10-11T00:00:00.000Z' });
+		const tests = testRecordPaths(r.repo, HASH, 's1', { now: '2026-10-11T00:00:00.000Z' });
 		assert.equal(tests.md, join(folder, 'TESTS.md'));
 	} finally { r.cleanup(); }
 });
 
 test('c00559b7 — compareStoryOrdinal orders by ordinal, then by id, for both id spellings', () => {
-	assert.deepEqual(['S010', 's2', 'S002', 'S001', 's10'].sort(compareStoryOrdinal), ['S001', 'S002', 's2', 'S010', 's10']);
+	assert.deepEqual(['S010', 's2', 's2', 's1', 's10'].sort(compareStoryOrdinal), ['s1', 's2', 's2', 'S010', 's10']);
 });
 
 test('c00559b7 — compareStoryOrdinal uses the canonical story-id parse: a non-story id sorts last', () => {
-	assert.deepEqual(['S002', 'draft', 'S001x', 's1'].sort(compareStoryOrdinal), ['s1', 'S002', 'draft', 'S001x']);
+	assert.deepEqual(['s2', 'draft', 'S001x', 's1'].sort(compareStoryOrdinal), ['s1', 's2', 'draft', 'S001x']);
 });

@@ -41,7 +41,7 @@ import { buildAuthorParty, codeReviewRunStart } from '../code-review-rpc.js';
 import type { CodeReviewRunDeps } from '../code-review-rpc.js';
 
 const EPIC = 'abcd1234ef567890';
-const STORY = 'S001';
+const STORY = 's1';
 
 function repoWith(buildMeta?: Record<string, unknown>): { repo: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-cr-rpc-'));
@@ -86,7 +86,7 @@ test('T12 the daemon refuses to review code the daemon wrote: an error frame, no
 		assert.equal(f.stream, 'error');
 		const data = f.data as { error: string; reason?: string; recoverable: boolean };
 		assert.equal(data.reason, 'same-party-review');
-		assert.match(data.error, /Same-party review refused: the code of Story S001 was authored by the daemon/);
+		assert.match(data.error, /Same-party review refused: the code of Story s1 was authored by the daemon/);
 		assert.match(data.error, /controller review \(.*insrc_code_review_step.*\) or an override reason at approval/);
 		assert.equal(calls.provider, 0, 'no provider is built');
 		assert.deepEqual(calls.review, [], 'no review is run, so nothing is stamped');

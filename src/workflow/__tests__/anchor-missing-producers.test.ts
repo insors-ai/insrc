@@ -18,6 +18,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { MissingAnchorError } from '../artifact-ids.js';
+import { approveArtifactByJsonPath } from '../gates.js';
+import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import { finalizeArtifact } from '../orchestrator.js';
 import { pathsForWorkflow, requireEpicAnchor } from '../storage.js';
 import { _setAutoPushDepsForTests, autoPushEpicOnHld, autoPushStoryOnLld } from '../tracker-auto.js';
@@ -117,6 +119,62 @@ test('the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize ea
 		}
 		assert.deepEqual(listing(hld.repo), before, 'the finalizer wrote nothing');
 	} finally { hld.done(); }
+
+	// the design.story (epic route) finalizer: an approved Define and HLD that carry no creation time
+	const story = tempRepo();
+	try {
+		const art = (id: string, doc: unknown): string => { const p = join(story.repo, '.insrc', 'artifacts', `${id}.json`); writeFileSync(p, JSON.stringify(doc, null, 2)); return p; };
+		const defJson = art(`DEF-${HASH}`, {
+			meta: { workflow: 'define', runId: 'def-x', schemaVersion: 1, epicHash: HASH, epicSlug: SLUG },
+			body: {
+				flavor: 'new-capability', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
+				stories: [
+					{ id: 's1', title: 'Owns sc1', userValue: 'v', acceptanceCriteria: [], dependsOn: [] },
+					{ id: 's2', title: 'Consumer', userValue: 'v', acceptanceCriteria: [], dependsOn: [] },
+				],
+				openQuestions: [],
+			},
+			citations: [],
+		});
+		stampOtherPartyReview(defJson);
+		approveArtifactByJsonPath(defJson);
+		const hldJson = art(`HLD-${HASH}`, {
+			meta: { workflow: 'design.epic', runId: 'hld-x', schemaVersion: 1, epicHash: HASH, epicSlug: SLUG },
+			body: {
+				frameworkSummary: 'x', architectureShape: 'x [[c1]]',
+				sharedContracts: [{ id: 'sc1', name: 'A', purpose: 'p', interfaceSketch: 'interface A {}', ownedByStory: 's1', consumedByStories: ['s2'], assumptions: [] }],
+				storyBoundaries: [
+					{ storyId: 's1', owns: ['sc1'], depends: [], internal: 's1 owns sc1' },
+					{ storyId: 's2', owns: [], depends: ['sc1'], internal: 's2 consumes sc1' },
+				],
+				nonFunctional: {},
+				rolloutOverview: { phases: [{ name: 'A', includesStories: ['s1', 's2'], rationale: 'x', backwardCompat: '', featureFlag: null }], orderingRationale: 'x', riskyBits: [] },
+				alternativesConsidered: [{ id: 'a1', name: 'x', oneLineSummary: 'x', approach: 'x', pros: ['x'], cons: ['x'], costEstimate: 'S' }],
+				chosenAlternative: 'a1', openQuestions: [],
+			},
+			citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
+		});
+		stampOtherPartyReview(hldJson);
+		approveArtifactByJsonPath(hldJson);
+		const before = listing(story.repo);
+		const lldBody = {
+			hldContextSlice: { frameworkSummary: 'x', ownedContracts: [], consumedContracts: [], boundary: { storyId: 's2', owns: [], depends: ['sc1'], internal: 'x' }, adjacentBoundaries: [], rolloutPhase: 'A', nonFunctional: {} },
+			contractDetails: { surfaceLevel: 'internal', api: [] }, dataModelChanges: [],
+			interactionWithShared: [{ contractId: 'sc1', role: 'consumes', howDetails: 'legit' }],
+			errorPaths: { errorCases: [], edgeCases: [], invariantsToPreserve: [] },
+			testStrategy: { testLevels: [], acceptanceMapping: [], testFramework: 'node:test' },
+			alternativesConsidered: [{ id: 'a1', name: 'n', oneLineSummary: 'x', approach: 'x', pros: ['x'], cons: ['x'], costEstimate: 'S' }],
+			chosenAlternative: 'a1', openQuestions: [],
+		};
+		const storyIntent = { workflow: 'design.story', repoPath: story.repo, focus: 'a story', params: { epicHash: HASH, storyId: 's2' }, repoIndexedAt: null } as unknown as WorkflowIntent;
+		const out = await finalizeArtifact(storyIntent, {}, 'wf-story', 5, { body: lldBody, citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }] }, 'client');
+		assert.equal(out.ok, false);
+		if (!out.ok && !out.failure.ok) {
+			assert.equal(out.failure.retryable, false);
+			assert.match(out.failure.message, /no Epic anchor/);
+		}
+		assert.deepEqual(listing(story.repo), before, 'the finalizer wrote nothing');
+	} finally { story.done(); }
 
 	// tracker-auto, team and legacy: no issue is created and no file is touched
 	for (const mode of ['team', 'legacy'] as const) {

@@ -184,7 +184,7 @@ test('plan happy path: writes a PlanArtifact under docs/epics/<slug>-E.../S<nnn>
 		assert.ok(existsSync(outPath));
 		const md = readFileSync(outPath, 'utf8');
 		// With a valid createdAt the title leads with the hierarchical story id.
-		assert.ok(/# Plan: E\d{8}[0-9a-f]{8}:S001\b/.test(md), md.split('\n').find(l => l.startsWith('# Plan:')));
+		assert.ok(/# Plan: STORY-[0-9a-f]{16}-s1\b/.test(md), md.split('\n').find(l => l.startsWith('# Plan:')));
 		assert.ok(md.includes('**`t1`**'));
 		assert.ok(md.includes('| 1 |'));               // ordered
 		assert.ok(md.includes('unit: filter by tag')); // tests rendered

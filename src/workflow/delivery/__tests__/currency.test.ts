@@ -149,10 +149,9 @@ test('a review stamped before its record, a standalone design and malformed fiel
 		defRecord(EPIC, ['s1', 's2', 's3', 's4']),
 		hldRecord(EPIC, { runId: RUN }),
 		lld('s1', current, early),                                              // review older than the record
-		lldRecord('cccccccccccccccc', 'S001', { ...REVIEW, standalone: true, hldEffectiveHash: current }),
+		lldRecord('cccccccccccccccc', 's1', { ...REVIEW, standalone: true, hldEffectiveHash: current }),
 		lld('s2', current, { hldEffectiveHash: 42, hldAmendmentsApplied: 'none' }), // wrong types
 		lld('s3', current, { review: 'not a review' }),                          // no review
-		recordFromFile(`LLD-${EPIC}-S003.json`, { meta: { ...REVIEW, createdAt: CREATED, epicHash: EPIC, storyId: 'S003', hldBaseRunId: RUN, hldEffectiveHash: current }, body: {} }),
 		planRecord(EPIC, 's4', ['t1'], { ...REVIEW, lldRunId: 'x' }),            // a story with no LLD
 	];
 	let result: CurrencyPassResult | undefined;
@@ -162,10 +161,9 @@ test('a review stamped before its record, a standalone design and malformed fiel
 	const stamped = currencyOf(result, `LLD-${EPIC}-s1`);
 	assert.equal(stamped.reviewCurrency, 'stale');
 	assert.match(stamped.basis ?? '', /precedes createdAt/);
-	assert.equal(currencyOf(result, 'LLD-cccccccccccccccc-S001').reviewCurrency, 'unknown', 'a standalone design has no HLD to compare');
+	assert.equal(currencyOf(result, 'LLD-cccccccccccccccc-s1').reviewCurrency, 'unknown', 'a standalone design has no HLD to compare');
 	assert.equal(currencyOf(result, `LLD-${EPIC}-s2`).reviewCurrency, 'unknown');
 	assert.equal(currencyOf(result, `LLD-${EPIC}-s3`).reviewCurrency, null);
-	assert.equal(currencyOf(result, `LLD-${EPIC}-S003`).reviewCurrency, 'unknown', 'two LLDs on one story (s3 and S003): none is compared');
 	assert.equal(currencyOf(result, `PLAN-${EPIC}-s4`).reviewCurrency, 'unknown');
 
 	// An epic with no HLD record.
@@ -205,12 +203,12 @@ test('an extension story stays in the view and its extension newer than the epic
 });
 
 test('an item no record gives a title stays in the view with an incomplete-evidence notice', () => {
-	const { graph, result } = run([buildRecord('eeeeeeeeeeeeeeee', 'S001', [{ id: 't1', passed: true }])]);
-	const story = holderOf(graph, 'BUILD-eeeeeeeeeeeeeeee-S001', 'story');
+	const { graph, result } = run([buildRecord('eeeeeeeeeeeeeeee', 's1', [{ id: 't1', passed: true }])]);
+	const story = holderOf(graph, 'BUILD-eeeeeeeeeeeeeeee-s1', 'story');
 	assert.equal(story.title, null);
 	const notice = result.notices.find(n => n.code === 'incomplete-evidence' && n.itemIds.includes(story.id));
 	assert.ok(notice, 'an incomplete-evidence notice on the untitled story');
-	assert.deepEqual(notice.artifactIds, ['BUILD-eeeeeeeeeeeeeeee-S001']);
+	assert.deepEqual(notice.artifactIds, ['BUILD-eeeeeeeeeeeeeeee-s1']);
 	assert.match(notice.message, /no record gives .* a title/);
 });
 
@@ -255,7 +253,6 @@ const STORE_FILES: Readonly<Record<string, unknown>> = {
 	[`DEF-${EPIC}.json`]:      { meta: { epicHash: EPIC, createdAt: CREATED, epicCreatedAt: CREATED, epicSlug: 'e1' }, body: { stories: [{ id: 's1', title: 'One' }, { id: 's2', title: 'Two' }, { id: 's3', title: 'Three' }] } },
 	[`LLD-${EPIC}-s1.json`]:   { meta: { epicHash: EPIC, storyId: 's1', createdAt: CREATED, ...REVIEW }, body: {} },
 	[`LLD-${EPIC}-s3.json`]:   { meta: { epicHash: EPIC, storyId: 's3', createdAt: CREATED, ...REVIEW }, body: {} },
-	[`LLD-${EPIC}-S003.json`]: { meta: { epicHash: EPIC, storyId: 'S003', createdAt: CREATED, ...REVIEW }, body: {} },
 	[BAD_FILE]:                '{ "meta": { "epicHash": ',
 };
 
@@ -299,7 +296,6 @@ test('producing the currency annotation changes no file in the artifact store', 
 		const set = loadArtifactRecordSet(repo);
 		const result = deriveCurrency(buildWorkItemGraph(set), set);
 		assert.equal(set.failures.length, 1, 'the malformed file is among the inputs');
-		assert.ok(result.notices.some(n => n.message.includes('several LLD records')), 'the s3 / S003 pair is among the inputs');
 		assert.deepEqual(snapshotTree(repo), before);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });

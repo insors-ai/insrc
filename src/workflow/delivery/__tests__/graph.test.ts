@@ -62,34 +62,34 @@ test('a story with LLD, PLAN, BUILD and CR is one item with all four as evidence
 	assert.deepEqual(graph.notices, []);
 });
 
-test('s1 and S001 records join one story and both raw ids are kept in sourceIds', () => {
+test('the LLD and BUILD of one story join one story node, keeping its id in sourceIds', () => {
 	const graph = buildWorkItemGraph(recordSet([
 		defRecord(EPIC, ['s1']),
 		lldRecord(EPIC, 's1'),
-		buildRecord(EPIC, 'S001', [{ id: 't1', passed: true }]),
+		buildRecord(EPIC, 's1', [{ id: 't1', passed: true }]),
 	]));
 	const stories = [...graph.items.values()].filter(n => n.kind === 'story');
 	assert.equal(stories.length, 1);
-	assert.deepEqual(stories[0]?.sourceIds, ['S001', 's1']);
-	assert.deepEqual(stories[0]?.evidenceArtifactIds, [`BUILD-${EPIC}-S001`, `LLD-${EPIC}-s1`]);
+	assert.deepEqual(stories[0]?.sourceIds, ['s1']);
+	assert.deepEqual(stories[0]?.evidenceArtifactIds, [`BUILD-${EPIC}-s1`, `LLD-${EPIC}-s1`]);
 });
 
-test('the real S001/s001 pair from epic dfc0371b yields one story', () => {
+test('the real records of epic dfc0371b yield one story', () => {
 	const graph = buildWorkItemGraph(recordSet(stampedRealRecords([
-		'LLD-dfc0371b7200f5b5-S001.json', 'PLAN-dfc0371b7200f5b5-s001.json',
-		'BUILD-dfc0371b7200f5b5-S001.json', 'CR-dfc0371b7200f5b5-S001.json',
+		'LLD-dfc0371b7200f5b5-s1.json', 'PLAN-dfc0371b7200f5b5-s1.json',
+		'BUILD-dfc0371b7200f5b5-s1.json', 'CR-dfc0371b7200f5b5-s1.json',
 	])));
 	assert.deepEqual(storyIds(graph), ['E20260926dfc0371b:S001']);
 	const story = item(graph, 'E20260926dfc0371b:S001');
-	assert.deepEqual(story.sourceIds, ['S001', 's001']);
+	assert.deepEqual(story.sourceIds, ['s1']);
 	assert.equal(story.evidenceArtifactIds.length, 4);
 	assert.equal(story.title, 'surface-bugfix-workflow-properly-so-first');
 });
 
 test('LLD standalone true with BUILD standalone false (real d88062a6 and dfc0371b shapes) is one item with no notice', () => {
 	const graph = buildWorkItemGraph(recordSet(stampedRealRecords([
-		'LLD-d88062a6e63aa312-S001.json', 'BUILD-d88062a6e63aa312-S001.json',
-		'LLD-dfc0371b7200f5b5-S001.json', 'BUILD-dfc0371b7200f5b5-S001.json',
+		'LLD-d88062a6e63aa312-s1.json', 'BUILD-d88062a6e63aa312-s1.json',
+		'LLD-dfc0371b7200f5b5-s1.json', 'BUILD-dfc0371b7200f5b5-s1.json',
 	])));
 	assert.deepEqual(storyIds(graph), ['E20260804d88062a6:S001', 'E20260926dfc0371b:S001']);
 	for (const n of graph.items.values()) {
@@ -115,8 +115,8 @@ test('an unparseable storyId keeps its own :R(<raw>) item and raises identity-am
 
 test('a standalone story with no head is a root with no invented epic, dated from its own LLD', () => {
 	const graph = buildWorkItemGraph(recordSet([
-		lldRecord('bbbbbbbbbbbbbbbb', 'S001', { standalone: true, createdAt: '2026-09-01T10:00:00.000Z', epicSlug: 'a-standalone-thing' }),
-		buildRecord('bbbbbbbbbbbbbbbb', 'S001', [{ id: 't1', passed: true }], { createdAt: '2026-09-03T10:00:00.000Z', epicCreatedAt: '2026-09-01T10:00:00.000Z' }),
+		lldRecord('bbbbbbbbbbbbbbbb', 's1', { standalone: true, createdAt: '2026-09-01T10:00:00.000Z', epicSlug: 'a-standalone-thing' }),
+		buildRecord('bbbbbbbbbbbbbbbb', 's1', [{ id: 't1', passed: true }], { createdAt: '2026-09-03T10:00:00.000Z', epicCreatedAt: '2026-09-01T10:00:00.000Z' }),
 	]));
 	assert.deepEqual(storyIds(graph), ['E20260901bbbbbbbb:S001']);
 	const story = item(graph, 'E20260901bbbbbbbb:S001');
@@ -128,12 +128,12 @@ test('a standalone story with no head is a root with no invented epic, dated fro
 
 test('a trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice', () => {
 	const graph = buildWorkItemGraph(recordSet(stampedRealRecords([
-		'BUILD-d5a433047dc3439f-S001.json', 'CR-d5a433047dc3439f-S001.json',
+		'BUILD-d5a433047dc3439f-s1.json', 'CR-d5a433047dc3439f-s1.json',
 	])));
 	const story = item(graph, 'E20260930d5a43304:S001');
 	assert.equal(story.standalone, true);
 	assert.equal(story.parentId, null);
-	assert.deepEqual(story.evidenceArtifactIds, ['BUILD-d5a433047dc3439f-S001', 'CR-d5a433047dc3439f-S001']);
+	assert.deepEqual(story.evidenceArtifactIds, ['BUILD-d5a433047dc3439f-s1', 'CR-d5a433047dc3439f-s1']);
 	assert.deepEqual(graph.rootIds, ['E20260930d5a43304:S001']);
 	assert.deepEqual(graph.notices, []);
 });
@@ -243,11 +243,11 @@ test('task t1 in two stories of different epics gets two distinct canonical ids'
 });
 
 test('a BUILD task id equal to the story id creates no task item and no notice', () => {
-	const graph = buildWorkItemGraph(recordSet(stampedRealRecords(['ISSUE-0855311b6b32eb72.json', 'BUILD-0855311b6b32eb72-S001.json'])));
+	const graph = buildWorkItemGraph(recordSet(stampedRealRecords(['ISSUE-0855311b6b32eb72.json', 'BUILD-0855311b6b32eb72-s1.json'])));
 	assert.equal([...graph.items.values()].some(n => n.kind === 'task'), false);
 	const story = item(graph, 'E202610040855311b:S001');
 	assert.deepEqual(story.childIds, []);
-	assert.deepEqual(story.evidenceArtifactIds, ['BUILD-0855311b6b32eb72-S001']);
+	assert.deepEqual(story.evidenceArtifactIds, ['BUILD-0855311b6b32eb72-s1']);
 	assert.deepEqual(graph.notices, []);
 });
 
@@ -270,15 +270,15 @@ test('an issue with fix stories S001 and S002 has two distinct story children wi
 	const ISSUE = '3333333333333333';
 	const graph = buildWorkItemGraph(recordSet([
 		issueRecord(ISSUE, { slug: 'some-fix' }, { epicSlug: 'some-fix', magnitude: 'sized' }),
-		lldRecord(ISSUE, 'S001', { standalone: true }), planRecord(ISSUE, 'S001', ['t1']),
-		lldRecord(ISSUE, 'S002', { standalone: true }), planRecord(ISSUE, 'S002', ['t1', 't2']),
+		lldRecord(ISSUE, 's1', { standalone: true }), planRecord(ISSUE, 's1', ['t1']),
+		lldRecord(ISSUE, 's2', { standalone: true }), planRecord(ISSUE, 's2', ['t1', 't2']),
 	]));
 	const issue = item(graph, 'E2026100733333333');
 	assert.equal(issue.kind, 'issue');
 	assert.deepEqual(issue.childIds, ['E2026100733333333:S001', 'E2026100733333333:S002']);
 	assert.deepEqual(item(graph, 'E2026100733333333:S001').childIds, ['E2026100733333333:S001:T001']);
 	assert.deepEqual(item(graph, 'E2026100733333333:S002').childIds, ['E2026100733333333:S002:T001', 'E2026100733333333:S002:T002']);
-	assert.deepEqual(item(graph, 'E2026100733333333:S002').evidenceArtifactIds, [`LLD-${ISSUE}-S002`, `PLAN-${ISSUE}-S002`]);
+	assert.deepEqual(item(graph, 'E2026100733333333:S002').evidenceArtifactIds, [`LLD-${ISSUE}-s2`, `PLAN-${ISSUE}-s2`]);
 	assert.deepEqual(graph.rootIds, ['E2026100733333333']);
 });
 
@@ -321,7 +321,7 @@ test('a parentRef naming an existing epic and a storyId it lacks resolves to the
 
 test('a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the existing story without a notice', () => {
 	const graph = buildWorkItemGraph(recordSet(stampedRealRecords([
-		'ISSUE-095906bac5bbacaf.json', 'BUILD-d5a433047dc3439f-S001.json', 'CR-d5a433047dc3439f-S001.json',
+		'ISSUE-095906bac5bbacaf.json', 'BUILD-d5a433047dc3439f-s1.json', 'CR-d5a433047dc3439f-s1.json',
 	])));
 	assert.deepEqual(item(graph, 'E20260930095906ba').correctsRef, {
 		slug: 'd5a433047dc3439f', storyId: 's1', resolvedItemId: 'E20260930d5a43304:S001',
@@ -329,13 +329,21 @@ test('a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the 
 	assert.deepEqual(graph.notices, []);
 });
 
-test('a hierarchical slug parentRef resolves through parseWorkflowId', () => {
+test('an artifact-id slug parentRef resolves through ArtifactIds.parse', () => {
 	const graph = buildWorkItemGraph(recordSet([
-		...stampedRealRecords(['LLD-d88062a6e63aa312-S001.json']),
-		issueRecord('5555555555555555', { slug: 'E20260804d88062a6-S001' }, { epicSlug: 'a-fix' }),
+		...stampedRealRecords(['LLD-d88062a6e63aa312-s1.json']),
+		issueRecord('5555555555555555', { slug: 'STORY-d88062a6e63aa312-s1' }, { epicSlug: 'a-fix' }),
 	]));
 	assert.equal(item(graph, 'E2026100755555555').correctsRef?.resolvedItemId, 'E20260804d88062a6:S001');
 	assert.deepEqual(graph.notices, []);
+});
+
+test('a work-item-id slug parentRef from before the artifact ids is not parsed, so it resolves to nothing', () => {
+	const graph = buildWorkItemGraph(recordSet([
+		...stampedRealRecords(['LLD-d88062a6e63aa312-s1.json']),
+		issueRecord('5555555555555555', { slug: 'E20260804d88062a6-S001' }, { epicSlug: 'a-fix' }),
+	]));
+	assert.equal(item(graph, 'E2026100755555555').correctsRef?.resolvedItemId ?? null, null);
 });
 
 test('a parentRef slug matching two hashes resolves to nothing and raises identity-ambiguous naming both', () => {
@@ -401,7 +409,7 @@ test('every load failure is one store-level record-unreadable notice naming the 
 });
 
 test('items, rootIds and every other notice are the same with and without an unreadable file', () => {
-	const records = [defRecord(EPIC, ['s1', 's2']), lldRecord(EPIC, 's1'), buildRecord('bbbbbbbbbbbbbbbb', 'S001', [{ id: 'S001', passed: true }], { standalone: true })];
+	const records = [defRecord(EPIC, ['s1', 's2']), lldRecord(EPIC, 's1'), buildRecord('bbbbbbbbbbbbbbbb', 's1', [{ id: 's1', passed: true }], { standalone: true })];
 	const clean = buildWorkItemGraph(recordSet(records));
 	const failing = buildWorkItemGraph(recordSet(records, FAILURES));
 	assert.deepEqual([...failing.items.entries()], [...clean.items.entries()]);

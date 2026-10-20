@@ -29,7 +29,7 @@ import { userInfo } from 'node:os';
 import { basename } from 'node:path';
 
 import { repoConfigPath } from '../../../indexer/repo-ignore-config.js';
-import { epicWorkflowId, safeCanonical, storyIdToOrdinal, storyWorkflowId } from '../../id.js';
+import { ArtifactIds } from '../../artifact-ids.js';
 import type { CompanionHeader } from './types.js';
 
 /** What the finalize site knows about the document the companion belongs to. */
@@ -129,9 +129,9 @@ function projectName(repoPath: string): string {
 
 function workItemId(source: CompanionHeaderSource): string {
 	if (source.kind === 'HLD') {
-		return safeCanonical(() => epicWorkflowId(source.epicHash, source.anchorCreatedAt)) ?? source.epicHash;
+		return ArtifactIds.tryMake({ kind: 'EPIC', epicHash: source.epicHash }) ?? source.epicHash;
 	}
-	return safeCanonical(() => storyWorkflowId(source.epicHash, source.anchorCreatedAt, source.storyId)) ?? source.storyId;
+	return ArtifactIds.tryMake({ kind: 'STORY', epicHash: source.epicHash, story: source.storyId }) ?? source.storyId;
 }
 
 function pad(n: number): string {
@@ -168,9 +168,10 @@ function firstSentence(s: string | undefined): string | undefined {
 	return t.length > 80 ? `${t.slice(0, 77)}...` : t;
 }
 
-/** The `S<nnn>` folder form for any spelling of the story id. */
+/** The `S<nnn>` folder form of an `s<n>` story id; any other text is returned as it is. */
 function storyLabel(storyId: string): string {
-	try { return `S${String(storyIdToOrdinal(storyId)).padStart(3, '0')}`; } catch { return storyId; }
+	const ordinal = ArtifactIds.storyOrdinal(storyId);
+	return ordinal === null ? storyId : `S${String(ordinal).padStart(3, '0')}`;
 }
 
 function joinLine(placement: string, ...parts: (string | undefined)[]): string {

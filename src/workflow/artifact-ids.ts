@@ -167,6 +167,21 @@ export const ArtifactIds = {
 		}
 	},
 
+	/** {@link ArtifactIds.make} that answers undefined instead of throwing, for a renderer or reader that falls back to a plain label. */
+	tryMake(key: ArtifactKey): string | undefined {
+		try { return ArtifactIds.make(key); } catch { return undefined; }
+	},
+
+	/** The ordinal n of an `s<n>` story, or null when the text is not one. */
+	storyOrdinal(story: string): number | null {
+		return typeof story === 'string' && STORY_RE.test(story) ? Number(story.slice(1)) : null;
+	},
+
+	/** The ordinal n of a `t<n>` task, or null when the text is not one. */
+	taskOrdinal(task: string): number | null {
+		return typeof task === 'string' && TASK_RE.test(task) ? Number(task.slice(1)) : null;
+	},
+
 	/** The parent key: TASK to STORY, STORY to EPIC, TASKS and DIAG to STORY;
 	 *  undefined for the rest. */
 	parentOf(key: ArtifactKey): ArtifactKey | undefined {

@@ -161,15 +161,15 @@ test('a full-chain, feature or sized-bugfix story with a build and no plan gets 
 	const s = snapshotOf([
 		defRecord(EPIC, ['s1']),
 		buildRecord(EPIC, 's1', [{ id: 't1', passed: true }]),                                        // full-chain
-		lldRecord(FEATURE, 'S001', { standalone: true, sizeClass: 'feature' }),
-		buildRecord(FEATURE, 'S001', [{ id: 't1', passed: true }], { standalone: true }),             // feature
+		lldRecord(FEATURE, 's1', { standalone: true, sizeClass: 'feature' }),
+		buildRecord(FEATURE, 's1', [{ id: 't1', passed: true }], { standalone: true }),             // feature
 		issueRecord(SIZED, { slug: 'x' }, { magnitude: 'sized' }),
-		buildRecord(SIZED, 'S001', [{ id: 'S001', passed: true }], { standalone: true }),             // sized-bugfix
-		lldRecord(SMALL, 'S001', { standalone: true, sizeClass: 'small' }),
-		buildRecord(SMALL, 'S001', [{ id: 'S001', passed: true }], { standalone: true }),             // small
+		buildRecord(SIZED, 's1', [{ id: 's1', passed: true }], { standalone: true }),             // sized-bugfix
+		lldRecord(SMALL, 's1', { standalone: true, sizeClass: 'small' }),
+		buildRecord(SMALL, 's1', [{ id: 's1', passed: true }], { standalone: true }),             // small
 		issueRecord(ISSUE, { slug: 'y' }, { magnitude: 'small' }),
-		buildRecord(ISSUE, 'S001', [{ id: 'S001', passed: true }], { standalone: true }),             // small-bugfix
-		buildRecord(TRIVIAL, 'S001', [{ id: 'S001', passed: true }], { standalone: true, sizeClass: 'trivial' }), // trivial
+		buildRecord(ISSUE, 's1', [{ id: 's1', passed: true }], { standalone: true }),             // small-bugfix
+		buildRecord(TRIVIAL, 's1', [{ id: 's1', passed: true }], { standalone: true, sizeClass: 'trivial' }), // trivial
 	]);
 	const routeOf = (i: DeliveryItem): string | undefined => i.stage?.route;
 	const flagged = (i: DeliveryItem): boolean => i.notices.some(n => n.code === 'incomplete-evidence' && /no plan/.test(n.message));

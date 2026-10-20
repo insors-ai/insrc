@@ -24,7 +24,7 @@ import { join } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
 import { ARTIFACTS_DIR } from './storage.js';
-import { deriveWorkItemIdentity } from './id.js';
+import { ArtifactIds } from './artifact-ids.js';
 import { resolveArtifactMdPath, type ArtifactKind, type WorkItemKind } from './path-scheme.js';
 
 const log = getLogger('workflow-pending');
@@ -46,7 +46,7 @@ export interface PendingArtifact {
 	readonly kind:              PendingKind;
 	readonly title:             string;
 	readonly mdPath:            string;    // rendered .md path under docs/ (best-effort; '' when unresolvable)
-	readonly workItemId?:       string;    // canonical E…:S…:T… when derivable
+	readonly workItemId?:       string;    // the artifact id of the Epic or Story (SPEC / ISSUE id for a run with no Epic) when derivable
 	readonly openQuestionCount: number;
 	readonly state:             'pending'; // approvedAt absent AND rejectedAt absent
 }
@@ -194,22 +194,22 @@ function buildRecordMdPath(repoPath: string, artifactId: string, meta: Readonly<
 	return head.includes(`<!-- insrc:artifact ${artifactId} -->`) ? derived : '';
 }
 
-/** Canonical E…:S…:T… identity when the meta carries the hash + createdAt
- *  anchor; undefined otherwise (e.g. a legacy artifact missing the anchor). */
+/** The artifact id of the work item the meta belongs to: the Story (`STORY-<h>-s1`) or the Epic (`EPIC-<h>`), or the
+ *  SPEC or ISSUE id for a run that has no Epic hash; undefined when the meta carries no valid hash. */
 function deriveWorkItemId(meta: Record<string, unknown>): string | undefined {
-	const hash = str(meta['epicHash']) ?? str(meta['specHash']) ?? str(meta['issueHash']);
-	const createdAt = str(meta['epicCreatedAt']);
-	if (hash === undefined || createdAt === undefined) return undefined;
-	try {
-		const identity = deriveWorkItemIdentity(hash, createdAt, str(meta['storyId']));
-		return identity.canonical;
-	} catch {
-		return undefined;
+	const epicHash = str(meta['epicHash']);
+	if (epicHash !== undefined) {
+		const story = str(meta['storyId']);
+		return ArtifactIds.tryMake(story !== undefined ? { kind: 'STORY', epicHash, story } : { kind: 'EPIC', epicHash });
 	}
+	const specHash = str(meta['specHash']);
+	if (specHash !== undefined) return ArtifactIds.tryMake({ kind: 'SPEC', epicHash: specHash });
+	const issueHash = str(meta['issueHash']);
+	return issueHash !== undefined ? ArtifactIds.tryMake({ kind: 'ISSUE', epicHash: issueHash }) : undefined;
 }
 
 /** A short human label for the list. Prefers the artifact body's own title
- *  (SPEC/ISSUE), else the canonical work-item id, else the file identity. */
+ *  (SPEC/ISSUE), else the work item's artifact id, else the file identity. */
 function deriveTitle(
 	kind: PendingKind, meta: Record<string, unknown>, body: Record<string, unknown>,
 	workItemId: string | undefined, artifactId: string,

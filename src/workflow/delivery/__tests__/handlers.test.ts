@@ -69,7 +69,7 @@ test("a build record that stamps no epic slug or date is located through its wor
 		// The real BUILD shape: only epicHash, storyId and createdAt.
 		[store(`BUILD-${EPIC}-s1.json`)]:  { meta: { epicHash: EPIC, storyId: 's1', createdAt: '2026-10-08T10:00:00.000Z' }, body: { tasks: [] } },
 		[store(`AMD-${EPIC}-1.json`)]:     { id: `AMD-${EPIC}-1`, epicHash: EPIC, proposedAt: CREATED, status: 'pending', amendment: { type: 'storyBoundary.addStory', storyId: 's2' } },
-		[store('BUILD-cccccccccccccccc-S001.json')]: { meta: { epicHash: 'cccccccccccccccc', storyId: 'S001', createdAt: CREATED, standalone: true }, body: { tasks: [] } },
+		[store('BUILD-cccccccccccccccc-s1.json')]: { meta: { epicHash: 'cccccccccccccccc', storyId: 's1', createdAt: CREATED, standalone: true }, body: { tasks: [] } },
 		[`${EPIC_FOLDER}/DEF.md`]:         `<!-- insrc:artifact DEF-${EPIC} -->\n# Define\n`,
 		[`${EPIC_FOLDER}/S001/LLD.md`]:    `<!-- insrc:artifact LLD-${EPIC}-s1 -->\n# LLD\n`,
 		[`${EPIC_FOLDER}/S001/BUILD.md`]:  '# Build record\n\nNo marker on this older shape.\n',
@@ -96,7 +96,7 @@ test("a build record that stamps no epic slug or date is located through its wor
 		assert.deepEqual(port.markdownOf(rec(`LLD-${EPIC}-s1`)), { mdPath: join(repo, EPIC_FOLDER, 'S001', 'LLD.md'), realPath: realpathSync(join(repo, EPIC_FOLDER, 'S001', 'LLD.md')), hasMarker: true });
 		assert.deepEqual(port.markdownOf(rec(`DEF-${EPIC}`)), { mdPath: join(repo, EPIC_FOLDER, 'DEF.md'), realPath: realpathSync(join(repo, EPIC_FOLDER, 'DEF.md')), hasMarker: true });
 		assert.equal(port.markdownOf(rec(`AMD-${EPIC}-1`)), null, 'an amendment has no rendered markdown');
-		assert.equal(port.markdownOf(rec('BUILD-cccccccccccccccc-S001')), null, 'no folder and no file: null');
+		assert.equal(port.markdownOf(rec('BUILD-cccccccccccccccc-s1')), null, 'no folder and no file: null');
 		assert.equal(port.markdownOf(rec(`LLD-${EPIC}-s2`)), null, 'a matching folder without the file does not fall back to the meta-derived path');
 		assert.deepEqual(port.markdownOf(rec(`HLD-${EPIC}`)), { mdPath: join(repo, EPIC_FOLDER, 'HLD.md'), realPath: realpathSync(join(repo, EPIC_FOLDER, 'HLD.md')), hasMarker: false }, 'the marker must be the whole first line');
 		assert.equal(port.markdownOf(rec(`LLD-${EPIC}-s3`)), null, "a file carrying another record's marker is not this record's markdown");

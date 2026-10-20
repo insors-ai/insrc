@@ -71,7 +71,7 @@ test('every kind in a temporary store is lifted, AMD from its flat shape', () =>
 		assert.equal(byId.get('ISSUE-0855311b6b32eb72')?.workItemHash, '0855311b6b32eb72');
 		assert.equal(byId.get('DEF-1111111111111111')?.epicCreatedAt, '2026-10-01T00:00:00.000Z');
 		assert.equal(byId.get('HLD-1111111111111111')?.approval.state, 'rejected');
-		assert.equal(byId.get('PLAN-dfc0371b7200f5b5-s001')?.storyOrdinal, 1);
+		assert.equal(byId.get('PLAN-dfc0371b7200f5b5-s1')?.storyOrdinal, 1);
 
 		const amd = byId.get('AMD-761a43a6fa645815-1');
 		assert.ok(amd);

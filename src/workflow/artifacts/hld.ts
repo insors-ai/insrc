@@ -16,7 +16,7 @@
  */
 
 import { artifactIdMarker, hldArtifactId } from '../storage.js';
-import { safeCanonical, storyWorkflowId } from '../id.js';
+import { ArtifactIds } from '../artifact-ids.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
@@ -166,7 +166,7 @@ export function renderHldMarkdown(artifact: HldArtifact): string {
 	};
 
 	const sbItem = (sb: StoryBoundary): SectionItem => {
-		const sid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, sb.storyId)) : undefined;
+		const sid = eh !== undefined ? ArtifactIds.tryMake({ kind: 'STORY', epicHash: eh, story: sb.storyId }) : undefined;
 		const l: string[] = [];
 		if (sb.owns.length > 0)    l.push(`**Owns:** ${sb.owns.map(x => `\`${x}\``).join(', ')}`);
 		if (sb.depends.length > 0) l.push(`**Depends on:** ${sb.depends.map(x => `\`${x}\``).join(', ')}`);

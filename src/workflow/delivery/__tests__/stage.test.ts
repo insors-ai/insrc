@@ -94,7 +94,7 @@ test('a story with no design, plan or build record is scoped', () => {
 
 test("the issue magnitude decides a fix story's route ahead of its build stamp", () => {
 	const out = run([issueRecord(ISSUE, undefined, { magnitude: 'small', ...APPROVED }),
-		buildRecord(ISSUE, 'S001', [{ id: 'S001', passed: true }], { standalone: true, sizeClass: 'trivial' })]);
+		buildRecord(ISSUE, 's1', [{ id: 's1', passed: true }], { standalone: true, sizeClass: 'trivial' })]);
 	const a = storyStage(out, ISSUE, 1);
 	assert.equal(a.route, 'small-bugfix');
 	assert.equal(a.stage, 'build-recorded');
@@ -135,26 +135,19 @@ test('a sized-bugfix or full-chain story with an approved design and no plan is 
 
 test('an unknown or disagreeing stamp gives the unknown route, never a guess', () => {
 	// No stamp anywhere on a standalone story.
-	const none = storyStage(run([lldRecord(SOLO, 'S001', { standalone: true, ...APPROVED })]), SOLO, 1);
+	const none = storyStage(run([lldRecord(SOLO, 's1', { standalone: true, ...APPROVED })]), SOLO, 1);
 	assert.equal(none.route, 'unknown');
 	assert.equal(none.stage, 'design-plan', 'an approved design with no route is not ready');
 	assert.match(none.reason.text, /route unknown/);
 
 	// A stamp that is not a SizeClass member, and 'bugfix' with no ISSUE.
 	for (const sizeClass of ['M', 'bugfix', 'epic']) {
-		const a = storyStage(run([lldRecord(SOLO, 'S001', { standalone: true, sizeClass })]), SOLO, 1);
+		const a = storyStage(run([lldRecord(SOLO, 's1', { standalone: true, sizeClass })]), SOLO, 1);
 		assert.equal(a.route, 'unknown', sizeClass);
 	}
 
-	// Two standalone BUILDs of one story that disagree.
-	const split = storyStage(run([
-		buildRecord(SOLO, 'S001', [{ id: 'S001', passed: true }], { standalone: true, sizeClass: 'small' }),
-		buildRecord(SOLO, 's1', [{ id: 's1', passed: true }], { standalone: true, sizeClass: 'trivial' }),
-	]), SOLO, 1);
-	assert.equal(split.route, 'unknown');
-
 	// An agreeing stamp is read.
-	const trivial = storyStage(run([buildRecord(SOLO, 'S001', [{ id: 'S001', passed: true }], { standalone: true, sizeClass: 'trivial', ...APPROVED })]), SOLO, 1);
+	const trivial = storyStage(run([buildRecord(SOLO, 's1', [{ id: 's1', passed: true }], { standalone: true, sizeClass: 'trivial', ...APPROVED })]), SOLO, 1);
 	assert.equal(trivial.route, 'trivial');
 	assert.equal(trivial.stage, 'complete');
 });
@@ -165,7 +158,7 @@ test('an unknown or disagreeing stamp gives the unknown route, never a guess', (
 
 test('a small story with an approved design and a small-bugfix issue with an approved issue are ready-design-approved with no plan notice', () => {
 	const out = run([
-		lldRecord(SOLO, 'S001', { standalone: true, sizeClass: 'small', ...APPROVED }),
+		lldRecord(SOLO, 's1', { standalone: true, sizeClass: 'small', ...APPROVED }),
 		issueRecord(ISSUE, undefined, { magnitude: 'small', ...APPROVED }),
 	]);
 	const small = storyStage(out, SOLO, 1);
@@ -195,19 +188,19 @@ test('a code review with no build leaves the stage and raises review-without-bui
 });
 
 test("an item with no recorded route keeps its records' stage and raises unknown-route", () => {
-	const out = run([lldRecord(SOLO, 'S001', { standalone: true, ...APPROVED }), planRecord(SOLO, 'S001', ['t1'], APPROVED)]);
+	const out = run([lldRecord(SOLO, 's1', { standalone: true, ...APPROVED }), planRecord(SOLO, 's1', ['t1'], APPROVED)]);
 	const a = storyStage(out, SOLO, 1);
 	assert.equal(a.route, 'unknown');
 	assert.equal(a.stage, 'design-plan', 'no route, so no ready gate: the records establish design & plan');
 	const unknown = out.result.notices.filter(n => n.code === 'unknown-route');
 	assert.equal(unknown.length, 1);
 	assert.deepEqual(unknown[0]!.itemIds, [a.itemId]);
-	assert.deepEqual(unknown[0]!.artifactIds, [`LLD-${SOLO}-S001`]);
+	assert.deepEqual(unknown[0]!.artifactIds, [`LLD-${SOLO}-s1`]);
 	assert.equal(unknown[0]!.attention, false);
 
 	// A fix story whose ISSUE has no magnitude: the notice names the ISSUE whose
 	// field was read, even though the ISSUE is the issue item's evidence.
-	const fix = run([issueRecord(ISSUE, undefined, { magnitude: undefined }), buildRecord(ISSUE, 'S001', [{ id: 'S001', passed: true }], { standalone: false })]);
+	const fix = run([issueRecord(ISSUE, undefined, { magnitude: undefined }), buildRecord(ISSUE, 's1', [{ id: 's1', passed: true }], { standalone: false })]);
 	const fixStory = storyStage(fix, ISSUE, 1);
 	const fixNotice = fix.result.notices.find(n => n.code === 'unknown-route' && n.itemIds.includes(fixStory.itemId));
 	assert.ok(fixNotice);
@@ -228,10 +221,10 @@ test('a story or issue with no design, plan or build is scoped', () => {
 test('an issue takes the least advanced stage of its fix stories', () => {
 	const out = run([
 		issueRecord(ISSUE, undefined, { magnitude: 'sized', ...APPROVED }),
-		lldRecord(ISSUE, 'S001', { standalone: true, sizeClass: 'bugfix', ...APPROVED }),
-		planRecord(ISSUE, 'S001', ['t1'], APPROVED),
-		buildRecord(ISSUE, 'S001', [{ id: 't1', passed: true }], APPROVED),
-		lldRecord(ISSUE, 'S002', { standalone: true, sizeClass: 'bugfix' }),
+		lldRecord(ISSUE, 's1', { standalone: true, sizeClass: 'bugfix', ...APPROVED }),
+		planRecord(ISSUE, 's1', ['t1'], APPROVED),
+		buildRecord(ISSUE, 's1', [{ id: 't1', passed: true }], APPROVED),
+		lldRecord(ISSUE, 's2', { standalone: true, sizeClass: 'bugfix' }),
 	]);
 	assert.equal(storyStage(out, ISSUE, 1).stage, 'complete');
 	const s2 = storyStage(out, ISSUE, 2);
@@ -243,7 +236,7 @@ test('an issue takes the least advanced stage of its fix stories', () => {
 
 	// An issue whose route is unknown says so whichever branch placed it.
 	const unknownIssue = issueStage(run([issueRecord(ISSUE, undefined, { magnitude: undefined }),
-		buildRecord(ISSUE, 'S001', [{ id: 'S001', passed: true }], { standalone: true })]), ISSUE);
+		buildRecord(ISSUE, 's1', [{ id: 's1', passed: true }], { standalone: true })]), ISSUE);
 	assert.equal(unknownIssue.route, 'unknown');
 	assert.match(unknownIssue.reason.text, /route unknown, so no ready gate applies/);
 });
@@ -251,7 +244,7 @@ test('an issue takes the least advanced stage of its fix stories', () => {
 test('missing evidence records and wrongly typed fields never throw', () => {
 	const records = [
 		...epic(), lldRecord(EPIC, 's1', APPROVED), planRecord(EPIC, 's1', ['t1'], APPROVED),
-		lldRecord(SOLO, 'S001', { standalone: 'yes', sizeClass: 5 }),
+		lldRecord(SOLO, 's1', { standalone: 'yes', sizeClass: 5 }),
 		issueRecord(ISSUE, undefined, { magnitude: { size: 'small' } }),
 	];
 	const set = recordSet(records);

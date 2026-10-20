@@ -164,10 +164,10 @@ test('c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS re
 	} finally { r.cleanup(); }
 });
 
-test('c00559b7 — compareStoryOrdinal orders by ordinal, then by id, for both id spellings', () => {
-	assert.deepEqual(['S010', 's2', 's2', 's1', 's10'].sort(compareStoryOrdinal), ['s1', 's2', 's2', 'S010', 's10']);
+test('c00559b7 — compareStoryOrdinal orders by ordinal, then by id', () => {
+	assert.deepEqual(['s10', 's2', 's2', 's1', 's9'].sort(compareStoryOrdinal), ['s1', 's2', 's2', 's9', 's10']);
 });
 
-test('c00559b7 — compareStoryOrdinal uses the canonical story-id parse: a non-story id sorts last', () => {
-	assert.deepEqual(['s2', 'draft', 'S001x', 's1'].sort(compareStoryOrdinal), ['s1', 's2', 'draft', 'S001x']);
+test('c00559b7 — compareStoryOrdinal uses the strict story-id parse: a non-story id, including an uppercase one, sorts last', () => {
+	assert.deepEqual(['s2', 'draft', 'S001', 's1'].sort(compareStoryOrdinal), ['s1', 's2', 'draft', 'S001']);
 });

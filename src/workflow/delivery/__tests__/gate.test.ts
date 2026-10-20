@@ -247,9 +247,9 @@ test('an approved build with a failed task is a validation conflict and keeps bo
 	assert.equal(deriveStages(buildWorkItemGraph(set), set).stages.get(story.id)?.stage, 'complete');
 });
 
-test('a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)', () => {
-	const { graph, result } = run(realRecords(['ISSUE-0855311b6b32eb72.json', 'BUILD-0855311b6b32eb72-S001.json']));
-	const story = holder(graph, 'BUILD-0855311b6b32eb72-S001', 'story');
+test('a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-s1 shape)', () => {
+	const { graph, result } = run(realRecords(['ISSUE-0855311b6b32eb72.json', 'BUILD-0855311b6b32eb72-s1.json']));
+	const story = holder(graph, 'BUILD-0855311b6b32eb72-s1', 'story');
 	const gates = itemOf(result, story.id);
 
 	assert.equal(gates.storyLevelResult, 'failed');
@@ -303,7 +303,7 @@ test('a pending artifact superseded by an approved later gate on the same item s
 		extRecord(OTHER, 's2'),
 		amdRecord(OTHER, 1, 's2'),
 		specRecord(SPEC),
-		lldRecord(SOLO, 'S001', { standalone: true, sizeClass: 'small', seededFromSpec: SPEC, ...APPROVED }),
+		lldRecord(SOLO, 's1', { standalone: true, sizeClass: 'small', seededFromSpec: SPEC, ...APPROVED }),
 		issueRecord(ISSUE, { slug: 'nothing-here' }),
 	]);
 
@@ -352,10 +352,10 @@ test('every epic, story and issue in the real-shape fixtures gets item gates, de
 
 test('a story built without a plan marks its tasks unplanned, and the notice says the story has no plan', () => {
 	const { graph, result } = run([
-		lldRecord(SOLO, 'S001', { standalone: true, sizeClass: 'small', ...APPROVED }),
-		buildRecord(SOLO, 'S001', [{ id: 't1', passed: true }], { standalone: true }),
+		lldRecord(SOLO, 's1', { standalone: true, sizeClass: 'small', ...APPROVED }),
+		buildRecord(SOLO, 's1', [{ id: 't1', passed: true }], { standalone: true }),
 	]);
-	const story = holder(graph, `BUILD-${SOLO}-S001`, 'story');
+	const story = holder(graph, `BUILD-${SOLO}-s1`, 'story');
 	const gates = itemOf(result, story.id);
 	assert.deepEqual(gates.tasks.map(t => [t.result, t.planned]), [['passed', false]]);
 	assert.equal(gates.validation.unplanned, 1);

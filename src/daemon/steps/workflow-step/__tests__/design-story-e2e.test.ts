@@ -340,7 +340,7 @@ test('design.story enhancement: happy path writes LLD under docs/epics/<slug>-E.
 		assert.ok(existsSync(outPath));
 		const md = readFileSync(outPath, 'utf8');
 		// With a valid createdAt the LLD title leads with the hierarchical story id.
-		assert.ok(/# LLD: E\d{8}[0-9a-f]{8}:S001\b/.test(md), md.split('\n').find(l => l.startsWith('# LLD:')));
+		assert.ok(/# LLD: STORY-[0-9a-f]{16}-s1\b/.test(md), md.split('\n').find(l => l.startsWith('# LLD:')));
 		assert.match(md, /## \d+\. Contract details/);
 		assert.match(md, /## \d+\. Migration/);
 		assert.ok(md.includes('1. add tag index'));

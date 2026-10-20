@@ -109,6 +109,25 @@ function topSegment(workItemKind: WorkItemKind): string {
 	return workItemKind === 'epic' ? 'epics' : 'standalone';
 }
 
+/** The board id of a work item: its folder segment, then `:S<nnn>` for a story and `:T<nnn>` for a task
+ *  (`E20260804d88062a6:S001:T003`). It names a node of the delivery graph, so a board id always equals the
+ *  folder segment its work item lives under; it is not an artifact id.
+ *  @throws {InvalidArtifactKeyError} for a key {@link folderSegment} refuses, or a story or task that is not `s<n>` / `t<n>`. */
+export function workItemBoardId(key: WorkItemKey, task?: string): string {
+	const segment = folderSegment(key);
+	if (key.story === undefined) {
+		if (task !== undefined) throw new InvalidArtifactKeyError('workItemBoardId: a task needs a story');
+		return segment;
+	}
+	const story = ArtifactIds.storyOrdinal(key.story);
+	if (story === null) throw new InvalidArtifactKeyError(`workItemBoardId: story must be s<n> (got '${key.story}')`);
+	const storyPart = `${segment}:${storyFolder(story)}`;
+	if (task === undefined) return storyPart;
+	const t = ArtifactIds.taskOrdinal(task);
+	if (t === null) throw new InvalidArtifactKeyError(`workItemBoardId: task must be t<n> (got '${task}')`);
+	return `${storyPart}:T${String(t).padStart(3, '0')}`;
+}
+
 /** `E<YYYYMMDD><hash8>`: the folder key, identical for every artifact of one
  *  Epic because it reads only the hash and the Epic's anchor time.
  *  @throws {InvalidArtifactKeyError} when the hash is not lowercase hex or the time is not a valid ISO time. */

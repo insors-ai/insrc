@@ -12,7 +12,7 @@
  * matches build results back to them by the same ordinals. Never throws.
  */
 
-import { storyIdToOrdinal, taskIdToOrdinal } from '../id.js';
+import { ArtifactIds } from '../artifact-ids.js';
 
 /** The value as a plain object, or null for anything else (arrays included). */
 export function asObject(value: unknown): Readonly<Record<string, unknown>> | null {
@@ -32,20 +32,12 @@ export function asString(value: unknown): string | null {
 /** Code-unit order, independent of locale: the one string order every sorted list in the snapshot uses. */
 export const byText = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
-/** The ordinal of an `s<n>` / `S<nnn>` story id, or null when it does not parse. */
+/** The ordinal of an `s<n>` story id, or null when it does not parse. */
 export function storyOrdinalOf(storyId: string): number | null {
-	try {
-		return storyIdToOrdinal(storyId);
-	} catch {
-		return null;
-	}
+	return ArtifactIds.storyOrdinal(storyId);
 }
 
 /** The ordinal of a `t<n>` task id, or null when it does not parse. */
 export function taskOrdinalOf(taskId: string): number | null {
-	try {
-		return taskIdToOrdinal(taskId);
-	} catch {
-		return null;
-	}
+	return ArtifactIds.taskOrdinal(taskId);
 }

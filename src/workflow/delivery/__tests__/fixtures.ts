@@ -30,10 +30,10 @@ export type RawStoreFile = Readonly<Record<string, unknown>>;
 
 /**
  * Keyed by file name. Notable shapes:
- *   - dfc0371b: a standalone story whose LLD says 'S001' and PLAN 's001'; the
+ *   - dfc0371b: a standalone story whose LLD says 's1' and PLAN 's1'; the
  *     LLD has no epicCreatedAt, and its BUILD says standalone false.
  *   - ISSUE-0855311b: parentRef is its own slug (corrects nothing); its BUILD's
- *     only task id is the story id 'S001'.
+ *     only task id is the story id 's1'.
  *   - ISSUE-2d9e9e69: parentRef names another work item by slug.
  *   - ISSUE-57446545 / ISSUE-095906ba: parentRef carries a storyId, by slug
  *     and by bare hash respectively.
@@ -41,25 +41,25 @@ export type RawStoreFile = Readonly<Record<string, unknown>>;
  *   - AMD-761a43a6-1: the flat amendment shape (no meta/body).
  */
 export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
-	'LLD-dfc0371b7200f5b5-S001.json': {
+	'LLD-dfc0371b7200f5b5-s1.json': {
 		meta: {
 			createdAt: '2026-09-26T11:44:45.049Z',
 			epicHash: 'dfc0371b7200f5b5',
 			epicSlug: 'surface-bugfix-workflow-properly-so-first',
-			storyId: 'S001',
+			storyId: 's1',
 			standalone: true,
 			sizeClass: 'feature',
 			approvedAt: '2026-09-26T11:50:04.854Z',
 		},
 		body: {},
 	},
-	'PLAN-dfc0371b7200f5b5-s001.json': {
+	'PLAN-dfc0371b7200f5b5-s1.json': {
 		meta: {
 			createdAt: '2026-09-26T11:54:35.996Z',
 			epicCreatedAt: '2026-09-26T11:54:35.996Z',
 			epicHash: 'dfc0371b7200f5b5',
 			epicSlug: 'surface-bugfix-workflow-properly-so-first',
-			storyId: 's001',
+			storyId: 's1',
 			approvedAt: '2026-09-26T11:54:57.632Z',
 		},
 		body: {
@@ -87,11 +87,11 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 			],
 		},
 	},
-	'BUILD-dfc0371b7200f5b5-S001.json': {
+	'BUILD-dfc0371b7200f5b5-s1.json': {
 		meta: {
 			createdAt: '2026-09-26T12:14:57.292Z',
 			epicHash: 'dfc0371b7200f5b5',
-			storyId: 'S001',
+			storyId: 's1',
 			standalone: false,
 			sizeClass: 'feature',
 			approvedAt: '2026-09-26T12:16:23.220Z',
@@ -121,11 +121,11 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 			],
 		},
 	},
-	'CR-dfc0371b7200f5b5-S001.json': {
+	'CR-dfc0371b7200f5b5-s1.json': {
 		meta: {
 			createdAt: '2026-09-26T12:14:19.375Z',
 			epicHash: 'dfc0371b7200f5b5',
-			storyId: 'S001',
+			storyId: 's1',
 		},
 		body: {
 			verdict: 'warn',
@@ -147,11 +147,11 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 			title: 'File a small standalone story\'s BUILD record beside its design doc, not under docs/epics with a raw-hash folder name',
 		},
 	},
-	'BUILD-0855311b6b32eb72-S001.json': {
+	'BUILD-0855311b6b32eb72-s1.json': {
 		meta: {
 			createdAt: '2026-10-04T12:11:09.893Z',
 			epicHash: '0855311b6b32eb72',
-			storyId: 'S001',
+			storyId: 's1',
 			standalone: true,
 			sizeClass: 'trivial',
 			approvedAt: '2026-10-04T12:42:57.596Z',
@@ -159,7 +159,7 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 		body: {
 			tasks: [
 				{
-					id: 'S001',
+					id: 's1',
 					passed: false,
 				},
 			],
@@ -215,23 +215,23 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 			title: 'Dev-chat session dropdown shows only a bare down-arrow — the history glyph is blocked by the webview CSP',
 		},
 	},
-	'LLD-d88062a6e63aa312-S001.json': {
+	'LLD-d88062a6e63aa312-s1.json': {
 		meta: {
 			createdAt: '2026-08-04T19:09:56.031Z',
 			epicHash: 'd88062a6e63aa312',
 			epicSlug: 'make-code-review-work-any-subset',
-			storyId: 'S001',
+			storyId: 's1',
 			standalone: true,
 			sizeClass: 'feature',
 			approvedAt: '2026-08-04T19:19:19.625Z',
 		},
 		body: {},
 	},
-	'BUILD-d88062a6e63aa312-S001.json': {
+	'BUILD-d88062a6e63aa312-s1.json': {
 		meta: {
 			createdAt: '2026-08-05T00:00:00.000Z',
 			epicHash: 'd88062a6e63aa312',
-			storyId: 'S001',
+			storyId: 's1',
 			standalone: false,
 			approvedAt: '2026-08-04T19:35:51.413Z',
 		},
@@ -260,11 +260,11 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 			],
 		},
 	},
-	'BUILD-d5a433047dc3439f-S001.json': {
+	'BUILD-d5a433047dc3439f-s1.json': {
 		meta: {
 			createdAt: '2026-09-30T10:41:27.663Z',
 			epicHash: 'd5a433047dc3439f',
-			storyId: 'S001',
+			storyId: 's1',
 			standalone: true,
 			sizeClass: 'trivial',
 			approvedAt: '2026-09-30T10:47:58.400Z',
@@ -272,17 +272,17 @@ export const REAL_STORE: Readonly<Record<string, RawStoreFile>> = {
 		body: {
 			tasks: [
 				{
-					id: 'S001',
+					id: 's1',
 					passed: true,
 				},
 			],
 		},
 	},
-	'CR-d5a433047dc3439f-S001.json': {
+	'CR-d5a433047dc3439f-s1.json': {
 		meta: {
 			createdAt: '2026-09-30T10:47:53.871Z',
 			epicHash: 'd5a433047dc3439f',
-			storyId: 'S001',
+			storyId: 's1',
 		},
 		body: {
 			verdict: 'warn',

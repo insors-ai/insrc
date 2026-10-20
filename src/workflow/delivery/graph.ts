@@ -9,20 +9,15 @@
  * A pure function of the ArtifactRecordSet: every epic, story, task and issue
  * once, under the framework's canonical identity, with membership, evidence,
  * corrected-parent and seeding links, and the identity notices. Ids are minted
- * exactly as the folder writers mint them (buildRecordFolderArgs' anchor order,
- * safeCanonical over the WorkflowId minters), so a board id always equals the
+ * exactly as the folder writers name them (buildRecordFolderArgs' anchor order,
+ * workItemBoardId over the folder segment), so a board id always equals the
  * work item's folder segment. A mint that cannot succeed falls back to the
  * 'H<hash>', ':R(<raw>)' or '<story id>:T<nnn>' form; nothing here throws for
  * a malformed record.
  */
 
-import {
-	epicWorkflowId,
-	parseWorkflowId,
-	safeCanonical,
-	storyWorkflowId,
-	taskWorkflowId,
-} from '../id.js';
+import { ArtifactIds } from '../artifact-ids.js';
+import { workItemBoardId, type WorkItemKey } from '../path-scheme.js';
 import { makeNotice, sortNotices } from './notice.js';
 import { asObject, asString, storyOrdinalOf, taskOrdinalOf } from './read.js';
 import type {
@@ -91,6 +86,11 @@ function obj(v: unknown): Readonly<Record<string, unknown>> {
 
 function arr(v: unknown): readonly unknown[] {
 	return Array.isArray(v) ? v : [];
+}
+
+/** The board id of a node, or undefined when its key cannot name a folder. */
+function safeBoardId(key: WorkItemKey, task?: string): string | undefined {
+	try { return workItemBoardId(key, task); } catch { return undefined; }
 }
 
 function pad(n: number): string {
@@ -213,7 +213,7 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 		// --- the definition head: an epic (DEF) or an issue (ISSUE) node -------
 		let headDraft: Draft | null = null;
 		if (head !== null) {
-			const minted = head.createdAt === null ? undefined : safeCanonical(() => epicWorkflowId(hash, head.createdAt ?? ''));
+			const minted = head.createdAt === null ? undefined : safeBoardId({ epicHash: hash, epicCreatedAt: head.createdAt ?? '' });
 			const id = minted ?? `H${hash}`;
 			if (minted === undefined) {
 				notices.push(makeNotice('identity-anchor-missing',
@@ -292,11 +292,11 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 			let id: string;
 			if (ordinal === null) {
 				const base = headDraft?.id
-					?? (anchor === null ? undefined : safeCanonical(() => epicWorkflowId(hash, anchor)))
+					?? (anchor === null ? undefined : safeBoardId({ epicHash: hash, epicCreatedAt: anchor }))
 					?? `H${hash}`;
 				id = `${base}:${storyKey}`;
 			} else {
-				const minted = anchor === null ? undefined : safeCanonical(() => storyWorkflowId(hash, anchor, `s${ordinal}`));
+				const minted = anchor === null ? undefined : safeBoardId({ epicHash: hash, epicCreatedAt: anchor, story: `s${ordinal}` });
 				id = minted ?? `H${hash}:S${pad(ordinal)}`;
 				if (minted === undefined) {
 					notices.push(makeNotice('identity-anchor-missing',
@@ -395,7 +395,7 @@ function addTasks(story: StoryInfo, drafts: Map<string, Draft>): void {
 		if (t === undefined || taskOrdinal === null) continue;
 		const { ordinal, anchor } = story;
 		const minted = ordinal === null || anchor === null ? undefined
-			: safeCanonical(() => taskWorkflowId(story.hash, anchor, `s${ordinal}`, taskId));
+			: safeBoardId({ epicHash: story.hash, epicCreatedAt: anchor, story: `s${ordinal}` }, taskId);
 		const id = minted ?? `${story.draft.id}:T${pad(taskOrdinal)}`;
 		const existing = drafts.get(id);
 		if (existing !== undefined) {
@@ -433,14 +433,10 @@ function hashesForSlug(
 	if (BARE_HASH_RE.test(slug)) {
 		return { matched: slug !== ownHash && hashes.has(slug) ? [slug] : [], storyOrdinal: null };
 	}
-	const parsed = parseWorkflowId(slug);
-	if (parsed !== null) {
-		const prefix = `E${parsed.date}${parsed.hash8}`;
-		const matched = [...hashes.entries()]
-			.filter(([h, info]) => h !== ownHash && h.startsWith(parsed.hash8)
-				&& [info.headDraft?.id, ...info.stories.map(s => s.draft.id)].some(id => id !== undefined && (id === prefix || id.startsWith(`${prefix}:`))))
-			.map(([h]) => h);
-		return { matched, storyOrdinal: parsed.story ?? null };
+	const parsed = ArtifactIds.parse(slug);
+	if (parsed !== undefined) {
+		const matched = [...hashes.keys()].filter(h => h !== ownHash && (h === parsed.epicHash || (parsed.epicHash.length < 16 && h.startsWith(parsed.epicHash))));
+		return { matched, storyOrdinal: parsed.story !== undefined ? ArtifactIds.storyOrdinal(parsed.story) : null };
 	}
 	const matched = new Set<string>();
 	for (const r of recordSet.records) {

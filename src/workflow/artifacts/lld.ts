@@ -19,7 +19,7 @@
 import { createHash } from 'node:crypto';
 
 import { artifactIdMarker, lldArtifactId } from '../storage.js';
-import { safeCanonical, storyWorkflowId } from '../id.js';
+import { ArtifactIds } from '../artifact-ids.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Alternative, HldArtifact, SharedContract, StoryBoundary } from './hld.js';
 import type { ArtifactMetaBase, Citation, WorkflowArtifact } from '../types.js';
@@ -328,7 +328,7 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 	const { body, meta } = artifact;
 	const eh = typeof meta.epicHash === 'string' && meta.epicHash.length > 0 ? meta.epicHash : undefined;
 	const marker = eh !== undefined ? artifactIdMarker(lldArtifactId(meta.epicHash, meta.storyId)) : undefined;
-	const lldSid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;
+	const lldSid = eh !== undefined ? ArtifactIds.tryMake({ kind: 'STORY', epicHash: eh, story: meta.storyId }) : undefined;
 	const h1 = `LLD: ${lldSid ?? meta.storyId}`;
 	const isStandalone = (meta as { standalone?: boolean }).standalone === true;
 

@@ -27,7 +27,7 @@
  */
 
 import { artifactIdMarker, planArtifactId } from '../storage.js';
-import { safeCanonical, storyWorkflowId, taskWorkflowId } from '../id.js';
+import { ArtifactIds } from '../artifact-ids.js';
 import type { TestStrategy as LldTestStrategy } from './lld.js';
 import type { ArtifactMetaBase, Citation } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
@@ -113,7 +113,7 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 	const { body, meta } = artifact;
 	const eh = typeof meta.epicHash === 'string' && meta.epicHash.length > 0 ? meta.epicHash : undefined;
 	const marker = eh !== undefined ? artifactIdMarker(planArtifactId(meta.epicHash, meta.storyId)) : undefined;
-	const planSid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, meta.storyId)) : undefined;
+	const planSid = eh !== undefined ? ArtifactIds.tryMake({ kind: 'STORY', epicHash: eh, story: meta.storyId }) : undefined;
 	const h1 = `Plan: ${planSid ?? meta.storyId}`;
 	const ordered = [...body.tasks].sort((a, b) => a.order - b.order);
 
@@ -137,7 +137,7 @@ export function renderPlanMarkdown(artifact: PlanArtifact): string {
 	};
 
 	const taskItem = (t: PlanTask): SectionItem => {
-		const tid = eh !== undefined ? safeCanonical(() => taskWorkflowId(eh, meta.createdAt, meta.storyId, t.id)) : undefined;
+		const tid = eh !== undefined ? ArtifactIds.tryMake({ kind: 'TASK', epicHash: eh, story: meta.storyId, task: t.id }) : undefined;
 		const l: string[] = [t.summary, ''];
 		if (t.acceptanceChecks.length > 0) { l.push('**Acceptance checks:**'); for (const ac of t.acceptanceChecks) l.push(`- ${ac}`); }
 		return { title: tid !== undefined ? `${tid} — ${t.title}` : `\`${t.id}\` — ${t.title}`, lines: l };

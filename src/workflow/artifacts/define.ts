@@ -18,7 +18,7 @@
  */
 
 import { artifactIdMarker, defineArtifactId } from '../storage.js';
-import { safeCanonical, storyWorkflowId } from '../id.js';
+import { ArtifactIds } from '../artifact-ids.js';
 import { trackerRefLine } from '../tracker/refs.js';
 import type { Citation, WorkflowArtifact } from '../types.js';
 import type { FunctionalDefinition } from './functional-definition.js';
@@ -122,7 +122,7 @@ export function renderDefineMarkdown(artifact: DefineArtifact): string {
 	};
 
 	const storyItem = (s: DefineStory): SectionItem => {
-		const sid = eh !== undefined ? safeCanonical(() => storyWorkflowId(eh, meta.createdAt, s.id)) : undefined;
+		const sid = eh !== undefined ? ArtifactIds.tryMake({ kind: 'STORY', epicHash: eh, story: s.id }) : undefined;
 		const title = sid !== undefined ? `${sid} — ${s.title}` : `${s.id}: ${s.title}`;
 		const l: string[] = [];
 		const size = s.sizeEstimate === undefined ? '' : ` \`size: ${s.sizeEstimate}\``;

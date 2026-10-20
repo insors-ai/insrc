@@ -24,7 +24,6 @@ import { dirname, join } from 'node:path';
 import { _setCompanionHeaderDepsForTests, finalizeArtifact } from '../orchestrator.js';
 import { approveArtifactByJsonPath } from '../gates.js';
 import { defineArtifactPaths, workItemAnchorCreatedAt } from '../storage.js';
-import { deriveWorkItemIdentity } from '../id.js';
 import { _setCompanionRuntimeDirsForTests } from '../artifacts/companion/shell.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 import type { WorkflowIntent } from '../types.js';
@@ -111,10 +110,9 @@ test('finalize[standalone-LLD]: all four companions carry the header with the LL
 		const written = pages(repo, refs);
 		const headers = [...written.values()].map(headerOf);
 		for (const h of headers) assert.deepEqual(h, headers[0], 'every companion shows the same header');
-		// A first-time standalone LLD heads its own work item, anchored on its own write.
-		const anchor = workItemAnchorCreatedAt(artifact.meta);
+		// A first-time standalone LLD heads its own work item: the header names its Story by artifact id.
 		assert.deepEqual(headers[0], {
-			'Work item':  deriveWorkItemIdentity(EPIC_HASH, anchor, 's1').canonical,
+			'Work item':  `STORY-${EPIC_HASH}-s1`,
 			'Source doc': `<a href="./LLD.md">LLD-${EPIC_HASH}-s1</a>`,
 			'Date':       '2026-10-11 14:32',
 			'User':       'Subho Ghosh',
@@ -234,7 +232,7 @@ test('finalize[design.epic]: HLD companions name the HLD as the source doc and t
 		assert.equal(refs.length, 1);
 		const html = readFileSync(join(repo, refs[0]!.relPath), 'utf8');
 		assert.deepEqual(headerOf(html), {
-			'Work item':  'E20260720b7c3d1e2',
+			'Work item':  `EPIC-${EPIC_HASH}`,
 			'Source doc': `<a href="./HLD.md">HLD-${EPIC_HASH}</a>`,
 			'Date':       '2026-10-11 14:32',
 			'User':       'Subho Ghosh',

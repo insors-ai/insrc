@@ -27,7 +27,7 @@ const PINNED: CompanionHeaderDeps = {
 	osUserName:  () => 'subho',
 };
 
-const STANDALONE: CompanionHeaderSource = { kind: 'LLD-standalone', epicHash: HASH, storyId: 'S001', anchorCreatedAt: CREATED };
+const STANDALONE: CompanionHeaderSource = { kind: 'LLD-standalone', epicHash: HASH, storyId: 's1', anchorCreatedAt: CREATED };
 
 function withRepo<T>(fn: (repo: string) => T, config?: string): T {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-header-proj-'));
@@ -41,7 +41,7 @@ function withRepo<T>(fn: (repo: string) => T, config?: string): T {
 }
 
 function header(repo: string, source: CompanionHeaderSource = STANDALONE, deps: CompanionHeaderDeps = PINNED) {
-	return resolveCompanionHeader({ repoPath: repo, source, artifactId: `LLD-${HASH}-S001`, sourceMdPath: join(repo, 'docs/standalone/x/S001/LLD.md') }, deps);
+	return resolveCompanionHeader({ repoPath: repo, source, artifactId: `LLD-${HASH}-s1`, sourceMdPath: join(repo, 'docs/standalone/x/S001/LLD.md') }, deps);
 }
 
 // ---------------------------------------------------------------------------
@@ -92,24 +92,24 @@ test('d9f85b3c t4 — the date comes from the injected clock as YYYY-MM-DD HH:mm
 });
 
 test('d9f85b3c t4 — the source doc is the artifact id linked to its markdown beside the companion', () => {
-	withRepo(repo => assert.deepEqual(header(repo).sourceDoc, { id: `LLD-${HASH}-S001`, href: './LLD.md' }));
+	withRepo(repo => assert.deepEqual(header(repo).sourceDoc, { id: `LLD-${HASH}-s1`, href: './LLD.md' }));
 });
 
 // ---------------------------------------------------------------------------
 // unit: header: malformed createdAt/epicHash/storyId -> plain id fallback, no throw
 // ---------------------------------------------------------------------------
 
-test('d9f85b3c t4 — a well-formed source gets the hierarchical story or epic id', () => {
+test('d9f85b3c t4 — a well-formed source gets the story or epic artifact id', () => {
 	withRepo(repo => {
-		assert.equal(header(repo).workItemId, 'E20261011d9f85b3c:S001');
-		assert.equal(header(repo, { kind: 'HLD', epicHash: HASH, anchorCreatedAt: CREATED }).workItemId, 'E20261011d9f85b3c');
+		assert.equal(header(repo).workItemId, `STORY-${HASH}-s1`);
+		assert.equal(header(repo, { kind: 'HLD', epicHash: HASH, anchorCreatedAt: CREATED }).workItemId, `EPIC-${HASH}`);
 	});
 });
 
-test('d9f85b3c t4 — a malformed createdAt, epicHash or storyId falls back to the plain id without throwing', () => {
+test('d9f85b3c t4 — a malformed epicHash or storyId falls back to the plain id without throwing, and the anchor date is not needed', () => {
 	withRepo(repo => {
-		assert.equal(header(repo, { ...STANDALONE, anchorCreatedAt: 'not a date' } as CompanionHeaderSource).workItemId, 'S001');
-		assert.equal(header(repo, { ...STANDALONE, epicHash: 'xyz' } as CompanionHeaderSource).workItemId, 'S001');
+		assert.equal(header(repo, { ...STANDALONE, anchorCreatedAt: 'not a date' } as CompanionHeaderSource).workItemId, `STORY-${HASH}-s1`);
+		assert.equal(header(repo, { ...STANDALONE, epicHash: 'xyz' } as CompanionHeaderSource).workItemId, 's1');
 		assert.equal(header(repo, { ...STANDALONE, storyId: 'draft' } as CompanionHeaderSource).workItemId, 'draft');
 		assert.equal(header(repo, { kind: 'HLD', epicHash: 'xyz', anchorCreatedAt: '' }).workItemId, 'xyz');
 	});

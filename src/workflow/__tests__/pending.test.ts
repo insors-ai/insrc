@@ -82,8 +82,8 @@ test('listPendingArtifacts maps each descriptor field (kind/title/mdPath/workIte
 		assert.equal(d.title, 'Review panel foundation');
 		assert.equal(d.openQuestionCount, 2);
 		assert.equal(d.state, 'pending');
-		// workItemId derives from the meta anchor (S001, story ordinal 1).
-		assert.match(d.workItemId ?? '', /^E20260919238917.*:S001$/);
+		// workItemId is the Story's artifact id.
+		assert.equal(d.workItemId, 'STORY-238917216d8fd532-s1');
 		// mdPath is a best-effort docs-relative render — story-scoped LLD lives under S001/.
 		assert.match(d.mdPath, /S001[\\/]LLD\.md$/);
 	} finally {
@@ -122,7 +122,7 @@ test("listPendingArtifacts lists a pending BUILD record whose Story has a code r
 		assert.equal(b.kind, 'BUILD');
 		assert.equal(b.state, 'pending');
 		assert.equal(b.openQuestionCount, 0);
-		assert.match(b.workItemId ?? '', /^E20260919238917.*:S001$/);
+		assert.equal(b.workItemId, 'STORY-238917216d8fd532-s1');
 		assert.equal(b.title, `BUILD ${b.workItemId}`, "a build record's body has no title: its kind and work item id");
 		assert.equal(b.mdPath, md, 'the path of its BUILD.md');
 		assert.match(b.mdPath, /S001[\\/]BUILD\.md$/);
@@ -268,7 +268,7 @@ test('listPendingArtifacts falls back title to workItemId then artifactId when b
 	});
 	try {
 		const byId = new Map(listPendingArtifacts(repo).map(a => [a.artifactId, a]));
-		assert.match(byId.get('DEF-238917216d8fd532')?.title ?? '', /^DEF E20260919238917/);
+		assert.match(byId.get('DEF-238917216d8fd532')?.title ?? '', /^DEF EPIC-238917216d8fd532$/);
 		assert.equal(byId.get('SPEC-nothex')?.title, 'SPEC-nothex');
 	} finally {
 		cleanup(repo);

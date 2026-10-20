@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792502216356-7v5q2a",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-20T13:18:34.119Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 97750,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "storyId": "s2",
+    "lldRunId": "wf-1792398246645-7x3wlt",
+    "lldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-20T13:19:48.539Z",
+    "rangeBase": "4981cc4fae932c302940c9b37ba61aacf8869876"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story gives the code review its material: every changed symbol in a dimension's grounding becomes one whole atom, related to the others by calls, a shared file and a shared directory, and a symbol held in another chunk is described by a short deterministic line. Two pure functions do the work; the code-review adapter then hands them to s1's prepare, so a review over the limit is divided along the lines of the code while a review under it sends exactly today's prompt. Chunk prompts, obligations and gather remain Story s3's."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "codeReviewMaterial: atoms and relations from a dimension's grounding",
+        "summary": "Add codeReviewMaterial(grounding) in src/workflow/review-pipeline/adapters/code-review-material.ts: one whole atom per ChangedSymbolSummary in grounding order (id entityId, label file#name, file, module = the file's directory or '.', text = the row's JSON); 'calls' relations by name either direction (a name matching several rows relates to each, no self-relation, an unmatched name gives none); 'same-file' and 'same-module' relations; obligations empty and context absent. A duplicate entityId throws, naming it and both labels. Pure and deterministic.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Every row of the grounding is exactly one atom with the specified id, label, file, module and text.",
+          "Calls, same-file and same-module relations follow the contract, including same-named rows, self-calls, unmatched names and diff-review rows.",
+          "A duplicate entityId raises an error naming it; the same grounding always gives identical material."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a duplicate entityId throws an error naming it'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'the same grounding gives identical material and identical neighbour summaries every time'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "neighbourSummary: a deterministic line for a related atom held elsewhere",
+        "summary": "Add neighbourSummary(atom, material) beside codeReviewMaterial: '<kind> <name> in <file>: <first signature line, at most 200 characters>; calls: <related changed callee names>; called by: <related changed caller names>', with no model call; the same atom always gives the same line.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The line names kind, name, file, the first signature line cut at 200 characters, and only the related changed names.",
+          "The same atom and material give the same line every time."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'the same grounding gives identical material and identical neighbour summaries every time'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Point the code-review adapter at the material and the neighbour summary",
+        "summary": "In src/workflow/review-pipeline/code-review.ts, each dimension adapter's material() returns codeReviewMaterial of the dimension's prepared grounding read from the snapshot (coverage: prepareCoverageGrounding's output; the others: the grounding itself) and its neighbourSummary member uses t2's writer. Under the limit the single-chunk path and today's prompts are unchanged. Integration tests drive s1's prepare with a small limit and a chunk-call fixture rendering a chunk's rows in the prompt's array form: grouping order, neighbour summaries on both sides of a cut relation, whole atoms, every rendered chunk call within the limit, and an oversized atom named (judged neighbour-free).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Over the limit, symbols that call each other share a chunk before those only sharing a file, and those before those only sharing a directory.",
+          "A call relation cut between chunks gives each side a neighbour summary of the other.",
+          "Every symbol is whole in exactly one chunk, every rendered chunk call fits, and a symbol too large alone is named before any provider call.",
+          "Under the limit the plan is one chunk and the dimension prompt is today's.",
+          "A row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call.",
+          "An atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large.",
+          "Coverage material is built from prepareCoverageGrounding: only eligible rows, each carrying its coverageEvidence."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'under the limit the plan is one chunk and the dimension prompt is unchanged'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Rebuild and update the installed daemon",
+        "summary": "Update the installed daemon (maintenance.update, then restart) so reviews use the code-review material; no stored record, grounding or config changes.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The installed daemon runs the build that contains t1-t3."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Installed daemon: runs the build containing the code-review material (recorded in the BUILD record)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a duplicate entityId throws an error naming it'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'the same grounding gives identical material and identical neighbour summaries every time'",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'under the limit the plan is one chunk and the dimension prompt is unchanged'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails ReviewAdapter.material (code review)",
+      "quotedText": "built by codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMaterial"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails ReviewAdapter.neighbourSummary (code review)",
+      "quotedText": "neighbourSummary(atom: ReviewAtom, material: ReviewMaterial): string"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 errorPaths",
+      "quotedText": "One changed symbol's summary alone exceeds the chunk limit; Two atoms would share an id"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migration step 2",
+      "quotedText": "Point the code-review adapter's material() and neighbour-summary slot at them"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migration step 3",
+      "quotedText": "Rebuild and update the installed daemon."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy",
+      "quotedText": "The material through s1's prepare with a small limit"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s2",
     "createdAt": "2026-10-20T13:26:20.493Z",
-    "updatedAt": "2026-10-20T16:06:55.434Z",
+    "updatedAt": "2026-10-20T16:10:08.667Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
   },
@@ -408,6 +408,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "ad90a4c2",
+        "ranAt": "2026-10-20T16:10:08.667Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Installed daemon: runs the build containing the code-review material (recorded in the BUILD record)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/live-evidence/t4-daemon-update.txt section 'The running process loaded this build': daemon.status installedCommit 749857e075fc55b55b5010527a0cd1fb24f166b5 from the running daemon; process start 21:38:29 after build mtimes 21:38:13-14; compiled code-review.js lines 21/100/101 use codeReviewMaterial + neighbourSummary. Also stated in this BUILD record's summary."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

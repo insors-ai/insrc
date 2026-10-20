@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -138,3 +138,13 @@ Run at 2026-10-20T16:06:55.434Z on commit `0d07c80a`. Tests check: **passed**. 1
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` | 0 | 9 | 0.7 s |  |
 | `src/workflow/review-pipeline/__tests__/code-review-material.test.ts` | 0 | 7 | 0.6 s |  |
+
+## t4
+
+Run at 2026-10-20T16:10:08.667Z on commit `ad90a4c2`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: Installed daemon: runs the build containing the code-review material (recorded in the BUILD record)**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/live-evidence/t4-daemon-update.txt section 'The running process loaded this build': daemon.status installedCommit 749857e075fc55b55b5010527a0cd1fb24f166b5 from the running daemon; process start 21:38:29 after build mtimes 21:38:13-14; compiled code-review.js lines 21/100/101 use codeReviewMaterial + neighbourSummary. Also stated in this BUILD record's summary.

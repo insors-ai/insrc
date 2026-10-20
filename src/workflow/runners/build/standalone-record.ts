@@ -32,6 +32,7 @@ import type { ChangeLog, FeedbackRecord } from '../../artifacts/provenance/types
 import { readTestRecord } from './test-record.js';
 import { resolveStoryRangeBase } from './range-base.js';
 import { newestStoryCommit } from './story-commits.js';
+import type { PathIntent } from '../../artifact-ids.js';
 
 const log = getLogger('workflow:build-record');
 
@@ -261,13 +262,13 @@ export function headShortSha(repoPath: string): string | undefined {
 /** Paths a MERGED record occupies. The single derivation both the writer and the
  *  pre-persist lookup below use, so the two can never disagree about where a
  *  record lives. */
-function pathsForMerged(repoPath: string, merged: BuildRecord): { md: string; json: string } {
-	const fa = folderArgsForMerged(repoPath, merged);
-	return buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
+function pathsForMerged(repoPath: string, merged: BuildRecord, intent: PathIntent): { md: string; json: string } {
+	const fa = folderArgsForMerged(repoPath, merged, intent);
+	return buildArtifactPaths(repoPath, merged.meta.epicHash, merged.meta.storyId, fa.epicCreatedAt, fa.workItemKind, fa.epicSlug);
 }
 
 /** The work-item folder a MERGED record is filed under. */
-function folderArgsForMerged(repoPath: string, merged: BuildRecord): ReturnType<typeof buildRecordFolderArgs> {
+function folderArgsForMerged(repoPath: string, merged: BuildRecord, intent: PathIntent): ReturnType<typeof buildRecordFolderArgs> {
 	// The record's own flag, OR what the work item itself says. The flag alone was
 	// not enough: a record written without it (any writer that could not resolve
 	// the route) was filed under docs/epics/ even though its Story's LLD and ISSUE
@@ -277,7 +278,7 @@ function folderArgsForMerged(repoPath: string, merged: BuildRecord): ReturnType<
 	// true on the record is never overridden.
 	const standalone = merged.meta.standalone === true
 		|| inheritedStoryStandalone(repoPath, merged.meta.epicHash, merged.meta.storyId) === true;
-	return buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, standalone, merged.meta.createdAt);
+	return buildRecordFolderArgs(repoPath, merged.meta.epicHash, merged.meta.storyId, standalone, intent);
 }
 
 /**
@@ -291,9 +292,9 @@ function folderArgsForMerged(repoPath: string, merged: BuildRecord): ReturnType<
  * `createdAt` and `standalone`, not the new write's), and derives both paths
  * through the same {@link pathsForMerged} the writer uses. Read-only.
  */
-export function buildRecordPathsFor(repoPath: string, rec: BuildRecord): { md: string; json: string } {
+export function buildRecordPathsFor(repoPath: string, rec: BuildRecord, intent: PathIntent): { md: string; json: string } {
 	const jsonPath = artifactJsonPath(repoPath, buildArtifactId(rec.meta.epicHash, rec.meta.storyId));
-	return pathsForMerged(repoPath, mergeWithPrior(jsonPath, rec));
+	return pathsForMerged(repoPath, mergeWithPrior(jsonPath, rec), intent);
 }
 
 /** The Story's newest trailered commit since its range base; undefined when the
@@ -328,10 +329,12 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// Store the folder identity the record is filed under, so its meta and its md
 	// location agree (ISSUE-764b88ed). It is resolved from the work item, never
 	// from the stamp itself, so a re-persist re-derives rather than echoes it.
-	const merged: BuildRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsForMerged(repoPath, unstamped)) } };
+	// A write roots the anchor on this record's own time when nothing anchors yet.
+	const intent: PathIntent = { kind: 'write', root: { createdAt: unstamped.meta.createdAt } };
+	const merged: BuildRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsForMerged(repoPath, unstamped, intent)) } };
 	// content: a BUILD record is regenerated, so each persist mints a revision.
 	writeArtifact(jsonPath, merged, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
-	const paths = pathsForMerged(repoPath, merged);
+	const paths = pathsForMerged(repoPath, merged, intent);
 	// ONE renderer, every route — the former `meta.standalone` ternary is gone.
 	// The id marker is prepended HERE, not in the renderer, so the renderer's
 	// output (and every golden pinned on it) is unchanged. The md is named by

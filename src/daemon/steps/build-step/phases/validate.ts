@@ -442,7 +442,7 @@ async function runValidateSession(
 	const testRecordMd = (): string | undefined => {
 		if (!identified || readTestRecord(repoPath, ident.epicHash, ident.storyId) === null) return undefined;
 		try {
-			return relative(repoPath, testRecordPaths(repoPath, ident.epicHash, ident.storyId, { now, standalone: routeFlag }).md);
+			return relative(repoPath, testRecordPaths(repoPath, ident.epicHash, ident.storyId, { now, standalone: routeFlag }, { kind: 'read' }).md);
 		} catch {
 			return undefined;
 		}
@@ -574,7 +574,7 @@ async function runValidateSession(
 				// file. Without this the only dirty paths when the collector runs are
 				// usually these, so the record would report that the Story changed its
 				// own ledger entries. The list is the one the completion record uses.
-				const exclude = storyWorkflowFiles(repoPath, rec);
+				const exclude = storyWorkflowFiles(repoPath, rec, { kind: 'write', root: { createdAt: rec.meta.createdAt } });
 				// The Story's COMMITTED range base. Consulted by the derivation only
 				// when the working tree is clean — which is the normal case here,
 				// because the implement prompt commits before validation runs.

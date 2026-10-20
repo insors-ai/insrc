@@ -579,7 +579,7 @@ async function driveRunner(
 	}
 	releaseState(token);   // consumed — a resend of this token fails loadState (no double-write)
 	const cra = codeReviewSubjectPathArgs(subject);
-	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
+	const paths = codeReviewArtifactPaths(subject.repoPath, subject.epicHash, subject.storyId, cra.epicCreatedAt, cra.workItemKind, cra.epicSlug);
 	// ISSUE-11e4fa88 — say so when findings were dropped. The operator reads this
 	// response, not the record, and a clean-looking verdict that hides discarded
 	// findings reports the opposite of what the reviewer said.
@@ -746,7 +746,7 @@ async function reviewByDaemon(
 			);
 		}
 		const cra = codeReviewSubjectPathArgs(subject);
-		const paths = codeReviewArtifactPaths(repo, epicHash, storyId, cra.createdAtISO, cra.workItemKind, cra.epicSlug);
+		const paths = codeReviewArtifactPaths(repo, epicHash, storyId, cra.epicCreatedAt, cra.workItemKind, cra.epicSlug);
 		const model = res.artifact.meta.model;
 		return {
 			next:          'done',

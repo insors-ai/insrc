@@ -45,6 +45,9 @@ const STORY = 's1';
 
 function repoWith(buildMeta?: Record<string, unknown>): { repo: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-cr-rpc-'));
+	// the work item's head carries the Epic anchor the review's folder is keyed on
+	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+	writeFileSync(join(repo, '.insrc', 'artifacts', `ISSUE-${EPIC}.json`), JSON.stringify({ meta: { issueHash: EPIC, createdAt: '2026-10-01T00:00:00.000Z', epicSlug: 'a-fix', standalone: true }, body: {} }));
 	if (buildMeta !== undefined) {
 		const json = artifactJsonPath(repo, buildArtifactId(EPIC, STORY));
 		mkdirSync(dirname(json), { recursive: true });

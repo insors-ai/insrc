@@ -136,7 +136,12 @@ test("a file another Story's excluded commit also changed is listed in sharedWit
 			assembleGrounding: async () => ({ symbols: [] }),
 			write: (path) => { written.push(path); },
 		};
-		const subject: CodeReviewSubject = res.subject;
+		// The review is filed beside the Story's records, so the subject carries the build record's stamp.
+		const stamp = '2026-10-05T00:00:00.000Z';
+		const subject: CodeReviewSubject = {
+			...res.subject,
+			buildRecord: { meta: { workflow: 'build', epicHash: EPIC, storyId: 's1', createdAt: stamp, epicCreatedAt: stamp }, body: { tasks: [] } } as unknown as CodeReviewSubject['buildRecord'],
+		};
 		const out = await runCodeReview(subject, {} as LLMProvider, { runId: 'r', modelLabel: 'test' }, runnerDeps);
 		assert.ok(out.ok, out.ok ? '' : out.error);
 		if (!out.ok) return;

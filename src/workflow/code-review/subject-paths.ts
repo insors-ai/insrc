@@ -16,11 +16,12 @@
  */
 
 import type { WorkItemKind } from '../path-scheme.js';
-import { storyRecordFolderArgs, workItemAnchorCreatedAt } from '../storage.js';
+import { MissingAnchorError } from '../artifact-ids.js';
+import { storyRecordFolderArgs } from '../storage.js';
 import type { CodeReviewSubject } from './types.js';
 
 export function codeReviewSubjectPathArgs(subject: CodeReviewSubject): {
-	readonly createdAtISO: string;
+	readonly epicCreatedAt: string;
 	readonly workItemKind: WorkItemKind;
 	readonly epicSlug:     string | undefined;
 } {
@@ -29,10 +30,18 @@ export function codeReviewSubjectPathArgs(subject: CodeReviewSubject): {
 	// read straight off the LLD's stored meta, which can disagree with the
 	// definition head and sent the review to a second folder (ISSUE-b2e16601).
 	const held = subject.approvedLld?.meta ?? subject.buildRecord?.meta;
-	const resolved = storyRecordFolderArgs(subject.repoPath, subject.epicHash, subject.storyId, {
-		standalone:   held?.standalone,
-		ownCreatedAt: held !== undefined ? workItemAnchorCreatedAt(held) : new Date().toISOString(),
-	});
+	// The anchor is what the work item's records say. A subject also holds the
+	// persisted LLD or BUILD record it was built from, so that record's own stamp
+	// answers when the work item on disk is silent; with neither, the review has
+	// no folder and the read fails (no clock is substituted).
+	const heldStamp = held?.epicCreatedAt;
+	let resolved: ReturnType<typeof storyRecordFolderArgs>;
+	try {
+		resolved = storyRecordFolderArgs(subject.repoPath, subject.epicHash, subject.storyId, { standalone: held?.standalone }, { kind: 'read' });
+	} catch (err) {
+		if (!(err instanceof MissingAnchorError) || heldStamp === undefined || heldStamp.length === 0) throw err;
+		resolved = storyRecordFolderArgs(subject.repoPath, subject.epicHash, subject.storyId, { standalone: held?.standalone }, { kind: 'write', root: { createdAt: heldStamp } });
+	}
 	// The held LLD's label is the LAST resort — only when nothing on disk names
 	// the work item — so the folder never degrades to a raw hash while a label is
 	// in hand. An empty label counts as absent.

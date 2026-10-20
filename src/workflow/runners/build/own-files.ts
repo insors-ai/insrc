@@ -19,6 +19,7 @@
 import { buildStartRelPath } from './range-base.js';
 import { buildRecordPathsFor, type BuildRecord } from './standalone-record.js';
 import { testRecordPaths } from './test-record.js';
+import type { PathIntent } from '../../artifact-ids.js';
 
 /**
  * The paths to leave out of the change log of the Story `rec` belongs to: the
@@ -26,12 +27,12 @@ import { testRecordPaths } from './test-record.js';
  * build-start file. `rec` is the build record about to be written (its paths
  * are derived through the same merge the write uses).
  */
-export function storyWorkflowFiles(repoPath: string, rec: BuildRecord): readonly string[] {
-	const own = buildRecordPathsFor(repoPath, rec);
+export function storyWorkflowFiles(repoPath: string, rec: BuildRecord, intent: PathIntent): readonly string[] {
+	const own = buildRecordPathsFor(repoPath, rec, intent);
 	const { epicHash, storyId } = rec.meta;
 	const out: string[] = [own.json, own.md];
 	try {
-		const tests = testRecordPaths(repoPath, epicHash, storyId, { now: rec.meta.createdAt, standalone: rec.meta.standalone });
+		const tests = testRecordPaths(repoPath, epicHash, storyId, { now: rec.meta.createdAt, standalone: rec.meta.standalone }, intent);
 		out.push(tests.json, tests.md);
 	} catch {
 		// An identity the path scheme cannot place has no test record to leave out.

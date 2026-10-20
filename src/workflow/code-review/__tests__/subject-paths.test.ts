@@ -42,13 +42,13 @@ function subject(repo: string, over: Partial<CodeReviewSubject> = {}): CodeRevie
 
 function crMd(s: CodeReviewSubject): string {
 	const a = codeReviewSubjectPathArgs(s);
-	return codeReviewArtifactPaths(s.repoPath, s.epicHash, s.storyId, a.createdAtISO, a.workItemKind, a.epicSlug).md;
+	return codeReviewArtifactPaths(s.repoPath, s.epicHash, s.storyId, a.epicCreatedAt, a.workItemKind, a.epicSlug).md;
 }
 
 /** The folder the Story's BUILD record is written to (standalone flag as persisted). */
 function buildMd(repo: string, standalone: boolean, own: string): string {
-	const a = buildRecordFolderArgs(repo, HASH, STORY, standalone, own);
-	return buildArtifactPaths(repo, HASH, STORY, a.createdAtISO, a.workItemKind, a.epicSlug).md;
+	const a = buildRecordFolderArgs(repo, HASH, STORY, standalone, { kind: 'write', root: { createdAt: own } });
+	return buildArtifactPaths(repo, HASH, STORY, a.epicCreatedAt, a.workItemKind, a.epicSlug).md;
 }
 
 test('0855311b — a subject holding NO LLD and NO build record still files the review in the story\'s folder', () => {
@@ -109,7 +109,7 @@ test('with nothing on disk the subject\'s own LLD is still the fallback (anchor,
 		const created = '2026-07-18T00:00:00.000Z';
 		const approvedLld = { meta: { epicSlug: 'tag-filtering', createdAt: created, epicCreatedAt: created, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'];
 		const a = codeReviewSubjectPathArgs(subject(repo, { approvedLld }));
-		assert.equal(a.createdAtISO, created);
+		assert.equal(a.epicCreatedAt, created);
 		assert.equal(a.workItemKind, 'standalone');
 		assert.equal(a.epicSlug, 'tag-filtering', 'the held label is the last resort, never a raw hash');
 	});

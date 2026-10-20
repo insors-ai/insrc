@@ -68,7 +68,7 @@ export async function ensureBuildRecordOnCompletion(
 		// validate writer also uses: at completion time they are typically the only
 		// dirty paths, so without this the record reports that the Story changed its
 		// own ledger entries.
-		const exclude = storyWorkflowFiles(repoPath, base);
+		const exclude = storyWorkflowFiles(repoPath, base, { kind: 'write', root: { createdAt: base.meta.createdAt } });
 		// Same resolver the validate writer uses, so the two can never disagree
 		// about this Story's base. See range-base.ts for the precedence and for why
 		// an unresolvable base yields empty rather than a substituted range.

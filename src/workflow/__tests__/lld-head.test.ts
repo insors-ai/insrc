@@ -142,13 +142,13 @@ test('c00559b7 — a non-object tracker is ignored rather than passed through', 
 test('c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS records under docs/standalone, in the LLD\'s folder', () => {
 	const r = repo();
 	try {
-		r.seed(`LLD-${HASH}-s1`, { createdAt: LLD_MADE, epicSlug: 'legacy-feature' });
+		r.seed(`LLD-${HASH}-s1`, { createdAt: LLD_MADE, epicCreatedAt: LLD_MADE, epicSlug: 'legacy-feature' });
 		const folder = join(r.repo, 'docs/standalone', `legacy-feature-E20260903${HASH.slice(0, 8)}`, 'S001');
 
 		assert.equal(inheritedStoryStandalone(r.repo, HASH, 's1'), true);
 		assert.deepEqual(
-			storyRecordFolderArgs(r.repo, HASH, 's1', { ownCreatedAt: '2026-10-11T00:00:00.000Z' }),
-			{ createdAtISO: LLD_MADE, workItemKind: 'standalone', epicSlug: 'legacy-feature' },
+			storyRecordFolderArgs(r.repo, HASH, 's1', {}, { kind: 'write', root: { createdAt: '2026-10-11T00:00:00.000Z' } }),
+			{ epicCreatedAt: LLD_MADE, workItemKind: 'standalone', epicSlug: 'legacy-feature' },
 		);
 
 		// The BUILD record exactly as the shared validate persist writes it: no
@@ -156,10 +156,10 @@ test('c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS re
 		const build = buildRecordPathsFor(r.repo, {
 			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-10-11T00:00:00.000Z', epicCreatedAt: '2026-10-11T00:00:00.000Z' },
 			body: { tasks: [] },
-		} as never);
+		} as never, { kind: 'write', root: { createdAt: '2026-10-11T00:00:00.000Z' } });
 		assert.equal(build.md, join(folder, 'BUILD.md'));
 
-		const tests = testRecordPaths(r.repo, HASH, 's1', { now: '2026-10-11T00:00:00.000Z' });
+		const tests = testRecordPaths(r.repo, HASH, 's1', { now: '2026-10-11T00:00:00.000Z' }, { kind: 'write', root: { createdAt: '2026-10-11T00:00:00.000Z' } });
 		assert.equal(tests.md, join(folder, 'TESTS.md'));
 	} finally { r.cleanup(); }
 });

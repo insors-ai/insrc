@@ -93,11 +93,11 @@ test("the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md i
 		assert.match(tests.md, /docs\/epics\/pay-things-E20260115abc123de\/S001\/TESTS\.md$/);
 		// A later write of the record stays there.
 		assert.equal(persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('t2')).md, tests.md);
-		assert.equal(testRecordPaths(repo, HASH, 's1', { now: T2 }).md, tests.md);
+		assert.equal(testRecordPaths(repo, HASH, 's1', { now: T2 }, { kind: 'write', root: { createdAt: T2 } }).md, tests.md);
 	});
 	// A standalone Story with a design: the LLD dates the folder.
 	await withRepo((repo) => {
-		writeArtifact(repo, `LLD-${HASH}-s1`, { standalone: true, epicSlug: 'small-thing', createdAt: '2026-02-10T00:00:00.000Z' });
+		writeArtifact(repo, `LLD-${HASH}-s1`, { standalone: true, epicSlug: 'small-thing', createdAt: '2026-02-10T00:00:00.000Z', epicCreatedAt: '2026-02-10T00:00:00.000Z' });
 		const tests = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0, standalone: true }, task('s1'));
 		const build = persistBuildRecord(repo, { meta: { workflow: 'build', standalone: true, epicHash: HASH, storyId: 's1', createdAt: T1, updatedAt: T1 }, body: { tasks: [{ id: 's1', passed: true }] } });
 		assert.equal(dirname(tests.md), dirname(build.md));
@@ -112,8 +112,8 @@ test("the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md i
 		const later = persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T2 }, task('s1'));
 		assert.equal(later.md, first.md);
 		// ... and the shared derivation hands the same anchor to any other record writer.
-		const fa = storyRecordFolderArgs(repo, HASH, 's1', { ownCreatedAt: T2 });
-		assert.deepEqual([fa.createdAtISO, fa.workItemKind], [T0, 'standalone']);
+		const fa = storyRecordFolderArgs(repo, HASH, 's1', {}, { kind: 'write', root: { createdAt: T2 } });
+		assert.deepEqual([fa.epicCreatedAt, fa.workItemKind], [T0, 'standalone']);
 	});
 	// A build record that already exists stays the anchor, and the test record follows it.
 	await withRepo((repo) => {
@@ -211,7 +211,7 @@ test('when the document cannot be written after the json was, the json is put ba
 	const { mkdirSync: mk, rmSync: rm } = await import('node:fs');
 	// First write: the document's path is taken by a directory, so its write fails.
 	await withRepo((repo) => {
-		const paths = testRecordPaths(repo, HASH, 's1', { now: T0 });
+		const paths = testRecordPaths(repo, HASH, 's1', { now: T0 }, { kind: 'write', root: { createdAt: T0 } });
 		mk(paths.md, { recursive: true });
 		assert.throws(() => persistTestRecordTask(repo, { epicHash: HASH, storyId: 's1', now: T0 }, task('t1')));
 		assert.equal(existsSync(paths.json), false, 'no json is left behind for a record whose document was never written');

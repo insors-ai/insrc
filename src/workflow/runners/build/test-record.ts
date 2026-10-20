@@ -26,6 +26,7 @@ import { relative } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
 import { artifactIdMarker, artifactJsonPath, folderIdentityMeta, storyRecordFolderArgs, testsArtifactId, testsArtifactPaths, writeArtifact, writeAtomic } from '../../storage.js';
+import type { PathIntent } from '../../artifact-ids.js';
 
 const log = getLogger('workflow:test-record');
 
@@ -189,20 +190,17 @@ export function storedMappingFor(repoPath: string, epicHash: string, storyId: st
 // Paths + write
 // ---------------------------------------------------------------------------
 
-function pathsFor(repoPath: string, rec: TestRecord): { md: string; json: string } {
-	const fa = folderArgsFor(repoPath, rec);
-	return testsArtifactPaths(repoPath, rec.meta.epicHash, rec.meta.storyId, fa.createdAtISO, fa.workItemKind, fa.epicSlug);
+function pathsFor(repoPath: string, rec: TestRecord, intent: PathIntent): { md: string; json: string } {
+	const fa = folderArgsFor(repoPath, rec, intent);
+	return testsArtifactPaths(repoPath, rec.meta.epicHash, rec.meta.storyId, fa.epicCreatedAt, fa.workItemKind, fa.epicSlug);
 }
 
 /** The ONE folder derivation every Story record uses: the work item's
- *  definition head, its LLD and its persisted BUILD record decide; this
- *  record's own createdAt and flag are the fallback, for a Story that has no
- *  BUILD record yet. */
-function folderArgsFor(repoPath: string, rec: TestRecord): ReturnType<typeof storyRecordFolderArgs> {
-	return storyRecordFolderArgs(repoPath, rec.meta.epicHash, rec.meta.storyId, {
-		standalone:   rec.meta.standalone,
-		ownCreatedAt: rec.meta.createdAt,
-	});
+ *  definition head, its LLD and its persisted BUILD record decide; the intent
+ *  says whether a write may root the anchor on this record's own time when
+ *  nothing else anchors yet. */
+function folderArgsFor(repoPath: string, rec: TestRecord, intent: PathIntent): ReturnType<typeof storyRecordFolderArgs> {
+	return storyRecordFolderArgs(repoPath, rec.meta.epicHash, rec.meta.storyId, { standalone: rec.meta.standalone }, intent);
 }
 
 /** The paths of a Story's test record as it is on disk, or as a first write
@@ -212,12 +210,13 @@ export function testRecordPaths(
 	epicHash: string,
 	storyId:  string,
 	first:    { readonly now: string; readonly standalone?: boolean | undefined },
+	intent:   PathIntent,
 ): { md: string; json: string } {
 	const prior = readTestRecord(repoPath, epicHash, storyId);
 	return pathsFor(repoPath, prior ?? {
 		meta: { workflow: 'tests', epicHash, storyId, createdAt: first.now, updatedAt: first.now, ...(first.standalone === true ? { standalone: true } : {}) },
 		body: { tasks: [] },
-	});
+	}, intent);
 }
 
 /**
@@ -253,8 +252,10 @@ export function persistTestRecordTask(
 	};
 	// Store the folder identity the record is filed under, so its meta and its md
 	// location agree (ISSUE-764b88ed).
-	const rec: TestRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsFor(repoPath, unstamped)) } };
-	const paths = pathsFor(repoPath, rec);
+	// A write roots the anchor on this record's own time when nothing anchors yet.
+	const intent: PathIntent = { kind: 'write', root: { createdAt: unstamped.meta.createdAt } };
+	const rec: TestRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsFor(repoPath, unstamped, intent)) } };
+	const paths = pathsFor(repoPath, rec, intent);
 	// The json and its document are two files. If the document cannot be written
 	// after the json was, the json is put back as it was (or removed, when it is
 	// new): a caller told "the record was not written" must find the earlier run

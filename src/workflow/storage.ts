@@ -40,7 +40,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renam
 import { dirname, join } from 'node:path';
 
 import { PATHS } from '../shared/paths.js';
-import { ArtifactIds, MissingAnchorError } from './artifact-ids.js';
+import { ArtifactIds, MissingAnchorError, type PathIntent } from './artifact-ids.js';
 import { deriveWorkItemIdentity, storyIdToOrdinal } from './id.js';
 import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme.js';
 
@@ -575,64 +575,57 @@ export function compareStoryOrdinal(a: string, b: string): number {
 	return ordinal(a) - ordinal(b) || a.localeCompare(b);
 }
 
-/** Resolve the sc2 folder args (anchor createdAt + top-level split + slug label)
- *  for a BUILD record, which carries only minimal meta. The build must land in
- *  the SAME work-item folder as the story it builds, so the anchor + slug come
- *  from the upstream artifact — the parent Epic's `define` for an epic build, or
- *  the standalone LLD for a standalone build (both always pre-exist a build) —
- *  falling back to the record's own createdAt (Trivial standalone with no LLD). */
+/** Resolve the sc2 folder args (anchor + top-level split + slug label) for a
+ *  BUILD or TESTS record, which carries only minimal meta. The record must land
+ *  in the SAME work-item folder as the story it builds, so the anchor is the
+ *  first of: the persisted BUILD record's stamp, the persisted TESTS record's
+ *  stamp, the Epic anchor resolved from the work item's head
+ *  ({@link resolveEpicAnchor}), and — for a write only — the root the caller is
+ *  about to stamp. A read that finds none of them raises
+ *  {@link MissingAnchorError} instead of inventing a day.
+ *
+ *  @throws {MissingAnchorError} on a read with no anchor, or a write whose root
+ *    carries no time. */
 export function buildRecordFolderArgs(
-	repoPath:     string,
-	epicHash:     string,
-	storyId:      string,
-	standalone:   boolean,
-	ownCreatedAt: string,
-): { readonly createdAtISO: string; readonly workItemKind: WorkItemKind; readonly epicSlug: string | undefined } {
-	// The ANCHOR comes from the nearest upstream, which differs by route: the
-	// standalone route reads the LLD and degrades to the record's own createdAt,
-	// while the epic route reads the DEFINITION artifact (DEF or ISSUE alike)
-	// rather than the define artifact alone — S001/t5, which stopped an
-	// ISSUE-anchored work item from landing in a raw-hash folder.
+	repoPath:   string,
+	epicHash:   string,
+	storyId:    string,
+	standalone: boolean,
+	intent:     PathIntent,
+): { readonly epicCreatedAt: string; readonly workItemKind: WorkItemKind; readonly epicSlug: string | undefined } {
+	// The LABEL comes from the DEFINITION HEAD on BOTH routes (ISSUE-3a98d279): the
+	// nearest upstream (the LLD, on the standalone route) can have re-derived its
+	// own slug, and a work item whose definition and LLD disagreed ended up with
+	// two folders. The upstream label stays the FALLBACK so a work item with no
+	// definition artifact keeps whatever label its LLD carries instead of
+	// degrading to a raw-hash folder.
 	const upstream = standalone
 		? readArtifactCore(repoPath, lldArtifactId(epicHash, storyId))
 		: readEpicDefinitionCore(repoPath, epicHash);
-
-	// ISSUE-3a98d279 — the LABEL, by contrast, comes from the DEFINITION HEAD on
-	// BOTH routes. It used to come from whatever the nearest upstream persisted,
-	// which on the standalone route is the LLD; an LLD that had re-derived its own
-	// slug therefore named the folder, and a work item whose definition and LLD
-	// disagreed ended up with two. This closes the asymmetry a previous comment
-	// here described as deliberate.
-	//
-	// The upstream label remains the FALLBACK, so a work item with no definition
-	// artifact keeps whatever label its LLD carries instead of degrading to a
-	// raw-hash folder. On the epic route `head` IS `upstream`, so nothing changes
-	// there and no second read is issued.
-	// An EMPTY stored label counts as ABSENT, matching inheritedEpicSlug's own
-	// guard. `??` alone would not do it: it catches undefined but passes '' through,
-	// and fileSeg turns an empty label into the literal segment 'artifact' — so a
-	// head storing an empty string would name the folder `artifact-E<segment>` and
-	// suppress the upstream label that was about to be used. Verified by probe
-	// before this guard existed.
 	const head = standalone ? readEpicDefinitionCore(repoPath, epicHash) : upstream;
+	// An EMPTY stored label counts as ABSENT, matching inheritedEpicSlug's own
+	// guard: fileSeg turns an empty label into the literal segment 'artifact'.
 	const headLabel = head.epicSlug !== undefined && head.epicSlug.length > 0 ? head.epicSlug : undefined;
+
+	const stamped = readEpicCreatedAtStamp(repoPath, buildArtifactId(epicHash, storyId))
+		?? readEpicCreatedAtStamp(repoPath, testsArtifactId(epicHash, storyId))
+		?? resolveEpicAnchor(repoPath, epicHash);
 	return {
-		// ISSUE-0855311b — the standalone route falls back to the HEAD's anchor before
-		// the record's own clock. A bugfix built with no LLD has an ISSUE head and no
-		// upstream, so anchoring on `ownCreatedAt` filed its BUILD in a folder dated
-		// the day of the build, beside (not in) the one its ISSUE sits in. The LLD
-		// still wins when present, so 3a98d279's anchor rule is untouched; and with
-		// neither artifact the record's own createdAt is still the anchor (Trivial).
-		//
-		// The LLD's anchor is its `epicCreatedAt` when it carries one, because that is
-		// what the LLD's OWN folder is keyed on (workItemAnchorCreatedAt). Reading its
-		// bare createdAt instead filed the records a day away from the LLD whenever
-		// the two differed.
-		createdAtISO: (standalone ? readEpicCreatedAtStamp(repoPath, lldArtifactId(epicHash, storyId)) : undefined)
-			?? upstream.createdAt ?? head.createdAt ?? ownCreatedAt,
-		workItemKind: standalone ? 'standalone' : 'epic',
-		epicSlug:     headLabel ?? upstream.epicSlug,
+		epicCreatedAt: stamped ?? rootAnchor(intent, `${epicHash}/${storyId}`),
+		workItemKind:  standalone ? 'standalone' : 'epic',
+		epicSlug:      headLabel ?? upstream.epicSlug,
 	};
+}
+
+/** The time a write may stamp when nothing anchors yet; a read has none. */
+function rootAnchor(intent: PathIntent, what: string): string {
+	if (intent.kind === 'write' && typeof intent.root.createdAt === 'string' && intent.root.createdAt.length > 0) {
+		return intent.root.createdAt;
+	}
+	throw new MissingAnchorError(
+		`no Epic anchor for ${what}: neither the records nor the work item's head carry one` +
+		(intent.kind === 'write' ? ' and the write brought no root time' : ''),
+	);
 }
 
 /**
@@ -662,14 +655,15 @@ export function storyRecordFolderArgs(
 	repoPath: string,
 	epicHash: string,
 	storyId:  string,
-	fallback: { readonly standalone?: boolean | undefined; readonly ownCreatedAt: string },
-): { readonly createdAtISO: string; readonly workItemKind: WorkItemKind; readonly epicSlug: string | undefined } {
+	fallback: { readonly standalone?: boolean | undefined },
+	intent:   PathIntent,
+): { readonly epicCreatedAt: string; readonly workItemKind: WorkItemKind; readonly epicSlug: string | undefined } {
 	const build = readArtifactCore(repoPath, buildArtifactId(epicHash, storyId));
 	const tests = build.createdAt === undefined ? readArtifactCore(repoPath, testsArtifactId(epicHash, storyId)) : {};
 	const standalone = inheritedStoryStandalone(
 		repoPath, epicHash, storyId, build.standalone ?? tests.standalone ?? fallback.standalone,
 	) === true;
-	return buildRecordFolderArgs(repoPath, epicHash, storyId, standalone, build.createdAt ?? tests.createdAt ?? fallback.ownCreatedAt);
+	return buildRecordFolderArgs(repoPath, epicHash, storyId, standalone, intent);
 }
 
 /**
@@ -682,12 +676,12 @@ export function storyRecordFolderArgs(
  * is then the label) and the flag is only ever set to true.
  */
 export function folderIdentityMeta(fa: {
-	readonly createdAtISO: string;
+	readonly epicCreatedAt: string;
 	readonly workItemKind: WorkItemKind;
 	readonly epicSlug:     string | undefined;
 }): { readonly epicCreatedAt: string; readonly epicSlug?: string; readonly standalone?: true } {
 	return {
-		epicCreatedAt: fa.createdAtISO,
+		epicCreatedAt: fa.epicCreatedAt,
 		...(fa.epicSlug !== undefined && fa.epicSlug.length > 0 ? { epicSlug: fa.epicSlug } : {}),
 		...(fa.workItemKind === 'standalone' ? { standalone: true as const } : {}),
 	};

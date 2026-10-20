@@ -1283,7 +1283,7 @@ test('43d72766 — a record that never got its flag is still re-rendered beside 
 		seedStandaloneLldOnly(repo);
 		// A record as the old writer left it: no `standalone`, no `sizeClass`.
 		writeFileSync(join(artifactsDir(repo), `BUILD-${HASH}-s1.json`), JSON.stringify({
-			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-07-20T00:00:00.000Z', epicCreatedAt: '2026-07-20T00:00:00.000Z', updatedAt: '2026-07-20T00:00:00.000Z' },
+			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-07-20T00:00:00.000Z', updatedAt: '2026-07-20T00:00:00.000Z' },
 			body: { tasks: [{ id: 's1', passed: true }] },
 		}, null, 2));
 		// Any later write re-renders it — completion is the one an approval triggers.

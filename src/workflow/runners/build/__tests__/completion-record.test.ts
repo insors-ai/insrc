@@ -290,8 +290,8 @@ test("completion of a Story whose only dirty files are its BUILD and TESTS recor
 			'precondition: the only dirty files are the two records and the build-start file');
 
 		// The ONE list both writers use names exactly those files.
-		const own = buildRecordPathsFor(repo, rec);
-		assert.deepEqual(storyWorkflowFiles(repo, rec), [own.json, own.md, tests.json, tests.md, buildStartRelPath(HASH, 's1')]);
+		const own = buildRecordPathsFor(repo, rec, { kind: 'write', root: { createdAt: rec.meta.createdAt } });
+		assert.deepEqual(storyWorkflowFiles(repo, rec, { kind: 'write', root: { createdAt: rec.meta.createdAt } }), [own.json, own.md, tests.json, tests.md, buildStartRelPath(HASH, 's1')]);
 
 		// Completion, with the REAL change-set derivation: the committed range, not the records.
 		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' });

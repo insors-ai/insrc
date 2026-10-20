@@ -35,6 +35,8 @@ const D1 = '2026-10-02T10:00:00.000Z';
 const D2 = '2026-10-03T10:00:00.000Z';
 const D3 = '2026-10-04T10:00:00.000Z';
 const D4 = '2026-10-05T10:00:00.000Z';
+const D5 = '2026-10-06T10:00:00.000Z';
+const D6 = '2026-10-07T10:00:00.000Z';
 const SLUG = 'tag-filtering';
 
 function tempRepo(): { repo: string; seed: (id: string, meta: Record<string, unknown>) => void; done: () => void } {
@@ -83,20 +85,26 @@ test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one 
 			}
 			assert.equal(resolveEpicAnchor(r.repo, HASH), D0);
 
-			// the design records, each written on its own later day (an HLD exists only on the epic route)
+			// the design records, each written on its own later day
 			const design: string[] = [];
-			if (!standalone) design.push(dirname(writeDesign(r, 'HLD', D1, false)));
-			design.push(dirname(dirname(writeDesign(r, 'LLD', D1, standalone))));
-			design.push(dirname(dirname(writeDesign(r, 'PLAN', D2, standalone))));
+			design.push(dirname(writeDesign(r, 'HLD', D1, standalone)));
+			design.push(dirname(dirname(writeDesign(r, 'LLD', D2, standalone))));
+			design.push(dirname(dirname(writeDesign(r, 'PLAN', D3, standalone))));
 
-			// the ledger records: TESTS on D3, BUILD on D4, the code review (a read of the work item) after both
-			const tests = persistTestRecordTask(r.repo, { epicHash: HASH, storyId: 's1', now: D3, ...(standalone ? { standalone: true } : {}) }, task(D3));
-			const build = persistBuildRecord(r.repo, buildRec(D4, standalone));
+			// the ledger records: TESTS on D4, BUILD on D5, the code review on D6
+			const tests = persistTestRecordTask(r.repo, { epicHash: HASH, storyId: 's1', now: D4, ...(standalone ? { standalone: true } : {}) }, task(D4));
+			const build = persistBuildRecord(r.repo, buildRec(D5, standalone));
 			const cr = codeReviewArtifactPaths(
 				r.repo, HASH, 's1',
 				codeReviewSubjectPathArgs({ repoPath: r.repo, epicHash: HASH, storyId: 's1', changedFiles: [], approvedLld: null, approvedPlan: null, buildRecord: null }).epicCreatedAt,
 				standalone ? 'standalone' : 'epic', SLUG,
 			).md;
+
+			// the code review is a record too: written, with its stamp, on D6
+			const crStamp = resolveEpicAnchor(r.repo, HASH)!;
+			r.seed(`CR-${HASH}-s1`, { epicHash: HASH, storyId: 's1', createdAt: D6, epicCreatedAt: crStamp, epicSlug: SLUG, ...(standalone ? { standalone: true } : {}) });
+			mkdirSync(dirname(cr), { recursive: true });
+			writeFileSync(cr, '# CR\n');
 
 			const folders = new Set([...design, dirname(dirname(tests.md)), dirname(dirname(build.md)), dirname(dirname(cr))]);
 			assert.equal(folders.size, 1, `one folder, got ${[...folders].join(' | ')}`);
@@ -110,7 +118,9 @@ test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one 
 			assert.ok(ids.includes('E20261001c0ffee00:S001'), 'the story is one item');
 			const story = graph.items.get('E20261001c0ffee00:S001')!;
 			const kinds = story.evidenceArtifactIds.map(a => a.split('-')[0]).sort();
-			assert.deepEqual(kinds, ['BUILD', 'LLD', 'PLAN']);
+			assert.deepEqual(kinds, ['BUILD', 'CR', 'LLD', 'PLAN']);
+			const epicItem = graph.items.get('E20261001c0ffee00');
+			if (!standalone) assert.ok(epicItem?.evidenceArtifactIds.some(a => a.startsWith('DEF-')) && epicItem.evidenceArtifactIds.some(a => a.startsWith('HLD-')), 'the Epic item holds the DEF and the HLD');
 		} finally { r.done(); }
 	}
 });

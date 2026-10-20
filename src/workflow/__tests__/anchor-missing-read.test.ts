@@ -12,7 +12,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -47,14 +47,14 @@ function seedUnstampedDefine(repo: string): string {
 	return path;
 }
 
-/** Everything under the repo, so "no file was created" can be compared. */
+/** Everything under the repo (dot folders included), so "no file was created" can be compared. */
 function listing(repo: string): string[] {
 	const out: string[] = [];
 	const walk = (rel: string): void => {
 		for (const name of readdirSync(join(repo, rel))) {
 			const child = rel === '' ? name : `${rel}/${name}`;
 			out.push(child);
-			if (!name.includes('.')) walk(child);
+			if (statSync(join(repo, child)).isDirectory()) walk(child);
 		}
 	};
 	walk('');
@@ -147,4 +147,5 @@ test('pending and delivery do not date a record by its own day: an unstamped rec
 	} finally { r.done(); }
 	const graph = buildWorkItemGraph(recordSet([lldRecord(HASH, 's1', { createdAt: CREATED, epicCreatedAt: undefined, standalone: true })]));
 	assert.ok([...graph.items.keys()].every(id => !id.startsWith('E20261001')), 'no id is dated by the LLD\'s own day');
+	assert.ok(graph.notices.some(n => n.code === 'identity-anchor-missing'), 'the missing anchor is reported as a notice, not hidden');
 });

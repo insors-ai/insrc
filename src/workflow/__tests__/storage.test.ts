@@ -577,7 +577,7 @@ const SR_OWN = '2026-10-04T09:40:00.000Z';
 
 /** Seed one artifact's meta under .insrc/artifacts. */
 function seedMeta(repo: string, id: string, meta: Record<string, unknown>): void {
-	writeAtomic(join(repo, '.insrc/artifacts', `${id}.json`), JSON.stringify({ meta }));
+	writeAtomic(join(repo, '.insrc/artifacts', `${id}.json`), JSON.stringify({ meta, body: {} }));
 }
 
 test('0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last', () => {

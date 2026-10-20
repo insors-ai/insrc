@@ -33,6 +33,7 @@ import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
 import type { HldContextSlice, LldArtifact } from './artifacts/lld.js';
 import type { PlanArtifact } from './artifacts/plan.js';
+import { decodeArtifactHead } from './artifact-core/decode.js';
 import { isSpecBody } from './artifacts/spec.js';
 import type { SpecArtifact } from './artifacts/spec.js';
 import { authorPartyOf, reviewerPartyOf } from './review/party.js';
@@ -137,6 +138,11 @@ export class SpecNotApprovedError extends Error {
 	}
 }
 
+/** Read a stored head through the shared decoder (which checks its shape) and return it as the stage's artifact type. */
+function readStoredHead<T>(id: string, jsonPath: string): T {
+	return decodeArtifactHead(id, readFileSync(jsonPath, 'utf8')).head as unknown as T;
+}
+
 /** Read the canonical Define JSON from disk. */
 export function readDefineArtifact(repoPath: string, epicHash: string): DefineArtifact {
 	const jsonPath = artifactJsonPath(repoPath, defineArtifactId(epicHash));
@@ -146,8 +152,7 @@ export function readDefineArtifact(repoPath: string, epicHash: string): DefineAr
 			`workflow='define' focus='...' first.`,
 		);
 	}
-	const raw = readFileSync(jsonPath, 'utf8');
-	return JSON.parse(raw) as DefineArtifact;
+	return readStoredHead<DefineArtifact>(defineArtifactId(epicHash), jsonPath);
 }
 
 export interface EpicCatalogEntry {
@@ -240,8 +245,7 @@ export function readHldArtifact(repoPath: string, epicHash: string): HldArtifact
 			`HLD not found at ${jsonPath}. Run design.epic before design.story.`,
 		);
 	}
-	const raw = readFileSync(jsonPath, 'utf8');
-	return JSON.parse(raw) as HldArtifact;
+	return readStoredHead<HldArtifact>(hldArtifactId(epicHash), jsonPath);
 }
 
 /** Same as `readHldArtifact` but refuses when the artifact is not
@@ -285,7 +289,7 @@ export function readLldArtifact(repoPath: string, epicHash: string, storyId: str
 			`LLD not found at ${jsonPath}. Run design.story for Story '${storyId}' before plan.`,
 		);
 	}
-	return JSON.parse(readFileSync(jsonPath, 'utf8')) as LldArtifact;
+	return readStoredHead<LldArtifact>(lldArtifactId(epicHash, storyId), jsonPath);
 }
 
 /** Same as `readLldArtifact` but refuses when the LLD is unapproved,
@@ -381,7 +385,7 @@ export function readPlanArtifact(repoPath: string, epicHash: string, storyId: st
 			`Plan not found at ${jsonPath}. Run \`plan\` for Story '${storyId}' before build.`,
 		);
 	}
-	return JSON.parse(readFileSync(jsonPath, 'utf8')) as PlanArtifact;
+	return readStoredHead<PlanArtifact>(planArtifactId(epicHash, storyId), jsonPath);
 }
 
 /** Same as `readPlanArtifact` but refuses when the plan is unapproved or

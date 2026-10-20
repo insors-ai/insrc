@@ -623,7 +623,8 @@ export class OllamaProvider implements LLMProvider {
         }
       },
       (raw) => validateAgainstSchema<T>(schema, raw),
-      opts?.maxAttempts ?? 3,
+      // internalRetry false: one attempt; the caller owns retries (Epic 8315a11f s1).
+      opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
     );
   }
 }

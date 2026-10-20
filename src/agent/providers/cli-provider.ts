@@ -82,6 +82,10 @@ export interface ReviewSessionOpts {
 	readonly cwd:        string;
 	/** Time allowed for the whole call, its one possible retry included. */
 	readonly deadlineMs: number;
+	/** `false`: exactly one attempt, no transient or stall retry; the caller owns retries. */
+	readonly internalRetry?: boolean | undefined;
+	/** Cancels the session. */
+	readonly signal?: AbortSignal | undefined;
 }
 
 /** A reviewer session ran past the time it was given. Never retried. */
@@ -248,8 +252,7 @@ export class CliProvider implements LLMProvider {
 	 *  succeeds. Deterministic failures (bad schema, non-transient exit) are
 	 *  re-thrown on the first attempt. Accuracy over cost: a long synthesize is
 	 *  worth re-running rather than failing the whole workflow. */
-	private async withTransientRetry<T>(label: string, op: () => Promise<T>): Promise<T> {
-		const maxAttempts = 3;
+	private async withTransientRetry<T>(label: string, op: () => Promise<T>, maxAttempts = 3): Promise<T> {
 		let lastErr: unknown;
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 			try {
@@ -304,7 +307,7 @@ export class CliProvider implements LLMProvider {
 				+ `required: ['<field>'] }. A union BELOW the root is fine.`,
 			);
 		}
-		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts));
+		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.internalRetry === false ? 1 : 3);
 	}
 
 	private async completeStructuredOnce<T>(
@@ -419,6 +422,8 @@ export class CliProvider implements LLMProvider {
 	 */
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
 		const startedAt = Date.now();
+		// internalRetry false: the caller re-issues, so this call makes one attempt only.
+		const maxAttempts = opts.internalRetry === false ? 1 : 2;
 		for (let attempt = 1; ; attempt++) {
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
@@ -430,13 +435,13 @@ export class CliProvider implements LLMProvider {
 				// inside the time that remains (ISSUE-d4b2cd1c).
 				if (err instanceof CliStallError) {
 					log.warn({ provider: this.kind, attempt, codexSession: err.sessionId, err: msg },
-						attempt < 2 ? 'runReviewSession: the CLI produced no model output; retrying once inside the remaining time' : 'runReviewSession: the CLI produced no model output again; giving up');
-					if (attempt < 2) continue;
+						attempt < maxAttempts ? 'runReviewSession: the CLI produced no model output; retrying once inside the remaining time' : 'runReviewSession: the CLI produced no model output; giving up');
+					if (attempt < maxAttempts) continue;
 					throw err;
 				}
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
-				if (attempt >= 2 || !isTransientCliError(transienceText(err))) throw err;
+				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
 				log.warn({ provider: this.kind, err: msg.slice(0, 200) }, 'runReviewSession: transient CLI error; retrying once inside the remaining time');
 			}
 		}

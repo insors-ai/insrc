@@ -298,7 +298,10 @@ export interface StructuredCompletionOpts {
   readonly cwd?: string | undefined;
   /** Wall-clock cap in milliseconds for one call of a subprocess-backed provider;
    *  the provider's own default when unset. ISSUE-d4b2cd1c. */
-  readonly timeoutMs?: number | undefined;
+  readonly timeoutMs?: number | undefined;  /** `false`: the provider makes exactly ONE attempt (no transient, stall or
+   *  structured-output retry); the caller owns every retry. Absent or `true`:
+   *  today's retries. The review pipeline sets it (Epic 8315a11f s1). */
+  readonly internalRetry?: boolean | undefined;
 }
 
 // ---------------------------------------------------------------------------

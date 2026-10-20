@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-20T18:28:43.500Z",
+    "updatedAt": "2026-10-20T18:38:26.321Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
   },
@@ -436,6 +436,128 @@
               },
               {
                 "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "a1c3ae7d",
+        "ranAt": "2026-10-20T18:38:26.321Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a pair answer naming a counterpart outside its two symbols is rejected'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a pair answer naming a counterpart outside its two symbols is rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'compare and pair calls are counted under pipelineCalls.relation, not chunk'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "compare and pair calls are counted under pipelineCalls.relation, not chunk",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 865,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "title": "every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit",
+                "result": "pass"
+              },
+              {
+                "title": "a pair answer naming a counterpart outside its two symbols is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "compare and pair calls are counted under pipelineCalls.relation, not chunk",
                 "result": "pass"
               }
             ],

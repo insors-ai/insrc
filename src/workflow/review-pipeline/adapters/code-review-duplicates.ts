@@ -189,11 +189,12 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 			const names = new Set(pair.flatMap(x => [x.id, x.label, nameOf(x)]));
 			const files = new Set(pair.flatMap(x => x.file !== undefined ? [x.file] : []));
 			const findings = (answer as { findings?: readonly { location?: string; counterpartRef?: string }[] }).findings ?? [];
-			const badCounterparts = findings.flatMap((f, i) => f.counterpartRef === undefined || names.has(f.counterpartRef.trim()) ? [] : [`findings[${i}].counterpartRef`]);
+			// Every pair finding is a duplication, so it names the other symbol of the pair.
+			const badCounterparts = findings.flatMap((f, i) => f.counterpartRef !== undefined && names.has(f.counterpartRef.trim()) ? [] : [`findings[${i}].counterpartRef`]);
 			const badLocations = findings.flatMap((f, i) => files.has(fileOf(f.location ?? '')) ? [] : [`findings[${i}].location`]);
 			const listed = pair.map(x => x.label).join(' and ');
 			return [
-				...(badCounterparts.length > 0 ? [`${badCounterparts.length} findings name a counterpart that is not one of the two symbols judged (first: ${badCounterparts[0]}); name only ${listed}`] : []),
+				...(badCounterparts.length > 0 ? [`${badCounterparts.length} findings do not name the other symbol of the pair as counterpartRef (first: ${badCounterparts[0]}); name ${listed}`] : []),
 				...(badLocations.length > 0 ? [`${badLocations.length} findings are located outside the two symbols judged (first: ${badLocations[0]}); locate it in the file of ${listed}`] : []),
 			];
 		},

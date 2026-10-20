@@ -685,12 +685,17 @@ test('a pair answer naming a counterpart outside its two symbols is rejected', (
 	const outside = applyOutput(j, adapter, pair.callId, echo(pair, { findings: [{ ...dup, counterpartRef: 'fill' }] }));
 	const again = outside.pending.find(c => c.attempt === 2)!;
 	assert.ok(again !== undefined && again.stage === 'pair');
-	assert.match(again.prompt.messages[0]!.content as string, /1 findings name a counterpart that is not one of the two symbols judged \(first: findings\[0\]\.counterpartRef\)/);
+	assert.match(again.prompt.messages[0]!.content as string, /1 findings do not name the other symbol of the pair as counterpartRef \(first: findings\[0\]\.counterpartRef\)/);
 	assert.throws(() => applyOutput(outside, adapter, again.callId, echo(again, { findings: [{ ...dup, counterpartRef: 'price' }] })), (e: unknown) => e instanceof ReviewCallFailedError);
 	// The other symbol of the pair, by name, located in one of the two files: accepted.
 	const pairStage = adapter.stagesFor('daemon').find(st => st.id === 'pair')!;
 	assert.deepEqual(pairStage.validate!({ findings: [{ ...dup, counterpartRef: 'discount' }] }, pair), []);
 	assert.equal(pairStage.validate!({ findings: [{ ...dup, counterpartRef: 'discount', location: 'src/basket/basket.ts:1' }] }, pair).length, 1, 'not located at either symbol');
+	assert.equal(pairStage.validate!({ findings: [dup] }, pair).length, 1, 'a duplication names its counterpart');
+	// The duplicate, reported by pair with its counterpart, is recorded as the pair stage's answer.
+	const reported = applyOutput(j, adapter, pair.callId, echo(pair, { findings: [{ ...dup, counterpartRef: 'discount' }] }));
+	const recorded = [...reported.stageAnswers, ...((reported.outputs['pair'] ?? []) as { answer: unknown }[])].map(a => a.answer as { findings: { counterpartRef?: string; location: string }[] });
+	assert.deepEqual(recorded.flatMap(a => a.findings).map(f => [f.location, f.counterpartRef]), [['src/order/cancel.ts:1', 'discount']]);
 });
 
 test('compare and pair calls are counted under pipelineCalls.relation, not chunk', () => {

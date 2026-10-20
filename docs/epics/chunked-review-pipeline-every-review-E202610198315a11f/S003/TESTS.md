@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -134,3 +134,31 @@ Run at 2026-10-20T18:28:43.500Z on commit `40c58e88`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 13 | 0.7 s |  |
+
+## t6
+
+Run at 2026-10-20T18:38:26.321Z on commit `a1c3ae7d`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a pair answer naming a counterpart outside its two symbols is rejected'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a pair answer naming a counterpart outside its two symbols is rejected | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` |
+
+**unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` |
+
+**unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'compare and pair calls are counted under pipelineCalls.relation, not chunk'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | compare and pair calls are counted under pipelineCalls.relation, not chunk | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 16 | 0.9 s |  |

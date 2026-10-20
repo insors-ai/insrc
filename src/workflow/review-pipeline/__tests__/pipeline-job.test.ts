@@ -18,8 +18,9 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
-import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
-import type { StructuredSchema } from '../../../shared/types.js';
+import { CliStallError, ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
+import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
+import { runReviewJob } from '../driver.js';
 import { applyFailure, applyOutput, createReviewJob, MaterialChangedError, nextCalls, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
@@ -580,6 +581,121 @@ test("a re-issued reviewer-session call gets only the remaining time to the job 
 	// Near the end, each session gets only what remains.
 	const late = nextCalls(divided, long, T + sessions * 30 * 60_000 - 5_000);
 	assert.ok(late.every(c => (c.execution as { deadlineMs: number }).deadlineMs === 5_000));
+});
+
+test("a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message (runReviewJob)", async () => {
+	const T = 1_000_000;
+	const snap = toySnapshot([atom(1)]);
+	const sessionOpts: ToyOpts = { execution: { mode: 'reviewer-session', cwd: '/repo', deadlineMs: 600_000, tools: 'read-only' }, deadlineMessage: true };
+	// A session that stalls 200 s in; its re-issue is given what remains and answers.
+	{
+		let clock = T;
+		const seen: ReviewSessionOpts[] = [];
+		const provider = {
+			completeStructured: async () => { throw new Error('a session review makes no structured call'); },
+			runReviewSession: async (prompt: string, _schema: unknown, o: ReviewSessionOpts) => {
+				seen.push(o);
+				if (seen.length === 1) { clock += 200_000; throw new CliStallError('codex', 200_000, undefined); }
+				return { callId: /This request's id is "([^"]+)"/.exec(prompt)![1], answer: { seen: ['a1'] } };
+			},
+		} as unknown as LLMProvider;
+		const adapter = toyAdapter(snap, sessionOpts);
+		const out = await runReviewJob(createReviewJob(adapter, 'daemon', snap, 384_000, { now: T }), adapter, provider, { now: () => clock });
+		assert.deepEqual((out as ToyResult).seen, ['a1']);
+		assert.deepEqual(seen.map(o => o.deadlineMs), [600_000, 400_000], 'the re-issue never restarts the clock');
+		assert.ok(seen.every(o => o.internalRetry === false && o.cwd === '/repo'), 'each session with its mode, the pipeline owning retries');
+	}
+	// Past the deadline: no call at all; today's message.
+	{
+		let calls = 0;
+		const provider = { runReviewSession: async () => { calls++; return {}; } } as unknown as LLMProvider;
+		const adapter = toyAdapter(snap, sessionOpts);
+		await assert.rejects(runReviewJob(createReviewJob(adapter, 'daemon', snap, 384_000, { now: T }), adapter, provider, { now: () => T + 600_000 }),
+			/passed its time limit of 10 minutes\. No review was recorded/);
+		assert.equal(calls, 0);
+	}
+	// A session that runs out its time: the review fails with today's message, never re-issued.
+	{
+		let calls = 0;
+		const provider = { runReviewSession: async () => { calls++; throw new ReviewSessionTimeoutError(600_000); } } as unknown as LLMProvider;
+		const adapter = toyAdapter(snap, sessionOpts);
+		await assert.rejects(runReviewJob(createReviewJob(adapter, 'daemon', snap, 384_000, { now: T }), adapter, provider, { now: () => T }), /passed its time limit/);
+		assert.equal(calls, 1);
+	}
+});
+
+test('a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded', async () => {
+	const atoms = Array.from({ length: 24 }, (_, i) => atom(i));
+	const snap = toySnapshot(atoms);
+	const exec = { mode: 'structured' as const, cwd: '/repo', timeoutMs: 180_000 };
+	let finished = 0;
+	const counted = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => {
+		const a = toyAdapter(s, { execution: exec });
+		return { ...a, finish: (o, c) => { finished++; return a.finish(o, c); } };
+	};
+	// Uncancelled: serial calls, each with its execution mode, internalRetry false and the signal.
+	{
+		let inFlight = 0, most = 0;
+		const opts: StructuredCompletionOpts[] = [];
+		const model = seeingModel();
+		const ac = new AbortController();
+		const provider = {
+			completeStructured: async (messages: LLMMessage[], _schema: unknown, o: StructuredCompletionOpts) => {
+				inFlight++; most = Math.max(most, inFlight); opts.push(o);
+				await new Promise(r => setTimeout(r, 2));
+				inFlight--;
+				return model.answer({ messages } as unknown as ReviewCall);
+			},
+		} as unknown as LLMProvider;
+		const out = await runReviewJob(createReviewJob(counted(snap), 'daemon', snap, LIMIT), counted(snap), provider, { signal: ac.signal });
+		assert.equal((out as ToyResult).seen.length, atoms.length);
+		assert.ok(opts.length > 1);
+		assert.equal(most, 1, 'never more than one call in flight');
+		assert.ok(opts.every(o => o.internalRetry === false && o.cwd === '/repo' && o.timeoutMs === 180_000 && o.signal === ac.signal));
+	}
+	// Cancelled mid-call, whether the provider honours the signal or ignores it: AbortError at once.
+	for (const honours of [true, false]) {
+		finished = 0;
+		let calls = 0;
+		const ac = new AbortController();
+		const provider = {
+			completeStructured: (_m: LLMMessage[], _s: unknown, o: StructuredCompletionOpts) => {
+				calls++;
+				setTimeout(() => ac.abort(), 20);
+				return new Promise((_resolve, reject) => {
+					if (honours) o.signal?.addEventListener('abort', () => { const e = new Error('aborted'); e.name = 'AbortError'; reject(e); });
+				});
+			},
+		} as unknown as LLMProvider;
+		const t0 = Date.now();
+		const err = await Promise.race([
+			runReviewJob(createReviewJob(counted(snap), 'daemon', snap, LIMIT), counted(snap), provider, { signal: ac.signal }).then(() => null, (e: unknown) => e),
+			new Promise(r => setTimeout(() => r(new Error('still running 3 s after the cancel')), 3_000)),
+		]);
+		assert.ok(err instanceof Error && err.name === 'AbortError', `${honours ? 'honoured' : 'ignored'}: got ${String(err)}`);
+		assert.ok(Date.now() - t0 < 1_000, 'at once');
+		assert.equal(calls, 1, 'no re-issue');
+		assert.equal(finished, 0, 'nothing recorded: the review produced no result');
+	}
+	// An answer that arrives around the cancel is never applied after it: wherever the cancel lands
+	// relative to the answer (swept across microtask turns), a result is never made once it fired.
+	for (let depth = 0; depth <= 8; depth++) {
+		const ac = new AbortController();
+		const model = seeingModel();
+		let finishedAfterCancel = false;
+		const small = toySnapshot([atom(1)]);
+		const watched = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => {
+			const a = toyAdapter(s);
+			return { ...a, finish: (o, c) => { if (ac.signal.aborted) finishedAfterCancel = true; return a.finish(o, c); } };
+		};
+		const later = (n: number, f: () => void): void => { if (n === 0) f(); else queueMicrotask(() => later(n - 1, f)); };
+		const provider = {
+			completeStructured: async (messages: LLMMessage[]) => { later(depth, () => ac.abort()); return model.answer({ messages } as unknown as ReviewCall); },
+		} as unknown as LLMProvider;
+		const outcome = await runReviewJob(createReviewJob(watched(small), 'daemon', small, LIMIT), watched(small), provider, { signal: ac.signal }).then(() => 'result', (e: Error) => e.name);
+		assert.equal(finishedAfterCancel, false, `depth ${depth}: no result is made once the cancel fired`);
+		assert.ok(outcome === 'AbortError' || outcome === 'result', `depth ${depth}: ${outcome}`);
+	}
 });
 
 // -- the bounded gather (plan task t8) ----------------------------------------

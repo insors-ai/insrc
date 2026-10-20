@@ -21,7 +21,7 @@ test('augmentStandaloneParams: standalone mints a 16-char self-hash + default st
 	const p: Record<string, unknown> = { standalone: true };
 	augmentStandaloneParams(p, RUN_ID);
 	assert.match(p['epicHash'] as string, /^[0-9a-f]{16}$/, 'minted epicHash is a 16-char hex');
-	assert.equal(p['storyId'], 'S001');
+	assert.equal(p['storyId'], 's1');
 });
 
 test('augmentStandaloneParams: is deterministic in the runId (same runId → same hash)', () => {

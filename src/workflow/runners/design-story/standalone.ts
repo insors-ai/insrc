@@ -44,7 +44,7 @@ export function standaloneStoryContext(
 	params: Readonly<Record<string, unknown>>,
 	focus:  string,
 ): StandaloneStoryContext {
-	const storyId = strParam(params, 'storyId') ?? 'S001';
+	const storyId = strParam(params, 'storyId') ?? 's1';
 	const title   = strParam(params, 'storyTitle') ?? focus;
 	const spec    = strParam(params, 'storySpec')  ?? focus;
 	const flavorParam = strParam(params, 'flavor');

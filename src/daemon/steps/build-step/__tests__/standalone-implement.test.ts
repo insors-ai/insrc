@@ -48,7 +48,7 @@ test('trivial standalone build: admits, renders a scope-driven prompt, and persi
 	try {
 		const out = await implement({
 			repo: dir,
-			standalone: { standalone: true, storyId: 's1', sizeClass: 'trivial', focus: 'Fix a typo in the status log line', triageRationale: 'one-line mechanical edit' },
+			standalone: { standalone: true, sizeClass: 'trivial', focus: 'Fix a typo in the status log line', triageRationale: 'one-line mechanical edit' },
 		});
 		assert.equal(out.next, 'implement');
 		const impl = out as BuildStepImplement;

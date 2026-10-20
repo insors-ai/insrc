@@ -97,7 +97,7 @@ Never auto-approve and never send the user to the TUI. When a `done` response
 carries a `pendingApproval` block (or a build or review step leaves a record to
 approve), first DECLARE what you are about to show: call
 `insrc_present({ documents: [...] })` with each document's artifact id (for
-example `LLD-<hash>-S001`) or repo-relative path. Then PRESENT a concise summary
+example `LLD-<hash>-s1`) or repo-relative path. Then PRESENT a concise summary
 (give the document's path in your message too) and ASK the user; only on their
 explicit in-chat yes call `insrc_workflow_approve({ artifactPath })` (or
 `{ epicHash }` to batch). Review a DEF, HLD or LLD before you approve it — see

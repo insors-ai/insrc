@@ -34,7 +34,7 @@ export type BuildStepPhase = 'implement' | 'validate';
  *  `focus` scope statement (Trivial). See `docs/plans/feature-triage-router.md`. */
 export interface BuildStandaloneContext {
 	readonly standalone: true;
-	/** The standalone story identity (self-minted hash + `S001`). Required for
+	/** The standalone story identity (self-minted hash + `s1`). Required for
 	 *  Small (locates the LLD); optional for Trivial. */
 	readonly epicHash?:  string | undefined;
 	readonly storyId?:   string | undefined;

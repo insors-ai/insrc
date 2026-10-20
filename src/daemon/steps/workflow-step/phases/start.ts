@@ -139,7 +139,7 @@ export function epicKeyFor(
 /** A STANDALONE run (triage routed a non-Epic feature to `design.story` /
  *  `build`) carries no caller-provided `epicHash`. Mint a self-hash from the
  *  runId — the same identity move `define` makes — and default `storyId` to
- *  `S001`, so the runner's synthetic-context path and storage key identically.
+ *  `s1`, so the runner's synthetic-context path and storage key identically.
  *  No-op unless `params.standalone === true`. Idempotent: an already-set
  *  `epicHash` / `storyId` is preserved. Exported so the daemon `workflow.run`
  *  entry can apply the identical augmentation. */
@@ -149,6 +149,6 @@ export function augmentStandaloneParams(params: Record<string, unknown>, runId: 
 		params['epicHash'] = computeEpicHash(runId);
 	}
 	if (typeof params['storyId'] !== 'string' || (params['storyId'] as string).length === 0) {
-		params['storyId'] = 'S001';
+		params['storyId'] = 's1';
 	}
 }

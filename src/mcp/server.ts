@@ -587,7 +587,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				standalone: z.object({
 					standalone:      z.literal(true),
 					epicHash:        z.string().optional().describe('Standalone story identity (self-minted hash). Required for a Small build (locates the approved LLD).'),
-					storyId:         z.string().optional().describe('Standalone story id; defaults to S001.'),
+					storyId:         z.string().optional().describe('Standalone story id; defaults to s1.'),
 					focus:           z.string().optional().describe('Scope statement — the spec for a Trivial (no-LLD) build.'),
 					sizeClass:       z.string().optional().describe('Triage size class (small / trivial).'),
 					triageRationale: z.string().optional().describe('The classifier\'s rationale, stamped on the standalone BUILD record.'),
@@ -979,7 +979,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 			description:
 				'Declare the documents you are asking the user to review, BEFORE you ask them ' +
 				'to approve: the chat opens exactly the documents named here in its review pane. ' +
-				'Pass one to twenty artifact ids (for example `LLD-<hash>-S001`) or repo-relative ' +
+				'Pass one to twenty artifact ids (for example `LLD-<hash>-s1`) or repo-relative ' +
 				'document paths. The answer lists which names are `presented` (pending approval ' +
 				'and openable) and which are `notPending` (misspelt, already approved, with no ' +
 				'document file yet, or a path that matches more than one document), so you can ' +

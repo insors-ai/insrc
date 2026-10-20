@@ -148,18 +148,34 @@ test('a row whose JSON fits the limit but whose rendered singleton call does not
 });
 
 test('an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large', () => {
-	// hub fills most of a call; 25 small symbols share its directory, so alone it would carry 25 neighbour lines.
+	// hub fills most of a call; 25 small symbols share its directory. Their lines are proximity context (s1's
+	// amended prepare): sized without them, added while they fit. A symbol's row is larger than its line, so
+	// what fits is the hub with the symbols packed beside it and the lines of the rest that still fit.
 	const mates = Array.from({ length: 25 }, (_, i) => row(`m${i}`, `src/hub/m${i}.ts`, 20));
 	const hub = row('hub', 'src/hub/hub.ts', 5_000);
 	const g = grounding(hub, ...mates);
-	const { adapter } = adapterFor(g);
+	const { adapter, snapshot } = adapterFor(g);
 	const material = adapter.material();
-	const lines = mates.map(m => neighbourSummary(material.atoms.find(a => a.id === m.entityId)!, material)).join('\n').length;
-	assert.ok(JSON.stringify(hub, null, 2).length + lines > LIMIT - 1_000, 'with every neighbour line the hub would not fit');
+	const stage = adapter.stagesFor({ kind: 'divided' } as never)[0]!;
+	const lineOf = (id: string): string => neighbourSummary(material.atoms.find(a => a.id === id)!, material);
+	const alone = stage.chunkCalls({ id: 'c1', atomIds: ['hub'], chars: 0, neighbours: mates.map(m => ({ atomId: m.entityId, label: m.entityId, summary: lineOf(m.entityId), heldInChunk: 'c2' })) }, {}, snapshot);
+	assert.ok(promptChars(alone[0]!.messages) > LIMIT, 'the hub alone, with every neighbour line, does not fit');
 	const job = plan(g, LIMIT);
 	const holder = chunkOf(job, 'hub');
 	assert.ok(holder !== undefined, 'packed, not reported as too large');
 	assert.ok(holder.chars <= LIMIT);
 	assert.ok(job.pending.every(c => c.chars <= LIMIT));
+	const sent = job.pending.find(c => c.carries.chunkId === holder.id)!;
+	const user = sent.messages[1]!.content as string;
+	const together = mates.filter(m => holder.atomIds.includes(m.entityId));
+	assert.ok(together.length > 0, 'symbols sharing its directory are packed beside the hub');
+	for (const m of together) assert.ok(!user.includes(lineOf(m.entityId)), `${m.entityId} is read whole beside the hub, not summarised`);
+	// Lines are context for symbols held elsewhere, added while they fit: the chunk of the other symbols carries the hub's.
+	for (const c of job.plan.chunks) {
+		for (const n of c.neighbours) assert.ok(!c.atomIds.includes(n.atomId) && n.heldInChunk === chunkOf(job, n.atomId).id, `${c.id}: a line for ${n.atomId}, held in ${n.heldInChunk}`);
+	}
+	const other = job.plan.chunks.find(c => c.id !== holder.id && c.neighbours.some(n => n.atomId === 'hub'));
+	assert.ok(other !== undefined, 'a chunk without the hub carries its line');
+	assert.ok((job.pending.find(c => c.carries.chunkId === other.id)!.messages[1]!.content as string).includes(lineOf('hub')), 'in the call it sends');
 	assert.deepEqual(job.plan.chunks.flatMap(c => c.atomIds).sort(), g.symbols.map(s => s.entityId).sort());
 });

@@ -207,6 +207,13 @@
         "choice": "S1 adds; S6 reuses",
         "rationale": "Recorded as approved amendment AMD-2f27754d4ad00b8e-6 (methodAdd on sc6), owner's yes 2026-10-20.",
         "resolvedAt": "2026-10-20T08:52:05.535Z"
+      },
+      "q30822d51": {
+        "question": "Four identical pending amendments AMD-2f27754d4ad00b8e-1 to -4 record the RequirementIds.parse change to sc1; reject -2, -3 and -4 and approve -1 with the user before s2 consumes sc1.",
+        "status": "resolved",
+        "choice": "Approve canonical amendment",
+        "rationale": "Done differently: -1 to -4 are rejected as duplicates and AMD-2f27754d4ad00b8e-5 (with an explicit supersedes note) is the approved canonical amendment, because the applier only appends notes.",
+        "resolvedAt": "2026-10-20T08:52:44.017Z"
       }
     }
   },

@@ -881,6 +881,8 @@ The same anchor and path design as a1, but parse, the storage lookups and the la
   - **resolved**: Approve the Define exception — Done on 2026-10-20 with the owner's yes: DEF ac1 restated and k2 qualified (DEF revision 1, commit 3c871d76). _(2026-10-20T08:50:41.939Z)_
 - `q155d3f02` — findIssuesByTitleToken is a TrackerPort addition and s6 (sc6) owns the port additions; the user is asked to record that s1 adds this single method and that s6 builds on it rather than adding a second title lookup.
   - **resolved**: S1 adds; S6 reuses — Recorded as approved amendment AMD-2f27754d4ad00b8e-6 (methodAdd on sc6), owner's yes 2026-10-20. _(2026-10-20T08:52:05.535Z)_
+- `q30822d51` — Four identical pending amendments AMD-2f27754d4ad00b8e-1 to -4 record the RequirementIds.parse change to sc1; reject -2, -3 and -4 and approve -1 with the user before s2 consumes sc1.
+  - **resolved**: Approve canonical amendment — Done differently: -1 to -4 are rejected as duplicates and AMD-2f27754d4ad00b8e-5 (with an explicit supersedes note) is the approved canonical amendment, because the applier only appends notes. _(2026-10-20T08:52:44.017Z)_
 
 ## Citations
 

@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s2",
     "createdAt": "2026-10-20T13:26:20.493Z",
-    "updatedAt": "2026-10-20T13:44:16.305Z",
+    "updatedAt": "2026-10-20T15:50:57.309Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
   },
@@ -189,8 +189,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "9c6bd70f",
-        "ranAt": "2026-10-20T13:44:16.305Z",
+        "commit": "d7f6fe19",
+        "ranAt": "2026-10-20T15:50:57.309Z",
         "testsPassed": true,
         "tests": [
           {
@@ -316,7 +316,7 @@
             "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 837,
+            "durationMs": 686,
             "titles": [
               {
                 "title": "over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory",
@@ -357,7 +357,7 @@
             "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 558,
+            "durationMs": 565,
             "titles": [
               {
                 "title": "each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON",

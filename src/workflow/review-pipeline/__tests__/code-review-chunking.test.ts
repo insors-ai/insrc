@@ -20,6 +20,7 @@ import { buildQualityPrompt, qualitySpec, QUALITY_FINDINGS_SCHEMA } from '../../
 import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject } from '../../code-review/types.js';
 import { neighbourSummary } from '../adapters/code-review-material.js';
 import { codeReviewSnapshot, modelDimensionAdapter } from '../code-review.js';
+import { getLogger } from '../../../shared/logger.js';
 import { promptChars } from '../envelope.js';
 import { createReviewJob } from '../job.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
@@ -147,7 +148,7 @@ test('a row whose JSON fits the limit but whose rendered singleton call does not
 	assert.throws(() => plan(grounding(row('a', 'src/a/a.ts', 300), big), LIMIT, 2_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/w/wide.ts#wide'));
 });
 
-test('an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large', () => {
+test('an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large', () => {
 	// hub fills most of a call; 25 small symbols share its directory. Their lines are proximity context (s1's
 	// amended prepare): sized without them, added while they fit. A symbol's row is larger than its line, so
 	// what fits is the hub with the symbols packed beside it and the lines of the rest that still fit.
@@ -178,4 +179,33 @@ test('an atom whose singleton call with neighbour summaries exceeds the limit, b
 	assert.ok(other !== undefined, 'a chunk without the hub carries its line');
 	assert.ok((job.pending.find(c => c.carries.chunkId === other.id)!.messages[1]!.content as string).includes(lineOf('hub')), 'in the call it sends');
 	assert.deepEqual(job.plan.chunks.flatMap(c => c.atomIds).sort(), g.symbols.map(s => s.entityId).sort());
+});
+
+test('a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged', () => {
+	// hub fills most of a call and calls 25 symbols, each in a directory of its own. A callee's row is larger than
+	// its line, so packing callees beside the hub never makes its call smaller: the last resort is the only way.
+	const mates = Array.from({ length: 25 }, (_, i) => row(`m${i}`, `src/m${i}/m.ts`, 20));
+	const hub = row('hub', 'src/hub/hub.ts', 5_000, mates.map(m => m.entityId));
+	const g = grounding(hub, ...mates);
+	const { adapter, snapshot } = adapterFor(g);
+	const material = adapter.material();
+	const stage = adapter.stagesFor({ kind: 'divided' } as never)[0]!;
+	const lineOf = (id: string): string => neighbourSummary(material.atoms.find(a => a.id === id)!, material);
+	const alone = stage.chunkCalls({ id: 'c1', atomIds: ['hub'], chars: 0, neighbours: mates.map(m => ({ atomId: m.entityId, label: m.entityId, summary: lineOf(m.entityId), heldInChunk: 'c2' })) }, {}, snapshot);
+	assert.ok(promptChars(alone[0]!.messages) > LIMIT, 'the hub with every call summary does not fit');
+	const warnings: unknown[] = [];
+	const logger = getLogger('review-pipeline:prepare') as unknown as { warn: (...a: unknown[]) => void };
+	const original = logger.warn;
+	logger.warn = (...a: unknown[]) => { warnings.push(a); return original.apply(logger, a as never); };
+	let job: ReviewPipelineJob;
+	try { job = plan(g, LIMIT); } finally { logger.warn = original; }
+	const holder = chunkOf(job, 'hub');
+	assert.ok(holder.chars <= LIMIT && job.pending.every(c => c.chars <= LIMIT), 'every call fits');
+	const user = job.pending.find(c => c.carries.chunkId === holder.id)!.messages[1]!.content as string;
+	assert.ok(user.includes(JSON.stringify(hub, null, 2).split('\n').find(l => l.includes('"signature"'))!.trim()), 'the hub is read whole');
+	const elsewhere = mates.filter(m => !holder.atomIds.includes(m.entityId));
+	assert.ok(elsewhere.length > 0 && holder.neighbours.length > 0 && holder.neighbours.length < elsewhere.length, `some call summaries kept, the rest left out (${holder.neighbours.length} of ${elsewhere.length})`);
+	assert.ok(warnings.some(w => JSON.stringify(w).includes('leaving out the ones that do not fit') && JSON.stringify(w).includes('hub')), 'the omission is logged, naming the symbol');
+	// The other side of every cut call keeps the hub's summary: only the side that cannot hold them is short.
+	for (const m of elsewhere) assert.ok(chunkOf(job, m.entityId).neighbours.some(n => n.atomId === 'hub'), `${m.entityId}'s chunk summarises the hub`);
 });

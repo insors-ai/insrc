@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s2",
     "createdAt": "2026-10-20T13:26:20.493Z",
-    "updatedAt": "2026-10-20T13:44:16.305Z",
+    "updatedAt": "2026-10-20T15:50:57.309Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
@@ -24,45 +24,150 @@
         "passed": false
       }
     ],
-    "summary": "s2/t3: each model dimension's adapter (src/workflow/review-pipeline/code-review.ts) returns codeReviewMaterial of its prepared grounding from the snapshot (coverage via the new optional ModelDimensionSpec.materialGrounding = prepareCoverageGrounding; the others the grounding itself) and uses neighbourSummary. ux and diagram stay deterministic with no chunk calls, so they keep no material. Under the limit nothing changes (single chunk, today's prompt). The chunking tests drive s1's prepare with the real adapter and a chunk-call fixture rendering rows as a JSON array plus context and neighbour lines (s3 owns the real chunk prompts): precedence (calls > same-file > same-module), neighbour lines on both sides of a cut call, whole atoms once, every call within the limit, too-large atoms named neighbour-free, a hub packed despite many neighbour lines; plus the coverage material unit test. Until s3, a real over-limit review still refuses (no chunk calls exist yet). 6 mutations each fail a test. Commit 9c6bd70f.",
+    "summary": "The code-review adapter reads its material from codeReviewMaterial (coverage via spec.materialGrounding) and its neighbour lines from neighbourSummary; chunking is tested through s1's amended prepare, where call/reference lines are required and directory/file lines are context added while they fit.",
     "testRecord": {
       "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/TESTS.md"
     },
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/LLD-8315a11f29fd2812-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/envelope-cli-both-20261020T205634.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/ollama-grounded-20261020T203331.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
           "file": "src/workflow/code-review/dimensions/coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T13:44:16.305Z"
+        "timestamp": "2026-10-20T15:50:57.309Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T13:44:16.305Z"
+        "timestamp": "2026-10-20T15:50:57.309Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T13:44:16.305Z"
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/toy-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-material.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T13:44:16.305Z"
+        "timestamp": "2026-10-20T15:50:57.309Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/code-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T13:44:16.305Z"
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/design-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/job.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/prepare.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/template-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T15:50:57.309Z"
       }
     ],
     "commit": "9c6bd70f"

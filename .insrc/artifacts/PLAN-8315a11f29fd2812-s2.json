@@ -24,7 +24,6 @@
     "lldRunId": "wf-1792398246645-7x3wlt",
     "lldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
     "authoredBy": "controller",
-    "approvedAt": "2026-10-20T13:19:48.539Z",
     "rangeBase": "4981cc4fae932c302940c9b37ba61aacf8869876"
   },
   "body": {
@@ -102,7 +101,7 @@
       {
         "id": "t3",
         "title": "Point the code-review adapter at the material and the neighbour summary",
-        "summary": "In src/workflow/review-pipeline/code-review.ts, each dimension adapter's material() returns codeReviewMaterial of the dimension's prepared grounding read from the snapshot (coverage: prepareCoverageGrounding's output; the others: the grounding itself) and its neighbourSummary member uses t2's writer. Under the limit the single-chunk path and today's prompts are unchanged. Integration tests drive s1's prepare with a small limit and a chunk-call fixture rendering a chunk's rows in the prompt's array form: grouping order, neighbour summaries on both sides of a cut relation, whole atoms, every rendered chunk call within the limit, and an oversized atom named (judged neighbour-free).",
+        "summary": "In src/workflow/review-pipeline/code-review.ts, each dimension adapter's material() returns codeReviewMaterial of the dimension's prepared grounding read from the snapshot (coverage: prepareCoverageGrounding's output; the others: the grounding itself) and its neighbourSummary member uses t2's writer. Under the limit the single-chunk path and today's prompts are unchanged. Integration tests drive s1's prepare with a small limit and a chunk-call fixture rendering a chunk's rows in the prompt's array form: grouping order, neighbour summaries on both sides of a cut relation (s1's logged last resort excepted), whole atoms, every rendered chunk call within the limit, and an oversized atom named (judged neighbour-free).",
         "size": "M",
         "order": 3,
         "dependsOn": [
@@ -111,11 +110,11 @@
         ],
         "acceptanceChecks": [
           "Over the limit, symbols that call each other share a chunk before those only sharing a file, and those before those only sharing a directory.",
-          "A call relation cut between chunks gives each side a neighbour summary of the other.",
+          "A call relation cut between chunks gives each side a neighbour summary of the other, except s1's logged last resort: a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out of its call and the omission is logged; the other side still carries the symbol's summary.",
           "Every symbol is whole in exactly one chunk, every rendered chunk call fits, and a symbol too large alone is named before any provider call.",
           "Under the limit the plan is one chunk and the dimension prompt is today's.",
           "A row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call.",
-          "An atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large.",
+          "An atom whose singleton call with every same-directory line exceeds the limit is packed and not reported as too large: same-file and same-directory lines are context (s1's amended prepare), added only while they fit.",
           "Coverage material is built from prepareCoverageGrounding: only eligible rows, each carrying its coverageEvidence."
         ],
         "derivedFrom": [
@@ -160,7 +159,11 @@
           },
           {
             "level": "integration",
-            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'"
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged'"
           }
         ]
       },
@@ -278,6 +281,18 @@
         "coveredByTaskIds": [
           "t3"
         ]
+      }
+    ],
+    "feedback": [
+      {
+        "id": "84907087",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-20T15:57:44.968Z",
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/PLAN.md"
+        },
+        "comment": "Amended 2026-10-20 by the stakeholder's decision after the t3 build gate failed two checks that predate s1's approved LLD amendment (usage summaries required, proximity lines best-effort, a logged last resort). (1) 'A call relation cut between chunks gives each side a neighbour summary of the other' now excepts that last resort: a symbol that cannot hold its call summaries beside it is kept whole, the ones that do not fit are left out of its call and logged, and the other side still carries its summary; a new t3 test pins it. (2) The check 'fits once its related atoms share the chunk' described a case the code-review material cannot produce (a symbol's row is always longer than its one-line summary, so packing a related symbol beside an atom never shrinks its call); it now states what holds: same-file and same-directory lines are context, added while they fit, so such an atom is packed and not reported as too large. Its test is renamed to match. The testStrategyCoverage entries still quote s2's approved LLD verbatim; t3 covers both.",
+        "kind": "feedback"
       }
     ]
   },

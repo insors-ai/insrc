@@ -70,7 +70,7 @@ Run at 2026-10-20T13:33:35.019Z on commit `57ccc141`. Tests check: **passed**. 2
 
 ## t3
 
-Run at 2026-10-20T13:44:16.305Z on commit `9c6bd70f`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-20T15:50:57.309Z on commit `d7f6fe19`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence'**
 
@@ -130,5 +130,5 @@ Run at 2026-10-20T13:44:16.305Z on commit `9c6bd70f`. Tests check: **passed**. 9
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` | 0 | 8 | 0.8 s |  |
+| `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` | 0 | 8 | 0.7 s |  |
 | `src/workflow/review-pipeline/__tests__/code-review-material.test.ts` | 0 | 7 | 0.6 s |  |

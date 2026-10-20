@@ -65,6 +65,9 @@ export interface ChunkPrompt {
 	readonly execution: ExecutionMode;
 	/** What the call judges, when one stage makes several calls (a premise's id). */
 	readonly key?:      string | undefined;
+	/** The atoms a chunk-stage call actually carries, when not its whole chunk (a stage that
+	 *  reads across chunks). Absent: the chunk's atoms. Recorded on the call's carries. */
+	readonly carries?:  { readonly atomIds: readonly string[] } | undefined;
 }
 
 /** Committed stage outputs, by stage id. */
@@ -99,6 +102,10 @@ export interface AdapterStage {
 	/** The re-issued prompt for an invalid answer. Absent: the reasons are appended to the
 	 *  first system message (or prepended as one). */
 	withCorrection?(prompt: ChunkPrompt, reasons: readonly string[]): ChunkPrompt;
+	/** Replacement calls for one of this stage's chunk calls refused for its size, each within
+	 *  `maxChars` (below the refused call's size). Absent: the generic re-division of the call's
+	 *  carried atoms into smaller chunks. A replacement that does not fit names the material. */
+	redivide?(call: ReviewCall, maxChars: number, prior: StageOutputs, snapshot: ReviewMaterialSnapshot): readonly ChunkPrompt[];
 	/** The pipelineCalls role a divided review counts this stage's chunk calls under (their
 	 *  re-issues and re-divisions included). Counting only: the calls keep role 'chunk'. Default 'chunk'. */
 	readonly countAs?: 'chunk' | 'relation' | undefined;

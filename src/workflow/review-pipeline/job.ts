@@ -142,7 +142,7 @@ function issueChunkCalls(job: ReviewPipelineJob, stage: AdapterStage, chunks: re
 	for (const chunk of chunks) {
 		for (const prompt of stage.chunkCalls(chunk, job.outputs, job.snapshot)) {
 			if (only !== undefined && prompt.key !== only.key) continue;
-			calls.push({ prompt, role: 'chunk', countAs: stage.countAs, carries: { chunkId: chunk.id, atomIds: chunk.atomIds, noteIds: [], key: prompt.key } });
+			calls.push({ prompt, role: 'chunk', countAs: stage.countAs, carries: { chunkId: chunk.id, atomIds: prompt.carries?.atomIds ?? chunk.atomIds, noteIds: [], key: prompt.key } });
 		}
 	}
 	return issue(job, calls);
@@ -282,7 +282,9 @@ export function applyFailure(
 	if (cause === 'size-refusal') {
 		if (call.role === 'relation') return redivideRelation(rest, adapter, call, maxChars);
 		if (call.role === 'merge') throw new AtomTooLargeError(`the merge call ${call.carries.key ?? call.callId}`, call.chars, maxChars ?? call.chars - 1);
-		return isGatherRole(call.role) ? redivideNotes(rest, adapter, call, maxChars) : redivide(rest, adapter, currentStage(job, adapter), call, maxChars);
+		if (isGatherRole(call.role)) return redivideNotes(rest, adapter, call, maxChars);
+		const own = currentStage(job, adapter);
+		return call.role === 'chunk' && own.redivide !== undefined ? redivideByStage(rest, own, call, maxChars) : redivide(rest, adapter, own, call, maxChars);
 	}
 
 	if (call.attempt < MAX_CALL_ATTEMPTS) {
@@ -307,6 +309,24 @@ export function applyFailure(
 }
 
 /** Re-plan a refused call's atoms smaller and issue the stage's calls for them. */
+/** A refused chunk-stage call whose stage re-divides its own calls: the stage's replacements, each within
+ *  the refused size (never the refused prompt again); one that does not fit names the material. */
+function redivideByStage(job: ReviewPipelineJob, stage: AdapterStage, call: ReviewCall, maxChars: number | undefined): ReviewPipelineJob {
+	const budget = Math.min(maxChars ?? Math.floor(call.chars / 2), call.chars - 1, job.plan.limitChars);
+	log.warn({ dimension: job.dimension, stage: stage.id, chars: call.chars, budget }, 'review pipeline: a call was refused for its size; the stage re-divides it');
+	const prompts = stage.redivide!(call, budget, job.outputs, job.snapshot);
+	const what = `the ${stage.id} call ${call.carries.key ?? call.carries.atomIds.join(', ')}`;
+	if (prompts.length === 0) throw new AtomTooLargeError(what, call.chars, budget);
+	for (const p of prompts) {
+		const chars = sentChars(p);
+		if (chars > budget) throw new AtomTooLargeError(what, chars, budget);
+	}
+	return issue(job, prompts.map(prompt => ({
+		prompt, role: 'chunk' as const, countAs: stage.countAs,
+		carries: { chunkId: call.carries.chunkId, atomIds: prompt.carries?.atomIds ?? call.carries.atomIds, noteIds: [], key: prompt.key },
+	})));
+}
+
 function redivide(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, stage: AdapterStage, call: ReviewCall, maxChars: number | undefined): ReviewPipelineJob {
 	// Both always below the refused prompt's size, so the re-plan splits it, and a
 	// refused unit that cannot be split is named rather than sent again.

@@ -683,6 +683,24 @@ test('a relation judged by two calls is complete only when both are answered', (
 	assert.equal((r.pipelineCalls as { relation: number }).relation, 2);
 	assert.equal(offered, 1);
 
+	// A refused relation call cannot be divided: it is named, never resent, and the review never
+	// completes on the other call alone.
+	{
+		let rj = createReviewJob(rebuild(snap), 'daemon', snap, LIMIT);
+		while (rj.pending.some(c => c.role === 'chunk')) {
+			const c = rj.pending.find(x => x.role === 'chunk')!;
+			rj = applyOutput(rj, rebuild(rj.snapshot), c.callId, model.answer(c));
+		}
+		const [r1, r2] = rj.pending.filter(c => c.role === 'relation');
+		assert.throws(() => applyFailure(rj, rebuild(rj.snapshot), r1!.callId, 'size-refusal', 500), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('relation'));
+		// Answered once, failed twice otherwise: the review fails rather than finishing on one answer.
+		let one = applyOutput(rj, rebuild(rj.snapshot), r2!.callId, model.answer(r2!));
+		one = applyFailure(one, rebuild(one.snapshot), r1!.callId, 'transient');
+		const again = one.pending.find(c => c.role === 'relation')!;
+		assert.throws(() => applyFailure(one, rebuild(one.snapshot), again.callId, 'transient'), (e: unknown) => e instanceof ReviewCallFailedError);
+		assert.equal(relationJudged(one, key), false);
+	}
+
 	// A relation call that does not fit the limit is named, never sent.
 	const wide = toySnapshot([atom(1, 3_500), atom(2, 3_500)], [{ from: 'a1', to: 'a2', kind: 'references' }]);
 	const wa = toyAdapter(wide, { gatherLimit: LIMIT, relationCalls: 1 });

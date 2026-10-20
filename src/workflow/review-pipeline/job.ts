@@ -278,6 +278,8 @@ export function applyFailure(
 	// A gather call fails the review when it fails twice; it re-divides its notes when refused.
 	const stage: Pick<AdapterStage, 'id' | 'onCallFailure' | 'withCorrection'> = isGatherRole(call.role) ? { id: call.stage, onCallFailure: 'fail-review' } : currentStage(job, adapter);
 	if (cause === 'size-refusal') {
+		// A relation call reads one fixed pair: it cannot be divided, and is never resent.
+		if (call.role === 'relation' || call.role === 'merge') throw new AtomTooLargeError(`the ${call.role} call ${call.carries.key ?? call.callId}`, call.chars, maxChars ?? call.chars - 1);
 		return isGatherRole(call.role) ? redivideNotes(rest, adapter, call, maxChars) : redivide(rest, adapter, currentStage(job, adapter), call, maxChars);
 	}
 
@@ -455,7 +457,11 @@ function advanceGather(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>):
 		const judged = next.gathered.some(g => g.role === 'obligation' && g.key === o.key);
 		if (!waiting && !judged) next = requestNoteCall(next, adapter, 'obligation', o.key, activeNotes(next, o.key).map(n => n.noteId));
 	}
-	return next.pending.length === 0 ? finishJob(next, adapter) : next;
+	if (next.pending.length > 0) return next;
+	// Nothing pending: every obligation and every relation must be judged, all of its calls answered.
+	const unjudged = Object.keys(next.relationPlan).filter(k => !relationJudged(next, k));
+	if (unjudged.length > 0) throw new Error(`review ${job.dimension}: the gather ended with relations not judged: ${unjudged.join(', ')}`);
+	return finishJob(next, adapter);
 }
 
 /** A key's evidence: its notes not yet reduced into another. */

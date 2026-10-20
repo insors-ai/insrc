@@ -201,6 +201,13 @@
         "choice": "Mark as provisional",
         "rationale": "The new files do not exist yet; the plan names the planned paths and the build replaces them with real call sites.",
         "resolvedAt": "2026-10-20T16:36:51.614Z"
+      },
+      "qbc16ec4c": {
+        "question": "sbdry5: s2 defines the WriteJournal port and the appendSidecarLine primitive because binding requirements 1 and 3 touch the write path, while s4 implements the durable journal, layout, ordering, de-duplication and repair; confirm this edge with s4",
+        "status": "resolved",
+        "choice": "s2 contracts; s4 durability",
+        "rationale": "Keeps the stated split: s2 defines the WriteJournal port and appendSidecarLine; s4 implements durability against them. Confirm with s4 when its LLD is written.",
+        "resolvedAt": "2026-10-20T16:37:20.539Z"
       }
     }
   },

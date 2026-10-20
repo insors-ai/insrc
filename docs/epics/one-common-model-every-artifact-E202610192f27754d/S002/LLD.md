@@ -750,6 +750,8 @@ The a1 store with History over fixed file names beside each head, read-time filt
 
 - `qabbd384a` — dm1: new entities under src/workflow/artifact-core cite the nearest existing module as a call site because the new files do not exist yet; confirm this is acceptable
   - **resolved**: Mark as provisional — The new files do not exist yet; the plan names the planned paths and the build replaces them with real call sites. _(2026-10-20T16:36:51.614Z)_
+- `qbc16ec4c` — sbdry5: s2 defines the WriteJournal port and the appendSidecarLine primitive because binding requirements 1 and 3 touch the write path, while s4 implements the durable journal, layout, ordering, de-duplication and repair; confirm this edge with s4
+  - **resolved**: s2 contracts; s4 durability — Keeps the stated split: s2 defines the WriteJournal port and appendSidecarLine; s4 implements durability against them. Confirm with s4 when its LLD is written. _(2026-10-20T16:37:20.539Z)_
 
 ## Citations
 

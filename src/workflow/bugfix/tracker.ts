@@ -38,6 +38,8 @@ import type { IssueArtifact } from '../artifacts/issue.js';
 import { renderIssueMarkdown } from '../artifacts/issue.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../config/github.js';
 import { GithubConfigError } from '../config/github.js';
+import { ArtifactIds } from '../artifact-ids.js';
+import { getLogger } from '../../shared/logger.js';
 import { artifactJsonPath, issueArtifactId } from '../storage.js';
 import { GhCommandError, ghAuthOk, type CreatedIssue } from '../tracker/github.js';
 import { createGithubTracker } from '../tracker/github-adapter.js';
@@ -45,6 +47,8 @@ import type { PortResult } from '../tracker/port.js';
 import { patchTrackerMeta, readTrackerMeta } from '../tracker/refs.js';
 import { issueForWorkflowId } from '../tracker/resolve.js';
 import type { WorkItemRef } from '../types.js';
+
+const log = getLogger('bugfix-tracker');
 
 // ---------------------------------------------------------------------------
 // Result records (module-internal, non-shared)
@@ -383,24 +387,38 @@ function recordRefToDisk(repoPath: string, issueHash: string, ref: string): void
 }
 
 /** The identifier forms a WorkItemRef can resolve through, most specific first.
- *  `slug` is the sc3 locator's primary output — a full hierarchical slug (a
- *  work-item slug) that round-trips through `parseWorkflowId`; `storyId`
- *  is the single-epic structural-label fallback (`s\d+`, resolvable only when the
- *  artifacts dir holds exactly one epic). A bare `epicHash` (hex-16) is NOT a form
- *  `resolveWorkflowRef` accepts — it needs the full `E<date><hash>` id, not the
- *  raw hash — so it is deliberately NOT a candidate: a WorkItemRef pinned ONLY by
- *  epicHash cannot resolve a parent GH issue, and the create degrades to unlinked
- *  (never an error). sc3 always sets `slug`, so the primary candidate resolves. */
+ *  `slug` is the locator's output: the artifact id of the parent (`STORY-<h>-s1` or `EPIC-<h>`). A stored ref whose
+ *  slug is not an artifact id (one written before the artifact ids) is converted from its `epicHash` and `storyId`
+ *  when it has them, and is otherwise skipped, never guessed; `legacyParentSlug` names it so it can be reported.
+ *  `storyId` alone is the single-epic structural-label fallback (`s\d+`, resolvable only when the artifacts dir
+ *  holds exactly one epic). */
 export function parentRefIdentifiers(parentRef: WorkItemRef): string[] {
 	const ids: string[] = [];
-	if (parentRef.slug)    ids.push(parentRef.slug);
+	if (parentRef.slug && ArtifactIds.parse(parentRef.slug) !== undefined) ids.push(parentRef.slug);
+	else if (parentRef.epicHash) {
+		try {
+			ids.push(ArtifactIds.make(parentRef.storyId
+				? { kind: 'STORY', epicHash: parentRef.epicHash, story: parentRef.storyId }
+				: { kind: 'EPIC', epicHash: parentRef.epicHash }));
+		} catch { /* not an id form: left to the label fallback below */ }
+	}
 	if (parentRef.storyId) ids.push(parentRef.storyId);
 	return ids;
+}
+
+/** The stored `slug` of a parent ref when it is not an artifact id, for the report that it was converted or skipped. */
+export function legacyParentSlug(parentRef: WorkItemRef): string | undefined {
+	return parentRef.slug && ArtifactIds.parse(parentRef.slug) === undefined ? parentRef.slug : undefined;
 }
 
 /** Map a WorkItemRef to the parent's GH issue ref via the resolvable identifier
  *  forms (see `parentRefIdentifiers`). Returns null when none resolves. */
 function defaultResolveParentIssueRef(repoPath: string, parentRef: WorkItemRef): string | null {
+	const legacy = legacyParentSlug(parentRef);
+	if (legacy !== undefined) {
+		log.warn({ slug: legacy, epicHash: parentRef.epicHash, storyId: parentRef.storyId },
+			'stored parentRef.slug is not an artifact id; resolving from epicHash and storyId only, never from the slug');
+	}
 	for (const id of parentRefIdentifiers(parentRef)) {
 		const ref = issueForWorkflowId(repoPath, id);
 		if (ref !== null && ref.length > 0) return ref;

@@ -330,11 +330,13 @@ test('normal create path: promptOnLostRef is never consulted (a1 no-per-create-r
 	assert.equal(promptCalled, false, 'a successful create never prompts');
 });
 
-test('parentRefIdentifiers: slug first, then storyId; a bare epicHash is not a resolvable candidate (MED-1)', () => {
-	assert.deepEqual(parentRefIdentifiers({ slug: 'E202609181703991c-S005', storyId: 's5' }), ['E202609181703991c-S005', 's5']);
+test('parentRefIdentifiers: an artifact-id slug first, a stored old slug converted from epicHash, then storyId', () => {
+	const h = '1703991c69967193';
+	assert.deepEqual(parentRefIdentifiers({ slug: `STORY-${h}-s5`, storyId: 's5' }), [`STORY-${h}-s5`, 's5']);
 	assert.deepEqual(parentRefIdentifiers({ storyId: 's5' }), ['s5']);
-	assert.deepEqual(parentRefIdentifiers({ slug: 'E202609181703991c-S005' }), ['E202609181703991c-S005']);
-	assert.deepEqual(parentRefIdentifiers({ epicHash: '1703991c69967193' }), [], 'epicHash alone is not a resolvable id form');
+	assert.deepEqual(parentRefIdentifiers({ slug: 'E202609181703991c-S005', epicHash: h, storyId: 's5' }), [`STORY-${h}-s5`, 's5'], 'an old slug is converted, not used');
+	assert.deepEqual(parentRefIdentifiers({ slug: 'E202609181703991c-S005' }), [], 'an old slug alone is skipped, not guessed');
+	assert.deepEqual(parentRefIdentifiers({ epicHash: h }), [`EPIC-${h}`], 'a bare epicHash names the Epic');
 	assert.deepEqual(parentRefIdentifiers({}), []);
 });
 

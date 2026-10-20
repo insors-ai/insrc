@@ -15,8 +15,10 @@ export * from './types.js';
 export { locateParent } from './locate-parent.js';
 export {
 	inferParentCandidates,
+	buildDocPathIndex,
 	refFromDocPath,
 	DEFAULT_SEMANTIC_K,
+	type DocPathIndex,
 	type InferencePorts,
 } from './infer.js';
 export {

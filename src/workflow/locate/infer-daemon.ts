@@ -22,7 +22,7 @@ import { findEntitiesByFile } from '../../db/entities.js';
 import { findCallees, findCallers, resolveClosure, searchEntities } from '../../db/search.js';
 import { embedQuery } from '../../indexer/embedder.js';
 import { getLogger } from '../../shared/logger.js';
-import { refFromDocPath, type InferencePorts } from './infer.js';
+import { buildDocPathIndex, refFromDocPath, type DocPathIndex, type InferencePorts } from './infer.js';
 import type { RankedCandidate } from './types.js';
 
 const log = getLogger('locate-infer');
@@ -61,11 +61,12 @@ export function daemonInferencePorts(db: DbClient, repoPath: string): InferenceP
 			if (queryVec.length === 0) return [];
 			// Scope to the active repo's dependency closure (rule 3), not every
 			// registered repo — a bugfix in repo A must not attach to a story in
-			// an unrelated repo B (refFromDocPath carries no repo qualifier).
+			// an unrelated repo B (a mapped ref carries no repo qualifier).
 			const closure = await resolveClosure(db, repoPath);
 			const repos = closure.length > 0 ? closure : [repoPath];
 			const hits = await searchEntities(db, queryVec, repos, k, 'artifact');
-			return mapSemanticHits(hits);
+			// The docs are indexed from the stored artifacts, once per query: a hit is mapped by its path, never by a folder name.
+			return mapSemanticHits(hits, buildDocPathIndex(repoPath));
 		},
 	};
 }
@@ -78,13 +79,13 @@ export function daemonInferencePorts(db: DbClient, repoPath: string): InferenceP
  * POLICY (which is threshold-gated and fully tested) is unaffected. Hits whose
  * file is not a recognised work-item artifact are dropped. Exported for tests.
  */
-export function mapSemanticHits(hits: readonly Entity[]): RankedCandidate[] {
+export function mapSemanticHits(hits: readonly Entity[], index: DocPathIndex): RankedCandidate[] {
 	const out: RankedCandidate[] = [];
 	const seen = new Set<string>();
 	const n = hits.length;
 	for (let i = 0; i < n; i++) {
 		const h = hits[i]!;
-		const ref = refFromDocPath(h.file);
+		const ref = refFromDocPath(index, h.file);
 		if (ref === null) continue;
 		const key = `${ref.epicHash ?? ''}|${ref.storyId ?? ''}|${ref.slug ?? ''}`;
 		if (seen.has(key)) continue;

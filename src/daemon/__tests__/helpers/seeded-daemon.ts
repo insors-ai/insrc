@@ -124,8 +124,8 @@ export async function startSeededDaemon(opts: { readonly bigRepos?: readonly num
 	writeFileSync(join(repoA, DOC_DIR, 'LLD.md'), '# LLD\n', 'utf8');
 	// The story's ownership record: it cites a.ts.
 	mkdirSync(join(repoA, '.insrc', 'artifacts'), { recursive: true });
-	writeFileSync(join(repoA, '.insrc', 'artifacts', 'LLD-aaaaaaaa-s1.json'), JSON.stringify({
-		meta: { epicHash: 'aaaaaaaa', storyId: 's1', epicSlug: 'demo' },
+	writeFileSync(join(repoA, '.insrc', 'artifacts', 'LLD-aaaaaaaaaaaaaaaa-s1.json'), JSON.stringify({
+		meta: { epicHash: 'aaaaaaaaaaaaaaaa', epicCreatedAt: '2026-10-13T00:00:00.000Z', storyId: 's1', epicSlug: 'demo' },
 		citations: [{ id: 'c1', kind: 'code', ref: 'a.ts:1' }],
 	}), 'utf8');
 

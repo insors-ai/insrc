@@ -21,13 +21,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
-import { inferParentCandidates, refFromDocPath, type InferencePorts } from '../locate/infer.js';
+import { inferParentCandidates, refFromDocPath, type DocPathIndex, type InferencePorts } from '../locate/infer.js';
 import { buildOwnershipIndex, matchGraphCandidates } from '../locate/ownership.js';
 import { mapSemanticHits } from '../locate/infer-daemon.js';
 import { locateParent } from '../locate/locate-parent.js';
 import type { Entity } from '../../shared/types.js';
+import type { WorkItemRef } from '../types.js';
 import type { InferParentsRequest, RankedCandidate } from '../locate/types.js';
 
 // --- fixtures --------------------------------------------------------------
@@ -169,18 +170,28 @@ test('inferParentCandidates: empty defectDescription skips the semantic pass', a
 	assert.deepEqual(out.semantic, []);
 });
 
-// --- refFromDocPath (pure mapper) ------------------------------------------
+// --- docs index ------------------------------------------------------------
+// refFromDocPath maps a path through the stored artifacts (see locate/__tests__/locate-parent-ids.test.ts);
+// these tests use a hand-built index so the rank-decay and tier policy stay independent of the disk.
 
-test('refFromDocPath parses slug + storyId from a docs artifact path', () => {
-	assert.deepEqual(
-		refFromDocPath('docs/epics/add-bugfix-triage-category-insrc-framework-E202609181703991c/S003/LLD.md'),
-		{ slug: 'add-bugfix-triage-category-insrc-framework', storyId: 's3' },
-	);
-	assert.deepEqual(
-		refFromDocPath('/abs/docs/standalone/my-feature-E202609170d565a95/DEF.md'),
-		{ slug: 'my-feature' },
-	);
-	assert.equal(refFromDocPath('src/not/a/doc.ts'), null);
+const REF_A: WorkItemRef = { epicHash: '1703991c69967193', storyId: 's1', slug: 'STORY-1703991c69967193-s1' };
+const REF_B: WorkItemRef = { epicHash: 'abcdef1234567890', storyId: 's2', slug: 'STORY-abcdef1234567890-s2' };
+
+function docIndex(entries: Record<string, WorkItemRef>): DocPathIndex {
+	return { repoPath: '/repo', byPath: new Map(Object.entries(entries).map(([f, ref]) => [resolve('/repo', f), ref])) };
+}
+
+const DOCS = docIndex({
+	'docs/epics/epic-a-E202609181703991c/S001/LLD.md': REF_A,
+	'docs/epics/epic-a-E202609181703991c/S001/PLAN.md': REF_A,
+	'docs/epics/epic-b-E20260101abcdef12/S002/LLD.md': REF_B,
+});
+
+test('refFromDocPath returns the work item a stored artifact renders to, and null for any other path', () => {
+	assert.deepEqual(refFromDocPath(DOCS, 'docs/epics/epic-a-E202609181703991c/S001/LLD.md'), REF_A);
+	assert.deepEqual(refFromDocPath(DOCS, '/repo/docs/epics/epic-b-E20260101abcdef12/S002/LLD.md'), REF_B);
+	assert.equal(refFromDocPath(DOCS, 'docs/epics/epic-c-E20260101abcdef12/S002/LLD.md'), null);
+	assert.equal(refFromDocPath(DOCS, 'src/not/a/doc.ts'), null);
 });
 
 // --- mapSemanticHits (rank-decay proxy) ------------------------------------
@@ -192,9 +203,9 @@ test('mapSemanticHits maps artifact hits to work items, rank-decayed, de-duped',
 		fakeEntity({ file: 'src/code.ts', name: 'C' }),                                        // not a doc → dropped
 		fakeEntity({ file: 'docs/epics/epic-b-E20260101abcdef12/S002/LLD.md', name: 'B1' }),
 	];
-	const ranked = mapSemanticHits(hits);
+	const ranked = mapSemanticHits(hits, DOCS);
 	assert.equal(ranked.length, 2);
-	assert.deepEqual(ranked[0]!.parentRef, { slug: 'epic-a', storyId: 's1' });
+	assert.deepEqual(ranked[0]!.parentRef, REF_A);
 	assert.ok(ranked[0]!.score > ranked[1]!.score, 'rank decay: earlier hit scores higher');
 	assert.ok(ranked[0]!.score <= 1 && ranked[1]!.score > 0);
 });
@@ -234,7 +245,7 @@ test('end-to-end: defect description matching a story → semantic attach (ac2)'
 		expandTouchedFiles: noExpand,
 		semanticCandidates: async () => mapSemanticHits([
 			fakeEntity({ file: 'docs/epics/epic-a-E202609181703991c/S001/LLD.md', name: 'A1' }),
-		]),
+		], DOCS),
 	};
 	const res = await locateParent(
 		{ touchedPaths: ['src/unrelated.ts'], defectDescription: 'the login token expires early' },
@@ -247,7 +258,7 @@ test('end-to-end: defect description matching a story → semantic attach (ac2)'
 		},
 	);
 	assert.equal(res.tier, 'semantic');
-	assert.deepEqual(res.parentRef, { slug: 'epic-a', storyId: 's1' });
+	assert.deepEqual(res.parentRef, REF_A);
 });
 
 test('end-to-end: neither tier matches → prompt → standalone (ac3)', async () => {

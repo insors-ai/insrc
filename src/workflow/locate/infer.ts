@@ -19,6 +19,13 @@
  * ownership index. The real daemon wiring lives in `infer-daemon.ts`.
  */
 
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+
+import { ArtifactIds } from '../artifact-ids.js';
+import { deriveMdPath } from '../pending.js';
+import type { ArtifactKind } from '../path-scheme.js';
+import { ARTIFACTS_DIR } from '../storage.js';
 import type { WorkItemRef } from '../types.js';
 import { matchGraphCandidates, type OwnershipIndex } from './ownership.js';
 import type { InferParentsRequest, InferredCandidates, RankedCandidate } from './types.js';
@@ -65,24 +72,51 @@ function dedupe(xs: readonly string[]): string[] {
 	return [...new Set(xs.filter(x => x.length > 0))];
 }
 
+/** Every rendered artifact `.md` of a repository, keyed by its absolute path, with the work item it belongs to. */
+export interface DocPathIndex {
+	readonly repoPath: string;
+	readonly byPath:   ReadonlyMap<string, WorkItemRef>;
+}
+
 /**
- * Derive a WorkItemRef from a docs artifact path such as
- * `docs/epics/<slug>-E<date><hash8>/S<nnn>/LLD.md` or
- * `docs/standalone/<slug>-E.../DEF.md`. Returns `{ slug, storyId? }` (the tracker
- * resolves against a slug + optional story) or `null` when the path is not a
- * recognised work-item artifact. Pure — the semantic adapter uses it to map an
- * artifact hit back to its owning work item. Exported for unit tests.
+ * Index the repository's docs by reading the stored artifacts, never a folder name: each artifact JSON under
+ * `.insrc/artifacts/` names its work item and story in its id and meta, and `deriveMdPath` gives the `.md` it
+ * renders to. An artifact whose meta cannot place a path (an unstamped record) is not in the index.
  */
-export function refFromDocPath(path: string): WorkItemRef | null {
-	const norm = path.replace(/\\/g, '/');
-	const m = /\/docs\/(?:epics|standalone)\/([^/]+?)-E[0-9a-f]{6,}(?:\/(S\d+))?\//.exec(`/${norm}/`);
-	if (m === null) return null;
-	const slug = m[1];
-	if (slug === undefined || slug.length === 0) return null;
-	const storySeg = m[2];
-	const ref: WorkItemRef = {
-		slug,
-		...(storySeg !== undefined ? { storyId: `s${Number(storySeg.slice(1))}` } : {}),
-	};
-	return ref;
+export function buildDocPathIndex(repoPath: string): DocPathIndex {
+	const byPath = new Map<string, WorkItemRef>();
+	const dir = join(repoPath, ARTIFACTS_DIR);
+	let files: string[];
+	try { files = readdirSync(dir); } catch { return { repoPath, byPath }; }
+	for (const f of files) {
+		if (!f.endsWith('.json')) continue;
+		const key = ArtifactIds.parse(f.slice(0, -'.json'.length));
+		if (key === undefined || !DOC_KINDS.has(key.kind)) continue;
+		let meta: Record<string, unknown>;
+		try { meta = (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { meta?: Record<string, unknown> }).meta ?? {}; } catch { continue; }
+		const md = deriveMdPath(repoPath, key.kind as ArtifactKind, meta);
+		if (md.length === 0) continue;
+		const ref: WorkItemRef = {
+			epicHash: key.epicHash,
+			...(key.story !== undefined ? { storyId: key.story } : {}),
+			slug: ArtifactIds.make(key.story !== undefined
+				? { kind: 'STORY', epicHash: key.epicHash, story: key.story }
+				: { kind: 'EPIC', epicHash: key.epicHash }),
+		};
+		byPath.set(resolve(md), ref);
+	}
+	return { repoPath, byPath };
+}
+
+/** The artifact kinds that render to a `.md` under docs/. */
+const DOC_KINDS: ReadonlySet<string> = new Set(['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'BUILD', 'CR', 'EXT', 'ISSUE', 'TESTS']);
+
+/**
+ * The work item a docs artifact path belongs to, from the stored artifact that renders to it: `{ epicHash, storyId?,
+ * slug }` with `slug` the artifact id of its level (`STORY-<h>-s1` or `EPIC-<h>`), or `null` when no stored artifact
+ * renders to the path. A path is matched whole, so the folder name is never read. The semantic adapter uses it to map
+ * an artifact hit back to its owning work item. Exported for unit tests.
+ */
+export function refFromDocPath(index: DocPathIndex, path: string): WorkItemRef | null {
+	return index.byPath.get(resolve(index.repoPath, path)) ?? null;
 }

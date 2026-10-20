@@ -36,8 +36,8 @@ function fakeResolved(over: Partial<ResolvedRef> = {}): ResolvedRef {
 		epicSlug:   'the-epic',
 		createdAt:  '2026-01-01T00:00:00.000Z',
 		storyId:    's7',
-		workflowId: 'E20260101deadbeef:S007',
-		slug:       'the-epic:s7',
+		workflowId: 'STORY-deadbeefdeadbeef-s7',
+		slug:       'STORY-deadbeefdeadbeef-s7',
 		...over,
 	};
 }
@@ -85,7 +85,7 @@ test('tier-1 explicit-ref hit → deterministic, short-circuits (inferCandidates
 	const res = await locateParent(input({ explicitRef: 'E20260101deadbeef:S007' }), deps);
 	assert.equal(res.tier, 'deterministic');
 	assert.equal(res.confidence, 1);
-	assert.deepEqual(res.parentRef, { epicHash: 'deadbeefdeadbeef', storyId: 's7', slug: 'the-epic:s7' });
+	assert.deepEqual(res.parentRef, { epicHash: 'deadbeefdeadbeef', storyId: 's7', slug: 'STORY-deadbeefdeadbeef-s7' });
 	assert.equal(inferCalls.n, 0, 'inference must not run on a deterministic hit');
 });
 
@@ -214,12 +214,12 @@ test('empty defectDescription → semantic tier skipped, graph+prompt order pres
 test('nothing clears threshold → promptForRef; a resolvable ref attaches (prompt tier)', async () => {
 	const res = await locateParent(input(), makeDeps({
 		inferCandidates: async () => ({ graph: [], semantic: [] }),
-		promptForRef: async () => 'the-epic:s7',
-		resolveRef: (_repo, id) => id === 'the-epic:s7' ? fakeResolved() : null,
+		promptForRef: async () => 'STORY-deadbeefdeadbeef-s7',
+		resolveRef: (_repo, id) => id === 'STORY-deadbeefdeadbeef-s7' ? fakeResolved() : null,
 	}));
 	assert.equal(res.tier, 'prompt');
 	assert.equal(res.confidence, 1);
-	assert.deepEqual(res.parentRef, { epicHash: 'deadbeefdeadbeef', storyId: 's7', slug: 'the-epic:s7' });
+	assert.deepEqual(res.parentRef, { epicHash: 'deadbeefdeadbeef', storyId: 's7', slug: 'STORY-deadbeefdeadbeef-s7' });
 });
 
 test('prompt with an unresolvable / empty ref → standalone, parentRef=null', async () => {

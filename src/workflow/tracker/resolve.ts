@@ -226,9 +226,9 @@ export function readEpicDefinition(dir: string, epicHash: string): EpicDefinitio
 }
 
 /** Path to a story-scoped artifact (`LLD` / `PLAN`), tolerant of the two story-id
- *  spellings in play: the epic route names files `-s1.json`, the standalone/bugfix
- *  route names them `-S001.json`, and the hierarchical id form always yields the
- *  lowercase label. The exact name is tried FIRST — so every existing lookup keeps
+ *  spellings in play: files are named with the lowercase story, files stored before
+ *  the s9 conversion carry the uppercase one, and the hierarchical id form always
+ *  yields the lowercase label. The exact name is tried FIRST — so every existing lookup keeps
  *  its current single-stat fast path — and only on a miss does it scan for a
  *  sibling whose story segment denotes the same ORDINAL. */
 function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string, storyId: string, files?: readonly string[]): string {

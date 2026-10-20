@@ -1,0 +1,27 @@
+{
+  "id": "AMD-2f27754d4ad00b8e-6",
+  "epicHash": "2f27754d4ad00b8e",
+  "epicSlug": "one-common-model-every-artifact",
+  "hldBaseRunId": "wf-1792406752203-whj6zi",
+  "amendment": {
+    "type": "sharedContract.methodAdd",
+    "contractId": "sc6",
+    "method": {
+      "name": "findIssuesByTitleToken",
+      "signature": "findIssuesByTitleToken(token: string): PortResult<IssueRef[]>",
+      "purpose": "exact-token title lookup (title equals the artifact id, or starts with it followed by an em dash and a space); added to TrackerPort by Story s1, which implements it with the GitHub adapter and the fake; s6 builds on it and adds no second title lookup"
+    }
+  },
+  "rationale": "Story s1 needs one title lookup on TrackerPort to avoid duplicating older issues; sc6 (owned by s6) owns the port additions, so the method is recorded on sc6 as an s1/s6 ownership exception.",
+  "citations": [],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "manual-s1-prerequisites",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-20T08:43:12.646Z",
+  "status": "approved",
+  "approvedAt": "2026-10-20T08:43:12.647Z",
+  "approvedBy": "user (explicit yes in chat, 2026-10-20)"
+}

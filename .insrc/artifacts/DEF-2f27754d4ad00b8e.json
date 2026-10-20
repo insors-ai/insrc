@@ -1251,7 +1251,8 @@
         "rationale": "Owner accepted: a story is testable once its declared dependencies are complete; the dependency graph stays explicit and acyclic; no substitutes or restructuring.",
         "resolvedAt": "2026-10-19T10:29:14.648Z"
       }
-    }
+    },
+    "revision": 1
   },
   "body": {
     "title": "One common model for every artifact",
@@ -1327,7 +1328,7 @@
       },
       {
         "id": "k2",
-        "text": "An artifact id never changes once created",
+        "text": "An artifact id never changes once created, except the single rename of an uppercase story or task id (S001 to s1) by the s9 conversion",
         "type": "invariant",
         "source": "c1"
       },
@@ -1384,7 +1385,7 @@
             "id": "ac1",
             "given": "an existing repository with artifacts named by the current scheme",
             "when": "the second identity scheme is removed",
-            "then": "every existing artifact keeps its id and file name, and no stored reference stops resolving",
+            "then": "every artifact stored in the lowercase story form keeps its id and file name and keeps resolving, and an artifact stored in the uppercase form (S001) fails with a message that points to the s9 conversion, which renames it once",
             "operationalizes": [
               "k1",
               "k2"

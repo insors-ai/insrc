@@ -100,7 +100,7 @@ Persisted entities share no common model. Each artifact type declares its own me
 | ID | Type | Text | Source |
 | :--- | :--- | :--- | :--- |
 | `k1` | convention | There is exactly one identity scheme for stored artifacts; the work-item id module is removed and nothing parses the folder key back into an id | [[c7]] |
-| `k2` | invariant | An artifact id never changes once created | [[c1]] |
+| `k2` | invariant | An artifact id never changes once created, except the single rename of an uppercase story or task id (S001 to s1) by the s9 conversion | [[c1]] |
 | `k3` | invariant | A revision moves only when an artifact's content changes; an identical rewrite, a comment, a reference change or a provenance write does not move it | [[c1]] |
 | `k4` | contract | Feedback entries are immutable and append-only with no state of their own; they are resolved as part of the artifact that is revised | [[c1]] |
 | `k5` | invariant | Gates decide on the live identity reported by the tracker, never on a declared alias | [[c1]] |
@@ -121,7 +121,7 @@ A person sees the same id for an artifact everywhere: in the repository, in the 
 
 **Acceptance criteria:**
 
-- **ac1:** Given an existing repository with artifacts named by the current scheme, when the second identity scheme is removed, then every existing artifact keeps its id and file name, and no stored reference stops resolving. _(operationalizes `k1`, `k2`)_
+- **ac1:** Given an existing repository with artifacts named by the current scheme, when the second identity scheme is removed, then every artifact stored in the lowercase story form keeps its id and file name and keeps resolving, and an artifact stored in the uppercase form (S001) fails with a message that points to the s9 conversion, which renames it once. _(operationalizes `k1`, `k2`)_
 - **ac2:** Given a new Epic, Story or Task issue is created on the tracker, when the issue title is written, then the title starts with the artifact's id, and an issue created earlier keeps its title and is still found by its unit label. _(operationalizes `k1`)_
 - **ac3:** Given two artifacts of one epic written on different days, when their folder is chosen, then both land in the same folder, because the date always comes from the epic's creation time and a folder name is never read back as an id. _(operationalizes `k1`, `k7`)_
 

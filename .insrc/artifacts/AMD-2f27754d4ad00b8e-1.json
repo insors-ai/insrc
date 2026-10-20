@@ -1,0 +1,40 @@
+{
+  "id": "AMD-2f27754d4ad00b8e-1",
+  "epicHash": "2f27754d4ad00b8e",
+  "epicSlug": "one-common-model-every-artifact",
+  "hldBaseRunId": "wf-1792406752203-whj6zi",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc1",
+    "field": {
+      "name": "RequirementIds.parse result",
+      "type": "{ date: string; hash8: string; story?: number | undefined; fr: number } | undefined",
+      "optional": false,
+      "purpose": "Stored requirement ids carry only the date and the first 8 hash characters, so parse returns those parts (story and fr as numbers) instead of epicHash, ordinal and storyId."
+    },
+    "breaking": false
+  },
+  "rationale": "The interface sketch in sc1 cannot be implemented from stored requirement ids: they contain no full epic hash. The existing parseFrId result is what its tests and callers rely on.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/id.ts:278-316"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/fr-id.test.ts"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1792479916708-dpw3mt",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-20T07:09:14.551Z",
+  "status": "rejected",
+  "rejectedAt": "2026-10-20T08:43:12.643Z",
+  "rejectedReason": "Superseded: the AMD-5 amendment states the RequirementIds.parse change explicitly as superseding the old return type; this was one of four identical duplicates filed by repeated design.story runs for s1."
+}

@@ -236,3 +236,13 @@ The HLD review (6 HIGH) led to these owner rulings, which narrow the approved De
 ## Binding requirement 7: the s2 LLD carries the ER definition (2026-10-19)
 
 Added after the owner found the approved HLD has no ER diagram (issue CDM-1, GitHub #91). **The s2 LLD must author an `erDefinition`** (rendered to a diagram companion) covering the whole envelope: Artifact, Lifecycle with Revision, Approval, Review, Signoff and Staleness, TrackerBinding, Attachment, Reference, Actor, ChangeLogEntry, Feedback (with its sidecar record), TaskSet and Task, and RepoSchema, with the relationships between them (parent, references, one lifecycle per artifact, sidecar entries owned by an artifact id). The s2 reviewer is to treat its absence as a finding. This does not close CDM-1; the HLD itself may still be revised.
+
+## s1 LLD upstream prerequisites (2026-10-20)
+
+The s1 LLD was regenerated six times over two review cycles of three rounds each (blocks: 5 high, 6 high, 3 high, then 3 high, 3 high, 1 high and 2 medium). It is design-complete but not approved. Done before approval, on the owner's explicit yes:
+
+1. **DEF restated.** ac1 of s1 now says lowercase artifacts keep their id and uppercase ones (444 stored files carry `S0nn`) fail with a pointer to the s9 conversion; k2 is qualified with the single s9 rename of `S001` to `s1`. DEF revision 1.
+2. **Amendments cleaned up.** `AMD-…-1` to `-4` were identical duplicates (every `design.story` run that emits an amendment proposal files one) and are rejected. `AMD-…-5` replaces them: sc1 `RequirementIds.parse` returns `{ date, hash8, story?: number, fr }` and the note says it supersedes the sketch's return type (the applier only appends notes). `AMD-…-6` records the s1/s6 ownership exception: `findIssuesByTitleToken` is added to `TrackerPort` through sc6 by s1, and s6 builds on it. Both approved. The s1 LLD is therefore marked stale against the new effective HLD hash until it is acked.
+3. **Lesson.** Do not emit `hld.amendmentProposal` in `contract.detail` when an amendment already records the change.
+
+Binding build requirements for s1 still to be recorded when the LLD is approved: the `refFromDocPath` / locate mapping in `src/workflow/locate/infer.ts` and `infer-daemon.ts` must stop parsing folder names into ids; the `ResolvedRef.workflowId` and `slug` outputs consumed by `locate-parent.ts` and `bugfix/tracker.ts` need defined values and a conversion of stored `parentRef.slug`, tested with several epics; plus the review items from rounds 1 to 6 (AMD ids, write-intent paths, validate error handling, `fr-id` test updates, exact-token matching).

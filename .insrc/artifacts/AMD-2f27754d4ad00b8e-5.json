@@ -1,0 +1,29 @@
+{
+  "id": "AMD-2f27754d4ad00b8e-5",
+  "epicHash": "2f27754d4ad00b8e",
+  "epicSlug": "one-common-model-every-artifact",
+  "hldBaseRunId": "wf-1792406752203-whj6zi",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc1",
+    "field": {
+      "name": "RequirementIds.parse result",
+      "type": "{ date: string; hash8: string; story?: number | undefined; fr: number } | undefined",
+      "optional": false,
+      "purpose": "SUPERSEDES the return type of RequirementIds.parse declared in this sketch ({ epicHash; ordinal; storyId? }): a stored requirement id carries only the date and the first 8 hash characters, so parse returns these parts, story and fr as numbers"
+    },
+    "breaking": false
+  },
+  "rationale": "The sc1 sketch cannot be implemented from stored requirement ids: they contain no full epic hash. The existing parseFrId result is what its tests and callers rely on.",
+  "citations": [],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "manual-s1-prerequisites",
+    "storyId": "s1",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-20T08:43:12.645Z",
+  "status": "approved",
+  "approvedAt": "2026-10-20T08:43:12.646Z",
+  "approvedBy": "user (explicit yes in chat, 2026-10-20)"
+}

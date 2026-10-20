@@ -99,12 +99,14 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 
 		// disableThinking: true is critical for the qwen3.6 family -- without
 		// `think: false` the model emits empty bodies (memory: qwen3_6_needs_think_false).
-		const response: LLMResponse = await args.provider.complete(convo, {
+		// The signal goes into the call AND bounds the wait for it, so a provider
+		// that is between attempts (a retry backoff) cannot hold the loop past it.
+		const response: LLMResponse = await untilAborted(args.provider.complete(convo, {
 			tools:           [...args.tools],
 			toolChoice:      'auto',
 			disableThinking: true,
 			...(args.signal !== undefined ? { signal: args.signal } : {}),
-		});
+		}), args.signal);
 
 		const toolCalls = response.toolCalls ?? [];
 		if (response.stopReason !== 'tool_use' || toolCalls.length === 0) {
@@ -159,7 +161,7 @@ export interface StructuredAnswerArgs {
 export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promise<T> {
 	throwIfAborted(args.signal);
 	const messages: LLMMessage[] = [...args.messages, { role: 'user', content: args.instruction }];
-	return args.provider.completeStructured<T>(messages, args.schema, {
+	return untilAborted(args.provider.completeStructured<T>(messages, args.schema, {
 		// Critical for qwen3.6 (memory: qwen3_6_needs_think_false); harmless elsewhere.
 		disableThinking: true,
 		...(args.maxAttempts !== undefined ? { maxAttempts: args.maxAttempts } : {}),
@@ -167,7 +169,7 @@ export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promi
 		...(args.maxTokens !== undefined ? { maxTokens: args.maxTokens } : {}),
 		...(args.signal !== undefined ? { signal: args.signal } : {}),
 		...(args.onToken !== undefined ? { onToken: args.onToken } : {}),
-	});
+	}), args.signal);
 }
 
 /**

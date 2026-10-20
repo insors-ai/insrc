@@ -45,8 +45,14 @@ export interface LocalModelInfo {
   readonly displayName?: string;
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+/** Wait `ms`; a fired `signal` ends the wait at once with AbortError. */
+function sleep(ms: number, signal?: AbortSignal | undefined): Promise<void> {
+  if (signal?.aborted === true) return Promise.reject(abortError());
+  return new Promise((resolve, reject) => {
+    const onAbort = (): void => { clearTimeout(t); reject(abortError()); };
+    const t = setTimeout(() => { signal?.removeEventListener('abort', onAbort); resolve(); }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 }
 
 // Some Ollama models (qwen3.6 in particular) occasionally wrap their
@@ -362,7 +368,8 @@ export class OllamaProvider implements LLMProvider {
             delayMs,
             err:      err instanceof Error ? err.message : String(err),
           }, 'ollama: transient stream error -- retrying');
-          await sleep(delayMs);
+          // A cancelled call stops waiting: the backoff never outlives the signal.
+          await sleep(delayMs, opts.signal);
           continue;
         }
         throw wrapOllamaError(err);

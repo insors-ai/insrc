@@ -67,9 +67,9 @@ function results(messages: readonly LLMMessage[]): Array<{ content: string; isEr
 }
 
 /** A local server speaking Ollama's streamed chat. `answer` gets each request's
- *  body and its number (1-based) and returns the chunks to stream, or 'hang' to
- *  start answering and never finish. */
-async function fakeOllama(answer: (body: OllamaBody, n: number) => object[] | 'hang'): Promise<{ provider: OllamaProvider; bodies: OllamaBody[]; close: () => Promise<void> }> {
+ *  body and its number (1-based) and returns the chunks to stream, 'hang' to
+ *  start answering and never finish, or 'cut' to end the stream with no final chunk (a transient error). */
+async function fakeOllama(answer: (body: OllamaBody, n: number) => object[] | 'hang' | 'cut'): Promise<{ provider: OllamaProvider; bodies: OllamaBody[]; close: () => Promise<void> }> {
 	const bodies: OllamaBody[] = [];
 	const server = createServer((req, res) => {
 		let raw = '';
@@ -79,6 +79,10 @@ async function fakeOllama(answer: (body: OllamaBody, n: number) => object[] | 'h
 			bodies.push(body);
 			res.writeHead(200, { 'content-type': 'application/x-ndjson' });
 			const chunks = answer(body, bodies.length);
+			if (chunks === 'cut') {
+				res.end(JSON.stringify({ message: { role: 'assistant', content: '' }, done: false }) + '\n');
+				return;
+			}
 			if (chunks === 'hang') {
 				res.write(JSON.stringify({ message: { role: 'assistant', content: '' }, done: false }) + '\n');
 				return;
@@ -167,6 +171,17 @@ test('an Ollama reviewer session reads the repo with read-only tools and returns
 				assert.ok(err instanceof ReviewSessionTimeoutError, `got ${String(err)}`);
 				assert.ok(Date.now() - t0 < 2_000, 'ended at its deadline');
 				assert.equal(f.bodies.length, 1, 'never retried');
+			} finally { await f.close(); }
+		}
+		// The deadline holds through a transient-error retry backoff (5 s): the stream is cut mid-answer.
+		{
+			const f = await fakeOllama(() => 'cut');
+			try {
+				const t0 = Date.now();
+				const err = await within(f.provider.runReviewSession('review this', ANSWER_SCHEMA, { cwd: repo, deadlineMs: 400 }).then(() => null, (e: unknown) => e as Error), 8_000);
+				assert.ok(err instanceof ReviewSessionTimeoutError, `got ${String(err)}`);
+				assert.ok(Date.now() - t0 < 2_000, `ended at its deadline, not after the backoff (${Date.now() - t0} ms)`);
+				assert.equal(f.bodies.length, 1, 'the retry never went out');
 			} finally { await f.close(); }
 		}
 		// The deadline also holds while a tool runs: file_read on a FIFO blocks until a writer opens it.
@@ -325,6 +340,23 @@ test('cancelling an Ollama reviewer session mid tool loop aborts the in-flight t
 			await new Promise(r => setTimeout(r, 200));
 			assert.equal(requests, 2, 'no further turn started');
 		}
+		// OllamaProvider.complete in its transient-error backoff: an abort ends the wait at once.
+		{
+			const f = await fakeOllama(() => 'cut');
+			try {
+				const ac = new AbortController();
+				const run = f.provider.complete([{ role: 'user', content: 'x' }], { signal: ac.signal }).then(() => null, (e: unknown) => e as Error);
+				const until = Date.now() + 5_000;
+				while (f.bodies.length < 1 && Date.now() < until) await new Promise(r => setTimeout(r, 20));
+				await new Promise(r => setTimeout(r, 300)); // the cut has happened; the provider is in its backoff
+				const t0 = Date.now();
+				ac.abort();
+				const err = await within(run, 8_000);
+				assert.ok(err instanceof Error && err.name === 'AbortError', `got ${String(err)}`);
+				assert.ok(Date.now() - t0 < 1_000, `the backoff ended with the abort (${Date.now() - t0} ms)`);
+				assert.equal(f.bodies.length, 1, 'no retry went out');
+			} finally { await f.close(); }
+		}
 		// Through the reviewer session: the caller's signal is AbortError, not a timeout, and no further turn starts.
 		{
 			const f = await fakeOllama((_b, n) => n === 1 ? asksTool('file_read', { path: 'x' }) : 'hang');
@@ -366,6 +398,18 @@ test('cancelling an Ollama reviewer session mid tool loop aborts the in-flight t
 			}).then(() => null, (e: unknown) => e);
 			assert.ok(err instanceof Error && err.name === 'AbortError', `got ${String(err)}`);
 			assert.equal(sent.length, 1, 'no further turn started');
+		}
+		// Abort during a model turn whose provider ignores the signal: the loop still ends at once.
+		{
+			const ac = new AbortController();
+			const deaf = { complete: () => new Promise<LLMResponse>(() => {}), completeStructured: () => new Promise(() => {}) } as unknown as LLMProvider;
+			setTimeout(() => ac.abort(), 50);
+			const t0 = Date.now();
+			const err = await within(runReadOnlyToolLoop({
+				provider: deaf, messages: [{ role: 'user', content: 'go' }], tools: [], allow: ALLOW, deps: deps(tmpdir()), maxTurns: 5, signal: ac.signal,
+			}).then(() => null, (e: unknown) => e as Error), 5_000);
+			assert.ok(err instanceof Error && err.name === 'AbortError', `got ${String(err)}`);
+			assert.ok(Date.now() - t0 < 1_000, 'not held by the provider');
 		}
 		// Abort while a tool that ignores the signal is still running: the loop ends at once.
 		{

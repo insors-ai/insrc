@@ -237,6 +237,18 @@ The HLD review (6 HIGH) led to these owner rulings, which narrow the approved De
 
 Added after the owner found the approved HLD has no ER diagram (issue CDM-1, GitHub #91). **The s2 LLD must author an `erDefinition`** (rendered to a diagram companion) covering the whole envelope: Artifact, Lifecycle with Revision, Approval, Review, Signoff and Staleness, TrackerBinding, Attachment, Reference, Actor, ChangeLogEntry, Feedback (with its sidecar record), TaskSet and Task, and RepoSchema, with the relationships between them (parent, references, one lifecycle per artifact, sidecar entries owned by an artifact id). The s2 reviewer is to treat its absence as a finding. This does not close CDM-1; the HLD itself may still be revised.
 
+## s9 conversion inputs (2026-10-20)
+
+The strict lowercase ids and the stamped Epic anchor (s1) leave stored data that only the s9 conversion repairs. s9 takes these as its inputs:
+
+1. **Uppercase stories.** The 444 stored artifact files whose name or `storyId` carries `S0nn` are renamed to `s<n>` and every reference to them that can be rewritten is rewritten, with no alias left behind. Until then they fail with an error that points at the conversion.
+2. **Stamps.** Every old record gets `epicCreatedAt`, taken from the head of its work item (a Define or ISSUE's own `createdAt`, or the stamp of a standalone design). A record without one fails on a read path and is not placed by its own day.
+3. **Tracker issues.** Old issues that carry neither a unit label nor an artifact-id title are relabelled and retitled, so the create guard recognises them. Until then one possible duplicate is accepted.
+4. **Parent references.** A stored `parentRef.slug` that is not an artifact id is converted from its `epicHash` and `storyId`, or reported when it has no `epicHash`; it is never guessed.
+5. **Documents.** Docs folders keep their names; the rendered headings that showed the old work-item id are rewritten to the artifact id.
+
+The docs migration command was removed in s1; s9 supersedes it.
+
 ## s1 LLD upstream prerequisites (2026-10-20)
 
 The s1 LLD was regenerated six times over two review cycles of three rounds each (blocks: 5 high, 6 high, 3 high, then 3 high, 3 high, 1 high and 2 medium). It is design-complete but not approved. Done before approval, on the owner's explicit yes:

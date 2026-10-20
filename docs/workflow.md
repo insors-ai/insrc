@@ -286,6 +286,34 @@ insrc workflow chain <h16>
 Prints the current state of Define / HLD / LLDs / amendments /
 tracker and the exact next command to run.
 
+## Artifact ids
+
+One scheme names every artifact (`src/workflow/artifact-ids.ts`). The forms are strict:
+
+| Part | Form | Example |
+| :--- | :--- | :--- |
+| Story | lower case `s<n>` | `s1`, `s12` |
+| Task | lower case `t<n>` | `t1`, `t10` |
+| Hash | 16 lower-case hex characters (a SPEC or ISSUE hash is at least 8) | `2f27754d4ad00b8e` |
+
+An artifact id is the kind, the hash and, where the kind has them, the story and task:
+`DEF-<h16>`, `LLD-<h16>-s1`, `PLAN-<h16>-s1`, `TASK-<h16>-s1-t3`, `AMD-<h16>-2`. `EPIC-<h16>`,
+`STORY-<h16>-s1` and `TASK-<h16>-s1-t3` name the Epic, a Story and a Task themselves; the delivery
+board, the rendered document headers and the tracker issue titles and markers use them. An upper-case
+story such as `S001` is not an id: an artifact stored with one fails with an error that points to the
+s9 conversion. A reference, whether `owner/repo#N`, `#N`, an artifact id or an `s1/t3` label, resolves
+through `resolveWorkflowRef`.
+
+### The Epic anchor
+
+Folder names stay `docs/epics/<slug>-E<date><hash8>/` (and `docs/standalone/...`), with one story
+folder per Story (`S001/`, `S012/`). The date is the Epic's creation time, and it is **stamped**: the
+root artifact of a work item (the Define, the ISSUE of a bugfix, or a standalone design's LLD) writes
+`meta.epicCreatedAt`, every later artifact carries the same stamp, and every path is computed from the
+stamp. Writes for one Epic therefore land in one folder whatever day they happen. A record with no
+stamp is never placed by its own date: a read path fails with "no Epic anchor", and a write path uses the
+root it is about to stamp. Records stored before the stamp are stamped by the s9 conversion.
+
 ## Storage layout
 
 Every artifact carries a 16-char Epic hash (`<h16>`, the same

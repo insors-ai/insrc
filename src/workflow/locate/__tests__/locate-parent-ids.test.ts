@@ -19,7 +19,10 @@ import { dirname, join } from 'node:path';
 import { buildDocPathIndex, refFromDocPath } from '../infer.js';
 import { mapSemanticHits } from '../infer-daemon.js';
 import { locateParent } from '../locate-parent.js';
-import { defaultTrackerCreateDeps, legacyParentSlug, parentRefIdentifiers } from '../../bugfix/tracker.js';
+import { createBugfixTrackerIssue, defaultTrackerCreateDeps, legacyParentSlug, parentRefIdentifiers } from '../../bugfix/tracker.js';
+import type { IssueArtifact } from '../../artifacts/issue.js';
+import type { ResolvedGithubConfig } from '../../config/github.js';
+import type { WorkItemRef } from '../../types.js';
 import { resolveWorkflowRef } from '../../tracker/resolve.js';
 import { deriveMdPath } from '../../pending.js';
 import type { Entity } from '../../../shared/types.js';
@@ -54,6 +57,23 @@ function twoEpics(): { repo: string; cleanup: () => void } {
 		});
 	}
 	return { repo, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+const GH: ResolvedGithubConfig = {
+	type: 'github', owner: 'acme', repo: 'demo',
+	epicLabel: 'insrc:epic', storyLabel: 'insrc:story', taskLabel: 'insrc:task',
+	useMilestones: false, pushTasks: false, commitArtifacts: true,
+	taskIssueType: 'Task', epicIssueType: 'Epic', storyIssueType: 'Story',
+	source: 'per-repo-config',
+};
+
+function bugfixIssue(parentRef: WorkItemRef): IssueArtifact {
+	return {
+		meta: { workflow: 'issue', runId: 'r', repoPath: '/repo', createdAt: '2026-10-20T00:00:00.000Z', elapsedMs: 1, repoIndexedAt: null,
+			schemaVersion: 1, issueHash: 'abcd1234abcd1234', approvedAt: '2026-10-20T00:00:01.000Z', parentRef } as IssueArtifact['meta'],
+		body: { title: 'Fix the boom', reproduction: 'do X', rootCause: 'Y', fixIntent: 'Z' },
+		citations: [],
+	};
 }
 
 function entity(file: string): Entity {
@@ -97,6 +117,21 @@ test('a parent is located and linked correctly in a repository with several epic
 		assert.equal(located.tier, 'deterministic');
 		assert.deepEqual(located.parentRef, { epicHash: HASH_B, storyId: 's1', slug: `STORY-${HASH_B}-s1` });
 		assert.equal(create.resolveParentIssueRef(s.repo, located.parentRef!), 'acme/demo#25');
+
+		// the bugfix issue is created and linked as a sub-issue of the located parent's own Story issue, in each epic
+		for (const [parent, storyIssue] of [[located.parentRef!, 'acme/demo#25'], [refFromDocPath(index, lldA)!, 'acme/demo#5']] as const) {
+			const links: Array<{ parentRef: string; childId: number }> = [];
+			const linked = await createBugfixTrackerIssue({ repoPath: s.repo, issueHash: 'abcd1234abcd1234' }, {
+				...create,
+				resolveConfig: () => GH, authOk: () => ({ ok: true }),
+				readIssue: () => bugfixIssue(parent), readRecordedRef: () => null, recordRef: () => undefined,
+				createIssue: () => ({ ref: 'acme/demo#99', id: 9099, typed: false }),
+				linkSubIssue: (_o, _r, parentRef, childId) => { links.push({ parentRef, childId }); },
+			});
+			assert.equal(linked.status, 'created');
+			assert.equal(linked.linked, true, `the bugfix is linked under ${storyIssue}`);
+			assert.deepEqual(links, [{ parentRef: storyIssue, childId: 9099 }]);
+		}
 
 		// a stored parentRef.slug that predates the artifact ids is converted from its epicHash and storyId, or reported and skipped
 		const old: { epicHash: string; storyId: string; slug: string } = { epicHash: HASH_A, storyId: 's1', slug: 'E202607171111aaaa-S001' };

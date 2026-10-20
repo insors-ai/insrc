@@ -173,8 +173,7 @@
       "reviewedAt": "2026-10-19T10:31:48.742Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
-    },
-    "approvedAt": "2026-10-19T10:45:51.280Z"
+    }
   },
   "body": {
     "summary": {
@@ -508,7 +507,7 @@
           ],
           "returns": {
             "type": "DimensionResult",
-            "meaning": "Findings concatenated in stage order. Identical findings (every field equal) kept once. A finding naming a note id is expanded to that note's atoms through the job's provenance. Findings outside the changed set are handled as each path does today: the daemon judges drop them (for example src/workflow/code-review/dimensions/quality.ts:124) and the controller step keeps them in outOfScope (src/daemon/steps/code-review-step/handler.ts). For coverage, normalizeCoverageFindings runs once over the merged result with the prepared grounding (src/workflow/code-review/dimensions/coverage.ts:185). pipelineCalls { chunk, obligation, relation, merge } is set; it is absent on a single-chunk review. Each dimension's finish also keeps every result filter that dimension's judge applies today. In particular, functional coverage keeps only findings whose expectationRef is absent or a known FR id (src/workflow/code-review/dimensions/functional-coverage.ts), so an invented FR reference cannot reach the verdict."
+            "meaning": "Findings concatenated in stage order. Identical findings (every field equal) kept once. Every finding is located at file:line, as today's single call locates it: an obligation or relation call lists the symbols its notes or pair name, with their files, and gather.validate rejects a finding located at a note id (or anything not file:line), so it is re-asked once with that reason and then fails the review; merge never rewrites a location (amended 2026-10-20 by the stakeholder's decision: s1's merge does not see the job's notes, and a real location is today's behaviour). Findings outside the changed set are handled as each path does today: the daemon judges drop them (for example src/workflow/code-review/dimensions/quality.ts:124) and the controller step keeps them in outOfScope (src/daemon/steps/code-review-step/handler.ts). For coverage, normalizeCoverageFindings runs once over the merged result with the prepared grounding (src/workflow/code-review/dimensions/coverage.ts:185). pipelineCalls { chunk, obligation, relation, merge } is set; it is absent on a single-chunk review. Each dimension's finish also keeps every result filter that dimension's judge applies today. In particular, functional coverage keeps only findings whose expectationRef is absent or a known FR id (src/workflow/code-review/dimensions/functional-coverage.ts), so an invented FR reference cannot reach the verdict."
           },
           "errors": [],
           "preconditions": [],
@@ -586,7 +585,7 @@
       {
         "contractId": "sc5",
         "role": "consumes",
-        "howDetails": "Uses the job's note provenance to expand note ids, and writes pipelineCalls."
+        "howDetails": "Reads the notes each obligation call carries (their ids and atoms) to list the symbols a finding may be located at, and writes pipelineCalls."
       },
       {
         "contractId": "sc6",
@@ -643,6 +642,13 @@
           "detection": "finish applies today's FR-reference filter (expectationRef must be absent or a known FR id).",
           "response": "The finding is dropped, as today's judge drops it.",
           "userImpact": "As today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An obligation or relation answer locates a finding at an evidence note id, or at anything that is not file:line.",
+          "detection": "gather.validate(answer, call) checks every finding's location is file:line; the call lists the symbols and files its notes or pair name.",
+          "response": "Invalid answer: one re-issue under a new callId with the reason (fixed size), then fail-review.",
+          "userImpact": "No finding is recorded at a location a reader cannot open.",
           "recoverable": true
         }
       ],
@@ -715,7 +721,7 @@
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key with no notes is adjudicated on the no-evidence statement'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a pair answer naming a counterpart outside its two symbols is rejected'",
-            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, expands note ids to atoms, moves out-of-set findings to outOfScope, and normalises coverage once'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing'",
@@ -764,7 +770,7 @@
           "provingTests": [
             "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key with no notes is adjudicated on the no-evidence statement'",
-            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, expands note ids to atoms, moves out-of-set findings to outOfScope, and normalises coverage once'",
+            "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing'",
             "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a conventions candidate rejected by the module judgement is absent from the merged result'",
@@ -826,7 +832,7 @@
         "id": "a1",
         "name": "Per-dimension gather plans on s1's GatherPlan, carried over from ISSUE-aef82b03's strategies",
         "oneLineSummary": "Each model-judged dimension's adapter gets chunk prompts (today's prompt over the chunk's rows, neighbour lines and its context) that return today's findings plus evidence notes keyed by obligation; s1's gather adjudicates every obligation key on all notes, judges each cut call relation in a relation call, and quality adds a compare stage for cross-chunk duplicates; finish folds into today's DimensionResult.",
-        "approach": "Obligations per dimension, all created at prepare so a key with no evidence is still adjudicated: adherence keys each approved LLD clause and PLAN task; functional coverage each FR; coverage each promised test; conventions each touched module. Each dimension's chunkCalls build today's prompt over the chunk's rows (the s2 material), with the chunk's neighbour summaries and the context atoms the chunk needs (clauses, FRs, test-record atoms of the files its symbols reach). The answer schema is today's findings plus notes [{key, atomIds, note}]. Chunk answers never emit absence findings (unimplemented clause, unrealized FR, missing promised test, module idiom verdict); only obligation adjudication does. GatherPlan.obligationCall adjudicates one key on its notes and its own context atom, with today's rules (conventions keeps today's too-few-examples rule and confirms or drops chunk-level candidate deviations). reduceCall merges a key's notes under the quarter-limit cap. GatherPlan.relationCall judges each 'calls' relation in ChunkPlan.crossRelations once, on the two symbols' full summaries, and reports a mismatch between caller and callee as a finding at the caller's location; it is used by quality and adherence, the dimensions that judge behaviour. Quality's adapter adds a model stage 'compare' after its chunk stage: chunk answers include a one-line description per symbol, descriptions from different chunks are packed into batch pairs within the limit, and each pair call names duplicate candidates, which a 'pair' stage judges on both full summaries, reporting duplication with counterpartRef. merge concatenates findings, keeps identical ones once, expands note ids to their atoms through the job's provenance, and drops any finding outside the changed set as today. finish runs normalizeCoverageFindings once over coverage's merged result, and DimensionResult gets pipelineCalls. foldVerdict is unchanged. The smoke runs Epic c2ba6fa6 Story s1's code review through the installed daemon's code-review RPC and writes the verdict, chunk plan and calls per stage to a smoke record beside S003.",
+        "approach": "Obligations per dimension, all created at prepare so a key with no evidence is still adjudicated: adherence keys each approved LLD clause and PLAN task; functional coverage each FR; coverage each promised test; conventions each touched module. Each dimension's chunkCalls build today's prompt over the chunk's rows (the s2 material), with the chunk's neighbour summaries and the context atoms the chunk needs (clauses, FRs, test-record atoms of the files its symbols reach). The answer schema is today's findings plus notes [{key, atomIds, note}]. Chunk answers never emit absence findings (unimplemented clause, unrealized FR, missing promised test, module idiom verdict); only obligation adjudication does. GatherPlan.obligationCall adjudicates one key on its notes and its own context atom, with today's rules (conventions keeps today's too-few-examples rule and confirms or drops chunk-level candidate deviations). reduceCall merges a key's notes under the quarter-limit cap. GatherPlan.relationCall judges each 'calls' relation in ChunkPlan.crossRelations once, on the two symbols' full summaries, and reports a mismatch between caller and callee as a finding at the caller's location; it is used by quality and adherence, the dimensions that judge behaviour. Quality's adapter adds a model stage 'compare' after its chunk stage: chunk answers include a one-line description per symbol, descriptions from different chunks are packed into batch pairs within the limit, and each pair call names duplicate candidates, which a 'pair' stage judges on both full summaries, reporting duplication with counterpartRef. merge concatenates findings, keeps identical ones once, accepts only file:line locations (a note id is re-asked), and drops any finding outside the changed set as today. finish runs normalizeCoverageFindings once over coverage's merged result, and DimensionResult gets pipelineCalls. foldVerdict is unchanged. The smoke runs Epic c2ba6fa6 Story s1's code review through the installed daemon's code-review RPC and writes the verdict, chunk plan and calls per stage to a smoke record beside S003.",
         "pros": [
           "Reuses ISSUE-aef82b03's approved per-dimension design (keys, absence findings only from adjudication, digest-free pair checks), now on s1's bounded gather.",
           "Every obligation is judged once on all chunks' evidence, as one call would judge it.",
@@ -883,7 +889,7 @@
           {
             "constraintId": "sc5",
             "verdict": "satisfies",
-            "notes": "Note provenance expands note ids to atoms; pipelineCalls is recorded."
+            "notes": "Every finding keeps a file:line location; pipelineCalls is recorded."
           },
           {
             "constraintId": "sc6",

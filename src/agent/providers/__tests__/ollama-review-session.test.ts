@@ -24,9 +24,10 @@ import { test } from 'node:test';
 import { READ_ONLY_TOOL_IDS } from '../../../analyze/context/tool-surface.js';
 import { registerBuiltinTools } from '../../../daemon/tools/builtins/index.js';
 import { registerLlmAliases } from '../../../daemon/tools/builtins/llm-aliases.js';
+import { getTool } from '../../../daemon/tools/registry.js';
 import type { ToolDeps, ToolResult } from '../../../daemon/tools/types.js';
 import type { LLMMessage, LLMProvider, LLMResponse, ToolCall } from '../../../shared/types.js';
-import { rootedInput, runReadOnlyToolLoop } from '../../read-only-tool-loop.js';
+import { FILESYSTEM_ARGS, NOT_FILESYSTEM_ARGS, rootedInput, runReadOnlyToolLoop } from '../../read-only-tool-loop.js';
 import { ReviewSessionTimeoutError } from '../cli-provider.js';
 import { OllamaProvider } from '../ollama.js';
 
@@ -133,6 +134,21 @@ test('an Ollama reviewer session reads the repo with read-only tools and returns
 				assert.equal(f.bodies[2]!.tools, undefined);
 			} finally { await f.close(); }
 		}
+		// A range diff in the repo: git_diff's revisions reach git unchanged and git runs in the repo.
+		{
+			const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' });
+			git('init', '-q');
+			git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '--allow-empty', '-m', 'one');
+			writeFileSync(join(repo, 'changed.txt'), 'a line only the second commit adds\n');
+			git('add', 'changed.txt');
+			git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', 'two');
+			const f = await fakeOllama((_b, n) => n === 1 ? asksTool('git_diff', { from: 'HEAD~1', to: 'HEAD' }) : n === 2 ? says('seen') : says('{"answer":"ok"}'));
+			try {
+				await f.provider.runReviewSession('review this', ANSWER_SCHEMA, { cwd: repo, deadlineMs: 20_000 });
+				const turn2 = JSON.stringify(f.bodies[1]!.messages);
+				assert.ok(turn2.includes('a line only the second commit adds'), `the range diff was read: ${turn2.slice(-600)}`);
+			} finally { await f.close(); }
+		}
 		// An answer that breaks the schema is rejected: with internalRetry false, one attempt only.
 		{
 			const f = await fakeOllama((_b, n) => n === 1 ? says('nothing to read') : says('{"answer":42}'));
@@ -174,11 +190,36 @@ test('an Ollama reviewer session reads the repo with read-only tools and returns
 });
 
 test('a tool input is anchored at the session repo: relative paths resolve there and an absent optional root defaults to it', () => {
-	const schema = { properties: { path: {}, cwd: {}, pattern: {} }, required: ['pattern'] };
-	assert.deepEqual(rootedInput(schema, { pattern: 'x' }, '/repo'), { pattern: 'x', path: '/repo', cwd: '/repo' });
-	assert.deepEqual(rootedInput(schema, { pattern: 'x', path: 'src', cwd: '/abs' }, '/repo'), { pattern: 'x', path: '/repo/src', cwd: '/abs' });
-	// A required path is never invented.
-	assert.deepEqual(rootedInput({ properties: { path: {} }, required: ['path'] }, {}, '/repo'), {});
+	// Filesystem arguments: relative resolves at the repo; an absent optional root defaults to it.
+	assert.deepEqual(rootedInput('file_read', { path: 'src/a.ts' }, '/repo'), { path: '/repo/src/a.ts' });
+	assert.deepEqual(rootedInput('file_read', { path: '/abs/a.ts' }, '/repo'), { path: '/abs/a.ts' });
+	assert.deepEqual(rootedInput('file_read', {}, '/repo'), {}, 'a required path is never invented');
+	assert.deepEqual(rootedInput('search_grep', { pattern: 'x' }, '/repo'), { pattern: 'x', path: '/repo' });
+	assert.deepEqual(rootedInput('search_glob', { pattern: '**/*.ts' }, '/repo'), { pattern: '**/*.ts', cwd: '/repo' });
+	assert.deepEqual(rootedInput('code_orm_scan', { orm: 'prisma' }, '/repo'), { orm: 'prisma', repoPath: '/repo' });
+	assert.deepEqual(rootedInput('code_class_locate', { className: 'A', repos: ['/r'] }, '/repo'), { className: 'A', repos: ['/r'] }, 'repoPath is exclusive with repos');
+	// git: only cwd is anchored; revisions and repo-relative paths pass through as given.
+	assert.deepEqual(rootedInput('git_diff', { from: 'HEAD~1', to: 'HEAD' }, '/repo'), { from: 'HEAD~1', to: 'HEAD', cwd: '/repo' });
+	assert.deepEqual(rootedInput('git_diff', { paths: ['src/a.ts'] }, '/repo'), { paths: ['src/a.ts'], cwd: '/repo' }, 'no path is added beside paths');
+	assert.deepEqual(rootedInput('git_log', { path: 'src' }, '/repo'), { path: 'src', cwd: '/repo' });
+	// Not filesystem locations at all.
+	assert.deepEqual(rootedInput('db_file_distinct', { connectionId: 'c', column: 'x', path: 'Sheet1' }, '/repo'), { connectionId: 'c', column: 'x', path: 'Sheet1' });
+	assert.deepEqual(rootedInput('graph_search', { query: 'x' }, '/repo'), { query: 'x' });
+});
+
+test('every read-only tool argument that looks like a path is classified as a filesystem location or not', () => {
+	const PATHY = /^(path|paths|file_?path|cwd|dir|directory|root|repoPath|repo)$/i;
+	for (const id of READ_ONLY_TOOL_IDS) {
+		const props = Object.keys((getTool(id)?.inputSchema as { properties?: Record<string, unknown> } | undefined)?.properties ?? {});
+		for (const key of props.filter(k => PATHY.test(k))) {
+			const fs = (FILESYSTEM_ARGS[id] ?? []).some(a => a.key === key);
+			const not = (NOT_FILESYSTEM_ARGS[id] ?? []).includes(key);
+			assert.ok(fs !== not, `${id}.${key} must be listed in exactly one of FILESYSTEM_ARGS / NOT_FILESYSTEM_ARGS`);
+		}
+	}
+	for (const id of [...Object.keys(FILESYSTEM_ARGS), ...Object.keys(NOT_FILESYSTEM_ARGS)]) {
+		assert.ok(READ_ONLY_TOOL_IDS.includes(id), `${id} is a read-only tool`);
+	}
 });
 
 test('a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed', async () => {

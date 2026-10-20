@@ -46,9 +46,8 @@ export interface ReadOnlyToolLoopArgs {
 	readonly allow:    ReadonlySet<string>;
 	readonly deps:     ToolDeps;
 	/** The directory tools work in. The tools resolve paths against the daemon's
-	 *  own cwd, so when set, a relative path argument is resolved against it, and an
-	 *  optional root argument (`cwd`, or a `path` the tool does not require) that is
-	 *  absent defaults to it. Absent: inputs pass through unchanged. */
+	 *  own cwd, so when set, each tool's filesystem arguments ({@link FILESYSTEM_ARGS})
+	 *  are anchored at it. Absent: inputs pass through unchanged. */
 	readonly root?:    string | undefined;
 	readonly maxTurns: number;
 	/** Cancels the loop: the turn in flight is aborted and no further turn or tool runs. */
@@ -91,7 +90,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		const tool = getTool(name);
 		if (tool === undefined) return unknownTool(name);
 		if (!args.allow.has(tool.id)) return refused(name, tool.id);
-		return execute(name, args.root !== undefined ? rootedInput(tool.inputSchema, input, args.root) : input, deps);
+		return execute(name, args.root !== undefined ? rootedInput(tool.id, input, args.root) : input, deps);
 	};
 
 	for (let turn = 0; turn < args.maxTurns; turn++) {
@@ -171,21 +170,55 @@ export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promi
 	});
 }
 
-/** Path arguments the file, search and git tools take. */
-const PATH_KEYS = ['path', 'file_path', 'cwd', 'from', 'to'] as const;
+/**
+ * The filesystem arguments of the read-only tools, by canonical id. The tools
+ * resolve them against the daemon's own cwd; a loop with a `root` resolves a
+ * relative one against the root and, where `defaultsToRoot`, fills an absent one
+ * with it. Only these arguments are touched: the same key can mean something
+ * else elsewhere (git_diff's `from`/`to` are revisions and its `path` is
+ * repo-relative; db_file_*'s `path` is a sheet name). A read-only tool with a
+ * path-like argument must be listed here or in {@link NOT_FILESYSTEM_ARGS}
+ * (pinned by a test).
+ */
+export const FILESYSTEM_ARGS: Readonly<Record<string, readonly { readonly key: string; readonly defaultsToRoot: boolean; readonly unlessPresent?: string }[]>> = {
+	'file_read':          [{ key: 'path', defaultsToRoot: false }],
+	'file_stat':          [{ key: 'path', defaultsToRoot: false }],
+	'search_list-dir':    [{ key: 'path', defaultsToRoot: false }],
+	'search_grep':        [{ key: 'path', defaultsToRoot: true }],
+	'search_recent':      [{ key: 'path', defaultsToRoot: true }],
+	'search_glob':        [{ key: 'cwd',  defaultsToRoot: true }],
+	'git_blame':          [{ key: 'cwd',  defaultsToRoot: true }],
+	'git_diff':           [{ key: 'cwd',  defaultsToRoot: true }],
+	'git_log':            [{ key: 'cwd',  defaultsToRoot: true }],
+	'git_show':           [{ key: 'cwd',  defaultsToRoot: true }],
+	'git_status':         [{ key: 'cwd',  defaultsToRoot: true }],
+	'code_class_locate':  [{ key: 'repoPath', defaultsToRoot: true, unlessPresent: 'repos' }],
+	'code_orm_scan':      [{ key: 'repoPath', defaultsToRoot: true }],
+	'code_migration_walk': [{ key: 'repoPath', defaultsToRoot: true }],
+};
 
-/** `input` with its path arguments anchored at `root` (see {@link ReadOnlyToolLoopArgs.root}). */
-export function rootedInput(schema: unknown, input: unknown, root: string): unknown {
-	if (input === null || typeof input !== 'object' || Array.isArray(input)) return input;
+/** Path-like argument names that are NOT filesystem locations, by tool id. */
+export const NOT_FILESYSTEM_ARGS: Readonly<Record<string, readonly string[]>> = {
+	// Repo-relative, resolved by git under `cwd`.
+	'git_blame':          ['path'],
+	'git_diff':           ['path', 'paths'],
+	'git_log':            ['path'],
+	'git_show':           ['path'],
+	// A sub-path or sheet name inside a data file.
+	'db_file_aggregate':  ['path'],
+	'db_file_distinct':   ['path'],
+};
+
+/** `input` for tool `toolId` with its filesystem arguments anchored at `root` (see {@link FILESYSTEM_ARGS}). */
+export function rootedInput(toolId: string, input: unknown, root: string): unknown {
+	const args = FILESYSTEM_ARGS[toolId];
+	if (args === undefined || input === null || typeof input !== 'object' || Array.isArray(input)) return input;
 	const out: Record<string, unknown> = { ...(input as Record<string, unknown>) };
-	const props = (schema as { properties?: Record<string, unknown> } | undefined)?.properties ?? {};
-	const required = new Set((schema as { required?: readonly string[] } | undefined)?.required ?? []);
-	for (const key of PATH_KEYS) {
-		if (!(key in props)) continue;
+	for (const { key, defaultsToRoot, unlessPresent } of args) {
 		const v = out[key];
 		if (typeof v === 'string' && v.length > 0) {
 			if (!isAbsolute(v)) out[key] = resolve(root, v);
-		} else if (v === undefined && !required.has(key) && (key === 'cwd' || key === 'path')) {
+		} else if (v === undefined && defaultsToRoot && (unlessPresent === undefined || out[unlessPresent] === undefined)) {
 			out[key] = root;
 		}
 	}

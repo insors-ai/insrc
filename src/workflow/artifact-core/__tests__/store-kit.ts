@@ -26,10 +26,10 @@ export function clock(): () => Date {
 
 export interface Faults {
 	/** Fail the next call of this step once (set to true), or every call while true for `sticky`. */
-	stage?:   boolean;
-	append?:  boolean;
-	replace?: boolean;
-	clear?:   boolean;
+	stage?:   boolean | undefined;
+	append?:  boolean | undefined;
+	replace?: boolean | undefined;
+	clear?:   boolean | undefined;
 }
 
 export interface Kit {

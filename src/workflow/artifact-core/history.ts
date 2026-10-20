@@ -87,29 +87,32 @@ export class History {
 		await this.io.appendRecord('feedback', { artifactId: id, entry: f });
 	}
 
-	log(id: string): Promise<ChangeLogEntry[]> { return this.read<ChangeLogEntry>('log', id); }
+	log(id: string): Promise<ChangeLogEntry[]> { return this.read<ChangeLogEntry>('log', id, e => validateLogEntry(e)); }
 
 	async logTail(id: string): Promise<ChangeLogEntry | undefined> {
 		const entries = await this.log(id);
 		return entries[entries.length - 1];
 	}
 
-	feedback(id: string): Promise<Feedback[]> { return this.read<Feedback>('feedback', id); }
+	feedback(id: string): Promise<Feedback[]> { return this.read<Feedback>('feedback', id, f => validateFeedback(f)); }
 
 	/** The feedback no later log entry addresses (by listing its id, or with `all`). */
 	async openFeedback(id: string): Promise<Feedback[]> {
 		const feedback = await this.feedback(id);
 		const log = await this.log(id);
 		return feedback.filter(f => !log.some(e =>
-			at(e.timestamp) >= at(f.timestamp)
+			at(e.timestamp) > at(f.timestamp)
 			&& (e.addresses === 'all' || (Array.isArray(e.addresses) && e.addresses.includes(f.id)))));
 	}
 
-	private async read<E>(file: SidecarFile, id: string): Promise<E[]> {
+	private async read<E>(file: SidecarFile, id: string, check: (entry: E) => void): Promise<E[]> {
 		requireId(id);
 		try {
 			const entries = await this.io.readRecords<E>(file, id);
-			entries.forEach((e, i) => { if (!isObject(e)) throw new Error(`line ${i + 1} is not a record`); });
+			entries.forEach((e, i) => {
+				if (!isObject(e)) throw new Error(`line ${i + 1} is not a record`);
+				try { check(e); } catch (err) { throw new Error(`line ${i + 1}: ${(err as Error).message}`); }
+			});
 			return entries;
 		} catch (err) {
 			throw new HistoryReadError(`reading the ${file} of ${id} failed: ${(err as Error).message}`);

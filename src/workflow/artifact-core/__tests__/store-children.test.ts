@@ -29,6 +29,7 @@ describe('ArtifactStore.childrenOf', () => {
 			put(`LLD-${H}-s1`, head({ workflow: 'design.story' }));      // no parent link
 			put(`PLAN-${H}-s1`, '{not json');                            // unreadable: skipped
 			put(`AMD-${H}-1`, JSON.stringify({ id: 'flat' }));           // unconverted amendment: skipped
+			put(`TASK-${H}-s1-t3`, head({ envelope: { parent: { entityId: STORY } } }));   // a parent with no type or relation is not a link
 			writeFileSync(join(dir, '.insrc', 'artifacts', 'notes.json'), '{}');   // not an artifact id: ignored
 			const parentBytes = readFileSync(artifactJsonPath(dir, STORY), 'utf8');
 

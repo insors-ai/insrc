@@ -63,4 +63,28 @@ describe('History', () => {
 		const junk = { appendRecord: () => Promise.resolve(), readRecords: () => Promise.resolve([1]) } as never;
 		await assert.rejects(new History(junk).feedback(ID), HistoryReadError);
 	});
+
+	it('a corrupt sidecar entry is a HistoryReadError, a same-time entry does not close later feedback, and a repeated append reads once', async () => {
+		const ID2 = ID;
+		for (const bad of [{}, { id: 'e' }, { id: 'e', actor, timestamp: 't', operation: 'nope' }]) {
+			const io = { appendRecord: () => Promise.resolve(), readRecords: () => Promise.resolve([bad]) } as never;
+			await assert.rejects(new History(io).log(ID2), HistoryReadError);
+		}
+		await assert.rejects(new History({ appendRecord: () => Promise.resolve(), readRecords: () => Promise.resolve([{}]) } as never).feedback(ID2), HistoryReadError);
+
+		const h = new History(createMemorySidecar());
+		await h.appendFeedback(ID2, fb('f1', { timestamp: '2026-10-20T10:00:00Z' }));
+		await h.appendLog(ID2, entry('e1', { timestamp: '2026-10-20T10:00:00Z', addresses: 'all' }));
+		assert.deepEqual((await h.openFeedback(ID2)).map(f => f.id), ['f1'], 'an entry at the same instant does not close it');
+		await h.appendLog(ID2, entry('e2', { timestamp: '2026-10-20T10:00:01Z', addresses: ['f1'] }));
+		assert.deepEqual(await h.openFeedback(ID2), []);
+
+		const dup = new History(createMemorySidecar());
+		await dup.appendLog(ID2, entry('e1'));
+		await dup.appendLog(ID2, entry('e1'));
+		await dup.appendFeedback(ID2, fb('f1'));
+		await dup.appendFeedback(ID2, fb('f1'));
+		assert.equal((await dup.log(ID2)).length, 1);
+		assert.equal((await dup.feedback(ID2)).length, 1);
+	});
 });

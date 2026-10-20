@@ -40,7 +40,17 @@ export function createMemorySidecar(): SidecarIo & { readonly records: readonly 
 			records.push({ file, record });
 			return Promise.resolve();
 		},
-		readRecords: <E>(file: SidecarFile, artifactId: string): Promise<E[]> =>
-			Promise.resolve(records.filter(r => r.file === file && r.record.artifactId === artifactId).map(r => r.record.entry as E)),
+		// Like a durable reader, de-duplicate by entry id: appending the same entry twice is harmless.
+		readRecords: <E>(file: SidecarFile, artifactId: string): Promise<E[]> => {
+			const seen = new Set<unknown>();
+			const out: E[] = [];
+			for (const r of records) {
+				if (r.file !== file || r.record.artifactId !== artifactId) continue;
+				const entryId = (r.record.entry as { id?: unknown } | null)?.id;
+				if (entryId !== undefined) { if (seen.has(entryId)) continue; seen.add(entryId); }
+				out.push(r.record.entry as E);
+			}
+			return Promise.resolve(out);
+		},
 	};
 }

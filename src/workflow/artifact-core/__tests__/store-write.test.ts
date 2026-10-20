@@ -149,4 +149,45 @@ describe('ArtifactStore.write', () => {
 			assert.deepEqual(Object.keys(after.meta).filter(x => !(x in stamped.meta)).sort(), ['envelope', 'lifecycle'].filter(x => !(x in stamped.meta)).sort());
 		} finally { k.done(); }
 	});
+
+	it('concurrent writes to one artifact are serialised, so none is lost', async () => {
+		const k = kit();
+		try {
+			const id = `DEF-${H}`;
+			await k.store.write(artifact(id), alice);
+			const base = await k.store.read(id);
+			// five writers read the same prior revision and write at once, from two store instances
+			const other = k.restart();
+			await Promise.all([1, 2, 3, 4, 5].map(n => (n % 2 === 0 ? other : k.store).write({ ...base, description: `d${n}` }, alice)));
+			const after = await k.store.readWithHistory(id);
+			assert.equal(after.lifecycle.revision.number, 6, 'each of the five content changes minted its own revision');
+			assert.equal(after.changeLog.length, 6);
+			assert.equal(new Set(after.changeLog.map(e => e.id)).size, 6);
+			assert.equal(after.description, 'd5', 'the last queued write wins, none overwrote another');
+			assert.equal(await k.journal.pending(id), undefined);
+			// a failed write does not block the queue behind it
+			k.faults.append = true;
+			const failing = k.store.write({ ...after, description: 'x' }, alice);
+			const next = k.store.write({ ...after, description: 'y' }, alice);
+			await assert.rejects(failing);
+			await next;
+			assert.equal((await k.store.read(id)).description, 'y');
+		} finally { k.done(); }
+	});
+
+	it('a binding, its pending links and a parent relation are checked like other links', async () => {
+		const k = kit();
+		try {
+			await k.store.write(artifact(`DEF-${H}`), alice);
+			const id = `LLD-${H}-s1`;
+			const bad: Reference = { entityId: 'PLAN-nope', type: 'PLAN', relation: 'tracked-by' };
+			const good: Reference = { entityId: 'o/r#1', type: 'github:issue', relation: 'tracked-by' };
+			await assert.rejects(k.store.write(artifact(id, { binding: { reference: bad, createdAtRevision: 1, posted: [] } }), alice), ArtifactShapeError);
+			await assert.rejects(k.store.write(artifact(id, { binding: { reference: good, createdAtRevision: 1, posted: [], pendingLink: { parent: bad } } }), alice), ArtifactShapeError);
+			await assert.rejects(k.store.write(artifact(id, { binding: { reference: good, createdAtRevision: 1, posted: [], pendingLink: { parent: good, child: bad } } }), alice), ArtifactShapeError);
+			await assert.rejects(k.store.write(artifact(id, { parent: { entityId: `HLD-${H}`, type: 'HLD', relation: 'cites' } }), alice), ArtifactShapeError);
+			await k.store.write(artifact(id, { binding: { reference: good, createdAtRevision: 1, posted: [], pendingLink: { parent: good, child: good } } }), alice);
+			assert.equal((await k.store.read(id)).binding?.reference.entityId, 'o/r#1');
+		} finally { k.done(); }
+	});
 });

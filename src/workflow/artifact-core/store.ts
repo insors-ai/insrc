@@ -55,6 +55,9 @@ function canonical(v: unknown): string {
 	return JSON.stringify(v) ?? 'null';
 }
 
+/** The writes in flight, one queue per repository and artifact, shared by every store instance in the process. */
+const WRITE_QUEUES = new Map<string, Promise<unknown>>();
+
 const ACTOR_ID = /^[a-z][a-z0-9-]*:\S+$/;
 
 /** A reference whose type is an artifact type must name a valid artifact id; external targets are allowed. */
@@ -109,7 +112,7 @@ export class ArtifactStore {
 				if (!isObject(head) || !isObject(head['meta']) || !isObject(head['body'])) throw new ArtifactShapeError(`the head of ${childId} has no meta and body objects`);
 				const envelope = head['meta']['envelope'];
 				const parent = isObject(envelope) ? envelope['parent'] : undefined;
-				if (isObject(parent) && parent['entityId'] === id) children.push(childId);
+				if (isObject(parent) && typeof parent['type'] === 'string' && typeof parent['relation'] === 'string' && parent['entityId'] === id) children.push(childId);
 			} catch (err) {
 				log.warn({ id: childId, err: (err as Error).message }, 'skipped an unreadable head while listing children');
 			}
@@ -122,6 +125,17 @@ export class ArtifactStore {
 	 * with its change log entry, the entry is appended, the head replaced and the journal cleared.
 	 */
 	async write(a: Artifact<HeadPayload>, by: Actor): Promise<void> {
+		// One write at a time per artifact in this process: recovery, stage, append and replace must not interleave.
+		const lockKey = `${this.deps.repoPath}\0${a.id}`;
+		const previous = WRITE_QUEUES.get(lockKey) ?? Promise.resolve();
+		const run = previous.then(() => this.writeUnlocked(a, by));
+		const tail = run.catch(() => undefined);
+		WRITE_QUEUES.set(lockKey, tail);
+		try { await run; }
+		finally { if (WRITE_QUEUES.get(lockKey) === tail) WRITE_QUEUES.delete(lockKey); }
+	}
+
+	private async writeUnlocked(a: Artifact<HeadPayload>, by: Actor): Promise<void> {
 		const key = ArtifactIds.parse(a.id);
 		if (key === undefined) throw new InvalidArtifactKeyError(`'${a.id}' is not an artifact id`);
 		if (typeof by?.id !== 'string' || !ACTOR_ID.test(by.id) || by.id !== by.id.toLowerCase()) {
@@ -142,10 +156,11 @@ export class ArtifactStore {
 		const kind = contentChanged ? 'content' : 'meta-only';
 		const priorRevision = prior === undefined ? 0 : prior.artifact.lifecycle.revision.number;
 
+		// The base head (and, on a create, its creation context) is built once, so both preparations see the same identity meta.
+		const base: HeadFile = prior === undefined
+			? codec.encode(a.payload, key, (this.deps.contexts ?? creationContextProvider(this.deps.repoPath, { now: this.deps.now }))(key))
+			: { ...prior.head, meta: prior.head.meta, body: a.payload.body, citations: a.payload.citations };
 		const build = (revisionNumber: number): HeadFile => {
-			const base: HeadFile = prior === undefined
-				? codec.encode(a.payload, key, (this.deps.contexts ?? creationContextProvider(this.deps.repoPath, { now: this.deps.now }))(key))
-				: { ...prior.head, meta: prior.head.meta, body: a.payload.body, citations: a.payload.citations };
 			const envelope = {
 				description: a.description,
 				...(a.parent !== undefined ? { parent: a.parent } : {}),
@@ -201,6 +216,7 @@ export class ArtifactStore {
 		if (a.parent !== undefined) {
 			const parentKey = ArtifactIds.parse(a.parent.entityId);
 			if (parentKey === undefined) throw new ArtifactShapeError(`the parent of ${a.id} is '${a.parent.entityId}', which is not an artifact id`);
+			if (a.parent.relation !== 'derived-from') throw new ArtifactShapeError(`the parent of ${a.id} has relation '${a.parent.relation}', not derived-from`);
 			const expected = ArtifactIds.parentOf(key);
 			if (expected !== undefined && ArtifactIds.make(expected) !== a.parent.entityId) {
 				throw new ArtifactShapeError(`the parent of ${a.id} has to be ${ArtifactIds.make(expected)}, not ${a.parent.entityId}`);
@@ -208,5 +224,12 @@ export class ArtifactStore {
 		}
 		for (const r of a.references) checkReference(r, `a reference of ${a.id}`);
 		for (const t of a.attachments) checkReference(t.target, `an attachment of ${a.id}`);
+		if (a.binding !== undefined) {
+			checkReference(a.binding.reference, `the binding of ${a.id}`);
+			if (a.binding.pendingLink !== undefined) {
+				checkReference(a.binding.pendingLink.parent, `the pending link of ${a.id}`);
+				if (a.binding.pendingLink.child !== undefined) checkReference(a.binding.pendingLink.child, `the pending link of ${a.id}`);
+			}
+		}
 	}
 }

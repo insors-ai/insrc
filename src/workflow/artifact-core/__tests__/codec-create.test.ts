@@ -43,7 +43,7 @@ describe('kind codecs', () => {
 				workflow: 'define', runId: 'run-1', repoPath: repo, createdAt: NOW.toISOString(), epicCreatedAt: NOW.toISOString(),
 				elapsedMs: 0, repoIndexedAt: null, schemaVersion: 1, epicHash: H, epicSlug: 'a-slug',
 			});
-			assert.equal(workItemAnchorCreatedAt(def.meta as { epicCreatedAt?: string }), NOW.toISOString());
+			assert.equal(workItemAnchorCreatedAt(def.meta as { epicCreatedAt?: string | undefined }), NOW.toISOString());
 			const md = renderDefineMarkdown(def as unknown as DefineArtifact);
 			assert.equal(md, renderDefineMarkdown({ meta: def.meta, body, citations: [] } as unknown as DefineArtifact), 'the renderer reads the created head');
 			assert.ok(md.includes('\n') && md.includes('s1'), 'it renders the story');

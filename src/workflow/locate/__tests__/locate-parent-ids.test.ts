@@ -136,12 +136,14 @@ test('a parent is located and linked correctly in a repository with several epic
 		// a stored parentRef.slug that predates the artifact ids is converted from its epicHash and storyId, or reported and skipped
 		const old: { epicHash: string; storyId: string; slug: string } = { epicHash: HASH_A, storyId: 's1', slug: 'E202607171111aaaa-S001' };
 		assert.equal(legacyParentSlug(old), 'E202607171111aaaa-S001', 'the old slug is reported');
-		assert.deepEqual(parentRefIdentifiers(old), [`STORY-${HASH_A}-s1`, 's1'], 'and converted from epicHash and storyId');
+		assert.deepEqual(parentRefIdentifiers(old), [`STORY-${HASH_A}-s1`], 'and converted from epicHash and storyId, with no bare label that could match another epic');
 		assert.equal(create.resolveParentIssueRef(s.repo, old), 'acme/demo#5');
 		assert.deepEqual(parentRefIdentifiers({ slug: 'E202607171111aaaa-S001' }), [], 'with no epicHash the old slug is skipped, not guessed');
 		assert.deepEqual(parentRefIdentifiers({ epicHash: HASH_A }), [`EPIC-${HASH_A}`]);
 		assert.equal(legacyParentSlug({ slug: `STORY-${HASH_A}-s1` }), undefined);
 		assert.equal(create.resolveParentIssueRef(s.repo, { slug: 'E202607171111aaaa-S001' }), null);
+		// a ref pinned to an epic that is gone does not fall back to the same story label in another epic
+		assert.equal(create.resolveParentIssueRef(s.repo, { epicHash: 'ffffffffffffffff', storyId: 's1', slug: 'E20260101ffffffff-S001' }), null);
 	} finally { s.cleanup(); }
 });
 

@@ -391,7 +391,7 @@ function recordRefToDisk(repoPath: string, issueHash: string, ref: string): void
  *  slug is not an artifact id (one written before the artifact ids) is converted from its `epicHash` and `storyId`
  *  when it has them, and is otherwise skipped, never guessed; `legacyParentSlug` names it so it can be reported.
  *  `storyId` alone is the single-epic structural-label fallback (`s\d+`, resolvable only when the artifacts dir
- *  holds exactly one epic). */
+ *  holds exactly one epic), so it is offered only when the ref has no `epicHash`. */
 export function parentRefIdentifiers(parentRef: WorkItemRef): string[] {
 	const ids: string[] = [];
 	if (parentRef.slug && ArtifactIds.parse(parentRef.slug) !== undefined) ids.push(parentRef.slug);
@@ -402,7 +402,8 @@ export function parentRefIdentifiers(parentRef: WorkItemRef): string[] {
 				: { kind: 'EPIC', epicHash: parentRef.epicHash }));
 		} catch { /* not an id form: left to the label fallback below */ }
 	}
-	if (parentRef.storyId) ids.push(parentRef.storyId);
+	// The bare label is only a single-epic fallback: with an epicHash it could resolve the same story in another epic.
+	if (parentRef.storyId && !parentRef.epicHash) ids.push(parentRef.storyId);
 	return ids;
 }
 

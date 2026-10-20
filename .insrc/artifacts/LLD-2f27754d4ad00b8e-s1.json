@@ -214,6 +214,13 @@
         "choice": "Approve canonical amendment",
         "rationale": "Done differently: -1 to -4 are rejected as duplicates and AMD-2f27754d4ad00b8e-5 (with an explicit supersedes note) is the approved canonical amendment, because the applier only appends notes.",
         "resolvedAt": "2026-10-20T08:52:44.017Z"
+      },
+      "q3ceef04f": {
+        "question": "An old tracker issue with neither a unit label nor an artifact-id title cannot be recognised by the guard; confirm that one possible duplicate until the s9 relabelling is acceptable.",
+        "status": "resolved",
+        "choice": "Accept the temporary duplicate risk",
+        "rationale": "Accepted with the LLD approval override (2026-10-20); s9 relabels old issues.",
+        "resolvedAt": "2026-10-20T08:53:14.773Z"
       }
     }
   },

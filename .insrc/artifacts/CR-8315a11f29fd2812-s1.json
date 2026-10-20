@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792500008361-m3wrfi",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-20T12:40:08.361Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 42562,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/__tests__/internal-retry.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/agent/providers/ollama.ts",
+        "src/shared/types.ts",
+        "src/agent/providers/__tests__/cli-review-session.test.ts",
+        "src/config/__tests__/config-catalog-contract.test.ts",
+        "src/config/config-catalog.ts",
+        "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+        "src/workflow/review-pipeline/limit.ts",
+        "src/agent/providers/__tests__/abort-in-flight.test.ts",
+        "src/shared/process-group.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/agent/providers/cli-provider.ts",
+        "src/agent/providers/ollama.ts",
+        "src/shared/types.ts",
+        "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "src/workflow/review-pipeline/limit.ts:1",
+            "message": "The promised installed-daemon smoke test is missing from the supplied grounding: neither the gate results nor the builder-reported tests record a real under-limit code review and design review completing with the expected result shape.",
+            "expectationRef": "Installed daemon: a real under-limit code review and a real design review complete with today's result shape (manual smoke recorded in the BUILD record)",
+            "confidence": "breach",
+            "findingKind": "promised-test",
+            "symbolId": ""
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 1,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

@@ -1,0 +1,1503 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>insrc — Pre-commit understanding check</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="insrc — Pre-commit understanding check" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;insrc — Pre-commit understanding check&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 10px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn,
+.nav-link {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover,
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .btn,
+  .nav-link,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, var(--font-size-normal));
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+
+  .form-range::-webkit-slider-runnable-track {
+    height: 44px;
+  }
+
+  .form-range::-moz-range-track {
+    height: 44px;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    margin-top: 12px;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;understanding-mock&quot; aria-label=&quot;VS Code pre-commit understanding check&quot;&gt;
+  &lt;div class=&quot;demo-bar&quot;&gt;&lt;span&gt;UX MOCK&lt;/span&gt;&lt;label&gt;Scenario &lt;select id=&quot;scenario&quot;&gt;&lt;option value=&quot;high&quot;&gt;High · review impact&lt;/option&gt;&lt;option value=&quot;test&quot;&gt;High · take test&lt;/option&gt;&lt;option value=&quot;unsure&quot;&gt;Guidance · unsure&lt;/option&gt;&lt;option value=&quot;wrong&quot;&gt;Guidance · incorrect answer&lt;/option&gt;&lt;option value=&quot;pass&quot;&gt;High · passed&lt;/option&gt;&lt;option value=&quot;fail&quot;&gt;High · needs attention&lt;/option&gt;&lt;option value=&quot;override&quot;&gt;High · override&lt;/option&gt;&lt;option value=&quot;medium&quot;&gt;Medium · strict mode&lt;/option&gt;&lt;option value=&quot;low&quot;&gt;Low · optional&lt;/option&gt;&lt;option value=&quot;trivial&quot;&gt;Trivial · skipped&lt;/option&gt;&lt;option value=&quot;stale&quot;&gt;Staged changes updated&lt;/option&gt;&lt;option value=&quot;settings&quot;&gt;Project settings&lt;/option&gt;&lt;/select&gt;&lt;/label&gt;&lt;span class=&quot;demo-note&quot;&gt;Illustrative data · no Git operations&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;app-window&quot;&gt;
+    &lt;div class=&quot;title-bar&quot;&gt;&lt;span&gt;Visual Studio Code&lt;/span&gt;&lt;span&gt;insrc · workspace&lt;/span&gt;&lt;span&gt;⋯&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;app-grid&quot;&gt;
+      &lt;aside class=&quot;activity&quot; aria-label=&quot;Activity bar&quot;&gt;&lt;i data-lucide=&quot;files&quot;&gt;&lt;/i&gt;&lt;i data-lucide=&quot;search&quot;&gt;&lt;/i&gt;&lt;i data-lucide=&quot;git-branch&quot;&gt;&lt;/i&gt;&lt;i data-lucide=&quot;blocks&quot;&gt;&lt;/i&gt;&lt;/aside&gt;
+      &lt;aside class=&quot;scm&quot;&gt;&lt;div class=&quot;eyebrow&quot;&gt;SOURCE CONTROL &lt;span&gt;⋯&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;repo&quot;&gt;⌄ &amp;nbsp; insrc&lt;/div&gt;&lt;label class=&quot;sr&quot; for=&quot;message&quot;&gt;Commit message&lt;/label&gt;&lt;textarea id=&quot;message&quot; rows=&quot;3&quot;&gt;Reject stale session tokens&lt;/textarea&gt;&lt;button id=&quot;commit&quot; class=&quot;primary full&quot; disabled&gt;Commit paused&lt;/button&gt;&lt;div class=&quot;scm-state&quot; id=&quot;scm-state&quot;&gt;&lt;/div&gt;&lt;div class=&quot;file-heading&quot;&gt;⌄ &amp;nbsp; Staged Changes &lt;span&gt;3&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;file&quot;&gt;session.ts &lt;span&gt;M&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;file&quot;&gt;refresh.ts &lt;span&gt;M&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;file&quot;&gt;session.test.ts &lt;span&gt;M&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;scm-link&quot;&gt;Linked work&lt;/div&gt;&lt;div class=&quot;work-item&quot;&gt;ISSUE-142&lt;br&gt;&lt;small&gt;Reject stale session tokens&lt;/small&gt;&lt;br&gt;&lt;span class=&quot;closed&quot;&gt;Closed · review approved&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;scm-bottom&quot;&gt;Understanding is tracked separately from delivery status.&lt;/div&gt;&lt;/aside&gt;
+      &lt;main class=&quot;editor-pane&quot;&gt;&lt;div class=&quot;editor-tabs&quot;&gt;&lt;span class=&quot;inactive-tab&quot;&gt;TS &amp;nbsp; session.ts&lt;/span&gt;&lt;span class=&quot;active-tab&quot;&gt;&lt;i data-lucide=&quot;graduation-cap&quot;&gt;&lt;/i&gt; Understanding check &lt;span&gt;×&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;breadcrumbs&quot;&gt;insrc › Pre-commit › &lt;span id=&quot;breadcrumb-state&quot;&gt;Impact assessment&lt;/span&gt;&lt;/div&gt;&lt;div id=&quot;screen&quot; aria-live=&quot;polite&quot;&gt;&lt;/div&gt;&lt;/main&gt;
+    &lt;/div&gt;
+    &lt;footer class=&quot;status&quot;&gt;&lt;span&gt;⑂ fix/session-expiry &amp;nbsp; ✓&lt;/span&gt;&lt;span id=&quot;status-text&quot;&gt;insrc daemon · Connected&lt;/span&gt;&lt;span&gt;Assessment for you&lt;/span&gt;&lt;/footer&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+&lt;style&gt;
+#understanding-mock{--u-bg:light-dark(#fff,#1f1f1f);--u-chrome:light-dark(#f4f4f4,#181818);--u-panel:light-dark(#fafafa,#252526);--u-text:light-dark(#242424,#dedede);--u-muted:light-dark(#666,#a3a3a3);--u-line:light-dark(#ddd,#383838);--u-blue:light-dark(#005fb8,#70b8f5);--u-button:light-dark(#0068bb,#0e639c);--u-on:#fff;--u-green:light-dark(#237544,#83c89a);--u-warn:light-dark(#946009,#e4b76b);--u-red:light-dark(#ad3030,#ee9999);--u-tint:light-dark(#edf5fc,#213344);color:var(--u-text);font:13px/1.5 system-ui,sans-serif}
+#understanding-mock *{box-sizing:border-box}#understanding-mock button,#understanding-mock select,#understanding-mock textarea{font:inherit}#understanding-mock button{cursor:pointer;border:1px solid var(--u-line);border-radius:3px;background:var(--u-panel);color:var(--u-text);padding:7px 12px;display:inline-flex;align-items:center;justify-content:center;gap:7px}#understanding-mock button:hover{background:var(--u-tint)}#understanding-mock button:disabled{cursor:default;opacity:.5}#understanding-mock .primary{background:var(--u-button);border-color:var(--u-button);color:var(--u-on)}#understanding-mock .primary:hover{filter:brightness(1.1)}#understanding-mock .quiet{border-color:transparent;background:transparent;color:var(--u-muted)}#understanding-mock .full{width:100%}#understanding-mock .demo-bar{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding:0 0 14px}#understanding-mock .demo-bar&gt;span:first-child{font-size:11px;letter-spacing:1.4px;color:var(--u-muted)}#understanding-mock .demo-bar label{display:flex;align-items:center;gap:8px}#understanding-mock select{max-width:100%;padding:6px;background:var(--u-bg);color:var(--u-text);border:1px solid var(--u-line);border-radius:3px}#understanding-mock .demo-note{margin-left:auto;color:var(--u-muted);font-size:11px}#understanding-mock .app-window{border:1px solid var(--u-line);border-radius:7px;overflow:hidden;background:var(--u-bg)}#understanding-mock .title-bar{display:flex;justify-content:space-between;padding:9px 16px;background:var(--u-chrome);border-bottom:1px solid var(--u-line);font-size:12px}#understanding-mock .app-grid{display:grid;grid-template-columns:44px 214px minmax(0,1fr)}#understanding-mock .activity{display:flex;flex-direction:column;align-items:center;gap:28px;padding:20px 0;background:var(--u-chrome);border-right:1px solid var(--u-line);color:var(--u-muted)}#understanding-mock .activity svg:nth-child(3){color:var(--u-blue)}#understanding-mock .scm{background:var(--u-panel);border-right:1px solid var(--u-line);padding:14px 12px;min-width:0}#understanding-mock .eyebrow{font-size:11px;letter-spacing:.7px;display:flex;justify-content:space-between}#understanding-mock .repo{margin:18px 0 10px}#understanding-mock textarea{width:100%;background:var(--u-bg);color:var(--u-text);border:1px solid var(--u-line);padding:9px;resize:vertical;border-radius:3px}#understanding-mock .scm textarea{font-size:12px;min-height:78px;margin-bottom:7px}#understanding-mock .scm-state{margin:10px 0 24px;font-size:12px;color:var(--u-muted)}#understanding-mock .file-heading{display:flex;justify-content:space-between;font-size:12px;margin-bottom:9px}#understanding-mock .file{display:flex;justify-content:space-between;padding:5px 5px 5px 15px;font-size:12px}#understanding-mock .file span{color:var(--u-warn)}#understanding-mock .scm-link{margin-top:30px;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--u-muted)}#understanding-mock .work-item{margin-top:9px}#understanding-mock .closed{color:var(--u-green);font-size:11px}#understanding-mock .scm-bottom{border-top:1px solid var(--u-line);margin-top:28px;padding-top:14px;color:var(--u-muted);font-size:11px}#understanding-mock .editor-pane{min-width:0}#understanding-mock .editor-tabs{display:flex;background:var(--u-chrome);border-bottom:1px solid var(--u-line);font-size:12px;flex-wrap:wrap}#understanding-mock .editor-tabs&gt;span{padding:11px 14px;display:flex;align-items:center;gap:8px}#understanding-mock .active-tab{background:var(--u-bg);border-top:2px solid var(--u-blue)}#understanding-mock .active-tab&gt;span{margin-left:18px;color:var(--u-muted)}#understanding-mock .inactive-tab{color:var(--u-muted)}#understanding-mock .breadcrumbs{padding:9px 20px;color:var(--u-muted);font-size:11px;border-bottom:1px solid var(--u-line)}#understanding-mock #screen{padding:28px 30px 32px;min-height:555px}#understanding-mock .overline{color:var(--u-muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:10px}#understanding-mock h1{font-size:24px;line-height:1.25;font-weight:500;margin:0 0 10px;letter-spacing:-.5px}#understanding-mock h2{font-size:15px;font-weight:500;margin:22px 0 10px}#understanding-mock p{margin:8px 0 16px}#understanding-mock .muted{color:var(--u-muted)}#understanding-mock .badge{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:3px;background:var(--u-tint);color:var(--u-blue);font-size:12px}#understanding-mock .high{color:var(--u-warn);background:light-dark(#fff5e4,#3a3021)}#understanding-mock .green{color:var(--u-green)}#understanding-mock .warning{color:var(--u-warn)}#understanding-mock .banner{display:flex;align-items:flex-start;gap:10px;padding:13px 14px;border:1px solid var(--u-line);border-left:3px solid var(--u-blue);background:var(--u-panel);border-radius:3px;margin:20px 0}#understanding-mock .banner svg{flex-shrink:0;margin-top:2px}#understanding-mock .banner.warning{border-left-color:var(--u-warn);color:var(--u-text)}#understanding-mock .banner.success{border-left-color:var(--u-green)}#understanding-mock .context-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--u-muted);font-size:12px;margin:18px 0}#understanding-mock .why{padding-left:18px;margin:8px 0 18px}#understanding-mock .why li{margin:8px 0}#understanding-mock .actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px;margin-top:24px}#understanding-mock .footnote{color:var(--u-muted);font-size:11px;margin-top:18px}#understanding-mock .divider{border-top:1px solid var(--u-line);margin:22px 0}#understanding-mock .evidence{padding:11px 13px;background:var(--u-panel);border:1px solid var(--u-line);border-radius:4px;margin:16px 0}#understanding-mock summary{cursor:pointer;color:var(--u-blue)}#understanding-mock pre{white-space:pre-wrap;overflow-wrap:anywhere;font:12px/1.7 Menlo,monospace;padding:12px;background:var(--u-chrome);border:1px solid var(--u-line);border-radius:3px;margin:12px 0}#understanding-mock .code-add{color:var(--u-green)}#understanding-mock .code-remove{color:var(--u-red)}#understanding-mock fieldset{border:0;padding:0;margin:18px 0}#understanding-mock legend{font-size:12px;color:var(--u-muted);margin-bottom:8px}#understanding-mock .choice{display:flex;align-items:flex-start;gap:10px;border:1px solid var(--u-line);border-radius:4px;padding:11px 12px;margin-bottom:8px;cursor:pointer}#understanding-mock .choice:has(input:checked){background:var(--u-tint);border-color:var(--u-blue)}#understanding-mock input[type=radio],#understanding-mock input[type=checkbox]{accent-color:var(--u-button);margin-top:4px}#understanding-mock .confidence{display:flex;gap:14px;flex-wrap:wrap}#understanding-mock .confidence label{display:flex;align-items:center;gap:5px}#understanding-mock .stepbar{display:flex;gap:5px;margin:15px 0 22px}#understanding-mock .stepbar span{height:3px;background:var(--u-line);flex:1}#understanding-mock .stepbar .done{background:var(--u-blue)}#understanding-mock .result-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:13px 0;border-bottom:1px solid var(--u-line)}#understanding-mock .result-row small{display:block;color:var(--u-muted);margin-top:3px}#understanding-mock .result-row&gt;span{font-size:12px}#understanding-mock .setting{display:flex;align-items:flex-start;gap:12px;padding:17px 0;border-bottom:1px solid var(--u-line)}#understanding-mock .setting small{display:block;color:var(--u-muted);margin-top:4px}#understanding-mock .status{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:6px 12px;font-size:11px;border-top:1px solid var(--u-line);background:var(--u-chrome)}#understanding-mock .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media(max-width:800px){#understanding-mock .app-grid{grid-template-columns:36px 175px minmax(0,1fr)}#understanding-mock #screen{padding:22px 18px}#understanding-mock .inactive-tab{display:none}}
+@media(max-width:600px){#understanding-mock .app-grid{display:flex;flex-direction:column}#understanding-mock .activity{display:none}#understanding-mock .scm{border-right:0;border-bottom:1px solid var(--u-line);display:grid;grid-template-columns:1fr 1fr;gap:8px}#understanding-mock .scm .eyebrow{grid-column:1/-1}#understanding-mock .scm textarea{margin:0;min-height:60px}#understanding-mock .scm-state{margin:0;grid-column:1/-1}#understanding-mock .scm .repo,#understanding-mock .file-heading,#understanding-mock .file,#understanding-mock .scm-link,#understanding-mock .work-item,#understanding-mock .scm-bottom{display:none}#understanding-mock #screen{min-height:0;padding:22px 16px}#understanding-mock h1{font-size:22px}#understanding-mock .demo-bar label{flex-wrap:wrap}#understanding-mock .result-row{grid-template-columns:1fr}#understanding-mock .demo-note{margin:0}#understanding-mock .title-bar span:first-child{display:none}}
+@media(pointer:coarse){#understanding-mock button,#understanding-mock select{min-height:44px}#understanding-mock textarea{font-size:16px}}
+&lt;/style&gt;
+&lt;script&gt;
+(() =&gt; {
+ const root=document.getElementById(&#x27;understanding-mock&#x27;), screen=root.querySelector(&#x27;#screen&#x27;), picker=root.querySelector(&#x27;#scenario&#x27;);
+ const state={scene:&#x27;high&#x27;,impact:&#x27;High&#x27;,strict:true,highGate:true,q:0,answers:[],confidence:[],reason:&#x27;&#x27;,ack:false,snapshot:&#x27;7f2c91a&#x27;,overrideFrom:&#x27;skipped&#x27;,commitReady:false,committed:false,guideStep:0,guideReason:&#x27;unsure&#x27;,history:[],assisted:[],recheck:[]};
+ const design={density:&#x27;Comfortable&#x27;};
+ const questions=[
+  {topic:&#x27;Session boundary&#x27;,q:&#x27;A session expires at 14:00:00. A request arrives at exactly 14:00:00. What happens now?&#x27;,options:[&#x27;The request succeeds; expiry starts one second later.&#x27;,&#x27;The request is rejected and the user must authenticate again.&#x27;,&#x27;The request refreshes the session automatically.&#x27;],answer:1,explanation:&#x27;The new check rejects expiresAt &lt;= now. Equality is expired, not a final valid instant.&#x27;,source:&#x27;session.ts · lines 42–46&#x27;,code:&#x27;- if (session.expiresAt &lt; now) return expired();\n+ if (session.expiresAt &lt;= now) return expired();&#x27;},
+  {topic:&#x27;Design intent&#x27;,q:&#x27;Why must the refresh path also reject an expired session?&#x27;,options:[&#x27;Otherwise refresh can revive a session that the request path rejects.&#x27;,&#x27;It makes the refresh endpoint faster.&#x27;,&#x27;It prevents all users from refreshing any session.&#x27;],answer:0,explanation:&#x27;Both paths must enforce the same validity boundary; otherwise refresh bypasses the expiry decision.&#x27;,source:&#x27;ISSUE-142 · accepted design&#x27;,code:&#x27;Expired sessions must not be renewed.\nRequest validation and refresh share the expiry boundary.&#x27;},
+  {topic:&#x27;Regression coverage&#x27;,q:&#x27;Which test directly protects the behavior changed by this commit?&#x27;,options:[&#x27;A token issued one minute ago can be parsed.&#x27;,&#x27;A request without a token returns an error.&#x27;,&#x27;A token whose expiry equals the clock is rejected by both validation and refresh.&#x27;],answer:2,explanation:&#x27;An equality-boundary test exercises the exact changed behavior in both affected paths.&#x27;,source:&#x27;session.test.ts · lines 81–94&#x27;,code:&#x27;expect(validate(token, expiresAt)).toBeExpired();\nexpect(refresh(token, expiresAt)).toBeExpired();&#x27;}
+ ];
+ const followups=[
+  {q:&#x27;A session expires at 16:30:00. Which request is still valid under the new boundary?&#x27;,options:[&#x27;A request at 16:30:00 exactly.&#x27;,&#x27;A request at 16:29:59.&#x27;,&#x27;A request at 16:30:01.&#x27;],answer:1},
+  {q:&#x27;Validation rejects an expired token, but refresh accepts it. Which design requirement is violated?&#x27;,options:[&#x27;Both entry points must enforce the same session lifetime.&#x27;,&#x27;All refresh requests must be rejected.&#x27;,&#x27;A session must expire before its configured timestamp.&#x27;],answer:0},
+  {q:&#x27;A regression changes &lt;= back to &lt; in refresh only. Which test exposes it?&#x27;,options:[&#x27;Refresh with an expiry equal to now must fail.&#x27;,&#x27;A valid token can be parsed.&#x27;,&#x27;Validation rejects a token with no signature.&#x27;],answer:0}
+ ];
+ const guides=[
+  [{title:&#x27;Start with the boundary&#x27;,body:&#x27;An expiry timestamp is the first instant when the session is no longer valid. Compare the request clock with that timestamp.&#x27;,example:&#x27;expiresAt = 14:00:00\nnow       = 14:00:00&#x27;},
+   {title:&#x27;Walk through the condition&#x27;,body:&#x27;The old comparison missed equality. The new comparison includes it, so the expired branch runs at the boundary.&#x27;,example:&#x27;Before: 14:00:00 &lt; 14:00:00  → false\nAfter:  14:00:00 &lt;= 14:00:00 → true\nResult: reject the request&#x27;},
+   {title:&#x27;Carry the idea to another case&#x27;,body:&#x27;Before expiry, the session may be valid. At or after expiry, reject it. Apply that boundary to a new timestamp in the next question.&#x27;,example:&#x27;now &lt; expiry   → not expired\nnow &gt;= expiry  → expired&#x27;}],
+  [{title:&#x27;Name the design guarantee&#x27;,body:&#x27;An expired session must not grant continued access. This guarantee applies to every path that can accept or renew the session.&#x27;,example:&#x27;Request validation → checks validity\nToken refresh      → must check validity too&#x27;},
+   {title:&#x27;Follow the bypass&#x27;,body:&#x27;If only validation rejects an expired token, a caller can refresh that same token and obtain renewed access. The second path undermines the first.&#x27;,example:&#x27;Expired token → validation rejects\nExpired token → refresh accepts → renewed access&#x27;},
+   {title:&#x27;Apply the invariant&#x27;,body:&#x27;The solution is consistent expiry checks, not disabling all refreshes. A still-valid session can refresh; an expired one cannot.&#x27;,example:&#x27;Valid session   → eligible for refresh\nExpired session → reject in both paths&#x27;}],
+  [{title:&#x27;Locate what changed&#x27;,body:&#x27;This change adds equality to the expiry condition. A regression test needs an input that distinguishes &lt; from &lt;=.&#x27;,example:&#x27;Changed behavior: now equals expiry&#x27;},
+   {title:&#x27;Choose a discriminating example&#x27;,body:&#x27;Before and after expiry behave the same with both comparisons. Exactly at expiry is the case that fails with the old comparison and passes with the corrected behavior.&#x27;,example:&#x27;Before expiry → both comparisons agree\nAfter expiry  → both comparisons agree\nAt expiry     → comparisons differ&#x27;},
+   {title:&#x27;Cover both affected paths&#x27;,body:&#x27;Validation and refresh each enforce the guarantee. Exercise the equality boundary in both, so a regression in either path is detected.&#x27;,example:&#x27;validate(token, expiry) → expired\nrefresh(token, expiry)  → expired&#x27;}]
+ ];
+ function currentQuestion(i){return state.recheck[i]?{...questions[i],...followups[i]}:questions[i];}
+ function beginGuide(reason){state.guideReason=reason;state.guideStep=0;state.assisted[state.q]=true;state.history.push({question:state.q,answer:state.answers[state.q]??null,confidence:state.confidence[state.q]??null,reason});state.scene=&#x27;guide&#x27;;}
+ function guide(){const q=questions[state.q],step=guides[state.q][state.guideStep];return &#x27;&lt;div class=&quot;overline&quot;&gt;&#x27;+icon(&#x27;book-open&#x27;)+&#x27; Guided understanding · &#x27;+q.topic+&#x27;&lt;/div&gt;&lt;h1&gt;Let’s work through this together&lt;/h1&gt;&lt;p class=&quot;muted&quot;&gt;&#x27;+(state.guideReason===&#x27;unsure&#x27;?&#x27;You selected Unsure. Take a moment to build the mental model.&#x27;:&#x27;That answer missed an important detail. Let’s trace the reasoning.&#x27;)+&#x27;&lt;/p&gt;&lt;div class=&quot;evidence&quot;&gt;&lt;strong&gt;Question at hand&lt;/strong&gt;&lt;p&gt;&#x27;+escape(currentQuestion(state.q).q)+&#x27;&lt;/p&gt;&#x27;+ (state.answers[state.q]!==undefined?&#x27;&lt;small&gt;Your answer: &#x27;+escape(currentQuestion(state.q).options[state.answers[state.q]])+&#x27;&lt;/small&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;overline&quot;&gt;Step &#x27;+(state.guideStep+1)+&#x27; of 3&lt;/div&gt;&lt;h2&gt;&#x27;+step.title+&#x27;&lt;/h2&gt;&lt;p&gt;&#x27;+step.body+&#x27;&lt;/p&gt;&lt;pre&gt;&#x27;+escape(step.example)+&#x27;&lt;/pre&gt;&#x27;+evidence(q)+&#x27;&lt;div class=&quot;actions&quot;&gt;&#x27;+(state.guideStep?action(&#x27;guide-back&#x27;,&#x27;Back&#x27;):&#x27;&#x27;)+action(state.guideStep&lt;2?&#x27;guide-next&#x27;:&#x27;recheck&#x27;,state.guideStep&lt;2?&#x27;Continue walkthrough&#x27;:&#x27;Check my understanding&#x27;,true)+(state.guideStep===2?action(&#x27;leave-gap&#x27;,&#x27;Continue with gap recorded&#x27;):&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;footnote&quot;&gt;Your original response is preserved. Reading guidance alone does not count as demonstrated understanding.&lt;/div&gt;&#x27;;}
+ const escape=s=&gt;String(s).replace(/[&amp;&lt;&gt;&quot;&#x27;]/g,c=&gt;({&#x27;&amp;&#x27;:&#x27;&amp;amp;&#x27;,&#x27;&lt;&#x27;:&#x27;&amp;lt;&#x27;,&#x27;&gt;&#x27;:&#x27;&amp;gt;&#x27;,&#x27;&quot;&#x27;:&#x27;&amp;quot;&#x27;,&quot;&#x27;&quot;:&#x27;&amp;#39;&#x27;}[c]));
+ const icon=name=&gt;&#x27;&lt;i data-lucide=&quot;&#x27;+name+&#x27;&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&#x27;;
+ const action=(id,text,primary=false)=&gt;&#x27;&lt;button data-action=&quot;&#x27;+id+&#x27;&quot; class=&quot;&#x27;+(primary?&#x27;primary&#x27;:&#x27;&#x27;)+&#x27;&quot;&gt;&#x27;+text+&#x27;&lt;/button&gt;&#x27;;
+ const blocking=()=&gt;state.impact===&#x27;High&#x27;&amp;&amp;state.highGate;
+ const mandatory=()=&gt;blocking()||(state.impact===&#x27;Medium&#x27;&amp;&amp;state.strict);
+ const policy=()=&gt;blocking()?&#x27;Pass required · explicit override available&#x27;:mandatory()?&#x27;Completion required · outcome does not block&#x27;:&#x27;Optional · outcome does not block&#x27;;
+ const context=()=&gt;&#x27;&lt;div class=&quot;context-row&quot;&gt;&lt;span class=&quot;badge &#x27;+(state.impact===&#x27;High&#x27;?&#x27;high&#x27;:&#x27;&#x27;)+&#x27;&quot;&gt;&#x27;+state.impact+&#x27; impact&lt;/span&gt;&lt;span&gt;ISSUE-142&lt;/span&gt;&lt;span&gt;·&lt;/span&gt;&lt;span&gt;Staged snapshot &#x27;+state.snapshot+&#x27;&lt;/span&gt;&lt;/div&gt;&#x27;;
+ const banner=(text,type=&#x27;&#x27;)=&gt;&#x27;&lt;div class=&quot;banner &#x27;+type+&#x27;&quot;&gt;&#x27;+icon(type===&#x27;success&#x27;?&#x27;circle-check&#x27;:type===&#x27;warning&#x27;?&#x27;circle-alert&#x27;:&#x27;info&#x27;)+&#x27;&lt;div&gt;&#x27;+text+&#x27;&lt;/div&gt;&lt;/div&gt;&#x27;;
+ const evidence=q=&gt;&#x27;&lt;details class=&quot;evidence&quot;&gt;&lt;summary&gt;&#x27;+q.source+&#x27;&lt;/summary&gt;&lt;pre&gt;&#x27;+escape(q.code)+&#x27;&lt;/pre&gt;&lt;/details&gt;&#x27;;
+ function setScene(scene){state.scene=scene;state.history=[];state.assisted=[];state.recheck=[];state.committed=false;state.commitReady=false;if([&#x27;high&#x27;,&#x27;test&#x27;,&#x27;pass&#x27;,&#x27;fail&#x27;,&#x27;override&#x27;,&#x27;stale&#x27;].includes(scene))state.impact=&#x27;High&#x27;;if([&#x27;medium&#x27;,&#x27;low&#x27;,&#x27;trivial&#x27;].includes(scene))state.impact=scene[0].toUpperCase()+scene.slice(1);if(scene===&#x27;test&#x27;){state.q=0;state.answers=[];state.confidence=[];}if(scene===&#x27;override&#x27;){state.overrideFrom=&#x27;skipped&#x27;;state.reason=&#x27;&#x27;;state.ack=false;}if(scene===&#x27;pass&#x27;||scene===&#x27;fail&#x27;){state.answers=scene===&#x27;pass&#x27;?[1,0,2]:[1,2,2];state.confidence=[&#x27;Certain&#x27;,&#x27;Certain&#x27;,&#x27;Somewhat sure&#x27;];}if(scene===&#x27;unsure&#x27;||scene===&#x27;wrong&#x27;){state.impact=&#x27;High&#x27;;state.q=0;state.answers=[];state.confidence=[];if(scene===&#x27;wrong&#x27;){state.answers[0]=0;state.confidence[0]=&#x27;Certain&#x27;;}else state.confidence[0]=&#x27;Unsure&#x27;;beginGuide(scene===&#x27;wrong&#x27;?&#x27;incorrect&#x27;:&#x27;unsure&#x27;);}render();}
+ function overview(){
+  const trivial=state.impact===&#x27;Trivial&#x27;;
+  const why=state.impact===&#x27;High&#x27;?[&#x27;Session validation and refresh both change their expiry boundary.&#x27;,&#x27;The affected paths decide whether a user remains authenticated.&#x27;,&#x27;The accepted design requires consistent rejection across both paths.&#x27;]:state.impact===&#x27;Medium&#x27;?[&#x27;Retry scheduling changes under transient failures.&#x27;,&#x27;The effect is contained to the delivery worker and its retry tests.&#x27;]:state.impact===&#x27;Low&#x27;?[&#x27;A diagnostic message changes; execution and persisted data are unchanged.&#x27;]:[&#x27;Only spacing and comment wording changed.&#x27;,&#x27;The daemon found no change to executable behavior.&#x27;];
+  return &#x27;&lt;div class=&quot;overline&quot;&gt;&#x27;+icon(&#x27;scan-text&#x27;)+&#x27; Classified by insrc daemon&lt;/div&gt;&lt;h1&gt;&#x27;+(trivial?&#x27;No assessment needed&#x27;:state.impact===&#x27;Low&#x27;?&#x27;A quick check, if you want it&#x27;:&#x27;Understand the change you’re committing&#x27;)+&#x27;&lt;/h1&gt;&lt;p class=&quot;muted&quot;&gt;&#x27;+(trivial?&#x27;This commit is ready to continue.&#x27;:&#x27;Your understanding of the implementation and its design decisions is recorded separately from the work item.&#x27;)+&#x27;&lt;/p&gt;&#x27;+context()+banner(trivial?&#x27;Trivial impact. The assessment step was skipped.&#x27;:policy(),trivial?&#x27;success&#x27;:blocking()?&#x27;warning&#x27;:&#x27;&#x27;)+&#x27;&lt;h2&gt;Why this scope?&lt;/h2&gt;&lt;ul class=&quot;why&quot;&gt;&#x27;+why.map(t=&gt;&#x27;&lt;li&gt;&#x27;+t+&#x27;&lt;/li&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/ul&gt;&lt;div class=&quot;footnote&quot;&gt;Contextual daemon assessment of staged changes, affected dependencies, linked design, and tests. No line-count thresholds.&lt;/div&gt;&#x27;+(!trivial?&#x27;&lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;&lt;div class=&quot;context-row&quot;&gt;3 questions &amp;nbsp; · &amp;nbsp; About 3 minutes &amp;nbsp; · &amp;nbsp; Recorded for you&lt;/div&gt;&#x27;:&#x27;&#x27;)+&#x27;&lt;div class=&quot;actions&quot;&gt;&#x27;+(!trivial?action(&#x27;start&#x27;,&#x27;Start assessment&#x27;,true):action(&#x27;continue&#x27;,&#x27;Continue to commit&#x27;,true))+(!trivial&amp;&amp;!mandatory()?action(&#x27;decline&#x27;,&#x27;Skip assessment&#x27;):blocking()?action(&#x27;override&#x27;,&#x27;Skip with override&#x27;):&#x27;&#x27;)+action(&#x27;settings&#x27;,&#x27;Project settings&#x27;)+&#x27;&lt;/div&gt;&#x27;;
+ }
+ function test(){const q=currentQuestion(state.q);return &#x27;&lt;div class=&quot;overline&quot;&gt;&#x27;+icon(&#x27;graduation-cap&#x27;)+&#x27; Understanding check · &#x27;+(state.q+1)+&#x27; of 3&lt;/div&gt;&lt;div class=&quot;stepbar&quot;&gt;&#x27;+questions.map((_,i)=&gt;&#x27;&lt;span class=&quot;&#x27;+(i&lt;=state.q?&#x27;done&#x27;:&#x27;&#x27;)+&#x27;&quot;&gt;&lt;/span&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;h1&gt;&#x27;+q.topic+&#x27;&lt;/h1&gt;&#x27;+context()+&#x27;&lt;p&gt;&#x27;+q.q+&#x27;&lt;/p&gt;&#x27;+evidence(q)+&#x27;&lt;fieldset&gt;&lt;legend&gt;Your answer&lt;/legend&gt;&#x27;+q.options.map((t,i)=&gt;&#x27;&lt;label class=&quot;choice&quot;&gt;&lt;input type=&quot;radio&quot; name=&quot;answer&quot; value=&quot;&#x27;+i+&#x27;&quot; &#x27;+(state.answers[state.q]===i?&#x27;checked&#x27;:&#x27;&#x27;)+&#x27;&gt;&lt;span&gt;&#x27;+t+&#x27;&lt;/span&gt;&lt;/label&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/fieldset&gt;&lt;fieldset&gt;&lt;legend&gt;How sure are you?&lt;/legend&gt;&lt;div class=&quot;confidence&quot;&gt;&#x27;+[&#x27;Unsure&#x27;,&#x27;Somewhat sure&#x27;,&#x27;Certain&#x27;].map(t=&gt;&#x27;&lt;label&gt;&lt;input type=&quot;radio&quot; name=&quot;confidence&quot; value=&quot;&#x27;+t+&#x27;&quot; &#x27;+(state.confidence[state.q]===t?&#x27;checked&#x27;:&#x27;&#x27;)+&#x27;&gt;&#x27;+t+&#x27;&lt;/label&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;/fieldset&gt;&lt;div class=&quot;actions&quot;&gt;&#x27;+(state.q?action(&#x27;back&#x27;,&#x27;Back&#x27;):&#x27;&#x27;)+&#x27;&lt;button data-action=&quot;next&quot; class=&quot;primary&quot; &#x27;+(state.answers[state.q]===undefined||!state.confidence[state.q]?&#x27;disabled&#x27;:&#x27;&#x27;)+&#x27;&gt;&#x27;+(state.q===2?&#x27;Check answer &amp; finish&#x27;:&#x27;Check answer &amp; continue&#x27;)+&#x27;&lt;/button&gt;&#x27;+ (blocking()?action(&#x27;override&#x27;,&#x27;Skip with override&#x27;):!mandatory()?action(&#x27;decline&#x27;,&#x27;Skip assessment&#x27;):&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;footnote&quot;&gt;&#x27;+policy()+&#x27;. Work item stays closed.&lt;/div&gt;&#x27;;}
+ function results(){const hits=questions.map((q,i)=&gt;state.answers[i]===currentQuestion(i).answer),pass=hits.every(Boolean);state.commitReady=pass||!blocking();return &#x27;&lt;div class=&quot;overline&quot;&gt;&#x27;+icon(pass?&#x27;circle-check&#x27;:&#x27;book-open&#x27;)+&#x27; Assessment complete · Recorded for you&lt;/div&gt;&lt;h1&gt;&#x27;+(pass?&#x27;You understand this change&#x27;:&#x27;A gap to revisit&#x27;)+&#x27;&lt;/h1&gt;&#x27;+context()+banner(pass?&#x27;Passed. The commit is unblocked automatically.&#x27;:blocking()?&#x27;The commit remains paused. Retry the assessment or explicitly override.&#x27;:&#x27;Completion recorded. The result does not block this commit.&#x27;,pass||!blocking()?&#x27;success&#x27;:&#x27;warning&#x27;)+&#x27;&lt;h2&gt;&#x27;+hits.filter(Boolean).length+&#x27; of 3 concepts demonstrated&lt;/h2&gt;&#x27;+questions.map((q,i)=&gt;&#x27;&lt;div class=&quot;result-row&quot;&gt;&lt;div&gt;&#x27;+q.topic+&#x27;&lt;small&gt;&#x27;+(hits[i]?(state.assisted[i]?&#x27;Demonstrated after guidance · initial response retained&#x27;:&#x27;Demonstrated without guidance&#x27;):q.explanation)+&#x27;&lt;/small&gt;&lt;/div&gt;&lt;span class=&quot;&#x27;+(hits[i]?&#x27;green&#x27;:&#x27;warning&#x27;)+&#x27;&quot;&gt;&#x27;+(hits[i]?(state.assisted[i]?&#x27;✓ After guidance&#x27;:&#x27;✓ Understood&#x27;):state.confidence[i]===&#x27;Certain&#x27;?&#x27;! Confident, but incorrect&#x27;:&#x27;! Needs review&#x27;)+&#x27;&lt;/span&gt;&lt;/div&gt;&#x27;).join(&#x27;&#x27;)+&#x27;&lt;div class=&quot;actions&quot;&gt;&#x27;+(state.commitReady?action(&#x27;continue&#x27;,&#x27;Continue to commit&#x27;,true):action(&#x27;retry&#x27;,&#x27;Review and retry&#x27;,true))+(!pass&amp;&amp;blocking()?action(&#x27;override&#x27;,&#x27;Override and continue&#x27;):&#x27;&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;footnote&quot;&gt;Saved to your understanding history for ISSUE-142 and snapshot &#x27;+state.snapshot+&#x27;. Delivery status remains closed. Mock pass criterion: all three concepts demonstrated.&lt;/div&gt;&#x27;;}
+ function override(){return &#x27;&lt;div class=&quot;overline&quot;&gt;&#x27;+icon(&#x27;shield-alert&#x27;)+&#x27; Explicit override&lt;/div&gt;&lt;h1&gt;Continue without a passing assessment&lt;/h1&gt;&#x27;+context()+banner(&#x27;This records an exception; it does not mark the assessment as passed.&#x27;,&#x27;warning&#x27;)+&#x27;&lt;label for=&quot;override-reason&quot;&gt;Reason for overriding&lt;/label&gt;&lt;textarea id=&quot;override-reason&quot; rows=&quot;3&quot; placeholder=&quot;Explain why you are proceeding&quot;&gt;&#x27;+escape(state.reason)+&#x27;&lt;/textarea&gt;&lt;label class=&quot;setting&quot;&gt;&lt;input id=&quot;ack&quot; type=&quot;checkbox&quot; &#x27;+(state.ack?&#x27;checked&#x27;:&#x27;&#x27;)+&#x27;&gt;&lt;span&gt;I explicitly accept proceeding without a passing assessment.&lt;small&gt;The reason and assessment reference will be included in this commit message.&lt;/small&gt;&lt;/span&gt;&lt;/label&gt;&lt;h2&gt;Commit message addition&lt;/h2&gt;&lt;pre id=&quot;trailer&quot;&gt;&#x27;+escape(trailer())+&#x27;&lt;/pre&gt;&lt;div class=&quot;actions&quot;&gt;&lt;button data-action=&quot;confirm-override&quot; class=&quot;primary&quot; &#x27;+(!state.ack||!state.reason.trim()?&#x27;disabled&#x27;:&#x27;&#x27;)+&#x27;&gt;Record override and continue&lt;/button&gt;&#x27;+action(&#x27;cancel-override&#x27;,&#x27;Return to assessment&#x27;)+&#x27;&lt;/div&gt;&lt;div class=&quot;footnote&quot;&gt;Assessment: UC-142-01 · &#x27;+state.overrideFrom+&#x27; · You · Applies only to snapshot &#x27;+state.snapshot+&#x27;&lt;/div&gt;&#x27;;}
+ function trailer(){return &#x27;Insrc-Understanding: overridden\nInsrc-Impact: High\nInsrc-Assessment: UC-142-01\nInsrc-Snapshot: &#x27;+state.snapshot+&#x27;\nInsrc-Override-Reason: &#x27;+(state.reason.trim().replace(/\s+/g,&#x27; &#x27;)||&#x27;&lt;your reason&gt;&#x27;);}
+ function settings(){return &#x27;&lt;div class=&quot;overline&quot;&gt;&#x27;+icon(&#x27;settings-2&#x27;)+&#x27; Project settings&lt;/div&gt;&lt;h1&gt;Pre-commit understanding&lt;/h1&gt;&lt;p class=&quot;muted&quot;&gt;The daemon determines impact. These settings determine what happens next.&lt;/p&gt;&lt;label class=&quot;setting&quot;&gt;&lt;input id=&quot;strict&quot; type=&quot;checkbox&quot; &#x27;+(state.strict?&#x27;checked&#x27;:&#x27;&#x27;)+&#x27;&gt;&lt;span&gt;Strict mode for Medium impact&lt;small&gt;Require assessment completion. A failed result does not block the commit.&lt;/small&gt;&lt;/span&gt;&lt;/label&gt;&lt;label class=&quot;setting&quot;&gt;&lt;input id=&quot;highgate&quot; type=&quot;checkbox&quot; &#x27;+(state.highGate?&#x27;checked&#x27;:&#x27;&#x27;)+&#x27;&gt;&lt;span&gt;Require a pass for High impact&lt;small&gt;A failed or skipped assessment requires an explicit override recorded in the commit message.&lt;/small&gt;&lt;/span&gt;&lt;/label&gt;&lt;div class=&quot;result-row&quot;&gt;&lt;span&gt;Low impact&lt;/span&gt;&lt;span class=&quot;muted&quot;&gt;Offer an optional assessment&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;result-row&quot;&gt;&lt;span&gt;Trivial impact&lt;/span&gt;&lt;span class=&quot;muted&quot;&gt;Skip assessment&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;actions&quot;&gt;&#x27;+action(&#x27;save-settings&#x27;,&#x27;Apply to mock&#x27;,true)+&#x27;&lt;/div&gt;&lt;div class=&quot;footnote&quot;&gt;Applies to this preview only. Disabling either requirement makes that scope optional in this proposed UX. Classifier failures need a separate policy.&lt;/div&gt;&#x27;;}
+ function ready(){return &#x27;&lt;div class=&quot;overline&quot;&gt;&#x27;+icon(&#x27;circle-check&#x27;)+&#x27; Commit ready&lt;/div&gt;&lt;h1&gt;&#x27;+(state.committed?&#x27;Commit simulated&#x27;:&#x27;Return to Source Control&#x27;)+&#x27;&lt;/h1&gt;&#x27;+banner(state.committed?&#x27;The mock commit has completed. No repository files or Git history were changed.&#x27;:&#x27;The pre-commit requirement is satisfied for this staged snapshot.&#x27;,&#x27;success&#x27;)+&#x27;&lt;h2&gt;Commit message&lt;/h2&gt;&lt;pre&gt;&#x27;+escape(root.querySelector(&#x27;#message&#x27;).value)+&#x27;&lt;/pre&gt;&lt;p class=&quot;muted&quot;&gt;Your understanding record is separate from the closed work item.&lt;/p&gt;&lt;div class=&quot;actions&quot;&gt;&#x27;+(!state.committed?action(&#x27;simulate-commit&#x27;,&#x27;Simulate commit&#x27;,true):action(&#x27;restart&#x27;,&#x27;Back to impact assessment&#x27;))+&#x27;&lt;/div&gt;&#x27;;}
+ function stale(){return &#x27;&lt;div class=&quot;overline&quot;&gt;&#x27;+icon(&#x27;refresh-cw&#x27;)+&#x27; Assessment needs refresh&lt;/div&gt;&lt;h1&gt;The staged changes have changed&lt;/h1&gt;&lt;p class=&quot;muted&quot;&gt;Your previous answers are saved, but they were assessed against a different snapshot.&lt;/p&gt;&#x27;+banner(&#x27;The daemon must evaluate the new staged changes before the commit can continue.&#x27;,&#x27;warning&#x27;)+&#x27;&lt;div class=&quot;result-row&quot;&gt;&lt;span&gt;Assessed snapshot&lt;/span&gt;&lt;span&gt;7f2c91a&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;result-row&quot;&gt;&lt;span&gt;Current staged snapshot&lt;/span&gt;&lt;span&gt;9ba12d4&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;actions&quot;&gt;&#x27;+action(&#x27;reclassify&#x27;,&#x27;Re-evaluate staged changes&#x27;,true)+&#x27;&lt;/div&gt;&lt;div class=&quot;footnote&quot;&gt;Previous passes and overrides cannot silently authorize a changed snapshot.&lt;/div&gt;&#x27;;}
+ function render(){
+  root.style.setProperty(&#x27;--mock-density&#x27;,design.density);state.commitReady=false;
+  let content;
+  if(state.scene===&#x27;guide&#x27;)content=guide();else if(state.scene===&#x27;test&#x27;)content=test();else if([&#x27;pass&#x27;,&#x27;fail&#x27;,&#x27;results&#x27;].includes(state.scene))content=results();else if(state.scene===&#x27;override&#x27;)content=override();else if(state.scene===&#x27;settings&#x27;)content=settings();else if(state.scene===&#x27;stale&#x27;)content=stale();else if(state.scene===&#x27;ready&#x27;){state.commitReady=true;content=ready();}else{content=overview();state.commitReady=state.impact===&#x27;Trivial&#x27;||!mandatory();}
+  screen.innerHTML=content;screen.style.padding=design.density===&#x27;Compact&#x27;?&#x27;20px&#x27;:&#x27;28px 30px 32px&#x27;;
+  if([...picker.options].some(o=&gt;o.value===state.scene))picker.value=state.scene;
+  const commit=root.querySelector(&#x27;#commit&#x27;);commit.disabled=!state.commitReady;commit.textContent=state.committed?&#x27;Commit simulated&#x27;:state.commitReady?&#x27;Commit&#x27;:&#x27;Commit paused&#x27;;
+  root.querySelector(&#x27;#scm-state&#x27;).textContent=state.committed?&#x27;Mock only · no Git changes&#x27;:state.scene===&#x27;stale&#x27;?&#x27;Staged changes require re-evaluation.&#x27;:state.commitReady?&#x27;Ready for this staged snapshot.&#x27;:state.scene===&#x27;settings&#x27;?&#x27;Project policy preview.&#x27;:policy();
+  root.querySelector(&#x27;#breadcrumb-state&#x27;).textContent=state.scene===&#x27;test&#x27;?&#x27;Assessment&#x27;:state.scene===&#x27;override&#x27;?&#x27;Override&#x27;:state.scene===&#x27;settings&#x27;?&#x27;Settings&#x27;:&#x27;Impact &amp; understanding&#x27;;
+  root.querySelector(&#x27;#status-text&#x27;).textContent=&#x27;insrc daemon · Connected · &#x27;+state.impact+&#x27; impact&#x27;;
+  if(globalThis.lucide)lucide.createIcons({attrs:{width:16,height:16}});
+  screen.querySelectorAll(&#x27;[name=answer],[name=confidence]&#x27;).forEach(el=&gt;el.onchange=()=&gt;{if(el.name===&#x27;answer&#x27;)state.answers[state.q]=Number(el.value);else {state.confidence[state.q]=el.value;if(el.value===&#x27;Unsure&#x27;){beginGuide(&#x27;unsure&#x27;);render();return;}}const next=screen.querySelector(&#x27;[data-action=next]&#x27;);next.disabled=state.answers[state.q]===undefined||!state.confidence[state.q];});
+  const reason=screen.querySelector(&#x27;#override-reason&#x27;),ack=screen.querySelector(&#x27;#ack&#x27;);
+  function updateOverride(){state.reason=reason.value;state.ack=ack.checked;screen.querySelector(&#x27;#trailer&#x27;).textContent=trailer();screen.querySelector(&#x27;[data-action=confirm-override]&#x27;).disabled=!state.reason.trim()||!state.ack;}
+  if(reason){reason.oninput=updateOverride;ack.onchange=updateOverride;}
+ }
+ screen.addEventListener(&#x27;click&#x27;,e=&gt;{const b=e.target.closest(&#x27;[data-action]&#x27;);if(!b||b.disabled)return;const a=b.dataset.action;
+  if(a===&#x27;start&#x27;||a===&#x27;retry&#x27;){state.q=0;state.answers=[];state.confidence=[];state.assisted=[];state.recheck=[];state.scene=&#x27;test&#x27;;}
+  if(a===&#x27;next&#x27;){if(state.answers[state.q]!==currentQuestion(state.q).answer)beginGuide(&#x27;incorrect&#x27;);else if(state.q&lt;2)state.q++;else state.scene=&#x27;results&#x27;;}
+  if(a===&#x27;guide-next&#x27;)state.guideStep++;
+  if(a===&#x27;guide-back&#x27;)state.guideStep--;
+  if(a===&#x27;recheck&#x27;){state.recheck[state.q]=true;delete state.answers[state.q];delete state.confidence[state.q];state.scene=&#x27;test&#x27;;}
+  if(a===&#x27;leave-gap&#x27;){state.answers[state.q]=-1;if(state.q&lt;2){state.q++;state.scene=&#x27;test&#x27;;}else state.scene=&#x27;results&#x27;;}
+  if(a===&#x27;back&#x27;)state.q--;
+  if(a===&#x27;override&#x27;){state.overrideFrom=[&#x27;results&#x27;,&#x27;fail&#x27;].includes(state.scene)?&#x27;failed&#x27;:&#x27;skipped&#x27;;state.scene=&#x27;override&#x27;;state.reason=&#x27;&#x27;;state.ack=false;}
+  if(a===&#x27;confirm-override&#x27;){root.querySelector(&#x27;#message&#x27;).value+=&#x27;\n\n&#x27;+trailer();state.scene=&#x27;ready&#x27;;}
+  if(a===&#x27;cancel-override&#x27;){state.scene=&#x27;test&#x27;;state.q=0;}
+  if(a===&#x27;continue&#x27;||a===&#x27;decline&#x27;)state.scene=&#x27;ready&#x27;;
+  if(a===&#x27;simulate-commit&#x27;){state.scene=&#x27;ready&#x27;;state.committed=true;}
+  if(a===&#x27;settings&#x27;)state.scene=&#x27;settings&#x27;;
+  if(a===&#x27;save-settings&#x27;){state.strict=screen.querySelector(&#x27;#strict&#x27;).checked;state.highGate=screen.querySelector(&#x27;#highgate&#x27;).checked;state.scene=&#x27;high&#x27;;state.impact=&#x27;High&#x27;;}
+  if(a===&#x27;restart&#x27;||a===&#x27;reclassify&#x27;){state.scene=&#x27;high&#x27;;state.impact=&#x27;High&#x27;;if(a===&#x27;reclassify&#x27;)state.snapshot=&#x27;9ba12d4&#x27;;}
+  render();
+ });
+ picker.onchange=()=&gt;{state.snapshot=&#x27;7f2c91a&#x27;;root.querySelector(&#x27;#message&#x27;).value=&#x27;Reject stale session tokens&#x27;;setScene(picker.value);};
+ root.querySelector(&#x27;#commit&#x27;).onclick=()=&gt;{if(state.commitReady){state.scene=&#x27;ready&#x27;;state.committed=true;render();}};
+ render();
+ if(globalThis.Tweak){const tweak=new Tweak({container:root,onChange:render});tweak.addSelect(design,&#x27;density&#x27;,{label:&#x27;Editor pane spacing&#x27;,options:[&#x27;Comfortable&#x27;,&#x27;Compact&#x27;]});}
+})();
+&lt;/script&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerdown&quot;, handlePointer);
+    document.removeEventListener(&quot;pointercancel&quot;, handlePointer);
+    document.removeEventListener(&quot;click&quot;, handleTouchClick);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerdown&quot;, handlePointer);
+  document.addEventListener(&quot;pointercancel&quot;, handlePointer);
+  document.addEventListener(&quot;click&quot;, handleTouchClick);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>

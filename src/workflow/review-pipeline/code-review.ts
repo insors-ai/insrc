@@ -24,6 +24,7 @@ import { buildRetryNote } from '../../agent/providers/structured-output.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
 import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
+import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
 import { runReviewJob } from './driver.js';
 import { createReviewJob } from './job.js';
 import { reviewLimitChars } from './limit.js';
@@ -73,6 +74,9 @@ export interface ModelDimensionSpec<O> {
 	readonly toResult:  (output: O, grounding: CodeReviewGrounding, mode: 'full' | 'degraded') => DimensionResult;
 	/** Present when the dimension makes no call at all for this subject (adherence without an LLD or plan). */
 	readonly skip?:     (() => DimensionResult) | undefined;
+	/** The dimension's prepared grounding, the rows its prompt carries (coverage:
+	 *  prepareCoverageGrounding's output). Absent: the grounding itself. */
+	readonly materialGrounding?: ((grounding: CodeReviewGrounding, mode: 'full' | 'degraded') => CodeReviewGrounding) | undefined;
 }
 
 /** A deterministic dimension: run on the snapshot alone on the daemon path; the controller is offered its prompt. */
@@ -132,7 +136,9 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 	};
 	return {
 		kind: 'code-review', dimension: spec.dimension,
-		material: () => ({ atoms: [], relations: [], obligations: [] }),
+		// Story s2: the dimension's rows as whole atoms with their relations, from the snapshot only.
+		material: () => codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding),
+		neighbourSummary,
 		stagesFor: stages,
 		finish: (outputs, ctx) => spec.skip !== undefined
 			? outputs['skip'] as DimensionResult

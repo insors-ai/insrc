@@ -13,7 +13,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import type { ChangedSymbolSummary, CodeReviewGrounding } from '../../code-review/types.js';
+import { coverageSpec, prepareCoverageGrounding } from '../../code-review/dimensions/coverage.js';
+import { qualitySpec } from '../../code-review/dimensions/quality.js';
+import type { ChangedSymbolSummary, CodeReviewGrounding, CodeReviewSubject } from '../../code-review/types.js';
+import { codeReviewSnapshot, modelDimensionAdapter } from '../code-review.js';
 import { codeReviewMaterial, neighbourSummary } from '../adapters/code-review-material.js';
 
 const row = (entityId: string, file: string, name: string, callees: string[] = [], callers: string[] = [], kind = 'function'): ChangedSymbolSummary =>
@@ -118,4 +121,31 @@ test('a neighbour summary names kind, name, file, the first signature line withi
 	assert.equal(of('t1'), 'function twin in src/a/twin.ts: twin(); calls: none; called by: main');
 	// The atom itself is never shortened: only its summary line is.
 	assert.ok(m.atoms.find(a => a.id === 'm')!.text.includes('second line'));
+});
+
+test('coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence', () => {
+	const subject = {
+		repoPath: '/repo', epicHash: 'e1a2b3c4d5e6f708', storyId: 's1', changedFiles: ['src/a.ts', 'src/__tests__/a.test.ts'],
+		approvedLld: null, approvedPlan: null, buildRecord: null,
+	} as CodeReviewSubject;
+	const g = grounding(
+		row('fn', 'src/a.ts', 'run'),
+		{ ...row('iface', 'src/a.ts', 'Shape'), kind: 'interface' },
+		row('t', 'src/__tests__/a.test.ts', 'testRun'),
+		{ ...row('reached', 'src/a.ts', 'helper'), testsReaching: ['src/__tests__/a.test.ts#testRun'] },
+	);
+	const adapter = modelDimensionAdapter(coverageSpec(subject), subject, codeReviewSnapshot(subject, g));
+	const material = adapter.material();
+	const prepared = prepareCoverageGrounding(subject, g, 'full');
+	assert.deepEqual(material.atoms.map(a => a.id), prepared.symbols.map(s => s.entityId), 'exactly the rows coverage judges');
+	assert.ok(!material.atoms.some(a => a.id === 'iface' || a.id === 't'), 'ineligible rows are not atoms');
+	assert.ok(material.atoms.length >= 1);
+	for (const a of material.atoms) {
+		const parsed = JSON.parse(a.text) as ChangedSymbolSummary;
+		assert.ok(parsed.coverageEvidence !== undefined, `${a.id} carries its coverage evidence`);
+		assert.deepEqual(parsed, prepared.symbols.find(s => s.entityId === a.id));
+	}
+	// The other dimensions take the grounding itself.
+	const quality = modelDimensionAdapter(qualitySpec(subject), subject, codeReviewSnapshot(subject, g));
+	assert.deepEqual(quality.material().atoms.map(a => a.id), ['fn', 'iface', 't', 'reached']);
 });

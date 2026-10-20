@@ -294,6 +294,8 @@ export function coverageSpec(subject: CodeReviewSubject): ModelDimensionSpec<Cov
 		dimension: DIMENSION,
 		schema:    COVERAGE_FINDINGS_SCHEMA,
 		prompt:    (grounding, mode, note) => buildCoveragePrompt(subject, prepareCoverageGrounding(subject, grounding, mode), note, { groundingMode: mode }),
+		// The rows the prompt carries: only eligible symbols, each with its coverage evidence.
+		materialGrounding: (grounding, mode) => prepareCoverageGrounding(subject, grounding, mode),
 		toResult:  (output, grounding, mode) => normalizeCoverageFindings({
 			dimension: DIMENSION,
 			findings: output.findings

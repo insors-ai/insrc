@@ -33,7 +33,7 @@ import { envelopeMessages, envelopeSchema, openEnvelope, promptChars, promptHash
 import { AtomTooLargeError, packIntoBatches } from './pack-into-batches.js';
 import { planChunks } from './prepare.js';
 import type {
-	AdapterStage, CallCarries, CallRole, ChunkPrompt, EnvelopedAnswer, EvidenceNote, FailureCause, GatherPlan, NeighbourSummary, PipelineCalls,
+	AdapterStage, CallCarries, CallRole, ChunkPrompt, EnvelopedAnswer, EvidenceNote, FailureCause, GatherPlan, NeighbourSummary, PipelineCalls, ReviewAtom,
 	ReviewAdapter, ReviewCall, ReviewChunk, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer,
 } from './types.js';
 
@@ -87,7 +87,7 @@ export function createReviewJob(
 		reviewId: opts.reviewId ?? randomUUID(), path, snapshot: freeze(structuredClone(snapshot)),
 		kind: adapter.kind, dimension: adapter.dimension, phase: 'review',
 		plan: { limitChars, single: true, chunks: [], crossRelations: [] },
-		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], gathered: [], relationPlan: {}, gatherLevels: {}, notes: [], noteProvenance: {}, notJudged: [],
+		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], gathered: [], relationPlan: {}, gatherLevels: {}, contextReduced: {}, notes: [], noteProvenance: {}, notJudged: [],
 		issuedHashes: [], counts: { single: 0, chunk: 0, reduce: 0, obligation: 0, relation: 0, merge: 0 },
 		materialHash: materialHash(adapter.material()), seq: 0,
 	};
@@ -386,12 +386,26 @@ function stageDone(job: ReviewPipelineJob): boolean {
  */
 export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, role: 'obligation' | 'reduce', key: string, noteIds: readonly string[]): ReviewPipelineJob {
 	const gather = gatherOf(job, adapter);
-	const notes = notesOf(job, noteIds);
-	const prompt = role === 'obligation' ? gather.obligationCall(key, notes) : gather.reduceCall(key, notes);
-	const next: ReviewPipelineJob = { ...job, phase: job.phase === 'done' ? 'done' : 'gather' };
-	if (sentChars(prompt) <= job.plan.limitChars) return issue(next, [{ prompt, role, carries: noteCarries(key, notes) }]);
+	let notes = notesOf(job, noteIds);
+	let next: ReviewPipelineJob = { ...job, phase: job.phase === 'done' ? 'done' : 'gather' };
+	const context = role === 'obligation' && next.contextReduced[key] === undefined ? obligationContext(next, adapter, key) : [];
+	const prompt = role === 'obligation' ? gather.obligationCall(key, notes, context) : gather.reduceCall(key, notes);
+	if (sentChars(prompt) <= job.plan.limitChars) {
+		const carries = noteCarries(key, notes);
+		return issue(next, [{ prompt, role, carries: { ...carries, atomIds: [...new Set([...carries.atomIds, ...context.map(a => a.id)])] } }]);
+	}
+	if (context.length > 0) {
+		// The obligation's own context does not fit beside its evidence: each context atom becomes a
+		// note under the key, and is reduced with the evidence (nothing is dropped; provenance kept).
+		const seq = next.seq;
+		const contextNotes: EvidenceNote[] = context.map((a, i) => ({ noteId: `n${seq + i + 1}`, key, text: a.text, atomIds: [a.id] }));
+		next = { ...next, seq: seq + context.length, notes: [...next.notes, ...contextNotes], contextReduced: { ...next.contextReduced, [key]: true } };
+		notes = [...notes, ...contextNotes];
+		log.info({ dimension: job.dimension, key, contextAtoms: context.length }, 'review pipeline: an obligation\'s context is over the limit; reducing it with its evidence');
+	}
 	const b = budgets(job.plan.limitChars);
-	const batches = reduceBatches(gather, key, notes, b.soft, b.hard);
+	const labels = new Map(context.map((a, i) => [`n${next.seq - context.length + i + 1}`, `context atom ${a.label}`] as const));
+	const batches = reduceBatches(gather, key, notes, b.soft, b.hard, labels);
 	// A level that reduces each note alone, when every note is already within the cap, cannot shrink the evidence.
 	if (batches.every(c => c.carries.noteIds.length === 1) && notes.every(n => n.text.length <= gather.noteCapChars)) {
 		throw new Error(`review ${job.dimension}: the evidence for ${key} cannot be reduced to fit one call (${notes.length} notes)`);
@@ -491,11 +505,11 @@ function redivideNotes(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, 
 }
 
 /** Reduce calls over `notes`, packed within `soft`; one note may use `hard`; one over it is named. */
-function reduceBatches(gather: GatherPlan<unknown>, key: string, notes: readonly EvidenceNote[], soft: number, hard: number): NewCall[] {
+function reduceBatches(gather: GatherPlan<unknown>, key: string, notes: readonly EvidenceNote[], soft: number, hard: number, labels: ReadonlyMap<string, string> = new Map()): NewCall[] {
 	const size = (batch: readonly EvidenceNote[]): number => sentChars(gather.reduceCall(key, batch));
 	for (const n of notes) {
 		const alone = size([n]);
-		if (alone > hard) throw new AtomTooLargeError(`evidence note ${n.noteId} (${key})`, alone, hard);
+		if (alone > hard) throw new AtomTooLargeError(`${labels.get(n.noteId) ?? `evidence note ${n.noteId}`} (${key})`, alone, hard);
 	}
 	const batches = packIntoBatches(notes, x => (x.length === 1 ? Math.min(size(x), soft) : size(x)), soft, n => n.noteId);
 	return batches.map(batch => ({ prompt: gather.reduceCall(key, batch), role: 'reduce' as const, carries: noteCarries(key, batch) }));
@@ -523,6 +537,15 @@ function applyGatherAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknow
 	const noteId = `n${base.seq + 1}`;
 	const note: EvidenceNote = { noteId, key: call.carries.key ?? '', text: text as string, atomIds: call.carries.atomIds };
 	return advanceGather({ ...base, seq: base.seq + 1, notes: [...base.notes, note], noteProvenance: { ...base.noteProvenance, [noteId]: call.carries.noteIds } }, adapter);
+}
+
+/** An obligation's own context: the material.context atoms its atomIds name. */
+function obligationContext(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, key: string): ReviewAtom[] {
+	const material = readMaterial(job, adapter);
+	const obligation = material.obligations.find(o => o.key === key);
+	if (obligation?.atomIds === undefined) return [];
+	const byId = new Map((material.context ?? []).map(a => [a.id, a] as const));
+	return obligation.atomIds.map(id => byId.get(id)).filter((a): a is ReviewAtom => a !== undefined);
 }
 
 function gatherOf(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): GatherPlan<unknown> {

@@ -113,7 +113,9 @@ export interface EvidenceNote {
 }
 
 export interface GatherPlan<R> {
-	readonly obligationCall: (key: string, evidence: readonly EvidenceNote[]) => ChunkPrompt;
+	/** Judges one obligation on its evidence and its own context atoms (the material.context
+	 *  entries its atomIds name). Once its context has been reduced into notes, `context` is empty. */
+	readonly obligationCall: (key: string, evidence: readonly EvidenceNote[], context: readonly ReviewAtom[]) => ChunkPrompt;
 	/** Answer: one EvidenceNote under the same key. */
 	readonly reduceCall:     (key: string, batch: readonly EvidenceNote[]) => ChunkPrompt;
 	/** A quarter of the limit. */
@@ -270,6 +272,8 @@ export interface ReviewPipelineJob {
 	readonly relationPlan: Readonly<Record<string, number>>;
 	/** Reduction levels run per obligation key. */
 	readonly gatherLevels: Readonly<Record<string, number>>;
+	/** Obligation keys whose context atoms did not fit their call and became notes. */
+	readonly contextReduced: Readonly<Record<string, true>>;
 	readonly notes:      readonly EvidenceNote[];
 	readonly noteProvenance: Readonly<Record<string, readonly string[]>>;
 	readonly notJudged:  readonly NotJudged[];

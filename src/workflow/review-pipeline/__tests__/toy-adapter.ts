@@ -28,8 +28,11 @@ export const TOY_SCHEMA = {
 export const atom = (i: number, size = 400, file = `src/f${i}.ts`, module = 'src'): ReviewAtom =>
 	({ id: `a${i}`, label: `src/f${i}.ts#fn${i}`, text: `body-${i}-${'x'.repeat(size)}`, file, module });
 
-export function toySnapshot(atoms: readonly ReviewAtom[], relations: readonly ReviewRelation[] = [], obligations: readonly string[] = []): ReviewMaterialSnapshot {
-	return { kind: 'code-review', documentText: JSON.stringify({ atoms, relations, obligations }) };
+/** An obligation: its key, or its key with the context atoms it names. */
+export type ToyObligation = string | { readonly key: string; readonly atomIds: readonly string[] };
+
+export function toySnapshot(atoms: readonly ReviewAtom[], relations: readonly ReviewRelation[] = [], obligations: readonly ToyObligation[] = [], context: readonly ReviewAtom[] = []): ReviewMaterialSnapshot {
+	return { kind: 'code-review', documentText: JSON.stringify({ atoms, relations, obligations, context }) };
 }
 
 /** Today's single prompt for the toy review. */
@@ -68,9 +71,15 @@ export interface ToyResult {
 
 /** One model stage, 'judge', reading the atoms in the snapshot's document text. */
 export function toyAdapter(snapshot: ReviewMaterialSnapshot, opts: ToyOpts = {}): ReviewAdapter<ToyResult> {
-	const { atoms, relations, obligations = [] } = JSON.parse(snapshot.documentText ?? '{"atoms":[],"relations":[]}') as { atoms: ReviewAtom[]; relations: ReviewRelation[]; obligations?: string[] };
+	const { atoms, relations, obligations = [], context = [] } = JSON.parse(snapshot.documentText ?? '{"atoms":[],"relations":[]}') as { atoms: ReviewAtom[]; relations: ReviewRelation[]; obligations?: ToyObligation[]; context?: ReviewAtom[] };
 	const byId = new Map(atoms.map(a => [a.id, a] as const));
-	const material = { atoms, relations, obligations: obligations.map(key => ({ key, kind: 'clause' as const, text: `obligation ${key}` })) };
+	const material = {
+		atoms, relations,
+		obligations: obligations.map(o => typeof o === 'string'
+			? { key: o, kind: 'clause' as const, text: `obligation ${o}` }
+			: { key: o.key, kind: 'clause' as const, text: `obligation ${o.key}`, atomIds: o.atomIds }),
+		...(context.length > 0 ? { context } : {}),
+	};
 	const execution = opts.execution ?? { mode: 'structured', cwd: '/repo' };
 	const render = (ids: readonly string[], neighbours: readonly NeighbourSummary[]): string => JSON.stringify({
 		atoms: ids.map(id => ({ id, text: byId.get(id)!.text })),
@@ -95,7 +104,7 @@ export function toyAdapter(snapshot: ReviewMaterialSnapshot, opts: ToyOpts = {})
 		}),
 		neighbourSummary: a => `summary of ${a.label}`,
 		...(opts.gatherLimit !== undefined ? { gather: {
-			obligationCall: (key, ev) => ({ messages: [{ role: 'system', content: 'Judge the obligation on this evidence.' }, { role: 'user', content: renderNotes(key, ev) }], schema: VERDICT_SCHEMA, execution }),
+			obligationCall: (key, ev, ctx) => ({ messages: [{ role: 'system', content: 'Judge the obligation on this evidence.' }, { role: 'user', content: `${renderNotes(key, ev)}\n${JSON.stringify({ context: ctx.map(a => ({ contextId: a.id, text: a.text })) })}` }], schema: VERDICT_SCHEMA, execution }),
 			reduceCall: (key, batch) => ({ messages: [{ role: 'system', content: 'Reduce this evidence to one note.' }, { role: 'user', content: renderNotes(key, batch) }], schema: NOTE_SCHEMA, execution }),
 			noteCapChars: Math.floor(opts.gatherLimit / 4),
 			notesFrom: (a: StageAnswer) => (a.answer as { notes?: { key: string; text: string }[] }).notes ?? [],

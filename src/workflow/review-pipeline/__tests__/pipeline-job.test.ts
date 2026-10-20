@@ -905,3 +905,40 @@ test('usage summaries size a chunk and are always kept; proximity summaries are 
 	assert.deepEqual(gchunk.atomIds, ['a20']);
 	assert.ok(gchunk.chars <= LIMIT && gchunk.neighbours.length < callees.length, 'the atom stays whole; the summaries that do not fit are left out');
 });
+
+test("an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named", async () => {
+	// A divided review with no atoms (s1: divided even with zero atoms): one obligation whose 12 context atoms
+	// (a large test record) do not fit one call beside it.
+	const context = Array.from({ length: 12 }, (_, i) => ({ id: `x${i}`, label: `test-record#${i}`, text: `record-${i}-${'r'.repeat(900)}` }));
+	const snap = toySnapshot([], [], [{ key: 'promised-1', atomIds: context.map(c => c.id) }], context);
+	const rebuild = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => {
+		const a = toyAdapter(s, { gatherLimit: LIMIT });
+		// The single call is over the limit (as a diff review's coverage with a large record would be): divided with zero atoms.
+		return { ...a, stagesFor: p => a.stagesFor(p).map(st => ({ ...st, singleCalls: () => [{ messages: [{ role: 'user' as const, content: 'x'.repeat(LIMIT) }], schema: TOY_SCHEMA, execution: { mode: 'structured' as const } }] })) };
+	};
+	const model = gatherModel(10, 1_400);
+	const { job } = await drive(createReviewJob(rebuild(snap), 'daemon', snap, LIMIT), rebuild, model.answer);
+	assert.equal(job.phase, 'done');
+	assert.equal(job.contextReduced['promised-1'], true, 'the context became notes');
+	for (const c of model.calls) assert.ok(c.chars <= LIMIT, `a ${c.chars}-character ${c.role} call`);
+	assert.ok(model.calls.some(c => c.role === 'reduce'), 'reduced');
+	const obligation = model.calls.filter(c => c.role === 'obligation');
+	assert.equal(obligation.length, 1, 'judged once, on the reduced notes');
+	// Every context atom is read whole by some reduction, and the final notes stand for all of them.
+	for (const c of context) assert.ok(model.calls.some(call => call.role === 'reduce' && asSent(call.messages).includes(c.text)), `${c.id} read whole`);
+	assert.deepEqual([...obligation[0]!.carries.atomIds].sort(), context.map(c => c.id).sort(), 'provenance names every context atom');
+	// A context that fits is passed whole, with no reduction.
+	const small = context.slice(0, 2);
+	const fits = toySnapshot([], [], [{ key: 'promised-2', atomIds: small.map(c => c.id) }], small);
+	const fitModel = gatherModel(10, 10);
+	const fitRun = await drive(createReviewJob(rebuild(fits), 'daemon', fits, LIMIT), rebuild, fitModel.answer);
+	assert.equal(fitRun.job.contextReduced['promised-2'], undefined);
+	const ob = fitModel.calls.find(c => c.role === 'obligation')!;
+	for (const c of small) assert.ok(asSent(ob.messages).includes(c.text), 'the raw context is in the obligation call');
+	assert.ok(!fitModel.calls.some(c => c.role === 'reduce'));
+	// One context atom too large even alone is named.
+	const huge = [{ id: 'xh', label: 'test-record#huge', text: 'h'.repeat(LIMIT + 100) }];
+	const hs = toySnapshot([], [], [{ key: 'promised-3', atomIds: ['xh'] }], huge);
+	await assert.rejects(async () => drive(createReviewJob(rebuild(hs), 'daemon', hs, LIMIT), rebuild, gatherModel(10, 10).answer),
+		(e: unknown) => e instanceof AtomTooLargeError && e.message.includes('context atom test-record#huge'));
+});

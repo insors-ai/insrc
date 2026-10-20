@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-20T17:04:04.005Z",
+    "updatedAt": "2026-10-20T17:12:07.050Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
   },
@@ -203,6 +203,117 @@
               },
               {
                 "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "dc591479",
+        "ranAt": "2026-10-20T17:12:07.050Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key with no notes is adjudicated on the no-evidence statement'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a conventions candidate rejected by the module judgement is absent from the merged result'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 700,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
                 "result": "pass"
               }
             ],

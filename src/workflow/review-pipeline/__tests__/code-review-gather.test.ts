@@ -393,6 +393,9 @@ test('a conventions candidate rejected by the module judgement is absent from th
 	const judged = calls.find(c => c.role === 'obligation' && c.carries.key === 'module:src/order')!;
 	assert.ok(userOf(judged).includes(deviation), 'the module judgement sees the candidate');
 	assert.ok(userOf(judged).includes('## Documented rules'), 'with the documented rules');
+	// A module has no single ref: a finding names the breached rule's id, as today.
+	assert.match(judged.prompt.messages[0]!.content as string, /names in expectationRef the breached documented-rule id/);
+	assert.ok(!(judged.prompt.messages[0]!.content as string).includes('expectationRef "The documented rules'), 'not forced to the module text');
 	// The chunk could not record it (notes only); the module judgement rejected it: no finding remains.
 	const gather = adapter.gather!;
 	const parts = calls.filter(c => c.role === 'obligation').map(c => gather.partOf({ role: 'obligation', key: c.carries.key!, atomIds: [], answer: { findings: [] } }));
@@ -417,6 +420,30 @@ test('a promised test passed only by a reported smoke run, with no test file or 
 	assert.ok(user.includes(`expectationRef ${JSON.stringify(SMOKE)}`), 'a finding about it would name it exactly');
 	// Judged present, it adds no finding to the result.
 	assert.deepEqual((adapter.gather!.partOf({ role: 'obligation', key: `test:${SMOKE}`, atomIds: [], answer: { findings: [] } }) as { findings: unknown[] }).findings, []);
+
+	// With zero atoms (a diff review whose single call is over the limit): divided with no chunk, every promised
+	// test judged on its full record evidence, and a symbol-coverage finding is never accepted.
+	const bloated = structuredClone(TESTS_RECORD) as { body: { tasks: { files?: unknown[] }[] } };
+	bloated.body.tasks[0]!.files!.push(...Array.from({ length: 60 }, (_, i) => ({ file: `src/other/__tests__/o${i}.test.ts`, titles: [{ title: `other ${i} ${'t'.repeat(150)}`, result: 'pass' }], exitCode: 0, timedOut: false })));
+	const diff = subject({ testRecord: bloated as unknown as CodeReviewSubject['testRecord'] });
+	const snap = codeReviewSnapshot(diff, DIVIDING, 'degraded');
+	const zero = modelDimensionAdapter(coverageSpec(diff), diff, snap, SMALL) as unknown as ReviewAdapter<unknown>;
+	assert.deepEqual(zero.material().atoms, [], 'zero atoms');
+	let zjob = createReviewJob(zero, 'daemon', snap, SMALL);
+	assert.equal(zjob.plan.single, false, 'divided');
+	assert.deepEqual(zjob.plan.chunks, [], 'with no chunk');
+	const judged: ReviewCall[] = [...zjob.pending];
+	assert.deepEqual(judged.map(c => c.role), ['obligation', 'obligation'], 'straight to the promised tests');
+	assert.ok(userOf(judged.find(c => c.carries.key === `test:${SMOKE}`)!).includes('docs/smoke.txt'));
+	assert.ok(userOf(judged.find(c => c.carries.key === `test:${UNIT}`)!).includes('src/order/__tests__/order.test.ts'));
+	for (const c of judged) assert.ok(!(c.prompt.messages[0]!.content as string).includes('coverageEvidence class'), 'no symbol grading in the judgement');
+	const symbolFinding = { severity: 'HIGH', location: 'src/order/order.ts:1', message: 'not exercised', findingKind: 'symbol-coverage', symbolId: 'id-placeOrder' };
+	const first = judged[0]!;
+	zjob = applyOutput(zjob, zero, first.callId, echo(first, { findings: [symbolFinding] }));
+	const again = zjob.pending.find(c => c.attempt === 2)!;
+	assert.ok(again !== undefined && again.carries.key === first.carries.key, 'rejected and re-issued');
+	assert.match(again.prompt.messages[0]!.content as string, /may report only findingKind "promised-test"/);
+	assert.throws(() => applyOutput(zjob, zero, again.callId, echo(again, { findings: [symbolFinding] })), (e: unknown) => e instanceof ReviewCallFailedError);
 });
 
 test('a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits', () => {

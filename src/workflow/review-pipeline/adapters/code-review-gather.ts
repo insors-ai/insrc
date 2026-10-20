@@ -22,7 +22,7 @@
 
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { DimensionFinding, DimensionResult, ReviewDimension } from '../../code-review/types.js';
-import type { EvidenceNote, ExecutionMode, GatherAnswer, GatherPlan, ReviewAtom, ReviewMaterial } from '../types.js';
+import type { EvidenceNote, ExecutionMode, GatherAnswer, GatherPlan, ReviewAtom, ReviewCall, ReviewMaterial, ReviewObligation } from '../types.js';
 import { chunkNotesFrom, type ChunkSpec } from './code-review-chunk.js';
 
 /** A reduction answers with one note. */
@@ -47,11 +47,29 @@ export interface CodeReviewGatherArgs {
 	readonly changedFiles: readonly string[];
 }
 
-/** The expectationRef an obligation's findings carry, as today's filters read it:
- *  an FR's id, a promised test's exact name, otherwise the obligation's text. */
-export function expectationRefOf(key: string, text: string): string {
-	for (const prefix of ['fr:', 'test:']) if (key.startsWith(prefix)) return key.slice(prefix.length);
-	return text;
+/** The expectationRef an obligation's findings carry, as today's filters and rules read it:
+ *  an FR's id, a promised test's exact name, a clause's text. A module's conventions have
+ *  no single ref: each finding names the breached documented rule's id (or the idiom), as today. */
+export function expectationRefOf(o: Pick<ReviewObligation, 'key' | 'kind' | 'text'>): string | undefined {
+	if (o.kind === 'module-conventions') return undefined;
+	for (const prefix of ['fr:', 'test:']) if (o.key.startsWith(prefix)) return o.key.slice(prefix.length);
+	return o.text;
+}
+
+/** The rule a finding's expectationRef follows in an obligation call. */
+function refRule(ref: string | undefined): string {
+	return ref !== undefined
+		? `Every finding carries expectationRef ${JSON.stringify(ref)} exactly`
+		: 'Every finding names in expectationRef the breached documented-rule id, or the label of the module idiom it departs from';
+}
+
+/** A promised test's judgement may report only promised-test findings: symbol coverage is
+ *  graded in the chunks that hold the symbols, never at gather (and not at all with zero atoms). */
+function obligationReasons(answer: unknown, call: ReviewCall, material: ReviewMaterial): string[] {
+	const o = material.obligations.find(x => x.key === call.carries.key);
+	if (call.role !== 'obligation' || o?.kind !== 'promised-test') return [];
+	const kinds = ((answer as { findings?: readonly { findingKind?: string }[] }).findings ?? []).map(f => f.findingKind ?? '(none)').filter(k => k !== 'promised-test');
+	return kinds.length > 0 ? [`a promised test's judgement may report only findingKind "promised-test" findings about that test; found ${[...new Set(kinds)].map(k => JSON.stringify(k)).join(', ')}`] : [];
 }
 
 /** The labels of the atoms a set of notes names, so a finding can be located at them. */
@@ -69,12 +87,12 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		const material = args.material();
 		const obligation = material.obligations.find(o => o.key === key);
 		if (obligation === undefined) throw new Error(`code review ${dimension}: no obligation ${key}`);
-		const ref = expectationRefOf(key, obligation.text);
+		const ref = expectationRefOf(obligation);
 		const system = [
-			chunk.framing,
+			chunk.obligationFraming ?? chunk.framing,
 			'This review was DIVIDED into chunks. You judge ONE obligation, once, on the evidence notes every chunk wrote about it and on its own context below. The notes are the whole evidence: a part of the change no note mentions did not bear on this obligation.',
 			chunk.judge ?? '',
-			`Every finding carries expectationRef ${JSON.stringify(ref)} exactly, and is located at \`file:line\` in one of the Story's changed files (prefer the file of a symbol the notes name).`,
+			`${refRule(ref)}, and is located at \`file:line\` in one of the Story's changed files (prefer the file of a symbol the notes name).`,
 			'If the obligation is met, return an EMPTY findings array. Never manufacture findings.',
 		].filter(s => s.length > 0).join('\n');
 		const user = [
@@ -90,7 +108,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 			'## The Story\'s changed files',
 			...args.changedFiles.map(f => `- ${f}`),
 			'## Output',
-			`Return today's findings shape, { "findings": [ ... ] }, each finding with expectationRef ${JSON.stringify(ref)}. Return an empty findings array if the obligation is met.`,
+			`Return today's findings shape, { "findings": [ ... ] }. ${refRule(ref)}. Return an empty findings array if the obligation is met.`,
 		].join('\n');
 		return { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema, execution, key };
 	};
@@ -114,6 +132,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		reduceCall,
 		noteCapChars: Math.floor(args.limitChars / 4),
 		notesFrom: chunkNotesFrom,
+		validate: (answer, call) => obligationReasons(answer, call, args.material()),
 		partOf: (g: GatherAnswer): DimensionResult => ({
 			dimension,
 			findings: ((g.answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] }).findings ?? []).map(f => ({ ...f, dimension })),

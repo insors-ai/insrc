@@ -39,6 +39,9 @@ export interface ChunkSpec {
 	readonly findings?:  StructuredSchema | undefined;
 	/** Today's rules for judging one obligation at gather (absent for quality, which has none). */
 	readonly judge?:     string | undefined;
+	/** The framing of an obligation call, when the chunk framing does not fit it (coverage: chunks
+	 *  grade symbols, a promised test's judgement does not). Absent: `framing`. */
+	readonly obligationFraming?: string | undefined;
 }
 
 const NOTES_PROPERTY = {

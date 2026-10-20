@@ -1188,8 +1188,8 @@ export interface InsrcPresentDeps extends UnaryRpcDeps {
 }
 
 /** True when the pending record names the document: the artifact id (compared
- *  without regard to case, since the daemon lists `-s5` for some records and
- *  `-S001` for others) or the document's repo-relative or absolute path.
+ *  without regard to case, since older records carry an uppercase story and
+ *  newer ones a lowercase one) or the document's repo-relative or absolute path.
  *  The chat plugin applies the same rule in `namesDocument`
  *  (vscode-plugin/src/chat/review-presenter.ts): keep the two in step, which the
  *  shared vectors in present-dispatch.test.ts and review-presenter.test.ts check. */

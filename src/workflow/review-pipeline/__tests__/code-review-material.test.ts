@@ -1,0 +1,91 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * The code review's material (Epic 8315a11f s2): atoms and relations from a
+ * dimension's grounding, on hand-built groundings.
+ *
+ * Run: npx tsx --test src/workflow/review-pipeline/__tests__/code-review-material.test.ts
+ */
+
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+
+import type { ChangedSymbolSummary, CodeReviewGrounding } from '../../code-review/types.js';
+import { codeReviewMaterial } from '../adapters/code-review-material.js';
+
+const row = (entityId: string, file: string, name: string, callees: string[] = [], callers: string[] = [], kind = 'function'): ChangedSymbolSummary =>
+	({ entityId, file, kind, name, signature: `${name}()`, callers, callees, testsReaching: [] });
+const grounding = (...symbols: ChangedSymbolSummary[]): CodeReviewGrounding => ({ symbols });
+/** Relations as sorted "kind a~b" strings, direction ignored. */
+const rels = (g: CodeReviewGrounding, kind?: string): string[] =>
+	codeReviewMaterial(g).relations.filter(r => kind === undefined || r.kind === kind)
+		.map(r => `${r.kind} ${[r.from, r.to].sort().join('~')}`).sort();
+
+test("each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON", () => {
+	const rows = [row('e1', 'src/a/x.ts', 'one'), row('e2', 'src/b/y.ts', 'two'), row('e3', 'README.md', 'top', [], [], 'file')];
+	const m = codeReviewMaterial(grounding(...rows));
+	assert.deepEqual(m.atoms, [
+		{ id: 'e1', label: 'src/a/x.ts#one', text: JSON.stringify(rows[0]), file: 'src/a/x.ts', module: 'src/a' },
+		{ id: 'e2', label: 'src/b/y.ts#two', text: JSON.stringify(rows[1]), file: 'src/b/y.ts', module: 'src/b' },
+		{ id: 'e3', label: 'README.md#top', text: JSON.stringify(rows[2]), file: 'README.md', module: '.' },
+	], 'every row, in grounding order, whole');
+	assert.deepEqual(m.obligations, [], 'obligations are the dimension\'s own (s3)');
+	assert.equal(m.context, undefined);
+	assert.deepEqual(codeReviewMaterial(grounding()).atoms, [], 'an empty grounding gives no atoms');
+});
+
+test('a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none', () => {
+	// a calls b (a's callees); c is called by a (c's callers); two rows are named "dup"; self calls itself; "ghost" is unchanged.
+	const g = grounding(
+		row('a', 'src/p/a.ts', 'a', ['b', 'dup', 'ghost']),
+		row('b', 'src/q/b.ts', 'b'),
+		row('c', 'src/r/c.ts', 'c', [], ['a']),
+		row('d1', 'src/s/d.ts', 'dup'),
+		row('d2', 'src/t/d.ts', 'dup'),
+		row('self', 'src/u/s.ts', 'self', ['self'], ['self']),
+	);
+	assert.deepEqual(rels(g, 'calls'), ['calls a~b', 'calls a~c', 'calls a~d1', 'calls a~d2']);
+	// Direction: the caller is `from`.
+	const calls = codeReviewMaterial(g).relations.filter(r => r.kind === 'calls');
+	assert.ok(calls.every(r => r.from === 'a'), 'a is the caller of each');
+	// A relation stated from both sides is one relation.
+	const both = grounding(row('x', 'src/v/x.ts', 'x', ['y']), row('y', 'src/w/y.ts', 'y', [], ['x']));
+	assert.deepEqual(rels(both, 'calls'), ['calls x~y']);
+});
+
+test('same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only', () => {
+	const g = grounding(row('f1', 'src/m/one.ts', 'f1'), row('f2', 'src/m/one.ts', 'f2'), row('g1', 'src/m/two.ts', 'g1'), row('h1', 'src/n/three.ts', 'h1'));
+	assert.deepEqual(rels(g, 'same-file'), ['same-file f1~f2']);
+	assert.deepEqual(rels(g, 'same-module'), ['same-module f1~f2', 'same-module f1~g1', 'same-module f2~g1']);
+	assert.deepEqual(rels(g).filter(r => r.includes('h1')), [], 'a symbol alone in its directory is related to nothing');
+	// A diff review: one 'file' row per changed file, no callers or callees.
+	const diff = grounding(
+		{ ...row('src/m/one.ts', 'src/m/one.ts', 'src/m/one.ts', [], [], 'file'), signature: '@@ -1 +1 @@\n-a\n+b' },
+		row('src/m/two.ts', 'src/m/two.ts', 'src/m/two.ts', [], [], 'file'),
+		row('src/n/three.ts', 'src/n/three.ts', 'src/n/three.ts', [], [], 'file'),
+	);
+	assert.deepEqual(rels(diff), ['same-module src/m/one.ts~src/m/two.ts'], 'only same-module relations');
+});
+
+test('a duplicate entityId throws an error naming it', () => {
+	assert.throws(
+		() => codeReviewMaterial(grounding(row('e1', 'src/a.ts', 'one'), row('e1', 'src/b.ts', 'two'))),
+		(e: unknown) => e instanceof Error && e.message.includes('e1') && e.message.includes('src/a.ts#one') && e.message.includes('src/b.ts#two'),
+	);
+});
+
+test('the same grounding gives identical material and identical neighbour summaries every time', () => {
+	const make = (): CodeReviewGrounding => grounding(
+		row('a', 'src/p/a.ts', 'a', ['b', 'c']), row('b', 'src/p/a.ts', 'b', [], ['a']), row('c', 'src/q/c.ts', 'c'), row('d', 'src/p/d.ts', 'd'),
+	);
+	const first = codeReviewMaterial(make());
+	for (let i = 0; i < 5; i++) assert.deepEqual(codeReviewMaterial(make()), first, 'same atoms, same relations, same order');
+	// Built from the grounding alone: the input is not changed.
+	const g = make();
+	const before = JSON.stringify(g);
+	codeReviewMaterial(g);
+	assert.equal(JSON.stringify(g), before);
+});

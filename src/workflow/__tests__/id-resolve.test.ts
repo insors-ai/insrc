@@ -1161,10 +1161,13 @@ test('resolver — unknown / malformed identifier → null', () => {
 // ---------------------------------------------------------------------------
 
 test('id marker embeds as the first body line and round-trips out', () => {
-	const body = renderTaskBody('acme/demo#5', 's1', TASK_T3, 'demo-feature', EPIC_HASH, CREATED, { owner: 'acme', repo: 'demo' }, CANON_TASK);
-	assert.equal(body.split('\n')[0], `<!-- insrc:id ${CANON_TASK} -->`);
-	assert.equal(parseIdMarker(body), CANON_TASK);
-	// Without a workflowId the marker is absent.
+	// The marker carries the artifact id; a marker written before the artifact ids is not read.
+	const artifactId = `TASK-${EPIC_HASH}-s1-t3`;
+	const body = renderTaskBody('acme/demo#5', 's1', TASK_T3, 'demo-feature', EPIC_HASH, CREATED, { owner: 'acme', repo: 'demo' }, artifactId);
+	assert.equal(body.split('\n')[0], `<!-- insrc:id ${artifactId} -->`);
+	assert.equal(parseIdMarker(body), artifactId);
+	assert.equal(parseIdMarker(`<!-- insrc:id ${CANON_TASK} -->\n\nbody`), null);
+	// Without an artifact id the marker is absent.
 	const bare = renderTaskBody('acme/demo#5', 's1', TASK_T3, 'demo-feature', EPIC_HASH, CREATED);
 	assert.equal(parseIdMarker(bare), null);
 });

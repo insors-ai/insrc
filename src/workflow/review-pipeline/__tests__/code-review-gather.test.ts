@@ -482,3 +482,85 @@ test('a key whose notes exceed the limit is reduced into notes within noteCapCha
 	assert.ok(userOf(fr1[0]!).includes('condensed '), 'on the condensed notes');
 	for (const c of calls) assert.ok(c.chars <= SMALL, `a ${c.role} call of ${c.chars} characters`);
 });
+
+// -- relation checks (t5) ------------------------------------------------------
+
+const chunkAnswer = (spec: 'notes' | 'quality', call: ReviewCall) => spec === 'quality'
+	? { findings: [], descriptions: call.carries.atomIds.map(atomId => ({ atomId, description: `what ${atomId} does` })) }
+	: { notes: [] };
+
+test('a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits', () => {
+	const s = subject();
+	const snap = codeReviewSnapshot(s, DIVIDING);
+	for (const spec of [qualitySpec, adherenceSpec] as const) {
+		const adapter = modelDimensionAdapter(spec(s), s, snap, SMALL) as unknown as ReviewAdapter<unknown>;
+		const material = adapter.material();
+		const atomOf = (id: string) => material.atoms.find(a => a.id === id)!;
+		const caller = atomOf('id-placeOrder'), callee = atomOf('id-fill');
+		const sig = (id: string) => JSON.stringify(DIVIDING.symbols.find(x => x.entityId === id)!.signature);
+		const relationCall = adapter.gather!.relationCall!;
+		// Both fit one call: one call, both full rows, the mismatch to be located in the caller's file.
+		const one = relationCall([caller, callee]);
+		assert.equal(one.length, 1, spec.name);
+		const text = promptText(one[0]!.messages);
+		assert.ok(text.includes(sig('id-placeOrder')) && text.includes(sig('id-fill')), 'both full rows');
+		assert.match(one[0]!.messages[0]!.content as string, /located at `file:line` in the CALLER's file, "src\/order\/order\.ts"/);
+		assert.deepEqual(one[0]!.schema, spec(s).schema, "today's findings shape");
+		// Within a refused size: two calls, each one full row against the other's summary line, each within the size.
+		const maxChars = 9_000;
+		const two = relationCall([caller, callee], maxChars);
+		assert.equal(two.length, 2);
+		const [fromCaller, fromCallee] = two.map(c => promptText(c.messages));
+		assert.ok(fromCaller!.includes(sig('id-placeOrder')) && !fromCaller!.includes(sig('id-fill')) && fromCaller!.includes(`- ${material.atoms && (adapter.neighbourSummary!(callee, material))}`));
+		assert.ok(fromCallee!.includes(sig('id-fill')) && !fromCallee!.includes(sig('id-placeOrder')) && fromCallee!.includes(`- ${adapter.neighbourSummary!(caller, material)}`));
+		for (const c of two) assert.ok(promptText(c.messages).length + 600 <= maxChars, 'each within the reported size, envelope included');
+		// When both do not fit the limit, the same two calls.
+		const tight = modelDimensionAdapter(spec(s), s, snap, 9_000) as unknown as ReviewAdapter<unknown>;
+		assert.equal(tight.gather!.relationCall!([caller, callee]).length, 2);
+		// A cut relation that is not a call (same module) is not judged.
+		assert.deepEqual(relationCall([atomOf('id-price'), atomOf('id-discount')]), []);
+	}
+	// Only quality and adherence judge relations.
+	for (const spec of [coverageSpec, conventionsSpec, functionalCoverageSpec]) {
+		assert.equal((modelDimensionAdapter(spec(s) as ModelDimensionSpec<unknown>, s, snap, SMALL) as unknown as ReviewAdapter<unknown>).gather!.relationCall, undefined);
+	}
+	// In a divided review the cut call is judged in the gather, and every call fits the limit.
+	for (const [kind, spec] of [['quality', qualitySpec], ['notes', adherenceSpec]] as const) {
+		const { job, adapter } = dividedJob(spec);
+		assert.ok(job.plan.crossRelations.some(r => r.kind === 'calls' && r.from === 'id-placeOrder' && r.to === 'id-fill'), 'the call is cut');
+		const { calls } = drive(job, adapter, call => call.role === 'chunk' ? chunkAnswer(kind, call) : { findings: [] });
+		const relations = calls.filter(c => c.role === 'relation');
+		assert.deepEqual(relations.map(c => c.carries.atomIds), [['id-placeOrder', 'id-fill']], `${kind}: the call relation, once`);
+		for (const c of calls) assert.ok(c.chars <= SMALL, `${kind}: a ${c.role} call of ${c.chars}`);
+	}
+});
+
+test('a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review', () => {
+	for (const [kind, spec] of [['quality', qualitySpec], ['notes', adherenceSpec]] as const) {
+		const { job, adapter } = dividedJob(spec);
+		// Run to the relation call.
+		let j = job;
+		let relation: ReviewCall | undefined;
+		for (let guard = 0; relation === undefined; guard++) {
+			assert.ok(guard < 100);
+			const call = nextCalls(j, adapter)[0]!;
+			if (call.role === 'relation') { relation = call; break; }
+			j = applyOutput(j, adapter, call.callId, echo(call, call.role === 'chunk' ? chunkAnswer(kind, call) : { findings: [] }));
+		}
+		const mismatch = { severity: 'MED', location: 'src/order/order.ts:3', message: 'placeOrder ignores the error fill throws' };
+		// A location outside the two symbols: re-issued once, with the reason.
+		const outside = applyOutput(j, adapter, relation.callId, echo(relation, { findings: [{ ...mismatch, location: 'src/price/price.ts:1' }] }));
+		const again = outside.pending.find(c => c.attempt === 2)!;
+		assert.ok(again !== undefined && again.role === 'relation', `${kind}: re-issued`);
+		assert.match(again.prompt.messages[0]!.content as string, /1 findings are located outside the two symbols judged \(first: findings\[0\]\.location\)/);
+		// A counterpart outside the two symbols on the re-issue: the review fails.
+		assert.throws(() => applyOutput(outside, adapter, again.callId, echo(again, { findings: [{ ...mismatch, counterpartRef: 'discount' }] })),
+			(e: unknown) => e instanceof ReviewCallFailedError && /invalid-answer/.test(e.message), kind);
+		// The mismatch located at the caller, naming the callee, is valid and becomes the dimension's finding.
+		const answer = { findings: [{ ...mismatch, counterpartRef: 'fill' }] };
+		assert.deepEqual(adapter.gather!.validate!(answer, relation), [], kind);
+		const part = adapter.gather!.partOf({ role: 'relation', key: relation.carries.key!, atomIds: relation.carries.atomIds, answer }) as { findings: { location: string; dimension: string }[] };
+		assert.equal(part.findings[0]!.location, 'src/order/order.ts:3', `${kind}: at the caller`);
+		assert.equal(part.findings[0]!.dimension, spec(subject()).dimension);
+	}
+});

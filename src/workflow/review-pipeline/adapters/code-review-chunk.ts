@@ -43,6 +43,8 @@ export interface ChunkSpec {
 	/** The framing of an obligation call, when the chunk framing does not fit it (coverage: chunks
 	 *  grade symbols, a promised test's judgement does not). Absent: `framing`. */
 	readonly obligationFraming?: string | undefined;
+	/** The rules a cross-chunk call relation is judged by (quality, adherence). Absent: no relation checks. */
+	readonly relation?: string | undefined;
 }
 
 const NOTES_PROPERTY = {

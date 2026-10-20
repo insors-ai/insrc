@@ -15,15 +15,23 @@
  * context alone. Evidence too large for one call is reduced by s1, a batch at a
  * time, into notes of at most a quarter of the limit (reduceCall).
  *
- * partOf maps an obligation answer to a part of today's DimensionResult; merge
+ * A changed symbol calling one held in another chunk (quality, adherence) is judged
+ * in a relation call: both full rows when they fit one call, else (or within a size
+ * a refusal reported) two calls, each one full row against the other's neighbour
+ * summary. A mismatch is located at the caller; an answer naming a location or a
+ * counterpart outside the two symbols is rejected.
+ *
+ * partOf maps an obligation or relation answer to a part of today's DimensionResult; merge
  * joins the chunk result with the parts (t7 adds its de-duplication and today's
  * per-dimension filters).
  */
 
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { DimensionFinding, DimensionResult, ReviewDimension } from '../../code-review/types.js';
+import { envelopeMessages, promptChars } from '../envelope.js';
 import type { EvidenceNote, ExecutionMode, GatherAnswer, GatherPlan, ReviewAtom, ReviewCall, ReviewMaterial, ReviewObligation } from '../types.js';
 import { chunkNotesFrom, type ChunkSpec } from './code-review-chunk.js';
+import { neighbourSummary } from './code-review-material.js';
 
 /** A reduction answers with one note. */
 export const REDUCE_NOTE_SCHEMA: StructuredSchema = {
@@ -61,6 +69,31 @@ function refRule(ref: string | undefined): string {
 	return ref !== undefined
 		? `Every finding carries expectationRef ${JSON.stringify(ref)} exactly`
 		: 'Every finding names in expectationRef the breached documented-rule id, or the label of the module idiom it departs from';
+}
+
+/** A call's size as sent, enveloped under an id of a real id's length. */
+const sentChars = (messages: readonly LLMMessage[]): number => promptChars(envelopeMessages('00000000-0000-0000-0000-000000000000', messages));
+
+const fileOfLocation = (location: string): string => {
+	const i = location.indexOf(':');
+	return i >= 0 ? location.slice(0, i) : location;
+};
+
+/** A relation answer's problems: a finding located outside the two symbols' files, or naming a
+ *  counterpart that is neither of them. Fixed-size reasons: made-up values are located, not quoted. */
+function relationReasons(answer: unknown, call: ReviewCall, material: ReviewMaterial): string[] {
+	if (call.role !== 'relation') return [];
+	const pair = call.carries.atomIds.map(id => material.atoms.find(a => a.id === id)).filter((a): a is ReviewAtom => a !== undefined);
+	const files = new Set(pair.flatMap(a => a.file !== undefined ? [a.file] : []));
+	const names = new Set(pair.flatMap(a => [a.id, a.label, (JSON.parse(a.text) as { name?: string }).name ?? a.id]));
+	const findings = (answer as { findings?: readonly { location?: string; counterpartRef?: string }[] }).findings ?? [];
+	const badLocations = findings.flatMap((f, i) => files.has(fileOfLocation(f.location ?? '')) ? [] : [`findings[${i}].location`]);
+	const badCounterparts = findings.flatMap((f, i) => f.counterpartRef === undefined || names.has(f.counterpartRef.trim()) ? [] : [`findings[${i}].counterpartRef`]);
+	const listed = pair.map(a => a.label).join(' and ');
+	return [
+		...(badLocations.length > 0 ? [`${badLocations.length} findings are located outside the two symbols judged (first: ${badLocations[0]}); locate a mismatch at the caller, in ${[...files].map(f => JSON.stringify(f)).join(' or ')}`] : []),
+		...(badCounterparts.length > 0 ? [`${badCounterparts.length} findings name a counterpart that is not one of the two symbols judged (first: ${badCounterparts[0]}); name only ${listed}`] : []),
+	];
 }
 
 /** A promised test's judgement may report only promised-test findings: symbol coverage is
@@ -127,12 +160,45 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		].join('\n');
 		return { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: REDUCE_NOTE_SCHEMA, execution, key };
 	};
+	/** A cut call relation, judged once: both full rows in one call when they fit, else (or within a
+	 *  refused size) one full row against the other's neighbour summary, in each direction. A cut
+	 *  relation that is not a call (same file, same module) is not judged here: no calls. */
+	const relationCall = (pair: readonly [ReviewAtom, ReviewAtom], maxChars?: number): { messages: LLMMessage[]; schema: StructuredSchema; execution: ExecutionMode; key: string }[] => {
+		const material = args.material();
+		const [caller, callee] = pair;
+		if (!material.relations.some(r => r.kind === 'calls' && r.from === caller.id && r.to === callee.id)) return [];
+		const key = `${caller.id}->${callee.id}`;
+		const obligations = dimension === 'adherence' && material.obligations.length > 0
+			? ['## The approved clauses and plan tasks either symbol may carry', '```json', JSON.stringify(material.obligations.map(o => ({ key: o.key, text: o.text })), null, 2), '```']
+			: [];
+		const build = (full: readonly ReviewAtom[], summarised: ReviewAtom | undefined): { messages: LLMMessage[]; schema: StructuredSchema; execution: ExecutionMode; key: string } => {
+			const system = [
+				chunk.framing,
+				`This review was DIVIDED into chunks. You judge ONE call that crosses chunks: ${caller.label} calls ${callee.label}. Judge whether the caller's use matches the callee: the arguments it passes, how it uses the return value, and the callee's error contract.`,
+				chunk.relation ?? '',
+				`A mismatch is a finding located at \`file:line\` in the CALLER's file, ${JSON.stringify(caller.file ?? caller.label)}. Name a counterpart (counterpartRef) only as one of the two symbols. If the call matches, return an EMPTY findings array.`,
+			].filter(x => x.length > 0).join('\n');
+			const user = [
+				...full.map(a => [`## ${a === caller ? 'The caller' : 'The callee'} (full structured summary): ${a.label}`, '```json', JSON.stringify(JSON.parse(a.text), null, 2), '```'].join('\n')),
+				...(summarised !== undefined ? [`## ${summarised === caller ? 'The caller' : 'The callee'} (its one-line summary; it is held in another chunk)`, `- ${neighbourSummary(summarised, material)}`] : []),
+				...obligations,
+				'## Output',
+				'Return today\'s findings shape, { "findings": [ ... ] }, each located in the caller\'s file. Return an empty findings array if the call matches.',
+			].join('\n');
+			return { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema, execution, key };
+		};
+		// After a refusal s1 passes a size below the refused call's, so both rows never fit it again.
+		const both = build([caller, callee], undefined);
+		if (sentChars(both.messages) <= (maxChars ?? args.limitChars)) return [both];
+		return [build([caller], callee), build([callee], caller)];
+	};
 	return {
 		obligationCall,
 		reduceCall,
 		noteCapChars: Math.floor(args.limitChars / 4),
 		notesFrom: chunkNotesFrom,
-		validate: (answer, call) => obligationReasons(answer, call, args.material()),
+		validate: (answer, call) => [...obligationReasons(answer, call, args.material()), ...relationReasons(answer, call, args.material())],
+		...(chunk.relation !== undefined ? { relationCall } : {}),
 		partOf: (g: GatherAnswer): DimensionResult => ({
 			dimension,
 			findings: ((g.answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] }).findings ?? []).map(f => ({ ...f, dimension })),

@@ -193,7 +193,9 @@ export class ArtifactStore {
 			operation: prior === undefined ? 'create' : 'update',
 			revision: { number: prepared.revision, contentHash: a.lifecycle.revision.contentHash },
 		};
-		validateLogEntry(entry);                          // never stage an entry the log would refuse: it would block every later write
+		// Never stage what a later read or append would refuse: it would block every later write of this artifact.
+		validateLogEntry(entry);
+		decodeArtifactHead(a.id, prepared.bytes);
 		const op: StagedOperation = { operationId, priorRevision, bytes: prepared.bytes, entry };
 
 		await this.deps.journal.stage(a.id, op);

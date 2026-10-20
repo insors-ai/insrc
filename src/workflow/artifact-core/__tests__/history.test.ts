@@ -44,6 +44,16 @@ describe('History', () => {
 		];
 		for (const [why, f] of bad) await assert.rejects(h.appendFeedback(ID, f), HistoryEntryError, why);
 		await h.appendFeedback(ID, fb('with-reply', { feedback: [fb('r2')], revision: 2, batchId: 'b', source: { system: 'github', externalId: '9', url: 'u' } }));
+		// optional log fields are validated too: addresses as a bare string would silently close nothing
+		for (const [why, bad] of [
+			['addresses a string', { addresses: 'f1' }], ['addresses a list of numbers', { addresses: [1] }],
+			['revision without a hash', { revision: { number: 1 } }], ['status without to', { status: { from: 'a' } }],
+			['outcome without a summary', { outcome: { result: 'ok' } }], ['a bad reference', { references: [{}] }],
+		] as const) await assert.rejects(h.appendLog(ID, entry('bad', bad as never)), HistoryEntryError, why);
+		await new History(createMemorySidecar()).appendLog(ID, entry('good', {
+			addresses: ['f1'], revision: { number: 1, contentHash: 'h' }, status: { from: 'draft', to: 'approved' },
+			outcome: { result: 'ok', summary: 's' }, references: [{ entityId: 'o/r#1', type: 'github:issue', relation: 'tracked-by' }],
+		}));
 		// limits are inclusive
 		await h.appendFeedback(ID, fb('ok', { anchor: { quote: 'x'.repeat(500), prefix: 'x'.repeat(40), suffix: 'x'.repeat(40), lines: [2, 2] } }));
 		await assert.rejects(h.appendFeedback('not-an-id', fb('f9')), InvalidArtifactKeyError);

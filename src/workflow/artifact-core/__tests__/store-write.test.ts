@@ -123,6 +123,14 @@ describe('ArtifactStore.write', () => {
 			await assert.rejects(k.store.write(artifact(id), { id: 'github:eve' } as never), ArtifactShapeError);
 			await assert.rejects(k.store.write(artifact(id), { id: 'github:eve', kind: 'robot', properties: {} } as never), ArtifactShapeError);
 			assert.equal(await k.journal.pending(id), undefined);
+			// a malformed lifecycle or binding is refused before staging, so a readable head is never overwritten by an unreadable one
+			const current = await k.store.read(id);
+			const before = (await k.store.readWithHistory(id)).changeLog.length;
+			await assert.rejects(k.store.write({ ...current, lifecycle: { ...current.lifecycle, status: 'nope' as never } }, alice), ArtifactShapeError);
+			await assert.rejects(k.store.write({ ...current, binding: { reference: external, createdAtRevision: 'x' as never, posted: [] } }, alice), ArtifactShapeError);
+			assert.equal(await k.journal.pending(id), undefined);
+			assert.equal((await k.store.readWithHistory(id)).changeLog.length, before);
+			assert.equal((await k.store.read(id)).lifecycle.status, current.lifecycle.status, 'the head is still readable');
 			await k.store.write(artifact(id), alice);       // and the artifact is still writable
 		} finally { k.done(); }
 	});

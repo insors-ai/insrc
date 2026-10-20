@@ -10,7 +10,7 @@
  */
 
 import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
-import { isActor } from './decode.js';
+import { isActor, isReference } from './decode.js';
 import { HistoryEntryError, HistoryReadError } from './types.js';
 import type { ChangeLogEntry, Feedback, Operation } from './types.js';
 import type { SidecarIo, SidecarFile } from './sidecar.js';
@@ -48,6 +48,13 @@ export function validateLogEntry(e: ChangeLogEntry): void {
 	if (!(OPERATIONS as readonly unknown[]).includes(e.operation)) {
 		throw new HistoryEntryError(`change log entry ${e.id} names an unknown operation '${String(e.operation)}'`);
 	}
+	const bad = (field: string): never => { throw new HistoryEntryError(`change log entry ${e.id}: ${field} is malformed`); };
+	const text = (v: unknown): boolean => typeof v === 'string';
+	if (e.revision !== undefined && !(isObject(e.revision) && Number.isInteger(e.revision.number) && text(e.revision.contentHash))) bad('revision');
+	if (e.status !== undefined && !(isObject(e.status) && text(e.status.from) && text(e.status.to))) bad('status');
+	if (e.outcome !== undefined && !(isObject(e.outcome) && text(e.outcome.result) && text(e.outcome.summary))) bad('outcome');
+	if (e.references !== undefined && !(Array.isArray(e.references) && e.references.every(isReference))) bad('references');
+	if (e.addresses !== undefined && e.addresses !== 'all' && !(Array.isArray(e.addresses) && e.addresses.every(text))) bad('addresses');
 }
 
 function validateFeedback(f: Feedback): void {

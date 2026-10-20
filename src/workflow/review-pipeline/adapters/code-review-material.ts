@@ -68,3 +68,26 @@ export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMateri
 	}
 	return { atoms, relations, obligations: [] };
 }
+
+/** The longest first signature line a neighbour summary carries. */
+export const NEIGHBOUR_SIGNATURE_CHARS = 200;
+
+/**
+ * One deterministic line, with no model call, describing a changed symbol held
+ * in another chunk: `<kind> <name> in <file>: <first signature line, at most 200
+ * characters>; calls: <related changed callees>; called by: <related changed
+ * callers>`. Only this line is shortened: the symbol itself is reviewed whole in
+ * the chunk that holds it. The related names are those of the material's 'calls'
+ * relations, so only changed symbols are named; 'none' when there are none.
+ */
+export function neighbourSummary(atom: ReviewAtom, material: ReviewMaterial): string {
+	const row = JSON.parse(atom.text) as { kind: string; name: string; file: string; signature: string };
+	const nameOf = new Map(material.atoms.map(a => [a.id, (JSON.parse(a.text) as { name: string }).name] as const));
+	const names = (ids: readonly string[]): string => {
+		const unique = [...new Set(ids.map(id => nameOf.get(id)).filter((n): n is string => n !== undefined))];
+		return unique.length === 0 ? 'none' : unique.join(', ');
+	};
+	const calls = material.relations.filter(r => r.kind === 'calls');
+	const firstLine = (row.signature.split('\n')[0] ?? '').slice(0, NEIGHBOUR_SIGNATURE_CHARS);
+	return `${row.kind} ${row.name} in ${row.file}: ${firstLine}; calls: ${names(calls.filter(r => r.from === atom.id).map(r => r.to))}; called by: ${names(calls.filter(r => r.to === atom.id).map(r => r.from))}`;
+}

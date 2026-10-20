@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import type { ChangedSymbolSummary, CodeReviewGrounding } from '../../code-review/types.js';
-import { codeReviewMaterial } from '../adapters/code-review-material.js';
+import { codeReviewMaterial, neighbourSummary } from '../adapters/code-review-material.js';
 
 const row = (entityId: string, file: string, name: string, callees: string[] = [], callers: string[] = [], kind = 'function'): ChangedSymbolSummary =>
 	({ entityId, file, kind, name, signature: `${name}()`, callers, callees, testsReaching: [] });
@@ -82,10 +82,36 @@ test('the same grounding gives identical material and identical neighbour summar
 		row('a', 'src/p/a.ts', 'a', ['b', 'c']), row('b', 'src/p/a.ts', 'b', [], ['a']), row('c', 'src/q/c.ts', 'c'), row('d', 'src/p/d.ts', 'd'),
 	);
 	const first = codeReviewMaterial(make());
-	for (let i = 0; i < 5; i++) assert.deepEqual(codeReviewMaterial(make()), first, 'same atoms, same relations, same order');
+	const summaries = (m: ReturnType<typeof codeReviewMaterial>): string[] => m.atoms.map(a => neighbourSummary(a, m));
+	const firstSummaries = summaries(first);
+	for (let i = 0; i < 5; i++) {
+		const again = codeReviewMaterial(make());
+		assert.deepEqual(again, first, 'same atoms, same relations, same order');
+		assert.deepEqual(summaries(again), firstSummaries, 'same neighbour summaries');
+	}
+	assert.equal(firstSummaries[0], 'function a in src/p/a.ts: a(); calls: b, c; called by: none');
 	// Built from the grounding alone: the input is not changed.
 	const g = make();
 	const before = JSON.stringify(g);
 	codeReviewMaterial(g);
 	assert.equal(JSON.stringify(g), before);
+});
+
+test('a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names', () => {
+	const long = `${'x'.repeat(250)}\nsecond line`;
+	const g = grounding(
+		{ ...row('m', 'src/svc/main.ts', 'main', ['helper', 'unchangedLib', 'twin']), kind: 'method', signature: long },
+		{ ...row('h', 'src/svc/helper.ts', 'helper', [], ['main', 'outsider']), signature: 'helper()\n  // the body is not part of the line' },
+		row('t1', 'src/a/twin.ts', 'twin'),
+		row('t2', 'src/b/twin.ts', 'twin'),
+		row('c', 'src/svc/caller.ts', 'caller', ['main']),
+	);
+	const m = codeReviewMaterial(g);
+	const of = (id: string): string => neighbourSummary(m.atoms.find(a => a.id === id)!, m);
+	// Kind, name, file; the first signature line cut at 200; only changed related names (unchangedLib and outsider are not).
+	assert.equal(of('m'), `method main in src/svc/main.ts: ${'x'.repeat(200)}; calls: helper, twin; called by: caller`);
+	assert.equal(of('h'), 'function helper in src/svc/helper.ts: helper(); calls: none; called by: main');
+	assert.equal(of('t1'), 'function twin in src/a/twin.ts: twin(); calls: none; called by: main');
+	// The atom itself is never shortened: only its summary line is.
+	assert.ok(m.atoms.find(a => a.id === 'm')!.text.includes('second line'));
 });

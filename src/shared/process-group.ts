@@ -30,6 +30,8 @@ export interface ProcessGroupResult {
 	readonly timedOut:   boolean;
 	/** True when the stall watchdog fired and the group was killed. */
 	readonly stalled?:   boolean | undefined;
+	/** True when `opts.signal` fired: the group was killed (or never spawned). */
+	readonly aborted?:   boolean | undefined;
 	readonly durationMs: number;
 	/** Present when the command could not be spawned (e.g. ENOENT). */
 	readonly spawnError?: string | undefined;
@@ -47,6 +49,9 @@ export interface ProcessGroupOpts {
 	 * the result says `stalled`. ISSUE-d4b2cd1c.
 	 */
 	readonly stall?:    { readonly ms: number; readonly started: (stdout: string) => boolean } | undefined;
+	/** Cancels the run: the group is killed as on timeout and the result says
+	 *  `aborted`. An already-aborted signal spawns nothing. Epic 8315a11f s1. */
+	readonly signal?:   AbortSignal | undefined;
 }
 
 const GROUPS = process.platform !== 'win32';
@@ -64,19 +69,26 @@ export function killProcessGroup(pid: number): void {
 export function runInProcessGroup(command: string, args: readonly string[], opts: ProcessGroupOpts): Promise<ProcessGroupResult> {
 	return new Promise(resolve => {
 		const start = Date.now();
+		if (opts.signal?.aborted === true) {
+			resolve({ stdout: '', stderr: '', exitCode: -1, timedOut: false, durationMs: 0, aborted: true });
+			return;
+		}
 		let stdout = '';
 		let stderr = '';
 		let timedOut = false;
 		let stalled = false;
+		let aborted = false;
 		let settled = false;
 		const finish = (exitCode: number, spawnError?: string): void => {
 			if (settled) return;
 			settled = true;
 			clearTimeout(timer);
 			if (stallTimer !== undefined) clearTimeout(stallTimer);
+			opts.signal?.removeEventListener('abort', onAbort);
 			resolve({
 				stdout, stderr, exitCode, timedOut, durationMs: Date.now() - start,
 				...(stalled ? { stalled } : {}),
+				...(aborted ? { aborted } : {}),
 				...(spawnError !== undefined ? { spawnError } : {}),
 			});
 		};
@@ -96,6 +108,9 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 		const stallTimer = stall !== undefined && stall.ms < opts.timeoutMs
 			? setTimeout(() => { if (!stall.started(stdout)) { stalled = true; kill(); } }, stall.ms)
 			: undefined;
+
+		const onAbort = (): void => { aborted = true; kill(); };
+		opts.signal?.addEventListener('abort', onAbort, { once: true });
 
 		child.stdout.on('data', (c: Buffer) => { stdout += c.toString(); });
 		child.stderr.on('data', (c: Buffer) => { stderr += c.toString(); });

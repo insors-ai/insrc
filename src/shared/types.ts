@@ -98,6 +98,9 @@ export interface CompletionOpts {
    * CLI inherits the daemon's working directory. Ignored by `OllamaProvider`.
    */
   cwd?: string | undefined;
+  /** Cancels the call, including one already running: the CLI's process group is
+   *  killed or the Ollama request aborted, and the call throws AbortError. */
+  signal?: AbortSignal | undefined;
   /**
    * Strict-output hint. Three forms:
    *

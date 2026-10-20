@@ -165,6 +165,8 @@ export class OllamaProvider implements LLMProvider {
     embeddings:       true,
   };
   private readonly client: Ollama;
+  /** Builds a client whose requests carry `signal` (Epic 8315a11f s1); see {@link clientFor}. */
+  private readonly signalledClient: (signal: AbortSignal) => Ollama;
   private readonly model: string;
   /**
    * Effective Ollama `num_ctx` for this provider. Callers that decide
@@ -211,6 +213,21 @@ export class OllamaProvider implements LLMProvider {
     const longTimeoutFetch = ((input: any, init?: any) =>
       undiciFetch(input, { ...init, dispatcher: agent })) as unknown as typeof globalThis.fetch;
     this.client = new Ollama({ host, fetch: longTimeoutFetch });
+    // A cancellable call gets its own client over the SAME agent, whose fetch
+    // carries the call's signal, so aborting ends that request (and its stream).
+    this.signalledClient = (signal: AbortSignal) => new Ollama({
+      host,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fetch: ((input: any, init?: any) => undiciFetch(input, { ...init, dispatcher: agent, signal })) as unknown as typeof globalThis.fetch,
+    });
+  }
+
+  /** The client for one call: the shared one, or, when the call can be cancelled,
+   *  one whose requests carry its signal. An already-aborted signal throws at once. */
+  private clientFor(signal: AbortSignal | undefined): Ollama {
+    if (signal === undefined) return this.client;
+    if (signal.aborted) throw abortError();
+    return this.signalledClient(signal);
   }
 
   async ping(): Promise<boolean> {
@@ -396,7 +413,7 @@ export class OllamaProvider implements LLMProvider {
     // maps to OpenAI-shape; whether the local model actually honors
     // it is per-family (no enforcement guarantees).
     const ollamaToolChoice = toOllamaToolChoice(opts.toolChoice, tools);
-    const response = await this.client.chat({
+    const response = await this.clientFor(opts.signal).chat({
       model: this.model,
       messages: ollamaMessages,
       ...(tools ? { tools } : {}),
@@ -559,7 +576,7 @@ export class OllamaProvider implements LLMProvider {
           // 'length' the num_predict cap cut the model off mid-JSON
           // and we surface a distinct 'response-truncated' error the
           // retry-loop feedback names explicitly (ISSUES.md I-003).
-          const response = await this.client.chat({
+          const response = await this.clientFor(opts?.signal).chat({
             model:    this.model,
             messages: msgs,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -756,6 +773,13 @@ function toOllamaToolChoice(
     return { type: 'function', function: { name: toolChoice.name } };
   }
   return toolChoice;
+}
+
+/** The error a call cancelled before it started throws. */
+function abortError(): Error {
+  const err = new Error('the call was cancelled');
+  err.name = 'AbortError';
+  return err;
 }
 
 /** The error a cancelled request raises (fetch's DOMException, the Ollama client's own AbortError). */

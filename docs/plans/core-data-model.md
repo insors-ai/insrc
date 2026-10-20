@@ -267,3 +267,14 @@ Binding build requirements for s1 still to be recorded when the LLD is approved:
 2. **The codec creation context is defined**: its type, its provider, and how each kind obtains `workflow`, `runId`, `repoPath`, `createdAt`, `elapsedMs`, `repoIndexedAt` and `schemaVersion` when no prior head exists. Test: a create without a prior head.
 3. **AMD-7 is resolved** (approved or rejected by the owner) before the s2 plan is written.
 4. s9 inputs from this LLD: convert the 53 flat amendment files; add `meta.envelope` and `meta.lifecycle` to every head; turn `body.feedback` into sidecar lines through the legacy conversion (absent kind becomes comment, author becomes `unknown:<author>`, unmapped `target.version` is reported); set the marker to version 2.
+
+## s2 build: s9 conversion inputs (2026-10-21)
+
+The common artifact model (s2) reads and writes the new shapes but converts nothing. These four inputs are left for the s9 conversion:
+
+1. **Flat amendments.** The 53 `AMD-…` files are flat records with no `meta` and `body`. The decoder and the AMD codec refuse them with a pointer to this conversion; s9 turns each into a `{ meta, body, citations }` head. `approveAmendment` and the other amendment functions keep working on the flat shape until then.
+2. **Envelope and lifecycle back-fill.** Every stored head gets `meta.envelope` (description, parent, references, binding, attachments) and `meta.lifecycle`. A head without them already decodes with empty parts (draft, revision from `meta.revision`), so this can run per file. A head that has `meta` but no `body` object is refused by the shared decoder and by the four gates readers.
+3. **Feedback conversion.** `body.feedback` becomes sidecar lines through `convertLegacyFeedback` (src/workflow/artifact-core/feedback-convert.ts) and the decision of each batch becomes the outcome of a change log entry through `legacyBatchOutcomes`. The result reports every unmapped `target.version` and foreign `target.file`; s9 prints that report and never drops a value silently.
+4. **Version marker.** After converting, s9 writes `.insrc/schema.json` as `{ "version": 2, "convertedAt": … }`. `RepoSchemaGate.require(repo, 2)` is how the new tools refuse an unconverted repository.
+
+Left to other Stories: the durable `WriteJournal` and the sidecar file layout, ordering and de-duplication (s4, against the `WriteJournal` and `SidecarIo` ports defined here); the lifecycle rules (s3); the tracker binding (s6); Task artifacts (s7). The question whether the `WriteJournal` port and the `prefix`/`suffix` anchor extension need HLD amendments (sbdry3) is still deferred to the owner.

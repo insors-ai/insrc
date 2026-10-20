@@ -29,9 +29,10 @@ describe('ArtifactStore read side', () => {
 			const sidecar = createMemorySidecar();
 			const history = new History(sidecar);
 			const ref: Reference = { entityId: 'o/r#9', type: 'github:issue', relation: 'tracked-by' };
+			const story: Reference = { entityId: `STORY-${H}-s1`, type: 'STORY', relation: 'derived-from' };
 			const lifecycle: Lifecycle = { status: 'approved', revision: { number: 2, contentHash: 'h', at: 't', by: actor }, signoffs: [] };
 			r.put(LLD, {
-				meta: { workflow: 'design.story', revision: 2, lifecycle, envelope: { description: 'the LLD', references: [ref], attachments: [] } },
+				meta: { workflow: 'design.story', revision: 2, lifecycle, envelope: { description: 'the LLD', parent: story, references: [ref], attachments: [] } },
 				body: { x: 1 }, citations: [],
 			});
 			const entry: ChangeLogEntry = { id: 'e1', actor, timestamp: '2026-10-20T10:00:00Z', operation: 'create', revision: { number: 1, contentHash: 'h' } };
@@ -43,6 +44,7 @@ describe('ArtifactStore read side', () => {
 			const a = await store.readWithHistory(LLD);
 			assert.equal(a.id, LLD);
 			assert.equal(a.description, 'the LLD');
+			assert.deepEqual(a.parent, story);
 			assert.deepEqual(a.references, [ref]);
 			assert.deepEqual(a.lifecycle, lifecycle);
 			assert.deepEqual(a.payload, { body: { x: 1 }, citations: [] });

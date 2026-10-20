@@ -113,7 +113,8 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, resolveEpicAnchor, scopeAnalyzeCachePath, stampRootAnchor, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
+import { MissingAnchorError } from './artifact-ids.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, requireEpicAnchor, resolveEpicAnchor, scopeAnalyzeCachePath, stampRootAnchor, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
 import { basename, dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
@@ -449,6 +450,8 @@ async function finalizeByWorkflow(
 				throw new Error(`finalizeArtifact: workflow '${intent.workflow}' not yet supported`);
 		}
 	} catch (err) {
+		// No Epic anchor: nothing to retry, the work item cannot place its records.
+		if (err instanceof MissingAnchorError) return { ok: false, failure: { ok: false, kind: 'schema', message: err.message, retryable: false } };
 		// A structural check or renderer threw — almost always because the
 		// LLM body slipped past the shape guard with a missing/mistyped nested
 		// field (e.g. an array left undefined). Convert it to a RETRYABLE
@@ -1374,7 +1377,7 @@ function finalizeDefineExtend(
 			createdAt:     new Date().toISOString(),
 			// Work-item folder anchor (sc2): an extend Story belongs to the parent
 			// Epic, so its folder is keyed on the Epic's define createdAt.
-			epicCreatedAt: resolveEpicAnchor(intent.repoPath, epicHash) ?? new Date().toISOString(),
+			epicCreatedAt: requireEpicAnchor(intent.repoPath, epicHash),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -1849,7 +1852,7 @@ async function finalizeDesignEpic(
 		createdAt:     nowISO,
 		// Work-item folder anchor (sc2): keyed on the Epic's define createdAt so
 		// the HLD lands in the same folder as its DEF.
-		epicCreatedAt: resolveEpicAnchor(intent.repoPath, epicHash) ?? nowISO,
+		epicCreatedAt: requireEpicAnchor(intent.repoPath, epicHash),
 		attribution:   attribution ?? singleModelAttribution(model),
 		elapsedMs,
 		repoIndexedAt: intent.repoIndexedAt,
@@ -2229,7 +2232,7 @@ async function finalizeDesignStory(
 		schemaVersion: LLD_SCHEMA_VERSION,
 		// Work-item folder anchor (sc2): an Epic Story's LLD is keyed on the
 		// Epic's define createdAt so it lands in the Story's folder.
-		epicCreatedAt:        resolveEpicAnchor(intent.repoPath, epicHash) ?? nowISO,
+		epicCreatedAt:        requireEpicAnchor(intent.repoPath, epicHash),
 		epicHash,
 		epicSlug,
 		storyId,
@@ -2690,7 +2693,7 @@ function finalizePlan(
 			createdAt:     new Date().toISOString(),
 			// Work-item folder anchor (sc2): a plan belongs to an Epic Story, keyed
 			// on the Epic's define createdAt so it lands in the Story's folder.
-			epicCreatedAt: resolveEpicAnchor(intent.repoPath, epicHash) ?? new Date().toISOString(),
+			epicCreatedAt: requireEpicAnchor(intent.repoPath, epicHash),
 			...(standaloneFlag === true ? { standalone: true } : {}),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,

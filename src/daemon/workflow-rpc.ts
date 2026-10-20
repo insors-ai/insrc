@@ -331,8 +331,8 @@ export async function runWorkflowServerSide(
 	const storyIdParam = typeof intent.params['storyId'] === 'string' ? intent.params['storyId'] as string : undefined;
 	const paths = pathsForWorkflow({
 		workflow: intent.workflow, repoPath: intent.repoPath, epicKey, runId,
-		// Work-item folder anchor (sc2): meta.epicCreatedAt when stamped, else own.
-		createdAtISO: meta.epicCreatedAt ?? meta.createdAt ?? new Date().toISOString(),
+		// The work-item folder anchor (sc2): the stamp the finalizer wrote, never the artifact's own time.
+		epicCreatedAt: meta.epicCreatedAt,
 		epicHash: meta.epicHash, epicSlug: meta.epicSlug, specHash: meta.specHash,
 		issueHash: meta.issueHash,
 		storyId: meta.storyId, storyIdParam, standalone: meta.standalone,

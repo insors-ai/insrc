@@ -34,7 +34,8 @@ import { renderDefineMarkdown, type DefineArtifact } from './artifacts/define.js
 import { renderHldMarkdown } from './artifacts/hld.js';
 import { renderLldMarkdown } from './artifacts/lld.js';
 import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactId, lldArtifactPaths, resolveEpicAnchor, writeAtomic } from './storage.js';
+import { MissingAnchorError } from './artifact-ids.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactId, lldArtifactPaths, requireEpicAnchor, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
 import { GhCommandError, ghAuthOk } from './tracker/github.js';
 import { createGithubTracker } from './tracker/github-adapter.js';
@@ -103,6 +104,16 @@ function gate(repoPath: string): { cfg: Extract<ResolvedGithubConfig, { type: 'g
 // HLD → Epic issue
 // ---------------------------------------------------------------------------
 
+/** The Epic's anchor, or the failed result a push returns before it calls GitHub or writes a file. */
+function anchorOrFailed(repoPath: string, epicHash: string): { readonly anchor: string } | { readonly failed: AutoPushResult } {
+	try {
+		return { anchor: requireEpicAnchor(repoPath, epicHash) };
+	} catch (err) {
+		if (err instanceof MissingAnchorError) return { failed: { status: 'failed', reason: err.message } };
+		throw err;
+	}
+}
+
 function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	const meta = readMeta(hldJsonPath);
 	if (typeof meta.tracker?.epicRef === 'string' && meta.tracker.epicRef.length > 0) {
@@ -122,6 +133,9 @@ function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	let define: DefineArtifact;
 	try { define = readDefineArtifact(repoPath, epicHash); }
 	catch (err) { return { status: 'failed', reason: `cannot read parent Define: ${(err as Error).message}` }; }
+	const anchored = anchorOrFailed(repoPath, epicHash);
+	if ('failed' in anchored) return anchored.failed;
+	const anchor = anchored.anchor;
 
 	// Duplicate guard: adopt an existing Epic issue (unique by epic +
 	// epic-membership labels) rather than creating a second one.
@@ -153,8 +167,7 @@ function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	// Persist the ref (firm): on the HLD (its own doc link) and on the
 	// Define (the Epic-level aggregate the chain report + LLD flow read).
 	const now = new Date().toISOString();
-	// Epic docs — keyed on the Epic's define createdAt anchor (sc2), all 'epic'.
-	const anchor = resolveEpicAnchor(repoPath, epicHash) ?? now;
+	// Epic docs — keyed on the Epic's anchor (resolved above, before anything was created), all 'epic'.
 	patchTrackerMeta(hldJsonPath, { epicRef, pushedAt: now, ...(created.length > 0 ? { labelsCreated: created } : {}) });
 	const definePaths = defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug);
 	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
@@ -193,6 +206,9 @@ function legacyPushStory(lldJsonPath: string): AutoPushResult {
 	catch (err) { return { status: 'failed', reason: `cannot read parent Define: ${(err as Error).message}` }; }
 	const story = define.body.stories.find(s => s.id === storyId);
 	if (story === undefined) return { status: 'failed', reason: `Story '${storyId}' not present in Define body` };
+	const anchored = anchorOrFailed(repoPath, epicHash);
+	if ('failed' in anchored) return anchored.failed;
+	const storyAnchor = anchored.anchor;
 
 	// The Define carries the Epic-level aggregate (epicRef + storyRefs),
 	// written when the HLD was approved. It must have the Epic ref first.
@@ -231,7 +247,6 @@ function legacyPushStory(lldJsonPath: string): AutoPushResult {
 	// Persist: storyRef on the LLD (its doc link) + aggregate into the
 	// Define's storyRefs map. Re-render the LLD doc with the issue link.
 	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
-	const storyAnchor = resolveEpicAnchor(repoPath, epicHash) ?? new Date().toISOString();
 	relink(lldArtifactPaths(repoPath, epicHash, storyId, storyAnchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
 	patchTrackerMeta(artifactJsonPath(repoPath, defineArtifactId(epicHash)), { storyRefs: { ...(defineTracker?.storyRefs ?? {}), [storyId]: storyRef } });
 
@@ -446,13 +461,16 @@ function teamPushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps):
 	if ('skip' in g) return g.skip;
 	const { cfg, port } = g;
 	const unit: UnitRef = { unit: 'epic', repoPath, epicHash };
+	// The folder anchor first: a work item with none fails before an issue is created.
+	const anchored = anchorOrFailed(repoPath, epicHash);
+	if ('failed' in anchored) return anchored.failed;
+	const anchor = anchored.anchor;
 
 	const ensured = ensureUnitIssueDetailed(unit, port);
 	if (!ensured.ok) return failedResult(`the Epic issue could not be ensured: ${ensured.reason}`);
 	const epicRef = ensured.value.issue;
 
 	const now = new Date().toISOString();
-	const anchor = resolveEpicAnchor(repoPath, epicHash) ?? now;
 	patchTrackerMeta(hldJsonPath, { epicRef, pushedAt: now });
 	const definePaths = defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug);
 	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
@@ -482,6 +500,9 @@ function teamPushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps)
 	catch (err) { return failedResult(`cannot read parent Define: ${(err as Error).message}`); }
 	const story = define.body.stories.find(s => s.id === storyId);
 	if (story === undefined) return failedResult(`Story '${storyId}' not present in Define body`);
+	const anchored = anchorOrFailed(repoPath, epicHash);
+	if ('failed' in anchored) return anchored.failed;
+	const anchor = anchored.anchor;
 
 	const epic = ensureUnitIssueDetailed({ unit: 'epic', repoPath, epicHash }, port);
 	if (!epic.ok) return failedResult(`the Epic issue could not be ensured: ${epic.reason}`);
@@ -492,7 +513,6 @@ function teamPushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps)
 	const storyRef = ensured.value.issue;
 
 	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
-	const anchor = resolveEpicAnchor(repoPath, epicHash) ?? new Date().toISOString();
 	relink(lldArtifactPaths(repoPath, epicHash, storyId, anchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
 
 	const ops = port.issueOps;

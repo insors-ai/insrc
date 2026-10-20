@@ -394,6 +394,23 @@ export function resolveEpicAnchor(repoPath: string, epicHash: string): string | 
 }
 
 /**
+ * The Epic's creation time for a producer that cannot proceed without it: the same resolution as
+ * {@link resolveEpicAnchor}, but a work item with no anchor raises {@link MissingAnchorError} instead of
+ * returning `undefined`, so the caller fails before it writes a file or calls out.
+ *
+ * @throws {MissingAnchorError} when the work item's head carries no usable time.
+ */
+export function requireEpicAnchor(repoPath: string, epicHash: string): string {
+	const anchor = resolveEpicAnchor(repoPath, epicHash);
+	if (anchor === undefined) {
+		throw new MissingAnchorError(
+			`no Epic anchor for ${epicHash}: its head (a Define, an Issue or a stamped standalone LLD) carries no creation time`,
+		);
+	}
+	return anchor;
+}
+
+/**
  * The `meta.epicCreatedAt` a ROOT producer stores: the anchor that already exists
  * for the work item, else the root record's own creation time (it is the first
  * record, so its clock is the Epic's). Called only by the root producers
@@ -1004,7 +1021,7 @@ export function pathsForWorkflow(args: {
 	readonly repoPath:      string;
 	readonly epicKey:       string;
 	readonly runId:         string;
-	readonly createdAtISO:  string;                // from finalized meta.createdAt — supplies the E<date> folder segment
+	readonly epicCreatedAt?: string | undefined;  // from finalized meta.epicCreatedAt — supplies the E<date> folder segment
 	readonly epicHash?:     string | undefined;
 	readonly epicSlug?:     string | undefined;
 	readonly specHash?:     string | undefined;   // from finalized meta (brainstorm)
@@ -1013,11 +1030,13 @@ export function pathsForWorkflow(args: {
 	readonly storyIdParam?: string | undefined;   // from intent.params
 	readonly standalone?:   boolean | undefined;  // from finalized meta — triage-routed feature (no Epic parent)
 }): { readonly md: string; readonly json: string } {
-	const { workflow, repoPath, epicKey, runId, createdAtISO, epicHash, epicSlug, specHash, issueHash, storyId, storyIdParam, standalone } = args;
+	const { workflow, repoPath, epicKey, runId, epicCreatedAt, epicHash, epicSlug, specHash, issueHash, storyId, storyIdParam, standalone } = args;
 	// Epic-parented vs triage-routed standalone selects the docs/epics vs
 	// docs/standalone top-level (sc2). A brainstorm spec precedes the Epic chain,
 	// so it is always a standalone work item.
 	const workItemKind: WorkItemKind = standalone === true ? 'standalone' : 'epic';
+	// The folder date is the Epic's stamp and nothing else; a workflow that needs it and has none fails here, before any file.
+	const anchor = (): string => workItemAnchorCreatedAt({ epicCreatedAt });
 	if (workflow === 'stub') return stubArtifactPaths(repoPath, epicKey);
 	// A brainstorm SpecArtifact is NOT Epic-scoped — it is keyed by its own
 	// run-derived specHash (S006/sc1). Routed before the epicHash guard.
@@ -1025,7 +1044,7 @@ export function pathsForWorkflow(args: {
 		if (specHash === undefined) {
 			throw new Error(`pathsForWorkflow: workflow 'brainstorm' finalized without meta.specHash`);
 		}
-		return specArtifactPaths(repoPath, specHash, createdAtISO, 'standalone', epicSlug);
+		return specArtifactPaths(repoPath, specHash, anchor(), 'standalone', epicSlug);
 	}
 	// A bugfix IssueArtifact (sc2 / S002) is keyed by its own run-derived
 	// issueHash — like a SPEC it heads the flow and is its own work item.
@@ -1034,7 +1053,7 @@ export function pathsForWorkflow(args: {
 		if (issueHash === undefined) {
 			throw new Error(`pathsForWorkflow: workflow 'issue' finalized without meta.issueHash`);
 		}
-		return issueArtifactPaths(repoPath, issueHash, createdAtISO, workItemKind, epicSlug);
+		return issueArtifactPaths(repoPath, issueHash, anchor(), workItemKind, epicSlug);
 	}
 	if (epicHash === undefined) {
 		throw new Error(`pathsForWorkflow: workflow '${workflow}' finalized without meta.epicHash`);
@@ -1043,30 +1062,30 @@ export function pathsForWorkflow(args: {
 		// The `define` extend branch emits an ExtendArtifact (meta carries a
 		// storyId) → route to EXT-*, not DEF-*.
 		if (typeof storyId === 'string' && storyId.length > 0) {
-			return extendArtifactPaths(repoPath, epicHash, storyId, createdAtISO, workItemKind, epicSlug);
+			return extendArtifactPaths(repoPath, epicHash, storyId, anchor(), workItemKind, epicSlug);
 		}
-		return defineArtifactPaths(repoPath, epicHash, createdAtISO, workItemKind, epicSlug);
+		return defineArtifactPaths(repoPath, epicHash, anchor(), workItemKind, epicSlug);
 	}
-	if (workflow === 'design.epic') return hldArtifactPaths(repoPath, epicHash, createdAtISO, workItemKind, epicSlug);
+	if (workflow === 'design.epic') return hldArtifactPaths(repoPath, epicHash, anchor(), workItemKind, epicSlug);
 	if (workflow === 'design.story') {
 		if (typeof storyIdParam !== 'string' || storyIdParam.length === 0) {
 			throw new Error(`design.story synthesize requires params.storyId`);
 		}
-		return lldArtifactPaths(repoPath, epicHash, storyIdParam, createdAtISO, workItemKind, epicSlug);
+		return lldArtifactPaths(repoPath, epicHash, storyIdParam, anchor(), workItemKind, epicSlug);
 	}
 	if (workflow === 'plan') {
 		const sid = storyId ?? storyIdParam;
 		if (typeof sid !== 'string' || sid.length === 0) {
 			throw new Error(`plan synthesize requires params.storyId`);
 		}
-		return planArtifactPaths(repoPath, epicHash, sid, createdAtISO, workItemKind, epicSlug);
+		return planArtifactPaths(repoPath, epicHash, sid, anchor(), workItemKind, epicSlug);
 	}
 	if (workflow === 'build') {
 		const sid = storyId ?? storyIdParam;
 		if (typeof sid !== 'string' || sid.length === 0) {
 			throw new Error(`build synthesize requires params.storyId`);
 		}
-		return buildArtifactPaths(repoPath, epicHash, sid, createdAtISO, workItemKind, epicSlug);
+		return buildArtifactPaths(repoPath, epicHash, sid, anchor(), workItemKind, epicSlug);
 	}
 	if (workflow === 'tracker.push' || workflow === 'tracker.sync' || workflow === 'tracker.post') {
 		const dir = runsDirFor(epicHash);

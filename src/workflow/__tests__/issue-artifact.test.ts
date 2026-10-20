@@ -129,13 +129,13 @@ test('ArtifactKind: ISSUE is an item-root singleton (NOT story-scoped); existing
 test('pathsForWorkflow: workflow "issue" routes to the ISSUE.md/json keyed by meta.issueHash', () => {
 	const paths = pathsForWorkflow({
 		workflow: 'issue', repoPath: '/tmp/repo', epicKey: ISSUE_HASH, runId: 'wf-issue-run',
-		createdAtISO: ISSUE_CREATED, issueHash: ISSUE_HASH, epicSlug: 'pager-off-by-one', standalone: true,
+		epicCreatedAt: ISSUE_CREATED, issueHash: ISSUE_HASH, epicSlug: 'pager-off-by-one', standalone: true,
 	});
 	assert.equal(paths.json, '/tmp/repo/.insrc/artifacts/ISSUE-abcd1234ef567890.json');
 	assert.match(paths.md, /\/docs\/standalone\/pager-off-by-one-E[0-9a-z]+\/ISSUE\.md$/);
 	// Without a specHash-style issueHash, it fails loudly (never mis-routes).
 	assert.throws(
-		() => pathsForWorkflow({ workflow: 'issue', repoPath: '/tmp/repo', epicKey: 'k', runId: 'r', createdAtISO: ISSUE_CREATED }),
+		() => pathsForWorkflow({ workflow: 'issue', repoPath: '/tmp/repo', epicKey: 'k', runId: 'r', epicCreatedAt: ISSUE_CREATED }),
 		/finalized without meta\.issueHash/,
 	);
 });

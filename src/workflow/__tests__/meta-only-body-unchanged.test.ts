@@ -97,7 +97,7 @@ test('every meta-only writer leaves the body byte-identical and the revision unc
 
 	// orchestrator tracker push and sync (Define)
 	{
-		const doc: Doc = { meta: { workflow: 'define', epicSlug: 'tag-filtering', revision: 7 }, body: { stories: [] }, citations: [] };
+		const doc: Doc = { meta: { workflow: 'define', epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, revision: 7 }, body: { stories: [] }, citations: [] };
 		const fx = repoWith(defineArtifactId(HASH), doc);
 		try {
 			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.push', { epicRef: 'o/r#1', storyRefs: { s1: 'o/r#2' }, labelsCreated: ['l'] } as never);

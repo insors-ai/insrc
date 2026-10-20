@@ -76,9 +76,8 @@ export async function handleSynthesize(
 	const paths = pathsForWorkflow({
 		workflow: state.intent.workflow, repoPath: state.intent.repoPath,
 		epicKey: state.epicKey, runId: state.runId,
-		// The work-item folder anchor (sc2): meta.epicCreatedAt when stamped, else
-		// this artifact's own createdAt.
-		createdAtISO: finalizedMeta.epicCreatedAt ?? finalizedMeta.createdAt ?? new Date().toISOString(),
+		// The work-item folder anchor (sc2): the stamp the finalizer wrote, never the artifact's own time.
+		epicCreatedAt: finalizedMeta.epicCreatedAt,
 		epicHash: finalizedMeta.epicHash, epicSlug: finalizedMeta.epicSlug,
 		specHash: finalizedMeta.specHash,
 		issueHash: finalizedMeta.issueHash,

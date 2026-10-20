@@ -15,6 +15,7 @@ Building this Story gives every model-judged code-review dimension a divided pat
 1. [Tasks](#1-tasks)
 2. [Test-strategy coverage](#2-test-strategy-coverage)
 3. [References](#3-references)
+4. [Feedback](#4-feedback)
 
 ## 1. Tasks
 
@@ -46,7 +47,7 @@ The 'judge' stage of adherence, functional coverage and conventions gets chunkCa
 
 **Acceptance checks:**
 - The adherence, functional-coverage and conventions chunk schemas have no findings field, so no chunk answer can record an absence finding, an obligation verdict or a conventions verdict.
-- A chunk answer with an unknown key or an atom outside its call's carries is rejected and re-issued once with a correction note, then fails the review.
+- A chunk answer with an unknown key or an atom outside its call's carries is rejected and re-issued once with a correction note, then fails the review. The reasons have a fixed size (a made-up value is located by count and position, never quoted back); when a call already fills the limit and leaves no room for the correction, it is re-issued as planned with the omission logged, as s1's approved LLD rules (src/workflow/review-pipeline/job.ts), and a second invalid answer still fails the review.
 - Every chunk call measures within the limit with its rows, neighbour lines and context atoms.
 - Under the limit s1's single path sends today's prompt and schema unchanged.
 
@@ -159,3 +160,7 @@ Rebuild and update the installed daemon (maintenance update, then restart), then
 - **[[c10]]** `prior-artifact` `LLD s3 errorPaths`
 - **[[c11]]** `prior-artifact` `LLD s3 testStrategy`
 - **[[c12]]** `prior-artifact` `LLD s3 migration`
+
+## 4. Feedback
+
+- **Subho Ghosh** (2026-10-20T18:00:07.782Z) `feedback` — `docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/PLAN.md`: Amended 2026-10-20 by the stakeholder's decision after t2's third build gate. t2's check required a correction note on every re-issue, which conflicts with s1's approved rule: prepare lets one symbol fill the hard limit, and a correction that does not fit beside such a call is left out and logged, never cut. The check now follows s1: the reasons have a fixed size (a made-up value is located by count and position, never quoted back), so the correction is sent whenever the call has room; a call that already fills the limit is re-issued as planned with the omission logged, and a second invalid answer still fails the review. Also recorded: commit 581e1d76 (a t2 fix) changed quality's description reasons to the same fixed-size form for consistency, since every chunk validator lives in one module; that part belongs to t3's surface.

@@ -62,7 +62,7 @@ function lldEmit(): Record<string, unknown> {
 	};
 }
 
-type Meta = { createdAt?: string; epicCreatedAt?: string };
+type Meta = { createdAt?: string | undefined; epicCreatedAt?: string | undefined };
 async function metaOf(i: WorkflowIntent, emit: Record<string, unknown>, runId: string): Promise<Meta> {
 	const result = await finalizeArtifact(i, {}, runId, 5, emit, 'client');
 	assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);

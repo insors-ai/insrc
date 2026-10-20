@@ -15,7 +15,11 @@ import { InvalidArtifactKeyError } from '../artifact-ids.js';
 import { codecFor, keyOf } from './codecs.js';
 import type { HeadFile, HeadPayload } from './codecs.js';
 import { ArtifactShapeError } from './types.js';
-import type { Actor, Artifact, Attachment, Lifecycle, Reference, TrackerBinding } from './types.js';
+import type { Actor, Artifact, Attachment, Lifecycle, Reference, Status, TrackerBinding } from './types.js';
+
+const STATUSES: readonly Status[] = [
+	'draft', 'pending-review', 'approved', 'in-signoff', 'changes-requested', 'signed-off', 'rejected', 'completed', 'withdrawn', 'superseded',
+];
 
 /** The actor recorded on parts the model fills in itself. */
 export const SYSTEM_ACTOR: Actor = { id: 'insrc:system', kind: 'system', properties: {} };
@@ -35,6 +39,20 @@ export function emptyLifecycle(revision: number): Lifecycle {
 	return { status: 'draft', revision: { number: revision, contentHash: '', at: '', by: SYSTEM_ACTOR }, signoffs: [] };
 }
 
+const isStr = (v: unknown): v is string => typeof v === 'string';
+const isActor = (v: unknown): boolean => isObject(v) && isStr(v['id']) && isStr(v['kind']) && isObject(v['properties']);
+const isReference = (v: unknown): boolean => isObject(v) && isStr(v['entityId']) && isStr(v['type']) && isStr(v['relation']);
+
+/** The reason a lifecycle part is malformed, or undefined when it is well formed. */
+function lifecycleProblem(v: unknown): string | undefined {
+	if (!isObject(v)) return 'is not an object';
+	if (!(STATUSES as readonly unknown[]).includes(v['status'])) return `has an unknown status '${String(v['status'])}'`;
+	const r = v['revision'];
+	if (!isObject(r) || !Number.isInteger(r['number']) || !isStr(r['contentHash']) || !isStr(r['at']) || !isActor(r['by'])) return 'has a malformed revision';
+	if (!Array.isArray(v['signoffs'])) return 'has no signoffs list';
+	return undefined;
+}
+
 export function decodeArtifactHead(id: string, raw: string): DecodedHead {
 	const key = keyOf(id);
 	if (key === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
@@ -49,20 +67,30 @@ export function decodeArtifactHead(id: string, raw: string): DecodedHead {
 			(key.kind === 'AMD' ? '; a flat amendment has to be converted first by the s9 conversion' : ''),
 		);
 	}
+	if (parsed['citations'] !== undefined && !Array.isArray(parsed['citations'])) {
+		throw new ArtifactShapeError(`the citations of ${id} are not a list`);
+	}
 	const head = parsed as unknown as HeadFile;
 	const meta = head.meta;
 
 	const envelope = meta['envelope'];
 	if (envelope !== undefined && !isObject(envelope)) throw new ArtifactShapeError(`meta.envelope of ${id} is not an object`);
 	const lifecycle = meta['lifecycle'];
-	if (lifecycle !== undefined && !(isObject(lifecycle) && typeof lifecycle['status'] === 'string' && isObject(lifecycle['revision']))) {
-		throw new ArtifactShapeError(`meta.lifecycle of ${id} is not a lifecycle`);
+	if (lifecycle !== undefined) {
+		const problem = lifecycleProblem(lifecycle);
+		if (problem !== undefined) throw new ArtifactShapeError(`meta.lifecycle of ${id} ${problem}`);
 	}
 	const references = envelope?.['references'];
 	const attachments = envelope?.['attachments'];
 	if ((references !== undefined && !Array.isArray(references)) || (attachments !== undefined && !Array.isArray(attachments))) {
 		throw new ArtifactShapeError(`meta.envelope of ${id} has references or attachments that are not lists`);
 	}
+	if (Array.isArray(references) && !references.every(isReference)) throw new ArtifactShapeError(`meta.envelope of ${id} has a reference without an entityId, type and relation`);
+	if (Array.isArray(attachments) && !attachments.every(a => isObject(a) && isReference(a['target']))) throw new ArtifactShapeError(`meta.envelope of ${id} has an attachment without a target`);
+	const parentRef = envelope?.['parent'];
+	if (parentRef !== undefined && !isReference(parentRef)) throw new ArtifactShapeError(`meta.envelope of ${id} has a parent that is not a reference`);
+	const bindingRef = envelope?.['binding'];
+	if (bindingRef !== undefined && !(isObject(bindingRef) && isReference(bindingRef['reference']))) throw new ArtifactShapeError(`meta.envelope of ${id} has a binding without a reference`);
 	const revision = typeof meta['revision'] === 'number' && Number.isInteger(meta['revision']) && meta['revision'] >= 0 ? meta['revision'] : 0;
 	const description = envelope?.['description'];
 

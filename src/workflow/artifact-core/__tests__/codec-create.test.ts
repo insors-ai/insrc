@@ -40,7 +40,8 @@ describe('kind codecs', () => {
 			assert.equal(def.meta['schemaVersion'], 1);
 			assert.equal(workItemAnchorCreatedAt(def.meta as { epicCreatedAt?: string }), NOW.toISOString());
 			const md = renderDefineMarkdown(def as unknown as DefineArtifact);
-			assert.match(md, /Users|p/);
+			assert.equal(md, renderDefineMarkdown({ meta: def.meta, body, citations: [] } as unknown as DefineArtifact), 'the renderer reads the created head');
+			assert.ok(md.includes('\n') && md.includes('s1'), 'it renders the story');
 			// the encoded head decodes back to the same payload
 			const back = decodeArtifactHead(`DEF-${H}`, JSON.stringify(def));
 			assert.deepEqual(back.artifact.payload.body, body);

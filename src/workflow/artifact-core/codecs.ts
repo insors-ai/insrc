@@ -16,7 +16,7 @@ import { randomUUID } from 'node:crypto';
 import { ArtifactIds } from '../artifact-ids.js';
 import type { ArtifactIdKind, ArtifactKey } from '../artifact-ids.js';
 import { requireEpicAnchor, stampRootAnchor } from '../storage.js';
-import { UnknownArtifactKindError } from './types.js';
+import { ArtifactShapeError, UnknownArtifactKindError } from './types.js';
 
 /** The stored head, as `writeArtifact` and every raw reader see it. */
 export interface HeadFile {
@@ -83,7 +83,13 @@ function codec(kind: ArtifactIdKind, workflow: string): KindCodec {
 	return {
 		kind,
 		workflow,
-		decode: head => ({ body: head.body, citations: head.citations ?? [] }),
+		decode: head => {
+			// An amendment stored before the s9 conversion is a flat record with no meta and body; refuse it here as well as in the decoder.
+			if (kind === 'AMD' && (typeof head.meta !== 'object' || head.meta === null || typeof head.body !== 'object' || head.body === null)) {
+				throw new ArtifactShapeError('a flat amendment has to be converted by the s9 conversion before it can be read');
+			}
+			return { body: head.body, citations: head.citations ?? [] };
+		},
 		encode: (payload, key, ctx) => ({ meta: identityMeta(key, ctx), body: payload.body, citations: payload.citations }),
 	};
 }

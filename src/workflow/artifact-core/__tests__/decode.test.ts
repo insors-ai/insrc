@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { codecFor } from '../codecs.js';
 import { decodeArtifactHead } from '../decode.js';
 import { ArtifactShapeError, UnknownArtifactKindError } from '../types.js';
 import { InvalidArtifactKeyError } from '../../artifact-ids.js';
@@ -57,6 +58,17 @@ describe('decodeArtifactHead', () => {
 		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: 'x' })), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { references: 'x' } })), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: { status: 'draft' } })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, JSON.stringify({ meta: {}, body: {}, citations: 'invalid' })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: { status: 'invalid', revision: {} } })), ArtifactShapeError);
+		const goodRev = { number: 1, contentHash: 'h', at: 't', by: actor };
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: { status: 'draft', revision: goodRev } })), ArtifactShapeError, 'no signoffs list');
+		assert.throws(() => decodeArtifactHead(LLD, head({ lifecycle: { status: 'draft', revision: { ...goodRev, number: 1.5 }, signoffs: [] } })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { references: [{ entityId: 'x' }] } })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { attachments: [{}] } })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { parent: 'x' } })), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(LLD, head({ envelope: { binding: {} } })), ArtifactShapeError);
+		// the AMD codec refuses a flat record on its own as well
+		assert.throws(() => codecFor('AMD').decode({ id: 'x' } as never), ArtifactShapeError);
 		assert.throws(() => decodeArtifactHead(`TASK-${H}-s1-t1`, head({})), UnknownArtifactKindError);
 		assert.throws(() => decodeArtifactHead(`STORY-${H}-s1`, head({})), UnknownArtifactKindError);
 

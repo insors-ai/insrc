@@ -96,14 +96,16 @@ runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, provider: 
 - A 'record-not-judged' stage keeps every other judgement and records the failed one as not judged (MED); a 'record-observation' stage records a LOW observation.
 - Cancellation ends the review at once, including a call in flight: the provider throws AbortError within moments of the signal, never after the call's own time limit.
 
-### 2.3 `ReviewPipelineDriver.nextCalls / applyAnswer / applyFailure / result`
+### 2.3 `ReviewPipelineDriver.nextCalls / applyOutput / applyAnswer / applyFailure / result`
 
 ```typescript
-nextCalls(job, adapter): readonly ReviewCall[]; applyAnswer(job, adapter, answer: EnvelopedAnswer): ReviewPipelineJob; applyFailure(job, adapter, callId, cause, maxChars?): ReviewPipelineJob; result<R>(job): R
+nextCalls(job, adapter, now?): readonly ReviewCall[]; applyOutput(job, adapter, callId, raw, now?): ReviewPipelineJob; applyAnswer(job, adapter, answer: EnvelopedAnswer, now?): ReviewPipelineJob; applyFailure(job, adapter, callId, cause, maxChars?, more?): ReviewPipelineJob; result<R>(job): R
 ```
 
 **Parameters:**
-- `answer: EnvelopedAnswer` — { callId, answer }; rejected when callId is not a pending call's.
+- `callId (applyOutput): string` — The id of the call the caller sent: the EXPECTED id, supplied by the caller (the daemon driver knows which call it made; the controller step names the call each answer is for). It is never read from the model's answer.
+- `raw (applyOutput): unknown` — The model's raw output, expected to be the envelope { callId, answer }. Its echoed callId is compared with the expected one: missing or different is the 'identifier-mismatch' failure (re-issued once under a new callId, then the stage's policy); equal goes on to applyAnswer with the inner answer.
+- `answer: EnvelopedAnswer` — { callId, answer }: an answer already matched to its call. applyAnswer checks the answer against the stage schema and the stage's validate (an invalid answer is the 'invalid-answer' failure); it does not check an echoed id. It rejects a callId that is not a pending call's.
 - `cause: 'size-refusal' | 'transient' | 'stall' | 'identifier-mismatch' | 'invalid-answer'` — Why the call did not complete.
 - `maxChars: number` _(optional)_ — The size a refusal reported, when it did.
 
@@ -117,6 +119,7 @@ nextCalls(job, adapter): readonly ReviewCall[]; applyAnswer(job, adapter, answer
 
 **Postconditions:**
 - A size refusal re-plans the call's carried atoms and notes within the reported (else halved) budget; transient, stall, identifier-mismatch and invalid-answer re-issue once under a new callId.
+- Which to call (amended 2026-10-20 after review round 2): a model's raw output goes through applyOutput, which owns the echo check; applyAnswer is for an answer already matched to its call. The daemon driver uses applyOutput; the controller step (s5) uses applyOutput for each answer it is handed, naming the call the answer is for.
 
 ### 2.4 `runCodeReview`
 
@@ -520,7 +523,7 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
 **Error cases**
 
 - **A model answer whose callId is missing or differs from the call's.** (recoverable)
-  - Detection: applyAnswer compares the enveloped answer's callId with the pending call's before schema validation.
+  - Detection: applyOutput compares the enveloped answer's echoed callId with the expected id of the call it answers, before schema validation.
   - Response: The answer is discarded and the call re-issued once under a new callId; a second mismatch applies the stage's failure policy.
   - User impact: None when the re-issue succeeds; otherwise the stage's policy (fail, not judged, or observation).
 - **An answer whose inner answer fails the adapter schema.** (recoverable)

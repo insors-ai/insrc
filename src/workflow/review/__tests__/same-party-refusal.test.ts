@@ -35,13 +35,14 @@ import { reviewArtifact } from '../../../cli/services/workflow.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { reviewArtifactFile, SamePartyReviewError } from '../index.js';
 import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../template.js';
+import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
 
 const SPEC = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
 
 /** A provider that counts every call it receives, of either kind. */
 function countingProvider() {
 	const calls: string[] = [];
-	const provider = {
+	let provider = {
 		capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
 		async complete() { calls.push('complete'); throw new Error('unused'); },
 		async completeStructured() { calls.push('completeStructured'); return { claims: [] }; },
@@ -50,6 +51,7 @@ function countingProvider() {
 			return { items: SPEC.items.map(it => ({ item: it.id, premises: [{ premise: `claim under ${it.id}`, outcome: 'holds', evidence: 'read it', action: '' }] })) };
 		},
 	} as unknown as LLMProvider;
+	provider = envelopeProvider(provider);
 	return { provider, calls };
 }
 

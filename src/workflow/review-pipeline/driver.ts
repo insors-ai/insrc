@@ -16,7 +16,7 @@
  * nothing: the job is not returned.
  */
 
-import { CliStallError, InputTooLargeError, ReviewSessionTimeoutError } from '../../agent/providers/cli-provider.js';
+import { CliStallError, InputTooLargeError } from '../../agent/providers/cli-provider.js';
 import { ModelResponseShapeError } from '../../agent/providers/model-call-error.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMMessage, LLMProvider } from '../../shared/types.js';
@@ -30,6 +30,10 @@ export interface RunReviewJobOpts {
 	readonly signal?: AbortSignal | undefined;
 	/** The clock the deadline is read against. Default: Date.now. */
 	readonly now?: (() => number) | undefined;
+	/** Progress: a deterministic stage is about to run. */
+	readonly onStage?: ((stage: string) => void) | undefined;
+	/** Progress: a call is about to be made. */
+	readonly onCall?: ((call: ReviewCall) => void) | undefined;
 }
 
 /** Drive `job` to the end and return the adapter's result. */
@@ -40,18 +44,21 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		throwIfAborted(signal);
 		const calls = nextCalls(job, adapter, now());
 		if (calls.length === 0) {
+			opts.onStage?.(job.stage);
 			job = await runStage(job, adapter, { signal, now });
 			continue;
 		}
 		// Serial: one call at a time, never more than one in flight.
 		const call = calls[0]!;
+		opts.onCall?.(call);
 		let raw: unknown;
 		try {
 			raw = await untilAborted(send(provider, call, signal), signal);
 		} catch (err) {
 			throwIfAborted(signal);
 			if (isAbortError(err)) throw err;
-			if (err instanceof ReviewSessionTimeoutError) throw deadlineError(job, adapter);
+			// Matched by name, as today: a session that ran out its time fails the review, never re-issued.
+			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw deadlineError(job, adapter);
 			const failure = classify(err);
 			log.warn({ dimension: job.dimension, stage: call.stage, role: call.role, attempt: call.attempt, cause: failure.cause }, 'review pipeline: a call did not complete');
 			job = applyFailure(job, adapter, call.callId, failure.cause, failure.maxChars, { detail: failure.detail, now: now() });

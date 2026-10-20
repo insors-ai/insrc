@@ -47,7 +47,7 @@ export const MAX_CALL_ATTEMPTS = 2;
 
 /** A call failed both attempts in a stage whose policy fails the review. Nothing is recorded. */
 export class ReviewCallFailedError extends Error {
-	constructor(readonly stage: string, readonly cause: FailureCause | 'stage-error', readonly detail: string | undefined) {
+	constructor(readonly stage: string, readonly cause: FailureCause | 'stage-error', readonly detail: string | undefined, readonly reasons: readonly string[] = []) {
 		super(`review stage ${stage}: the call failed twice (${cause})${detail !== undefined ? `: ${detail}` : ''}. No review was recorded.`);
 		this.name = 'ReviewCallFailedError';
 	}
@@ -295,10 +295,10 @@ export function applyFailure(
 	}
 
 	const detail = more.detail ?? (more.reasons !== undefined ? more.reasons.join('; ') : undefined);
-	if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, cause, detail);
+	if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, cause, detail, more.reasons ?? []);
 	const key = call.carries.key ?? call.carries.chunkId ?? call.callId;
 	log.warn({ dimension: job.dimension, stage: stage.id, key, cause }, 'review pipeline: a call failed twice; recorded and the review goes on');
-	const next: ReviewPipelineJob = { ...rest, notJudged: [...rest.notJudged, { stage: stage.id, key, cause: detail !== undefined ? `${cause}: ${detail}` : cause, policy: stage.onCallFailure }] };
+	const next: ReviewPipelineJob = { ...rest, notJudged: [...rest.notJudged, { stage: stage.id, key, cause, ...(detail !== undefined ? { detail } : {}), policy: stage.onCallFailure }] };
 	return stageDone(next) ? completeStage(next, adapter, now) : next;
 }
 
@@ -353,7 +353,7 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 		throwIfAborted(opts.signal);
 		const detail = err instanceof Error ? err.message : String(err);
 		if (stage.onCallFailure === 'fail-review') throw new ReviewCallFailedError(stage.id, 'stage-error', detail);
-		next = { ...job, notJudged: [...job.notJudged, { stage: stage.id, key: stage.id, cause: detail, policy: stage.onCallFailure }] };
+		next = { ...job, notJudged: [...job.notJudged, { stage: stage.id, key: stage.id, cause: 'stage-error', detail, policy: stage.onCallFailure }] };
 		output = undefined;
 	}
 	throwIfAborted(opts.signal);

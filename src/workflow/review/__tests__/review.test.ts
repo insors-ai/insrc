@@ -32,6 +32,7 @@ import { runReview } from '../review.js';
 import { renderReviewReport } from '../report.js';
 import type { Claim } from '../types.js';
 import { VERIFY_CALL_TIMEOUT_MS } from '../verify.js';
+import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
 
 // The probe uses the shared `runGrepSearch` backend (ripgrep when present,
 // Node walk otherwise), so these tests run everywhere — no rg guard needed.
@@ -159,7 +160,7 @@ function makeProvider(opts: { inventoryLow: boolean }): LLMProvider {
 			return verifyFor(content, opts.inventoryLow) as T;
 		},
 	};
-	return p;
+	return envelopeProvider(p);
 }
 
 const BASE_OPTS = { model: 'fake-model', reviewedAt: '2026-07-20T00:00:00.000Z' } as const;

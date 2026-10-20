@@ -233,7 +233,10 @@ export interface ReviewMaterialSnapshot {
 export interface NotJudged {
 	readonly stage:  string;
 	readonly key:    string;
+	/** Why: a failure cause ('transient', 'stall', ...) or 'stage-error'. */
 	readonly cause:  string;
+	/** The last error's message, when there was one. */
+	readonly detail?: string | undefined;
 	readonly policy: 'record-not-judged' | 'record-observation';
 }
 

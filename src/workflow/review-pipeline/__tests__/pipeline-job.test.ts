@@ -467,7 +467,7 @@ test("runStage commits a deterministic stage's output; extract claims and probe 
 			await assert.rejects(runStage(j, premiseAdapter(j.snapshot, boom, policy)), (e: unknown) => e instanceof ReviewCallFailedError && e.message.includes('handler broke'));
 		} else {
 			j = await runStage(j, premiseAdapter(j.snapshot, boom, policy));
-			assert.deepEqual(j.notJudged.map(n => [n.stage, n.policy, n.cause]), [['probe', 'record-observation', 'handler broke']]);
+			assert.deepEqual(j.notJudged.map(n => [n.stage, n.policy, n.cause, n.detail]), [['probe', 'record-observation', 'stage-error', 'handler broke']]);
 		}
 	}
 	// Re-planning after the snapshot is complete reads the claims and evidence from it alone: a

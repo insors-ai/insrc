@@ -17,53 +17,19 @@
 
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
-import { extractClaims } from './extract.js';
-import { gatherEvidence } from './probe.js';
-import { verifyClaim } from './verify.js';
+import { runReviewJob } from '../review-pipeline/driver.js';
+import { designReviewSnapshot, premiseAdapter } from '../review-pipeline/design-review.js';
+import { createReviewJob } from '../review-pipeline/job.js';
+import { reviewLimitChars } from '../review-pipeline/limit.js';
+import type { ReviewAdapter } from '../review-pipeline/types.js';
 import { isDesignStage } from './template.js';
 import { runTemplateReview } from './template-review.js';
 import type { DesignIntent } from './template.js';
 import type { EntitiesForRepoReader } from './source-roots.js';
-import type { Claim, Evidence, Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
+import type { Finding, ReviewReport, ReviewVerdict, Severity } from './types.js';
 import { computeVerdict, DEFAULT_BLOCK_ON, severityForOutcome, tally } from './verdict.js';
 
 export { severityForOutcome };
-
-/** The codex session a failed call ran in, when its error names one, so a stall can be followed up. */
-function codexSessionOf(message: string): string | undefined {
-	return /"thread_id":"([^"]+)"/.exec(message)?.[1];
-}
-
-/**
- * Judge one premise; a failed or stalled call is retried once as a fresh call.
- * One that fails again is recorded as not judged (MED, never a pass) with its
- * cause, so the premises already judged and the rest of the review are kept
- * (ISSUE-d4b2cd1c). A cancelled review still ends at once.
- */
-async function verifyOrRecord(claim: Claim, ev: Evidence, provider: LLMProvider, signal: AbortSignal | undefined): Promise<Finding> {
-	let cause = '';
-	for (let attempt = 1; attempt <= 2; attempt++) {
-		try {
-			return await verifyClaim(claim, ev, provider, signal);
-		} catch (err) {
-			if (err instanceof Error && err.name === 'AbortError') throw err;
-			throwIfAborted(signal);
-			cause = err instanceof Error ? err.message : String(err);
-			const session = (err as { sessionId?: string | undefined }).sessionId ?? codexSessionOf(cause);
-			log.warn({ claimId: claim.id, attempt, codexSession: session, error: cause }, 'review:verify: the premise call failed');
-		}
-	}
-	return {
-		claimId: claim.id,
-		...(claim.ref !== undefined ? { ref: claim.ref } : {}),
-		kind: claim.kind,
-		severity: 'MED',
-		premise: claim.text,
-		evidence: `Not judged: the reviewing model call failed twice. Last error: ${cause}`,
-		action: 'Re-run the review, or judge this premise by hand.',
-		fixability: 'manual',
-	};
-}
 
 const log = getLogger('review');
 
@@ -118,24 +84,27 @@ export async function runReview(
 	const emit = opts.onProgress ?? (() => { /* no-op */ });
 
 	throwIfAborted(signal);
-	emit('extract');
-	const claims = await extractClaims(artifactMarkdown, stage, provider, signal);
-
-	throwIfAborted(signal);
-	emit('probe');
+	// One review-pipeline job (Epic 8315a11f): extract, probe, then one verify call
+	// per premise; the pipeline re-issues a failed call once, and a premise whose
+	// call fails twice is recorded as not judged (MED), the rest kept.
 	let sourceRootFallback: string | undefined;
-	const evidence = await gatherEvidence(claims, repo, {
-		readEntitiesForRepo: opts.readEntitiesForRepo,
+	const snapshot = designReviewSnapshot(artifactMarkdown);
+	const adapter = premiseAdapter(snapshot, {
+		stage, repo, readEntitiesForRepo: opts.readEntitiesForRepo,
 		onSourceRootFallback: reason => { sourceRootFallback = reason; },
-	});
-	const evidenceById = new Map(evidence.map(e => [e.claimId, e] as const));
-
-	const findings: Finding[] = [];
-	for (const claim of claims) {
-		throwIfAborted(signal);
-		emit(`verify:${claim.id}`);
-		const ev = evidenceById.get(claim.id) ?? { claimId: claim.id, grepResults: [], reads: [] };
-		findings.push(await verifyOrRecord(claim, ev, provider, signal));
+	}) as unknown as ReviewAdapter<unknown>;
+	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars());
+	let findings: Finding[];
+	try {
+		findings = [...await runReviewJob(job, adapter, provider, {
+			signal,
+			onStage: s => { if (s === 'probe') emit('probe'); },
+			onCall: c => emit(c.stage === 'extract' ? 'extract' : `verify:${c.carries.key ?? ''}`),
+		}) as readonly Finding[]];
+	} catch (err) {
+		// A cancel of this review keeps today's message; a provider's own abort propagates as it was.
+		if (signal?.aborted === true) throw new Error('review: aborted');
+		throw err;
 	}
 
 	const counts = tally(findings);

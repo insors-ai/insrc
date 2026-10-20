@@ -157,7 +157,7 @@ export function deterministicDimensionAdapter(spec: DeterministicDimensionSpec, 
 			if (outputs['run'] !== undefined) return outputs['run'] as DimensionResult;
 			const failed = ctx.notJudged.find(n => n.stage === 'run');
 			if (failed !== undefined) {
-				return { dimension: spec.dimension, findings: [{ dimension: spec.dimension, severity: 'LOW', location: `${spec.dimension}:stage`, message: `${spec.dimension} failed: ${failed.cause}`, confidence: 'observation' }] };
+				return { dimension: spec.dimension, findings: [{ dimension: spec.dimension, severity: 'LOW', location: `${spec.dimension}:stage`, message: `${spec.dimension} failed: ${failed.detail ?? failed.cause}`, confidence: 'observation' }] };
 			}
 			const answer = singleAnswer(outputs, 'judge', spec.dimension, ctx.divided) as { findings: DimensionResult['findings'] };
 			return { dimension: spec.dimension, findings: answer.findings.map(f => ({ ...f, dimension: spec.dimension })) };

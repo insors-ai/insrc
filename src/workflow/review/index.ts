@@ -19,7 +19,7 @@
 export * from './types.js';
 export { extractClaims, buildExtractPrompt, normalizeClaimsEnvelope, EXTRACT_SCHEMA } from './extract.js';
 export { gatherEvidence } from './probe.js';
-export { verifyClaim, buildVerifyPrompt, normalizeFinding, renderEvidence, VERIFY_SCHEMA } from './verify.js';
+export { verifyClaim, buildVerifyPrompt, buildBatchedVerifyPrompt, normalizeFinding, renderEvidence, VERDICTS_SCHEMA, VERIFY_SCHEMA } from './verify.js';
 export type { RawFinding } from './verify.js';
 export { runReview, tallyFindings, computeReviewVerdict, severityForOutcome, DEFAULT_BLOCK_ON_SEVERITIES } from './review.js';
 export type { ReviewPhase, RunReviewOpts } from './review.js';

@@ -33,6 +33,7 @@ import { addRepo } from '../../../db/repos.js';
 import { upsertEntities } from '../../../db/entities.js';
 import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { Entity, LLMProvider, LLMResponse } from '../../../shared/types.js';
+import { envelopeProvider } from '../../review-pipeline/__tests__/enveloped.js';
 
 const base = mkdtempSync(join(tmpdir(), 'insrc-root-reader-'));
 const repo = join(base, 'repo');
@@ -67,7 +68,7 @@ const under = (ms: string[], dir: string): boolean => ms.some(m => m.includes(`$
 
 /** A provider that extracts the one claim above and finds it sound. */
 function provider(): LLMProvider {
-	return {
+	return envelopeProvider({
 		supportsTools: false,
 		capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
 		async complete(): Promise<LLMResponse> { return { text: '', stopReason: 'end_turn' }; },
@@ -80,7 +81,7 @@ function provider(): LLMProvider {
 			}
 			return { severity: 'LOW', evidence: 'found', action: 'none — verified sound', fixability: 'manual' } as T;
 		},
-	} as LLMProvider;
+	} as LLMProvider);
 }
 
 test('review with no reader passed uses the default reader, as the daemon and the MCP server do', async () => {

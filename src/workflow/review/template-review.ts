@@ -17,12 +17,14 @@ import { getLogger } from '../../shared/logger.js';
 import type { ReviewSessionOpts } from '../../agent/providers/cli-provider.js';
 import type { StructuredSchema } from '../../shared/types.js';
 import type { RunReviewOpts } from './review.js';
-import {
-	buildTemplateReviewPrompt, HARD_REVIEW_DEADLINE_MS, reviewDeadlineMs, reviewTemplateFor, TEMPLATE_ANSWER_SCHEMA,
-	validateTemplateAnswer,
-} from './template.js';
-import type { RawTemplateAnswer } from './template.js';
-import type { ReviewReport } from './types.js';
+import type { LLMProvider } from '../../shared/types.js';
+import { runReviewJob } from '../review-pipeline/driver.js';
+import { designReviewSnapshot, templateAdapter } from '../review-pipeline/design-review.js';
+import { createReviewJob, ReviewCallFailedError } from '../review-pipeline/job.js';
+import { reviewLimitChars } from '../review-pipeline/limit.js';
+import type { ReviewAdapter } from '../review-pipeline/types.js';
+import { HARD_REVIEW_DEADLINE_MS, reviewDeadlineMs, reviewTemplateFor } from './template.js';
+import type { Finding, ReviewReport } from './types.js';
 import { computeVerdict, DEFAULT_BLOCK_ON, tally } from './verdict.js';
 
 const log = getLogger('review');
@@ -66,53 +68,33 @@ export async function runTemplateReview(artifactMarkdown: string, opts: RunRevie
 	const template = reviewTemplateFor(intent);
 	const limitMs = Math.min(opts.deadlineMs ?? reviewDeadlineMs(intent === 'issue' ? 'issue' : 'feature'), HARD_REVIEW_DEADLINE_MS);
 	const startedAt = nowMs();
-	const { system, user } = buildTemplateReviewPrompt(template, artifactMarkdown, stage);
 
 	const timedOut = (): Error => new Error(
 		`The design review passed its time limit of ${minutes(limitMs)} (template ${template.id}). No review was recorded.`,
 	);
 
-	/** Read through a function: the signal can flip while a session is awaited. */
-	const aborted = (): boolean => opts.signal?.aborted === true;
-
-	/** One session, started with only the time that remains on the review's deadline. */
-	const ask = async (prompt: string): Promise<RawTemplateAnswer> => {
-		if (aborted()) throw new Error('review: aborted');
-		const remainingMs = limitMs - (nowMs() - startedAt);
-		if (remainingMs <= 0) throw timedOut();
-		let raw: RawTemplateAnswer;
-		try {
-			raw = await session.runReviewSession<RawTemplateAnswer>(prompt, TEMPLATE_ANSWER_SCHEMA as StructuredSchema, { cwd: repo, deadlineMs: remainingMs });
-		} catch (err) {
-			if (err instanceof Error && err.name === 'ReviewSessionTimeoutError') throw timedOut();
-			throw err;
-		}
-		// The session cannot be interrupted mid-run, so an abort raised while it ran
-		// is honoured here: a cancelled review never returns a report to be stamped.
-		if (aborted()) throw new Error('review: aborted');
-		return raw;
-	};
-
-	emit('template');
-	let result = validateTemplateAnswer(template, await ask(`${system}\n\n${user}`));
-	if (!result.ok) {
-		log.warn({ stage, template: template.id, errors: result.errors.length }, 'review:template: answer failed validation; asking once more');
-		const correction = [
-			'Your previous answer was REJECTED because it did not satisfy the checklist:',
-			...result.errors.map(e => `- ${e}`),
-			'Answer again, correcting every point above.',
-		].join('\n');
-		// The correction sits between the instructions and the checklist, so the design stays last.
-		result = validateTemplateAnswer(template, await ask(`${system}\n\n${correction}\n\n${user}`));
-		if (!result.ok) {
+	// One review-pipeline job (Epic 8315a11f): one reviewer session under the
+	// review's one deadline; an answer that breaks the checklist is re-issued once
+	// by the pipeline with today's correction, and a second break fails the review.
+	const snapshot = designReviewSnapshot(artifactMarkdown);
+	const adapter = templateAdapter(snapshot, { template, stage, repo, limitMs, timedOut }) as unknown as ReviewAdapter<unknown>;
+	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars(), { now: startedAt });
+	let findings: readonly Finding[];
+	try {
+		findings = await runReviewJob(job, adapter, session as LLMProvider, { signal: opts.signal, now: nowMs, onCall: () => emit('template') }) as readonly Finding[];
+	} catch (err) {
+		// A cancel of this review keeps today's message; a provider's own abort propagates as it was.
+		if (opts.signal?.aborted === true) throw new Error('review: aborted');
+		if (err instanceof ReviewCallFailedError && err.stage === 'template' && err.cause === 'invalid-answer') {
+			log.warn({ stage, template: template.id }, 'review:template: the answer failed the checklist twice');
 			throw new Error(
 				`The design review answer failed checklist ${template.id} twice. No review was recorded.\n` +
-				result.errors.map(e => `- ${e}`).join('\n'),
+				err.reasons.map(e => `- ${e}`).join('\n'),
 			);
 		}
+		throw err;
 	}
 
-	const findings = result.findings;
 	const counts = tally(findings);
 	const verdict = computeVerdict(findings, opts.blockOn ?? DEFAULT_BLOCK_ON);
 	const reviewedAt = opts.reviewedAt ?? (opts.now !== undefined ? opts.now() : new Date(0).toISOString());

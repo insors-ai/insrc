@@ -26,7 +26,8 @@ import { codeReviewSubjectPathArgs } from '../code-review/subject-paths.js';
 import { persistBuildRecord, type BuildRecord } from '../runners/build/standalone-record.js';
 import { persistTestRecordTask } from '../runners/build/test-record.js';
 import { buildWorkItemGraph } from '../delivery/graph.js';
-import { buildRecord as dBuild, crRecord, defRecord, lldRecord, planRecord, recordSet } from '../delivery/__tests__/fixtures.js';
+import { loadArtifactRecordSet } from '../delivery/load.js';
+import { lldRecord, recordSet } from '../delivery/__tests__/fixtures.js';
 
 const HASH = 'c0ffee00d15ea5e5';
 const D0 = '2026-10-01T10:00:00.000Z';
@@ -52,15 +53,22 @@ const buildRec = (createdAt: string, standalone: boolean): BuildRecord => ({
 	body: { tasks: [{ id: 't1', passed: true }] },
 } as unknown as BuildRecord);
 
-/** HLD, LLD and PLAN take their folder from the anchor a finalizer reads (resolveEpicAnchor) and stamps. */
-function designFolders(repo: string, standalone: boolean): string[] {
-	const stamp = resolveEpicAnchor(repo, HASH)!;
-	const kind = standalone ? 'standalone' : 'epic';
-	return [
-		dirname(hldArtifactPaths(repo, HASH, workItemAnchorCreatedAt({ epicCreatedAt: stamp }), kind, SLUG).md),
-		dirname(dirname(lldArtifactPaths(repo, HASH, 's1', workItemAnchorCreatedAt({ epicCreatedAt: stamp }), kind, SLUG).md)),
-		dirname(dirname(planArtifactPaths(repo, HASH, 's1', workItemAnchorCreatedAt({ epicCreatedAt: stamp }), kind, SLUG).md)),
-	];
+/** What a design finalizer does: stamp the Epic's anchor on the record, write its json, and render its md in the
+ *  folder the stamp names. Returns the md path. */
+function writeDesign(r: ReturnType<typeof tempRepo>, kind: 'HLD' | 'LLD' | 'PLAN', createdAt: string, standalone: boolean): string {
+	const stamp = resolveEpicAnchor(r.repo, HASH)!;
+	const meta = { epicHash: HASH, ...(kind === 'HLD' ? {} : { storyId: 's1' }), createdAt, epicCreatedAt: stamp, epicSlug: SLUG, ...(standalone ? { standalone: true } : {}) };
+	const id = kind === 'HLD' ? `HLD-${HASH}` : `${kind}-${HASH}-s1`;
+	// the standalone route's head is the LLD already on disk: do not replace its stamp-bearing record
+	if (!(standalone && kind === 'LLD')) r.seed(id, meta);
+	const anchor = workItemAnchorCreatedAt(meta);
+	const wk = standalone ? 'standalone' : 'epic';
+	const md = kind === 'HLD' ? hldArtifactPaths(r.repo, HASH, anchor, wk, SLUG).md
+		: kind === 'LLD' ? lldArtifactPaths(r.repo, HASH, 's1', anchor, wk, SLUG).md
+		: planArtifactPaths(r.repo, HASH, 's1', anchor, wk, SLUG).md;
+	mkdirSync(dirname(md), { recursive: true });
+	writeFileSync(md, `# ${kind}\n`);
+	return md;
 }
 
 test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one folder on the epic route and on the standalone route, including delivery grouping', () => {
@@ -68,17 +76,22 @@ test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one 
 		const r = tempRepo();
 		try {
 			if (standalone) {
-				// no DEF: a stamped standalone LLD heads the work item
+				// no DEF: a stamped standalone LLD heads the work item (written on D1, stamped with the Epic's D0)
 				r.seed(`LLD-${HASH}-s1`, { epicHash: HASH, storyId: 's1', createdAt: D1, epicCreatedAt: D0, epicSlug: SLUG, standalone: true });
 			} else {
 				r.seed(`DEF-${HASH}`, { epicHash: HASH, createdAt: D0, epicSlug: SLUG });
 			}
 			assert.equal(resolveEpicAnchor(r.repo, HASH), D0);
 
-			const design = designFolders(r.repo, standalone);
-			// the ledger records, each written on a later day
+			// the design records, each written on its own later day (an HLD exists only on the epic route)
+			const design: string[] = [];
+			if (!standalone) design.push(dirname(writeDesign(r, 'HLD', D1, false)));
+			design.push(dirname(dirname(writeDesign(r, 'LLD', D1, standalone))));
+			design.push(dirname(dirname(writeDesign(r, 'PLAN', D2, standalone))));
+
+			// the ledger records: TESTS on D3, BUILD on D4, the code review (a read of the work item) after both
 			const tests = persistTestRecordTask(r.repo, { epicHash: HASH, storyId: 's1', now: D3, ...(standalone ? { standalone: true } : {}) }, task(D3));
-			const build = persistBuildRecord(r.repo, buildRec(D3, standalone));
+			const build = persistBuildRecord(r.repo, buildRec(D4, standalone));
 			const cr = codeReviewArtifactPaths(
 				r.repo, HASH, 's1',
 				codeReviewSubjectPathArgs({ repoPath: r.repo, epicHash: HASH, storyId: 's1', changedFiles: [], approvedLld: null, approvedPlan: null, buildRecord: null }).epicCreatedAt,
@@ -89,26 +102,16 @@ test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one 
 			assert.equal(folders.size, 1, `one folder, got ${[...folders].join(' | ')}`);
 			assert.match([...folders][0]!, new RegExp(`/docs/${standalone ? 'standalone' : 'epics'}/${SLUG}-E20261001c0ffee00$`));
 			assert.equal(dirname(tests.md), dirname(build.md), 'BUILD and TESTS share the story folder');
-		} finally { r.done(); }
 
-		// the delivery read model groups the same records, written on different days, under one work item
-		const records = standalone
-			? [
-				lldRecord(HASH, 's1', { createdAt: D1, epicCreatedAt: D0, standalone: true }),
-				dBuild(HASH, 's1', [{ id: 't1', passed: true }], { createdAt: D3, epicCreatedAt: D0, standalone: true }),
-				crRecord(HASH, 's1', 'pass', { createdAt: D4, epicCreatedAt: D0, standalone: true }),
-			]
-			: [
-				defRecord(HASH, ['s1'], { createdAt: D0, epicCreatedAt: D0 }),
-				lldRecord(HASH, 's1', { createdAt: D1, epicCreatedAt: D0 }),
-				planRecord(HASH, 's1', ['t1'], { createdAt: D2, epicCreatedAt: D0 }),
-				dBuild(HASH, 's1', [{ id: 't1', passed: true }], { createdAt: D3, epicCreatedAt: D0 }),
-				crRecord(HASH, 's1', 'pass', { createdAt: D4, epicCreatedAt: D0 }),
-			];
-		const graph = buildWorkItemGraph(recordSet(records));
-		const ids = [...graph.items.keys()];
-		assert.ok(ids.every(id => id.startsWith('E20261001c0ffee00')), `every id carries the Epic's day, got ${ids.join(', ')}`);
-		assert.ok(ids.includes('E20261001c0ffee00:S001'), 'the story is one item');
+			// the delivery reader, over the store these records were written to, groups them under one work item
+			const graph = buildWorkItemGraph(loadArtifactRecordSet(r.repo));
+			const ids = [...graph.items.keys()];
+			assert.ok(ids.every(id => id.startsWith('E20261001c0ffee00')), `every id carries the Epic's day, got ${ids.join(', ')}`);
+			assert.ok(ids.includes('E20261001c0ffee00:S001'), 'the story is one item');
+			const story = graph.items.get('E20261001c0ffee00:S001')!;
+			const kinds = story.evidenceArtifactIds.map(a => a.split('-')[0]).sort();
+			assert.deepEqual(kinds, ['BUILD', 'LLD', 'PLAN']);
+		} finally { r.done(); }
 	}
 });
 

@@ -18,6 +18,7 @@
  * to the implementer via the prompt's "## Resolved design decisions" section.
  */
 
+import { MissingAnchorError } from '../../../../workflow/artifact-ids.js';
 import { getLogger } from '../../../../shared/logger.js';
 import { readLldArtifact } from '../../../../workflow/gates.js';
 import { lldMdRel, workItemAnchorCreatedAt, workItemKindOf } from '../../../../workflow/storage.js';
@@ -143,20 +144,29 @@ function handleStandaloneImplement(
 		return { next: 'refused', refusal: verdict.refusal };
 	}
 
+	let lldMdRelPath: string | undefined;
+	let resolvedDecisions = '';
+	let specFocus = focus.length > 0 ? focus : `Implement the approved standalone LLD for Story ${storyId}.`;
+
+	// The LLD's folder is worked out before anything is written: an LLD no anchor can place fails
+	// here, with no build-start stamp or record left behind.
+	if (producesLld) {
+		const lld = readLldArtifact(repoPath, epicHash, storyId);
+		resolvedDecisions = renderResolvedDecisions(lld.meta.questionResolutions);
+		try {
+			lldMdRelPath = lldMdRel(epicHash, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug ?? epicHash, storyId);
+		} catch (e) {
+			if (e instanceof MissingAnchorError) return err('missing-anchor', `insrc_build_step[implement]: ${e.message}`);
+			throw e;
+		}
+	}
+
 	// Admitted on either standalone route. Stamped BEFORE the Trivial branch
 	// below writes its task-less record, so the stamp is taken at build start
 	// whatever that record later says.
 	noteBuildStart(repoPath, epicHash, storyId);
 
-	let lldMdRelPath: string | undefined;
-	let resolvedDecisions = '';
-	let specFocus = focus.length > 0 ? focus : `Implement the approved standalone LLD for Story ${storyId}.`;
-
-	if (producesLld) {
-		const lld = readLldArtifact(repoPath, epicHash, storyId);
-		resolvedDecisions = renderResolvedDecisions(lld.meta.questionResolutions);
-		lldMdRelPath = lldMdRel(epicHash, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug ?? epicHash, storyId);
-	} else {
+	if (!producesLld) {
 		// Trivial — no upstream artifact; persist the tracking record so the
 		// change is on the ledger.
 		persistStandaloneBuildRecord(repoPath, {

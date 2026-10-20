@@ -334,6 +334,8 @@ async function handleStandaloneValidate(
 			lldMdRelPath = lldMdRel(epicHash, workItemAnchorCreatedAt(lld.meta), workItemKindOf(lld.meta), lld.meta.epicSlug ?? epicHash, storyId);
 			testStrategy = lld.body.testStrategy;
 		} catch (e) {
+			// An LLD no anchor can place is not an unreadable one: say so before any check runs.
+			if (e instanceof MissingAnchorError) return err('missing-anchor', `insrc_build_step[validate]: ${e.message}`);
 			log.info({ storyId, err: e instanceof Error ? e.message : String(e) }, 'insrc_build_step[validate]: standalone LLD unreadable for the verdict prompt');
 		}
 	}

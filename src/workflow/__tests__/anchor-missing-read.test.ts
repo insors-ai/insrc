@@ -16,7 +16,11 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { handleBuildStep } from '../../daemon/steps/build-step/handler.js';
 import { MissingAnchorError } from '../artifact-ids.js';
+import { deriveMdPath } from '../pending.js';
+import { buildWorkItemGraph } from '../delivery/graph.js';
+import { lldRecord, recordSet } from '../delivery/__tests__/fixtures.js';
 import { buildChainReport } from '../chain.js';
 import { codeReviewSubjectPathArgs } from '../code-review/subject-paths.js';
 import { appendStoryToDefine, requireApprovedEpic } from '../gates.js';
@@ -105,4 +109,42 @@ test('the code-review subject paths fail when no record and no head anchors the 
 		);
 		assert.deepEqual(listing(r.repo), before);
 	} finally { r.done(); }
+});
+
+/** An approved standalone LLD stored before the stamp existed: nothing anchors its folder. */
+function seedUnstampedStandaloneLld(repo: string): void {
+	writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({
+		meta: {
+			workflow: 'design.story', runId: 'l1', schemaVersion: 1, epicHash: HASH, epicSlug: 'a-small-fix', storyId: 's1',
+			createdAt: CREATED, standalone: true, approvedAt: CREATED,
+		},
+		body: { openQuestions: [] }, citations: [],
+	}));
+}
+
+test('implement and validate on a standalone story whose LLD no anchor can place fail with missing-anchor and create nothing', async () => {
+	for (const phase of ['implement', 'validate'] as const) {
+		const r = tempRepo();
+		try {
+			seedUnstampedStandaloneLld(r.repo);
+			const before = listing(r.repo);
+			const env = await handleBuildStep({ phase, target: 's1', repo: r.repo, standalone: { standalone: true, epicHash: HASH, storyId: 's1', sizeClass: 'small' } as never });
+			const out = JSON.parse(env.content[0]!.text) as { next: string; error?: { code: string } };
+			assert.equal(out.next, 'error', `${phase}: not a prompt or a verdict`);
+			assert.equal(out.error?.code, 'missing-anchor', phase);
+			assert.deepEqual(listing(r.repo), before, `${phase}: no build-start stamp, record or folder was written`);
+		} finally { r.done(); }
+	}
+});
+
+test('pending and delivery do not date a record by its own day: an unstamped record gets no path and no dated id, and nothing is created', () => {
+	const r = tempRepo();
+	try {
+		const before = listing(r.repo);
+		assert.equal(deriveMdPath(r.repo, 'LLD', { epicHash: HASH, storyId: 's1', createdAt: CREATED, standalone: true }), '');
+		assert.equal(deriveMdPath(r.repo, 'LLD', { epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, standalone: true }).endsWith('/S001/LLD.md'), true);
+		assert.deepEqual(listing(r.repo), before);
+	} finally { r.done(); }
+	const graph = buildWorkItemGraph(recordSet([lldRecord(HASH, 's1', { createdAt: CREATED, epicCreatedAt: undefined, standalone: true })]));
+	assert.ok([...graph.items.keys()].every(id => !id.startsWith('E20261001')), 'no id is dated by the LLD\'s own day');
 });

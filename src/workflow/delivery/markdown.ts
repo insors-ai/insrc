@@ -35,7 +35,7 @@ const MARKER_RE = /^<!-- insrc:artifact (\S+) -->$/;
 
 /** '<slug>-E<yyyymmdd><hash8>' folder name -> its epic segment. */
 const FOLDER_SEGMENT_RE = /-(E\d{8}[0-9a-f]{8})$/;
-/** The story folder of a canonical story id, e.g. 'E20261007aaaaaaaa:S001' -> 'S001'. */
+/** The story folder (`S<nnn>`) of a canonical work-item story id. */
 const STORY_SEGMENT_RE = /:(S\d{3,})$/;
 
 /** The first line of the file, from at most its first HEAD_BYTES bytes; null on any read error. */

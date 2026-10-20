@@ -521,8 +521,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** The artifact id of the work item's lowest-ordinal Story LLD (`S001` before
- *  `S002`, `s1` before `s2`), or undefined when it has none. Ordinals compare
+/** The artifact id of the work item's lowest-ordinal Story LLD (`s1` before
+ *  `s2`), or undefined when it has none. Ordinals compare
  *  numerically, with the id itself as the tie-break, so the pick is stable. */
 function lowestOrdinalLldId(repoPath: string, epicHash: string): string | undefined {
 	let files: readonly string[];
@@ -541,7 +541,7 @@ function lowestOrdinalLldId(repoPath: string, epicHash: string): string | undefi
 	return first === undefined ? undefined : lldArtifactId(epicHash, first);
 }
 
-/** Orders Story ids by ordinal (`S001` before `S002`, `s2` before `s10`), the id
+/** Orders Story ids by ordinal (`s2` before `s10`), the id
  *  itself breaking ties, so the pick is stable. The ONE rule for which Story's
  *  LLD heads a work item: the docs migrator sorts with it too, so the migrated
  *  folder and the runtime head can never disagree. */

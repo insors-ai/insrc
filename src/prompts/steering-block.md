@@ -218,7 +218,7 @@ resolve, then present-ask-approve. Next stage: `design.story` per Story.
 Produces one Story's **LLD** (low-level design: interfaces, files, tasks,
 citations). Requires an approved **HLD** for an epic Story; a **standalone**
 `design.story` (from triage `feature` / `small`) skips the HLD/epic reads and
-runs on its own. Pass the LOWERCASE story id (e.g. `s1`) — an uppercase `S001`
+runs on its own. Pass the LOWERCASE story id (e.g. `s1`) — an uppercase story id
 crashes with "Story not found".
 
 Stay inside the Story's own scope — the LLD carries `adjacentBoundaries` and an

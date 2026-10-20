@@ -525,9 +525,8 @@ function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?
 
 const OWNER_REPO_ISSUE_RE = /^([^/#\s]+)\/([^/#\s]+)#(\d+)$/;
 const BARE_ISSUE_RE       = /^#?(\d+)$/;
-// Accepts BOTH story-id shapes, matching LLD_RE/PLAN_RE: `s1/t3` from the epic
-// route and `S001/t3` from the standalone/bugfix route. Lowercase-only here made
-// the bugfix route's own story id an unparseable target.
+// Accepts the lowercase `s1/t3` form and, matching LLD_RE/PLAN_RE, an uppercase
+// story spelling stored before the s9 conversion.
 const LABEL_RE            = /^([sS]\d+)(?:\/(t\d+))?$/;
 
 /** `owner/repo#N` → `N`. */

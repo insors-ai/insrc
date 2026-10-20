@@ -177,7 +177,8 @@
     "reviewOverride": {
       "reason": "User approved with override (2026-10-20, option A). Two full review cycles ran on the amended s1 LLD (six daemon rounds). Cycle 1: H2 M4 -> M1 -> M2; cycle 2: H3 -> H1 M1 -> M1. Every HIGH and MED was fixed in code, tests and the LLD (commits 9043c695, bfad6524, ada98c63, a3e09ee2, b6b2f216, 31fc6bf2, edfd803b). The last round's only finding (an invalid answer's correction silently dropped when it would not fit) was fixed in edfd803b without a further review: the correction is left out, never cut, the omission is logged, and a test pins it.",
       "at": "2026-10-20T15:47:19.136Z"
-    }
+    },
+    "approvedAt": "2026-10-20T16:30:20.107Z"
   },
   "body": {
     "summary": {

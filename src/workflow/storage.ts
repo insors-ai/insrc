@@ -155,12 +155,34 @@ function sameApartFromRevision(a: Record<string, unknown>, b: Record<string, unk
  * object with a `meta` object.
  */
 export function writeArtifact(path: string, next: unknown, kind: WriteKind, opts: { readonly replaceUnreadable?: boolean | undefined } = {}): number {
+	const prepared = prepareArtifactWrite(path, next, kind, opts);
+	writeAtomic(path, prepared.bytes);
+	return prepared.revision;
+}
+
+/** What a write would put on disk. */
+export interface PreparedArtifactWrite {
+	/** The exact file text. */
+	readonly bytes:          string;
+	/** The `meta.revision` the file will carry (0 when it has none). */
+	readonly revision:       number;
+	/** True for a `content` write that changes the artifact, including a first write. */
+	readonly contentChanged: boolean;
+}
+
+/**
+ * The pure half of {@link writeArtifact}: reads the file already at `path` (if any)
+ * and returns the bytes, revision and whether content changed. Writes nothing.
+ * Throws as `writeArtifact` does.
+ */
+export function prepareArtifactWrite(path: string, next: unknown, kind: WriteKind, opts: { readonly replaceUnreadable?: boolean | undefined } = {}): PreparedArtifactWrite {
 	if (!isRecord(next) || !isRecord(next['meta'])) {
 		throw new TypeError(`writeArtifact: ${path}: the artifact must be an object with a meta object`);
 	}
 	const prior = readPrior(path, opts.replaceUnreadable === true);
 	const priorMeta = isRecord(prior?.['meta']) ? prior['meta'] : undefined;
 	const meta: Record<string, unknown> = { ...next['meta'] };
+	let contentChanged = false;
 	if (kind === 'content') {
 		const tracker = carryTracker(priorMeta?.['tracker'], meta['tracker']);
 		if (tracker !== undefined) meta['tracker'] = tracker;
@@ -173,6 +195,7 @@ export function writeArtifact(path: string, next: unknown, kind: WriteKind, opts
 			else delete meta['revision'];
 		} else {
 			meta['revision'] = readRevision(prior) + 1;
+			contentChanged = true;
 		}
 	} else if (priorMeta !== undefined && 'revision' in priorMeta) {
 		meta['revision'] = priorMeta['revision'];
@@ -180,8 +203,7 @@ export function writeArtifact(path: string, next: unknown, kind: WriteKind, opts
 		delete meta['revision'];
 	}
 	const out = { ...next, meta };
-	writeAtomic(path, JSON.stringify(out, null, 2) + '\n');
-	return readRevision(out);
+	return { bytes: JSON.stringify(out, null, 2) + '\n', revision: readRevision(out), contentChanged };
 }
 
 // ---------------------------------------------------------------------------

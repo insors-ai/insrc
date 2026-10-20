@@ -21,8 +21,8 @@ import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, ReviewDim
 // ---- fixtures ----
 
 // Under the S002 nested docs-tree, the CR record's md path is derived from the
-// work-item identity, which requires a >=8-char lowercase-hex epicHash (see
-// id.ts `hash8Of`). The hash-flat `CR-<epic>-<story>.json` id is unaffected.
+// work-item key, which requires a >=8-char lowercase-hex epicHash (see
+// path-scheme.ts `folderSegment`). The hash-flat `CR-<epic>-<story>.json` id is unaffected.
 const EPIC = 'e1a2b3c4d5e6f7a8';
 const STORY = 's8';
 const CHANGED = ['src/a.ts', 'src/b.ts'];

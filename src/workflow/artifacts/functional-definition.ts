@@ -8,7 +8,7 @@
  * Story S001). The structured functional-requirement data carried in every artifact JSON
  * body: discrete requirements with stable sequence-numbered ids, doc-level and per-item,
  * from which the human-readable prose is generated (k2). This module declares TYPES ONLY;
- * the id minter/parser lives in `../id.ts` (reusing its padOrdinal/hash8Of/utcDate), and
+ * the id minter/parser is `RequirementIds` in `../artifact-ids.ts`, and
  * the per-body optional field + renderer section are wired by later Tasks.
  */
 

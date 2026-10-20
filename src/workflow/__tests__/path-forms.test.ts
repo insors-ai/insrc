@@ -222,7 +222,7 @@ test('src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses an absol
 });
 
 test('src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a path that names a symbol and says what to keep', () => {
-  for (const ref of ['src/workflow/synthesizer.ts:validateCitations', 'src/workflow/id.ts::storyIdToOrdinal']) {
+  for (const ref of ['src/workflow/synthesizer.ts:validateCitations', 'src/workflow/artifact-ids.ts::ArtifactIds']) {
     const details = detailsOf(checkPathForms([], [ref]));
     assert.equal(details.length, 1, `${ref} is refused`);
     assert.match(details[0]!, /names a symbol after the path; keep only the path/);

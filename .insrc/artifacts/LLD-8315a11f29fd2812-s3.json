@@ -24,7 +24,156 @@
     "hldBaseRunId": "wf-1792389266411-gvxl8y",
     "hldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S003 covers upstream obligation gathering, cross-chunk relationship checks, duplicate detection and the installed-daemon smoke.",
+          "evidence": "HLD §5.3 assigns precisely these responsibilities and ac1–ac4 to S003. DEF FR006 requires gathering without new review criteria, and FR010 requires the installed-daemon review. The proposed adapters and smoke address those requirements. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/workflow/review-pipeline/adapters/code-review-gather.ts]",
+          "action": "Preserve the stated scope and acceptance mapping.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's quality review judges structured symbol summaries rather than function bodies.",
+          "evidence": "buildQualityPrompt explicitly says 'Reason only over the structured symbol summaries provided — you are not given raw file contents.' Its payload is grounding.symbols. ChangedSymbolSummary contains signature, callers and callees, consistent with the design's stated evidence limitation. [files: src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/types.ts]",
+          "action": "Keep relationship and duplication claims limited to evidence visible in those summaries.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The BUILD record establishes that tasks t1–t7 are built and only t8–t9 remain.",
+          "evidence": "The BUILD JSON lists t1 through t6 only, with t2 marked \"passed\": false. Its summary says 'Merging pair findings into the dimension's result is t7's (finish), as the plan orders.' The implementation now contains divided finish and merge, but the cited BUILD record does not establish the claimed completion state. [files: .insrc/artifacts/BUILD-8315a11f29fd2812-s3.json, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/BUILD.md, src/workflow/review-pipeline/code-review.ts]",
+          "action": "Distinguish implemented working-tree code from validated BUILD tasks; reconcile the BUILD/PLAN status before declaring only t8–t9 outstanding.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing runReviewJob completion hook can supply the finished plan for successful smoke runs.",
+          "evidence": "RunReviewJobOpts defines onDone(job: ReviewPipelineJob), and runReviewJob invokes it after the job reaches done. The job contains plan and call counts; pipelineCallsOf derives the reported counters. runDimensionJob currently passes only signal, so adding the proposed logging callback is necessary. [files: src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/types.ts]",
+          "action": "Reuse onDone for successful-run plan logging.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The shared pipeline calls finish before merge, so dimension filters must run on the complete merged findings.",
+          "evidence": "finishJob calls adapter.finish(outputs, { notJudged, divided }), then gather.merge([finished, ...obligationParts, ...relationParts]). modelDimensionAdapter returns unfiltered chunk findings when divided; gather.merge invokes finalize, which applies spec.toResult. functionalCoverageSpec filters unknown FR references there, and coverageSpec normalizes the combined findings there. [files: src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/code-review/dimensions/coverage.ts]",
+          "action": "Make the error-path and migration wording consistently say merge/finalize applies divided-result filters; several passages still attribute this to finish.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The runner signature and verdict rules can remain unchanged.",
+          "evidence": "runCodeReview has the stated subject/provider/options/dependencies signature. It collects DimensionResult values serially and folds HIGH to block, MED to warn, otherwise pass; capVerdictAtWarn promotes only pass. The RPC and controller handler already invoke this runner, with controller judgements supplied through injected judge dependencies. [files: src/workflow/code-review/runner.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "Retain the runner contract while S005 connects controller pipeline results.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Optional pipelineCalls preserves compatibility with existing records and leaves parts intact.",
+          "evidence": "DimensionResult declares both parts and pipelineCalls as optional. finishJob adds pipelineCalls only when pipelineCallsOf returns a value; that helper returns undefined for single plans. The completion gate reads verdict and counts without requiring either field. [files: src/workflow/code-review/types.ts, src/workflow/review-pipeline/job.ts, src/workflow/code-review/gate.ts]",
+          "action": "Keep pipelineCalls optional and avoid rewriting older records.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S003 consumes the pipeline and material contracts without taking ownership of S001, S002, S004 or S005.",
+          "evidence": "HLD §§5.1–5.5 assign pipeline mechanics to S001, material construction to S002, design review to S004 and controller frames to S005. Existing GatherPlan supports obligationCall, reduceCall, relationCall with maxChars, validate and merge; AdapterStage supports redivide. The S003 adapter implementation uses these extension points. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts]",
+          "action": "Keep controller frame/schema changes in S005 and generic retry/replanning changes in S001.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A terminal dimension failure returns an unsuccessful review without persisting a partial new review result.",
+          "evidence": "runCodeReview awaits all judges before constructing and writing the artifact. A thrown judge error reaches the catch returning { ok: false, error }. The RPC converts that outcome to an error frame. Thus a pipeline failure during judging occurs before record writes. [files: src/workflow/code-review/runner.ts, src/daemon/code-review-rpc.ts, src/workflow/review-pipeline/driver.ts]",
+          "action": "Retain the planned integration test asserting no writes after a gather failure.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The proposed onDone logging supplies the plan when the smoke fails from a terminal call failure or oversized atom.",
+          "evidence": "runReviewJob invokes 'opts.onDone?.(job)' only after its execution loop finishes successfully. Errors from applyFailure or planning escape before that callback; createReviewJob can also fail before the driver starts. The RPC error frame contains only error and recoverable, not the failed job's plan. Therefore the promised failure report 'with the outcome and the plan logged' is not provided by the proposed hook. [files: src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/code-review.ts, src/daemon/code-review-rpc.ts]",
+          "action": "Specify failure-path plan capture, including prepare failures, or narrow the diagnostic promise to plans from completed dimension jobs.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every upstream S003 acceptance criterion maps to a proposed proving test.",
+          "evidence": "HLD §5.3 defines ac1 as divided/single parity, ac2 as cross-chunk mismatch detection, ac3 as duplicate detection and ac4 as the installed-daemon smoke. The design maps each to a corresponding integration or live test. Existing code-review-gather tests exercise obligations, relation calls, duplicate pairs, normalization and validation, but the proposed divided integration and smoke files are not yet present, consistent with the stated remaining work. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/LLD.md, src/workflow/review-pipeline/__tests__/code-review-gather.test.ts]",
+          "action": "Implement and run the planned integration and smoke tests before claiming acceptance; existing scripted unit tests alone do not establish end-to-end parity.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 2,
+        "low": 9,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-20T19:49:56.389Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {
@@ -419,7 +568,7 @@
       {
         "entity": "Smoke record for Epic c2ba6fa6 Story s1",
         "change": "new",
-        "details": "A JSON file beside S003 (docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/smoke-c2ba6fa6-s1.json) recording the run date, the installed daemon commit, the verdict and counts, and per dimension the chunk plan (chunk count, chars per chunk) and calls per stage. The review record itself is written by the daemon as today (.insrc/artifacts/CR-c2ba6fa62a148ed1-s1.json). Where the plan comes from (amended 2026-10-20, after review): the installed daemon's code-review RPC returns only the record, and a DimensionResult carries pipelineCalls but not the plan. So runDimensionJob passes s1's existing runReviewJob onDone hook and writes one daemon-log line per dimension job, 'review pipeline: plan', with the dimension, whether it was single, each chunk's id, atom count and chars, and pipelineCalls, from the finished job (refusal re-planning included). The smoke reads those lines from the daemon log for its run, and the verdict and counts from the review record.",
+        "details": "A JSON file beside S003 (docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/smoke-c2ba6fa6-s1.json) recording the run date, the installed daemon commit, the verdict and counts, and per dimension the chunk plan (chunk count, chars per chunk) and calls per stage. The review record itself is written by the daemon as today (.insrc/artifacts/CR-c2ba6fa62a148ed1-s1.json). Where the plan comes from (amended 2026-10-20, after review): the installed daemon's code-review RPC returns only the record, and a DimensionResult carries pipelineCalls but not the plan. So runDimensionJob writes a daemon-log line 'review pipeline: plan' for each dimension job twice: once when the job is created (the prepared plan: the dimension, whether it is single, each chunk's id, atom count and chars), and once from s1's runReviewJob onDone hook when the job finishes (the final plan after any refusal re-planning, and pipelineCalls). A job that fails after it was created therefore still has its prepared plan in the log, beside s1's refusal and failure warnings; a failure at prepare, before any plan exists, is the AtomTooLargeError naming the atom, which the smoke reports as its outcome. The smoke reads those lines from the daemon log for its run, and the verdict and counts from the review record.",
         "callSites": [
           ".insrc/artifacts/BUILD-c2ba6fa62a148ed1-s1.json"
         ]
@@ -670,7 +819,7 @@
       ]
     },
     "migration": {
-      "stateBefore": "After s1 and s2, a code review over the limit is divided into chunks of related code (s2), but no dimension has chunk prompts, obligations or a gather plan, so it cannot be judged across chunks. Today each dimension judges once (src/workflow/code-review/runner.ts:171), coverage is prepared and normalised once on both paths (src/workflow/code-review/dimensions/coverage.ts:135, src/workflow/code-review/dimensions/coverage.ts:185, src/daemon/steps/code-review-step/handler.ts:534), and foldVerdict folds the counts (src/workflow/code-review/runner.ts:257). ISSUE-aef82b03's per-dimension gather design was approved but not built. Epic c2ba6fa6 Story s1 has no code-review record because its review was refused for size. As of the 2026-10-20 amendments, PLAN tasks t1-t7 are built (the BUILD record): obligations, chunk calls, obligation adjudication, relation checks and quality's compare and pair stages. t7's divided finish and merge are built too (finish returns the chunks' own findings; merge applies the dimension's filters once), with the note-id rule, the fuller adherence obligations, and the compare and pair carries and refusals added after review. What remains: the divided-versus-single integration tests (t8), and the plan log line with the installed-daemon smoke (t9).",
+      "stateBefore": "After s1 and s2, a code review over the limit is divided into chunks of related code (s2), but no dimension has chunk prompts, obligations or a gather plan, so it cannot be judged across chunks. Today each dimension judges once (src/workflow/code-review/runner.ts:171), coverage is prepared and normalised once on both paths (src/workflow/code-review/dimensions/coverage.ts:135, src/workflow/code-review/dimensions/coverage.ts:185, src/daemon/steps/code-review-step/handler.ts:534), and foldVerdict folds the counts (src/workflow/code-review/runner.ts:257). ISSUE-aef82b03's per-dimension gather design was approved but not built. Epic c2ba6fa6 Story s1 has no code-review record because its review was refused for size. As of the 2026-10-20 amendments, PLAN tasks t1-t6 have been through the build gate (the BUILD record; t2's scope finding is carried to the BUILD approval): obligations, chunk calls, obligation adjudication, relation checks and quality's compare and pair stages. t7's divided finish and merge are implemented and committed but not yet through the build gate (finish returns the chunks' own findings; merge applies the dimension's filters once), with the note-id rule, the fuller adherence obligations, and the compare and pair carries and refusals added after review. What remains: the divided-versus-single integration tests (t8), and the plan log line with the installed-daemon smoke (t9).",
       "stateAfter": "Each model-judged dimension's adapter has obligations and context, chunk prompts that return findings plus keyed notes, an obligation adjudication per key, relation checks for cut call relations (quality, adherence), quality's compare and pair stages, and a merge and finish that fold into today's DimensionResult with pipelineCalls. A divided review gives one result per dimension and today's verdict rule. Epic c2ba6fa6 Story s1's code review completes on the installed daemon and its smoke record is written.",
       "migrationSteps": [
         {

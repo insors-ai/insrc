@@ -383,8 +383,8 @@ function recordRefToDisk(repoPath: string, issueHash: string, ref: string): void
 }
 
 /** The identifier forms a WorkItemRef can resolve through, most specific first.
- *  `slug` is the sc3 locator's primary output — a full hierarchical slug (e.g.
- *  `E<date><hash>-S001`) that round-trips through `parseWorkflowId`; `storyId`
+ *  `slug` is the sc3 locator's primary output — a full hierarchical slug (a
+ *  work-item slug) that round-trips through `parseWorkflowId`; `storyId`
  *  is the single-epic structural-label fallback (`s\d+`, resolvable only when the
  *  artifacts dir holds exactly one epic). A bare `epicHash` (hex-16) is NOT a form
  *  `resolveWorkflowRef` accepts — it needs the full `E<date><hash>` id, not the

@@ -1061,7 +1061,7 @@ function readArtifactIdMarker(mdPath: string): string | undefined {
 	}
 }
 
-/** `.../docs/epics/<slug>-E.../S001/LLD.md` → `.../` (the repo root). Returns
+/** `.../docs/epics/<slug>-E.../S<nnn>/LLD.md` → `.../` (the repo root). Returns
  *  undefined when the path has no recognised docs root. The nested work-item
  *  roots (docs/epics, docs/standalone — sc2) plus the side-by-side stub dir. */
 function repoRootFromDocsPath(p: string): string | undefined {

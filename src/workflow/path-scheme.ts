@@ -16,8 +16,7 @@
  *
  *   docs/epics/<slug>-E<YYYYMMDD><hash8>/        — epic-parented work
  *     SPEC.md DEF.md HLD.md                      — item-root artifacts (singletons)
- *     S001/  LLD.md PLAN.md BUILD.md CR.md EXT.md — per-story artifacts
- *     S002/  ...
+ *     S<nnn>/  LLD.md PLAN.md BUILD.md CR.md EXT.md — per-story artifacts
  *   docs/standalone/<slug>-E<YYYYMMDD><hash8>/    — triage-routed features (same shape)
  *
  * The folder is keyed by the work item's canonical identity (`epicSegment` +

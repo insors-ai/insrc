@@ -168,7 +168,7 @@ function firstSentence(s: string | undefined): string | undefined {
 	return t.length > 80 ? `${t.slice(0, 77)}...` : t;
 }
 
-/** `S001` for any spelling of the story id (`s1`, `S1`, `S001`). */
+/** The `S<nnn>` folder form for any spelling of the story id. */
 function storyLabel(storyId: string): string {
 	try { return `S${String(storyIdToOrdinal(storyId)).padStart(3, '0')}`; } catch { return storyId; }
 }

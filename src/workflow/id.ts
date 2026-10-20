@@ -34,8 +34,8 @@
  *   epicHash  '185807ba9a6b35d3'
  *   createdAt '2026-07-17T07:42:28.275Z'
  *   storyId   's1'  taskId 't3'
- *     → canonical E20260717185807ba:S001:T003
- *     → slug      E20260717185807ba-S001-T003
+ *     → canonical E20260717185807ba:S<nnn>:T<nnn>
+ *     → slug      E20260717185807ba-S<nnn>-T<nnn>
  */
 
 // ---------------------------------------------------------------------------
@@ -68,7 +68,7 @@ export interface WorkItemIdentity {
 	readonly slug:        string;
 	/** `E<YYYYMMDD><hash8>` — the epic segment (top-level folder key). */
 	readonly epicSegment: string;
-	/** 1-based story ordinal (`s1` and `S001` both → 1); absent at epic level. */
+	/** 1-based story ordinal (`s1` and the stored `S<nnn>` form both → 1); absent at epic level. */
 	readonly story?:      number | undefined;
 }
 
@@ -119,7 +119,7 @@ function padOrdinal(n: number): string {
 export function storyIdToOrdinal(storyId: string): number {
 	// Accept BOTH the lowercase 's<n>' form (epic-parented) and the uppercase
 	// 'S<nnn>' form (triage-routed standalone) so every story canonicalizes
-	// uniformly. The ordinal is what matters — 's1', 'S1' and 'S001' all yield 1.
+	// uniformly. The ordinal is what matters — the lowercase and stored uppercase spellings of one story yield the same ordinal.
 	const m = /^[sS](\d+)$/.exec(storyId);
 	if (m === null) throw new Error(`invalid storyId '${storyId}' (expected s<n>)`);
 	return Number(m[1]);

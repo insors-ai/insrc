@@ -121,7 +121,9 @@ export interface GatherPlan<R> {
 	/** A quarter of the limit. */
 	readonly noteCapChars:   number;
 	/** One or more calls that together judge a cross-chunk relation. */
-	readonly relationCall?:  ((pair: readonly [ReviewAtom, ReviewAtom]) => readonly ChunkPrompt[]) | undefined;
+	/** `maxChars` is set when a call for this relation was refused for its size: return calls that
+	 *  each fit it (for example one full atom against the other's neighbour summary). */
+	readonly relationCall?:  ((pair: readonly [ReviewAtom, ReviewAtom], maxChars?: number) => readonly ChunkPrompt[]) | undefined;
 	/** The keyed notes a chunk answer carries; a note names atoms of its call, else stands for all of them. */
 	readonly notesFrom?:     ((answer: StageAnswer) => readonly { readonly key: string; readonly text: string; readonly atomIds?: readonly string[] | undefined }[]) | undefined;
 	/** Semantic problems with a gather call's answer (obligation, relation, reduction) already

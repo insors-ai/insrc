@@ -837,8 +837,8 @@ test('a relation judged by two calls is complete only when both are answered', (
 	assert.equal((r.pipelineCalls as { relation: number }).relation, 2);
 	assert.equal(offered, 1);
 
-	// A refused relation call cannot be divided: it is named, never resent, and the review never
-	// completes on the other call alone.
+	// A refused relation call is asked again within the reported size: its new calls replace it, the
+	// refused prompt is never resent, and the relation is judged only when every call is answered.
 	{
 		let rj = createReviewJob(rebuild(snap), 'daemon', snap, LIMIT);
 		while (rj.pending.some(c => c.role === 'chunk')) {
@@ -846,7 +846,19 @@ test('a relation judged by two calls is complete only when both are answered', (
 			rj = applyOutput(rj, rebuild(rj.snapshot), c.callId, model.answer(c));
 		}
 		const [r1, r2] = rj.pending.filter(c => c.role === 'relation');
-		assert.throws(() => applyFailure(rj, rebuild(rj.snapshot), r1!.callId, 'size-refusal', 500), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('relation'));
+		const before = new Set(rj.pending.map(c => c.callId));
+		let re = applyFailure(rj, rebuild(rj.snapshot), r1!.callId, 'size-refusal', 900);
+		const fresh = re.pending.filter(c => !before.has(c.callId));
+		assert.equal(fresh.length, 2, 'asked again: one call per direction');
+		assert.ok(fresh.every(c => c.role === 'relation' && c.carries.key === key && c.chars <= 900), 'each within the reported size');
+		assert.ok(!re.pending.some(c => c.callId === r1!.callId) && !fresh.some(c => content(c) === content(r1!)), 'the refused prompt is never resent');
+		assert.equal(re.relationPlan[key], 3, 'the relation now waits for three answers');
+		for (const c of [r2!, ...fresh].slice(0, 2)) re = applyOutput(re, rebuild(re.snapshot), c.callId, model.answer(c));
+		assert.equal(relationJudged(re, key), false, 'not judged until every call is answered');
+		re = applyOutput(re, rebuild(re.snapshot), fresh[1]!.callId, model.answer(fresh[1]!));
+		assert.equal(relationJudged(re, key), true);
+		// Calls that still do not fit name the relation.
+		assert.throws(() => applyFailure(rj, rebuild(rj.snapshot), r1!.callId, 'size-refusal', 200), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('relation'));
 		// Answered once, failed twice otherwise: the review fails rather than finishing on one answer.
 		let one = applyOutput(rj, rebuild(rj.snapshot), r2!.callId, model.answer(r2!));
 		one = applyFailure(one, rebuild(one.snapshot), r1!.callId, 'transient');

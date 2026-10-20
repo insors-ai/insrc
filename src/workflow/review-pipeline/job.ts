@@ -278,8 +278,8 @@ export function applyFailure(
 	// A gather call fails the review when it fails twice; it re-divides its notes when refused.
 	const stage: Pick<AdapterStage, 'id' | 'onCallFailure' | 'withCorrection'> = isGatherRole(call.role) ? { id: call.stage, onCallFailure: 'fail-review' } : currentStage(job, adapter);
 	if (cause === 'size-refusal') {
-		// A relation call reads one fixed pair: it cannot be divided, and is never resent.
-		if (call.role === 'relation' || call.role === 'merge') throw new AtomTooLargeError(`the ${call.role} call ${call.carries.key ?? call.callId}`, call.chars, maxChars ?? call.chars - 1);
+		if (call.role === 'relation') return redivideRelation(rest, adapter, call, maxChars);
+		if (call.role === 'merge') throw new AtomTooLargeError(`the merge call ${call.carries.key ?? call.callId}`, call.chars, maxChars ?? call.chars - 1);
 		return isGatherRole(call.role) ? redivideNotes(rest, adapter, call, maxChars) : redivide(rest, adapter, currentStage(job, adapter), call, maxChars);
 	}
 
@@ -542,6 +542,33 @@ function applyGatherAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknow
 	const noteId = `n${base.seq + 1}`;
 	const note: EvidenceNote = { noteId, key: call.carries.key ?? '', text: text as string, atomIds: call.carries.atomIds };
 	return advanceGather({ ...base, seq: base.seq + 1, notes: [...base.notes, note], noteProvenance: { ...base.noteProvenance, [noteId]: call.carries.noteIds } }, adapter);
+}
+
+/**
+ * A refused relation call: the adapter is asked again for the relation's calls within the reported
+ * size (else half the refused prompt). They replace the refused call; the relation is judged when
+ * all its calls are answered. Calls that still do not fit name the relation; the refused prompt is
+ * never resent.
+ */
+function redivideRelation(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, call: ReviewCall, maxChars: number | undefined): ReviewPipelineJob {
+	const gather = gatherOf(job, adapter);
+	const key = call.carries.key ?? '';
+	const budget = Math.min(maxChars ?? Math.floor(call.chars / 2), call.chars - 1, job.plan.limitChars);
+	const [fromId, toId] = call.carries.atomIds;
+	const byId = new Map(readMaterial(job, adapter).atoms.map(a => [a.id, a] as const));
+	const from = fromId !== undefined ? byId.get(fromId) : undefined;
+	const to = toId !== undefined ? byId.get(toId) : undefined;
+	if (gather.relationCall === undefined || from === undefined || to === undefined) {
+		throw new AtomTooLargeError(`the relation call ${key}`, call.chars, budget);
+	}
+	const prompts = gather.relationCall([from, to], budget);
+	for (const prompt of prompts) {
+		const chars = sentChars(prompt);
+		if (chars > budget) throw new AtomTooLargeError(`the relation ${from.id} -> ${to.id} (${key})`, chars, budget);
+	}
+	log.warn({ dimension: job.dimension, key, refused: call.chars, budget, calls: prompts.length }, 'review pipeline: a relation call was refused for its size; asked again within the reported size');
+	const relationPlan = { ...job.relationPlan, [key]: (job.relationPlan[key] ?? 1) - 1 + prompts.length };
+	return issue({ ...job, relationPlan }, prompts.map(prompt => ({ prompt, role: 'relation' as const, carries: call.carries })));
 }
 
 /** Context atoms as evidence notes under the key, once (job.contextReduced), named for errors.

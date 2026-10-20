@@ -441,7 +441,7 @@ neighbourSummary?(atom: ReviewAtom, material: ReviewMaterial): string
 ### 2.22 `GatherPlan.relationCall`
 
 ```typescript
-relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => readonly ChunkPrompt[]) | undefined
+relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom], maxChars?: number) => readonly ChunkPrompt[]) | undefined
 ```
 
 **Parameters:**
@@ -454,6 +454,7 @@ relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => readonly ChunkPromp
 
 **Postconditions:**
 - Each relation in crossRelations is offered to relationCall exactly once per job.
+- Refusal (amended 2026-10-20 after review): a relation call refused for its size is asked again with maxChars = the reported size (else half the refused prompt); the calls returned replace the refused one and the relation is judged when all its calls are answered. A returned call that still exceeds maxChars names the relation (AtomTooLargeError); the refused prompt is never resent.
 
 ## 3. Data model changes
 

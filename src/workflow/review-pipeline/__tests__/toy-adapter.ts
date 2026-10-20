@@ -110,9 +110,12 @@ export function toyAdapter(snapshot: ReviewMaterialSnapshot, opts: ToyOpts = {})
 			reduceCall: (key, batch) => ({ messages: [{ role: 'system', content: 'Reduce this evidence to one note.' }, { role: 'user', content: renderNotes(key, batch) }], schema: NOTE_SCHEMA, execution }),
 			noteCapChars: Math.floor(opts.gatherLimit / 4),
 			notesFrom: (a: StageAnswer) => (a.answer as { notes?: { key: string; text: string }[] }).notes ?? [],
-			...(opts.relationCalls !== undefined ? { relationCall: (pair: readonly [ReviewAtom, ReviewAtom]) => {
+			...(opts.relationCalls !== undefined ? { relationCall: (pair: readonly [ReviewAtom, ReviewAtom], maxChars?: number) => {
 				opts.onRelationCall?.(pair);
 				const one = (a: ReviewAtom, b: ReviewAtom, dir: string) => ({ messages: [{ role: 'system' as const, content: `Does ${a.id} use ${b.id} correctly (${dir})?` }, { role: 'user' as const, content: JSON.stringify({ a: a.text, b: b.text }) }], schema: RELATION_SCHEMA, execution });
+				// Within a refused size: one call per direction, each holding one full atom and the other's label.
+				const half = (a: ReviewAtom, b: ReviewAtom) => ({ messages: [{ role: 'system' as const, content: `Does ${a.id} use ${b.id} (${b.label}) correctly?` }, { role: 'user' as const, content: JSON.stringify({ a: a.text }) }], schema: RELATION_SCHEMA, execution });
+				if (maxChars !== undefined) return [half(pair[0], pair[1]), half(pair[1], pair[0])];
 				return opts.relationCalls === 1 ? [one(pair[0], pair[1], 'both')] : [one(pair[0], pair[1], 'forward'), one(pair[1], pair[0], 'backward')];
 			} } : {}),
 			...(opts.gatherValidate !== undefined ? { validate: opts.gatherValidate } : {}),

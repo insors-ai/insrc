@@ -119,7 +119,9 @@ test('claude and codex accept the envelope around every review answer schema and
 			assert.ok(openEnvelope(raw, callId) !== undefined, `${kind} session: echoes its callId`);
 		} finally { rmSync(repo, { recursive: true, force: true }); }
 	}
-	assert.ok(ran > 0, 'at least one CLI was available');
+	// Both CLIs are required: the gate is that claude AND codex accept the envelope.
+	assert.ok(has('claude') && has('codex'), 'both the claude and the codex CLI must be installed for this probe');
+	assert.equal(ran, 2 * SCHEMAS.length, 'every schema answered on both CLIs');
 });
 
 test('a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline', { skip: !GATE ? 'INSRC_LIVE_TESTS is not 1' : !ollamaHas(OLLAMA_MODEL) ? `${OLLAMA_MODEL} is not installed` : false, timeout: 90 * 60_000 }, async () => {

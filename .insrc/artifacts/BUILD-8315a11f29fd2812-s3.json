@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s3",
     "createdAt": "2026-10-20T16:44:27.482Z",
-    "updatedAt": "2026-10-20T17:12:07.050Z",
+    "updatedAt": "2026-10-20T17:14:24.444Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
@@ -25,10 +25,10 @@
       },
       {
         "id": "t4",
-        "passed": false
+        "passed": true
       }
     ],
-    "summary": "Each model dimension with a chunk call gets a gather plan (src/workflow/review-pipeline/adapters/code-review-gather.ts): obligationCall judges each key once with today's findings schema and the dimension's rules (spec chunk.judge), on all chunks' notes and its own context; a key with no notes is judged on the no-evidence statement; with zero atoms each key is judged on its context alone. reduceCall condenses a batch into one note within noteCapChars (a quarter of the limit); notesFrom reads chunk notes; partOf maps an answer to a DimensionResult part. Locations stay governed by today's per-dimension filters (t7), not by a gather validate.",
+    "summary": "Each model dimension with a chunk call gets a gather plan (adapters/code-review-gather.ts): obligationCall judges each key once with today's findings schema and rules, on all chunks' notes and its own context; a key with no notes is judged on the no-evidence statement; reduceCall condenses notes within noteCapChars; notesFrom reads chunk notes; partOf maps an answer to a part. After the first gate: a promised test is judged under its own framing (no symbol grading) and the gather's validate rejects any non-promised-test finding, so with zero atoms nothing is reported as symbol coverage (tested on a diff review divided with zero atoms); conventions findings name the breached documented-rule id, not the module text.",
     "testRecord": {
       "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/TESTS.md"
     },
@@ -38,79 +38,79 @@
           "file": "src/workflow/code-review/dimensions/adherence.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/conventions.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/functional-coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/quality.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-chunk.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-gather.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-obligations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/code-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/job.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T17:12:07.050Z"
+        "timestamp": "2026-10-20T17:14:24.444Z"
       }
     ],
-    "commit": "dc591479"
+    "commit": "3f3345c3"
   }
 }

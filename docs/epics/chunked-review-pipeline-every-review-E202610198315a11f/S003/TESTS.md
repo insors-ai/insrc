@@ -80,7 +80,7 @@ Run at 2026-10-20T17:04:04.005Z on commit `eae69f84`. Tests check: **passed**. 2
 
 ## t4
 
-Run at 2026-10-20T17:12:07.050Z on commit `dc591479`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-20T17:14:24.444Z on commit `3f3345c3`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key with no notes is adjudicated on the no-evidence statement'**
 
@@ -110,4 +110,4 @@ Run at 2026-10-20T17:12:07.050Z on commit `dc591479`. Tests check: **passed**. 4
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 10 | 0.7 s |  |
+| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 10 | 0.6 s |  |

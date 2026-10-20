@@ -26,7 +26,7 @@ import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import type { BuildRecord } from '../runners/build/standalone-record.js';
 import type { TestRecord } from '../runners/build/test-record.js';
-import type { PipelineCalls } from '../review-pipeline/types.js';
+import type { PipelineCalls, ReviewMaterialSnapshot } from '../review-pipeline/types.js';
 
 // ---------------------------------------------------------------------------
 // sc3 — the per-dimension finding vocabulary (owned here, emitted by s2-s5)
@@ -131,6 +131,10 @@ export type CoverageEvidence = 'reached-passing' | 'reached-not-passing' | 'no-e
 export interface JudgeContext {
 	/** 'degraded' when the grounding is the diff, not the graph. */
 	readonly groundingMode: 'full' | 'degraded';
+	/** The review's snapshot, taken once by runCodeReview (Epic 8315a11f); absent: the judge takes it. */
+	readonly snapshot?: ReviewMaterialSnapshot | undefined;
+	/** Cancels the review, including a call in flight. */
+	readonly signal?: AbortSignal | undefined;
 }
 
 /** The IPC-served grounding bundle — structured summaries only, never file text. */

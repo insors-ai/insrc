@@ -138,7 +138,8 @@ export type StructuredValidator<T> = (raw: unknown) => ValidationResult<T>;
  * seen -- markdown fence wrappers and mid-stream truncation -- so the
  * model knows what NOT to do rather than only what to do.
  */
-function buildRetryNote(errors: readonly string[]): string {
+/** The correction note a re-asked structured call carries: the problems, then how to answer. */
+export function buildRetryNote(errors: readonly string[]): string {
 	const errorList = errors.length > 0
 		? `\n  - ${errors.join('\n  - ')}\n`
 		: ' (no structured error captured)';

@@ -21,6 +21,7 @@ import {
 import type { CodeReviewSubject, CodeReviewGrounding, ChangedSymbolSummary } from '../../types.js';
 import type { LLMProvider } from '../../../../shared/types.js';
 import { mintFrId } from '../../../id.js';
+import { enveloped, unenveloped } from '../../../review-pipeline/__tests__/enveloped.js';
 
 const EPIC = '185807ba9a6b35d3';
 const ISO  = '2026-07-17T07:42:28.275Z';
@@ -49,7 +50,7 @@ const grounding = (symbols: readonly Partial<ChangedSymbolSummary>[] = [{ file: 
 
 function fakeProvider(scripted: unknown): { provider: LLMProvider; calls: () => number } {
 	let n = 0;
-	const provider = { completeStructured: async () => { n++; return scripted; } } as unknown as LLMProvider;
+	const provider = { completeStructured: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); } } as unknown as LLMProvider;
 	return { provider, calls: () => n };
 }
 

@@ -54,7 +54,7 @@ export const erDiagramHandler: DiagramAdherenceHandler = {
 	type: ER_HANDLER_TYPE,
 	appliesTo: isErCompanion,
 	// eslint-disable-next-line @typescript-eslint/require-await
-	async judge(subject: CodeReviewSubject, _grounding: CodeReviewGrounding, _provider: LLMProvider): Promise<readonly DimensionFinding[]> {
+	async judge(subject: CodeReviewSubject, _grounding: CodeReviewGrounding, _provider: LLMProvider, exists?: (relPath: string) => boolean): Promise<readonly DimensionFinding[]> {
 		const body = subjectBody(subject);
 		const findings: DimensionFinding[] = [];
 
@@ -69,8 +69,10 @@ export const erDiagramHandler: DiagramAdherenceHandler = {
 		//     not ship. Checks existence only (not the file's content).
 		for (const ref of body.companions ?? []) {
 			if (!isErCompanion(ref)) continue;
-			const abs = isAbsolute(ref.relPath) ? ref.relPath : join(subject.repoPath, ref.relPath);
-			if (!existsSync(abs)) {
+			const present = exists !== undefined
+				? exists(ref.relPath)
+				: existsSync(isAbsolute(ref.relPath) ? ref.relPath : join(subject.repoPath, ref.relPath));
+			if (!present) {
 				findings.push({
 					dimension: 'diagram',
 					severity:  'HIGH',

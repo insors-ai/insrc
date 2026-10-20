@@ -25,7 +25,9 @@ import type { CompanionArtifactRef } from '../../../artifacts/companion/types.js
 export interface DiagramAdherenceHandler {
 	readonly type: string;
 	appliesTo(ref: CompanionArtifactRef): boolean;
-	judge(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider): Promise<readonly DimensionFinding[]>;
+	/** `exists` answers whether a companion file existed when the review was prepared
+	 *  (Epic 8315a11f: a review reads only its snapshot). Absent: the file system now. */
+	judge(subject: CodeReviewSubject, grounding: CodeReviewGrounding, provider: LLMProvider, exists?: (relPath: string) => boolean): Promise<readonly DimensionFinding[]>;
 }
 
 /** A second registration claimed the same diagram type — a startup wiring bug

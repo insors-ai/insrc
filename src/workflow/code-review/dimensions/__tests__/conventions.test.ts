@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { judgeConventions, buildConventionsPrompt, CONVENTIONS_FINDINGS_SCHEMA } from '../conventions.js';
 import type { CodeReviewSubject, CodeReviewGrounding } from '../../types.js';
 import type { LLMProvider } from '../../../../shared/types.js';
+import { enveloped, unenveloped } from '../../../review-pipeline/__tests__/enveloped.js';
 
 // ---- fixtures ----
 
@@ -32,7 +33,7 @@ const grounding = (n = 2): CodeReviewGrounding => ({
 function fakeProvider(scripted: unknown): { provider: LLMProvider; calls: () => number } {
 	let n = 0;
 	const provider = {
-		completeStructured: async () => { n++; return scripted; },
+		completeStructured: async (_m: unknown, schema: unknown) => { n++; return enveloped(schema, scripted); },
 	} as unknown as LLMProvider;
 	return { provider, calls: () => n };
 }

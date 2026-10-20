@@ -24,7 +24,8 @@
 
 import type { LLMMessage, LLMProvider } from '../../../../shared/types.js';
 import { getLogger } from '../../../../shared/logger.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult } from '../../types.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult, JudgeContext } from '../../types.js';
+import { deterministicDimensionAdapter, fileExisted, runDimensionJob, type DeterministicDimensionSpec } from '../../../review-pipeline/code-review.js';
 import type { CompanionArtifactRef } from '../../../artifacts/companion/types.js';
 import type { ErDefinition } from '../../../artifacts/companion/er.js';
 import type { SequenceDefinition } from '../../../artifacts/companion/sequence.js';
@@ -76,15 +77,15 @@ function unknownTypeOf(ref: CompanionArtifactRef): string {
 }
 
 /**
- * The 'diagram' judge — a thin dispatcher (no inline type switch). For each diagram
- * companion, delegate to the handler whose `appliesTo` selects it; a companion no
- * handler owns yields a LOW observation. The ER handler also runs for an
- * erDefinition present without a companion ref. Serial; per-handler isolation.
+ * Today's diagram judgement over the registered handlers, each isolated: a handler
+ * that throws is recorded as a LOW observation and the rest still run. `exists`
+ * answers companion-file existence from the review's snapshot.
  */
-export async function judgeDiagram(
+export async function diagramResult(
 	subject:   CodeReviewSubject,
 	grounding: CodeReviewGrounding,
 	provider:  LLMProvider,
+	exists?:   (relPath: string) => boolean,
 ): Promise<DimensionResult> {
 	const body = bodyOf(subject);
 	const findings: DimensionFinding[] = [];
@@ -128,7 +129,7 @@ export async function judgeDiagram(
 	// Serial dispatch; a handler that throws yields a LOW observation (isolation).
 	for (const handler of handlersToRun) {
 		try {
-			findings.push(...await handler.judge(subject, grounding, provider));
+			findings.push(...await handler.judge(subject, grounding, provider, exists));
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
 			log.warn({ type: handler.type, err: msg }, 'diagram handler threw; recording a LOW observation');
@@ -143,6 +144,32 @@ export async function judgeDiagram(
 	}
 
 	return { dimension: DIMENSION, findings };
+}
+
+/** Every registered diagram handler is deterministic: a model call from one is a wiring error. */
+const NO_MODEL: LLMProvider = new Proxy({}, {
+	get: (_t, prop) => (prop === 'then' ? undefined : () => { throw new Error(`a diagram handler called the model (${String(prop)}); diagram handlers are deterministic`); }),
+}) as LLMProvider;
+
+/** The diagram dimension as a pipeline spec: on the daemon path one deterministic
+ *  stage over the snapshot; the controller is offered today's prompt. */
+export function diagramSpec(subject: CodeReviewSubject): DeterministicDimensionSpec {
+	return {
+		dimension: DIMENSION,
+		onFailure: 'record-observation',
+		run: (snapshot, grounding) => diagramResult(subject, grounding, NO_MODEL, relPath => fileExisted(snapshot, relPath)),
+		controllerPrompt: grounding => buildDiagramPrompt(subject, grounding, undefined),
+	};
+}
+
+/** The diagram judge: one review-pipeline job (Epic 8315a11f). */
+export async function judgeDiagram(
+	subject:   CodeReviewSubject,
+	grounding: CodeReviewGrounding,
+	provider:  LLMProvider,
+	ctx?:      JudgeContext,
+): Promise<DimensionResult> {
+	return runDimensionJob(s => deterministicDimensionAdapter(diagramSpec(subject), subject, s), subject, grounding, provider, ctx);
 }
 
 /**

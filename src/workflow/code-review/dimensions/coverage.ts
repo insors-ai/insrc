@@ -38,16 +38,15 @@
  */
 
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
-import { validateAgainstSchema, type StructuredCall, type StructuredValidator } from '../../../agent/providers/structured-output.js';
 import type {
 	ChangedSymbolSummary, CodeReviewSubject, CodeReviewGrounding, CoverageEvidence, CoverageFindingKind,
 	DimensionResult, DimensionFinding, JudgeContext, LoweredFinding, ReviewDimension,
 } from '../types.js';
 import { isCoverageEligible } from '../grounding.js';
+import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
 import { testRecordView } from './test-record-view.js';
 
 const DIMENSION: ReviewDimension = 'coverage';
-const MAX_ATTEMPTS = 3;
 
 /** The model's raw coverage output, validated against COVERAGE_FINDINGS_SCHEMA.
  *  Per-finding shape maps 1:1 onto sc3 DimensionFinding minus the fixed
@@ -286,10 +285,37 @@ function fileOf(location: string): string {
 	return i >= 0 ? location.slice(0, i) : location;
 }
 
+/** Today's coverage judgement as a pipeline spec: the prompt over the prepared
+ *  grounding (coverage-eligible symbols with their evidence), and the mapping, scoped
+ *  to the changed set and normalised ONCE over the dimension's result. */
+export function coverageSpec(subject: CodeReviewSubject): ModelDimensionSpec<CoverageOutput> {
+	const changed = new Set(subject.changedFiles);
+	return {
+		dimension: DIMENSION,
+		schema:    COVERAGE_FINDINGS_SCHEMA,
+		prompt:    (grounding, mode, note) => buildCoveragePrompt(subject, prepareCoverageGrounding(subject, grounding, mode), note, { groundingMode: mode }),
+		toResult:  (output, grounding, mode) => normalizeCoverageFindings({
+			dimension: DIMENSION,
+			findings: output.findings
+				.filter(f => changed.has(fileOf(f.location)))   // scope to the Story's own changes
+				.map((f): DimensionFinding => ({
+					dimension: DIMENSION,
+					severity:  f.severity,
+					location:  f.location,
+					message:   f.message,
+					...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
+					...(f.confidence     !== undefined ? { confidence:     f.confidence     } : {}),
+					findingKind: f.findingKind,
+					...(f.symbolId       !== undefined ? { symbolId:       f.symbolId       } : {}),
+				})),
+		}, prepareCoverageGrounding(subject, grounding, mode), subject),
+	};
+}
+
 /**
- * The coverage judge (t2). One serial completeStructured call via
- * withStructuredRetry; maps the validated findings onto the sc3 DimensionResult
- * and drops any finding outside the Story's changed set. Propagates on failure.
+ * The coverage judge: one review-pipeline job (Epic 8315a11f), whose single call
+ * is today's prompt and schema with the repo as cwd. The pipeline re-issues a
+ * failed call once and propagates a second failure (never a fabricated pass).
  */
 export async function judgeCoverage(
 	subject:   CodeReviewSubject,
@@ -297,34 +323,5 @@ export async function judgeCoverage(
 	provider:  LLMProvider,
 	context?:  JudgeContext,
 ): Promise<DimensionResult> {
-	const { withStructuredRetry } = await import('../../../agent/providers/structured-output.js');
-	const groundingMode = context?.groundingMode ?? 'full';
-	const prepared = prepareCoverageGrounding(subject, grounding, groundingMode);
-
-	const call: StructuredCall = (note) =>
-		provider.completeStructured<unknown>(buildCoveragePrompt(subject, prepared, note, { groundingMode }), COVERAGE_FINDINGS_SCHEMA, { cwd: subject.repoPath });
-
-	const validate: StructuredValidator<CoverageOutput> = (raw) =>
-		validateAgainstSchema<CoverageOutput>(COVERAGE_FINDINGS_SCHEMA, raw);
-
-	// Exactly one logical judgement; withStructuredRetry re-issues the SAME
-	// serial call on validation failure and throws (never a fabricated pass)
-	// once the attempt cap is exhausted.
-	const output = await withStructuredRetry(call, validate, MAX_ATTEMPTS);
-
-	const changed = new Set(subject.changedFiles);
-	const findings: DimensionFinding[] = output.findings
-		.filter(f => changed.has(fileOf(f.location)))   // scope to the Story's own changes
-		.map(f => ({
-			dimension: DIMENSION,
-			severity:  f.severity,
-			location:  f.location,
-			message:   f.message,
-			...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
-			...(f.confidence     !== undefined ? { confidence:     f.confidence     } : {}),
-			findingKind: f.findingKind,
-			...(f.symbolId       !== undefined ? { symbolId:       f.symbolId       } : {}),
-		}));
-
-	return normalizeCoverageFindings({ dimension: DIMENSION, findings }, prepared, subject);
+	return runDimensionJob(s => modelDimensionAdapter(coverageSpec(subject), subject, s), subject, grounding, provider, context);
 }

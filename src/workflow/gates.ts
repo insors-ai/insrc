@@ -202,10 +202,12 @@ export function appendStoryToDefine(repoPath: string, epicHash: string, story: D
 		throw new Error(`Story '${story.id}' already exists in Epic '${epicHash}'`);
 	}
 	const next: DefineArtifact = { ...define, body: { ...define.body, stories: [...define.body.stories, story] } };
+	// The folder first: a Define with no Epic anchor fails here, before any file is written.
+	const mdPath = defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(next.meta), workItemKindOf(next.meta), next.meta.epicSlug).md;
 	// content: the extend path changes body.stories of a Define a signoff may cover.
 	const revision = writeArtifact(jsonPath, next, 'content');
 	// raw-write: markdown render of the Define just written.
-	writeAtomic(defineArtifactPaths(repoPath, epicHash, workItemAnchorCreatedAt(next.meta), workItemKindOf(next.meta), next.meta.epicSlug).md, renderDefineMarkdown(next));
+	writeAtomic(mdPath, renderDefineMarkdown(next));
 	return { ...next, meta: { ...next.meta, revision } };
 }
 

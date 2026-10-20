@@ -346,6 +346,20 @@ export function realRecords(fileNames: readonly string[] = Object.keys(REAL_STOR
 	}).sort((a, b) => a.artifactId.localeCompare(b.artifactId));
 }
 
+/** The same real-shape files as the delivery reader sees them after the s9 conversion, which stamps each
+ *  record with the day the old derivation gave it (its own createdAt). */
+export function stampedRealRecords(fileNames: readonly string[] = Object.keys(REAL_STORE)): ArtifactRecord[] {
+	return fileNames.map(f => {
+		const raw = REAL_STORE[f];
+		if (raw === undefined) throw new Error(`fixtures: no REAL_STORE file '${f}'`);
+		const meta = (raw as { meta?: Record<string, unknown> }).meta;
+		const stamped = meta !== undefined && meta['epicCreatedAt'] === undefined && typeof meta['createdAt'] === 'string'
+			? { ...raw, meta: { ...meta, epicCreatedAt: meta['createdAt'] } } as RawStoreFile
+			: raw;
+		return recordFromFile(f, stamped);
+	}).sort((a, b) => a.artifactId.localeCompare(b.artifactId));
+}
+
 /** A record set over the given records and failures, sorted as the loader sorts them. */
 export function recordSet(
 	records: readonly ArtifactRecord[],
@@ -372,8 +386,11 @@ function fileFor(kind: DeliveryArtifactKind, hash: string, storyId?: string): st
 
 function fabricate(kind: DeliveryArtifactKind, hash: string, storyId: string | undefined, meta: Meta, body: unknown): ArtifactRecord {
 	const hashKey = kind === 'ISSUE' ? 'issueHash' : kind === 'SPEC' ? 'specHash' : 'epicHash';
+	// A record carries the Epic's anchor stamp (the state after the s9 conversion); a test of an
+	// unstamped record passes `epicCreatedAt: undefined`.
 	const fullMeta: Meta = {
 		createdAt: CREATED,
+		epicCreatedAt: typeof meta['createdAt'] === 'string' ? meta['createdAt'] : CREATED,
 		[hashKey]: hash,
 		...(storyId !== undefined ? { storyId } : {}),
 		...meta,

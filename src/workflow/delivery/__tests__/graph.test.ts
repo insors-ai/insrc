@@ -20,7 +20,7 @@ import {
 	issueRecord,
 	lldRecord,
 	planRecord,
-	realRecords,
+	stampedRealRecords,
 	recordFromFile,
 	recordSet,
 	specRecord,
@@ -75,7 +75,7 @@ test('s1 and S001 records join one story and both raw ids are kept in sourceIds'
 });
 
 test('the real S001/s001 pair from epic dfc0371b yields one story', () => {
-	const graph = buildWorkItemGraph(recordSet(realRecords([
+	const graph = buildWorkItemGraph(recordSet(stampedRealRecords([
 		'LLD-dfc0371b7200f5b5-S001.json', 'PLAN-dfc0371b7200f5b5-s001.json',
 		'BUILD-dfc0371b7200f5b5-S001.json', 'CR-dfc0371b7200f5b5-S001.json',
 	])));
@@ -87,7 +87,7 @@ test('the real S001/s001 pair from epic dfc0371b yields one story', () => {
 });
 
 test('LLD standalone true with BUILD standalone false (real d88062a6 and dfc0371b shapes) is one item with no notice', () => {
-	const graph = buildWorkItemGraph(recordSet(realRecords([
+	const graph = buildWorkItemGraph(recordSet(stampedRealRecords([
 		'LLD-d88062a6e63aa312-S001.json', 'BUILD-d88062a6e63aa312-S001.json',
 		'LLD-dfc0371b7200f5b5-S001.json', 'BUILD-dfc0371b7200f5b5-S001.json',
 	])));
@@ -127,7 +127,7 @@ test('a standalone story with no head is a root with no invented epic, dated fro
 });
 
 test('a trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice', () => {
-	const graph = buildWorkItemGraph(recordSet(realRecords([
+	const graph = buildWorkItemGraph(recordSet(stampedRealRecords([
 		'BUILD-d5a433047dc3439f-S001.json', 'CR-d5a433047dc3439f-S001.json',
 	])));
 	const story = item(graph, 'E20260930d5a43304:S001');
@@ -243,7 +243,7 @@ test('task t1 in two stories of different epics gets two distinct canonical ids'
 });
 
 test('a BUILD task id equal to the story id creates no task item and no notice', () => {
-	const graph = buildWorkItemGraph(recordSet(realRecords(['ISSUE-0855311b6b32eb72.json', 'BUILD-0855311b6b32eb72-S001.json'])));
+	const graph = buildWorkItemGraph(recordSet(stampedRealRecords(['ISSUE-0855311b6b32eb72.json', 'BUILD-0855311b6b32eb72-S001.json'])));
 	assert.equal([...graph.items.values()].some(n => n.kind === 'task'), false);
 	const story = item(graph, 'E202610040855311b:S001');
 	assert.deepEqual(story.childIds, []);
@@ -283,13 +283,13 @@ test('an issue with fix stories S001 and S002 has two distinct story children wi
 });
 
 test('a self-slug parentRef gives correctsRef null and no notice', () => {
-	const graph = buildWorkItemGraph(recordSet(realRecords(['ISSUE-0855311b6b32eb72.json'])));
+	const graph = buildWorkItemGraph(recordSet(stampedRealRecords(['ISSUE-0855311b6b32eb72.json'])));
 	assert.equal(item(graph, 'E202610040855311b').correctsRef, null);
 	assert.deepEqual(graph.notices, []);
 });
 
 test('an issue whose outward parentRef matches nothing is present with an unresolved-parent notice', () => {
-	const graph = buildWorkItemGraph(recordSet(realRecords(['ISSUE-2d9e9e694a94116b.json'])));
+	const graph = buildWorkItemGraph(recordSet(stampedRealRecords(['ISSUE-2d9e9e694a94116b.json'])));
 	const issue = item(graph, 'E202609292d9e9e69');
 	assert.deepEqual(issue.correctsRef, { slug: 'vs-code-editor-dev-chat-ui', resolvedItemId: null });
 	assert.deepEqual(noticeCodes(graph), ['unresolved-parent']);
@@ -298,7 +298,7 @@ test('an issue whose outward parentRef matches nothing is present with an unreso
 
 test('a parentRef with slug and storyId (ISSUE-57446545909fe95c shape) resolves to the named story', () => {
 	const graph = buildWorkItemGraph(recordSet([
-		...realRecords(['ISSUE-57446545909fe95c.json']),
+		...stampedRealRecords(['ISSUE-57446545909fe95c.json']),
 		defRecord('761a43a6fa645815', ['s1', 's2'], { createdAt: '2026-08-03T06:51:25.695Z', epicSlug: 'add-daemon-driven-code-review-stage' }),
 	]));
 	assert.deepEqual(item(graph, 'E2026100357446545').correctsRef, {
@@ -320,7 +320,7 @@ test('a parentRef naming an existing epic and a storyId it lacks resolves to the
 });
 
 test('a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the existing story without a notice', () => {
-	const graph = buildWorkItemGraph(recordSet(realRecords([
+	const graph = buildWorkItemGraph(recordSet(stampedRealRecords([
 		'ISSUE-095906bac5bbacaf.json', 'BUILD-d5a433047dc3439f-S001.json', 'CR-d5a433047dc3439f-S001.json',
 	])));
 	assert.deepEqual(item(graph, 'E20260930095906ba').correctsRef, {
@@ -331,7 +331,7 @@ test('a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the 
 
 test('a hierarchical slug parentRef resolves through parseWorkflowId', () => {
 	const graph = buildWorkItemGraph(recordSet([
-		...realRecords(['LLD-d88062a6e63aa312-S001.json']),
+		...stampedRealRecords(['LLD-d88062a6e63aa312-S001.json']),
 		issueRecord('5555555555555555', { slug: 'E20260804d88062a6-S001' }, { epicSlug: 'a-fix' }),
 	]));
 	assert.equal(item(graph, 'E2026100755555555').correctsRef?.resolvedItemId, 'E20260804d88062a6:S001');
@@ -365,7 +365,7 @@ test("a SPEC named by seededFromSpec is in that epic's evidence; an unnamed SPEC
 
 test('the same record set built twice gives a deep-equal graph', () => {
 	const records = [
-		...realRecords(),
+		...stampedRealRecords(),
 		defRecord(EPIC, ['s1', 's2']), planRecord(EPIC, 's1', ['t2', 't1']), lldRecord(EPIC, 'x'),
 		specRecord('8888888888888888'),
 	];

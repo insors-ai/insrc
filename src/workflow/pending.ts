@@ -198,7 +198,7 @@ function buildRecordMdPath(repoPath: string, artifactId: string, meta: Readonly<
  *  anchor; undefined otherwise (e.g. a legacy artifact missing the anchor). */
 function deriveWorkItemId(meta: Record<string, unknown>): string | undefined {
 	const hash = str(meta['epicHash']) ?? str(meta['specHash']) ?? str(meta['issueHash']);
-	const createdAt = str(meta['epicCreatedAt']) ?? str(meta['createdAt']);
+	const createdAt = str(meta['epicCreatedAt']);
 	if (hash === undefined || createdAt === undefined) return undefined;
 	try {
 		const identity = deriveWorkItemIdentity(hash, createdAt, str(meta['storyId']));
@@ -225,7 +225,7 @@ function deriveTitle(
  *  delivery read model's fallback when a record's work-item folder is not found. */
 export function deriveMdPath(repoPath: string, kind: ArtifactKind, meta: Readonly<Record<string, unknown>>): string {
 	const hash = str(meta['epicHash']) ?? str(meta['specHash']) ?? str(meta['issueHash']);
-	const createdAt = str(meta['epicCreatedAt']) ?? str(meta['createdAt']);
+	const createdAt = str(meta['epicCreatedAt']);
 	if (hash === undefined || createdAt === undefined) return '';
 	const workItemKind: WorkItemKind = meta['standalone'] === true ? 'standalone' : 'epic';
 	const slug = str(meta['epicSlug']) ?? hash;

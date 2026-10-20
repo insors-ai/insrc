@@ -97,10 +97,10 @@ function pad(n: number): string {
 	return String(n).padStart(3, '0');
 }
 
-function earliestCreatedAt(records: readonly ArtifactRecord[]): string | null {
+function earliestStamp(records: readonly ArtifactRecord[]): string | null {
 	let best: string | null = null;
 	for (const r of records) {
-		if (r.createdAt !== null && (best === null || r.createdAt < best)) best = r.createdAt;
+		if (r.epicCreatedAt !== null && (best === null || r.epicCreatedAt < best)) best = r.epicCreatedAt;
 	}
 	return best;
 }
@@ -263,7 +263,8 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 			}
 		}
 
-		const lldAnchorOf = (lld: ArtifactRecord | null): string | null => lld === null ? null : lld.epicCreatedAt ?? lld.createdAt;
+		// A record's own createdAt is the day it was written, not the Epic's: only a stamp anchors.
+		const lldAnchorOf = (lld: ArtifactRecord | null): string | null => lld === null ? null : lld.epicCreatedAt;
 		const stories: StoryInfo[] = [];
 		const rawStories: StoryInfo[] = [];
 		for (const storyKey of [...seeds.keys()].sort()) {
@@ -283,8 +284,8 @@ export function buildWorkItemGraph(recordSet: ArtifactRecordSet): WorkItemGraph 
 			// Anchor follows buildRecordFolderArgs: an epic story is dated by its head; a
 			// standalone story by its LLD, else its head, else its earliest BUILD.
 			const anchor = standalone
-				? lldAnchorOf(lld) ?? head?.createdAt ?? earliestCreatedAt(builds) ?? earliestCreatedAt(records)
-				: head?.createdAt ?? lldAnchorOf(lld) ?? earliestCreatedAt(builds) ?? earliestCreatedAt(records);
+				? lldAnchorOf(lld) ?? head?.createdAt ?? earliestStamp(builds) ?? earliestStamp(records)
+				: head?.createdAt ?? lldAnchorOf(lld) ?? earliestStamp(builds) ?? earliestStamp(records);
 
 			const isRaw = storyKey.startsWith('R(');
 			const ordinal = isRaw ? null : Number(storyKey);

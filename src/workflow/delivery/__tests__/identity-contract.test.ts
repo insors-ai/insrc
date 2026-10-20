@@ -14,11 +14,11 @@ import assert from 'node:assert/strict';
 
 import { deriveWorkItemIdentity } from '../../id.js';
 import { buildWorkItemGraph } from '../graph.js';
-import { defRecord, issueRecord, lldRecord, realRecords, recordSet } from './fixtures.js';
+import { defRecord, issueRecord, lldRecord, stampedRealRecords, recordSet } from './fixtures.js';
 
 test('epic, standalone and issue ids equal deriveWorkItemIdentity over the anchor inputs and pinned folder segments, including a sized-bugfix LLD dated a different day from its ISSUE', () => {
 	const graph = buildWorkItemGraph(recordSet([
-		...realRecords([
+		...stampedRealRecords([
 			'LLD-d88062a6e63aa312-S001.json',
 			'LLD-dfc0371b7200f5b5-S001.json',
 			'ISSUE-0855311b6b32eb72.json', 'BUILD-0855311b6b32eb72-S001.json',

@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792501005727-3vurv5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-20T12:56:45.728Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 25685,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f431a4420d03374f",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-20T12:47:09.806Z",
+    "epicSlug": "count-commit-story-s-when-its",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "f431a4420d03374f",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts",
+        "src/workflow/runners/build/story-commits.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

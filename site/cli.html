@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>cli — insrc</title>
 <meta name="description" content="The insrc interactive TUI: a full-screen ink (React) terminal app with Daemon / Repos / Workflows / Setup / Tiers / Debug panes, a vim-style command bar, and all DB access delegated to the daemon over its Unix socket.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="icon" type="image/png" href="insrc-icon-128.png">
 <link rel="stylesheet" href="css/tui.css">
 </head>
 <body>
@@ -39,9 +39,9 @@
   <p>Launch it from anywhere — the launch directory becomes the default selected repo. The <code>insrc</code> bin resolves to <code>out/cli/index.js</code> (built) with source at <code>src/cli/index.tsx</code>.</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
-<pre><code><span class="p">$</span> npx insrc              <span class="c"># or the built entry: node out/cli/index.js</span></code></pre>
+<pre><code><span class="p">$</span> &quot;$HOME/.insrc/daemon/scripts/insrc&quot;              <span class="c"># or the built entry: node out/cli/index.js</span></code></pre>
   </div>
-  <p>The app renders a header with the four pane tabs, the active pane body, a toast line, and a persistent key-hint footer. Every pane talks to the running daemon; if the daemon is down, the Daemon pane starts it.</p>
+  <p>The app renders a header with the six pane tabs, the active pane body, a toast line, and a persistent key-hint footer. Every pane talks to the running daemon; if the daemon is down, the Daemon pane starts it.</p>
 
   <div class="panel"><span class="panel-title">global keys</span>
     <p class="mt0">These work from any pane (a pane suspends them while it has an open prompt / modal):</p>
@@ -221,7 +221,7 @@
 
 <footer class="foot"><div class="foot-inner">
   <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
-  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">TypeScript · ESM · Node ≥22.13.0</span>
   <span class="seg">LMDB + Lance + DuckDB</span>
   <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
   <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>

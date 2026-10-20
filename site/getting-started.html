@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>getting started — insrc</title>
 <meta name="description" content="Get started with insrc on any surface: the CLI + daemon, the VS Code extension, or the JetBrains plugin. An overview of the three, shared prerequisites, and a step-by-step quick start for each.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="icon" type="image/png" href="insrc-icon-128.png">
 <link rel="stylesheet" href="css/tui.css">
 </head>
 <body>
@@ -50,8 +50,8 @@
   <div class="tablewrap"><table>
     <thead><tr><th>Requirement</th><th>Why</th><th>Check</th></tr></thead>
     <tbody>
-      <tr><td><strong>Node.js 20+</strong></td><td>runtime. Native modules build against Node 22.22.1 headers; the daemon spawns under Node 22 at install. <em>(The IDE plugins can provision a private Node when the system one is unsuitable.)</em></td><td><code>node -v</code></td></tr>
-      <tr><td><strong>Ollama</strong></td><td>local models. <strong>Required for embeddings</strong> (always local) and <strong>optional for the core reasoning model</strong> — see the two panels below.</td><td><code>ollama --version</code></td></tr>
+      <tr><td><strong>Node.js ≥22.13.0</strong></td><td>runtime. Native modules build against Node 22.22.1 headers; the daemon spawns under Node 22 at install. <em>(The IDE plugins can provision a private Node when the system one is unsuitable.)</em></td><td><code>node -v</code></td></tr>
+      <tr><td><strong>Ollama</strong></td><td>local models. Needed for Ollama embeddings; optional when using the local ONNX backend and <strong>optional for the core reasoning model</strong> — see the two panels below.</td><td><code>ollama --version</code></td></tr>
       <tr><td><strong>claude</strong> and/or <strong>codex</strong> CLI</td><td>cloud LLM access is delegated to these CLIs' OAuth sessions — insrc never makes direct REST calls. Also how you run the <em>core model</em> in the cloud (no Ollama needed for it).</td><td><code>claude --version</code></td></tr>
       <tr><td><strong>git</strong></td><td>repo discovery, the git tools, and the workflow tracker.</td><td><code>git --version</code></td></tr>
     </tbody>
@@ -131,10 +131,10 @@
   </div>
 
   <h3 id="cli-run">2 · Launch the TUI</h3>
-  <p>The <code>insrc</code> command is a full-screen ink (React) TUI. It starts (or attaches to) the daemon and gives you Daemon / Repos / Workflows / Setup panes.</p>
+  <p>The <code>insrc</code> command is a full-screen ink (React) TUI. It starts (or attaches to) the daemon and gives you Daemon / Repos / Workflows / Setup / Tiers / Debug panes.</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
-<pre><code><span class="p">$</span> npx insrc</code></pre>
+<pre><code><span class="p">$</span> &quot;$HOME/.insrc/daemon/scripts/insrc&quot;</code></pre>
   </div>
   <div class="term" style="margin:16px 0">
     <div class="term-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="term-title">insrc — Repos</span></div>
@@ -160,7 +160,8 @@
   <p>For any question about a codebase's structure, conventions or capabilities, use the analyze tools — every claim is grounded in a real graph exploration, with file paths drawn from the index (no hallucinated paths).</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
-<pre><code><span class="p">$</span> insrc analyze <span class="s">"list the storage layers and where each is initialised"</span></code></pre>
+<pre><code><span class="c"># In your MCP-connected assistant, ask:</span>
+<span class="s">"List the storage layers and where each is initialised."</span></code></pre>
   </div>
   <p>Prefer <code>insrc_analyze_step</code> (multi-turn, stays in your session) over the one-shot <code>insrc_analyze</code> when driving from an MCP client — it's more accurate and doesn't spawn a separate billing path. See <a href="analyze.html">the analyze guide</a>.</p>
 
@@ -258,14 +259,14 @@
   <div class="grid">
     <a class="card" href="architecture.html"><div class="glyph">⬡</div><h4>Architecture</h4><p>How the daemon, storage substrate and IPC contract fit together.</p><span class="more">read</span></a>
     <a class="card" href="workflow.html"><div class="glyph">⟿</div><h4>Workflow</h4><p>Drive a feature from define → design → plan → build with a GitHub tracker.</p><span class="more">read</span></a>
-    <a class="card" href="analyze.html"><div class="glyph">◎</div><h4>Analyze</h4><p>The 10 exploration recipes and the 7-layer context bundle.</p><span class="more">read</span></a>
+    <a class="card" href="analyze.html"><div class="glyph">◎</div><h4>Analyze</h4><p>The 20 exploration types and the 7-layer context bundle.</p><span class="more">read</span></a>
   </div>
 
 </main></div>
 
 <footer class="foot"><div class="foot-inner">
   <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
-  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">TypeScript · ESM · Node ≥22.13.0</span>
   <span class="seg">LMDB + Lance + DuckDB</span>
   <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
   <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>

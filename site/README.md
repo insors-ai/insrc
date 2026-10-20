@@ -28,8 +28,13 @@ site/
   workflow.html         define→design→plan→build · tracker · open-questions · IDs · build
   analyze.html          the exploration recipes · 7-layer context bundle · step loop
   tools.html            ~110 built-in tools by category · providers · structured output
-  cli.html              the ink TUI panes (Daemon / Repos / Workflows / Setup)
+  cli.html              the ink TUI panes (Daemon / Repos / Workflows / Setup / Tiers / Debug)
   plugin.html           the JetBrains IDE plugin — install · setup · usage · build from source
+  vscode.html           VS Code integration · chat preview · document review · delivery board
+  settings.html         daemon configuration and IDE settings
+  tracker.html          GitHub issues and tracked delivery
+  philosophy.html       accuracy, locality, and model routing
+  insrc-icon-128.png     shared site icon and favicon
   css/tui.css           the whole theme (design tokens + components)
   js/tui.js             progressive enhancement: theme toggle · active-nav · copy · type-in
 ```
@@ -52,6 +57,7 @@ site/
 
 ## Deploy
 
-It's plain static files — host `site/` on GitHub Pages, Netlify, S3, or any
-static host. For GitHub Pages, point Pages at the `site/` folder (or copy it to
-`docs/` / a `gh-pages` branch).
+The existing `.github/workflows/pages.yml` workflow publishes `site/` to
+https://insrc.insors.io when a `site/**` change lands on `main`, or when triggered
+manually. It uploads this directory directly; no build step, `docs/` copy, or
+`gh-pages` branch is needed. `site/CNAME` carries the custom domain.

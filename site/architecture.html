@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>architecture — insrc</title>
 <meta name="description" content="How insrc fits together: one daemon owning the LMDB graph + Lance vectors + DuckDB query engine, a JSON-RPC Unix-socket IPC contract, the tree-sitter indexer, and the seven architectural rules that hold it all in place.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="icon" type="image/png" href="insrc-icon-128.png">
 <link rel="stylesheet" href="css/tui.css">
 </head>
 <body>
@@ -33,13 +33,13 @@
 <div class="wrap"><main id="main">
 
   <h1>Architecture</h1>
-  <p class="lead">insrc is one daemon that owns everything. It parses your repos with tree-sitter into a typed entity/relation graph, stores that graph in LMDB alongside Lance vectors, and answers every query with structured, citation-grounded context. Clients — the <code>claude</code> / <code>codex</code> CLIs, the interactive TUI, the VSCode fork, and the <a href="plugin.html">JetBrains plugin</a> — never touch a database directly; they speak JSON-RPC over a Unix socket.</p>
+  <p class="lead">insrc is one daemon that owns everything. It parses your repos with tree-sitter into a typed entity/relation graph, stores that graph in LMDB alongside Lance vectors, and answers every query with structured, citation-grounded context. Clients — the <code>claude</code> / <code>codex</code> CLIs, the interactive TUI, the <a href="vscode.html">VS Code extension</a>, and the <a href="plugin.html">JetBrains plugin</a> — never touch a database directly; they speak JSON-RPC over a Unix socket.</p>
 
   <section>
     <h2 id="overview">The shape of the system</h2>
     <p>Three kinds of client fan in through two entry surfaces — the MCP servers and the raw IPC socket — onto a single daemon. The daemon is the sole owner of the graph, the vectors, the query engine, and the tool registry.</p>
 <div class="ascii" aria-label="architecture diagram">
-   <i>claude / codex CLI</i>      <i>insrc TUI</i>        <i>VSCode fork</i>
+   <i>claude / codex CLI</i>      <i>insrc TUI</i>        <i>IDE plugins</i>
           │                    │                   │
           └──────────┬─────────┴─────────┬─────────┘
                      ▼                   ▼
@@ -92,6 +92,14 @@
         <tr><td><strong>DuckDB</strong> <small>via <code>@duckdb/node-api</code></small></td><td>In-memory query engine that backs the data-driver <code>db_file_*</code> tools.</td><td><code>src/daemon/tools/</code></td></tr>
       </tbody>
     </table></div>
+
+    <h3 id="documents">Document indexing and summaries</h3>
+    <p>Repository documentation is indexed as documents and sections for retrieval of prose,
+      decisions, and constraints. Background summaries follow the configured cheap model tier,
+      which can use Ollama or a cloud CLI. The summary queue yields to code indexing;
+      unchanged document summaries are preserved across a full reindex.</p>
+    <p>Embedding backends are local: Ollama or embedded ONNX. Selecting a cloud reasoning model
+      sends relevant context through the installed Claude / Codex CLI, while graph and vector storage remain on disk.</p>
 
     <h3 id="graph">LMDB graph layer</h3>
     <p>The graph layer in <code>src/db/graph/</code> is built directly on LMDB — <code>store.ts</code>, <code>keys.ts</code>, <code>codec.ts</code>, <code>edges.ts</code>, and <code>traversal.ts</code>. Structural queries go through a typed JS API, not a query language: <strong>no Cypher, GQL, or SQL is exposed for traversal.</strong></p>
@@ -181,7 +189,7 @@ src/
       <span class="panel-title">invariants</span>
       <ol class="mt0">
         <li><strong>Daemon owns all DB access.</strong> The CLI, MCP, and the IDE workbench communicate via IPC only — none of them opens LMDB or LanceDB directly.</li>
-        <li><strong>Local-first.</strong> Ollama is always available; embeddings are local-only. Cloud LLM access goes through <code>CliProvider</code> (the <code>claude</code> + <code>codex</code> CLI subprocesses) — no direct REST.</li>
+        <li><strong>Local-first.</strong> Embeddings run locally through Ollama or the embedded ONNX backend. Cloud LLM access goes through <code>CliProvider</code> (the <code>claude</code> + <code>codex</code> CLI subprocesses) — no direct REST.</li>
         <li><strong>Dependency-closure scoping.</strong> Graph searches span only the transitive <code>DEPENDS_ON</code> closure of the active repo.</li>
         <li><strong>Graph + vector split.</strong> Structural queries use the LMDB graph layer's typed JS API; semantic queries use LanceDB ANN. No Cypher / GQL / SQL is exposed for graph traversal.</li>
         <li><strong>No raw file dumps.</strong> Context is always structured entity summaries + relations from the graph — never a blind file paste.</li>
@@ -204,7 +212,7 @@ src/
 
 <footer class="foot"><div class="foot-inner">
   <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
-  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">TypeScript · ESM · Node ≥22.13.0</span>
   <span class="seg">LMDB + Lance + DuckDB</span>
   <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
   <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>

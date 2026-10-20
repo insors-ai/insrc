@@ -28,7 +28,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "pass",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -36,8 +36,8 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S001 covers the shared engine, identifier checking, uniform limit, refusal handling and Ollama execution required upstream.",
-          "evidence": "Checked DEF §6.1 and HLD §5.1 against the design and implementation. job.ts implements identified calls, failure policies and redivision; driver.ts awaits one call at a time; limit.ts uses 128000 × 3; OllamaProvider.runReviewSession uses the shared read-only loop. The design supplies contracts and acceptance mappings for all five S001 criteria. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/limit.ts, src/agent/providers/ollama.ts]",
+          "premise": "S001 designs the shared pipeline, identifier validation, provider-independent chunk limit and Ollama reviewer capability required by its upstream acceptance criteria.",
+          "evidence": "DEF §6.1 specifies ac1–ac5 for these capabilities; HLD §5.1 assigns their implementation to S001. The delivered driver sends calls serially with internalRetry:false, design-review adapters supply premise/template stages, limit.ts uses 128000 × 3, and OllamaProvider.runReviewSession uses the shared tool loop and structured emit. Document splitting and controller integration remain explicitly assigned to later Stories. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/limit.ts, src/agent/providers/ollama.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -48,8 +48,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "verifyClaim uses a 180000 ms timeout and supplies no working directory; repository cwd is an additive change in the pipeline adapter.",
-          "evidence": "Read verifyClaim and the premise adapter. verifyClaim passes `{ timeoutMs: VERIFY_CALL_TIMEOUT_MS, ...(signal !== undefined ? { signal } : {}) }`, with VERIFY_CALL_TIMEOUT_MS = 180_000. The adapter preserves buildVerifyPrompt and adds `execution: { mode: 'structured', cwd: opts.repo, timeoutMs: VERIFY_CALL_TIMEOUT_MS }`. [files: src/workflow/review/verify.ts, src/workflow/review-pipeline/design-review.ts]",
+          "premise": "The delivery note correctly says the pipeline and both design-review execution paths already exist in the current code.",
+          "evidence": "runReview routes design stages to runTemplateReview; otherwise it constructs premiseAdapter and executes createReviewJob/runReviewJob. runTemplateReview constructs templateAdapter and uses the same driver. The premise adapter orders extract → probe → verify, with timeoutMs:VERIFY_CALL_TIMEOUT_MS and cwd:opts.repo on daemon verification calls. [files: src/workflow/review/review.ts, src/workflow/review/template-review.ts, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/driver.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -60,9 +60,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The delivered pipeline reuses the existing review prompt builders and preserves packIntoBatches through its old import path.",
-          "evidence": "The delivery note correctly acknowledges that this infrastructure already exists. The design adapters call buildExtractPrompt, buildVerifyPrompt, buildBatchedVerifyPrompt and buildTemplateReviewPrompt. The old packer module contains `export { AtomTooLargeError, packIntoBatches } from '../review-pipeline/pack-into-batches.js';`. Repository searches found no remaining imports of the deleted review-job.js API. [files: src/workflow/review-pipeline/design-review.ts, src/workflow/code-review/pack-into-batches.ts, src/workflow/review-pipeline/pack-into-batches.ts]",
-          "action": "None; retain the delivery note when describing these components as new.",
+          "premise": "packIntoBatches is reusable with the stated signature and whole-item behavior, and its old import path remains compatible.",
+          "evidence": "The full implementation accepts items, sizeOf, budget and an optional describe callback; it tests sizeOf([item]) and throws AtomTooLargeError(describe(item), alone, budget) rather than cutting an item. The old module exports both AtomTooLargeError and packIntoBatches from '../review-pipeline/pack-into-batches.js'. [files: src/workflow/review-pipeline/pack-into-batches.ts, src/workflow/code-review/pack-into-batches.ts]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -72,20 +72,8 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Both analyzer production paths must retain their tool-loop and final-emission wiring during extraction of the generic loop.",
-          "evidence": "Read runShaper's legacy tail, runShaperToolLoop and their helper implementations. Both production paths call runToolLoop followed by runFinalStructuredEmit. The helpers delegate to runReadOnlyToolLoop and emitStructuredAnswer, retaining analyzer-specific messages, tracing and configured retry arguments. [files: src/analyze/context/driver.ts, src/agent/read-only-tool-loop.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The optional stage extensions countAs, carries and redivide have the stated implemented shapes and consumers.",
-          "evidence": "Checked types.ts and full issueChunkCalls, applyFailure and redivideByStage bodies. issueChunkCalls records prompt.carries.atomIds when supplied; countAs affects counters while the role remains 'chunk'; redivideByStage rejects empty or oversized replacements and preserves the original chunkId. [files: src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/job.ts]",
+          "premise": "The analyzer extraction must preserve both runShaperToolLoop and runShaper's legacy tail, because both invoke the tool loop and final structured emit.",
+          "evidence": "Both production paths call runToolLoop followed by runFinalStructuredEmit, passing configured turn/retry/output limits and tracing callbacks. The shared runToolLoop wrapper delegates to runReadOnlyToolLoop and retains analyzer-specific trace conversion and exhaustion/error handling. The design identifies both callers. [files: src/analyze/context/driver.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -96,20 +84,8 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Older configuration files receive the chunk-limit default without requiring a bespoke migration.",
-          "evidence": "CONFIG_CATALOG declares review.chunkTokens with default 128000. reconcileConfig classifies absent catalog leaves as 'fill' and writes their defaults while preserving unenumerated fields. Independently, readReviewChunkTokens returns DEFAULT_REVIEW_CHUNK_TOKENS when the key or file is missing. [files: src/config/config-catalog.ts, src/config/reconcile.ts, src/workflow/review-pipeline/limit.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "pipelineCalls is additive, single-chunk results omit it, and the historical parts shape remains readable.",
-          "evidence": "DimensionResult retains optional parts { map, reduce, compare }; both result interfaces declare optional pipelineCalls. pipelineCallsOf returns undefined when plan.single is true. finishJob leaves arrays intact, while design review entry points conditionally attach counters to ReviewReport. The code-review validator does not require either optional field. [files: src/workflow/code-review/types.ts, src/workflow/review/types.ts, src/workflow/review-pipeline/job.ts, src/workflow/review/review.ts, src/workflow/review/template-review.ts, src/workflow/code-review/runner.ts]",
+          "premise": "Older configurations lacking review.chunkTokens receive the default without requiring a bespoke migration.",
+          "evidence": "CONFIG_CATALOG declares review.chunkTokens with default:128000. Reconciliation classifies an absent leaf as 'fill' and writes cloneDefault(opt.default). Independently, readReviewChunkTokens returns DEFAULT_REVIEW_CHUNK_TOKENS when the setting or file is missing, and reviewLimitChars multiplies it by 3. [files: src/config/config-catalog.ts, src/config/reconcile.ts, src/workflow/review-pipeline/limit.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -120,8 +96,8 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S001 owns sc1–sc6 and generic adapter extension points; document chunking and controller frame adoption remain S004 and S005 responsibilities.",
-          "evidence": "HLD §§4–5 assigns precisely these owners. The implemented design adapters explicitly defer division to S004 and reject divided design reviews through refuseDivided. The proposed countAs, carries and redivide additions extend S001-owned sc2 rather than implementing controller frames or document-section extraction. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/design-review.ts]",
+          "premise": "S001 owns sc1–sc6; document-specific chunking and controller frame/schema changes belong to S004 and S005.",
+          "evidence": "HLD §§5.1, 5.4 and 5.5 assign exactly these responsibilities. The current design-review adapter supplies empty material and chunkCalls and explicitly rejects divided design reviews with 'dividing a design review is not available yet', consistent with its single-chunk transitional scope. S001's generic stage contracts therefore do not themselves implement S004's section material or S005's MCP frames. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/design-review.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -131,12 +107,12 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "Section 6 says template deadline expiry produces ReviewSessionTimeoutError and preserves one limit for the whole review.",
-          "evidence": "This contradicts amended §2.20 and the implementation. withDeadline computes `deadlineBudgetMs = sessionLimitMs * sessions.length`. deadlineError returns `adapter.deadlineError?.(budget) ?? new ReviewSessionTimeoutError(budget)`. The template adapter supplies timedOut(), which constructs a plain Error. Thus divided jobs receive a multiplied budget, and template callers receive the adapter's plain Error. [files: src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/design-review.ts, src/workflow/review/template-review.ts]",
-          "action": "Update §6 to match §2.20: distinguish the per-session cap from the total planned budget, and state the adapter-specific timeout error with ReviewSessionTimeoutError only as the fallback.",
+          "severity": "LOW",
+          "premise": "A failed premise verification is retried once and then recorded as MED not judged, while extraction failure terminates the review.",
+          "evidence": "premiseAdapter sets extract.onCallFailure='fail-review' and daemon verify.onCallFailure='record-not-judged'. applyFailure reissues before the attempt limit, then either throws ReviewCallFailedError or appends notJudged. The adapter converts failed claims into severity:'MED' findings while retaining successful answers. [files: src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/job.ts]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "error-paths.2",
@@ -144,8 +120,8 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Cancellation bypasses retry and deterministic-stage failure policies in the pipeline.",
-          "evidence": "Read runReviewJob and runStage. Both race in-flight work against the signal, check cancellation before committing output, and rethrow AbortError before applying failure policies. The daemon driver passes the signal and internalRetry:false into both provider execution modes. [files: src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/job.ts]",
+          "premise": "Cancellation during a deterministic stage ends the pipeline wait and prevents committing its output.",
+          "evidence": "runStage awaits untilAborted(stage.run(job.outputs, job.snapshot, opts.signal), opts.signal), checks cancellation in the catch path and again before commit, and propagates AbortError rather than applying the stage's recording policy. [files: src/workflow/review-pipeline/job.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -156,21 +132,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Every upstream S001 acceptance criterion has a corresponding substantive test design.",
-          "evidence": "Compared DEF ac1–ac5 with §7 and read corresponding test bodies: parity asserts prompt order, cwd, findings and verdicts; identifier tests reject missing/wrong IDs and check fresh hashes; limit tests cover the default and override; refusal tests check exact carried atoms/notes and replacement sizes; Ollama tests exercise repository reads, schema rejection, deadlines and dispatch allowlisting. The live test covers both CLI envelopes and both Ollama execution modes. Tests were inspected, not executed. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts, src/workflow/review-pipeline/__tests__/pipeline-job.test.ts, src/agent/providers/__tests__/internal-retry.test.ts, src/agent/providers/__tests__/ollama-review-session.test.ts, src/workflow/review-pipeline/__tests__/envelope.live.test.ts]",
-          "action": "None for acceptance mapping; runtime and live-test success are not established by this review.",
+          "premise": "Each S001 acceptance criterion has a concrete test mapping supported by repository test assertions.",
+          "evidence": "Read test bodies covering ac1 prompt/order/findings/verdict parity for code, DEF and HLD reviews; ac2 missing/wrong identifiers, fresh IDs and distinct prompt hashes; ac3 the default and provider-independent configured limit; ac4 refusal replacement carrying the original evidence and excluding the refused prompt; and ac5 an Ollama session reading repository content and returning a schema-checked answer. The mapping exists; tests were inspected, not executed in this review. [files: src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts, src/workflow/review-pipeline/__tests__/pipeline-job.test.ts, src/agent/providers/__tests__/ollama-review-session.test.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md]",
+          "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
         "high": 0,
-        "med": 1,
-        "low": 10,
+        "med": 0,
+        "low": 9,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-20T19:43:16.221Z",
+      "reviewedAt": "2026-10-20T19:45:51.738Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     },

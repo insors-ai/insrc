@@ -161,9 +161,10 @@ function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	// Duplicate guard: adopt an existing Epic issue (unique by epic +
 	// epic-membership labels) rather than creating a second one.
 	const membership = epicMembershipLabel(epicSlug);
-	// A failed lookup reads as "not found" (as before), so the Epic is created.
+	// A failed lookup is a failure: nothing is created on a guess that the Epic is not there.
 	const found = port.findIssue([cfg.epicLabel, membership]);
-	let adopted = found.ok ? found.value ?? undefined : undefined;
+	if (!found.ok) return { status: 'failed', reason: `cannot look up the Epic issue: ${found.reason}` };
+	let adopted = found.value ?? undefined;
 	// The guard in front of the create: the unit label, then the title's artifact id. Several matches, or a
 	// failed lookup, create nothing.
 	if (adopted === undefined) {

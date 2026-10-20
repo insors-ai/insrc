@@ -144,9 +144,9 @@ test('an issue created earlier is adopted by its unit label or an exact artifact
 	for (const mode of ['team', 'legacy'] as const) {
 		const fx = seed();
 		try {
-			// the Epic issue has the artifact-id title and no unit label; the Story issue has the unit label and an old title
+			// the Epic issue is found by its artifact-id title alone (no labels at all); the Story issue has the unit label and an old title
 			const t = fakeTracker([
-				{ ref: 'acme/demo#7', spec: { title: `${EPIC_ID} — Users cannot filter todos by tag today.`, body: 'x', labels: ['insrc:epic', `epic:${SLUG}`] } as IssueSpec },
+				{ ref: 'acme/demo#7', spec: { title: `${EPIC_ID} — Users cannot filter todos by tag today.`, body: 'x', labels: [] } as IssueSpec },
 				{ ref: 'acme/demo#8', spec: { title: 'E20260717a3f4b8c9:S001 — Filter by tag', body: 'x', labels: ['insrc:story', `epic:${SLUG}`, unitLabel(story(fx.repo))] } as IssueSpec },
 			]);
 			const results = pushAll(fx, t, mode);
@@ -158,6 +158,41 @@ test('an issue created earlier is adopted by its unit label or an exact artifact
 			assert.deepEqual(t.issues.slice(2).map(i => i.spec.title.split(' ')[0]), [TASK_ID], `${mode}: only the Task was created`);
 		} finally { fx.cleanup(); }
 	}
+});
+
+test('a Task issue found by its title alone is adopted, and a Story with two unit-label matches creates nothing', () => {
+	const titleOnly = seed();
+	try {
+		const t = fakeTracker([{ ref: 'acme/demo#8', spec: { title: `${TASK_ID} — Add the input`, body: 'x', labels: [] } as IssueSpec }]);
+		const results = pushAll(titleOnly, t, 'legacy');
+		assert.equal(results[2]!.status, 'already-exists', JSON.stringify(results[2]));
+		assert.equal(t.issues.filter(i => i.spec.title.startsWith(`${TASK_ID} — `)).length, 1, 'no second Task issue');
+	} finally { titleOnly.cleanup(); }
+	for (const mode of ['team', 'legacy'] as const) {
+		const twice = seed();
+		try {
+			const labels = ['insrc:story', `epic:${SLUG}`, unitLabel(story(twice.repo))];
+			const t = fakeTracker([
+				{ ref: 'acme/demo#8', spec: { title: 'an old title', body: 'x', labels } as IssueSpec },
+				{ ref: 'acme/demo#9', spec: { title: 'another old title', body: 'x', labels } as IssueSpec },
+			]);
+			const results = pushAll(twice, t, mode);
+			assert.equal(results[1]!.status, 'failed', `${mode}: ${JSON.stringify(results[1])}`);
+			assert.match((results[1] as { reason: string }).reason, /issues carry the label/);
+			assert.ok(!t.issues.some(i => i.spec.title.startsWith(`${STORY_ID} — `)), `${mode}: no Story issue was created`);
+		} finally { twice.cleanup(); }
+	}
+});
+
+test('a failed Epic label lookup on the legacy path creates no Epic issue', () => {
+	const fx = seed();
+	try {
+		const t = fakeTracker();
+		(t.port as unknown as { findIssue: () => PortResult<IssueRef | null> }).findIssue = () => ({ ok: false, reason: 'gh timed out', kind: 'unreachable' });
+		const results = pushAll(fx, t, 'legacy');
+		assert.equal(results[0]!.status, 'failed', JSON.stringify(results[0]));
+		assert.equal(t.issues.length, 0, 'nothing was created');
+	} finally { fx.cleanup(); }
 });
 
 test('s10 is never matched for s1 and t10 never for t1, several matches and a failed lookup create nothing', () => {

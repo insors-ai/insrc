@@ -117,7 +117,9 @@ function fakeTracker(over: {
 		...(over.withListing !== false ? {
 			findIssues: (labels: string[]): PortResult<IssueRef[]> => {
 				calls.list += 1;
-				if (over.failList === true) return { ok: false, reason: 'listing timed out', kind: 'unreachable' };
+				// the guard's lookup before a create is stale for a stale tracker; only the tie-break listing after a create fails
+				if (over.staleTitle === true && calls.create === 0) return { ok: true, value: [] };
+				if (over.failList === true && calls.create > 0) return { ok: false, reason: 'listing timed out', kind: 'unreachable' };
 				return { ok: true, value: issues.filter(i => labels.every(l => i.spec.labels.includes(l))).sort((a, b) => a.number - b.number).map(i => i.ref) };
 			},
 		} : {}),

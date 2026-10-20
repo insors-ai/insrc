@@ -284,6 +284,12 @@ export function ensureUnitIssueDetailed(unit: UnitRef, port: TrackerPort, deps: 
 	const found = port.findIssue([membership, label]);
 	if (!found.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${found.reason}`, found.kind);
 	let adopted: string | undefined = found.value ?? undefined;
+	if (adopted !== undefined && typeof port.findIssues === 'function') {
+		// findIssue answers the first match only: a unit that already has several issues is refused, not bound to one of them.
+		const all = port.findIssues([membership, label]);
+		if (!all.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${all.reason}`, all.kind);
+		if (all.value.length > 1) return before(`${all.value.length} issues carry the label '${label}' (${all.value.join(', ')}); keep one, close the others and retry`, 'rejected');
+	}
 	if (adopted === undefined && unit.unit === 'epic') {
 		const old = port.findIssue([cfg.epicLabel, membership]);
 		if (!old.ok) return before(`cannot look up the issue for ${unitKey(unit)}: ${old.reason}`, old.kind);
@@ -437,9 +443,15 @@ function tieBreak(unit: UnitRef, port: TrackerPort, label: string, own: IssueRef
 export function findExistingUnitIssue(
 	port: TrackerPort, membership: string, label: string, token: string,
 ): { readonly ok: true; readonly issue: IssueRef | null } | { readonly ok: false; readonly reason: string; readonly kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected' } {
-	const byLabel = port.findIssue([membership, label]);
-	if (!byLabel.ok) return { ok: false, reason: `cannot look up the issue by its label '${label}': ${byLabel.reason}`, kind: byLabel.kind };
-	if (byLabel.value !== null) return { ok: true, issue: byLabel.value };
+	// Every issue carrying the label, so a unit that already has several is refused rather than bound to the first.
+	const labelled = typeof port.findIssues === 'function'
+		? port.findIssues([membership, label])
+		: (() => { const one = port.findIssue([membership, label]); return one.ok ? { ok: true as const, value: one.value === null ? [] : [one.value] } : one; })();
+	if (!labelled.ok) return { ok: false, reason: `cannot look up the issue by its label '${label}': ${labelled.reason}`, kind: labelled.kind };
+	if (labelled.value.length > 1) {
+		return { ok: false, reason: `${labelled.value.length} issues carry the label '${label}' (${labelled.value.join(', ')}); keep one, close the others and retry`, kind: 'rejected' };
+	}
+	if (labelled.value[0] !== undefined) return { ok: true, issue: labelled.value[0] };
 	if (typeof port.findIssuesByTitleToken !== 'function') return { ok: false, reason: `this tracker cannot look an issue up by its title ${token}`, kind: 'rejected' };
 	const byTitle = port.findIssuesByTitleToken(token);
 	if (!byTitle.ok) return { ok: false, reason: `cannot look up the issue titled ${token}: ${byTitle.reason}`, kind: byTitle.kind };

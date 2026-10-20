@@ -289,6 +289,8 @@ function runAll(s: ReturnType<typeof setupWithPlan>) {
 const API_ISSUES = 'api -X POST repos/acme/demo/issues';
 const LABEL = (name: string): string => `label create ${name} --repo acme/demo --force`;
 const UNIT = (suffix: string): string => `insrc:unit:${HASH}${suffix}`;
+/** The guard's listing of every issue carrying the unit label. */
+const LABEL_LIST = (suffix: string): string => `api --paginate repos/acme/demo/issues?state=all&per_page=100&labels=epic%3Ademo-feature,${UNIT(suffix).replace(/:/g, '%3A')} -q .[] | select(.pull_request | not) | .number`;
 const TITLE_LIST = 'api --paginate repos/acme/demo/issues?state=all&per_page=100 -q .[] | select(.pull_request | not) | {number, title}';
 const GATE = ['-C <repo> remote get-url origin', 'auth status'];
 const TYPED = (labels: string[], type: string): string => `${API_ISSUES} -f title=… -f body=… ${labels.map(l => `-f labels[]=${l}`).join(' ')} -f type=${type}`;
@@ -305,22 +307,22 @@ test('the three push functions keep their gh sequence, best-effort behaviour and
 			...GATE,
 			'issue list --repo acme/demo --state all --json number -q .[0].number --label insrc:epic --label epic:demo-feature',
 			// the guard: the unit label, then the title's artifact id, before anything is created
-			`issue list --repo acme/demo --state all --json number -q .[0].number --label epic:demo-feature --label ${UNIT('')}`, TITLE_LIST,
+			LABEL_LIST(''), TITLE_LIST,
 			LABEL('insrc:epic'), LABEL('insrc:story'), LABEL('epic:demo-feature'), LABEL('insrc:in-progress'), LABEL('insrc:blocked'), LABEL(UNIT('')),
 			TYPED(['insrc:epic', 'epic:demo-feature', UNIT('')], 'Epic'),
 			...GATE,
-			`issue list --repo acme/demo --state all --json number -q .[0].number --label epic:demo-feature --label ${UNIT(':s1')}`, TITLE_LIST,
+			LABEL_LIST(':s1'), TITLE_LIST,
 			LABEL(UNIT(':s1')),
 			TYPED(['insrc:story', 'epic:demo-feature', UNIT(':s1')], 'Story'),
 			'api -X POST repos/acme/demo/issues/1/sub_issues -F sub_issue_id=1002',
 			'issue view 1 --repo acme/demo --json body -q .body',
 			...GATE,
 			LABEL('insrc:task'), LABEL('epic:demo-feature'),
-			`issue list --repo acme/demo --state all --json number -q .[0].number --label epic:demo-feature --label ${UNIT(':s1:t1')}`, TITLE_LIST,
+			LABEL_LIST(':s1:t1'), TITLE_LIST,
 			LABEL(UNIT(':s1:t1')),
 			TYPED(['insrc:task', 'epic:demo-feature', UNIT(':s1:t1')], 'Task'),
 			'api -X POST repos/acme/demo/issues/2/sub_issues -F sub_issue_id=1003',
-			`issue list --repo acme/demo --state all --json number -q .[0].number --label epic:demo-feature --label ${UNIT(':s1:t2')}`, TITLE_LIST,
+			LABEL_LIST(':s1:t2'), TITLE_LIST,
 			LABEL(UNIT(':s1:t2')),
 			TYPED(['insrc:task', 'epic:demo-feature', UNIT(':s1:t2')], 'Task'),
 			'api -X POST repos/acme/demo/issues/2/sub_issues -F sub_issue_id=1004',
@@ -377,7 +379,7 @@ test('a failing lookup in front of the create is a failed result, never a throw,
 	try {
 		const r = autoPushEpicOnHld(s.hldJson);
 		assert.equal(r.status, 'failed');
-		assert.match(r.status === 'failed' ? r.reason : '', /cannot look up the issue/);
+		assert.match(r.status === 'failed' ? r.reason : '', /cannot look up the Epic issue/);
 		const shapes = gh.calls.filter(c => c[0] === 'gh').map(shapeOf);
 		assert.ok(shapes.some(x => x.startsWith('issue list ')), 'the lookup ran');
 		assert.ok(!shapes.some(x => x.startsWith('api -X POST repos/acme/demo/issues ')), 'and no issue was created');

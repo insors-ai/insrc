@@ -2,18 +2,23 @@
 
 # `insrc`
 
-**local-first code-knowledge daemon**
+**Understand your code. Design changes. Deliver tracked work.**
 
-insrc parses your repos into a graph + vector store, answers questions with
-**citation-grounded** context, and drives an autonomous
-`define → design → plan → build` workflow — all through your local
-`claude` / `codex` CLI sessions.
+insrc combines a local code and document knowledge index with a tracked
+engineering workflow. Ask grounded questions, generate architecture documents,
+and take features or bug fixes through design, review, implementation, and
+code review using your existing Claude Code or Codex sessions.
 
-**No API keys. No data leaves your box.**
+Use it through MCP, the terminal dashboard, or companion IDE plugins.
+
+**Local storage and embeddings. Cloud reasoning through your existing CLI login.**
+Graph and vector data stay on disk. When you select a cloud model, relevant
+context is sent through the `claude` or `codex` CLI; background document summaries
+also follow the configured model tier. insrc does not require cloud LLM API keys.
 
 [![docs](https://img.shields.io/badge/docs-insrc.insors.io-4ade80?style=flat-square)](https://insrc.insors.io)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict%20·%20ESM-3178c6?style=flat-square)](https://www.typescriptlang.org/)
-[![Node](https://img.shields.io/badge/Node-20%2B-339933?style=flat-square)](https://nodejs.org/)
+[![Node](https://img.shields.io/badge/Node-22.13%2B-339933?style=flat-square)](https://nodejs.org/)
 [![storage](https://img.shields.io/badge/LMDB%20+%20Lance%20+%20DuckDB-embedded-f59e0b?style=flat-square)](#architecture)
 [![license](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
@@ -27,20 +32,20 @@ insrc parses your repos into a graph + vector store, answers questions with
 
 ---
 
-Ask a real question from your `claude` / `codex` session, get a grounded answer —
-every path and symbol comes from the indexed graph, not a guess:
+## Start with a question or a change
 
-```console
-▸ insrc_analyze  "how does the workflow tracker push issues to GitHub?"
-◆ decompose → 3 explorations · module.profile · symbol.locate · doc.constraint
-◆ grounding on the dependency-closure graph … 41 entities, 7 relations
-◆ synthesizing (citation-grounded) …
+From an MCP-connected assistant, ask:
 
-The tracker chain lives in src/workflow/tracker-auto.ts. On approval,
-autoPushEpicOnHld / autoPushStoryOnLld / autoPushTasksOnPlan create typed
-issues (Epic ▸ Story ▸ Task) as native sub-issues, committing the artifacts
-and linking the blobs back from each issue. [tracker-auto.ts:112]
-```
+- “What depends on this module, and what could break if I change it?”
+- “What decisions and constraints do our design documents record?”
+- “Generate a dependency diagram and explain the main components.”
+- “Plan and implement this feature through the tracked workflow.”
+- “Investigate this defect, record its cause, and build the fix.”
+
+`insrc_analyze_step` keeps multi-turn reasoning in your assistant session while
+retrieving structured evidence from the daemon. Answers include source evidence
+and retrieval limitations; graph coverage and unresolved relationships still
+matter. `insrc_analyze` also offers a one-shot daemon-side analysis path.
 
 ## What it does
 
@@ -50,15 +55,17 @@ semantic queries through a single background daemon. On top of that store:
 
 | | |
 |---|---|
-| **▚ Indexer** | tree-sitter parsing for TypeScript, Python, Go, Java, Scala & Kotlin into a typed entity/relation graph with deterministic IDs. |
-| **◎ Analyze framework** | deterministic graph queries + citation-grounded synthesis — every claim anchored to a real exploration output (module profile, symbol locate, class hierarchy, doc constraint), so paths come from the graph, never hallucinated. |
-| **⟿ Workflow framework** | an autonomous `define → design.epic → design.story → plan → build` chain that turns a goal into approved HLD/LLD artifacts, GitHub Epic/Story/Task issues, and code — with approval + review gates, open-question resolution, and staleness amendments. |
+| **▚ Indexer** | tree-sitter parsing for TypeScript / JavaScript, Python, Go, Java, Scala & Kotlin into a typed entity/relation graph with deterministic IDs. |
+| **◎ Analyze framework** | Graph queries and citation-grounded synthesis for module maps, symbol lookup, impact analysis, conventions, and document constraints, with explicit retrieval limits. |
+| **Document knowledge** | Index repository documentation and sections, maintain summaries, and retrieve recorded decisions, constraints, and related prose alongside code evidence. |
+| **Architecture documentation** | Generate self-contained offline HTML: type structures, component dependencies, call sequences, and graph-grounded narrative walkthroughs. |
+| **⟿ Workflow framework** | Brainstorm rough ideas, triage scope, and route work through definition, design, planning, build, and code review as needed. Track artifacts and GitHub Epic/Story/Task issues with explicit approval gates and staleness amendments. |
 | **⊘ Bugfix triage** | a defect fix is first-class: an `issue` stage captures reproduction + root cause, a tiered locator attaches it to the code it corrects, then it's scope-routed to build. |
 | **⚒ ~110 built-in tools** | capability wrappers spanning file · git · shell · http · web · gh · k8s · pkg · ssh · test · notify · search · graph · db · data · code · cloud. |
-| **▮ Interactive CLI** | a full-screen ink (React) TUI with Daemon / Repos / Workflows / Setup panes. |
+| **▮ Interactive CLI** | a full-screen ink (React) TUI with Daemon / Repos / Workflows / Setup / Tiers / Debug panes. |
 | **◱ IDE plugins** | thin VS Code & JetBrains orchestrators that install/manage the daemon, wire insrc's MCP tools into your IDE's AI assistant, and scope every call to the open project — [see below](#ide-plugins). |
 
-Both frameworks are exposed as MCP tools (`insrc_analyze`, `insrc_analyze_step`,
+These capabilities are exposed as MCP tools (`insrc_analyze`, `insrc_analyze_step`,
 `insrc_triage`, `insrc_workflow_step`, `insrc_docgen`, …) so they drive Claude
 Code, Codex, or any MCP client.
 
@@ -72,8 +79,8 @@ Code, Codex, or any MCP client.
 - **Accuracy is primary; cost is the least priority.** Given the choice between
   an accurate-but-expensive path and a cheap-but-lossy one, insrc chooses
   accuracy.
-- **Local-first.** Ollama is always available and embeddings are local-only; the
-  graph + vectors live on your disk under `~/.insrc/`.
+- **Local-first.** Embeddings run locally through Ollama or the embedded ONNX
+  backend; the graph + vectors live on your disk under `~/.insrc/`.
 - **No direct cloud REST calls.** Cloud LLM access goes exclusively through the
   locally-installed `claude` and `codex` CLI binaries (via `CliProvider`), so
   auth and quota stay with the user's CLI OAuth sessions.
@@ -117,15 +124,20 @@ the daemon is the single owner of the graph, the vectors, and the tool registry.
   the active repo. Registry membership is established exclusively via the
   `repo.add` IPC; entities for unregistered repos fail the upsert.
 
-## 60-second start
+## Getting started
+
+You need Git and Node.js **≥22.13.0** for a source installation. Choose local
+Ollama embeddings or the embedded ONNX alternative. Reasoning can use a local
+Ollama model or an authenticated `claude` / `codex` CLI. Model downloads and
+cloud reasoning require network access.
 
 ```bash
 # users — one-line release installer: clones + builds the daemon into ~/.insrc/daemon and starts it
 curl -fsSL https://github.com/insors-ai/insrc/releases/latest/download/insrc-daemon-install.sh | bash
 # options after `bash -s --`, e.g. --target <path> · --branch main · --no-start · --embedder auto|ollama|onnx
 
-# launch the interactive TUI — add a repo from the Repos pane (press 'a')
-insrc
+# launch the dashboard — add a repo from Repos (press 'a'), then wait for indexing
+"$HOME/.insrc/daemon/scripts/insrc"
 
 # then register insrc as an MCP server (see below) and ask grounded questions
 # from your claude / codex session, e.g. via the insrc_analyze tool:
@@ -170,6 +182,7 @@ src/
   workflow/   Workflow framework (define, design.epic, design.story, plan, build, tracker, gates)
   mcp/        MCP servers (insrc_analyze_step, insrc_workflow_step, …)
   cli/        `insrc` interactive TUI (ink) — panes, services, hooks
+  docgen/     Graph-derived diagrams and offline HTML documents
   bin/        Executable entrypoints
   prompts/    Shaper / analyze / workflow prompt templates
   assets/     Non-TS runtime resources (copied by copy-assets.mjs)
@@ -178,24 +191,24 @@ src/
 Compiled outputs: the daemon binary the IDE spawns is `out/daemon/index.js`; the
 MCP binary is `out/bin/insrc-mcp.js` (registered as `insrc-mcp`).
 
-**Tech stack** — TypeScript (strict, ESM-only, NodeNext) · Node.js 20+ (`tsx` in
+**Tech stack** — TypeScript (strict, ESM-only, NodeNext) · Node.js ≥22.13.0 (`tsx` in
 dev; native modules build against Node 22 headers) · LMDB + LanceDB + DuckDB ·
-tree-sitter (TS, Python, Go, Java, Scala, Kotlin) · Ollama (local LLM +
-embeddings) + `CliProvider` (claude + codex CLI subprocesses) · pino logging ·
+tree-sitter (TS/JS, Python, Go, Java, Scala, Kotlin) · Ollama (local LLM +
+embeddings) / ONNX (local embeddings) + `CliProvider` (claude + codex CLI subprocesses) · pino logging ·
 ink + react TUI · undici HTTP.
 
 ## CLI
 
 `insrc` is a **full-screen interactive terminal UI** (built on
 [ink](https://github.com/vadimdemedes/ink)) — no subcommands. Launch it in a
-terminal (no `node`/`npm` needed; runs from any directory):
+terminal (the launcher locates the runtime; runs from any directory):
 
 ```bash
 scripts/insrc                 # or `npm run insrc`
 # put it on PATH once:  ln -s "$PWD/scripts/insrc" /usr/local/bin/insrc  →  then just `insrc`
 ```
 
-Four panes (switch with `1`–`4`/`Tab`, `r` refresh, `q` quit):
+Six panes (switch with `1`–`6`/`Tab`, `r` refresh, `q` quit):
 
 - **Daemon** — live health (uptime, queue, model-pull, LMDB size) + the full
   maintenance lifecycle: `s` start · `x` stop · `R` restart · `u` update
@@ -208,6 +221,8 @@ Four panes (switch with `1`–`4`/`Tab`, `r` refresh, `q` quit):
   tracker) and approve / reject pending HLD amendments.
 - **Setup** — hardware detection + model recommendation; `a` apply config · `p`
   pull missing models (progress streamed inline).
+- **Tiers** — inspect and configure model tiers for reasoning roles.
+- **Debug** — inspect MCP connections and daemon logs.
 
 Press **`:`** anywhere for a vim-style command bar (REPL-style; `Esc` closes):
 
@@ -225,25 +240,37 @@ over the IPC socket directly rather than driving the UI.
 
 ## MCP server
 
-Register the compiled `insrc-mcp` binary with an MCP client (e.g. Claude Code in
-`~/.claude/settings.json`):
+Register the installed MCP server once with your assistant:
 
-```json
-{
-  "mcpServers": {
-    "insrc": {
-      "command": "insrc-mcp",
-      "env": { "INSRC_REPO": "/path/to/registered/repo" }
-    }
-  }
-}
+```bash
+# Claude Code
+claude mcp add insrc --scope user -- node "$HOME/.insrc/daemon/out/bin/insrc-mcp.js"
+
+# Codex
+codex mcp add insrc -- node "$HOME/.insrc/daemon/out/bin/insrc-mcp.js"
 ```
 
-`INSRC_REPO` is optional — callers may pass `repo` on each tool call instead. The
-repo must be registered (Repos pane → `a` add in the `insrc` TUI) and finished
-indexing. When the client declares the `sampling` capability, inner LLM calls
-route back through MCP `sampling/createMessage` (single session, no subprocess);
-otherwise they fall back to the daemon's configured `shaperProvider`.
+Use your actual install path if you changed the installer target. The MCP server
+resolves registered repositories from the session's working directory. You can
+also supply `repo` on a tool call or set `INSRC_REPO` explicitly. Register the
+repository and let indexing finish before querying it.
+
+The main tools include:
+
+| Tool | Use |
+|---|---|
+| `insrc_analyze_step` / `insrc_analyze` | Multi-turn or one-shot grounded analysis. |
+| `insrc_docgen` | Graph-derived HTML documentation and diagrams. |
+| `insrc_triage` | Size and route a feature or defect. |
+| `insrc_workflow_step` | Drive brainstorm, definition, design, planning, and tracker stages in-session. |
+| `insrc_build_step` | Implement and validate tracked work. |
+| `insrc_review_step` / `insrc_code_review_step` | Review design artifacts and built code. |
+| `insrc_present` / `insrc_workflow_approve` | Present pending artifacts and record explicit user approval. |
+| `insrc_schema` / `insrc_guide` | Retrieve exact tool contracts and workflow procedures. |
+
+Design artifacts are reviewed before approval; built Stories receive code
+review. Smaller changes take shorter routes. See the [workflow guide](docs/workflow.md)
+for the full lifecycle.
 
 ## IDE plugins
 
@@ -252,8 +279,8 @@ are **thin orchestrators that own no reasoning** — all reasoning still runs
 through the insrc MCP server your assistant invokes. Each one installs and keeps
 the daemon current, wires insrc's MCP tools + the tracked-workflow steering into
 your AI host, and scopes every call to the open project. Consent-gated,
-marker-delimited and fully reversed on uninstall; **no cloud path, no stored
-secrets** — auth stays with your existing CLI / OAuth sessions.
+marker-delimited and reversed on uninstall; cloud LLM authentication stays with
+your existing CLI / OAuth sessions.
 
 - **VS Code** — [`insors.insrc-vscode`](https://marketplace.visualstudio.com/items?itemName=insors.insrc-vscode)
   on the Marketplace (search **insrc**). Coalesced first-run onboarding (install
@@ -261,7 +288,9 @@ secrets** — auth stays with your existing CLI / OAuth sessions.
   action also a Command-Palette command, and the daemon's full configuration
   editable from **native VS Code Settings** (`insrc.*`, machine-scoped). After a
   daemon self-update it nudges you to **Reload Window** so the MCP connection
-  reconnects.
+  reconnects. It also includes an **in-editor chat preview** over your Claude /
+  Codex CLI, **pending-document review**, and a **delivery board** for tracked
+  work. Open these through the insrc commands in the Command Palette.
 - **JetBrains** — one plugin for **IntelliJ IDEA, PyCharm, GoLand & WebStorm**
   (2024.2+) from a single install; wires JetBrains **AI Assistant** or **Junie**.
   Adds **Settings → Tools → insrc** (a live daemon-config editor with nested

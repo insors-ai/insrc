@@ -8,7 +8,7 @@
  * batch, in order, each batch's built prompt within the budget, and names an
  * atom that cannot fit even alone.
  *
- * Run: npx tsx --test src/workflow/code-review/__tests__/pack-into-batches.test.ts
+ * Run: npx tsx --test src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts
  */
 
 import { test } from 'node:test';

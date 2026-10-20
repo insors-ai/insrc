@@ -26,7 +26,7 @@ import { readDefineArtifact } from '../gates.js';
 import type { DefineArtifact } from '../artifacts/define.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from '../config/github.js';
-import { epicWorkflowId, safeCanonical, storyWorkflowId, taskWorkflowId } from '../id.js';
+import { ArtifactIds, InvalidArtifactKeyError, type ArtifactKey } from '../artifact-ids.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, readRevision } from '../storage.js';
 import { epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody } from './conventions.js';
 import type { IssueRef, PortFailureKind, PortResult, TrackerPort } from './port.js';
@@ -424,17 +424,25 @@ function buildSpec(
 ): { value: Parameters<TrackerPort['issueOps']['create']>[0] } | { error: string } {
 	const labels = [kindLabel, membership, label];
 	const createdAt = define.meta.createdAt;
+	// The title and the body marker both start with the artifact id, so the issue maps back to its artifact
+	// from GitHub alone and the duplicate guard can find it by its title.
+	const idOf = (key: ArtifactKey): { readonly id: string } | { readonly error: string } => {
+		try { return { id: ArtifactIds.make(key) }; }
+		catch (e) { return { error: `no artifact id for the ${key.kind} issue: ${e instanceof InvalidArtifactKeyError ? e.message : String(e)}` }; }
+	};
 	if (unit.unit === 'epic') {
-		const wid = safeCanonical(() => epicWorkflowId(unit.epicHash, createdAt));
+		const made = idOf({ kind: 'EPIC', epicHash: unit.epicHash });
+		if ('error' in made) return made;
 		const problem = firstSentence(define.body.problem);
-		return { value: { title: wid !== undefined ? `${wid} — ${problem}` : `Epic: ${problem}`, body: renderEpicBody(define, epicSlug, repo, wid), labels, issueType: cfg.epicIssueType } };
+		return { value: { title: `${made.id} \u2014 ${problem}`, body: renderEpicBody(define, epicSlug, repo, made.id), labels, issueType: cfg.epicIssueType } };
 	}
 	const storyId = unit.storyId ?? '';
 	const story = define.body.stories.find(s => s.id === storyId || s.id.toLowerCase() === storyId.toLowerCase());
 	if (story === undefined) return { error: `Story '${storyId}' is not in the Define body` };
 	if (unit.unit === 'story') {
-		const wid = safeCanonical(() => storyWorkflowId(unit.epicHash, createdAt, story.id));
-		return { value: { title: wid !== undefined ? `${wid} — ${story.title}` : `${story.id}: ${story.title}`, body: renderStoryBody(parentRef ?? '', story, epicSlug, unit.epicHash, createdAt, repo, wid), labels, issueType: cfg.storyIssueType } };
+		const made = idOf({ kind: 'STORY', epicHash: unit.epicHash, story: story.id });
+		if ('error' in made) return made;
+		return { value: { title: `${made.id} \u2014 ${story.title}`, body: renderStoryBody(parentRef ?? '', story, epicSlug, unit.epicHash, createdAt, repo, made.id), labels, issueType: cfg.storyIssueType } };
 	}
 	let plan: PlanArtifact;
 	try { plan = JSON.parse(readFileSync(planJson(unit), 'utf8')) as PlanArtifact; }
@@ -442,8 +450,9 @@ function buildSpec(
 	const taskId = unit.taskId ?? '';
 	const task = (plan.body?.tasks ?? []).find(t => t.id === taskId || t.id.toLowerCase() === taskId.toLowerCase());
 	if (task === undefined) return { error: `Task '${taskId}' is not in the plan of Story '${storyId}'` };
-	const wid = safeCanonical(() => taskWorkflowId(unit.epicHash, createdAt, story.id, task.id));
-	return { value: { title: wid !== undefined ? `${wid} — ${task.title}` : `${story.id}/${task.id}: ${task.title}`, body: renderTaskBody(parentRef ?? '', story.id, task, epicSlug, unit.epicHash, createdAt, repo, wid), labels, issueType: cfg.taskIssueType } };
+	const made = idOf({ kind: 'TASK', epicHash: unit.epicHash, story: story.id, task: task.id });
+	if ('error' in made) return made;
+	return { value: { title: `${made.id} \u2014 ${task.title}`, body: renderTaskBody(parentRef ?? '', story.id, task, epicSlug, unit.epicHash, createdAt, repo, made.id), labels, issueType: cfg.taskIssueType } };
 }
 
 /**

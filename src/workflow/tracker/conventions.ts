@@ -16,6 +16,7 @@
 
 import { createHash } from 'node:crypto';
 
+import { ArtifactIds } from '../artifact-ids.js';
 import { issueNumber } from './refs.js';
 import { defineMdRel, hldMdRel, lldMdRel, planMdRel } from '../storage.js';
 import type { DefineArtifact, DefineStory } from '../artifacts/define.js';
@@ -56,20 +57,20 @@ export function allTrackerLabels(epicLabel: string, storyLabel: string, epicSlug
 
 /** HTML-comment marker embedded as the FIRST line of a pushed issue body.
  *  Invisible in rendered markdown, machine-readable — lets an issue map
- *  back to its canonical hierarchical workflow id from the GitHub side
- *  alone (complements the local artifact resolver). See `workflow/id.ts`. */
-export function idMarker(workflowId: string): string {
-	return `<!-- insrc:id ${workflowId} -->`;
+ *  back to its artifact id (`EPIC-<h>`, `STORY-<h>-s1`, `TASK-<h>-s1-t3`) from the GitHub
+ *  side alone. See `workflow/artifact-ids.ts`. */
+export function idMarker(artifactId: string): string {
+	return `<!-- insrc:id ${artifactId} -->`;
 }
 
-/** Extracts the canonical workflow id from an issue body's `idMarker`
- *  line (returns null when absent). The id has no whitespace, so `\S+`
- *  captures the whole `E<…>:S<…>:T<…>` / `E<…>-S<…>-T<…>` token. */
+/** Captures the token of an issue body's `idMarker` line. */
 export const ID_MARKER_RE = /<!--\s*insrc:id\s+(\S+)\s*-->/;
 
+/** The artifact id an issue body's `idMarker` line names, or null when there is none or the marker
+ *  carries anything else (a marker written before the artifact ids is not read). */
 export function parseIdMarker(body: string): string | null {
 	const m = ID_MARKER_RE.exec(body);
-	return m !== null ? m[1]! : null;
+	return m !== null && ArtifactIds.parse(m[1]!) !== undefined ? m[1]! : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,10 +96,10 @@ function docRef(label: string, path: string, repo?: RepoRef): string {
 	return `- ${label}: [\`${path}\`](https://github.com/${repo.owner}/${repo.repo}/blob/${branch}/${path})`;
 }
 
-export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: RepoRef, workflowId?: string): string {
+export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: RepoRef, artifactId?: string): string {
 	const body = define.body;
 	const lines: string[] = [];
-	if (workflowId !== undefined && workflowId.length > 0) lines.push(idMarker(workflowId));
+	if (artifactId !== undefined && artifactId.length > 0) lines.push(idMarker(artifactId));
 	lines.push('## Problem', '', body.problem, '');
 	if (body.nonGoals.length > 0) {
 		lines.push('## Non-goals', '');
@@ -126,9 +127,9 @@ export function renderEpicBody(define: DefineArtifact, epicSlug: string, repo?: 
 
 /** Story issue body — Epic back-ref, user value, acceptance criteria,
  *  slug-based LLD link. */
-export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: string, epicHash: string, createdAt: string, repo?: RepoRef, workflowId?: string): string {
+export function renderStoryBody(epicRef: string, story: DefineStory, epicSlug: string, epicHash: string, createdAt: string, repo?: RepoRef, artifactId?: string): string {
 	const lines: string[] = [];
-	if (workflowId !== undefined && workflowId.length > 0) lines.push(idMarker(workflowId));
+	if (artifactId !== undefined && artifactId.length > 0) lines.push(idMarker(artifactId));
 	lines.push(`**Epic:** #${issueNumber(epicRef)}`, '');
 	lines.push('## User value', '', story.userValue, '');
 	if (story.acceptanceCriteria.length > 0) {
@@ -171,9 +172,9 @@ export function updateEpicTaskList(currentBody: string, storyId: string, storyRe
 /** Task issue body — Story back-ref, size, summary, per-Task acceptance
  *  checks + named tests, and a slug-based link to the plan doc. Rendered
  *  for each PlanTask when `pushTasks` is enabled. */
-export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string, epicHash: string, createdAt: string, repo?: RepoRef, workflowId?: string): string {
+export function renderTaskBody(storyRef: string, storyId: string, task: PlanTask, epicSlug: string, epicHash: string, createdAt: string, repo?: RepoRef, artifactId?: string): string {
 	const lines: string[] = [];
-	if (workflowId !== undefined && workflowId.length > 0) lines.push(idMarker(workflowId));
+	if (artifactId !== undefined && artifactId.length > 0) lines.push(idMarker(artifactId));
 	lines.push(`**Story:** #${issueNumber(storyRef)} (${storyId})`, '');
 	lines.push(`**Size:** ${task.size}`, '');
 	lines.push('## Summary', '', task.summary, '');

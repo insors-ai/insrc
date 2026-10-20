@@ -394,18 +394,11 @@ export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<u
 		const carries = noteCarries(key, notes);
 		return issue(next, [{ prompt, role, carries: { ...carries, atomIds: [...new Set([...carries.atomIds, ...context.map(a => a.id)])] } }]);
 	}
-	if (context.length > 0) {
-		// The obligation's own context does not fit beside its evidence: each context atom becomes a
-		// note under the key, and is reduced with the evidence (nothing is dropped; provenance kept).
-		const seq = next.seq;
-		const contextNotes: EvidenceNote[] = context.map((a, i) => ({ noteId: `n${seq + i + 1}`, key, text: a.text, atomIds: [a.id] }));
-		next = { ...next, seq: seq + context.length, notes: [...next.notes, ...contextNotes], contextReduced: { ...next.contextReduced, [key]: true } };
-		notes = [...notes, ...contextNotes];
-		log.info({ dimension: job.dimension, key, contextAtoms: context.length }, 'review pipeline: an obligation\'s context is over the limit; reducing it with its evidence');
-	}
+	const converted = contextToNotes(next, key, context);
+	next = converted.job;
+	notes = [...notes, ...converted.notes];
 	const b = budgets(job.plan.limitChars);
-	const labels = new Map(context.map((a, i) => [`n${next.seq - context.length + i + 1}`, `context atom ${a.label}`] as const));
-	const batches = reduceBatches(gather, key, notes, b.soft, b.hard, labels);
+	const batches = reduceBatches(gather, key, notes, b.soft, b.hard, converted.labels);
 	// A level that reduces each note alone, when every note is already within the cap, cannot shrink the evidence.
 	if (batches.every(c => c.carries.noteIds.length === 1) && notes.every(n => n.text.length <= gather.noteCapChars)) {
 		throw new Error(`review ${job.dimension}: the evidence for ${key} cannot be reduced to fit one call (${notes.length} notes)`);
@@ -496,12 +489,23 @@ export function relationJudged(job: ReviewPipelineJob, key: string): boolean {
 function redivideNotes(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, call: ReviewCall, maxChars: number | undefined): ReviewPipelineJob {
 	const gather = gatherOf(job, adapter);
 	const key = call.carries.key ?? '';
-	const notes = notesOf(job, call.carries.noteIds);
+	let notes = notesOf(job, call.carries.noteIds);
+	// A refused obligation call that carried its raw context: the context becomes notes too, as at
+	// sizing, so nothing it carried is lost and later planning does not reattach it.
+	let labels: ReadonlyMap<string, string> = new Map();
+	if (call.role === 'obligation' && job.contextReduced[key] === undefined) {
+		const context = obligationContext(job, adapter, key).filter(a => call.carries.atomIds.includes(a.id));
+		const converted = contextToNotes(job, key, context);
+		job = converted.job;
+		notes = [...notes, ...converted.notes];
+		labels = converted.labels;
+	}
 	const hard = Math.min(maxChars ?? call.chars - 1, call.chars - 1, job.plan.limitChars);
 	const soft = Math.max(1, Math.min(maxChars !== undefined ? maxChars - reserveFor(maxChars) : Math.floor(call.chars / 2), hard));
 	log.warn({ dimension: job.dimension, role: call.role, key, notes: notes.length, soft, hard }, 'review pipeline: a note call was refused for its size; reducing its notes in smaller batches');
 	if (notes.length <= 1 && call.role === 'reduce') throw new AtomTooLargeError(`evidence note ${notes[0]?.noteId ?? '?'} (${key})`, call.chars, hard);
-	return issue(job, reduceBatches(gather, key, notes, soft, hard));
+	if (notes.length === 0) throw new AtomTooLargeError(`the obligation call for ${key}`, call.chars, hard);
+	return issue(job, reduceBatches(gather, key, notes, soft, hard, labels));
 }
 
 /** Reduce calls over `notes`, packed within `soft`; one note may use `hard`; one over it is named. */
@@ -525,6 +529,7 @@ function applyGatherAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknow
 		if (typeof text !== 'string') reasons = ['a reduction answers with one note: { "text": "..." }'];
 		else if (text.length > gather.noteCapChars) reasons = [`the note is ${text.length} characters; it must be at most ${gather.noteCapChars}`];
 	}
+	if (reasons.length === 0) reasons = [...(gather.validate?.(answer, call) ?? [])];
 	if (reasons.length > 0) return applyFailure(job, adapter, call.callId, 'invalid-answer', undefined, { reasons, now });
 	const base: ReviewPipelineJob = {
 		...job,
@@ -537,6 +542,16 @@ function applyGatherAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknow
 	const noteId = `n${base.seq + 1}`;
 	const note: EvidenceNote = { noteId, key: call.carries.key ?? '', text: text as string, atomIds: call.carries.atomIds };
 	return advanceGather({ ...base, seq: base.seq + 1, notes: [...base.notes, note], noteProvenance: { ...base.noteProvenance, [noteId]: call.carries.noteIds } }, adapter);
+}
+
+/** Context atoms as evidence notes under the key, once (job.contextReduced), named for errors.
+ *  Nothing is dropped; each note stands for its atom. */
+function contextToNotes(job: ReviewPipelineJob, key: string, context: readonly ReviewAtom[]): { job: ReviewPipelineJob; notes: EvidenceNote[]; labels: ReadonlyMap<string, string> } {
+	if (context.length === 0) return { job, notes: [], labels: new Map() };
+	const notes: EvidenceNote[] = context.map((a, i) => ({ noteId: `n${job.seq + i + 1}`, key, text: a.text, atomIds: [a.id] }));
+	const labels = new Map(context.map((a, i) => [notes[i]!.noteId, `context atom ${a.label}`] as const));
+	log.info({ dimension: job.dimension, key, contextAtoms: context.length }, 'review pipeline: an obligation\'s context is over the limit; reducing it with its evidence');
+	return { job: { ...job, seq: job.seq + context.length, notes: [...job.notes, ...notes], contextReduced: { ...job.contextReduced, [key]: true } }, notes, labels };
 }
 
 /** An obligation's own context: the material.context atoms its atomIds name. */
@@ -599,11 +614,20 @@ function finishJob(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): Rev
 		const relations = Object.keys(job.relationPlan).flatMap(k => job.gathered.filter(g => g.role === 'relation' && g.key === k));
 		finished = gather.merge([finished, ...[...obligations, ...relations].map(g => gather.partOf(g))]);
 	}
-	if (divided && finished !== null && typeof finished === 'object') {
-		const pipelineCalls: PipelineCalls = { chunk: job.counts.chunk, obligation: job.counts.obligation, relation: job.counts.relation, merge: job.counts.merge };
-		finished = { ...(finished as Record<string, unknown>), pipelineCalls };
+	const done: ReviewPipelineJob = { ...job, phase: 'done', stage: '', pending: [] };
+	// An object result (a DimensionResult) carries its calls per role; an array result (a design
+	// review's findings) is left as it is, and its entry point reads pipelineCallsOf(job).
+	const calls = pipelineCallsOf(done);
+	if (calls !== undefined && finished !== null && typeof finished === 'object' && !Array.isArray(finished)) {
+		finished = { ...(finished as Record<string, unknown>), pipelineCalls: calls };
 	}
-	return { ...job, phase: 'done', stage: '', pending: [], result: finished };
+	return { ...done, result: finished };
+}
+
+/** The calls a divided review made per role; undefined for a single-chunk review. */
+export function pipelineCallsOf(job: ReviewPipelineJob): PipelineCalls | undefined {
+	if (job.plan.single) return undefined;
+	return { chunk: job.counts.chunk, obligation: job.counts.obligation, relation: job.counts.relation, merge: job.counts.merge };
 }
 
 // -- helpers -----------------------------------------------------------------

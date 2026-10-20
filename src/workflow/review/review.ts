@@ -19,9 +19,9 @@ import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
 import { runReviewJob } from '../review-pipeline/driver.js';
 import { designReviewSnapshot, premiseAdapter } from '../review-pipeline/design-review.js';
-import { createReviewJob } from '../review-pipeline/job.js';
+import { createReviewJob, pipelineCallsOf } from '../review-pipeline/job.js';
 import { reviewLimitChars } from '../review-pipeline/limit.js';
-import type { ReviewAdapter } from '../review-pipeline/types.js';
+import type { PipelineCalls, ReviewAdapter } from '../review-pipeline/types.js';
 import { isDesignStage } from './template.js';
 import { runTemplateReview } from './template-review.js';
 import type { DesignIntent } from './template.js';
@@ -95,9 +95,11 @@ export async function runReview(
 	}) as unknown as ReviewAdapter<unknown>;
 	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars());
 	let findings: Finding[];
+	let pipelineCalls: PipelineCalls | undefined;
 	try {
 		findings = [...await runReviewJob(job, adapter, provider, {
 			signal,
+			onDone: done => { pipelineCalls = pipelineCallsOf(done); },
 			onStage: s => { if (s === 'probe') emit('probe'); },
 			onCall: c => emit(c.stage === 'extract' ? 'extract' : `verify:${c.carries.key ?? ''}`),
 		}) as readonly Finding[]];
@@ -123,6 +125,7 @@ export async function runReview(
 		reviewedAt,
 		model,
 		...(sourceRootFallback !== undefined ? { sourceRootFallback } : {}),
+		...(pipelineCalls !== undefined ? { pipelineCalls } : {}),
 	};
 }
 

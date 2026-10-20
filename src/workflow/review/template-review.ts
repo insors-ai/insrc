@@ -20,9 +20,9 @@ import type { RunReviewOpts } from './review.js';
 import type { LLMProvider } from '../../shared/types.js';
 import { runReviewJob } from '../review-pipeline/driver.js';
 import { designReviewSnapshot, templateAdapter } from '../review-pipeline/design-review.js';
-import { createReviewJob, ReviewCallFailedError } from '../review-pipeline/job.js';
+import { createReviewJob, pipelineCallsOf, ReviewCallFailedError } from '../review-pipeline/job.js';
 import { reviewLimitChars } from '../review-pipeline/limit.js';
-import type { ReviewAdapter } from '../review-pipeline/types.js';
+import type { PipelineCalls, ReviewAdapter } from '../review-pipeline/types.js';
 import { HARD_REVIEW_DEADLINE_MS, reviewDeadlineMs, reviewTemplateFor } from './template.js';
 import type { Finding, ReviewReport } from './types.js';
 import { computeVerdict, DEFAULT_BLOCK_ON, tally } from './verdict.js';
@@ -80,8 +80,11 @@ export async function runTemplateReview(artifactMarkdown: string, opts: RunRevie
 	const adapter = templateAdapter(snapshot, { template, stage, repo, limitMs, timedOut }) as unknown as ReviewAdapter<unknown>;
 	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars(), { now: startedAt });
 	let findings: readonly Finding[];
+	let pipelineCalls: PipelineCalls | undefined;
 	try {
-		findings = await runReviewJob(job, adapter, session as LLMProvider, { signal: opts.signal, now: nowMs, onCall: () => emit('template') }) as readonly Finding[];
+		findings = await runReviewJob(job, adapter, session as LLMProvider, {
+			signal: opts.signal, now: nowMs, onCall: () => emit('template'), onDone: done => { pipelineCalls = pipelineCallsOf(done); },
+		}) as readonly Finding[];
 	} catch (err) {
 		// A cancel of this review keeps today's message; a provider's own abort propagates as it was.
 		if (opts.signal?.aborted === true) throw new Error('review: aborted');
@@ -102,5 +105,5 @@ export async function runTemplateReview(artifactMarkdown: string, opts: RunRevie
 	emit('done');
 	log.info({ stage, template: template.id, verdict, counts, tookMs: nowMs() - startedAt }, 'review:template: completed design review');
 
-	return { artifact: opts.artifact ?? stage, stage, verdict, findings, counts, template: template.id, reviewedAt, model };
+	return { artifact: opts.artifact ?? stage, stage, verdict, findings, counts, template: template.id, reviewedAt, model, ...(pipelineCalls !== undefined ? { pipelineCalls } : {}) };
 }

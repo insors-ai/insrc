@@ -52,6 +52,8 @@ export interface ToyOpts {
 	readonly relationCalls?: 1 | 2 | undefined;
 	/** Counts relationCall invocations. */
 	readonly onRelationCall?: ((pair: readonly [ReviewAtom, ReviewAtom]) => void) | undefined;
+	/** The gather's semantic validator. */
+	readonly gatherValidate?: ((answer: unknown, call: ReviewCall) => readonly string[]) | undefined;
 }
 
 export const RELATION_SCHEMA = { type: 'object', required: ['holds'], properties: { holds: { type: 'boolean' } } } as unknown as StructuredSchema;
@@ -113,6 +115,7 @@ export function toyAdapter(snapshot: ReviewMaterialSnapshot, opts: ToyOpts = {})
 				const one = (a: ReviewAtom, b: ReviewAtom, dir: string) => ({ messages: [{ role: 'system' as const, content: `Does ${a.id} use ${b.id} correctly (${dir})?` }, { role: 'user' as const, content: JSON.stringify({ a: a.text, b: b.text }) }], schema: RELATION_SCHEMA, execution });
 				return opts.relationCalls === 1 ? [one(pair[0], pair[1], 'both')] : [one(pair[0], pair[1], 'forward'), one(pair[1], pair[0], 'backward')];
 			} } : {}),
+			...(opts.gatherValidate !== undefined ? { validate: opts.gatherValidate } : {}),
 			partOf: (g: GatherAnswer): ToyResult => ({ seen: [], notJudged: [], divided: true, gatheredParts: [g] }),
 			merge: (parts: readonly ToyResult[]): ToyResult => ({
 				seen: parts.flatMap(p => p.seen), notJudged: parts[0]!.notJudged, divided: true, gatheredParts: parts.flatMap(p => p.gatheredParts ?? []),

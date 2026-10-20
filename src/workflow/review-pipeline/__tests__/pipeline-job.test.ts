@@ -21,7 +21,7 @@ import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 import { CliStallError, ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { runReviewJob } from '../driver.js';
-import { applyFailure, applyOutput, createReviewJob, MAX_GATHER_LEVELS, MaterialChangedError, nextCalls, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
+import { applyFailure, applyOutput, createReviewJob, MAX_GATHER_LEVELS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { AdapterStage, EvidenceNote, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
@@ -980,5 +980,72 @@ test("the gather stops, failing the review with nothing recorded, when an obliga
 		const model = gatherModel(2_900, 10);
 		await assert.rejects(drive(createReviewJob(rebuild(snap), 'daemon', snap, LIMIT), rebuild, model.answer), /cannot be reduced to fit one call/);
 		assert.equal(finished, 0, 'nothing recorded');
+	}
+});
+
+test('a divided review whose result is an array keeps it an array, and its calls per role are read from the job', async () => {
+	const many = Array.from({ length: 24 }, (_, i) => atom(i));
+	const snap = toySnapshot(many);
+	// A design adapter's result is a findings array: here, the ids it saw.
+	const rebuild = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => {
+		const a = toyAdapter(s, { gatherLimit: LIMIT });
+		return { ...a, finish: (o, c) => [...(a.finish(o, c) as ToyResult).seen], gather: { ...a.gather!, merge: (parts: readonly unknown[]) => parts[0], partOf: () => [] } };
+	};
+	let done: ReviewPipelineJob | undefined;
+	const out = await runReviewJob(createReviewJob(rebuild(snap), 'daemon', snap, LIMIT), rebuild(snap), {
+		completeStructured: async (messages: LLMMessage[]) => seeingModel().answer({ messages } as unknown as ReviewCall),
+	} as unknown as LLMProvider, { onDone: j => { done = j; } });
+	assert.ok(Array.isArray(out), 'still an array');
+	assert.equal((out as string[]).length, many.length);
+	assert.ok(done !== undefined && !done.plan.single);
+	assert.deepEqual(pipelineCallsOf(done!), { chunk: done!.counts.chunk, obligation: 0, relation: 0, merge: 0 });
+	assert.ok(done!.counts.chunk > 1);
+	// A single-chunk review has none.
+	const one = toySnapshot([atom(1)]);
+	let single: ReviewPipelineJob | undefined;
+	await runReviewJob(createReviewJob(rebuild(one), 'daemon', one, LIMIT), rebuild(one), {
+		completeStructured: async (messages: LLMMessage[]) => seeingModel().answer({ messages } as unknown as ReviewCall),
+	} as unknown as LLMProvider, { onDone: j => { single = j; } });
+	assert.equal(pipelineCallsOf(single!), undefined);
+});
+
+test("a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review", () => {
+	const atoms = Array.from({ length: 20 }, (_, i) => atom(i, 400, i < 10 ? 'src/x.ts' : 'src/y.ts'));
+	const rel: ReviewRelation[] = [{ from: 'a1', to: 'a12', kind: 'references' }];
+	for (let i = 0; i < 20; i++) for (let j = i + 1; j < 20; j++) if (atoms[i]!.file === atoms[j]!.file) rel.push({ from: atoms[i]!.id, to: atoms[j]!.id, kind: 'same-file' });
+	const snap = toySnapshot(atoms, rel);
+	const seenCalls: string[] = [];
+	const validate = (answer: unknown, call: ReviewCall): readonly string[] => { seenCalls.push(call.role); return (answer as { holds?: unknown }).holds === true ? ['a relation answer must explain itself'] : []; };
+	const adapter = toyAdapter(snap, { gatherLimit: LIMIT, relationCalls: 1, gatherValidate: validate });
+	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
+	const model = gatherModel(10, 10);
+	while (job.pending.some(c => c.role === 'chunk')) { const c = job.pending.find(x => x.role === 'chunk')!; job = applyOutput(job, adapter, c.callId, model.answer(c)); }
+	const rel1 = job.pending.find(c => c.role === 'relation')!;
+	job = applyOutput(job, adapter, rel1.callId, model.answer(rel1));
+	assert.ok(seenCalls.includes('relation'), 'the validator saw the relation call');
+	const again = job.pending.find(c => c.role === 'relation')!;
+	assert.equal(again.attempt, 2);
+	assert.ok((again.messages[0]!.content as string).includes('a relation answer must explain itself'), 'the reasons are the correction');
+	assert.throws(() => applyOutput(job, adapter, again.callId, model.answer(again)), (e: unknown) => e instanceof ReviewCallFailedError && /invalid-answer/.test(e.message));
+});
+
+test('a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions', () => {
+	const context = Array.from({ length: 2 }, (_, i) => ({ id: `x${i}`, label: `record#${i}`, text: `record-${i}-${'r'.repeat(900)}` }));
+	for (const withNotes of [false, true]) {
+		const snap = toySnapshot([atom(1)], [], [{ key: 'k1', atomIds: context.map(c => c.id) }], context);
+		const adapter = toyAdapter(snap, { gatherLimit: LIMIT });
+		const base = createReviewJob(adapter, 'daemon', snap, LIMIT);
+		const notes: EvidenceNote[] = withNotes ? [{ noteId: 'e1', key: 'k1', text: 'evidence one', atomIds: ['a1'] }] : [];
+		let job = requestNoteCall({ ...base, notes }, adapter, 'obligation', 'k1', notes.map(n => n.noteId));
+		const obligation = job.pending.find(c => c.role === 'obligation')!;
+		assert.deepEqual([...obligation.carries.atomIds].sort(), [...(withNotes ? ['a1'] : []), 'x0', 'x1'].sort(), 'the raw context fits and is carried');
+		job = applyFailure(job, adapter, obligation.callId, 'size-refusal', 1_400);
+		const reductions = job.pending.filter(c => c.role === 'reduce');
+		assert.ok(reductions.length >= 1, `${withNotes ? 'mixed' : 'context-only'}: reductions are planned`);
+		assert.equal(job.contextReduced['k1'], true, 'the context became notes');
+		const carried = reductions.flatMap(c => c.carries.atomIds).sort();
+		assert.deepEqual(carried, [...(withNotes ? ['a1'] : []), 'x0', 'x1'].sort(), 'nothing it carried is lost');
+		for (const c of reductions) assert.ok(c.chars <= 1_400);
+		assert.ok(!job.pending.some(c => c.role === 'obligation'), 'the refused call is not resent');
 	}
 });

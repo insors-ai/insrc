@@ -34,6 +34,8 @@ export interface RunReviewJobOpts {
 	readonly onStage?: ((stage: string) => void) | undefined;
 	/** Progress: a call is about to be made. */
 	readonly onCall?: ((call: ReviewCall) => void) | undefined;
+	/** The finished job, before its result is returned (its calls per role: pipelineCallsOf). */
+	readonly onDone?: ((job: ReviewPipelineJob) => void) | undefined;
 }
 
 /** Drive `job` to the end and return the adapter's result. */
@@ -68,6 +70,7 @@ export async function runReviewJob(job: ReviewPipelineJob, adapter: ReviewAdapte
 		throwIfAborted(signal);
 		job = applyOutput(job, adapter, call.callId, raw, now());
 	}
+	opts.onDone?.(job);
 	return result(job);
 }
 

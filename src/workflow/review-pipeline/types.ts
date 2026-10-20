@@ -124,6 +124,10 @@ export interface GatherPlan<R> {
 	readonly relationCall?:  ((pair: readonly [ReviewAtom, ReviewAtom]) => readonly ChunkPrompt[]) | undefined;
 	/** The keyed notes a chunk answer carries; a note names atoms of its call, else stands for all of them. */
 	readonly notesFrom?:     ((answer: StageAnswer) => readonly { readonly key: string; readonly text: string; readonly atomIds?: readonly string[] | undefined }[]) | undefined;
+	/** Semantic problems with a gather call's answer (obligation, relation, reduction) already
+	 *  checked against its schema; empty = valid. Non-empty is an invalid answer, re-issued once
+	 *  with the reasons, then the review fails. */
+	readonly validate?:      ((answer: unknown, call: ReviewCall) => readonly string[]) | undefined;
 	/** An obligation's or a relation call's answer as one part for `merge`. */
 	readonly partOf:         (answer: GatherAnswer) => R;
 	/** The divided review's result: the chunk results (`finish`), then every obligation, then every relation part. */

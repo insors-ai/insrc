@@ -230,8 +230,8 @@ export function deriveMdPath(repoPath: string, kind: ArtifactKind, meta: Readonl
 	const workItemKind: WorkItemKind = meta['standalone'] === true ? 'standalone' : 'epic';
 	const slug = str(meta['epicSlug']) ?? hash;
 	try {
-		const identity = deriveWorkItemIdentity(hash, createdAt, str(meta['storyId']));
-		return resolveArtifactMdPath(repoPath, identity, kind, workItemKind, slug);
+		const story = str(meta['storyId']);
+		return resolveArtifactMdPath(repoPath, { epicHash: hash, epicCreatedAt: createdAt, ...(story !== undefined ? { story } : {}) }, kind, workItemKind, slug);
 	} catch {
 		return '';
 	}

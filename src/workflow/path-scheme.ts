@@ -19,8 +19,8 @@
  *     S<nnn>/  LLD.md PLAN.md BUILD.md CR.md EXT.md — per-story artifacts
  *   docs/standalone/<slug>-E<YYYYMMDD><hash8>/    — triage-routed features (same shape)
  *
- * The folder is keyed by the work item's canonical identity (`epicSegment` +
- * story ordinal, from sc1's {@link deriveWorkItemIdentity}); the human slug is
+ * The folder is keyed by the work item's {@link WorkItemKey} (epic hash, the
+ * Epic's anchor time, and the story for a story-scoped kind); the human slug is
  * only a readable LABEL and never determines identity. The filename is the bare
  * `<KIND>.md`.
  *
@@ -33,7 +33,7 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { deriveWorkItemIdentity, type WorkItemIdentity } from './id.js';
+import { ArtifactIds, InvalidArtifactKeyError } from './artifact-ids.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,6 +49,15 @@ export type ArtifactKind = 'SPEC' | 'DEF' | 'HLD' | 'LLD' | 'PLAN' | 'BUILD' | '
 /** Whether a work item is epic-parented or a triage-routed standalone feature —
  *  selects the `docs/epics` vs `docs/standalone` top-level split. */
 export type WorkItemKind = 'epic' | 'standalone';
+
+/** What locates a work item's folder: the epic hash, the Epic's anchor time (the
+ *  one date every artifact of the work item shares) and, for a story-scoped
+ *  artifact, the story (`s<n>`). */
+export interface WorkItemKey {
+	readonly epicHash:      string;
+	readonly epicCreatedAt: string;
+	readonly story?:        string | undefined;
+}
 
 /** One work-item folder located under the docs tree. */
 export interface WorkItemLocation {
@@ -100,9 +109,38 @@ function topSegment(workItemKind: WorkItemKind): string {
 	return workItemKind === 'epic' ? 'epics' : 'standalone';
 }
 
-/** Absolute path to a work item's folder: `<repo>/docs/<epics|standalone>/<slug>-<epicSegment>`. */
-function workItemRoot(repoPath: string, identity: WorkItemIdentity, workItemKind: WorkItemKind, slug: string): string {
-	return join(repoPath, 'docs', topSegment(workItemKind), `${fileSeg(slug)}-${identity.epicSegment}`);
+/** `E<YYYYMMDD><hash8>`: the folder key, identical for every artifact of one
+ *  Epic because it reads only the hash and the Epic's anchor time.
+ *  @throws {InvalidArtifactKeyError} when the hash is not lowercase hex or the time is not a valid ISO time. */
+export function folderSegment(key: WorkItemKey): string {
+	if (typeof key.epicHash !== 'string' || !/^[0-9a-f]{8,}$/.test(key.epicHash)) {
+		throw new InvalidArtifactKeyError(`folderSegment: epicHash must be lowercase hex (got '${String(key.epicHash)}')`);
+	}
+	const d = new Date(key.epicCreatedAt);
+	if (typeof key.epicCreatedAt !== 'string' || Number.isNaN(d.getTime())) {
+		throw new InvalidArtifactKeyError(`folderSegment: epicCreatedAt must be a valid ISO time (got '${String(key.epicCreatedAt)}')`);
+	}
+	const date = `${String(d.getUTCFullYear()).padStart(4, '0')}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+	return `E${date}${key.epicHash.slice(0, 8)}`;
+}
+
+/** The story ordinal of a key's `s<n>` story, read through ArtifactIds.parse so
+ *  the same strict form governs paths and ids.
+ *  @throws {InvalidArtifactKeyError} when the key has no story or the story is not `s<n>`. */
+function storyOrdinal(key: WorkItemKey, what: string): number {
+	if (key.story === undefined) {
+		throw new InvalidArtifactKeyError(`${what} requires a story, but the key has none (an epic-level key cannot locate a story artifact)`);
+	}
+	const parsed = ArtifactIds.parse(`STORY-${key.epicHash}-${key.story}`);
+	if (parsed === undefined || parsed.story === undefined) {
+		throw new InvalidArtifactKeyError(`${what}: story must be s<n> (got '${key.story}'); an uppercase S<nnn> id is converted by the s9 conversion`);
+	}
+	return Number(parsed.story.slice(1));
+}
+
+/** Absolute path to a work item's folder: `<repo>/docs/<epics|standalone>/<slug>-<folderSegment>`. */
+function workItemRoot(repoPath: string, key: WorkItemKey, workItemKind: WorkItemKind, slug: string): string {
+	return join(repoPath, 'docs', topSegment(workItemKind), `${fileSeg(slug)}-${folderSegment(key)}`);
 }
 
 /**
@@ -114,25 +152,19 @@ function workItemRoot(repoPath: string, identity: WorkItemIdentity, workItemKind
  * The companion JSON path is deliberately NOT produced here — the hash-flat
  * `.insrc/artifacts` store is out of scope and unchanged.
  *
- * @throws when `kind` is story-scoped but `identity.story` is undefined (an
- *   epic-level identity cannot locate a story artifact).
+ * @throws {InvalidArtifactKeyError} when `kind` is story-scoped but the key has no
+ *   (valid `s<n>`) story, or the key's hash or time is not valid.
  */
 export function resolveArtifactMdPath(
 	repoPath:     string,
-	identity:     WorkItemIdentity,
+	key:          WorkItemKey,
 	kind:         ArtifactKind,
 	workItemKind: WorkItemKind,
 	slug:         string,
 ): string {
 	const storyScoped = STORY_SCOPED.has(kind);
-	if (storyScoped && identity.story === undefined) {
-		throw new Error(
-			`resolveArtifactMdPath: story-scoped artifact '${kind}' requires a story identity, ` +
-			`but identity.story is undefined (an epic-level identity cannot locate a story artifact)`,
-		);
-	}
-	const root = workItemRoot(repoPath, identity, workItemKind, slug);
-	const storySeg = storyScoped ? storyFolder(identity.story as number) : '';
+	const root = workItemRoot(repoPath, key, workItemKind, slug);
+	const storySeg = storyScoped ? storyFolder(storyOrdinal(key, `resolveArtifactMdPath: story-scoped artifact '${kind}'`)) : '';
 	// `join` collapses the empty story segment for item-root artifacts.
 	return join(root, storySeg, `${kind}.md`);
 }
@@ -149,22 +181,17 @@ export function resolveArtifactMdPath(
  * separator (or a parent-dir segment) is rejected so a companion can never escape
  * the Story folder.
  *
- * @throws when `identity.story` is undefined (cannot locate a Story folder).
+ * @throws {InvalidArtifactKeyError} when the key has no story (cannot locate a Story folder).
  * @throws when `companionFileName` contains a path separator or `..` segment.
  */
 export function resolveCompanionPath(
 	repoPath:          string,
-	identity:          WorkItemIdentity,
+	key:               WorkItemKey,
 	workItemKind:      WorkItemKind,
 	slug:              string,
 	companionFileName: string,
 ): string {
-	if (identity.story === undefined) {
-		throw new Error(
-			`resolveCompanionPath: a companion is Story-scoped and requires a story identity, ` +
-			`but identity.story is undefined (an epic-level identity cannot locate a companion)`,
-		);
-	}
+	const ordinal = storyOrdinal(key, 'resolveCompanionPath: a companion is Story-scoped and');
 	if (
 		companionFileName.length === 0 ||
 		companionFileName.includes('/') ||
@@ -176,8 +203,8 @@ export function resolveCompanionPath(
 			`(no path separators, no '.'/'..' segments)`,
 		);
 	}
-	const root = workItemRoot(repoPath, identity, workItemKind, slug);
-	return join(root, storyFolder(identity.story), companionFileName);
+	const root = workItemRoot(repoPath, key, workItemKind, slug);
+	return join(root, storyFolder(ordinal), companionFileName);
 }
 
 // ---------------------------------------------------------------------------
@@ -237,8 +264,3 @@ export function listArtifactMdPaths(repoPath: string, location: WorkItemLocation
 	}
 	return out;
 }
-
-// Re-export the sc1 identity constructor so consumers can derive an identity +
-// resolve a path from one import surface.
-export { deriveWorkItemIdentity };
-export type { WorkItemIdentity };

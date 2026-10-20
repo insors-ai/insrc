@@ -724,7 +724,7 @@ export function defineArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO), 'DEF', workItemKind, epicSlug ?? epicHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO }, 'DEF', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${defineArtifactId(epicHash)}.json`),
 	};
 }
@@ -745,7 +745,7 @@ export function specArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(specHash, createdAtISO), 'SPEC', workItemKind, slug ?? specHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: specHash, epicCreatedAt: createdAtISO }, 'SPEC', workItemKind, slug ?? specHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${specArtifactId(specHash)}.json`),
 	};
 }
@@ -766,7 +766,7 @@ export function issueArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(issueHash, createdAtISO), 'ISSUE', workItemKind, slug ?? issueHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: issueHash, epicCreatedAt: createdAtISO }, 'ISSUE', workItemKind, slug ?? issueHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${issueArtifactId(issueHash)}.json`),
 	};
 }
@@ -784,7 +784,7 @@ export function hldArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO), 'HLD', workItemKind, epicSlug ?? epicHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO }, 'HLD', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${hldArtifactId(epicHash)}.json`),
 	};
 }
@@ -805,7 +805,7 @@ export function lldArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'LLD', workItemKind, epicSlug ?? epicHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'LLD', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${lldArtifactId(epicHash, storyId)}.json`),
 	};
 }
@@ -827,7 +827,7 @@ export function planArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'PLAN', workItemKind, epicSlug ?? epicHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'PLAN', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${planArtifactId(epicHash, storyId)}.json`),
 	};
 }
@@ -849,7 +849,7 @@ export function buildArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'BUILD', workItemKind, epicSlug ?? epicHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'BUILD', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${buildArtifactId(epicHash, storyId)}.json`),
 	};
 }
@@ -868,7 +868,7 @@ export function testsArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'TESTS', workItemKind, epicSlug ?? epicHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'TESTS', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${testsArtifactId(epicHash, storyId)}.json`),
 	};
 }
@@ -890,7 +890,7 @@ export function codeReviewArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'CR', workItemKind, epicSlug ?? epicHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'CR', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${codeReviewArtifactId(epicHash, storyId)}.json`),
 	};
 }
@@ -911,7 +911,7 @@ export function extendArtifactPaths(
 	readonly json: string;
 } {
 	return {
-		md:   resolveArtifactMdPath(repoPath, deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'EXT', workItemKind, epicSlug ?? epicHash),
+		md:   resolveArtifactMdPath(repoPath, { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'EXT', workItemKind, epicSlug ?? epicHash),
 		json: join(repoPath, ARTIFACTS_DIR, `${extendArtifactId(epicHash, storyId)}.json`),
 	};
 }
@@ -929,22 +929,22 @@ export function scopeAnalyzeCachePath(epicHash: string): string {
  *  as the writer helpers, with an empty repo root so the result is repo-relative
  *  (`docs/<epics|standalone>/<slug>-<epicSegment>/[S<nnn>/]<KIND>.md`). */
 export function defineMdRel(epicHash: string, createdAtISO: string, workItemKind: WorkItemKind, epicSlug: string): string {
-	return resolveArtifactMdPath('', deriveWorkItemIdentity(epicHash, createdAtISO), 'DEF', workItemKind, epicSlug);
+	return resolveArtifactMdPath('', { epicHash: epicHash, epicCreatedAt: createdAtISO }, 'DEF', workItemKind, epicSlug);
 }
 export function hldMdRel(epicHash: string, createdAtISO: string, workItemKind: WorkItemKind, epicSlug: string): string {
-	return resolveArtifactMdPath('', deriveWorkItemIdentity(epicHash, createdAtISO), 'HLD', workItemKind, epicSlug);
+	return resolveArtifactMdPath('', { epicHash: epicHash, epicCreatedAt: createdAtISO }, 'HLD', workItemKind, epicSlug);
 }
 export function lldMdRel(epicHash: string, createdAtISO: string, workItemKind: WorkItemKind, epicSlug: string, storyId: string): string {
-	return resolveArtifactMdPath('', deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'LLD', workItemKind, epicSlug);
+	return resolveArtifactMdPath('', { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'LLD', workItemKind, epicSlug);
 }
 export function planMdRel(epicHash: string, createdAtISO: string, workItemKind: WorkItemKind, epicSlug: string, storyId: string): string {
-	return resolveArtifactMdPath('', deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'PLAN', workItemKind, epicSlug);
+	return resolveArtifactMdPath('', { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'PLAN', workItemKind, epicSlug);
 }
 export function buildMdRel(epicHash: string, createdAtISO: string, workItemKind: WorkItemKind, epicSlug: string, storyId: string): string {
-	return resolveArtifactMdPath('', deriveWorkItemIdentity(epicHash, createdAtISO, storyId), 'BUILD', workItemKind, epicSlug);
+	return resolveArtifactMdPath('', { epicHash: epicHash, epicCreatedAt: createdAtISO, story: storyId }, 'BUILD', workItemKind, epicSlug);
 }
 export function specMdRel(specHash: string, createdAtISO: string, workItemKind: WorkItemKind, slug: string): string {
-	return resolveArtifactMdPath('', deriveWorkItemIdentity(specHash, createdAtISO), 'SPEC', workItemKind, slug);
+	return resolveArtifactMdPath('', { epicHash: specHash, epicCreatedAt: createdAtISO }, 'SPEC', workItemKind, slug);
 }
 
 /** Path for a single amendment record. The amendmentId is already

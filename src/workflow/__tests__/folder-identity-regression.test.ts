@@ -30,7 +30,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 
-import { deriveWorkItemIdentity, resolveArtifactMdPath } from '../path-scheme.js';
+import { resolveArtifactMdPath } from '../path-scheme.js';
 import { readEpicCreatedAt, readEpicDefinitionCore, workItemKindOf } from '../storage.js';
 
 const EPIC_HASH   = 'abcdef0123456789';              // → hash8 'abcdef01'
@@ -87,8 +87,8 @@ test('t7 REGRESSION GUARD: a DEF-bearing epic chain composes byte-identical path
 		// story-scoped one.
 		const kind = workItemKindOf(core);
 		assert.equal(kind, 'epic');
-		const hld = resolveArtifactMdPath(repo, deriveWorkItemIdentity(EPIC_HASH, core.createdAt!), 'HLD', kind, core.epicSlug!);
-		const lld = resolveArtifactMdPath(repo, deriveWorkItemIdentity(EPIC_HASH, core.createdAt!, 'S002'), 'LLD', kind, core.epicSlug!);
+		const hld = resolveArtifactMdPath(repo, { epicHash: EPIC_HASH, epicCreatedAt: core.createdAt! }, 'HLD', kind, core.epicSlug!);
+		const lld = resolveArtifactMdPath(repo, { epicHash: EPIC_HASH, epicCreatedAt: core.createdAt!, story: 's2' }, 'LLD', kind, core.epicSlug!);
 
 		assert.equal(hld, PINNED_HLD);
 		assert.equal(lld, PINNED_LLD);
@@ -121,7 +121,7 @@ test('t7 PURITY: the markdown path builders perform no filesystem read — a pat
 	const ghost = join(tmpdir(), `insrc-t7-does-not-exist-${Date.now()}`);
 	assert.equal(existsSync(ghost), false, 'the fixture must genuinely not exist');
 
-	const identity = deriveWorkItemIdentity(EPIC_HASH, DEF_CREATED, 'S002');
+	const identity = { epicHash: EPIC_HASH, epicCreatedAt: DEF_CREATED, story: 's2' };
 	const p = resolveArtifactMdPath(ghost, identity, 'LLD', 'epic', EPIC_SLUG);
 	assert.equal(p, join(ghost, 'docs', 'epics', `${EPIC_SLUG}-E20260311abcdef01`, 'S002', 'LLD.md'));
 	assert.equal(existsSync(ghost), false, 'composing a path must not CREATE anything either');
@@ -135,7 +135,7 @@ test('t7 — the definition artifact is consulted at finalize time only, never d
 	const bare = mkdtempSync(join(tmpdir(), 'insrc-t7-bare-'));
 	try {
 		assert.equal(existsSync(join(bare, '.insrc')), false, 'no artifact store in this repo');
-		const identity = deriveWorkItemIdentity(EPIC_HASH, DEF_CREATED);
+		const identity = { epicHash: EPIC_HASH, epicCreatedAt: DEF_CREATED };
 		assert.equal(
 			resolveArtifactMdPath(bare, identity, 'HLD', 'epic', EPIC_SLUG),
 			join(bare, 'docs', 'epics', `${EPIC_SLUG}-E20260311abcdef01`, 'HLD.md'),

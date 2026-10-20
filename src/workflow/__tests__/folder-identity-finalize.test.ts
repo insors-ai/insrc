@@ -31,7 +31,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { finalizeArtifact } from '../orchestrator.js';
-import { deriveWorkItemIdentity, resolveArtifactMdPath } from '../path-scheme.js';
+import { resolveArtifactMdPath } from '../path-scheme.js';
 import { workItemKindOf } from '../storage.js';
 import type { WorkflowIntent } from '../types.js';
 import type { LldArtifact } from '../artifacts/lld.js';
@@ -41,7 +41,7 @@ import type { LldArtifact } from '../artifacts/lld.js';
  *  whatever the finalizer wrote, and the builder is the shipping one. */
 function folderFor(repo: string, meta: { epicHash?: string; epicSlug?: string; createdAt?: string; epicCreatedAt?: string; standalone?: boolean }, storyId: string): string {
 	const anchor = meta.epicCreatedAt ?? meta.createdAt!;
-	const identity = deriveWorkItemIdentity(meta.epicHash!, anchor, storyId);
+	const identity = { epicHash: meta.epicHash!, epicCreatedAt: anchor, story: storyId };
 	return resolveArtifactMdPath(repo, identity, 'LLD', workItemKindOf(meta), meta.epicSlug!);
 }
 

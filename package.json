@@ -9,8 +9,7 @@
   },
   "bin": {
     "insrc-mcp": "./out/bin/insrc-mcp.js",
-    "insrc": "./out/cli/index.js",
-    "insrc-migrate-docs": "./out/bin/insrc-migrate-docs.js"
+    "insrc": "./out/cli/index.js"
   },
   "scripts": {
     "build": "tsc && node copy-assets.mjs",

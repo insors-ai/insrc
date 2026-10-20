@@ -513,12 +513,12 @@ test("handleArtifactContent serves a BUILD record's markdown by the path the pen
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-artcontent-build-'));
 	try {
 		const hash = '238917216d8fd532';
-		const id = `BUILD-${hash}-S001`;
-		const meta = { workflow: 'build', epicHash: hash, epicCreatedAt: '2026-09-19T08:00:00.000Z', epicSlug: 'demo', storyId: 'S001', standalone: true };
+		const id = `BUILD-${hash}-s1`;
+		const meta = { workflow: 'build', epicHash: hash, epicCreatedAt: '2026-09-19T08:00:00.000Z', epicSlug: 'demo', storyId: 's1', standalone: true };
 		const dir = join(repo, ARTIFACTS_DIR);
 		mkdirSync(dir, { recursive: true });
 		writeFileSync(join(dir, `${id}.json`), JSON.stringify({ meta, body: { summary: 'built' } }));
-		writeFileSync(join(dir, `CR-${hash}-S001.json`), JSON.stringify({ meta: { ...meta, workflow: 'code-review' }, body: { verdict: 'pass' } }));
+		writeFileSync(join(dir, `CR-${hash}-s1.json`), JSON.stringify({ meta: { ...meta, workflow: 'code-review' }, body: { verdict: 'pass' } }));
 		const mdRel = `docs/standalone/demo-E20260919${hash.slice(0, 8)}/S001/BUILD.md`;
 		const text = `<!-- insrc:artifact ${id} -->\n\n# Build (standalone small) — Story S001\n\nAll tasks passed.\n`;
 		mkdirSync(join(repo, mdRel, '..'), { recursive: true });

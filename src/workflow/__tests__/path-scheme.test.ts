@@ -6,13 +6,14 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 
-import { deriveWorkItemIdentity } from '../id.js';
+import { InvalidArtifactKeyError } from '../artifact-ids.js';
 import {
 	listArtifactMdPaths,
 	listWorkItems,
+	folderSegment,
 	resolveArtifactMdPath,
 	resolveCompanionPath,
 	type ArtifactKind,
@@ -34,7 +35,7 @@ const SLUG = 'my-feature';
 // ---------------------------------------------------------------------------
 
 test('resolveArtifactMdPath: SPEC/DEF/HLD land at the work-item root (no story segment)', () => {
-	const identity = deriveWorkItemIdentity(HASH, CREATED);   // epic-level, no story
+	const identity = { epicHash: HASH, epicCreatedAt: CREATED };   // epic-level, no story
 	for (const kind of ['SPEC', 'DEF', 'HLD'] as const) {
 		const p = resolveArtifactMdPath('/repo', identity, kind, 'epic', SLUG);
 		assert.equal(p, `/repo/docs/epics/${SLUG}-${EPIC_SEGMENT}/${kind}.md`);
@@ -42,7 +43,7 @@ test('resolveArtifactMdPath: SPEC/DEF/HLD land at the work-item root (no story s
 });
 
 test('resolveArtifactMdPath: LLD/PLAN/BUILD/CR/EXT land under S<nnn>/', () => {
-	const identity = deriveWorkItemIdentity(HASH, CREATED, 's1');
+	const identity = { epicHash: HASH, epicCreatedAt: CREATED, story: 's1' };
 	for (const kind of ['LLD', 'PLAN', 'BUILD', 'CR', 'EXT'] as const) {
 		const p = resolveArtifactMdPath('/repo', identity, kind, 'epic', SLUG);
 		assert.equal(p, `/repo/docs/epics/${SLUG}-${EPIC_SEGMENT}/S001/${kind}.md`);
@@ -50,7 +51,7 @@ test('resolveArtifactMdPath: LLD/PLAN/BUILD/CR/EXT land under S<nnn>/', () => {
 });
 
 test("resolveArtifactMdPath: workItemKind 'standalone' → docs/standalone, same internal S<nnn> grouping", () => {
-	const identity = deriveWorkItemIdentity(HASH, CREATED, 's2');
+	const identity = { epicHash: HASH, epicCreatedAt: CREATED, story: 's2' };
 	const epicP = resolveArtifactMdPath('/repo', identity, 'LLD', 'epic', SLUG);
 	const saP   = resolveArtifactMdPath('/repo', identity, 'LLD', 'standalone', SLUG);
 	assert.equal(epicP, `/repo/docs/epics/${SLUG}-${EPIC_SEGMENT}/S002/LLD.md`);
@@ -58,7 +59,7 @@ test("resolveArtifactMdPath: workItemKind 'standalone' → docs/standalone, same
 });
 
 test('resolveArtifactMdPath: bare <KIND>.md; folder key is fileSeg(slug)+epicSegment; identity (not filename) supplies the key', () => {
-	const identity = deriveWorkItemIdentity(HASH, CREATED, 's1');
+	const identity = { epicHash: HASH, epicCreatedAt: CREATED, story: 's1' };
 	// A slug with filesystem-unsafe chars is sanitised for the LABEL only.
 	const p = resolveArtifactMdPath('/repo', identity, 'LLD', 'epic', 'Weird Slug/v2!!');
 	assert.equal(p, `/repo/docs/epics/Weird-Slug-v2-${EPIC_SEGMENT}/S001/LLD.md`);
@@ -68,7 +69,7 @@ test('resolveArtifactMdPath: bare <KIND>.md; folder key is fileSeg(slug)+epicSeg
 });
 
 test('resolveArtifactMdPath: throws when a story-scoped kind gets an epic-level identity', () => {
-	const epicIdentity = deriveWorkItemIdentity(HASH, CREATED);   // story === undefined
+	const epicIdentity = { epicHash: HASH, epicCreatedAt: CREATED };   // story === undefined
 	for (const kind of ['LLD', 'PLAN', 'BUILD', 'CR', 'EXT'] as ArtifactKind[]) {
 		assert.throws(() => resolveArtifactMdPath('/repo', epicIdentity, kind, 'epic', SLUG), /story-scoped/);
 	}
@@ -79,9 +80,9 @@ test('resolveArtifactMdPath: throws when a story-scoped kind gets an epic-level 
 });
 
 test('resolveArtifactMdPath: story ordinal is zero-padded to S<nnn> (>=1000 keeps full width)', () => {
-	const id12 = deriveWorkItemIdentity(HASH, CREATED, 's12');
+	const id12 = { epicHash: HASH, epicCreatedAt: CREATED, story: 's12' };
 	assert.match(resolveArtifactMdPath('/repo', id12, 'LLD', 'epic', SLUG), /\/S012\/LLD\.md$/);
-	const id1234 = deriveWorkItemIdentity(HASH, CREATED, 's1234');
+	const id1234 = { epicHash: HASH, epicCreatedAt: CREATED, story: 's1234' };
 	assert.match(resolveArtifactMdPath('/repo', id1234, 'LLD', 'epic', SLUG), /\/S1234\/LLD\.md$/);
 });
 
@@ -178,7 +179,7 @@ test('defineArtifactId is unchanged (hash-flat json store stays untouched)', () 
 // ---------------------------------------------------------------------------
 
 test('resolveCompanionPath: returns a sibling in the same S<nnn>/ dir as the LLD.md (ac2)', () => {
-	const identity = deriveWorkItemIdentity(HASH, CREATED, 's1');
+	const identity = { epicHash: HASH, epicCreatedAt: CREATED, story: 's1' };
 	const lld = resolveArtifactMdPath('/repo', identity, 'LLD', 'epic', SLUG);
 	const companion = resolveCompanionPath('/repo', identity, 'epic', SLUG, 'er-model.html');
 	assert.equal(companion, `/repo/docs/epics/${SLUG}-${EPIC_SEGMENT}/S001/er-model.html`);
@@ -187,19 +188,50 @@ test('resolveCompanionPath: returns a sibling in the same S<nnn>/ dir as the LLD
 });
 
 test('resolveCompanionPath: standalone kind lands under docs/standalone', () => {
-	const identity = deriveWorkItemIdentity(HASH, CREATED, 's2');
+	const identity = { epicHash: HASH, epicCreatedAt: CREATED, story: 's2' };
 	const p = resolveCompanionPath('/repo', identity, 'standalone', SLUG, 'er-model.html');
 	assert.equal(p, `/repo/docs/standalone/${SLUG}-${EPIC_SEGMENT}/S002/er-model.html`);
 });
 
 test('resolveCompanionPath: throws for a story-scoped companion missing identity.story', () => {
-	const identity = deriveWorkItemIdentity(HASH, CREATED);   // epic-level, no story
+	const identity = { epicHash: HASH, epicCreatedAt: CREATED };   // epic-level, no story
 	assert.throws(() => resolveCompanionPath('/repo', identity, 'epic', SLUG, 'er-model.html'), /story/i);
 });
 
 test('resolveCompanionPath: rejects a companionFileName containing a path separator', () => {
-	const identity = deriveWorkItemIdentity(HASH, CREATED, 's1');
+	const identity = { epicHash: HASH, epicCreatedAt: CREATED, story: 's1' };
 	assert.throws(() => resolveCompanionPath('/repo', identity, 'epic', SLUG, 'sub/er.html'), /basename/);
 	assert.throws(() => resolveCompanionPath('/repo', identity, 'epic', SLUG, '..\\er.html'), /basename/);
 	assert.throws(() => resolveCompanionPath('/repo', identity, 'epic', SLUG, '../er.html'), /basename/);
+});
+
+test('paths over a WorkItemKey equal the paths built before and a story-scoped kind without a story is rejected', () => {
+	const epic = { epicHash: HASH, epicCreatedAt: CREATED };
+	const story = { ...epic, story: 's3' };
+	assert.equal(folderSegment(epic), EPIC_SEGMENT);
+	const root = `/repo/docs/epics/${SLUG}-${EPIC_SEGMENT}`;
+	for (const kind of ['SPEC', 'DEF', 'HLD', 'ISSUE'] as const) {
+		assert.equal(resolveArtifactMdPath('/repo', epic, kind, 'epic', SLUG), `${root}/${kind}.md`);
+	}
+	for (const kind of ['LLD', 'PLAN', 'BUILD', 'CR', 'EXT', 'TESTS'] as const) {
+		assert.equal(resolveArtifactMdPath('/repo', story, kind, 'epic', SLUG), `${root}/S003/${kind}.md`);
+		assert.throws(() => resolveArtifactMdPath('/repo', epic, kind, 'epic', SLUG), InvalidArtifactKeyError);
+	}
+	assert.equal(resolveCompanionPath('/repo', story, 'standalone', SLUG, 'er.html'), `/repo/docs/standalone/${SLUG}-${EPIC_SEGMENT}/S003/er.html`);
+	assert.throws(() => resolveCompanionPath('/repo', epic, 'epic', SLUG, 'er.html'), InvalidArtifactKeyError);
+	// the uppercase story form and a bad time are refused with the same error type
+	assert.throws(() => resolveArtifactMdPath('/repo', { ...epic, story: 'S001' }, 'LLD', 'epic', SLUG), InvalidArtifactKeyError);
+	assert.throws(() => folderSegment({ epicHash: HASH, epicCreatedAt: 'not a date' }), InvalidArtifactKeyError);
+	assert.throws(() => folderSegment({ epicHash: 'NOTHEX', epicCreatedAt: CREATED }), InvalidArtifactKeyError);
+});
+
+test('two artifacts of one Epic written on different days land in the same folder', () => {
+	// every artifact of the Epic carries the Epic's anchor time, not its own write time
+	const anchor = '2026-07-17T23:59:59.000Z';
+	const hld = resolveArtifactMdPath('/repo', { epicHash: HASH, epicCreatedAt: anchor }, 'HLD', 'epic', SLUG);
+	const build = resolveArtifactMdPath('/repo', { epicHash: HASH, epicCreatedAt: anchor, story: 's1' }, 'BUILD', 'epic', SLUG);
+	assert.equal(dirname(build), join(dirname(hld), 'S001'));
+	assert.equal(folderSegment({ epicHash: HASH, epicCreatedAt: anchor }), folderSegment({ epicHash: HASH, epicCreatedAt: '2026-07-17T00:00:00.000Z' }));
+	// a different anchor day is a different folder
+	assert.notEqual(folderSegment({ epicHash: HASH, epicCreatedAt: anchor }), folderSegment({ epicHash: HASH, epicCreatedAt: '2026-07-18T00:00:00.000Z' }));
 });

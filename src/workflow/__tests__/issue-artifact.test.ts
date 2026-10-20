@@ -24,7 +24,7 @@ import {
 	type IssueArtifactBody,
 } from '../artifacts/issue.js';
 import { issueArtifactId, issueArtifactPaths, pathsForWorkflow, writeAtomic } from '../storage.js';
-import { isStoryScopedKind, resolveArtifactMdPath, deriveWorkItemIdentity, type ArtifactKind } from '../path-scheme.js';
+import { isStoryScopedKind, resolveArtifactMdPath, type ArtifactKind } from '../path-scheme.js';
 import { finalizeArtifact, prepareDecompose, prepareSynthesize } from '../orchestrator.js';
 import type { WorkflowIntent } from '../types.js';
 
@@ -120,7 +120,7 @@ test('ArtifactKind: ISSUE is an item-root singleton (NOT story-scoped); existing
 		assert.equal(isStoryScopedKind(k), true, `${k} stays story-scoped`);
 	}
 	// An ISSUE path resolves to the work-item root (no S<nnn>/ segment).
-	const identity = deriveWorkItemIdentity(ISSUE_HASH, ISSUE_CREATED);
+	const identity = { epicHash: ISSUE_HASH, epicCreatedAt: ISSUE_CREATED };
 	const md = resolveArtifactMdPath('/tmp/repo', identity, 'ISSUE', 'standalone', 'pager-off-by-one');
 	assert.match(md, /\/docs\/standalone\/pager-off-by-one-E[0-9a-z]+\/ISSUE\.md$/);
 	assert.doesNotMatch(md, /\/S\d{3}\//, 'ISSUE is item-root, never under a story subfolder');

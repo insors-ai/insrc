@@ -89,7 +89,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/artifacts/companion/render.ts', class: 'render', via: 'raw', note: 'writes the companion diagram files' },
 
 	// --- migration -----------------------------------------------------------------
-	{ file: 'src/workflow/migrate-docs-tree.ts', class: 'migration', via: 'raw', note: 'moves the docs tree to the nested layout; rewrites files in place once' },
 	{ file: 'src/daemon/steps/workflow-step/resume.ts', class: 'migration', via: 'raw', note: 'a resume puts a parker\'s draft files back byte for byte, meta.revision included: it restores, it does not author, so it mints no revision' },
 
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---

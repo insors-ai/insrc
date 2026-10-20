@@ -34,7 +34,8 @@ site/
   settings.html         daemon configuration and IDE settings
   tracker.html          GitHub issues and tracked delivery
   philosophy.html       accuracy, locality, and model routing
-  insrc-icon-128.png     shared site icon and favicon
+  insrc-icon-transparent-128.png  transparent site icon and favicon
+  insrc-icon-transparent.png      full-resolution transparent icon
   css/tui.css           the whole theme (design tokens + components)
   js/tui.js             progressive enhancement: theme toggle · active-nav · copy · type-in
 ```

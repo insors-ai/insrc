@@ -12,7 +12,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = join(import.meta.dirname, '..', '..', '..');
@@ -36,7 +36,13 @@ test('the docs name the lowercase story form and the anchor rule and do not ment
 	}
 
 	// the removed command is named nowhere in the guides, and no guide gives S001 as a default
-	for (const file of ['docs/workflow.md', 'docs/daemon.md', 'README.md', 'CLAUDE.md', 'AGENTS.md']) {
+	// Every guide and plan: the root docs, docs/*.md and docs/plans/*.md. The rendered per-Story records under docs/epics and
+	// docs/standalone are the ledger of finished work and are not rewritten.
+	const guides = ['README.md', 'CLAUDE.md', 'AGENTS.md',
+		...readdirSync(join(ROOT, 'docs')).filter(f => f.endsWith('.md')).map(f => `docs/${f}`),
+		...readdirSync(join(ROOT, 'docs', 'plans')).filter(f => f.endsWith('.md')).map(f => `docs/plans/${f}`)];
+	assert.ok(guides.includes('docs/workflow.md') && guides.includes('docs/plans/core-data-model.md'));
+	for (const file of guides) {
 		const text = read(file);
 		assert.doesNotMatch(text, /insrc-migrate-docs/, `${file} mentions the removed command`);
 		assert.doesNotMatch(text, /(?:default|defaults to|e\.g\.|example)[^\n]{0,40}`?S00\d/i, `${file} gives S001 as a default or example`);

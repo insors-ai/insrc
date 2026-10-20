@@ -193,6 +193,15 @@
     "reviewOverride": {
       "reason": "Owner approved the s2 LLD with an override after three review rounds (10 HIGH, then 3 HIGH + 1 MED, then 1 HIGH). Binding build requirements recorded: (1) the write journal stages the complete immutable ChangeLogEntry (actor, timestamp, operation id) with the prepared head, and recovery appends it idempotently even when the head already matches, with tests for restart before append, a different retry actor and an identical-head append failure; (2) the codec creation context type and its provider are defined, with a create-without-prior-head test covering workflow, runId, repoPath, elapsedMs, repoIndexedAt and schemaVersion; (3) AMD-2f27754d4ad00b8e-7 (readWithHistory) is resolved before the plan is written.",
       "at": "2026-10-20T16:31:47.089Z"
+    },
+    "questionResolutions": {
+      "qabbd384a": {
+        "question": "dm1: new entities under src/workflow/artifact-core cite the nearest existing module as a call site because the new files do not exist yet; confirm this is acceptable",
+        "status": "resolved",
+        "choice": "Mark as provisional",
+        "rationale": "The new files do not exist yet; the plan names the planned paths and the build replaces them with real call sites.",
+        "resolvedAt": "2026-10-20T16:36:51.614Z"
+      }
     }
   },
   "body": {

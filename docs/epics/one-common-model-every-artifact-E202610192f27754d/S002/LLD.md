@@ -746,25 +746,19 @@ The a1 store with History over fixed file names beside each head, read-time filt
 - sbdry3: the WriteJournal port and the Feedback anchor prefix and suffix extension are additions with no HLD amendment; readWithHistory is filed as AMD-7; confirm whether the journal port and the anchor change need amendments too
 - sbdry5: s2 defines the WriteJournal port and the appendSidecarLine primitive because binding requirements 1 and 3 touch the write path, while s4 implements the durable journal, layout, ordering, de-duplication and repair; confirm this edge with s4
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qabbd384a` — dm1: new entities under src/workflow/artifact-core cite the nearest existing module as a call site because the new files do not exist yet; confirm this is acceptable
+  - **resolved**: Mark as provisional — The new files do not exist yet; the plan names the planned paths and the build replaces them with real call sites. _(2026-10-20T16:36:51.614Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**1 do not hold · 2 could not be verified · 9 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-20T16:23:47.727Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| error-paths | HIGH | The specified journal record is sufficient to recover the original logged operation after an append failure or restart. | The LLD persists only '{ operationId, priorRevision, bytes }'. HLD sc3 requires each ChangeLogEntry to contain 'actor' and 'timestamp'. For a metadata-only write, the actor passed as by need not appear in the staged head because lifecycle is persisted as supplied. After a crash before append, recovery cannot reconstruct the original actor or timestamp. Further, an identical-head write whose append fails meets the recovery condition 'head already equals the staged bytes', causing clear-only recovery despite the missing log entry. [files: .insrc/artifacts/LLD-2f27754d4ad00b8e-s2.json, .insrc/artifacts/HLD-2f27754d4ad00b8e.json, docs/plans/core-data-model.md, src/workflow/storage.ts] | Stage the complete immutable ChangeLogEntry with the prepared head. On recovery, ensure that entry is appended idempotently even when head bytes already match, then replace the head if needed and clear the journal. Test restart before append, a different retry actor, and an identical-head append failure. |
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| change-sites | The creation contract supplies enough context for codecs to construct metadata required by existing readers and renderers. | ArtifactMetaBase requires workflow, runId, repoPath, createdAt, elapsedMs, repoIndexedAt and schemaVersion. The design names encode(payload, ctx), but does not define ctx or how write(a, by) obtains these fields when no prior head exists. The anchor helpers do not supply workflow-run provenance. Insrc analysis discovery was unavailable; direct reads established the requirements but found no proposed context-provider contract. [files: src/workflow/types.ts, src/workflow/storage.ts, src/workflow/artifacts/define.ts, .insrc/artifacts/LLD-2f27754d4ad00b8e-s2.json] | Specify the codec context type, its constructor/provider, and how each kind obtains required creation metadata. Include a create-without-prior-head test. |
-| boundaries | The readWithHistory contract addition is approved for downstream consumption. | AMD-7 contains the stated sc2 methodAdd, so the claim that it was filed is correct. Its status is 'pending'. approvedInApplyOrder explicitly filters for status === 'approved', so it is not part of the effective approved contract yet. [files: .insrc/artifacts/AMD-2f27754d4ad00b8e-7.json, src/workflow/amendments/store.ts] | Resolve AMD-7 before treating the extended sc2 interface as approved. |
+- **[[c1]]** `analyze-bundle` `write path and revision rule: src/workflow/storage.ts writeArtifact and workItemAnchorCreatedAt`
+- **[[c2]]** `analyze-bundle` `HLD sc4, sc5, sc6 contracts and Gap 7: .insrc/artifacts/HLD-2f27754d4ad00b8e.json and docs/plans/core-data-model.md`
+- **[[c3]]** `analyze-bundle` `provenance types in use: src/workflow/artifacts/provenance/types.ts and the build change log`
+- **[[c4]]** `analyze-bundle` `write inventory and existing appenders: src/workflow/artifact-write-inventory.ts`
+- **[[c5]]** `analyze-bundle` `flat amendment files: src/workflow/amendments/store.ts`
+- **[[c6]]** `analyze-bundle` `gates readers: src/workflow/gates.ts readDefineArtifact, readHldArtifact, readLldArtifact, readPlanArtifact`
+- **[[c7]]** `analyze-bundle` `s1 identity module and the tests the model extends: src/workflow/artifact-ids.ts`
+- **[[c8]]** `doc` `docs/plans/core-data-model.md#binding-requirement-7-the-s2-lld-carries-the-er-definition-2026-10-19`
+- **[[c9]]** `prior-artifact` `HLD-2f27754d4ad00b8e sc2 ArtifactEnvelope, sc3 HistoryRecords, sc8 RepoSchemaVersion`

@@ -11,7 +11,7 @@
  * builds and reads the requirement ids stored in Define documents
  * (`E<date><hash8>[:S<nnn>]:FR<nnn>`). Both are pure string layers: no disk,
  * no clock, no fallback. The form is strict: a story is `s<n>`, a task is
- * `t<n>`, a hash is lowercase hex. An uppercase `S001` is not an id.
+ * `t<n>`, a hash is lowercase hex. An uppercase story or task spelling is not an id.
  */
 
 // ---------------------------------------------------------------------------

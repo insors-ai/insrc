@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="vscode-plugin/icon.png" alt="insrc" width="128" height="128">
+
 # `insrc`
 
 **Understand your code. Design changes. Deliver tracked work.**

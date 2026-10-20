@@ -25,10 +25,11 @@ import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/typ
 import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
 import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
+import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
 import { createReviewJob } from './job.js';
 import { reviewLimitChars } from './limit.js';
-import type { AdapterStage, ReviewAdapter, ReviewMaterialSnapshot, ReviewPath, StageAnswer } from './types.js';
+import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, StageAnswer } from './types.js';
 
 /** What a code-review job's snapshot holds as its grounding. */
 interface GroundingFacts {
@@ -77,6 +78,9 @@ export interface ModelDimensionSpec<O> {
 	/** The dimension's prepared grounding, the rows its prompt carries (coverage:
 	 *  prepareCoverageGrounding's output). Absent: the grounding itself. */
 	readonly materialGrounding?: ((grounding: CodeReviewGrounding, mode: 'full' | 'degraded') => CodeReviewGrounding) | undefined;
+	/** What a divided review must judge (Story s3): the obligations and their context atoms,
+	 *  from the saved subject and the material's atoms only. Absent: none. */
+	readonly obligations?: ((material: ReviewMaterial) => DimensionObligations) | undefined;
 }
 
 /** A deterministic dimension: run on the snapshot alone on the daemon path; the controller is offered its prompt. */
@@ -137,7 +141,12 @@ export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: C
 	return {
 		kind: 'code-review', dimension: spec.dimension,
 		// Story s2: the dimension's rows as whole atoms with their relations, from the snapshot only.
-		material: () => codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding),
+		material: () => {
+			const material = codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding);
+			const own = spec.obligations?.(material);
+			if (own === undefined) return material;
+			return { ...material, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+		},
 		neighbourSummary,
 		stagesFor: stages,
 		finish: (outputs, ctx) => spec.skip !== undefined

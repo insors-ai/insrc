@@ -29,6 +29,7 @@
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { conventionsObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 
 const DIMENSION: ReviewDimension = 'conventions';
 
@@ -147,6 +148,7 @@ export function conventionsSpec(subject: CodeReviewSubject): ModelDimensionSpec<
 		dimension: DIMENSION,
 		schema:    CONVENTIONS_FINDINGS_SCHEMA,
 		prompt:    (grounding, _mode, note) => buildConventionsPrompt(subject, grounding, note),
+		obligations: material => conventionsObligations(material.atoms),
 		toResult:  output => ({
 			dimension: DIMENSION,
 			findings: output.findings

@@ -29,6 +29,7 @@
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { functionalCoverageObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 import type { FunctionalRequirement } from '../../artifacts/functional-definition.js';
 
 const DIMENSION: ReviewDimension = 'functional-coverage';
@@ -140,6 +141,7 @@ export function functionalCoverageSpec(subject: CodeReviewSubject): ModelDimensi
 		dimension: DIMENSION,
 		schema:    FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA,
 		prompt:    (grounding, _mode, note) => buildFunctionalCoveragePrompt(subject, grounding, note),
+		obligations: () => functionalCoverageObligations(functionalRequirementsOf(subject)),
 		toResult:  output => ({
 			dimension: DIMENSION,
 			findings: output.findings

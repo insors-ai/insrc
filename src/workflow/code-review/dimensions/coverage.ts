@@ -44,6 +44,7 @@ import type {
 } from '../types.js';
 import { isCoverageEligible } from '../grounding.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { coverageObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 import { testRecordView } from './test-record-view.js';
 
 const DIMENSION: ReviewDimension = 'coverage';
@@ -296,6 +297,8 @@ export function coverageSpec(subject: CodeReviewSubject): ModelDimensionSpec<Cov
 		prompt:    (grounding, mode, note) => buildCoveragePrompt(subject, prepareCoverageGrounding(subject, grounding, mode), note, { groundingMode: mode }),
 		// The rows the prompt carries: only eligible symbols, each with its coverage evidence.
 		materialGrounding: (grounding, mode) => prepareCoverageGrounding(subject, grounding, mode),
+		// Each promised test, with its record evidence; with no symbols (a diff review) too.
+		obligations: () => coverageObligations(promisedTestsOf(subject), testRecordView(subject)),
 		toResult:  (output, grounding, mode) => normalizeCoverageFindings({
 			dimension: DIMENSION,
 			findings: output.findings

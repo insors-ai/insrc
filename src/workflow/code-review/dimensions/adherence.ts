@@ -27,6 +27,7 @@
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { adherenceObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 
 const DIMENSION: ReviewDimension = 'adherence';
 
@@ -144,6 +145,7 @@ export function adherenceSpec(subject: CodeReviewSubject): ModelDimensionSpec<Ad
 					...(f.expectationRef !== undefined ? { expectationRef: f.expectationRef } : {}),
 				})),
 		}),
+		obligations: () => adherenceObligations(subject),
 		...(subject.approvedLld === null && subject.approvedPlan === null ? { skip: () => ({ dimension: DIMENSION, findings: [] }) } : {}),
 	};
 }

@@ -417,7 +417,7 @@ export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<u
 }
 
 /** Reduction levels an obligation's evidence may go through before the review fails. */
-const MAX_GATHER_LEVELS = 16;
+export const MAX_GATHER_LEVELS = 16;
 
 /** The key of a cross-chunk relation; never an obligation key. */
 const relationKey = (r: { readonly from: string; readonly to: string; readonly kind: string }): string => `relation:${r.kind}:${r.from}->${r.to}`;

@@ -129,12 +129,18 @@ test('a configured high-end Ollama model completes a template review and a code-
 	try {
 		execFileSync('git', ['init', '-q'], { cwd: repo });
 		mkdirSync(join(repo, 'src'));
-		writeFileSync(join(repo, 'src/order.ts'), 'export function placeOrder(customer: string): string {\n\treturn `order for ${customer}`;\n}\n');
+		// The order id prefix is only knowable by reading the file; the design names neither the file nor the prefix.
+		writeFileSync(join(repo, 'src/order.ts'), 'export function placeOrder(customer: string): string {\n\treturn `ORD-7731 for ${customer}`;\n}\n');
 		// A template review: one reviewer session reading the repository with read-only tools.
-		const design = '# LLD: place an order\n\n## Contract\n\n`placeOrder(customer)` in `src/order.ts:1` returns a string naming the customer.\n';
+		const design = '# LLD: place an order\n\n## Contract\n\n`placeOrder(customer)` returns a string that starts with the fixed order-id prefix the code defines and then names the customer. Find the function in the repository and check the prefix it actually returns.\n';
 		const report = await runReview(design, { repo, stage: 'design.story', provider, model: OLLAMA_MODEL, intent: 'spec', deadlineMs: 30 * 60_000 });
 		assert.ok(['pass', 'warn', 'block'].includes(report.verdict), `a report with a verdict: ${report.verdict}`);
 		assert.ok(report.findings.length > 0, 'the checklist was answered');
+		// Grounded in the repository: a finding cites the file it read (template findings carry their files
+		// in the evidence), and the design gives neither the path nor the prefix.
+		const cited = report.findings.filter(f => f.evidence.includes('src/order.ts') || (f.ref ?? '').includes('src/order.ts'));
+		assert.ok(cited.length > 0, `a finding cites src/order.ts: ${JSON.stringify(report.findings.map(f => f.evidence)).slice(0, 1500)}`);
+		assert.ok(report.findings.some(f => /ORD-7731/.test(f.evidence) || /ORD-7731/.test(f.premise)), 'and reports what only reading it reveals (the ORD-7731 prefix)');
 		// A code-review dimension: one structured call through the pipeline.
 		const subject: CodeReviewSubject = {
 			repoPath: repo, epicHash: 'e1a2b3c4d5e6f708', storyId: 's1', changedFiles: ['src/order.ts'],

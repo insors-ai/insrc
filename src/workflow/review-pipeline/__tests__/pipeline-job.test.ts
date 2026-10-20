@@ -21,7 +21,7 @@ import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 import { CliStallError, ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOpts, StructuredSchema } from '../../../shared/types.js';
 import { runReviewJob } from '../driver.js';
-import { applyFailure, applyOutput, createReviewJob, MaterialChangedError, nextCalls, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
+import { applyFailure, applyOutput, createReviewJob, MAX_GATHER_LEVELS, MaterialChangedError, nextCalls, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { AdapterStage, EvidenceNote, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
@@ -941,4 +941,44 @@ test("an obligation whose own context does not fit its call is reduced with its 
 	const hs = toySnapshot([], [], [{ key: 'promised-3', atomIds: ['xh'] }], huge);
 	await assert.rejects(async () => drive(createReviewJob(rebuild(hs), 'daemon', hs, LIMIT), rebuild, gatherModel(10, 10).answer),
 		(e: unknown) => e instanceof AtomTooLargeError && e.message.includes('context atom test-record#huge'));
+});
+
+test("the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit", async () => {
+	const base = (gatherLimit: number) => {
+		const snap = toySnapshot([atom(1)], [], ['k1']);
+		const adapter = toyAdapter(snap, { gatherLimit });
+		return { adapter, job: createReviewJob(adapter, 'daemon', snap, LIMIT) };
+	};
+	// Cannot shrink: three notes, each within the note cap, no two of which fit one reduction call,
+	// so a level would reduce each alone and the evidence would never get smaller.
+	{
+		const { adapter, job } = base(4 * 3_000);   // note cap 3,000
+		const notes: EvidenceNote[] = Array.from({ length: 3 }, (_, i) => ({ noteId: `e${i}`, key: 'k1', text: `n${i}-${'q'.repeat(2_900)}`, atomIds: [] }));
+		assert.throws(() => requestNoteCall({ ...job, notes }, adapter, 'obligation', 'k1', notes.map(n => n.noteId)),
+			(e: unknown) => e instanceof Error && /the evidence for k1 cannot be reduced to fit one call \(3 notes\)/.test(e.message));
+	}
+	// The level limit: an obligation already reduced MAX_GATHER_LEVELS times that still does not fit is not reduced again.
+	{
+		const { adapter, job } = base(LIMIT);
+		const notes: EvidenceNote[] = Array.from({ length: 12 }, (_, i) => ({ noteId: `e${i}`, key: 'k1', text: `n${i}-${'q'.repeat(600)}`, atomIds: [] }));
+		const atLimit = { ...job, notes, gatherLevels: { k1: MAX_GATHER_LEVELS } };
+		assert.throws(() => requestNoteCall(atLimit, adapter, 'obligation', 'k1', notes.map(n => n.noteId)),
+			(e: unknown) => e instanceof Error && e.message.includes(`did not fit one call after ${MAX_GATHER_LEVELS} reduction levels`));
+		// One level below the limit it is reduced.
+		const below = requestNoteCall({ ...atLimit, gatherLevels: { k1: MAX_GATHER_LEVELS - 1 } }, adapter, 'obligation', 'k1', notes.map(n => n.noteId));
+		assert.ok(below.pending.some(c => c.role === 'reduce'));
+	}
+	// Either stop fails the whole review through the driver: no result is produced.
+	{
+		const snap = toySnapshot(Array.from({ length: 24 }, (_, i) => atom(i)), [], ['k1']);
+		let finished = 0;
+		const rebuild = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => {
+			const a = toyAdapter(s, { gatherLimit: 4 * 3_000 });
+			return { ...a, finish: (o, c) => { finished++; return a.finish(o, c); } };
+		};
+		// Each chunk answer carries one large note per atom: the evidence cannot shrink.
+		const model = gatherModel(2_900, 10);
+		await assert.rejects(drive(createReviewJob(rebuild(snap), 'daemon', snap, LIMIT), rebuild, model.answer), /cannot be reduced to fit one call/);
+		assert.equal(finished, 0, 'nothing recorded');
+	}
 });

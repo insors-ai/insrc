@@ -103,7 +103,7 @@ test('c00559b7 — an LLD-only work item is enumerated and its identity comes fr
 		const story = resolveWorkflowRef(r.repo, 's1', { epicHash: LLD_HASH });
 		assert.equal(story?.epicSlug, 'standalone-feature');
 		assert.equal(story?.createdAt, LLD_ANCHOR);
-		assert.equal(story?.workflowId, `E20261009${LLD_HASH.slice(0, 8)}:S001`);
+		assert.equal(story?.workflowId, `STORY-${LLD_HASH}-s1`);
 	} finally { r.cleanup(); }
 });
 
@@ -112,11 +112,11 @@ test('c00559b7 — a hash with an ISSUE and an LLD is headed by the ISSUE and en
 	try {
 		seedBugfix(r.dir);
 		seedStandalone(r.dir, ISSUE_HASH, 'lld-own-label');
-		const ref = resolveWorkflowRef(r.repo, 'S001/t1', { epicHash: ISSUE_HASH });
+		const ref = resolveWorkflowRef(r.repo, 's1/t1', { epicHash: ISSUE_HASH });
 		assert.equal(ref?.epicSlug, 'the-bugfix', 'the ISSUE, not the LLD, names the work item');
 		assert.equal(ref?.createdAt, ISSUE_MADE);
 		// Listed once: an unscoped label finds exactly one candidate, not two.
-		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1')?.epicHash, ISSUE_HASH);
+		assert.equal(resolveWorkflowRef(r.repo, 's1/t1')?.epicHash, ISSUE_HASH);
 	} finally { r.cleanup(); }
 });
 
@@ -135,8 +135,8 @@ test('c00559b7 — with no head at all a hash is not enumerated', () => {
 	try {
 		// A PLAN alone heads nothing.
 		writeJson(join(r.dir, `PLAN-${LLD_HASH}-s1.json`), { meta: { epicHash: LLD_HASH, storyId: 's1', createdAt: LLD_MADE }, body: { tasks: [TASK] } });
-		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1', { epicHash: LLD_HASH }), null);
-		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1'), null);
+		assert.equal(resolveWorkflowRef(r.repo, 's1/t1', { epicHash: LLD_HASH }), null);
+		assert.equal(resolveWorkflowRef(r.repo, 's1/t1'), null);
 	} finally { r.cleanup(); }
 });
 
@@ -144,19 +144,17 @@ test('c00559b7 — with no head at all a hash is not enumerated', () => {
 // unit: resolveWorkflowRef reaches an LLD+PLAN-only task by scoped label and hierarchical id
 // ---------------------------------------------------------------------------
 
-test('c00559b7 — S001/t1 and s1/t1 scoped by epicHash, and the hierarchical id, all reach the standalone task', () => {
+test('c00559b7 — s1/t1 scoped by epicHash, and the artifact id, reach the standalone task', () => {
 	const r = mkRepo();
 	try {
 		seedStandalone(r.dir, LLD_HASH, 'standalone-feature');
-		const upper = resolveWorkflowRef(r.repo, 'S001/t1', { epicHash: LLD_HASH });
 		const lower = resolveWorkflowRef(r.repo, 's1/t1', { epicHash: LLD_HASH });
-		assert.equal(upper?.task?.title, 'The standalone task');
-		assert.equal(lower?.task?.title, 'The standalone task', 'the lowercase label finds the -S001 artifacts');
-		assert.equal(upper?.workflowId, lower?.workflowId);
+		assert.equal(lower?.task?.title, 'The standalone task');
+		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1', { epicHash: LLD_HASH }), null, 'an uppercase label is not accepted');
 
-		const hier = resolveWorkflowRef(r.repo, upper!.workflowId);
-		assert.equal(hier?.task?.title, 'The standalone task');
-		assert.equal(resolveWorkflowRef(r.repo, upper!.slug)?.taskId, 't1', 'and the slug form');
+		const byId = resolveWorkflowRef(r.repo, lower!.workflowId);
+		assert.equal(byId?.task?.title, 'The standalone task');
+		assert.equal(resolveWorkflowRef(r.repo, lower!.slug)?.taskId, 't1', 'and the slug');
 	} finally { r.cleanup(); }
 });
 
@@ -164,7 +162,7 @@ test('c00559b7 — a legacy UNFLAGGED standalone LLD is reached the same way', (
 	const r = mkRepo();
 	try {
 		seedStandalone(r.dir, LLD_HASH, 'legacy-feature', { flagged: false });
-		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1', { epicHash: LLD_HASH })?.task?.id, 't1');
+		assert.equal(resolveWorkflowRef(r.repo, 's1/t1', { epicHash: LLD_HASH })?.task?.id, 't1');
 	} finally { r.cleanup(); }
 });
 
@@ -197,7 +195,7 @@ test('c00559b7 — the bugfix\'s implied S001 still outranks an LLD-only item th
 		// Without the PLAN the ISSUE's evidence would be 'implied'; with it,
 		// 'artifact'. Either way it is a DEF/ISSUE-anchored candidate and wins.
 		seedStandalone(r.dir, LLD_HASH, 'standalone-feature');
-		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1')?.task?.title, 'The bugfix task');
+		assert.equal(resolveWorkflowRef(r.repo, 's1/t1')?.task?.title, 'The bugfix task');
 
 		rmSync(join(r.dir, `PLAN-${ISSUE_HASH}-s1.json`));
 		assert.equal(resolveWorkflowRef(r.repo, 's1')?.epicHash, ISSUE_HASH, 'the implied tier still ranks above LLD heads');
@@ -208,11 +206,11 @@ test('c00559b7 — with only LLD-only items, a single one resolves unscoped and 
 	const r = mkRepo();
 	try {
 		seedStandalone(r.dir, LLD_HASH, 'standalone-feature');
-		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1')?.epicHash, LLD_HASH);
+		assert.equal(resolveWorkflowRef(r.repo, 's1/t1')?.epicHash, LLD_HASH);
 
 		seedStandalone(r.dir, LLD_HASH_2, 'another-feature');
-		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1'), null, 'two standalone items both hold S001');
-		assert.equal(resolveWorkflowRef(r.repo, 'S001/t1', { epicHash: LLD_HASH_2 })?.epicSlug, 'another-feature', 'scoping disambiguates');
+		assert.equal(resolveWorkflowRef(r.repo, 's1/t1'), null, 'two standalone items both hold S001');
+		assert.equal(resolveWorkflowRef(r.repo, 's1/t1', { epicHash: LLD_HASH_2 })?.epicSlug, 'another-feature', 'scoping disambiguates');
 	} finally { r.cleanup(); }
 });
 
@@ -225,8 +223,8 @@ test('c00559b7 — workflowIdForIssue for a DEF epic with a tracker block is unc
 	try {
 		seedEpic(r.dir);
 		seedStandalone(r.dir, LLD_HASH, 'standalone-feature');
-		assert.equal(workflowIdForIssue(r.repo, 3), `E20260701${DEF_HASH.slice(0, 8)}:S001:T001`, 'task ref');
-		assert.equal(workflowIdForIssue(r.repo, '1'), `E20260701${DEF_HASH.slice(0, 8)}`, 'epic ref');
+		assert.equal(workflowIdForIssue(r.repo, 3), `TASK-${DEF_HASH}-s1-t1`, 'task ref');
+		assert.equal(workflowIdForIssue(r.repo, '1'), `EPIC-${DEF_HASH}`, 'epic ref');
 		assert.equal(workflowIdForIssue(r.repo, 404), null);
 	} finally { r.cleanup(); }
 });

@@ -13,8 +13,10 @@
  *
  *   - tracker issue : `#9`, `9`, or `owner/repo#9`  (globally unique)
  *   - structural    : `s1/t3` (task) or `s1` (story) — needs epic scope
- *   - hierarchical  : canonical `E<…>:S<nnn>:T<nnn>` or slug
- *                     `E<…>-S<nnn>-T<nnn>` (any level; see `workflow/id.ts`)
+ *   - artifact id   : any id `ArtifactIds.parse` reads (`EPIC-<h>`, `STORY-<h>-s1`,
+ *                     `TASK-<h>-s1-t3`, `LLD-<h>-s1`, ...; see `workflow/artifact-ids.ts`).
+ *                     A work-item id (`E<date><hash8>:S001`) and an uppercase label
+ *                     are not ids and resolve to null.
  *
  * Disambiguation:
  *
@@ -22,9 +24,9 @@
  *           (`storyRefs` / `epicRef`) for the number; the level is the
  *           one it matched under. Issue numbers are globally unique so a
  *           number resolves to exactly one node.
- *   hierId  `hash8` + `date` locate the epic (the DEF whose `epicHash`
- *           starts with `hash8` AND whose `createdAt` UTC date equals
- *           `date`); the ordinals give the story/task labels.
+ *   artifact id  The id names the work item by its epic hash (a SPEC or ISSUE id
+ *           carries a shorter hash, matched as a prefix of exactly one present
+ *           work item) and carries the story and task labels directly.
  *   label   `s1/t3` / `s1` needs epic scope — resolvable only when the
  *           artifacts dir holds EXACTLY ONE epic; otherwise `null` (the
  *           caller must pass an issue# or a hierarchical id instead).
@@ -36,11 +38,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { ARTIFACTS_DIR, readEpicDefinitionCore, type TrackerBlock } from '../storage.js';
-import {
-	epicWorkflowId, ordinalToStoryId, ordinalToTaskId, parseWorkflowId,
-	storyIdToOrdinal, storyWorkflowId, taskWorkflowId, toCanonical, toSlug,
-	type WorkflowId,
-} from '../id.js';
+import { ArtifactIds, type ArtifactKey } from '../artifact-ids.js';
 import { issueNumber } from './refs.js';
 import type { PlanTask } from '../artifacts/plan.js';
 import type { DefineStory } from '../artifacts/define.js';
@@ -56,9 +54,10 @@ export interface ResolvedRef {
 	readonly createdAt:  string;
 	readonly storyId?:   string | undefined;
 	readonly taskId?:    string | undefined;
-	/** Canonical hierarchical id (see `toCanonical`). */
+	/** The artifact id of the resolved node: `EPIC-<h>`, `STORY-<h>-s1` or `TASK-<h>-s1-t3`. */
 	readonly workflowId: string;
-	/** Slug hierarchical id (see `toSlug`). */
+	/** The locator-facing name of the same node. It holds the same artifact id, so a
+	 *  `WorkItemRef.slug` round-trips through `resolveWorkflowRef`. */
 	readonly slug:       string;
 	/** The tracker issue ref (`owner/repo#N`) at the RESOLVED level:
 	 *  task → its taskRef, story → its storyRef, epic → its epicRef. */
@@ -79,11 +78,9 @@ const DEF_RE  = /^DEF-([0-9a-f]{16})\.json$/;
  *  needs. Consulted only where a DEF is absent, so DEF-bearing epics are
  *  unaffected. */
 const ISSUE_RE = /^ISSUE-([0-9a-f]{16})\.json$/;
-// Every route mints the lowercase `s<n>` story id. The pattern still accepts an
-// uppercase one so a story stored before the s9 conversion can be read by issue
-// number.
-const LLD_RE  = /^LLD-([0-9a-f]{16})-([sS]\d+)\.json$/;
-const PLAN_RE = /^PLAN-([0-9a-f]{16})-([sS]\d+)\.json$/;
+// Every route mints the lowercase `s<n>` story id; an uppercase file name is not an artifact until the s9 conversion.
+const LLD_RE  = /^LLD-([0-9a-f]{16})-(s\d+)\.json$/;
+const PLAN_RE = /^PLAN-([0-9a-f]{16})-(s\d+)\.json$/;
 
 // ---------------------------------------------------------------------------
 // Minimal artifact reads
@@ -225,24 +222,9 @@ export function readEpicDefinition(dir: string, epicHash: string): EpicDefinitio
 	return null;
 }
 
-/** Path to a story-scoped artifact (`LLD` / `PLAN`), tolerant of the two story-id
- *  spellings in play: files are named with the lowercase story, files stored before
- *  the s9 conversion carry the uppercase one, and the hierarchical id form always
- *  yields the lowercase label. The exact name is tried FIRST — so every existing lookup keeps
- *  its current single-stat fast path — and only on a miss does it scan for a
- *  sibling whose story segment denotes the same ORDINAL. */
-function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string, storyId: string, files?: readonly string[]): string {
-	const exact = join(dir, `${prefix}-${epicHash}-${storyId}.json`);
-	if (existsSync(exact)) return exact;
-	let want: number;
-	try { want = storyIdToOrdinal(storyId); } catch { return exact; }
-	const re = prefix === 'LLD' ? LLD_RE : PLAN_RE;
-	for (const f of files ?? listFiles(dir)) {
-		const m = re.exec(f);
-		if (m === null || m[1] !== epicHash) continue;
-		try { if (storyIdToOrdinal(m[2]!) === want) return join(dir, f); } catch { continue; }
-	}
-	return exact;   // unchanged miss — callers treat a bad path as "absent"
+/** Path to a story-scoped artifact (`LLD` / `PLAN`): the file is named with the lowercase story. */
+function storyArtifactPath(dir: string, prefix: 'LLD' | 'PLAN', epicHash: string, storyId: string): string {
+	return join(dir, `${prefix}-${epicHash}-${storyId}.json`);
 }
 
 /** HOW an epic evidences a story.
@@ -286,20 +268,17 @@ const EXPLICIT_EVIDENCE: ReadonlySet<StoryEvidence> = new Set<StoryEvidence>(['a
  *
  *  Never throws: an unparseable story label is a refusal, not an exception,
  *  because no consumer of this module has a handler. */
-function storyEvidence(dir: string, epicHash: string, storyId: string, files?: readonly string[]): StoryEvidence | null {
-	let want: number;
-	try { want = storyIdToOrdinal(storyId); } catch { return null; }
-
+function storyEvidence(dir: string, epicHash: string, storyId: string): StoryEvidence | null {
 	for (const prefix of ['LLD', 'PLAN'] as const) {
-		if (existsSync(storyArtifactPath(dir, prefix, epicHash, storyId, files))) return 'artifact';
+		if (existsSync(storyArtifactPath(dir, prefix, epicHash, storyId))) return 'artifact';
 	}
 
 	const def = readEpicDefinition(dir, epicHash);
 	if (def === null) return null;
 	// An ISSUE declares no story list — the bugfix route is one story at ordinal 1.
-	if (def.kind === 'issue') return want === 1 ? 'implied' : null;
+	if (def.kind === 'issue') return storyId === 's1' ? 'implied' : null;
 	for (const story of def.artifact.body?.stories ?? []) {
-		try { if (storyIdToOrdinal(story.id) === want) return 'declared'; } catch { continue; }
+		if (story.id === storyId) return 'declared';
 	}
 	return null;
 }
@@ -327,17 +306,18 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 	}
 	const epicSlug  = dmeta.epicSlug;
 	const createdAt = dmeta.createdAt;
+	// An anchor that is not a date cannot place the work item's folder: the node is unaddressable.
+	if (Number.isNaN(Date.parse(createdAt))) return null;
 	const defTracker = dmeta.tracker;
 
-	// Mint the hierarchical ids. A bad createdAt (can't form a UTC date)
-	// makes the node unaddressable → null.
-	let wfid: WorkflowId;
+	// Mint the artifact id. A key that is not a valid id (an uppercase story) makes the node unaddressable → null.
+	let workflowId: string;
 	try {
-		wfid = taskId !== undefined
-			? taskWorkflowId(epicHash, createdAt, storyId!, taskId)
+		workflowId = taskId !== undefined
+			? ArtifactIds.make({ kind: 'TASK', epicHash, story: storyId, task: taskId })
 			: storyId !== undefined
-				? storyWorkflowId(epicHash, createdAt, storyId)
-				: epicWorkflowId(epicHash, createdAt);
+				? ArtifactIds.make({ kind: 'STORY', epicHash, story: storyId })
+				: ArtifactIds.make({ kind: 'EPIC', epicHash });
 	} catch {
 		return null;
 	}
@@ -368,8 +348,8 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 		createdAt,
 		...(storyId !== undefined ? { storyId } : {}),
 		...(taskId  !== undefined ? { taskId }  : {}),
-		workflowId: toCanonical(wfid),
-		slug:       toSlug(wfid),
+		workflowId,
+		slug:       workflowId,
 		...(issueRef !== undefined ? { issueRef } : {}),
 		...(storyRef !== undefined ? { storyRef } : {}),
 		...(epicRef  !== undefined ? { epicRef }  : {}),
@@ -430,21 +410,12 @@ function resolveByIssue(dir: string, number: string): ResolvedRef | null {
 	return null;
 }
 
-/** hierId → node. `hash8` + `date` locate the epic; ordinals give labels. */
-function resolveByHier(dir: string, wfid: WorkflowId): ResolvedRef | null {
-	let epicHash: string | undefined;
-	for (const h of listEpicHashes(dir)) {
-		if (!h.startsWith(wfid.hash8)) continue;
-		const createdAt = readEpicIdentity(dir, h)?.createdAt;
-		if (typeof createdAt !== 'string') continue;
-		let d: WorkflowId;
-		try { d = epicWorkflowId(h, createdAt); } catch { continue; }
-		if (d.date === wfid.date) { epicHash = h; break; }
-	}
-	if (epicHash === undefined) return null;
-	const storyId = wfid.story !== undefined ? ordinalToStoryId(wfid.story) : undefined;
-	const taskId  = wfid.task  !== undefined ? ordinalToTaskId(wfid.task)   : undefined;
-	return buildRef(dir, epicHash, storyId, taskId);
+/** artifact id → node. The id's hash locates the work item (a shorter SPEC or ISSUE hash must match exactly one);
+ *  its story and task parts give the labels. */
+function resolveByKey(dir: string, key: ArtifactKey): ResolvedRef | null {
+	const matches = listEpicHashes(dir).filter(h => h === key.epicHash || (key.epicHash.length < 16 && h.startsWith(key.epicHash)));
+	if (matches.length !== 1) return null;
+	return buildRef(dir, matches[0]!, key.story, key.task);
 }
 
 /** label `s1/t3` / `s1` → node. Requires a single-epic artifacts dir, OR a
@@ -489,19 +460,13 @@ function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?
 	// turning genuine ambiguity into a confident answer. Evidence decides who
 	// competes; a winner that cannot be built is a refusal, not a hand-off to
 	// the runner-up.
-	// The directory listing is read ONCE and reused across every candidate.
-	// storyArtifactPath falls back to a listing scan whenever the exact filename
-	// misses, which is the common case here, so without this the whole artifacts
-	// dir was re-read twice per epic.
-	//
 	// ISSUE-c00559b7 — a work item headed only by an LLD (a standalone feature)
 	// competes in a THIRD tier, below both: whenever a DEF- or ISSUE-anchored work
 	// item evidences the label, the answer is exactly what it was before LLD heads
 	// existed. Such an item is always reachable by its epicHash or hierarchical id.
-	const files = listFiles(dir);
 	const candidates: { readonly hash: string; readonly evidence: StoryEvidence; readonly lldHeaded: boolean }[] = [];
 	for (const h of heads) {
-		const evidence = storyEvidence(dir, h.hash, storyId, files);
+		const evidence = storyEvidence(dir, h.hash, storyId);
 		if (evidence !== null) candidates.push({ hash: h.hash, evidence, lldHeaded: h.lldHeaded });
 	}
 	const tiers: readonly ((c: typeof candidates[number]) => boolean)[] = [
@@ -525,9 +490,7 @@ function resolveByLabel(dir: string, storyId: string, taskId?: string, epicHash?
 
 const OWNER_REPO_ISSUE_RE = /^([^/#\s]+)\/([^/#\s]+)#(\d+)$/;
 const BARE_ISSUE_RE       = /^#?(\d+)$/;
-// Accepts the lowercase `s1/t3` form and, matching LLD_RE/PLAN_RE, an uppercase
-// story spelling stored before the s9 conversion.
-const LABEL_RE            = /^([sS]\d+)(?:\/(t\d+))?$/;
+const LABEL_RE            = /^(s\d+)(?:\/(t\d+))?$/;
 
 /** `owner/repo#N` → `N`. */
 function refNumber(ref: string): string {
@@ -547,9 +510,9 @@ export function resolveWorkflowRef(repoPath: string, identifier: string, opts?: 
 	const dir = artifactsDir(repoPath);
 	if (!existsSync(dir)) return null;
 
-	// 1) Hierarchical id (canonical or slug).
-	const wfid = parseWorkflowId(id);
-	if (wfid !== null) return resolveByHier(dir, wfid);
+	// 1) Artifact id.
+	const key = ArtifactIds.parse(id);
+	if (key !== undefined) return resolveByKey(dir, key);
 
 	// 2) Tracker issue — owner/repo#N.
 	const ownerRepo = OWNER_REPO_ISSUE_RE.exec(id);
@@ -570,13 +533,13 @@ export function resolveWorkflowRef(repoPath: string, identifier: string, opts?: 
 // Tiny both-way helpers (tracker/build convenience)
 // ---------------------------------------------------------------------------
 
-/** issue number → canonical hierarchical id (or null). */
+/** issue number → the artifact id of the node it names (or null). */
 export function workflowIdForIssue(repoPath: string, issueNumber: number | string): string | null {
 	const r = resolveWorkflowRef(repoPath, `#${issueNumber}`);
 	return r?.workflowId ?? null;
 }
 
-/** hierarchical id → the tracker issue ref at that level (or null). */
+/** artifact id → the tracker issue ref at that level (or null). */
 export function issueForWorkflowId(repoPath: string, workflowId: string): string | null {
 	const r = resolveWorkflowRef(repoPath, workflowId);
 	return r?.issueRef ?? null;

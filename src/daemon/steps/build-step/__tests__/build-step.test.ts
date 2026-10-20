@@ -2150,7 +2150,7 @@ test('c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was u
 		const impl = outputOf(await handleBuildStep({ phase: 'implement', target: 's1/t1', epicHash: SA_HASH, repo }));
 		assert.equal(impl['next'], 'implement', `implement must admit the task, got ${JSON.stringify(impl)}`);
 		assert.equal(impl['taskId'], 't1');
-		assert.equal(impl['workflowId'], `E20261010${SA_HASH.slice(0, 8)}:S001:T001`);
+		assert.equal(impl['workflowId'], `TASK-${SA_HASH}-s1-t1`);
 		assert.match(impl['prompt'] as string, /Standalone check holds/);
 
 		_setBuildValidateProviderForTests({

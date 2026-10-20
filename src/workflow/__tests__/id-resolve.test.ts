@@ -37,6 +37,10 @@ const EPIC_HASH = '185807ba9a6b35d3';
 const CREATED   = '2026-07-17T07:42:28.275Z';
 const CANON_TASK = 'E20260717185807ba:S001:T003';
 const SLUG_TASK  = 'E20260717185807ba-S001-T003';
+// The artifact ids of the same nodes.
+const EPIC_ID  = `EPIC-${EPIC_HASH}`;
+const STORY_ID = `STORY-${EPIC_HASH}-s1`;
+const TASK_ID  = `TASK-${EPIC_HASH}-s1-t3`;
 
 // ---------------------------------------------------------------------------
 // id — the worked example, exactly
@@ -252,7 +256,7 @@ function setupRepo(): { repo: string; cleanup: () => void } {
 test('resolver — #9, s1/t3, canonical + slug all resolve to the same task record', () => {
 	const s = setupRepo();
 	try {
-		const forms = ['#9', '9', 'acme/demo#9', 's1/t3', CANON_TASK, SLUG_TASK];
+		const forms = ['#9', '9', 'acme/demo#9', 's1/t3', TASK_ID, TASK_ID];
 		const recs = forms.map(f => resolveWorkflowRef(s.repo, f));
 		for (let i = 0; i < forms.length; i += 1) {
 			assert.notEqual(recs[i], null, `form '${forms[i]}' resolved to null`);
@@ -263,7 +267,7 @@ test('resolver — #9, s1/t3, canonical + slug all resolve to the same task reco
 		}
 		assert.deepEqual(first, {
 			level: 'task', epicHash: EPIC_HASH, epicSlug: 'demo-feature', createdAt: CREATED,
-			storyId: 's1', taskId: 't3', workflowId: CANON_TASK, slug: SLUG_TASK,
+			storyId: 's1', taskId: 't3', workflowId: TASK_ID, slug: TASK_ID,
 			issueRef: 'acme/demo#9', storyRef: 'acme/demo#5', epicRef: 'acme/demo#1', task: TASK_T3,
 		});
 	} finally { s.cleanup(); }
@@ -274,7 +278,7 @@ test('resolver — story-level (s1, #5) and epic-level (#1)', () => {
 	try {
 		const story = resolveWorkflowRef(s.repo, 's1');
 		assert.equal(story?.level, 'story');
-		assert.equal(story?.workflowId, 'E20260717185807ba:S001');
+		assert.equal(story?.workflowId, STORY_ID);
 		assert.equal(story?.issueRef, 'acme/demo#5');
 		assert.equal(story?.taskId, undefined);
 
@@ -283,7 +287,7 @@ test('resolver — story-level (s1, #5) and epic-level (#1)', () => {
 
 		const epic = resolveWorkflowRef(s.repo, '#1');
 		assert.equal(epic?.level, 'epic');
-		assert.equal(epic?.workflowId, 'E20260717185807ba');
+		assert.equal(epic?.workflowId, EPIC_ID);
 		assert.equal(epic?.issueRef, 'acme/demo#1');
 	} finally { s.cleanup(); }
 });
@@ -291,11 +295,11 @@ test('resolver — story-level (s1, #5) and epic-level (#1)', () => {
 test('resolver — both-way helpers', () => {
 	const s = setupRepo();
 	try {
-		assert.equal(workflowIdForIssue(s.repo, 9), CANON_TASK);
-		assert.equal(workflowIdForIssue(s.repo, '5'), 'E20260717185807ba:S001');
-		assert.equal(issueForWorkflowId(s.repo, CANON_TASK), 'acme/demo#9');
-		assert.equal(issueForWorkflowId(s.repo, SLUG_TASK), 'acme/demo#9');
-		assert.equal(issueForWorkflowId(s.repo, 'E20260717185807ba:S001'), 'acme/demo#5');
+		assert.equal(workflowIdForIssue(s.repo, 9), TASK_ID);
+		assert.equal(workflowIdForIssue(s.repo, '5'), STORY_ID);
+		assert.equal(issueForWorkflowId(s.repo, TASK_ID), 'acme/demo#9');
+		assert.equal(issueForWorkflowId(s.repo, TASK_ID), 'acme/demo#9');
+		assert.equal(issueForWorkflowId(s.repo, STORY_ID), 'acme/demo#5');
 		assert.equal(workflowIdForIssue(s.repo, 999), null);
 	} finally { s.cleanup(); }
 });
@@ -320,7 +324,7 @@ test('resolver — a second epic that does NOT hold the label no longer makes it
 		assert.equal(r!.taskId, 't3');
 		// The issue# + hierId forms are unaffected either way.
 		assert.equal(resolveWorkflowRef(s.repo, '#9')?.taskId, 't3');
-		assert.equal(resolveWorkflowRef(s.repo, CANON_TASK)?.taskId, 't3');
+		assert.equal(resolveWorkflowRef(s.repo, TASK_ID)?.taskId, 't3');
 	} finally { s.cleanup(); }
 });
 
@@ -336,7 +340,7 @@ const TASK_T1: PlanTask = {
 };
 
 /** A bugfix-chain artifacts dir: ISSUE (no DEF) + LLD/PLAN named with the
- *  UPPERCASE `S001` story id the standalone route mints. */
+ *  lowercase `s1` story id the standalone route mints. */
 function setupBugfixRepo(opts: { withIssue?: boolean } = {}): { repo: string; dir: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-resolve-bug-'));
 	const dir = join(repo, '.insrc/artifacts');
@@ -406,7 +410,7 @@ test('resolver — MUTATION (INVERTED at ISSUE-c00559b7): delete the ISSUE and t
 	} finally { s.cleanup(); }
 });
 
-test('resolver — an uppercase S001 story is resolvable by ISSUE NUMBER (the lowercase-only PLAN_RE/LLD_RE defect)', () => {
+test('resolver — an s1 story is resolvable by ISSUE NUMBER', () => {
 	const s = setupBugfixRepo();
 	try {
 		assert.equal(resolveWorkflowRef(s.repo, '#78')?.taskId, 't1', 'taskRefs under a PLAN-<hash>-s1.json must be scanned');
@@ -415,23 +419,17 @@ test('resolver — an uppercase S001 story is resolvable by ISSUE NUMBER (the lo
 	} finally { s.cleanup(); }
 });
 
-test('resolver — the hierarchical id form also resolves for a DEF-less epic', () => {
+test('resolver — the artifact id form also resolves for a DEF-less epic', () => {
 	const s = setupBugfixRepo();
 	try {
 		const byLabel = resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH });
 		assert.notEqual(byLabel, null);
 		const byHier = resolveWorkflowRef(s.repo, byLabel!.workflowId);
-		assert.notEqual(byHier, null, 'the canonical id must resolve too — it shares the DEF-only enumeration gate, and its date match read the DEF directly');
+		assert.notEqual(byHier, null, 'the artifact id must resolve too — a DEF-less work item is enumerated by its ISSUE head');
 		assert.equal(byHier!.taskId, 't1');
-		// The PlanTask must be attached even though the hier form yields the
-		// LOWERCASE label while the artifacts on disk are named `-s1.json`.
-		assert.equal(byHier!.task?.id, 't1', 'the story artifact must be found across the two story-id spellings');
-		// NOTE the spelling: a hierarchical id denotes a story by ORDINAL, and
-		// ordinalToStoryId renders ordinal 1 as `s1`. So the resolved ref reports
-		// `s1` here and `S001` via the label form — same node, two spellings.
+		assert.equal(byHier!.task?.id, 't1', 'the PlanTask is attached');
 		assert.equal(byHier!.storyId, 's1');
-		assert.equal(storyIdToOrdinal(byHier!.storyId!), storyIdToOrdinal('S001'), 'both spellings denote the same story ordinal');
-		// And the slug form resolves identically.
+		// And the slug resolves identically: it holds the same artifact id.
 		assert.equal(resolveWorkflowRef(s.repo, byLabel!.slug)?.taskId, 't1');
 	} finally { s.cleanup(); }
 });
@@ -488,14 +486,14 @@ test('resolver — a bugfix epic is not shadowed by a DEF epic that lacks its st
 			body: { flavor: 'new-capability', problem: 'y.', nonGoals: [], assumptions: [], constraints: [], stories: [], openQuestions: [] },
 			citations: [],
 		});
-		const r = resolveWorkflowRef(s.repo, 'S001/t1');
+		const r = resolveWorkflowRef(s.repo, 's1/t1');
 		assert.notEqual(r, null, 'only the ISSUE-anchored epic evidences S001 — the DEF bystander must not shadow it');
 		assert.equal(r!.epicHash, BUG_HASH);
 		assert.equal(r!.taskId, 't1');
 		// Scoping by hash still works, as it does for DEF epics.
-		assert.equal(resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: BUG_HASH })?.taskId, 't1');
+		assert.equal(resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH })?.taskId, 't1');
 		// And the bystander still refuses the story it does not have.
-		assert.equal(resolveWorkflowRef(s.repo, 'S001/t1', { epicHash: EPIC_HASH }), null);
+		assert.equal(resolveWorkflowRef(s.repo, 's1/t1', { epicHash: EPIC_HASH }), null);
 	} finally { s.cleanup(); }
 });
 
@@ -602,10 +600,10 @@ test('RED-FIRST (c), green at t3, NARROWING 1 — asserts DESIRED behaviour, FAI
 test('RED-FIRST (d), green at t3, NARROWING 2 — asserts DESIRED behaviour, FAILS today: a hierarchical id naming a nonexistent story ordinal refuses', () => {
 	const s = setupRepo();
 	try {
-		assert.notEqual(resolveWorkflowRef(s.repo, 'E20260717185807ba:S001'), null,
+		assert.notEqual(resolveWorkflowRef(s.repo, STORY_ID), null,
 			'precondition: the hierarchical form resolves a story that exists');
-		assert.equal(resolveWorkflowRef(s.repo, 'E20260717185807ba:S009'), null,
-			'a hierarchical id derives its ordinal from the id and never confirmed it — S009 does not exist');
+		assert.equal(resolveWorkflowRef(s.repo, `STORY-${EPIC_HASH}-s9`), null,
+			'an artifact id names its story directly and the story is still verified — s9 does not exist');
 	} finally { s.cleanup(); }
 });
 
@@ -819,26 +817,18 @@ test('t3 — an ISSUE-anchored epic blesses ordinal 1 and REFUSES ordinal 2 (the
 			body: { title: 'x', reproduction: 'x', rootCause: 'x', fixIntent: 'x' },
 			citations: [],
 		});
-		const first = resolveWorkflowRef(repo, 'S001');
+		const first = resolveWorkflowRef(repo, 's1');
 		assert.notEqual(first, null, 'ordinal 1 is the standalone route’s single declared story');
-		assert.equal(first!.storyId, 'S001');
-		assert.equal(resolveWorkflowRef(repo, 'S002'), null, 'an ISSUE declares no second story');
+		assert.equal(first!.storyId, 's1');
+		assert.equal(resolveWorkflowRef(repo, 's2'), null, 'an ISSUE declares no second story');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('t3 — s1 / S1 / S001 verify identically, inherited from storyIdToOrdinal', () => {
+test('t3 — the lowercase label verifies and a nonexistent ordinal refuses', () => {
 	const s = setupBugfixRepo();
 	try {
-		// The artifacts are named `-S001`; every spelling of ordinal 1 must pass.
-		for (const spelling of ['S001', 'S1', 's1']) {
-			const r = resolveWorkflowRef(s.repo, spelling, { epicHash: BUG_HASH });
-			assert.notEqual(r, null, `spelling '${spelling}' must verify against the S001 artifacts`);
-		}
-		// And every spelling of a nonexistent ordinal must refuse.
-		for (const spelling of ['S002', 'S2', 's2']) {
-			assert.equal(resolveWorkflowRef(s.repo, spelling, { epicHash: BUG_HASH }), null,
-				`spelling '${spelling}' names ordinal 2, which does not exist`);
-		}
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1', { epicHash: BUG_HASH }), null, 's1 verifies against the s1 artifacts');
+		assert.equal(resolveWorkflowRef(s.repo, 's2', { epicHash: BUG_HASH }), null, 's2 names an ordinal that does not exist');
 	} finally { s.cleanup(); }
 });
 
@@ -975,7 +965,7 @@ test('t4 — a bugfix-only repo: `S001` refuses unscoped (every ISSUE epic impli
 	const s = setupBugfixRepo();
 	try {
 		// One bugfix epic — S001 is evidenced by its LLD, so it resolves.
-		assert.notEqual(resolveWorkflowRef(s.repo, 'S001'), null, 'a lone bugfix epic resolves S001 unscoped');
+		assert.notEqual(resolveWorkflowRef(s.repo, 's1'), null, 'a lone bugfix epic resolves S001 unscoped');
 
 		// Add a SECOND bugfix epic with its own S001 artifacts: now two epics
 		// evidence ordinal 1 explicitly, so the bare label is truly ambiguous.
@@ -988,17 +978,17 @@ test('t4 — a bugfix-only repo: `S001` refuses unscoped (every ISSUE epic impli
 			body: { title: 'y', reproduction: 'y', rootCause: 'y', fixIntent: 'y' },
 			citations: [],
 		});
-		writeJson(join(s.dir, `LLD-${RIVAL_HASH}-S001.json`), {
+		writeJson(join(s.dir, `LLD-${RIVAL_HASH}-s1.json`), {
 			meta: {
 				workflow: 'design.story', runId: 'l2', repoPath: s.repo, epicHash: RIVAL_HASH,
-				epicSlug: 'second-bugfix', storyId: 'S001', createdAt: CREATED, schemaVersion: 1,
+				epicSlug: 'second-bugfix', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
 			},
 			body: {},
 		});
-		assert.equal(resolveWorkflowRef(s.repo, 'S001'), null, 'two bugfix epics both ship an S001 — ambiguous');
-		assert.equal(resolveWorkflowRef(s.repo, 'S001', { epicHash: BUG_HASH })?.epicHash, BUG_HASH,
+		assert.equal(resolveWorkflowRef(s.repo, 's1'), null, 'two bugfix epics both ship an S001 — ambiguous');
+		assert.equal(resolveWorkflowRef(s.repo, 's1', { epicHash: BUG_HASH })?.epicHash, BUG_HASH,
 			'an explicit scope resolves it');
-		assert.equal(resolveWorkflowRef(s.repo, 'S001', { epicHash: RIVAL_HASH })?.epicHash, RIVAL_HASH);
+		assert.equal(resolveWorkflowRef(s.repo, 's1', { epicHash: RIVAL_HASH })?.epicHash, RIVAL_HASH);
 	} finally { s.cleanup(); }
 });
 
@@ -1008,13 +998,13 @@ test('t4 — the ISSUE was NOT demoted: a bugfix epic is still an enumerated pee
 		// Pins that this is NOT the rejected alternative a2 (which would have
 		// narrowed listEpicHashes back to DEF-only). A DEF-less bugfix epic is
 		// still enumerated, so its story is reachable without a scope at all.
-		const unscoped = resolveWorkflowRef(s.repo, 'S001');
+		const unscoped = resolveWorkflowRef(s.repo, 's1');
 		assert.notEqual(unscoped, null, 'an ISSUE-anchored epic is enumerated, not skipped');
 		assert.equal(unscoped!.epicHash, BUG_HASH);
 		assert.equal(unscoped!.epicSlug, 'resolver-blocked', 'identity still comes off the ISSUE meta');
 
 		// And the task level through the same enumeration.
-		const task = resolveWorkflowRef(s.repo, 'S001/t1');
+		const task = resolveWorkflowRef(s.repo, 's1/t1');
 		assert.notEqual(task, null);
 		assert.equal(task!.level, 'task');
 	} finally { s.cleanup(); }
@@ -1158,6 +1148,54 @@ test('resolver — unknown / malformed identifier → null', () => {
 
 // ---------------------------------------------------------------------------
 // marker embed + extract round-trip
+test('resolveWorkflowRef accepts an artifact id, owner/repo#N, #N and an s<n> label and refuses a work-item id and an uppercase label', () => {
+	const s = setupRepo();
+	try {
+		// every accepted form names the same Task
+		for (const form of [TASK_ID, 'acme/demo#9', '#9', '9', 's1/t3']) {
+			const r = resolveWorkflowRef(s.repo, form);
+			assert.equal(r?.taskId, 't3', `'${form}' resolves to the Task`);
+			assert.equal(r?.workflowId, TASK_ID, `'${form}' reports the Task's artifact id`);
+			assert.equal(r?.slug, TASK_ID, `'${form}' reports the artifact id as its slug`);
+		}
+		// the id of any artifact of the work item resolves at the level it names
+		assert.equal(resolveWorkflowRef(s.repo, EPIC_ID)?.level, 'epic');
+		assert.equal(resolveWorkflowRef(s.repo, `DEF-${EPIC_HASH}`)?.workflowId, EPIC_ID, 'a DEF id names the Epic');
+		assert.equal(resolveWorkflowRef(s.repo, `LLD-${EPIC_HASH}-s1`)?.workflowId, STORY_ID, 'an LLD id names its Story');
+		assert.equal(resolveWorkflowRef(s.repo, `PLAN-${EPIC_HASH}-s1`)?.workflowId, STORY_ID);
+		// a work-item id, a slug form of it, an uppercase label and an uppercase artifact id are refused
+		for (const refused of [CANON_TASK, SLUG_TASK, 'E20260717185807ba:S001', 'S1', 'S001', 'S001/t3', `STORY-${EPIC_HASH}-S001`, `TASK-${EPIC_HASH}-s1-T3`, `EPIC-${EPIC_HASH.toUpperCase()}`]) {
+			assert.equal(resolveWorkflowRef(s.repo, refused), null, `'${refused}' is not accepted`);
+		}
+		// a hash that names no work item, and a story it does not have
+		assert.equal(resolveWorkflowRef(s.repo, `EPIC-${'0'.repeat(16)}`), null);
+		assert.equal(resolveWorkflowRef(s.repo, `STORY-${EPIC_HASH}-s2`), null);
+	} finally { s.cleanup(); }
+});
+
+test('resolveWorkflowRef reports each ResolvedRef output as the artifact id of its level, for several epics', () => {
+	const s = setupBugfixRepo();
+	try {
+		const other = '2222333344445555';
+		writeJson(join(s.dir, `DEF-${other}.json`), {
+			meta: { workflow: 'define', runId: 'd2', repoPath: s.repo, epicHash: other, epicSlug: 'other-epic', createdAt: '2026-08-01T00:00:00.000Z', schemaVersion: 1,
+				tracker: { adapter: 'github', epicRef: 'acme/demo#40', storyRefs: { s1: 'acme/demo#41' } } },
+			body: { stories: [{ id: 's1' }] }, citations: [],
+		});
+		const bug = resolveWorkflowRef(s.repo, 's1/t1', { epicHash: BUG_HASH });
+		assert.equal(bug?.workflowId, `TASK-${BUG_HASH}-s1-t1`);
+		assert.equal(bug?.slug, bug?.workflowId);
+		const story = resolveWorkflowRef(s.repo, '#41');
+		assert.deepEqual([story?.level, story?.epicHash, story?.workflowId, story?.slug], ['story', other, `STORY-${other}-s1`, `STORY-${other}-s1`]);
+		const epic = resolveWorkflowRef(s.repo, '#40');
+		assert.deepEqual([epic?.level, epic?.workflowId, epic?.slug, epic?.createdAt], ['epic', `EPIC-${other}`, `EPIC-${other}`, '2026-08-01T00:00:00.000Z']);
+		// the unscoped label is ambiguous across the two epics, and the id of either one is not
+		assert.equal(resolveWorkflowRef(s.repo, 's1'), null);
+		assert.equal(resolveWorkflowRef(s.repo, `STORY-${other}-s1`)?.epicHash, other);
+		assert.equal(resolveWorkflowRef(s.repo, `STORY-${BUG_HASH}-s1`)?.epicHash, BUG_HASH);
+	} finally { s.cleanup(); }
+});
+
 // ---------------------------------------------------------------------------
 
 test('id marker embeds as the first body line and round-trips out', () => {

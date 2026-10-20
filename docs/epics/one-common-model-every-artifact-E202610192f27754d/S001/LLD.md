@@ -875,27 +875,21 @@ The same anchor and path design as a1, but parse, the storage lookups and the la
 - An old tracker issue with neither a unit label nor an artifact-id title cannot be recognised by the guard; confirm that one possible duplicate until the s9 relabelling is acceptable.
 - A record stored without epicCreatedAt now fails on a read path instead of being placed by its own day; the s9 conversion must stamp every old record, so confirm the stamp is part of the conversion inputs.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q28c07af3` — PREREQUISITE: DEF ac1 says every existing artifact keeps its id and no stored reference stops resolving, and k2 says an artifact id never changes once created; the user's ruling and a1 break the 444 stored uppercase artifacts until s9. Restate ac1 as: lowercase artifacts keep their id; uppercase artifacts fail with a pointer to the s9 conversion, and qualify k2 with the single s9 rename of S001 to s1. The s1 plan must not start until the user has approved the restated Define.
+  - **resolved**: Approve the Define exception — Done on 2026-10-20 with the owner's yes: DEF ac1 restated and k2 qualified (DEF revision 1, commit 3c871d76). _(2026-10-20T08:50:41.939Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**3 do not hold · 2 could not be verified · 7 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-20T08:33:03.017Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| coverage-of-intent | HIGH | The proposed compatibility behavior satisfies the currently approved upstream acceptance criteria and constraints. | The approved DEF still says ac1 requires 'every existing artifact keeps its id and file name, and no stored reference stops resolving'; k2 says 'An artifact id never changes once created'. Rejecting uppercase artifacts contradicts these requirements. The LLD acknowledges this, but its proposed prerequisite has not yet changed the stored DEF. [files: .insrc/artifacts/DEF-2f27754d4ad00b8e.json] | Complete the stated upstream amendment and approval prerequisite before treating this design as implementable. |
-| change-sites | MED | The change inventory covers the code needed to stop deriving work-item identity from folder names. | The omitted refFromDocPath function parses docs paths using '/docs/(?:epics\|standalone)/', extracts the folder slug and S-number, and returns a WorkItemRef with 'storyId: `s${Number(storySeg.slice(1))}`'. infer-daemon.ts actively calls it as 'refFromDocPath(h.file)' for semantic parent candidates. Deleting id.ts and changing path-scheme.ts leaves this folder-derived identity route intact. [files: src/workflow/locate/infer.ts, src/workflow/locate/infer-daemon.ts] | Add the locator and semantic-hit mapping to the inventory. Resolve ownership through artifact identity or stored metadata instead of reconstructing it from folder names, and add a regression test. |
-| boundaries | MED | Approving AMD-1 alone establishes an unambiguous replacement RequirementIds.parse signature for downstream stories. | The HLD declares parse returning { epicHash, ordinal, storyId? }. AMD-1 is a nonbreaking 'sharedContract.fieldAdd' named 'RequirementIds.parse result'. applyFieldAdd performs 'interfaceSketch: sc.interfaceSketch + marker'; it does not replace the original method signature. Approval would therefore leave the old declaration alongside an added comment describing an incompatible result. [files: .insrc/artifacts/HLD-2f27754d4ad00b8e.json, .insrc/artifacts/AMD-2f27754d4ad00b8e-1.json, src/workflow/amendments/applier.ts] | Correct the amendment so the effective contract explicitly supersedes the old return type, and classify the signature change accurately before downstream consumption. |
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| change-sites | The revised resolveWorkflowRef contract preserves its downstream parent-linking consumers after the hierarchical scheme is removed. | ResolvedRef currently includes workflowId and slug, populated with toCanonical(wfid) and toSlug(wfid). locate-parent.ts copies r.slug into WorkItemRef; bugfix/tracker.ts subsequently feeds parentRef.slug to issueForWorkflowId and falls back to an unscoped storyId. The LLD specifies accepted inputs but does not specify replacement values for these output fields or conversion of stored parentRef.slug values. [files: src/workflow/tracker/resolve.ts, src/workflow/locate/locate-parent.ts, src/workflow/bugfix/tracker.ts, src/workflow/types.ts] | Define the new ResolvedRef output semantics and parent-reference conversion explicitly. Test locating and linking a parent in a repository containing multiple epics. |
-| boundaries | The s1 ownership exception for the additional TrackerPort method has been agreed upstream. | The HLD assigns tracker port additions to s6. All four inspected pending amendments concern RequirementIds.parse; none records findIssuesByTitleToken ownership. The LLD itself lists the exception as awaiting the user's decision. [files: .insrc/artifacts/HLD-2f27754d4ad00b8e.json, .insrc/artifacts/AMD-2f27754d4ad00b8e-1.json, .insrc/artifacts/AMD-2f27754d4ad00b8e-2.json, .insrc/artifacts/AMD-2f27754d4ad00b8e-3.json, .insrc/artifacts/AMD-2f27754d4ad00b8e-4.json] | Record the ownership exception in the upstream contract before implementation. |
+- **[[c1]]** `analyze-bundle` `s1 bundle: the work-item id scheme in src/workflow/id.ts: exports and shapes`
+- **[[c2]]** `analyze-bundle` `s1 bundle: importers of src/workflow/id.ts`
+- **[[c3]]** `analyze-bundle` `s1 bundle: flat artifact ids, the amendment id minter and the pending amendments`
+- **[[c4]]** `analyze-bundle` `s1 bundle: the definition head reader and the epic anchor`
+- **[[c5]]** `analyze-bundle` `s1 bundle: the record-folder helpers, the headless validate flow and the write-intent path calculations`
+- **[[c6]]** `analyze-bundle` `s1 bundle: other sites that choose the folder date`
+- **[[c7]]** `analyze-bundle` `s1 bundle: folder construction in src/workflow/path-scheme.ts and its consumers`
+- **[[c8]]** `analyze-bundle` `s1 bundle: tracker issue creation paths and the tracker port`
+- **[[c9]]** `analyze-bundle` `s1 bundle: uppercase story producers and reference resolution`
+- **[[c10]]** `doc` `docs/plans/core-data-model.md`
+- **[[c11]]** `prior-artifact` `HLD-2f27754d4ad00b8e`

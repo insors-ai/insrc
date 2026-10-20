@@ -185,6 +185,22 @@
       "reviewedAt": "2026-10-20T08:33:03.017Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
+    },
+    "staleAckedAt": "2026-10-20T08:49:08.288Z",
+    "staleAckedReason": "Stale only because of AMD-2f27754d4ad00b8e-5 and -6, which this LLD itself proposed and the owner approved on 2026-10-20; the LLD already designs against them.",
+    "approvedAt": "2026-10-20T08:49:16.322Z",
+    "reviewOverride": {
+      "reason": "User approved over the daemon's block after six review rounds in two cycles (3 high, 3 high, 1 high and 2 medium in the last three). The remaining findings are recorded as binding build requirements in docs/plans/core-data-model.md: stop deriving ids from folder names in src/workflow/locate/infer.ts (refFromDocPath) and infer-daemon.ts; define ResolvedRef.workflowId and slug and convert stored parentRef.slug (locate-parent.ts, bugfix/tracker.ts), tested with several epics; plus the earlier round items (AMD ids, write-intent path calculations, validate missing-anchor handling, fr-id test updates, exact-token matching). The DEF ac1 and k2 are restated and sc1/sc6 amendments AMD-5 and AMD-6 are approved.",
+      "at": "2026-10-20T08:49:16.320Z"
+    },
+    "questionResolutions": {
+      "q28c07af3": {
+        "question": "PREREQUISITE: DEF ac1 says every existing artifact keeps its id and no stored reference stops resolving, and k2 says an artifact id never changes once created; the user's ruling and a1 break the 444 stored uppercase artifacts until s9. Restate ac1 as: lowercase artifacts keep their id; uppercase artifacts fail with a pointer to the s9 conversion, and qualify k2 with the single s9 rename of S001 to s1. The s1 plan must not start until the user has approved the restated Define.",
+        "status": "resolved",
+        "choice": "Approve the Define exception",
+        "rationale": "Done on 2026-10-20 with the owner's yes: DEF ac1 restated and k2 qualified (DEF revision 1, commit 3c871d76).",
+        "resolvedAt": "2026-10-20T08:50:41.939Z"
+      }
     }
   },
   "body": {

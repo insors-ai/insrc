@@ -885,6 +885,8 @@ The same anchor and path design as a1, but parse, the storage lookups and the la
   - **resolved**: Approve canonical amendment — Done differently: -1 to -4 are rejected as duplicates and AMD-2f27754d4ad00b8e-5 (with an explicit supersedes note) is the approved canonical amendment, because the applier only appends notes. _(2026-10-20T08:52:44.017Z)_
 - `q3ceef04f` — An old tracker issue with neither a unit label nor an artifact-id title cannot be recognised by the guard; confirm that one possible duplicate until the s9 relabelling is acceptable.
   - **resolved**: Accept the temporary duplicate risk — Accepted with the LLD approval override (2026-10-20); s9 relabels old issues. _(2026-10-20T08:53:14.773Z)_
+- `q5e95d7a2` — A record stored without epicCreatedAt now fails on a read path instead of being placed by its own day; the s9 conversion must stamp every old record, so confirm the stamp is part of the conversion inputs.
+  - **resolved**: Require stamp in conversion inputs — s9 stamps epicCreatedAt on every old record; recorded in the s9 inputs of the s1 LLD migration step 10. _(2026-10-20T08:53:32.600Z)_
 
 ## Citations
 

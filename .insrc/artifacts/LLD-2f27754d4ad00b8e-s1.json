@@ -221,6 +221,13 @@
         "choice": "Accept the temporary duplicate risk",
         "rationale": "Accepted with the LLD approval override (2026-10-20); s9 relabels old issues.",
         "resolvedAt": "2026-10-20T08:53:14.773Z"
+      },
+      "q5e95d7a2": {
+        "question": "A record stored without epicCreatedAt now fails on a read path instead of being placed by its own day; the s9 conversion must stamp every old record, so confirm the stamp is part of the conversion inputs.",
+        "status": "resolved",
+        "choice": "Require stamp in conversion inputs",
+        "rationale": "s9 stamps epicCreatedAt on every old record; recorded in the s9 inputs of the s1 LLD migration step 10.",
+        "resolvedAt": "2026-10-20T08:53:32.600Z"
       }
     }
   },

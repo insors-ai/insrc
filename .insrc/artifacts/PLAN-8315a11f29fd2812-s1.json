@@ -1,0 +1,648 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792483204265-qrhyj8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-20T08:02:49.416Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 165138,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "storyId": "s1",
+    "lldRunId": "wf-1792392444613-ac24bx",
+    "lldEffectiveHash": "044189484c775bed1646ac10219ebf87071619cf21f6f5d94ea8e3f9b09e32f1",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-20T08:06:56.786Z",
+    "rangeBase": "8648b67b60b2da4b13526256feb87e6c1edf397b"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s1 means first making the providers safe for a pipeline that owns retries: one attempt on request, cancellation that reaches the call in flight, size refusals recognised in reviewer sessions, and an Ollama reviewer session that can only read. Then the review-pipeline module is built from the delivered review job, in two parts (job and driver steps, then the bounded gather) with its serial daemon driver. Finally every review kind is moved onto it through single-chunk adapters that keep today's prompts and results, ending with live probes and a daemon update.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Provider retry switch: internalRetry",
+        "summary": "Add the optional internalRetry to StructuredCompletionOpts and ReviewSessionOpts and signal to ReviewSessionOpts, add the optional attempts parameter to CliProvider.withTransientRetry, and map internalRetry false to exactly one attempt in CliProvider.completeStructured, CliProvider.runReviewSession (no transient or stall retry) and OllamaProvider.completeStructured. When absent, behaviour is unchanged.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "internalRetry false makes exactly one CLI run or Ollama request on each of the three paths.",
+          "Without the field, today's retry counts are unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/internal-retry.test.ts: 'internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts'"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Claude reviewer-session size refusal",
+        "summary": "Classify a size refusal in the claude reviewer session's is_error envelope as InputTooLargeError with the classifier completeStructured uses; keep the codex session's existing classification and cover it with a regression test.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A claude session is_error size refusal throws InputTooLargeError.",
+          "A codex session size refusal still throws InputTooLargeError."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/cli-review-session.test.ts: 'a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is'"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "review.chunkTokens setting",
+        "summary": "Add the review.chunkTokens catalog entry (number, default 128000) and REVIEW_CHARS_PER_TOKEN = 3, so limitChars defaults to 384,000 for every provider; config reconcile fills old files.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Default limitChars is 384,000 for every provider.",
+          "A configured value v gives v x 3."
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens'"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Cancellation reaches the call in flight",
+        "summary": "Add the optional signal to ProcessGroupOpts and aborted to ProcessGroupResult (kill the group on abort; an already-aborted signal spawns nothing). Forward StructuredCompletionOpts.signal and ReviewSessionOpts.signal through runSubprocess in CliProvider, throwing AbortError, never retried. Add the optional signal to CompletionOpts, and abort OllamaProvider.complete and completeStructured through a per-call fetch over the shared undici agent.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Aborting a CLI call or reviewer session kills its process group and throws AbortError at once.",
+          "An aborted Ollama complete or completeStructured throws AbortError.",
+          "Without a signal, behaviour is unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/abort-in-flight.test.ts: 'aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried'"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Generic read-only tool loop with an execution-time allowlist",
+        "summary": "Extract the tool loop and final structured emit from src/analyze/context/driver.ts behind a generic loop taking caller-supplied messages, answer schema, deadline, signal, retry policy and tool allowlist. Check every returned tool call's name (after alias resolution) against the allowlist before executeTool; a call outside it is refused with a tool error and logged. Pass the signal to every turn. Repoint runShaperToolLoop and runShaper's legacy tail at it with unchanged behaviour.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "The analyzer's existing tests for runShaperToolLoop and runShaper pass unchanged.",
+          "A returned call to a tool outside the allowlist, file_write included, never reaches executeTool.",
+          "Cancellation stops the loop within the turn in flight."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/analyze/context/__tests__/driver-unit.test.ts (existing, still passes)"
+          },
+          {
+            "level": "integration",
+            "name": "src/analyze/context/__tests__/run-shaper-wiring.test.ts (existing, still passes)"
+          },
+          {
+            "level": "integration",
+            "name": "src/analyze/context/__tests__/shaper-errors.test.ts (existing, still passes)"
+          },
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn'"
+          },
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed'"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Ollama reviewer session",
+        "summary": "Make runReviewSession an optional member of LLMProvider and implement it on OllamaProvider over the generic loop: repository cwd, read-only allowlist, deadline, signal, and a schema-checked structured answer.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "An Ollama reviewer session reads the repository with read-only tools and returns a schema-checked answer within its deadline.",
+          "ReviewSessionTimeoutError when the deadline passes."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline'"
+          },
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn'"
+          },
+          {
+            "level": "integration",
+            "name": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed'"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Pipeline core: job, prepare, envelope and driver steps",
+        "summary": "Create src/workflow/review-pipeline. Move packIntoBatches (re-exported at its old path) and grow the delivered ReviewJob into ReviewPipelineJob, deleting review-job.ts and moving and rewriting its tests. Add the contracts sc1-sc4 and sc6 and the immutable snapshot (claims and evidence written once). Prepare: measure rendered calls, the single path, grouping by relation kind precedence (calls, same-file, same-module, references), the neighbourSummary slot, division with zero atoms, and AtomTooLargeError on a neighbour-free lower bound. Also: the envelope and fresh callIds; nextCalls; applyAnswer (schema, then validate(answer, call)); applyFailure (refusal re-division within maxChars, else half; one re-issue for transient, stall, mismatch and invalid answer); runStage; the per-stage failure policies; the deadlineAt rule (per-session limit times planned sessions, 30-minute cap per session); and the optional pipelineCalls on DimensionResult and ReviewReport.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Under the limit, the plan is single and the calls carry today's messages and schema inside the envelope.",
+          "A missing or wrong callId, a transient error, a stall or an invalid answer is re-issued once under a new callId, and no prompt hash repeats.",
+          "A size refusal re-divides exactly the carried atoms and notes; the refused prompt is never resent.",
+          "Re-planning reads only the snapshot."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts and src/workflow/review-pipeline/__tests__/review-job-core.test.ts: the delivered ISSUE-aef82b03 tests, moved and rewritten to the new API"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Pipeline core: bounded gather",
+        "summary": "Add the gather to the pipeline core: obligation calls; level-by-level reduction under the quarter-limit note cap, with the job keeping which atoms and earlier notes each note stands for; relationCall returning one or more calls, counted under pipelineCalls.relation; merge; and result.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "An obligation whose evidence exceeds the limit is reduced level by level, every gather call fits, and provenance is kept.",
+          "A relation judged by two calls is complete only when both are answered."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a relation judged by two calls is complete only when both are answered'"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Serial daemon driver runReviewJob",
+        "summary": "runReviewJob drives a job to the end serially: issue pending calls one at a time with internalRetry false and each call's execution mode (cwd, timeoutMs, or reviewer session with deadlineMs = min(deadlineAt - now, per-session limit)), run deterministic stages with runStage, apply answers and failures, pass the signal into every call, and return the adapter's result. A cancelled review ends at once with AbortError and records nothing.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Calls are serial and each runs with its execution mode.",
+          "A cancel during a call in flight ends the review at once with AbortError, no re-issue, nothing recorded.",
+          "A re-issued session never restarts the deadline."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded'"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Code-review single-chunk adapters and runCodeReview",
+        "summary": "One adapter per code-review dimension, each wrapping today's prompt builder unchanged, with daemon and controller stage plans. ux is a deterministic stage reading the snapshot's companion-mock fileFacts. Diagram keeps its handlers (deterministic ones as deterministic stages, a failing handler a LOW observation). Adherence makes no call without an approved LLD or plan. runCodeReview builds one job per expected dimension in today's order and drives it with runReviewJob, so the withStructuredRetry wrappers leave the review path. A dimension failing both attempts returns { ok: false, error } as today.",
+        "size": "L",
+        "order": 10,
+        "dependsOn": [
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "An under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included.",
+          "Coverage is still normalised once over the dimension's result.",
+          "A mock added or removed after prepare does not change the ux result."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'adherence makes no call without an approved LLD or plan'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'a mock added or removed after prepare does not change the ux result'"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Design-review single-chunk adapters and runReview / runTemplateReview",
+        "summary": "Premise adapter: extract (fail-review), probe (deterministic, runStage), and verify per premise (record-not-judged, the 3-minute timeoutMs, repo cwd as an addition). The controller plan uses today's single batched verify. Template adapter: one reviewer-session stage whose validate is today's checklist check, re-issued once by the pipeline with today's correction text, under job.deadlineAt. runReview and runTemplateReview switch to the pipeline; verifyOrRecord's own retry and the template re-ask leave the path.",
+        "size": "L",
+        "order": 11,
+        "dependsOn": [
+          "t9",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "An under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review; a verify call failing twice records the premise as not judged.",
+          "An under-limit HLD review makes one reviewer-session call and gives today's report; a checklist break is re-issued once by the pipeline.",
+          "The controller premise plan under the limit offers one batched verify call."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit HLD review makes one reviewer-session call and gives today's report'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema'"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks'"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Live envelope and Ollama probes",
+        "summary": "Add the INSRC_LIVE_TESTS-gated tests: claude and codex accept the envelope around every review answer schema and echo the callId, and a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline.",
+        "size": "S",
+        "order": 12,
+        "dependsOn": [
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "The live envelope test passes on claude and codex.",
+          "The live Ollama review completes."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'claude and codex accept the envelope around every review answer schema and echo the callId'"
+          },
+          {
+            "level": "live",
+            "name": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline'"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Rebuild and update the installed daemon",
+        "summary": "Rebuild and update the installed daemon (maintenance.update). Then run one real code review and one real design review under the limit on it, and confirm each completes with today's result shape.",
+        "size": "S",
+        "order": 13,
+        "dependsOn": [
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "The installed daemon runs the new build.",
+          "A real under-limit code review and design review complete on it."
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Installed daemon: a real under-limit code review and a real design review complete with today's result shape (manual smoke recorded in the BUILD record)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept'",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens'",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded'",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them'",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'",
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts and src/workflow/review-pipeline/__tests__/review-job-core.test.ts: the delivered ISSUE-aef82b03 tests, moved and rewritten to the new API",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included'",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'adherence makes no call without an approved LLD or plan'",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged'",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit HLD review makes one reviewer-session call and gives today's report'",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'a mock added or removed after prepare does not change the ux result'",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/internal-retry.test.ts: 'internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts'",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/cli-review-session.test.ts: 'a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is'",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline'",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__/driver-unit.test.ts (existing, still passes)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__/run-shaper-wiring.test.ts (existing, still passes)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__/shaper-errors.test.ts (existing, still passes)",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema'",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/abort-in-flight.test.ts: 'aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried'",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks'",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn'",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/ollama-review-session.test.ts: 'a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed'",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'claude and codex accept the envelope around every review answer schema and echo the callId'",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts: 'a configured high-end Ollama model completes a template review and a code-review dimension through the pipeline'",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contractDetails"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 dataModelChanges"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 errorPaths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 testStrategy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration"
+    }
+  ]
+}

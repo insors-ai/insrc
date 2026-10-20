@@ -44,7 +44,8 @@ export function convertLegacyFeedback(entry: FeedbackEntry, ownDocument?: string
 	let revision: number | undefined;
 	const version = entry.target.version;
 	if (version !== undefined) {
-		if (/^[0-9]+$/.test(version)) revision = Number(version);
+		const n = /^[0-9]+$/.test(version) ? Number(version) : NaN;
+		if (Number.isSafeInteger(n)) revision = n;
 		else unmapped.push({ field: 'target.version', value: version, reason: 'not an integer revision' });
 	}
 	if (ownDocument === undefined || entry.target.file !== ownDocument) {

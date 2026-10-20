@@ -42,7 +42,7 @@ describe('legacy feedback conversion', () => {
 		const odd = convertLegacyFeedback(entry({ target: { file: DOC, version: 'v3-draft' } }), DOC);
 		assert.equal(odd.feedback.revision, undefined);
 		assert.deepEqual(odd.unmapped, [{ field: 'target.version', value: 'v3-draft', reason: 'not an integer revision' }]);
-		for (const v of ['3.5', '-1', '', '1e3']) assert.equal(convertLegacyFeedback(entry({ target: { file: DOC, version: v } }), DOC).unmapped.length, 1, v);
+		for (const v of ['3.5', '-1', '', '1e3', '9007199254740993', '9'.repeat(400)]) assert.equal(convertLegacyFeedback(entry({ target: { file: DOC, version: v } }), DOC).unmapped.length, 1, v);
 
 		// target.file: the artifact's own document is dropped, any other is reported
 		const foreign = convertLegacyFeedback(entry({ target: { file: 'src/other.ts' } }), DOC);

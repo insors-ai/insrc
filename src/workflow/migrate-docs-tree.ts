@@ -224,8 +224,8 @@ interface NestedIndex {
 	readonly byShape: Map<string, string>;
 }
 
-/** The story ordinal for a storyId, via the canonical parse (`s1` and `S001`
- *  both → 1). The date argument only feeds `epicSegment`, which is unused here,
+/** The story ordinal for a storyId, via the canonical parse (the lowercase and
+ *  stored uppercase spellings of one story both give the same ordinal). The date argument only feeds `epicSegment`, which is unused here,
  *  so a fixed epoch keeps this a pure ordinal lookup rather than a second,
  *  drifting copy of the normalisation. */
 function storyOrdinalOf(storyId: string | undefined): number | undefined {

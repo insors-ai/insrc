@@ -47,6 +47,7 @@ import type {
 	LLMProvider,
 	LLMResponse,
 	ProviderCapabilities,
+	ReviewSessionOpts,
 	StructuredCompletionOpts,
 	StructuredSchema,
 } from '../../shared/types.js';
@@ -76,17 +77,8 @@ export interface EditSessionOpts {
 	readonly timeoutMs?: number | undefined;
 }
 
-/** Options for {@link CliProvider.runReviewSession}. */
-export interface ReviewSessionOpts {
-	/** The repo root the CLI runs inside. */
-	readonly cwd:        string;
-	/** Time allowed for the whole call, its one possible retry included. */
-	readonly deadlineMs: number;
-	/** `false`: exactly one attempt, no transient or stall retry; the caller owns retries. */
-	readonly internalRetry?: boolean | undefined;
-	/** Cancels the session. */
-	readonly signal?: AbortSignal | undefined;
-}
+/** Options for {@link CliProvider.runReviewSession}; declared with the provider interface. */
+export type { ReviewSessionOpts } from '../../shared/types.js';
 
 /** A reviewer session ran past the time it was given. Never retried. */
 export class ReviewSessionTimeoutError extends Error {

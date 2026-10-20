@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { Ollama } from 'ollama';
 import { Agent, fetch as undiciFetch } from 'undici';
 import type {
@@ -6,13 +8,17 @@ import type {
   LLMResponse,
   CompletionOpts,
   ProviderCapabilities,
+  ReviewSessionOpts,
   StructuredCompletionOpts,
   StructuredSchema,
   ToolDefinition,
   ToolCall,
 } from '../../shared/types.js';
+import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from '../../analyze/context/tool-surface.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import { getLogger } from '../../shared/logger.js';
+import { emitStructuredAnswer, runReadOnlyToolLoop, ToolLoopDeadlineError } from '../read-only-tool-loop.js';
+import { ReviewSessionTimeoutError } from './cli-provider.js';
 import { ModelCallFailedError } from './model-call-error.js';
 import { validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 
@@ -649,7 +655,56 @@ export class OllamaProvider implements LLMProvider {
       opts?.internalRetry === false ? 1 : (opts?.maxAttempts ?? 3),
     );
   }
+
+  /**
+   * A reviewer session on a local model (Epic 8315a11f s1): the model reads the
+   * repository at `opts.cwd` through the read-only tool loop, whose allowlist is
+   * checked where each tool runs, then gives a structured answer checked against
+   * `schema`. `opts.deadlineMs` bounds the whole session: passing it aborts the
+   * turn in flight and throws {@link ReviewSessionTimeoutError}, never retried.
+   * `opts.signal` cancels it with AbortError.
+   */
+  async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+    const deadlineAt = Date.now() + opts.deadlineMs;
+    const timer = new AbortController();
+    const handle = setTimeout(() => timer.abort(), opts.deadlineMs);
+    const signal = opts.signal !== undefined ? AbortSignal.any([opts.signal, timer.signal]) : timer.signal;
+    const timedOut = (): boolean => timer.signal.aborted && opts.signal?.aborted !== true;
+    try {
+      const loop = await runReadOnlyToolLoop({
+        provider: this,
+        messages: [{ role: 'user', content: prompt }],
+        tools:    getReadOnlyTools(),
+        allow:    new Set(READ_ONLY_TOOL_IDS),
+        deps:     { sessionId: `review-session-${randomUUID()}`, repoPath: opts.cwd, closureRepos: [opts.cwd], send: () => {}, requestId: 0, ollamaProvider: this },
+        // The repository is the session's working directory, as it is for the CLI sessions.
+        root:     opts.cwd,
+        maxTurns: REVIEW_SESSION_MAX_TURNS,
+        signal,
+        deadlineAt,
+      });
+      // Out of turns: the model still answers from what it has read.
+      if (!loop.done) log.warn({ model: this.model, turns: REVIEW_SESSION_MAX_TURNS }, 'ollama review session: tool turns ran out; asking for the answer');
+      return await emitStructuredAnswer<T>({
+        provider:    this,
+        messages:    loop.messages,
+        // Structural reference trails the prompt.
+        instruction: 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema),
+        schema,
+        ...(opts.internalRetry !== undefined ? { internalRetry: opts.internalRetry } : {}),
+        signal,
+      });
+    } catch (err) {
+      if (timedOut() || err instanceof ToolLoopDeadlineError) throw new ReviewSessionTimeoutError(opts.deadlineMs);
+      throw err;
+    } finally {
+      clearTimeout(handle);
+    }
+  }
 }
+
+/** Tool turns an Ollama reviewer session may take; its deadline is the real bound. */
+const REVIEW_SESSION_MAX_TURNS = 40;
 
 // ---------------------------------------------------------------------------
 // Helpers

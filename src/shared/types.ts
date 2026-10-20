@@ -230,7 +230,25 @@ export interface LLMProvider {
     schema:   StructuredSchema,
     opts?:    StructuredCompletionOpts,
   ): Promise<T>;
+  /**
+   * A reviewer session: the model reads the repository at `opts.cwd` with
+   * read-only tools, then answers against `schema`. Optional: the claude and
+   * codex CLIs and Ollama have one (Epic 8315a11f s1).
+   */
+  runReviewSession?<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T>;
   readonly capabilities: ProviderCapabilities;
+}
+
+/** Options for {@link LLMProvider.runReviewSession}. */
+export interface ReviewSessionOpts {
+  /** The repo root the session reads. */
+  readonly cwd:        string;
+  /** Time allowed for the whole call, its one possible retry included. */
+  readonly deadlineMs: number;
+  /** `false`: exactly one attempt, no transient or stall retry; the caller owns retries. */
+  readonly internalRetry?: boolean | undefined;
+  /** Cancels the session. */
+  readonly signal?: AbortSignal | undefined;
 }
 
 /**

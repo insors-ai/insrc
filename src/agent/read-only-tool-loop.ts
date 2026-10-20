@@ -15,6 +15,8 @@
  * never executed; the model is told the tool is not available.
  */
 
+import { isAbsolute, resolve } from 'node:path';
+
 import { executeTool } from '../daemon/tools/executor.js';
 import { getTool } from '../daemon/tools/registry.js';
 import { getLogger } from '../shared/logger.js';
@@ -43,6 +45,11 @@ export interface ReadOnlyToolLoopArgs {
 	/** Canonical ids the loop may EXECUTE. Checked for every returned call. */
 	readonly allow:    ReadonlySet<string>;
 	readonly deps:     ToolDeps;
+	/** The directory tools work in. The tools resolve paths against the daemon's
+	 *  own cwd, so when set, a relative path argument is resolved against it, and an
+	 *  optional root argument (`cwd`, or a `path` the tool does not require) that is
+	 *  absent defaults to it. Absent: inputs pass through unchanged. */
+	readonly root?:    string | undefined;
 	readonly maxTurns: number;
 	/** Cancels the loop: the turn in flight is aborted and no further turn or tool runs. */
 	readonly signal?:  AbortSignal | undefined;
@@ -84,7 +91,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		const tool = getTool(name);
 		if (tool === undefined) return unknownTool(name);
 		if (!args.allow.has(tool.id)) return refused(name, tool.id);
-		return execute(name, input, deps);
+		return execute(name, args.root !== undefined ? rootedInput(tool.inputSchema, input, args.root) : input, deps);
 	};
 
 	for (let turn = 0; turn < args.maxTurns; turn++) {
@@ -160,6 +167,27 @@ export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promi
 		...(args.signal !== undefined ? { signal: args.signal } : {}),
 		...(args.onToken !== undefined ? { onToken: args.onToken } : {}),
 	});
+}
+
+/** Path arguments the file, search and git tools take. */
+const PATH_KEYS = ['path', 'file_path', 'cwd', 'from', 'to'] as const;
+
+/** `input` with its path arguments anchored at `root` (see {@link ReadOnlyToolLoopArgs.root}). */
+export function rootedInput(schema: unknown, input: unknown, root: string): unknown {
+	if (input === null || typeof input !== 'object' || Array.isArray(input)) return input;
+	const out: Record<string, unknown> = { ...(input as Record<string, unknown>) };
+	const props = (schema as { properties?: Record<string, unknown> } | undefined)?.properties ?? {};
+	const required = new Set((schema as { required?: readonly string[] } | undefined)?.required ?? []);
+	for (const key of PATH_KEYS) {
+		if (!(key in props)) continue;
+		const v = out[key];
+		if (typeof v === 'string' && v.length > 0) {
+			if (!isAbsolute(v)) out[key] = resolve(root, v);
+		} else if (v === undefined && !required.has(key) && (key === 'cwd' || key === 'path')) {
+			out[key] = root;
+		}
+	}
+	return out;
 }
 
 function unknownTool(name: string): ToolResult {

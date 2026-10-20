@@ -413,7 +413,7 @@ validate?(answer: unknown, call: ReviewCall): readonly string[]
 **Returns:** `number` — Each session call, re-issue included, is sent with deadlineMs = min(deadlineAt - now, the per-session limit capped at HARD_REVIEW_DEADLINE_MS). A re-issue never restarts the job clock, and no single session runs longer than 30 minutes.
 
 **Errors:**
-- `ReviewSessionTimeoutError` when deadlineAt has passed: no further call is issued, and the review fails with today's time-limit message, never retried.
+- `Error (the adapter's deadlineError), else ReviewSessionTimeoutError` when deadlineAt has passed, or a session ran out its time: no further call is issued and the review fails, never retried. The error is the adapter's deadlineError when it supplies one: the template review supplies today's plain Error with today's time-limit message (runTemplateReview's timedOut), so its callers see exactly today's error. An adapter with no deadlineError gets ReviewSessionTimeoutError (amended 2026-10-20, after review: the contract now states the error each path actually raises).
 
 **Postconditions:**
 - A single-session template review keeps today's single limit, retries included.

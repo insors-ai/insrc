@@ -30,10 +30,10 @@ import { validateAgainstSchema } from '../../agent/providers/structured-output.j
 import { getLogger } from '../../shared/logger.js';
 import { HARD_REVIEW_DEADLINE_MS } from '../review/template.js';
 import { envelopeMessages, envelopeSchema, openEnvelope, promptChars, promptHash } from './envelope.js';
-import { AtomTooLargeError } from './pack-into-batches.js';
+import { AtomTooLargeError, packIntoBatches } from './pack-into-batches.js';
 import { planChunks } from './prepare.js';
 import type {
-	AdapterStage, CallCarries, CallRole, ChunkPrompt, EnvelopedAnswer, FailureCause, NeighbourSummary, PipelineCalls,
+	AdapterStage, CallCarries, CallRole, ChunkPrompt, EnvelopedAnswer, EvidenceNote, FailureCause, GatherPlan, NeighbourSummary, PipelineCalls,
 	ReviewAdapter, ReviewCall, ReviewChunk, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer,
 } from './types.js';
 
@@ -87,7 +87,7 @@ export function createReviewJob(
 		reviewId: opts.reviewId ?? randomUUID(), path, snapshot: freeze(structuredClone(snapshot)),
 		kind: adapter.kind, dimension: adapter.dimension, phase: 'review',
 		plan: { limitChars, single: true, chunks: [], crossRelations: [] },
-		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], notes: [], noteProvenance: {}, notJudged: [],
+		stage: stages[0]!.id, outputs: {}, pending: [], answered: [], stageAnswers: [], gathered: [], notes: [], noteProvenance: {}, notJudged: [],
 		issuedHashes: [], counts: { single: 0, chunk: 0, reduce: 0, obligation: 0, relation: 0, merge: 0 },
 		materialHash: materialHash(adapter.material()), seq: 0,
 	};
@@ -240,6 +240,7 @@ export function applyOutput(job: ReviewPipelineJob, adapter: ReviewAdapter<unkno
  */
 export function applyAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, answer: EnvelopedAnswer, now: number = Date.now()): ReviewPipelineJob {
 	const call = pendingCall(job, answer.callId);
+	if (isGatherRole(call.role)) return applyGatherAnswer(job, adapter, call, answer.answer, now);
 	const stage = currentStage(job, adapter);
 	const checked = validateAgainstSchema<unknown>(call.prompt.schema, answer.answer);
 	const reasons = checked.ok ? (stage.validate?.(answer.answer, call) ?? []) : checked.errors;
@@ -251,7 +252,7 @@ export function applyAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unkno
 		answered: [...job.answered, { callId: call.callId, stage: call.stage, answer: answer.answer }],
 		stageAnswers: [...job.stageAnswers, recorded],
 	};
-	return next.pending.length === 0 ? completeStage(next, adapter, now) : next;
+	return stageDone(next) ? completeStage(next, adapter, now) : next;
 }
 
 export interface FailureDetail {
@@ -272,10 +273,13 @@ export function applyFailure(
 	job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, callId: string, cause: FailureCause, maxChars?: number | undefined, more: FailureDetail = {},
 ): ReviewPipelineJob {
 	const call = pendingCall(job, callId);
-	const stage = currentStage(job, adapter);
 	const now = more.now ?? Date.now();
 	const rest: ReviewPipelineJob = { ...job, pending: job.pending.filter(c => c.callId !== callId) };
-	if (cause === 'size-refusal') return redivide(rest, adapter, stage, call, maxChars);
+	// A gather call fails the review when it fails twice; it re-divides its notes when refused.
+	const stage: Pick<AdapterStage, 'id' | 'onCallFailure' | 'withCorrection'> = isGatherRole(call.role) ? { id: call.stage, onCallFailure: 'fail-review' } : currentStage(job, adapter);
+	if (cause === 'size-refusal') {
+		return isGatherRole(call.role) ? redivideNotes(rest, adapter, call, maxChars) : redivide(rest, adapter, currentStage(job, adapter), call, maxChars);
+	}
 
 	if (call.attempt < MAX_CALL_ATTEMPTS) {
 		let prompt = call.prompt;
@@ -293,14 +297,11 @@ export function applyFailure(
 	const key = call.carries.key ?? call.carries.chunkId ?? call.callId;
 	log.warn({ dimension: job.dimension, stage: stage.id, key, cause }, 'review pipeline: a call failed twice; recorded and the review goes on');
 	const next: ReviewPipelineJob = { ...rest, notJudged: [...rest.notJudged, { stage: stage.id, key, cause: detail !== undefined ? `${cause}: ${detail}` : cause, policy: stage.onCallFailure }] };
-	return next.pending.length === 0 ? completeStage(next, adapter, now) : next;
+	return stageDone(next) ? completeStage(next, adapter, now) : next;
 }
 
 /** Re-plan a refused call's atoms smaller and issue the stage's calls for them. */
 function redivide(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, stage: AdapterStage, call: ReviewCall, maxChars: number | undefined): ReviewPipelineJob {
-	if (call.role !== 'single' && call.role !== 'chunk') {
-		throw new Error(`review ${job.dimension}: a refused ${call.role} call is re-divided by the gather`);
-	}
 	// Both always below the refused prompt's size, so the re-plan splits it, and a
 	// refused unit that cannot be split is named rather than sent again.
 	const hard = Math.min(maxChars ?? call.chars - 1, call.chars - 1, job.plan.limitChars);
@@ -362,6 +363,94 @@ export async function runStage(job: ReviewPipelineJob, adapter: ReviewAdapter<un
 export function result<R>(job: ReviewPipelineJob): R {
 	if (job.phase !== 'done') throw new Error(`review ${job.dimension}: not complete (stage ${job.stage})`);
 	return job.result as R;
+}
+
+// -- note calls (gather) ------------------------------------------------------
+
+const GATHER_ROLES: ReadonlySet<CallRole> = new Set<CallRole>(['reduce', 'obligation', 'relation', 'merge']);
+const isGatherRole = (role: CallRole): boolean => GATHER_ROLES.has(role);
+
+/** The model stage's own calls are all answered (gather calls may still be pending). */
+function stageDone(job: ReviewPipelineJob): boolean {
+	return job.phase === 'review' && !job.pending.some(c => !isGatherRole(c.role));
+}
+
+/**
+ * Ask for an obligation's adjudication (or one reduction) over evidence notes
+ * the job holds. A call that would not fit the limit is never planned: the notes
+ * are reduced instead, in batches that fit, each answered with one note under
+ * the same key.
+ */
+export function requestNoteCall(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, role: 'obligation' | 'reduce', key: string, noteIds: readonly string[]): ReviewPipelineJob {
+	const gather = gatherOf(job, adapter);
+	const notes = notesOf(job, noteIds);
+	const prompt = role === 'obligation' ? gather.obligationCall(key, notes) : gather.reduceCall(key, notes);
+	const next: ReviewPipelineJob = { ...job, phase: job.phase === 'done' ? 'done' : 'gather' };
+	if (sentChars(prompt) <= job.plan.limitChars) return issue(next, [{ prompt, role, carries: noteCarries(key, notes) }]);
+	const b = budgets(job.plan.limitChars);
+	return issue(next, reduceBatches(gather, key, notes, b.soft, b.hard));
+}
+
+/** A refused note call: its notes re-packed into smaller reduce calls; never resent. */
+function redivideNotes(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, call: ReviewCall, maxChars: number | undefined): ReviewPipelineJob {
+	const gather = gatherOf(job, adapter);
+	const key = call.carries.key ?? '';
+	const notes = notesOf(job, call.carries.noteIds);
+	const hard = Math.min(maxChars ?? call.chars - 1, call.chars - 1, job.plan.limitChars);
+	const soft = Math.max(1, Math.min(maxChars !== undefined ? maxChars - reserveFor(maxChars) : Math.floor(call.chars / 2), hard));
+	log.warn({ dimension: job.dimension, role: call.role, key, notes: notes.length, soft, hard }, 'review pipeline: a note call was refused for its size; reducing its notes in smaller batches');
+	if (notes.length <= 1 && call.role === 'reduce') throw new AtomTooLargeError(`evidence note ${notes[0]?.noteId ?? '?'} (${key})`, call.chars, hard);
+	return issue(job, reduceBatches(gather, key, notes, soft, hard));
+}
+
+/** Reduce calls over `notes`, packed within `soft`; one note may use `hard`; one over it is named. */
+function reduceBatches(gather: GatherPlan<unknown>, key: string, notes: readonly EvidenceNote[], soft: number, hard: number): NewCall[] {
+	const size = (batch: readonly EvidenceNote[]): number => sentChars(gather.reduceCall(key, batch));
+	for (const n of notes) {
+		const alone = size([n]);
+		if (alone > hard) throw new AtomTooLargeError(`evidence note ${n.noteId} (${key})`, alone, hard);
+	}
+	const batches = packIntoBatches(notes, x => (x.length === 1 ? Math.min(size(x), soft) : size(x)), soft, n => n.noteId);
+	return batches.map(batch => ({ prompt: gather.reduceCall(key, batch), role: 'reduce' as const, carries: noteCarries(key, batch) }));
+}
+
+/** A gather call's answer: a reduction becomes one note (with what it stands for); the rest are recorded. */
+function applyGatherAnswer(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>, call: ReviewCall, answer: unknown, now: number): ReviewPipelineJob {
+	const checked = validateAgainstSchema<unknown>(call.prompt.schema, answer);
+	let reasons = checked.ok ? [] : checked.errors;
+	const gather = gatherOf(job, adapter);
+	const text = (answer as { text?: unknown } | null)?.text;
+	if (reasons.length === 0 && call.role === 'reduce') {
+		if (typeof text !== 'string') reasons = ['a reduction answers with one note: { "text": "..." }'];
+		else if (text.length > gather.noteCapChars) reasons = [`the note is ${text.length} characters; it must be at most ${gather.noteCapChars}`];
+	}
+	if (reasons.length > 0) return applyFailure(job, adapter, call.callId, 'invalid-answer', undefined, { reasons, now });
+	const base: ReviewPipelineJob = {
+		...job,
+		pending: job.pending.filter(c => c.callId !== call.callId),
+		answered: [...job.answered, { callId: call.callId, stage: call.stage, answer }],
+	};
+	if (call.role !== 'reduce') return { ...base, gathered: [...base.gathered, { role: call.role, key: call.carries.key, answer }] };
+	const noteId = `n${base.seq + 1}`;
+	const note: EvidenceNote = { noteId, key: call.carries.key ?? '', text: text as string, atomIds: call.carries.atomIds };
+	return { ...base, seq: base.seq + 1, notes: [...base.notes, note], noteProvenance: { ...base.noteProvenance, [noteId]: call.carries.noteIds } };
+}
+
+function gatherOf(job: ReviewPipelineJob, adapter: ReviewAdapter<unknown>): GatherPlan<unknown> {
+	if (adapter.gather === undefined) throw new Error(`review ${job.dimension}: the adapter has no gather plan`);
+	return adapter.gather;
+}
+
+function notesOf(job: ReviewPipelineJob, noteIds: readonly string[]): EvidenceNote[] {
+	return noteIds.map(id => {
+		const note = job.notes.find(n => n.noteId === id);
+		if (note === undefined) throw new Error(`review ${job.dimension}: no evidence note ${id}`);
+		return note;
+	});
+}
+
+function noteCarries(key: string, notes: readonly EvidenceNote[]): CallCarries {
+	return { key, noteIds: notes.map(n => n.noteId), atomIds: [...new Set(notes.flatMap(n => n.atomIds))] };
 }
 
 // -- stage completion --------------------------------------------------------

@@ -20,10 +20,10 @@ import { test } from 'node:test';
 import { CONFIG_CATALOG } from '../../../config/config-catalog.js';
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import type { StructuredSchema } from '../../../shared/types.js';
-import { applyFailure, applyOutput, createReviewJob, MaterialChangedError, nextCalls, result, ReviewCallFailedError, runStage } from '../job.js';
+import { applyFailure, applyOutput, createReviewJob, MaterialChangedError, nextCalls, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
-import type { AdapterStage, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewRelation, StageAnswer } from '../types.js';
+import type { AdapterStage, EvidenceNote, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
 import { asSent, atom, drive, seeingModel, todayMessages, TOY_SCHEMA, toyAdapter, toySnapshot, type ToyOpts, type ToyResult } from './toy-adapter.js';
 
 test('the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens', () => {
@@ -265,6 +265,53 @@ test('a size refusal re-divides exactly the atoms and notes the call carried and
 	const contents = run.sent.map(content);
 	const refusedContents = run.sent.filter(c => asSent(c.messages).length > 3_000).map(content);
 	for (const r of refusedContents) assert.equal(contents.filter(c => c === r).length, 1, 'a refused request is never re-sent, even under a new id');
+
+	// A call carrying evidence notes: re-divided into reductions over exactly the notes it carried.
+	{
+		const gs = toySnapshot([atom(1)]);
+		const ga = toyAdapter(gs, { gatherLimit: LIMIT });
+		const base = createReviewJob(ga, 'daemon', gs, LIMIT);
+		const notes: EvidenceNote[] = Array.from({ length: 12 }, (_, i) => ({ noteId: `e${i}`, key: 'k1', text: `evidence-${i}-${'z'.repeat(560)}`, atomIds: [`a${i}`] }));
+		const withNotes: ReviewPipelineJob = { ...base, notes };
+		const carried = notes.slice(0, 6).map(n => n.noteId);
+		let gj = requestNoteCall(withNotes, ga, 'obligation', 'k1', carried);
+		const obligation = gj.pending.find(c => c.role === 'obligation')!;
+		assert.deepEqual(obligation.carries.noteIds, carried);
+		assert.deepEqual(obligation.carries.atomIds, ['a0', 'a1', 'a2', 'a3', 'a4', 'a5']);
+		const beforeIds = new Set(gj.pending.map(c => c.callId));
+		gj = applyFailure(gj, ga, obligation.callId, 'size-refusal', 2_000);
+		const reductions = gj.pending.filter(c => !beforeIds.has(c.callId));
+		assert.ok(reductions.length >= 2 && reductions.every(c => c.role === 'reduce'));
+		assert.deepEqual(reductions.flatMap(c => c.carries.noteIds).sort(), [...carried].sort(), 'exactly the notes it carried');
+		for (const c of reductions) assert.ok(c.chars <= 2_000, `a ${c.chars}-character reduction`);
+		assert.ok(!gj.pending.some(c => c.callId === obligation.callId || content(c) === content(obligation)), 'never resent');
+		// Each reduction's answer is one note under the key, standing for the notes it read.
+		for (const c of reductions) gj = applyOutput(gj, ga, c.callId, { callId: c.callId, answer: { text: `reduced ${c.carries.noteIds.join(',')}` } });
+		const reduced = gj.notes.filter(n => !carried.includes(n.noteId) && !n.noteId.startsWith('e'));
+		assert.equal(reduced.length, reductions.length);
+		assert.deepEqual(reduced.flatMap(n => gj.noteProvenance[n.noteId] ?? []).sort(), [...carried].sort(), 'provenance kept');
+		assert.ok(reduced.every(n => n.key === 'k1'));
+		// A refused reduction re-divides in turn; one note that cannot fit is named, not resent.
+		const tooLong: EvidenceNote = { noteId: 'big', key: 'k2', text: 'q'.repeat(2_500), atomIds: [] };
+		let lj = requestNoteCall({ ...base, notes: [tooLong] }, ga, 'reduce', 'k2', ['big']);
+		const lone = lj.pending.find(c => c.role === 'reduce')!;
+		assert.throws(() => applyFailure(lj, ga, lone.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('evidence note big'));
+		// Among others, a note larger than the reported size is named too.
+		const mixedNotes = [...notes.slice(0, 3), tooLong];
+		const mj2 = requestNoteCall({ ...base, notes: mixedNotes }, ga, 'obligation', 'k1', mixedNotes.map(x => x.noteId));
+		const mo = mj2.pending.find(c => c.role === 'obligation')!;
+		assert.throws(() => applyFailure(mj2, ga, mo.callId, 'size-refusal', 2_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('evidence note big'));
+		// A note over the cap is an invalid answer: re-issued once with the reason.
+		lj = applyOutput(lj, ga, lone.callId, { callId: lone.callId, answer: { text: 'w'.repeat(LIMIT) } });
+		const again = lj.pending.find(c => c.role === 'reduce')!;
+		assert.equal(again.attempt, 2);
+		assert.ok(content(again).includes(`at most ${LIMIT / 4}`));
+		// Evidence over the limit is never planned as one call: it is reduced in batches that fit.
+		const all = requestNoteCall(withNotes, ga, 'obligation', 'k1', notes.map(n => n.noteId));
+		const planned = all.pending.filter(c => c.role !== 'single');
+		assert.ok(planned.length >= 2 && planned.every(c => c.role === 'reduce' && c.chars <= LIMIT));
+		assert.deepEqual(planned.flatMap(c => c.carries.noteIds).sort(), notes.map(n => n.noteId).sort());
+	}
 
 	// The reported size bounds even a unit that cannot be split: an atom larger than it is named.
 	const mixed = toySnapshot([...Array.from({ length: 6 }, (_, i) => atom(i)), atom(40, 2_300), ...Array.from({ length: 6 }, (_, i) => atom(i + 10))]);

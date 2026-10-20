@@ -13,7 +13,7 @@ import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import { applyFailure, applyOutput, nextCalls, runStage } from '../job.js';
 import type {
-	AdapterStage, ExecutionMode, FailurePolicy, NeighbourSummary, ReviewAdapter, ReviewAtom, ReviewCall, ReviewMaterialSnapshot,
+	AdapterStage, EvidenceNote, ExecutionMode, FailurePolicy, NeighbourSummary, ReviewAdapter, ReviewAtom, ReviewCall, ReviewMaterialSnapshot,
 	ReviewPipelineJob, ReviewRelation, StageAnswer,
 } from '../types.js';
 
@@ -40,7 +40,13 @@ export interface ToyOpts {
 	readonly validate?: AdapterStage['validate'] | undefined;
 	readonly execution?: ExecutionMode | undefined;
 	readonly deadlineMessage?: boolean | undefined;
+	/** Give the adapter a gather plan whose note calls render the notes they carry. */
+	readonly gatherLimit?: number | undefined;
 }
+
+export const NOTE_SCHEMA = { type: 'object', required: ['text'], properties: { text: { type: 'string' } } } as unknown as StructuredSchema;
+export const VERDICT_SCHEMA = { type: 'object', required: ['verdict'], properties: { verdict: { type: 'string' } } } as unknown as StructuredSchema;
+const renderNotes = (key: string, notes: readonly EvidenceNote[]): string => JSON.stringify({ key, notes: notes.map(n => ({ noteId: n.noteId, text: n.text })) });
 
 export interface ToyResult {
 	readonly seen: readonly string[];
@@ -77,6 +83,12 @@ export function toyAdapter(snapshot: ReviewMaterialSnapshot, opts: ToyOpts = {})
 			notJudged: ctx.notJudged, divided: ctx.divided,
 		}),
 		neighbourSummary: a => `summary of ${a.label}`,
+		...(opts.gatherLimit !== undefined ? { gather: {
+			obligationCall: (key, ev) => ({ messages: [{ role: 'system', content: 'Judge the obligation on this evidence.' }, { role: 'user', content: renderNotes(key, ev) }], schema: VERDICT_SCHEMA, execution }),
+			reduceCall: (key, batch) => ({ messages: [{ role: 'system', content: 'Reduce this evidence to one note.' }, { role: 'user', content: renderNotes(key, batch) }], schema: NOTE_SCHEMA, execution }),
+			noteCapChars: Math.floor(opts.gatherLimit / 4),
+			merge: parts => parts[0]!,
+		} } : {}),
 		...(opts.deadlineMessage === true ? { deadlineError: (ms: number) => new Error(`The design review passed its time limit of ${ms / 60_000} minutes. No review was recorded.`) } : {}),
 	};
 }

@@ -247,6 +247,8 @@ export interface ReviewPipelineJob {
 	readonly answered:   readonly { readonly callId: string; readonly stage: string; readonly answer: unknown }[];
 	/** The current model stage's answers so far. */
 	readonly stageAnswers: readonly StageAnswer[];
+	/** Answers of gather calls that do not become notes (obligation, relation, merge). */
+	readonly gathered:   readonly { readonly role: CallRole; readonly key?: string | undefined; readonly answer: unknown }[];
 	readonly notes:      readonly EvidenceNote[];
 	readonly noteProvenance: Readonly<Record<string, readonly string[]>>;
 	readonly notJudged:  readonly NotJudged[];

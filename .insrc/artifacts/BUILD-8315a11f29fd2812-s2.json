@@ -4,10 +4,11 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s2",
     "createdAt": "2026-10-20T13:26:20.493Z",
-    "updatedAt": "2026-10-20T16:10:08.667Z",
+    "updatedAt": "2026-10-20T16:13:51.248Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
-    "epicSlug": "chunked-review-pipeline-every-review"
+    "epicSlug": "chunked-review-pipeline-every-review",
+    "approvedAt": "2026-10-20T16:13:51.522Z"
   },
   "body": {
     "tasks": [
@@ -35,166 +36,180 @@
     "changeLog": [
       {
         "target": {
+          "file": ".insrc/artifacts/CR-8315a11f29fd2812-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:13:51.248Z"
+      },
+      {
+        "target": {
           "file": ".insrc/artifacts/LLD-8315a11f29fd2812-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-8315a11f29fd2812-s2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/envelope-cli-both-20261020T205634.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S001/live-evidence/ollama-grounded-20261020T203331.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/live-evidence/t4-daemon-update.txt"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/dimensions/coverage.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/envelope.live.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/__tests__/toy-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-material.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/code-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/design-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/job.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/prepare.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review/review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       },
       {
         "target": {
           "file": "src/workflow/review/template-review.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-20T16:10:08.667Z"
+        "timestamp": "2026-10-20T16:13:51.248Z"
       }
     ],
-    "commit": "ad90a4c2"
+    "commit": "22ecacfe"
   }
 }

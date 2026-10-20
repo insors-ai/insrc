@@ -61,7 +61,7 @@ function artifactsDir(repo: string): string {
 
 function seedDef(repo: string): void {
 	writeFileSync(join(artifactsDir(repo), `DEF-${HASH}.json`), JSON.stringify({
-		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, approvedAt: CREATED_AT },
+		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, approvedAt: CREATED_AT },
 		body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] },
 		citations: [],
 	}, null, 2));
@@ -71,7 +71,7 @@ function seedLld(repo: string, openQuestions: readonly string[] = []): void {
 	writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({
 		meta: {
 			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
-			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT,
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 			hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis-hash-xyz', hldAmendmentsApplied: [],
 			approvedAt: CREATED_AT,
 			tracker: { storyRef: 'acme/widgets#10' },
@@ -85,7 +85,7 @@ function seedPlan(repo: string, approved: boolean): string {
 	writeFileSync(json, JSON.stringify({
 		meta: {
 			workflow: 'plan', runId: 'plan-run-1', schemaVersion: 1,
-			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT,
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 			lldRunId: 'lld-run-1', lldEffectiveHash: 'basis-hash-xyz',
 			tracker: { taskRefs: { t1: 'acme/widgets#42' } },
 		},
@@ -107,14 +107,14 @@ function seedPlan(repo: string, approved: boolean): string {
 function seedSecondEpic(repo: string): void {
 	const dir = artifactsDir(repo);
 	writeFileSync(join(dir, `DEF-${HASH2}.json`), JSON.stringify({
-		meta: { workflow: 'define', epicHash: HASH2, epicSlug: 'other-epic', createdAt: CREATED_AT2, approvedAt: CREATED_AT2 },
+		meta: { workflow: 'define', epicHash: HASH2, epicSlug: 'other-epic', createdAt: CREATED_AT2, epicCreatedAt: CREATED_AT2, approvedAt: CREATED_AT2 },
 		body: { problem: 'p', stories: [{ id: 's1', title: 'Story one' }] },
 		citations: [],
 	}, null, 2));
 	writeFileSync(join(dir, `${lldArtifactId(HASH2, 's1')}.json`), JSON.stringify({
 		meta: {
 			workflow: 'design.story', runId: 'lld-run-2', schemaVersion: 1,
-			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2,
+			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2, epicCreatedAt: CREATED_AT2,
 			hldBaseRunId: 'hld-run-2', hldEffectiveHash: 'basis-hash-222', hldAmendmentsApplied: [],
 			approvedAt: CREATED_AT2, tracker: { storyRef: 'acme/widgets#20' },
 		},
@@ -124,7 +124,7 @@ function seedSecondEpic(repo: string): void {
 	writeFileSync(planJson, JSON.stringify({
 		meta: {
 			workflow: 'plan', runId: 'plan-run-2', schemaVersion: 1,
-			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2,
+			epicHash: HASH2, epicSlug: 'other-epic', storyId: 's1', createdAt: CREATED_AT2, epicCreatedAt: CREATED_AT2,
 			lldRunId: 'lld-run-2', lldEffectiveHash: 'basis-hash-222',
 			tracker: { taskRefs: { t1: 'acme/widgets#52' } },
 		},
@@ -1198,7 +1198,7 @@ function seedStandaloneLldOnly(repo: string): void {
 	writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({
 		meta: {
 			workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1,
-			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT,
+			epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 			standalone: true, approvedAt: CREATED_AT,
 		},
 		body: { openQuestions: [] }, citations: [],
@@ -1283,7 +1283,7 @@ test('43d72766 — a record that never got its flag is still re-rendered beside 
 		seedStandaloneLldOnly(repo);
 		// A record as the old writer left it: no `standalone`, no `sizeClass`.
 		writeFileSync(join(artifactsDir(repo), `BUILD-${HASH}-s1.json`), JSON.stringify({
-			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-07-20T00:00:00.000Z', updatedAt: '2026-07-20T00:00:00.000Z' },
+			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-07-20T00:00:00.000Z', epicCreatedAt: '2026-07-20T00:00:00.000Z', updatedAt: '2026-07-20T00:00:00.000Z' },
 			body: { tasks: [{ id: 's1', passed: true }] },
 		}, null, 2));
 		// Any later write re-renders it — completion is the one an approval triggers.
@@ -1539,7 +1539,7 @@ function mappedRepo(tests: readonly { level: string; name: string }[] = [{ level
 	seedLld(repo);
 	const json = join(artifactsDir(repo), `${planArtifactId(HASH, 's1')}.json`);
 	writeFileSync(json, JSON.stringify({
-		meta: { workflow: 'plan', runId: 'plan-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, lldRunId: 'lld-run-1', lldEffectiveHash: 'basis-hash-xyz' },
+		meta: { workflow: 'plan', runId: 'plan-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, lldRunId: 'lld-run-1', lldEffectiveHash: 'basis-hash-xyz' },
 		body: { tasks: [
 			{ id: 't1', title: 'Wire the filter', summary: 's', size: 'M', order: 1, dependsOn: [], acceptanceChecks: ['a'], derivedFrom: ['c1'], tests },
 			{ id: 't2', title: 'Another', summary: 's', size: 'S', order: 2, dependsOn: ['t1'], acceptanceChecks: ['a'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'the second task works' }] },
@@ -2058,7 +2058,7 @@ test("on the standalone routes: a wrong mapping on a small build is refused with
 	const SUBJECT = 'the filter narrows results by tag';
 	try {
 		writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, 's1')}.json`), JSON.stringify({
-			meta: { workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, standalone: true, approvedAt: CREATED_AT },
+			meta: { workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, standalone: true, approvedAt: CREATED_AT },
 			body: { openQuestions: [], testStrategy: { testFramework: 'node:test', testLevels: [{ level: 'unit', purpose: 'p', subjects: [SUBJECT] }, { level: 'live', purpose: 'p', subjects: ['works against the daemon'] }], acceptanceMapping: [] } },
 			citations: [],
 		}, null, 2));

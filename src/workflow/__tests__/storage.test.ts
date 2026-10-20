@@ -28,7 +28,7 @@ import {
 	buildRecordFolderArgs,
 	inheritedStoryStandalone,
 	storyRecordFolderArgs,
-	readEpicCreatedAt,
+	resolveEpicAnchor,
 	readEpicDefinitionCore,
 	stubArtifactPaths,
 	writeAtomic,
@@ -315,7 +315,7 @@ test('t2 — an ISSUE-anchored work item yields the ISSUE\'s createdAt instead o
 	try {
 		writeAtomic(join(repo, '.insrc/artifacts', `ISSUE-${MIDNIGHT_HASH}.json`),
 			JSON.stringify({ meta: { createdAt: LATE_DAY_N, epicSlug: 'bugfix-item', standalone: true } }));
-		assert.equal(readEpicCreatedAt(repo, MIDNIGHT_HASH), LATE_DAY_N);
+		assert.equal(resolveEpicAnchor(repo, MIDNIGHT_HASH), LATE_DAY_N);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -324,18 +324,18 @@ test('t2 — signature and return meaning unchanged for a DEF-bearing epic', () 
 	try {
 		writeAtomic(join(repo, '.insrc/artifacts', `DEF-${MIDNIGHT_HASH}.json`),
 			JSON.stringify({ meta: { createdAt: LATE_DAY_N, epicSlug: 'epic-item' } }));
-		assert.equal(readEpicCreatedAt(repo, MIDNIGHT_HASH), LATE_DAY_N);
+		assert.equal(resolveEpicAnchor(repo, MIDNIGHT_HASH), LATE_DAY_N);
 
 		// Absent -> undefined, as before, so every caller's `?? nowISO` still fires.
 		const empty = mkdtempSync(join(tmpdir(), 'insrc-anchor-none-'));
 		try {
-			assert.equal(readEpicCreatedAt(empty, MIDNIGHT_HASH), undefined);
+			assert.equal(resolveEpicAnchor(empty, MIDNIGHT_HASH), undefined);
 		} finally { rmSync(empty, { recursive: true, force: true }); }
 
 		// An EMPTY-STRING createdAt is not a usable anchor and must degrade too.
 		writeAtomic(join(repo, '.insrc/artifacts', `DEF-${MIDNIGHT_HASH}.json`),
 			JSON.stringify({ meta: { createdAt: '', epicSlug: 'epic-item' } }));
-		assert.equal(readEpicCreatedAt(repo, MIDNIGHT_HASH), undefined,
+		assert.equal(resolveEpicAnchor(repo, MIDNIGHT_HASH), undefined,
 			'the non-empty guard is preserved from the previous implementation');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -350,8 +350,8 @@ test('t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to O
 		// Each stage does what every real caller does: read the anchor, else fall
 		// back to its OWN clock. Stage one runs late on day N, stage two early on
 		// day N+1 — the exact condition that forks a folder today.
-		const stageOneAnchor = readEpicCreatedAt(repo, MIDNIGHT_HASH) ?? LATE_DAY_N;
-		const stageTwoAnchor = readEpicCreatedAt(repo, MIDNIGHT_HASH) ?? EARLY_DAY_N1;
+		const stageOneAnchor = resolveEpicAnchor(repo, MIDNIGHT_HASH) ?? LATE_DAY_N;
+		const stageTwoAnchor = resolveEpicAnchor(repo, MIDNIGHT_HASH) ?? EARLY_DAY_N1;
 
 		const segOne = deriveWorkItemIdentity(MIDNIGHT_HASH, stageOneAnchor, 's1').epicSegment;
 		const segTwo = deriveWorkItemIdentity(MIDNIGHT_HASH, stageTwoAnchor, 's1').epicSegment;

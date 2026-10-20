@@ -45,7 +45,7 @@ function payload(env: Envelope): Record<string, unknown> {
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 // The seed DEF createdAt IS the work-item folder anchor the production EXT
-// writer reads back (readEpicCreatedAt), so the extend artifact lands in the
+// writer reads back (resolveEpicAnchor), so the extend artifact lands in the
 // SAME date-segment folder this test recomputes via extendArtifactPaths below.
 const CREATED = '2026-07-18T00:00:00.000Z';
 
@@ -54,7 +54,7 @@ function seed(repo: string): void {
 	const definePaths = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(definePaths.json), { recursive: true });
 	writeFileSync(definePaths.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'define-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'enhancement',
 			problem: 'Users cannot filter todos by tag today; only status filtering exists.',
@@ -74,7 +74,7 @@ function seed(repo: string): void {
 	const hldPaths = hldArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(hldPaths.json), { recursive: true });
 	writeFileSync(hldPaths.json, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			frameworkSummary: 'Extract TagFilter service.',
 			architectureShape: 'TagFilter owns the tag index [[c1]].',

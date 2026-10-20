@@ -34,7 +34,7 @@ function withRepo(fn: (repo: string) => Promise<void>): Promise<void> {
 async function review(repo: string, runId: string, write: CodeReviewRunnerDeps['write']): Promise<string> {
 	const subject: CodeReviewSubject = {
 		repoPath: repo, epicHash: HASH, storyId: 's1', changedFiles: ['src/a.ts'],
-		approvedLld: { meta: { epicHash: HASH, storyId: 's1', epicSlug: 'cr-rev', createdAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
+		approvedLld: { meta: { epicHash: HASH, storyId: 's1', epicSlug: 'cr-rev', createdAt: ANCHOR, epicCreatedAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 		approvedPlan: null as unknown as CodeReviewSubject['approvedPlan'],
 		buildRecord: null,
 	};

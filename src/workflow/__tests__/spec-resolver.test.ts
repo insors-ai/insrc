@@ -41,6 +41,7 @@ function specArtifact(approved: boolean): SpecArtifact {
 			runId:         'wf-spec-res-1',
 			repoPath:      '/tmp/repo',
 			createdAt:     '2026-08-02T00:00:00.000Z',
+			epicCreatedAt: '2026-08-02T00:00:00.000Z',
 			elapsedMs:     10,
 			repoIndexedAt: null,
 			schemaVersion: SPEC_SCHEMA_VERSION,
@@ -62,7 +63,7 @@ function specArtifact(approved: boolean): SpecArtifact {
 
 /** Persist a SPEC artifact (json + md) at its hash-addressed path into `repo`. */
 function writeSpec(repo: string, artifact: SpecArtifact): { md: string; json: string } {
-	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.createdAt, 'standalone', artifact.meta.epicSlug);
+	const paths = specArtifactPaths(repo, artifact.meta.specHash!, artifact.meta.epicCreatedAt!, 'standalone', artifact.meta.epicSlug);
 	writeAtomic(paths.json, JSON.stringify(artifact, null, 2) + '\n');
 	writeAtomic(paths.md, renderSpecMarkdown(artifact));
 	return paths;

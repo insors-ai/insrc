@@ -90,7 +90,7 @@ test('c00559b7 — a legacy UNFLAGGED lone LLD still heads its work item and rep
 		const core = readEpicDefinitionCore(r.repo, HASH);
 		assert.equal(core.headKind, 'LLD');
 		assert.equal(core.standalone, true, 'a work item with no DEF is never an epic');
-		assert.equal(core.createdAt, LLD_MADE, 'with no stamp the LLD\'s createdAt is the anchor');
+		assert.equal(core.createdAt, undefined, 'with no stamp the LLD\'s own createdAt is not the anchor');
 	} finally { r.cleanup(); }
 });
 
@@ -154,7 +154,7 @@ test('c00559b7 — a legacy unflagged LLD-only item files its BUILD and TESTS re
 		// The BUILD record exactly as the shared validate persist writes it: no
 		// standalone key, created today.
 		const build = buildRecordPathsFor(r.repo, {
-			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-10-11T00:00:00.000Z' },
+			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: '2026-10-11T00:00:00.000Z', epicCreatedAt: '2026-10-11T00:00:00.000Z' },
 			body: { tasks: [] },
 		} as never);
 		assert.equal(build.md, join(folder, 'BUILD.md'));

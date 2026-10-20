@@ -34,7 +34,7 @@ const EPIC = 'e1a2b3c4d5e6f708';
 const subject = (withFr: boolean): CodeReviewSubject => ({
 	repoPath: '/repo', epicHash: EPIC, storyId: 's1', changedFiles: ['src/a.ts'],
 	approvedLld: {
-		meta: { epicHash: EPIC, storyId: 's1', epicSlug: 'slug', createdAt: CREATED },
+		meta: { epicHash: EPIC, storyId: 's1', epicSlug: 'slug', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: withFr ? { functionalDefinition: { requirements: [{ id: `E20260717e1a2b3c4:FR001`, statement: 'x', scope: 'doc' }] } } : {},
 	} as unknown as CodeReviewSubject['approvedLld'],
 	approvedPlan: null,

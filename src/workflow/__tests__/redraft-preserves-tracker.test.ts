@@ -33,7 +33,7 @@ const tracker = {
 };
 
 const define = (withTracker: boolean) => ({
-	meta: { workflow: 'define', runId: 'd1', repoPath: '', epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, schemaVersion: 1, ...(withTracker ? { tracker } : {}) },
+	meta: { workflow: 'define', runId: 'd1', repoPath: '', epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1, ...(withTracker ? { tracker } : {}) },
 	body: {
 		flavor: 'enhancement', problem: 'Users cannot filter todos by tag today. Only status filtering exists.', nonGoals: [], assumptions: [],
 		constraints: [{ id: 'k1', text: 'Reuse the sidebar', type: 'convention', source: 'c1' }],
@@ -51,7 +51,7 @@ test('a re-draft keeps epicRef and storyRefs for sync, chain report and Task app
 		writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true } } }));
 		process.env['INSRC_GITHUB_CONFIG'] = cfg;
 		const defineJson = artifactJsonPath(repo, defineArtifactId(HASH));
-		const base = { repoPath: repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED };
+		const base = { repoPath: repo, epicHash: HASH, epicSlug: SLUG, createdAt: CREATED, epicCreatedAt: CREATED };
 		writeFileSync(defineJson, JSON.stringify({ ...define(true), meta: { ...define(true).meta, repoPath: repo } }, null, 2));
 		writeFileSync(artifactJsonPath(repo, lldArtifactId(HASH, 's1')), JSON.stringify({ meta: { workflow: 'design.story', runId: 'l1', ...base, storyId: 's1', tracker: { adapter: 'github', storyRef: 'acme/demo#2' } }, body: {}, citations: [] }));
 		const planJson = artifactJsonPath(repo, planArtifactId(HASH, 's1'));

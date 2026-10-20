@@ -40,7 +40,7 @@ function withItem(fn: (repo: string) => void | Promise<void>): Promise<void> {
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 	const seed = (id: string, meta: Record<string, unknown>): void =>
 		writeFileSync(join(repo, '.insrc', 'artifacts', `${id}.json`), JSON.stringify({ meta, body: {} }, null, 2) + '\n');
-	seed(`ISSUE-${HASH}`, { workflow: 'issue', issueHash: HASH, createdAt: ANCHOR, epicSlug: LABEL, standalone: true });
+	seed(`ISSUE-${HASH}`, { workflow: 'issue', issueHash: HASH, createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: LABEL, standalone: true });
 	seed(`LLD-${HASH}-s1`, { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: LABEL, standalone: true });
 	return Promise.resolve(fn(repo)).finally(() => rmSync(repo, { recursive: true, force: true }));
 }
@@ -53,7 +53,7 @@ function derivedFrom(json: string, kind: ArtifactKind, repo: string): string {
 test('764b88ed — a BUILD record stores the label, anchor and kind it was filed under', async () => {
 	await withItem((repo) => {
 		const { json, md } = persistBuildRecord(repo, {
-			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: LATER },
+			meta: { workflow: 'build', epicHash: HASH, storyId: 's1', createdAt: LATER, epicCreatedAt: LATER },
 			body: { tasks: [{ id: 't1', passed: true }] },
 		});
 		assert.equal(md, join(repo, FOLDER, 'BUILD.md'));
@@ -77,7 +77,7 @@ test('764b88ed — a code-review record stores the label, anchor and kind it was
 	await withItem(async (repo) => {
 		const subject: CodeReviewSubject = {
 			repoPath: repo, epicHash: HASH, storyId: 's1', changedFiles: ['src/a.ts'],
-			approvedLld:  { meta: { epicHash: HASH, storyId: 's1', epicSlug: LABEL, createdAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
+			approvedLld:  { meta: { epicHash: HASH, storyId: 's1', epicSlug: LABEL, createdAt: ANCHOR, epicCreatedAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 			approvedPlan: null as unknown as CodeReviewSubject['approvedPlan'],
 			buildRecord:  null,
 		};

@@ -30,7 +30,7 @@ function seed(repo: string): string {
 	const paths = defineArtifactPaths(repo, HASH, CREATED, 'epic', 'tag-filtering');
 	mkdirSync(dirname(paths.json), { recursive: true });
 	const define: DefineArtifact = {
-		meta: { workflow: 'define', runId: 'r1', repoPath: repo, createdAt: CREATED, model: 'client', elapsedMs: 0, repoIndexedAt: 'x', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', revision: 3, tracker: TRACKER } as DefineArtifact['meta'],
+		meta: { workflow: 'define', runId: 'r1', repoPath: repo, createdAt: CREATED, epicCreatedAt: CREATED, model: 'client', elapsedMs: 0, repoIndexedAt: 'x', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', revision: 3, tracker: TRACKER } as DefineArtifact['meta'],
 		body: {
 			flavor: 'enhancement', problem: 'Users cannot filter todos by tag today; only status filtering exists.', nonGoals: [], assumptions: [],
 			constraints: [{ id: 'k1', text: 'Reuse sidebar', type: 'convention', source: 'c1' }],

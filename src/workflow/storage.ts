@@ -40,7 +40,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renam
 import { dirname, join } from 'node:path';
 
 import { PATHS } from '../shared/paths.js';
-import { ArtifactIds } from './artifact-ids.js';
+import { ArtifactIds, MissingAnchorError } from './artifact-ids.js';
 import { deriveWorkItemIdentity, storyIdToOrdinal } from './id.js';
 import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme.js';
 
@@ -282,12 +282,22 @@ export function testsArtifactId(epicHash: string, storyId: string): string {
 	return ArtifactIds.make({ kind: 'TESTS', epicHash, story: storyId });
 }
 
-/** The work item's stable anchor createdAt — `meta.epicCreatedAt` when the
- *  finalize step stamped it, else the artifact's own `createdAt`. This is the
- *  value the sc2 md-path resolver keys the `E<date>` folder segment on, so every
- *  artifact of one work item lands in one folder. Pure — reads meta only. */
-export function workItemAnchorCreatedAt(meta: { readonly epicCreatedAt?: string | undefined; readonly createdAt: string }): string {
-	return meta.epicCreatedAt ?? meta.createdAt;
+/** The work item's stable anchor createdAt — the record's `meta.epicCreatedAt`
+ *  stamp. This is the value the md-path resolver keys the `E<date>` folder
+ *  segment on, so every artifact of one work item lands in one folder. Pure:
+ *  reads meta only, and never falls back to the record's own `createdAt` or to
+ *  the clock, because either would fork the folder on a day boundary.
+ *
+ *  @throws {MissingAnchorError} when the record carries no stamp. */
+export function workItemAnchorCreatedAt(meta: { readonly epicCreatedAt?: string | undefined }): string {
+	const stamp = meta.epicCreatedAt;
+	if (typeof stamp !== 'string' || stamp.length === 0) {
+		throw new MissingAnchorError(
+			'this record carries no epicCreatedAt, so its work-item folder cannot be located; ' +
+			'a record stored before the s9 conversion has to be stamped by it',
+		);
+	}
+	return stamp;
 }
 
 /** The sc2 top-level split for an artifact: `standalone` for a triage-routed
@@ -368,22 +378,30 @@ export function inheritedStoryStandalone(
 		?? fallback;
 }
 
-export function readEpicCreatedAt(repoPath: string, epicHash: string): string | undefined {
-	// S001/t2 — resolves through the DEFINITION artifact (DEF or ISSUE alike)
-	// rather than the define artifact alone. Signature and meaning are unchanged;
-	// what changes is that an ISSUE-anchored work item now yields its real anchor
-	// instead of undefined.
-	//
-	// Why this is the DEEPER half of the folder fork, and why it is fixed before
-	// the label: every caller applies `?? nowISO`, so a DEF-only read silently
-	// anchored each stage to that stage's own clock. deriveWorkItemIdentity builds
-	// epicSegment from the anchor DATE only, so two stages straddling midnight
-	// forked on the supposedly STABLE identity segment — a fork no label fix
-	// would prevent, and one that a same-day fixture cannot see at all.
+/**
+ * The Epic's creation time, resolved from the work item's head by kind: a DEF or
+ * ISSUE head contributes its own `createdAt` (it IS the Epic's origin); a
+ * standalone LLD head contributes only its stamped `epicCreatedAt`, because the
+ * LLD's own clock is just the day it happened to be written. `undefined` when
+ * there is no head or the head carries no usable time.
+ *
+ * This is the one place the Epic's creation time is resolved. It never returns
+ * the current time and never an unstamped record's own `createdAt`.
+ */
+export function resolveEpicAnchor(repoPath: string, epicHash: string): string | undefined {
 	const createdAt = readEpicDefinitionCore(repoPath, epicHash).createdAt;
-	// The non-empty check is preserved from the previous implementation: an empty
-	// string is not a usable anchor and must degrade to the caller's fallback.
 	return createdAt !== undefined && createdAt.length > 0 ? createdAt : undefined;
+}
+
+/**
+ * The `meta.epicCreatedAt` a ROOT producer stores: the anchor that already exists
+ * for the work item, else the root record's own creation time (it is the first
+ * record, so its clock is the Epic's). Called only by the root producers
+ * (finalizeDefine, finalizeBrainstorm, finalizeIssue, finalizeStandaloneLld);
+ * every later record reads the stamp instead of using its own clock.
+ */
+export function stampRootAnchor(repoPath: string, epicHash: string, ownCreatedAt: string): string {
+	return resolveEpicAnchor(repoPath, epicHash) ?? ownCreatedAt;
 }
 
 /** A work item's epic-level properties, as carried on its definition artifact.
@@ -503,10 +521,13 @@ export function readEpicDefinitionCore(repoPath: string, epicHash: string): Epic
 	// standalone even when a legacy LLD carries no flag, so every placement
 	// consumer files it under docs/standalone. Its anchor is the one its own
 	// folder is keyed on (workItemAnchorCreatedAt).
-	const createdAt = readEpicCreatedAtStamp(repoPath, lldId) ?? lld.createdAt;
+	// Only its stamp counts as the anchor; the LLD's own `createdAt` is dropped so
+	// no consumer can mistake the day it was written for the Epic's creation time.
+	const stamp = readEpicCreatedAtStamp(repoPath, lldId);
+	const { createdAt: _own, ...rest } = lld;
 	return {
-		...lld,
-		...(createdAt !== undefined ? { createdAt } : {}),
+		...rest,
+		...(stamp !== undefined ? { createdAt: stamp } : {}),
 		standalone: true,
 		headKind:   'LLD',
 	};

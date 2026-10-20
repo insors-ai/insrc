@@ -43,7 +43,7 @@ function subject(body: { uxDefinition?: UxDefinition; adherence?: AdherenceSelec
 	return {
 		repoPath: '/repo', epicHash: EPIC, storyId: 's1', changedFiles: ['src/a.ts'],
 		approvedLld: {
-			meta: { epicHash: EPIC, storyId: 's1', epicSlug: 'slug', createdAt: CREATED },
+			meta: { epicHash: EPIC, storyId: 's1', epicSlug: 'slug', createdAt: CREATED, epicCreatedAt: CREATED },
 			body,
 		} as unknown as CodeReviewSubject['approvedLld'],
 		approvedPlan: null,

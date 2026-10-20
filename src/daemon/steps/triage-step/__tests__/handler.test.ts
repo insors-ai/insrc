@@ -154,7 +154,7 @@ function specRepo(approved: boolean): { repo: string; cleanup: () => void } {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-triage-spec-'));
 	const artifact: SpecArtifact = {
 		meta: {
-			workflow: 'brainstorm', runId: 'wf-spec', repoPath: repo, createdAt: '2026-10-01T00:00:00.000Z',
+			workflow: 'brainstorm', runId: 'wf-spec', repoPath: repo, createdAt: '2026-10-01T00:00:00.000Z', epicCreatedAt: '2026-10-01T00:00:00.000Z',
 			elapsedMs: 1, repoIndexedAt: null, schemaVersion: SPEC_SCHEMA_VERSION,
 			specHash: SPEC_HASH, epicSlug: 'a-converged-spec',
 			...(approved ? { approvedAt: '2026-10-01T01:00:00.000Z' } : {}),

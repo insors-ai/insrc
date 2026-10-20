@@ -158,7 +158,7 @@ test('the team gate comes before the upstream-question gate: a held stage whose 
 		const hp = hldArtifactPaths(repo, HASH, '2026-07-18T00:00:00.000Z', 'epic', 'tag-filtering');
 		mkdirSync(dirname(hp.json), { recursive: true });
 		writeFileSync(hp.json, JSON.stringify({
-			meta: { workflow: 'design.epic', runId: 'h1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: '2026-07-18T00:00:00.000Z' },
+			meta: { workflow: 'design.epic', runId: 'h1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: '2026-07-18T00:00:00.000Z', epicCreatedAt: '2026-07-18T00:00:00.000Z' },
 			body: { frameworkSummary: 'x', openQuestions: ['[hq1 / missed] Should tags be case-insensitive?'] }, citations: [],
 		}));
 		const start = async (): Promise<{ next: string; error?: { code: string; message: string } }> =>

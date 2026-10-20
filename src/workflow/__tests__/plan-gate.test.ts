@@ -38,7 +38,7 @@ function seedDefineAndHld(repo: string): void {
 	const dp = defineArtifactPaths(repo, HASH, CREATED, 'epic');
 	mkdirSync(dirname(dp.json), { recursive: true });
 	writeFileSync(dp.json, JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			flavor: 'enhancement', problem: 'x', nonGoals: [], assumptions: [], constraints: [],
 			stories: [{ id: 's1', title: 'Filter by tag', userValue: 'v', acceptanceCriteria: [{ id: 'ac1', given: 'a', when: 'b', then: 'c', operationalizes: [] }], dependsOn: [] }],
@@ -51,7 +51,7 @@ function seedDefineAndHld(repo: string): void {
 
 	const hp = hldArtifactPaths(repo, HASH, CREATED, 'epic');
 	writeFileSync(hp.json, JSON.stringify({
-		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED },
+		meta: { workflow: 'design.epic', runId: HLD_RUN, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED },
 		body: {
 			frameworkSummary: 'x', architectureShape: 'x [[c1]]',
 			sharedContracts: [{ id: 'sc1', name: 'A', purpose: 'p', interfaceSketch: 'interface A {}', ownedByStory: 's1', consumedByStories: [], assumptions: [] }],
@@ -79,7 +79,7 @@ function seedLld(repo: string, storyId: string, opts: LldMetaOpts): string {
 	const lp = lldArtifactPaths(repo, HASH, storyId, CREATED, opts.standalone ? 'standalone' : 'epic');
 	mkdirSync(dirname(lp.json), { recursive: true });
 	const meta: Record<string, unknown> = {
-		workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId, createdAt: CREATED,
+		workflow: 'design.story', runId: 'lld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', storyId, createdAt: CREATED, epicCreatedAt: CREATED,
 		hldBaseRunId: HLD_RUN, hldEffectiveHash: opts.effectiveHash ?? CURRENT_EFFECTIVE, hldAmendmentsApplied: [],
 	};
 	if (opts.approved) meta['approvedAt'] = '2026-01-01T00:00:00Z';

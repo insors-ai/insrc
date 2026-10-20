@@ -80,7 +80,7 @@ function standaloneLldIntent(repo: string): WorkflowIntent {
 function seedIssueRepo(opts: { slug?: string | undefined; standalone?: boolean } = {}): string {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-t8-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
-	const meta: Record<string, unknown> = { epicHash: HASH, createdAt: ISSUE_MADE };
+	const meta: Record<string, unknown> = { epicHash: HASH, createdAt: ISSUE_MADE, epicCreatedAt: ISSUE_MADE };
 	const slug = 'slug' in opts ? opts.slug : HEAD_SLUG;
 	if (slug !== undefined) meta['epicSlug'] = slug;
 	if (opts.standalone !== undefined) meta['standalone'] = opts.standalone;
@@ -163,7 +163,7 @@ test('ISSUE-0b2faed8: a standalone LLD written on a later day than its ISSUE per
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('ISSUE-0b2faed8: with NO definition head the standalone LLD carries no anchor and files under its own day', async () => {
+test('ISSUE-0b2faed8: with NO definition head the standalone LLD is the first record, stamps its own time and files under that day', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-anchor-nohead-'));
 	try {
 		const emit = { body: minimalLldBody(), citations: [{ id: 'c1', kind: 'code', ref: 'src/x.ts' }] };
@@ -171,7 +171,7 @@ test('ISSUE-0b2faed8: with NO definition head the standalone LLD carries no anch
 		assert.equal(result.ok, true, `finalize failed: ${JSON.stringify((result as { failure?: unknown }).failure)}`);
 		const artifact = result.finalized.artifact as LldArtifact;
 		const meta = artifact.meta as { createdAt: string; epicCreatedAt?: string };
-		assert.equal('epicCreatedAt' in meta, false, 'no definition head means no inherited anchor, not a defaulted one');
+		assert.equal(meta.epicCreatedAt, meta.createdAt, 'the first record of the work item stamps its own time as the Epic\'s');
 		const day = meta.createdAt.slice(0, 10).replace(/-/g, '');
 		const folder = folderFor(repo, artifact.meta, 's1');
 		assert.ok(folder.includes(`-E${day}`), `the LLD files under its own day, got ${folder}`);
@@ -270,7 +270,7 @@ test('t8/t4a CALL SITE: an epic-parented PLAN still writes NO placement key at a
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 		// A DEF head that is explicitly NOT standalone, and an LLD to match.
 		writeFileSync(join(repo, '.insrc', 'artifacts', `DEF-${HASH}.json`),
-			JSON.stringify({ meta: { epicHash: HASH, epicSlug: HEAD_SLUG, createdAt: ISSUE_MADE, standalone: false }, body: {} }));
+			JSON.stringify({ meta: { epicHash: HASH, epicSlug: HEAD_SLUG, createdAt: ISSUE_MADE, epicCreatedAt: ISSUE_MADE, standalone: false }, body: {} }));
 		// staleAckedAt short-circuits the HLD-staleness branch, so this test needs no
 		// parent HLD on disk — HLD staleness is orthogonal to placement.
 		seedApprovedLld(repo, { standalone: false, staleAckedAt: '2026-04-09T09:30:00.000Z' });

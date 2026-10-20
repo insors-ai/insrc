@@ -113,7 +113,7 @@ import {
 	type TrackerPushRefs,
 	type TrackerSyncRefs,
 } from './artifacts/tracker.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, readEpicCreatedAt, scopeAnalyzeCachePath, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, inheritedEpicSlug, inheritedStandalone, lldArtifactId, lldArtifactPaths, planArtifactId, planArtifactPaths, resolveEpicAnchor, scopeAnalyzeCachePath, stampRootAnchor, workItemAnchorCreatedAt, workItemKindOf, writeArtifact, writeAtomic } from './storage.js';
 import { basename, dirname, join as joinPath } from 'node:path';
 import { validateErDefinition, type ErDefinition } from './artifacts/companion/er.js';
 import { validateUxDefinition, type UxDefinition } from './artifacts/companion/ux.js';
@@ -724,12 +724,14 @@ function finalizeBrainstorm(
 	// A SpecArtifact is not Epic-scoped — it mints its OWN run-derived identity.
 	const specHash = computeEpicHash(runId);
 	const slug     = headLabel(body.title, intent.focus);
+	const specCreatedAt = new Date().toISOString();
 	const artifact: SpecArtifact = {
 		meta: {
 			workflow:      'brainstorm',
 			runId,
 			repoPath:      intent.repoPath,
-			createdAt:     new Date().toISOString(),
+			createdAt:     specCreatedAt,
+			epicCreatedAt: stampRootAnchor(intent.repoPath, specHash, specCreatedAt),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -898,12 +900,14 @@ function finalizeIssue(
 	const issueHash = computeEpicHash(runId);
 	const slug      = headLabel(body.title, intent.focus);
 	const magnitude = intent.params['magnitude'];
+	const issueCreatedAt = new Date().toISOString();
 	const artifact: IssueArtifact = {
 		meta: {
 			workflow:      'issue',
 			runId,
 			repoPath:      intent.repoPath,
-			createdAt:     new Date().toISOString(),
+			createdAt:     issueCreatedAt,
+			epicCreatedAt: stampRootAnchor(intent.repoPath, issueHash, issueCreatedAt),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -1220,6 +1224,7 @@ function finalizeDefine(
 			runId,
 			repoPath:      intent.repoPath,
 			createdAt,
+			epicCreatedAt: stampRootAnchor(intent.repoPath, epicHash, createdAt),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -1369,7 +1374,7 @@ function finalizeDefineExtend(
 			createdAt:     new Date().toISOString(),
 			// Work-item folder anchor (sc2): an extend Story belongs to the parent
 			// Epic, so its folder is keyed on the Epic's define createdAt.
-			epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
+			epicCreatedAt: resolveEpicAnchor(intent.repoPath, epicHash) ?? new Date().toISOString(),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,
 			repoIndexedAt: intent.repoIndexedAt,
@@ -1844,7 +1849,7 @@ async function finalizeDesignEpic(
 		createdAt:     nowISO,
 		// Work-item folder anchor (sc2): keyed on the Epic's define createdAt so
 		// the HLD lands in the same folder as its DEF.
-		epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? nowISO,
+		epicCreatedAt: resolveEpicAnchor(intent.repoPath, epicHash) ?? nowISO,
 		attribution:   attribution ?? singleModelAttribution(model),
 		elapsedMs,
 		repoIndexedAt: intent.repoIndexedAt,
@@ -2224,7 +2229,7 @@ async function finalizeDesignStory(
 		schemaVersion: LLD_SCHEMA_VERSION,
 		// Work-item folder anchor (sc2): an Epic Story's LLD is keyed on the
 		// Epic's define createdAt so it lands in the Story's folder.
-		epicCreatedAt:        readEpicCreatedAt(intent.repoPath, epicHash) ?? nowISO,
+		epicCreatedAt:        resolveEpicAnchor(intent.repoPath, epicHash) ?? nowISO,
 		epicHash,
 		epicSlug,
 		storyId,
@@ -2395,14 +2400,15 @@ async function finalizeStandaloneLld(
 	// the LLD, went with it. Omitted, not defaulted, when there is no definition
 	// artifact: a standalone LLD that IS the work item's first record keeps
 	// anchoring on its own createdAt, exactly as before.
-	const epicCreatedAt = readEpicCreatedAt(intent.repoPath, epicHash);
+	const lldCreatedAt = new Date().toISOString();
+	const epicCreatedAt = stampRootAnchor(intent.repoPath, epicHash, lldCreatedAt);
 
 	const meta = {
 		workflow:      'design.story' as const,
 		runId,
 		repoPath:      intent.repoPath,
-		createdAt:     new Date().toISOString(),
-		...(epicCreatedAt !== undefined ? { epicCreatedAt } : {}),
+		createdAt:     lldCreatedAt,
+		epicCreatedAt,
 		attribution:   attribution ?? singleModelAttribution(model),
 		elapsedMs,
 		repoIndexedAt: intent.repoIndexedAt,
@@ -2684,7 +2690,7 @@ function finalizePlan(
 			createdAt:     new Date().toISOString(),
 			// Work-item folder anchor (sc2): a plan belongs to an Epic Story, keyed
 			// on the Epic's define createdAt so it lands in the Story's folder.
-			epicCreatedAt: readEpicCreatedAt(intent.repoPath, epicHash) ?? new Date().toISOString(),
+			epicCreatedAt: resolveEpicAnchor(intent.repoPath, epicHash) ?? new Date().toISOString(),
 			...(standaloneFlag === true ? { standalone: true } : {}),
 			attribution:   attribution ?? singleModelAttribution(model),
 			elapsedMs,

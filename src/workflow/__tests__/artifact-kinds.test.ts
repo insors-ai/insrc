@@ -42,7 +42,7 @@ function seedRepo(): { repo: string; cleanup: () => void } {
 		writeFileSync(join(repo, rel), body);
 	};
 	const art = (id: string, meta: Record<string, unknown>, body: Record<string, unknown> = {}, citations: unknown[] = []): void =>
-		wr(`.insrc/artifacts/${id}.json`, JSON.stringify({ meta: { epicHash: HASH, epicSlug: 'pay-things', createdAt: AT, runId: `run-${id}`, ...meta }, body, citations }));
+		wr(`.insrc/artifacts/${id}.json`, JSON.stringify({ meta: { epicHash: HASH, epicSlug: 'pay-things', createdAt: AT, epicCreatedAt: AT, runId: `run-${id}`, ...meta }, body, citations }));
 	art(`DEF-${HASH}`, { workflow: 'define' }, {
 		epic: { title: 'Pay things' },
 		stories: [{ id: 's1', title: 'Story one', userValue: 'v', acceptanceCriteria: [] }],

@@ -51,7 +51,7 @@ function writeDefine(repo: string, epicHash: string, opts: { stories: string[] }
 	writeAtomic(paths.json, JSON.stringify({
 		meta: {
 			workflow: 'define', runId: 'def-1', schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic', createdAt: CREATED,
+			epicHash, epicSlug: 'test-epic', createdAt: CREATED, epicCreatedAt: CREATED,
 		},
 		body: {
 			flavor: 'enhancement',
@@ -72,7 +72,7 @@ function writeHld(repo: string, epicHash: string, runId: string): { path: string
 	writeAtomic(paths.json, JSON.stringify({
 		meta: {
 			workflow: 'design.epic', runId, schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic', createdAt: CREATED,
+			epicHash, epicSlug: 'test-epic', createdAt: CREATED, epicCreatedAt: CREATED,
 		},
 		body: {
 			frameworkSummary: 'x', architectureShape: 'x',
@@ -93,7 +93,7 @@ function writeLld(repo: string, epicHash: string, storyId: string, hldRunId: str
 	writeAtomic(paths.json, JSON.stringify({
 		meta: {
 			workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic', storyId, createdAt: CREATED,
+			epicHash, epicSlug: 'test-epic', storyId, createdAt: CREATED, epicCreatedAt: CREATED,
 			hldBaseRunId: hldRunId, hldEffectiveHash: effectiveHash, hldAmendmentsApplied: [],
 		},
 		body: {

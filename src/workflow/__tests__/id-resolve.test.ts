@@ -232,7 +232,7 @@ function setupRepo(): { repo: string; cleanup: () => void } {
 	writeJson(join(dir, `LLD-${EPIC_HASH}-s1.json`), {
 		meta: {
 			workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: EPIC_HASH, epicSlug: 'demo-feature',
-			storyId: 's1', createdAt: CREATED, schemaVersion: 1,
+			storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
 			tracker: { adapter: 'github', storyRef: 'acme/demo#5' },
 		},
 		body: {},
@@ -240,7 +240,7 @@ function setupRepo(): { repo: string; cleanup: () => void } {
 	writeJson(join(dir, `PLAN-${EPIC_HASH}-s1.json`), {
 		meta: {
 			workflow: 'plan', runId: 'p1', repoPath: repo, epicHash: EPIC_HASH, epicSlug: 'demo-feature',
-			storyId: 's1', createdAt: CREATED, schemaVersion: 1,
+			storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
 			tracker: { adapter: 'github', taskRefs: { t3: 'acme/demo#9' } },
 		},
 		body: { tasks: [TASK_T3], testStrategyCoverage: [] },
@@ -354,7 +354,7 @@ function setupBugfixRepo(opts: { withIssue?: boolean } = {}): { repo: string; di
 	writeJson(join(dir, `LLD-${BUG_HASH}-s1.json`), {
 		meta: {
 			workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: BUG_HASH,
-			epicSlug: 'resolver-blocked', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
+			epicSlug: 'resolver-blocked', storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
 			tracker: { adapter: 'github', storyRef: 'acme/demo#77' },
 		},
 		body: {},
@@ -362,7 +362,7 @@ function setupBugfixRepo(opts: { withIssue?: boolean } = {}): { repo: string; di
 	writeJson(join(dir, `PLAN-${BUG_HASH}-s1.json`), {
 		meta: {
 			workflow: 'plan', runId: 'p1', repoPath: repo, epicHash: BUG_HASH,
-			epicSlug: 'resolver-blocked', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
+			epicSlug: 'resolver-blocked', storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
 			tracker: { adapter: 'github', taskRefs: { t1: 'acme/demo#78' } },
 		},
 		body: { tasks: [TASK_T1], testStrategyCoverage: [] },
@@ -764,7 +764,7 @@ function setupDeclaredStoryRepo(): { repo: string; dir: string; cleanup: () => v
 	writeJson(join(dir, `LLD-${DECL_HASH}-s1.json`), {
 		meta: {
 			workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: DECL_HASH,
-			epicSlug: 'declared-stories', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
+			epicSlug: 'declared-stories', storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
 		},
 		body: {},
 	});
@@ -938,7 +938,7 @@ function addRivalDefEpicWithS1(repo: string): void {
 	writeJson(join(dir, `LLD-${RIVAL_HASH}-s1.json`), {
 		meta: {
 			workflow: 'design.story', runId: 'l8', repoPath: repo, epicHash: RIVAL_HASH,
-			epicSlug: 'rival-feature', storyId: 's1', createdAt: CREATED, schemaVersion: 1,
+			epicSlug: 'rival-feature', storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED, schemaVersion: 1,
 		},
 		body: {},
 	});

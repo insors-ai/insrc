@@ -106,7 +106,7 @@ function commitApprovedArtifacts(approval: ApprovalResult): CommitArtifactsResul
 	// sc2 folder args from the approved artifact's own meta — its epicCreatedAt
 	// anchor is the Epic's define createdAt, so the Define (added alongside on
 	// epic/story approvals) resolves to the same work-item folder.
-	const anchor = workItemAnchorCreatedAt(meta.createdAt !== undefined ? { createdAt: meta.createdAt, epicCreatedAt: meta.epicCreatedAt } : { createdAt: new Date().toISOString(), epicCreatedAt: meta.epicCreatedAt });
+	const anchor = workItemAnchorCreatedAt(meta);
 	const kind = workItemKindOf(meta);
 
 	// The files this approval touched: the approved artifact, plus the Define

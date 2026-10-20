@@ -46,7 +46,7 @@ function artifactsDir(repo: string): string {
 
 function seedDef(repo: string, openQs: readonly string[]): void {
 	writeFileSync(join(artifactsDir(repo), `${defineArtifactId(HASH)}.json`), JSON.stringify({
-		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, approvedAt: CREATED_AT },
+		meta: { workflow: 'define', runId: 'def-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, approvedAt: CREATED_AT },
 		body: { flavor: 'enhancement', problem: 'p', nonGoals: [], assumptions: [], constraints: [], stories: [{ id: 's1', title: 'One', userValue: 'v', acceptanceCriteria: [] }], openQuestions: openQs },
 		citations: [],
 	}, null, 2));
@@ -54,7 +54,7 @@ function seedDef(repo: string, openQs: readonly string[]): void {
 
 function seedHld(repo: string, openQs: readonly string[]): void {
 	writeFileSync(join(artifactsDir(repo), `${hldArtifactId(HASH)}.json`), JSON.stringify({
-		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT },
+		meta: { workflow: 'design.epic', runId: 'hld-run-1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT },
 		body: {
 			frameworkSummary: 'fw', architectureShape: 'x', sharedContracts: [], storyBoundaries: [], nonFunctional: {},
 			rolloutOverview: { phases: [], orderingRationale: 'x', riskyBits: [] },
@@ -67,7 +67,7 @@ function seedHld(repo: string, openQs: readonly string[]): void {
 
 function seedLld(repo: string, storyId: string, openQs: readonly string[]): void {
 	writeFileSync(join(artifactsDir(repo), `${lldArtifactId(HASH, storyId)}.json`), JSON.stringify({
-		meta: { workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, storyId, hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis', hldAmendmentsApplied: [] },
+		meta: { workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, storyId, hldBaseRunId: 'hld-run-1', hldEffectiveHash: 'basis', hldAmendmentsApplied: [] },
 		body: {
 			hldContextSlice: { frameworkSummary: 'fw', rolloutPhase: 'p1', ownedContracts: [], consumedContracts: [], boundary: { storyId, owns: [], depends: [], internal: 'x' }, nonFunctional: {} },
 			contractDetails: { surfaceLevel: 'internal', api: [] },

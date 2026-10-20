@@ -30,7 +30,7 @@ const subject = (
 	// The sc2 CR path anchors on the story's LLD meta (createdAt + slug), so the
 	// fixture LLD must carry a valid meta — an unmeta'd artifact never occurs in
 	// production and would trip the nested path resolver.
-	approvedLld:  { meta: { epicHash, storyId, epicSlug: 'tag-filtering', createdAt: CREATED }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
+	approvedLld:  { meta: { epicHash, storyId, epicSlug: 'tag-filtering', createdAt: CREATED, epicCreatedAt: CREATED }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
 	approvedPlan: { body: { tasks: [] } } as unknown as CodeReviewSubject['approvedPlan'],
 	buildRecord: null,
 });

@@ -53,7 +53,7 @@ function subject(er: ErDefinition | undefined, repoPath = '/repo'): CodeReviewSu
 	return {
 		repoPath, epicHash: EPIC, storyId: 's1', changedFiles: ['src/a.ts'],
 		approvedLld: {
-			meta: { epicHash: EPIC, storyId: 's1', epicSlug: 'slug', createdAt: CREATED },
+			meta: { epicHash: EPIC, storyId: 's1', epicSlug: 'slug', createdAt: CREATED, epicCreatedAt: CREATED },
 			body: er !== undefined ? { erDefinition: er } : {},
 		} as unknown as CodeReviewSubject['approvedLld'],
 		approvedPlan: null,

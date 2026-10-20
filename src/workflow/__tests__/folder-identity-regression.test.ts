@@ -31,7 +31,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { resolveArtifactMdPath } from '../path-scheme.js';
-import { readEpicCreatedAt, readEpicDefinitionCore, workItemKindOf } from '../storage.js';
+import { resolveEpicAnchor, readEpicDefinitionCore, workItemKindOf } from '../storage.js';
 
 const EPIC_HASH   = 'abcdef0123456789';              // → hash8 'abcdef01'
 const DEF_CREATED = '2026-03-11T09:15:00.000Z';      // → E20260311
@@ -108,12 +108,12 @@ test("t7 — workItemKindOf still maps absent and false alike to 'epic'", () => 
 	assert.equal(workItemKindOf({ standalone: true }), 'standalone', 'only true → standalone');
 });
 
-test("t7 — readEpicCreatedAt's behaviour for a DEF-bearing epic is unchanged", () => {
+test("t7 — resolveEpicAnchor's behaviour for a DEF-bearing epic is unchanged", () => {
 	const { repo, cleanup } = seedEpicRepo();
 	try {
-		assert.equal(readEpicCreatedAt(repo, EPIC_HASH), DEF_CREATED);
+		assert.equal(resolveEpicAnchor(repo, EPIC_HASH), DEF_CREATED);
 		// Absent work item → undefined, so callers' `?? nowISO` still governs.
-		assert.equal(readEpicCreatedAt(repo, '0'.repeat(16)), undefined);
+		assert.equal(resolveEpicAnchor(repo, '0'.repeat(16)), undefined);
 	} finally { cleanup(); }
 });
 

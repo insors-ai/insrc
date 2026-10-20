@@ -54,7 +54,7 @@ test('every meta-only writer leaves the body byte-identical and the revision unc
 	// questions resolution (HLD)
 	{
 		const hld: Doc = {
-			meta: { workflow: 'design.epic', runId: 'h1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, revision: 4 },
+			meta: { workflow: 'design.epic', runId: 'h1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, revision: 4 },
 			body: {
 				frameworkSummary: 'fw', architectureShape: 'x', sharedContracts: [], storyBoundaries: [], nonFunctional: {},
 				rolloutOverview: { phases: [], orderingRationale: 'x', riskyBits: [] },

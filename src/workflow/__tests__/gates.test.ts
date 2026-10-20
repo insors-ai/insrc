@@ -144,7 +144,7 @@ function writeFixture(repo: string): string {
 	writeFileSync(paths.json, JSON.stringify({
 		meta: {
 			workflow: 'define', runId: 'r1',
-			epicHash: HASH, epicSlug: 'x', createdAt: CREATED,
+			epicHash: HASH, epicSlug: 'x', createdAt: CREATED, epicCreatedAt: CREATED,
 		},
 		body: { flavor: 'new-capability', problem: 'x', nonGoals: [], assumptions: [], constraints: [], stories: [{ id: 's1', title: 't', userValue: 'v', acceptanceCriteria: [] }], openQuestions: [] },
 		citations: [],
@@ -277,7 +277,7 @@ const metaOf = (json: string): Record<string, unknown> =>
 	(JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> }).meta;
 
 test('t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside meta.approvedAt', () => {
-	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED });
+	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
 		const out = approveArtifactByJsonPath(s.json);
 		const m = metaOf(s.json);
@@ -291,7 +291,7 @@ test('t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside 
 
 test('t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase', () => {
 	for (const workflow of ['define', 'design.epic', 'amendment', 'build']) {
-		const s = seedGitArtifact({ workflow, epicHash: HASH, storyId: 's1', createdAt: CREATED });
+		const s = seedGitArtifact({ workflow, epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED });
 		try {
 			approveArtifactByJsonPath(s.json);
 			const m = metaOf(s.json);
@@ -302,7 +302,7 @@ test('t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp
 });
 
 test('t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT', () => {
-	const standalone = seedGitArtifact({ workflow: 'design.story', standalone: true, epicHash: HASH, storyId: 'S001', createdAt: CREATED });
+	const standalone = seedGitArtifact({ workflow: 'design.story', standalone: true, epicHash: HASH, storyId: 'S001', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
 		approveArtifactByJsonPath(standalone.json);
 		assert.match(String(metaOf(standalone.json)['rangeBase']), FULL_SHA,
@@ -311,7 +311,7 @@ test('t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-pla
 
 	// The epic route reaches build through a PLAN, which is where its base lives —
 	// stamping the LLD too would put a second, staler base on the same chain.
-	const epic = seedGitArtifact({ workflow: 'design.story', epicHash: HASH, storyId: 's4', createdAt: CREATED });
+	const epic = seedGitArtifact({ workflow: 'design.story', epicHash: HASH, storyId: 's4', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
 		approveArtifactByJsonPath(epic.json);
 		assert.ok(!('rangeBase' in metaOf(epic.json)), 'an epic-route LLD is NOT stamped — its PLAN is');
@@ -363,7 +363,7 @@ test('t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not reso
 // ---------------------------------------------------------------------------
 
 test('CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins', () => {
-	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED });
+	const s = seedGitArtifact({ workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED });
 	try {
 		approveArtifactByJsonPath(s.json);
 		const firstBase = metaOf(s.json)['rangeBase'];
@@ -390,7 +390,7 @@ test('CR-3: re-approving after the work has landed does NOT move rangeBase forwa
 test('CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once', () => {
 	const PRIOR = 'a'.repeat(40);
 	const s = seedGitArtifact({
-		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED,
+		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED,
 		rangeBase: PRIOR,
 	});
 	try {
@@ -403,7 +403,7 @@ test('CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved
 
 test('CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever', () => {
 	const s = seedGitArtifact({
-		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED,
+		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED,
 		rangeBase: '',
 	});
 	try {
@@ -415,7 +415,7 @@ test('CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real ba
 
 test('t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them', () => {
 	const s = seedGitArtifact({
-		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED,
+		workflow: 'plan', epicHash: HASH, storyId: 's1', createdAt: CREATED, epicCreatedAt: CREATED,
 		// Pre-existing rejection, which the approve path DELETES — the neighbouring
 		// behaviour that makes "does the spread keep my key?" worth pinning.
 		rejectedAt: '2026-01-01T00:00:00.000Z', rejectReason: 'an earlier rejection',

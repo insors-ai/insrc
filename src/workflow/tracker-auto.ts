@@ -34,7 +34,7 @@ import { renderDefineMarkdown, type DefineArtifact } from './artifacts/define.js
 import { renderHldMarkdown } from './artifacts/hld.js';
 import { renderLldMarkdown } from './artifacts/lld.js';
 import type { PlanArtifact, PlanTask } from './artifacts/plan.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactId, lldArtifactPaths, readEpicCreatedAt, writeAtomic } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPaths, lldArtifactId, lldArtifactPaths, resolveEpicAnchor, writeAtomic } from './storage.js';
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
 import { GhCommandError, ghAuthOk } from './tracker/github.js';
 import { createGithubTracker } from './tracker/github-adapter.js';
@@ -154,7 +154,7 @@ function legacyPushEpic(hldJsonPath: string): AutoPushResult {
 	// Define (the Epic-level aggregate the chain report + LLD flow read).
 	const now = new Date().toISOString();
 	// Epic docs — keyed on the Epic's define createdAt anchor (sc2), all 'epic'.
-	const anchor = readEpicCreatedAt(repoPath, epicHash) ?? now;
+	const anchor = resolveEpicAnchor(repoPath, epicHash) ?? now;
 	patchTrackerMeta(hldJsonPath, { epicRef, pushedAt: now, ...(created.length > 0 ? { labelsCreated: created } : {}) });
 	const definePaths = defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug);
 	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
@@ -231,7 +231,7 @@ function legacyPushStory(lldJsonPath: string): AutoPushResult {
 	// Persist: storyRef on the LLD (its doc link) + aggregate into the
 	// Define's storyRefs map. Re-render the LLD doc with the issue link.
 	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
-	const storyAnchor = readEpicCreatedAt(repoPath, epicHash) ?? new Date().toISOString();
+	const storyAnchor = resolveEpicAnchor(repoPath, epicHash) ?? new Date().toISOString();
 	relink(lldArtifactPaths(repoPath, epicHash, storyId, storyAnchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
 	patchTrackerMeta(artifactJsonPath(repoPath, defineArtifactId(epicHash)), { storyRefs: { ...(defineTracker?.storyRefs ?? {}), [storyId]: storyRef } });
 
@@ -452,7 +452,7 @@ function teamPushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps):
 	const epicRef = ensured.value.issue;
 
 	const now = new Date().toISOString();
-	const anchor = readEpicCreatedAt(repoPath, epicHash) ?? now;
+	const anchor = resolveEpicAnchor(repoPath, epicHash) ?? now;
 	patchTrackerMeta(hldJsonPath, { epicRef, pushedAt: now });
 	const definePaths = defineArtifactPaths(repoPath, epicHash, anchor, 'epic', epicSlug);
 	patchTrackerMeta(definePaths.json, { epicRef, pushedAt: now });
@@ -492,7 +492,7 @@ function teamPushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps)
 	const storyRef = ensured.value.issue;
 
 	patchTrackerMeta(lldJsonPath, { storyRef, pushedAt: new Date().toISOString() });
-	const anchor = readEpicCreatedAt(repoPath, epicHash) ?? new Date().toISOString();
+	const anchor = resolveEpicAnchor(repoPath, epicHash) ?? new Date().toISOString();
 	relink(lldArtifactPaths(repoPath, epicHash, storyId, anchor, 'epic', epicSlug).md, () => { const a = readLldArtifact(repoPath, epicHash, storyId); return withResolvedTail(a.meta, a.citations, renderLldMarkdown(a)); });
 
 	const ops = port.issueOps;

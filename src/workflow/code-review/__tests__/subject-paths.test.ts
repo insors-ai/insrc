@@ -69,7 +69,7 @@ test('b2e16601 — the label comes from the definition head, not from what the L
 		const lldCreated = '2026-10-02T09:29:49.864Z';
 		seedMeta(repo, `ISSUE-${HASH}`, { createdAt: ISSUE_CREATED, epicSlug: 'the-head-label', standalone: true });
 		seedMeta(repo, `LLD-${HASH}-${STORY}`, { createdAt: lldCreated, epicSlug: 'a-label-the-lld-coined', standalone: true });
-		const approvedLld = { meta: { epicSlug: 'a-label-the-lld-coined', createdAt: lldCreated, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'];
+		const approvedLld = { meta: { epicSlug: 'a-label-the-lld-coined', createdAt: lldCreated, epicCreatedAt: lldCreated, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'];
 
 		const md = crMd(subject(repo, { approvedLld }));
 		assert.ok(md.includes('/the-head-label-E'), md);
@@ -82,7 +82,7 @@ test('0855311b — an LLD-only Small story: the review lands beside the LLD', ()
 	withRepo((repo) => {
 		const lldCreated = '2026-10-04T05:42:33.978Z';
 		seedMeta(repo, `LLD-${HASH}-${STORY}`, { createdAt: lldCreated, epicSlug: 'lock-insrc-chat', standalone: true });
-		const approvedLld = { meta: { epicSlug: 'lock-insrc-chat', createdAt: lldCreated, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'];
+		const approvedLld = { meta: { epicSlug: 'lock-insrc-chat', createdAt: lldCreated, epicCreatedAt: lldCreated, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'];
 		assert.equal(
 			crMd(subject(repo, { approvedLld })),
 			join(repo, 'docs/standalone', `lock-insrc-chat-E20261004${HASH.slice(0, 8)}`, 'S001', 'CR.md'),

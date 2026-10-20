@@ -78,7 +78,7 @@ function writeArtifact(fx: Fx, id: string, doc: unknown): string {
  *  `tasks`. Committed, so the tree is clean. */
 function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>): void {
 	writeArtifact(fx, `DEF-${HASH}`, {
-		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'range-base', createdAt: CREATED_AT, approvedAt: CREATED_AT },
+		meta: { workflow: 'define', epicHash: HASH, epicSlug: 'range-base', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, approvedAt: CREATED_AT },
 		body: { problem: 'p', stories: Object.keys(stories).map(id => ({ id, title: `Story ${id}` })) },
 		citations: [],
 	});
@@ -86,7 +86,7 @@ function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>):
 		writeArtifact(fx, lldArtifactId(HASH, storyId), {
 			meta: {
 				workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1,
-				epicHash: HASH, epicSlug: 'range-base', storyId, createdAt: CREATED_AT,
+				epicHash: HASH, epicSlug: 'range-base', storyId, createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 				hldBaseRunId: 'hld-1', hldEffectiveHash: `basis-${storyId}`, hldAmendmentsApplied: [],
 				approvedAt: CREATED_AT,
 			},
@@ -95,7 +95,7 @@ function seedEpic(fx: Fx, stories: Readonly<Record<string, readonly string[]>>):
 		writeArtifact(fx, planArtifactId(HASH, storyId), {
 			meta: {
 				workflow: 'plan', runId: `plan-${storyId}`, schemaVersion: 1,
-				epicHash: HASH, epicSlug: 'range-base', storyId, createdAt: CREATED_AT,
+				epicHash: HASH, epicSlug: 'range-base', storyId, createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 				lldRunId: `lld-${storyId}`, lldEffectiveHash: `basis-${storyId}`,
 			},
 			body: {
@@ -349,7 +349,7 @@ function seedStandaloneLld(fx: Fx): void {
 	writeArtifact(fx, lldArtifactId(HASH, 's1'), {
 		meta: {
 			workflow: 'design.story', runId: 'lld-s1', schemaVersion: 1,
-			epicHash: HASH, epicSlug: 'range-base', storyId: 's1', createdAt: CREATED_AT,
+			epicHash: HASH, epicSlug: 'range-base', storyId: 's1', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT,
 			standalone: true, approvedAt: CREATED_AT,
 		},
 		body: { openQuestions: [] }, citations: [],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -111,3 +111,25 @@ Run at 2026-10-20T17:14:24.444Z on commit `3f3345c3`. Tests check: **passed**. 4
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 10 | 0.6 s |  |
+
+## t5
+
+Run at 2026-10-20T18:13:52.999Z on commit `0aa410a8`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` |
+
+**unit: src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review | `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review-pipeline/__tests__/code-review-gather.test.ts` | 0 | 12 | 0.7 s |  |

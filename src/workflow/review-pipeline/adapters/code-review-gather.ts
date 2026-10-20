@@ -29,6 +29,7 @@
 import type { LLMMessage, StructuredSchema } from '../../../shared/types.js';
 import type { DimensionFinding, DimensionResult, ReviewDimension } from '../../code-review/types.js';
 import { envelopeMessages, promptChars } from '../envelope.js';
+import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { EvidenceNote, ExecutionMode, GatherAnswer, GatherPlan, ReviewAtom, ReviewCall, ReviewMaterial, ReviewObligation } from '../types.js';
 import { chunkNotesFrom, type ChunkSpec } from './code-review-chunk.js';
 import { neighbourSummary } from './code-review-material.js';
@@ -79,19 +80,20 @@ const fileOfLocation = (location: string): string => {
 	return i >= 0 ? location.slice(0, i) : location;
 };
 
-/** A relation answer's problems: a finding located outside the two symbols' files, or naming a
- *  counterpart that is neither of them. Fixed-size reasons: made-up values are located, not quoted. */
+/** A relation answer's problems: a finding not located at the caller (the first symbol), or naming a
+ *  counterpart that is neither of the two. Fixed-size reasons: made-up values are located, not quoted. */
 function relationReasons(answer: unknown, call: ReviewCall, material: ReviewMaterial): string[] {
 	if (call.role !== 'relation') return [];
 	const pair = call.carries.atomIds.map(id => material.atoms.find(a => a.id === id)).filter((a): a is ReviewAtom => a !== undefined);
-	const files = new Set(pair.flatMap(a => a.file !== undefined ? [a.file] : []));
+	// A mismatch is located at the caller: relationCall's pair is [caller, callee].
+	const callerFile = pair[0]?.file;
 	const names = new Set(pair.flatMap(a => [a.id, a.label, (JSON.parse(a.text) as { name?: string }).name ?? a.id]));
 	const findings = (answer as { findings?: readonly { location?: string; counterpartRef?: string }[] }).findings ?? [];
-	const badLocations = findings.flatMap((f, i) => files.has(fileOfLocation(f.location ?? '')) ? [] : [`findings[${i}].location`]);
+	const badLocations = findings.flatMap((f, i) => fileOfLocation(f.location ?? '') === callerFile ? [] : [`findings[${i}].location`]);
 	const badCounterparts = findings.flatMap((f, i) => f.counterpartRef === undefined || names.has(f.counterpartRef.trim()) ? [] : [`findings[${i}].counterpartRef`]);
 	const listed = pair.map(a => a.label).join(' and ');
 	return [
-		...(badLocations.length > 0 ? [`${badLocations.length} findings are located outside the two symbols judged (first: ${badLocations[0]}); locate a mismatch at the caller, in ${[...files].map(f => JSON.stringify(f)).join(' or ')}`] : []),
+		...(badLocations.length > 0 ? [`${badLocations.length} findings are not located at the caller (first: ${badLocations[0]}); locate a mismatch at the caller, in ${JSON.stringify(callerFile ?? '')}`] : []),
 		...(badCounterparts.length > 0 ? [`${badCounterparts.length} findings name a counterpart that is not one of the two symbols judged (first: ${badCounterparts[0]}); name only ${listed}`] : []),
 	];
 }
@@ -190,7 +192,15 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		// After a refusal s1 passes a size below the refused call's, so both rows never fit it again.
 		const both = build([caller, callee], undefined);
 		if (sentChars(both.messages) <= (maxChars ?? args.limitChars)) return [both];
-		return [build([caller], callee), build([callee], caller)];
+		// One full row against the other's summary line, in each direction. A row that does not fit even so
+		// is never cut: it is named as too large, as s1 names an atom no call can hold.
+		const halves = [{ full: caller, call: build([caller], callee) }, { full: callee, call: build([callee], caller) }];
+		const budget = maxChars ?? args.limitChars;
+		for (const h of halves) {
+			const chars = sentChars(h.call.messages);
+			if (chars > budget) throw new AtomTooLargeError(`${h.full.label} (in the relation ${caller.label} calls ${callee.label})`, chars, budget);
+		}
+		return halves.map(h => h.call);
 	};
 	return {
 		obligationCall,

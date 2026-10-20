@@ -24,6 +24,7 @@ import { chunkNotesFrom, NOTES_CHUNK_SCHEMA } from '../adapters/code-review-chun
 import { NO_EVIDENCE, REDUCE_NOTE_SCHEMA } from '../adapters/code-review-gather.js';
 import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
 import { applyOutput, createReviewJob, nextCalls, ReviewCallFailedError } from '../job.js';
+import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { ReviewAdapter, ReviewCall, ReviewMaterial, ReviewPipelineJob } from '../types.js';
 
 const LLD_BODY = {
@@ -514,6 +515,8 @@ test('a relation call carries both full summaries when they fit, else full again
 		assert.ok(fromCaller!.includes(sig('id-placeOrder')) && !fromCaller!.includes(sig('id-fill')) && fromCaller!.includes(`- ${material.atoms && (adapter.neighbourSummary!(callee, material))}`));
 		assert.ok(fromCallee!.includes(sig('id-fill')) && !fromCallee!.includes(sig('id-placeOrder')) && fromCallee!.includes(`- ${adapter.neighbourSummary!(caller, material)}`));
 		for (const c of two) assert.ok(promptText(c.messages).length + 600 <= maxChars, 'each within the reported size, envelope included');
+		// A size no row fits even against the other's summary: named as too large, never cut.
+		assert.throws(() => relationCall([caller, callee], 4_000), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('src/order/order.ts#placeOrder'));
 		// When both do not fit the limit, the same two calls.
 		const tight = modelDimensionAdapter(spec(s), s, snap, 9_000) as unknown as ReviewAdapter<unknown>;
 		assert.equal(tight.gather!.relationCall!([caller, callee]).length, 2);
@@ -552,7 +555,9 @@ test('a relation answer naming a counterpart or location outside its two symbols
 		const outside = applyOutput(j, adapter, relation.callId, echo(relation, { findings: [{ ...mismatch, location: 'src/price/price.ts:1' }] }));
 		const again = outside.pending.find(c => c.attempt === 2)!;
 		assert.ok(again !== undefined && again.role === 'relation', `${kind}: re-issued`);
-		assert.match(again.prompt.messages[0]!.content as string, /1 findings are located outside the two symbols judged \(first: findings\[0\]\.location\)/);
+		assert.match(again.prompt.messages[0]!.content as string, /1 findings are not located at the caller \(first: findings\[0\]\.location\); locate a mismatch at the caller, in "src\/order\/order\.ts"/);
+		// A finding located at the callee, not the caller, is rejected too.
+		assert.deepEqual(adapter.gather!.validate!({ findings: [{ ...mismatch, location: 'src/basket/basket.ts:2' }] }, relation).length, 1, `${kind}: not at the callee`);
 		// A counterpart outside the two symbols on the re-issue: the review fails.
 		assert.throws(() => applyOutput(outside, adapter, again.callId, echo(again, { findings: [{ ...mismatch, counterpartRef: 'discount' }] })),
 			(e: unknown) => e instanceof ReviewCallFailedError && /invalid-answer/.test(e.message), kind);

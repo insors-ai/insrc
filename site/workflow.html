@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>workflow — insrc</title>
 <meta name="description" content="Drive a feature from brainstorm → define → design → plan → build → code-review: citation-grounded artifacts, an independent design review, human approval gates, a code-review-gated completion, hierarchical Epic/Story/Task IDs, and a native GitHub sub-issue tracker.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="icon" type="image/png" href="insrc-icon-128.png">
 <link rel="stylesheet" href="css/tui.css">
 </head>
 <body>
@@ -65,9 +65,16 @@
 
   <div class="note">DEF, HLD, and LLD each carry an <code>openQuestions</code> list on their body (see <code>src/workflow/artifacts/{define,hld,lld}.ts</code>). PLAN deliberately does not — by plan time every design decision is settled, so a plan is pure sequencing. SPEC, ISSUE, and CR carry none either — a spec records decisions, an issue records a defect, and a review records findings.</div>
 
+  <div class="tip"><strong>Drive workflows in-session.</strong> Use <code>insrc_workflow_step</code>
+    turn by turn and follow its returned next step. Retrieve exact inputs with <code>insrc_schema</code>
+    and the procedure with <code>insrc_guide</code>. Declare pending documents with <code>insrc_present</code>
+    before asking for approval, then call <code>insrc_workflow_approve</code> only after the user's explicit yes.
+    DEF, HLD, and LLD require independent review before approval; ISSUE, SPEC, and PLAN do not require
+    review unless requested. Stop after three review rounds and ask the user how to proceed.</div>
+
   <h2 id="brainstorm">Brainstorm — shape a rough idea first</h2>
-  <p>When the ask is a vague idea rather than a crisp spec, the <code>brainstorm</code> stage runs before triage. It is a <strong>single paused <code>elicit</code> turn</strong>: you conduct the whole clarify → fold → show-back → confirm convergence in chat — folding each answer into a running statement, showing it back, re-asking only the open gaps, and at every fork recording the ruled-out choice as a non-goal — then resume <em>once</em> with <code>confirmed: true</code> and no open items. The result is a <strong>SpecArtifact</strong> you review and approve like any other artifact; it then seeds <code>define</code> (for an epic) or a standalone <code>design.story</code> (for a feature), so the elicited decisions flow straight into the tracked chain instead of being lost in chat.</p>
-  <div class="note">Brainstorm is deliberately un-automated on the model side — <em>you</em> run the convergence, so the human stays in the loop on every fork. Drive it with <code>insrc_workflow_step</code> / <code>insrc_workflow_run</code> at <code>workflow: 'brainstorm'</code>; skip it entirely when the request is already a clear scoped spec.</div>
+  <p>When the ask is a vague idea rather than a crisp spec, the <code>brainstorm</code> stage runs before triage. It is a <strong>single paused <code>elicit</code> turn</strong>: you conduct the whole clarify → fold → show-back → confirm convergence in chat — folding each answer into a running statement, showing it back, re-asking only the open gaps, and at every fork recording the ruled-out choice as a non-goal — then resume <em>once</em> with <code>confirmed: true</code> and no open items. The result is a <strong>SpecArtifact</strong> you present for explicit approval; it then seeds <code>define</code> (for an epic) or a standalone <code>design.story</code> (for a feature), so the elicited decisions flow straight into the tracked chain instead of being lost in chat.</p>
+  <div class="note">Brainstorm is deliberately un-automated on the model side — <em>you</em> run the convergence, so the human stays in the loop on every fork. Drive it with <code>insrc_workflow_step</code> at <code>workflow: 'brainstorm'</code>; skip it entirely when the request is already a clear scoped spec.</div>
 
   <h2 id="bugfix">Bugfix triage — a defect fix, tracked</h2>
   <p>A defect fix is a <strong>first-class triage category</strong>, not just a small feature. When triage recognises a bugfix it sizes it by <em>magnitude</em> — <code>small</code> vs <code>sized</code> — and routes it through a dedicated <code>issue</code> stage before any code is written, so even a one-line fix leaves a cited, reviewable record attached to the code it corrects.</p>
@@ -111,10 +118,11 @@
   <p>The gate is hard, not advisory. Every downstream workflow refuses to run against an unapproved (or rejected) upstream artifact. You approve from the CLI:</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
-<pre><code><span class="p">$</span> insrc workflow approve docs/defines/DEF-&lt;h16&gt;.md   <span class="c"># unlocks design.epic</span></code></pre>
+<pre><code><span class="c"># After presenting the artifact and receiving explicit approval, call:</span>
+insrc_workflow_approve { artifactPath: "docs/defines/DEF-&lt;h16&gt;.md" }   <span class="c"># unlocks design.epic</span></code></pre>
   </div>
 
-  <div class="tip">On approval the tracker can auto-push and commit. Approving an HLD auto-creates the Epic issue; approving an LLD auto-creates the Story issue; approving a PLAN can push the Task issues. The artifact docs are committed and linked back from each issue. Repeat approves are idempotent — an existing ref is detected and the push is skipped. Pass <code>--no-tracker</code> to opt out for one call.</div>
+  <div class="tip">On approval the tracker can auto-push and commit. Approving an HLD auto-creates the Epic issue; approving an LLD auto-creates the Story issue; approving a PLAN can push the Task issues. The artifact docs are committed and linked back from each issue. Repeat approves are idempotent — an existing ref is detected and the push is skipped. Use the approval tool’s tracker option to opt out for one call; check <code>insrc_schema</code> for its exact input.</div>
 
   <h3 id="review">Independent review before approve</h3>
   <p>Before you approve a <em>design</em> artifact, a second pair of eyes checks it. <code>insrc_review_step</code> extracts the artifact's load-bearing premises and re-verifies each against the real source tree with deterministic probes (ripgrep re-derivations, <code>file:line</code> confirmations), then returns findings graded <span class="badge man">HIGH</span> / <span class="badge">MED</span> / <span class="badge new">LOW</span> with a <code>block</code> / <code>warn</code> / <code>pass</code> verdict. It is a genuine independent pass — not the model grading its own work — so it routinely catches a stale citation or an under-specified change the author missed. Resolve any HIGH/MED before approving; a <code>block</code> verdict withholds approval unless you pass an explicit override.</p>
@@ -170,15 +178,17 @@
 
   <p>The nesting is real GitHub sub-issue linkage via <code>ghLinkSubIssue</code>, not just a label convention. Alongside the issues, the tracker commits the artifact docs and links the committed blobs back from each issue, and can seed a <strong>GitHub Projects v2</strong> dashboard so you get Epic → Story → Task drill-down on a board. Issue-type names and Task pushing are configurable per repo via <code>src/workflow/config/github.ts</code> (<code>epicIssueType</code> / <code>storyIssueType</code> / <code>taskIssueType</code>, <code>pushTasks</code>, <code>useMilestones</code>); types fail open to untyped issues when the org lacks them.</p>
 
-  <p>Bootstrap the automatable GitHub setup once with:</p>
+  <p>In the TUI, press <kbd>:</kbd> and enter <code>tracker setup</code> (or <code>tracker setup --project</code> to create a Projects v2 board):</p>
   <div class="code">
     <div class="code-head"><span class="name">bash</span><button class="copy" type="button">copy</button></div>
-<pre><code><span class="p">$</span> insrc tracker setup <span class="c"># config + labels + issue types</span>
-<span class="p">$</span> insrc tracker setup --project   <span class="c"># also create a Projects v2 board</span></code></pre>
+<pre><code><span class="c"># In the TUI, press : and enter:</span>
+:tracker setup <span class="c"># config + labels + issue types</span>
+<span class="c"># In the TUI, press : and enter:</span>
+:tracker setup --project   <span class="c"># also create a Projects v2 board</span></code></pre>
   </div>
   <p><code>runTrackerSetup</code> (<code>src/workflow/tracker/setup.ts</code>) checks that <code>gh</code> is authenticated, verifies the OAuth scopes it needs (<code>admin:org</code> for issue types, <code>project</code> for the board), writes the resolved config, upserts the fixed tracker labels, ensures the Epic/Story issue types exist, and — behind <code>--project</code> — creates the board. Steps whose prerequisite is missing come back as <span class="badge man">manual</span> with the exact command to run, so nothing is done behind your back.</p>
 
-  <div class="warn">The tracker is opt-in even when your git origin points at GitHub. With no matching <code>~/.insrc/github.json</code> entry, <code>resolveGithubConfig</code> returns <code>{ type: 'none' }</code>, auto-push short-circuits, and the manual <code>tracker.*</code> workflows refuse with a clear message. You must explicitly enable it (via <code>insrc tracker setup</code> or by writing the config).</div>
+  <div class="warn">The tracker is opt-in even when your git origin points at GitHub. With no matching <code>~/.insrc/github.json</code> entry, <code>resolveGithubConfig</code> returns <code>{ type: 'none' }</code>, auto-push short-circuits, and the manual <code>tracker.*</code> workflows refuse with a clear message. You must explicitly enable it (via <code>:tracker setup</code> or by writing the config).</div>
 
   <h2 id="build">The build stage</h2>
   <p>Build is a controller-driven MCP tool, <code>insrc_build_step</code>, with two phases (<code>src/mcp/build-step/</code>):</p>
@@ -242,7 +252,8 @@
 <span class="fn">phase=step ×N   </span> <span class="c">→ epic.frame → stories.compose → checklist.verify</span>
 <span class="fn">phase=synthesize</span> <span class="o">→ docs/defines/DEF-3f9c…e2.md   meta.model: client</span>
 
-<span class="p">$</span> insrc workflow approve docs/defines/DEF-3f9c…e2.md
+<span class="c"># Present the artifact, review it, and obtain explicit approval, then call:</span>
+insrc_workflow_approve { artifactPath: "docs/defines/DEF-3f9c…e2.md" }
   <span class="o">approved</span> · design.epic unlocked</code></pre>
     </div>
   </div>
@@ -258,7 +269,7 @@
 
 <footer class="foot"><div class="foot-inner">
   <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
-  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">TypeScript · ESM · Node ≥22.13.0</span>
   <span class="seg">LMDB + Lance + DuckDB</span>
   <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
   <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>

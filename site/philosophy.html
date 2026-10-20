@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>philosophy — insrc</title>
 <meta name="description" content="The philosophy behind insrc: grounded understanding over guessing, structured development for large and long-lived codebases, an auditable trail from ask to design to code, and documentation that is generated from the live code graph so it cannot drift.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='13' font-family='monospace' fill='%234ade80'>▌</text></svg>">
+<link rel="icon" type="image/png" href="insrc-icon-128.png">
 <link rel="stylesheet" href="css/tui.css">
 </head>
 <body>
@@ -111,7 +111,7 @@
     <span class="panel-title">non-negotiable</span>
     <ul>
       <li><strong>Accuracy is primary; cost is the least priority.</strong> Given an accurate-but-expensive path and a cheap-but-lossy one, insrc chooses accuracy — more explorations, bigger context, a slower pipeline. No stage is skipped and no LLM call is parallelised to save turns.</li>
-      <li><strong>Local-first.</strong> Embeddings are computed locally by Ollama; the graph and vectors live on your disk under <code>~/.insrc/</code>. Your code is indexed on your machine.</li>
+      <li><strong>Local-first.</strong> Embeddings are computed locally by Ollama or ONNX; the graph and vectors live on your disk under <code>~/.insrc/</code>. Your code is indexed on your machine.</li>
       <li><strong>No direct cloud REST.</strong> Cloud LLM access happens only through your installed <code>claude</code> and <code>codex</code> CLI binaries — auth and quota stay with your own CLI OAuth sessions, and no API keys are stored.</li>
       <li><strong>No raw file dumps.</strong> Context is always structured entity summaries and relations from the graph, never a blind file paste.</li>
     </ul>
@@ -128,7 +128,7 @@
 
 <footer class="foot"><div class="foot-inner">
   <span class="seg"><span class="accent">insrc</span> · code-knowledge daemon</span>
-  <span class="seg">TypeScript · ESM · Node 20+</span>
+  <span class="seg">TypeScript · ESM · Node ≥22.13.0</span>
   <span class="seg">LMDB + Lance + DuckDB</span>
   <span class="seg"><a href="https://github.com/insors-ai/insrc">github</a></span>
   <span class="seg" style="margin-left:auto">local-first · no keys · no REST</span>

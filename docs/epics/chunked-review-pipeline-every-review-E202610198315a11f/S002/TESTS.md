@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -70,7 +70,7 @@ Run at 2026-10-20T13:33:35.019Z on commit `57ccc141`. Tests check: **passed**. 2
 
 ## t3
 
-Run at 2026-10-20T15:50:57.309Z on commit `d7f6fe19`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-20T16:06:55.434Z on commit `0d07c80a`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence'**
 
@@ -120,15 +120,21 @@ Run at 2026-10-20T15:50:57.309Z on commit `d7f6fe19`. Tests check: **passed**. 9
 | :--- | :--- | :--- |
 | pass | a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` |
 
-**integration: src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'**
+**integration: src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large'**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` |
+| pass | an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` |
+
+**integration: src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged | `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` | 0 | 8 | 0.7 s |  |
+| `src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts` | 0 | 9 | 0.7 s |  |
 | `src/workflow/review-pipeline/__tests__/code-review-material.test.ts` | 0 | 7 | 0.6 s |  |

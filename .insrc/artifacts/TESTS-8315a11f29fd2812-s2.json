@@ -4,7 +4,7 @@
     "epicHash": "8315a11f29fd2812",
     "storyId": "s2",
     "createdAt": "2026-10-20T13:26:20.493Z",
-    "updatedAt": "2026-10-20T15:50:57.309Z",
+    "updatedAt": "2026-10-20T16:06:55.434Z",
     "epicCreatedAt": "2026-10-19T04:32:14.895Z",
     "epicSlug": "chunked-review-pipeline-every-review"
   },
@@ -189,8 +189,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "d7f6fe19",
-        "ranAt": "2026-10-20T15:50:57.309Z",
+        "commit": "0d07c80a",
+        "ranAt": "2026-10-20T16:06:55.434Z",
         "testsPassed": true,
         "tests": [
           {
@@ -298,13 +298,26 @@
             "files": []
           },
           {
-            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'",
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large'",
             "level": "integration",
             "source": "mapping",
             "cases": [
               {
                 "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
-                "title": "an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large",
+                "title": "an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged",
                 "result": "pass"
               }
             ],
@@ -316,7 +329,7 @@
             "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 686,
+            "durationMs": 726,
             "titles": [
               {
                 "title": "over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory",
@@ -347,7 +360,11 @@
                 "result": "pass"
               },
               {
-                "title": "an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large",
+                "title": "an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large",
+                "result": "pass"
+              },
+              {
+                "title": "a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged",
                 "result": "pass"
               }
             ],
@@ -357,7 +374,7 @@
             "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 565,
+            "durationMs": 559,
             "titles": [
               {
                 "title": "each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON",

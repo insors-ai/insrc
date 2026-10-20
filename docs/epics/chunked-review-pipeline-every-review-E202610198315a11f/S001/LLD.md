@@ -400,15 +400,17 @@ validate?(answer: unknown, call: ReviewCall): readonly string[]
 ```
 
 **Parameters:**
-- `deadlineAt: number` — Absolute expiry (epoch ms), set once at prepare as the start time plus today's limit (opts.deadlineMs, else reviewDeadlineMs, capped at HARD_REVIEW_DEADLINE_MS).
+- `deadlineAt: number` — Absolute expiry (epoch ms), set once at prepare. For a single-session review: start plus today's limit (opts.deadlineMs, else reviewDeadlineMs), capped at HARD_REVIEW_DEADLINE_MS, exactly as today. For a divided review with N planned reviewer-session calls: start plus N times that per-session limit. The 30-minute HARD_REVIEW_DEADLINE_MS cap then applies to each session, not to the whole review (decision 2026-10-20).
 
-**Returns:** `number` — Each session call, the re-issue included, is sent with deadlineMs = deadlineAt - now. A re-issue never restarts the clock.
+**Returns:** `number` — Each session call, re-issue included, is sent with deadlineMs = min(deadlineAt - now, the per-session limit capped at HARD_REVIEW_DEADLINE_MS). A re-issue never restarts the job clock, and no single session runs longer than 30 minutes.
 
 **Errors:**
 - `ReviewSessionTimeoutError` when deadlineAt has passed: no further call is issued, and the review fails with today's time-limit message, never retried.
 
 **Postconditions:**
-- The whole template review, retries included, keeps today's single limit.
+- A single-session template review keeps today's single limit, retries included.
+- A divided template review's budget grows with its planned session count, so a long document is not cut short by one review-wide 30-minute cap; each session stays within 30 minutes.
+- A refusal that re-divides a session into more sessions does not extend deadlineAt; the remaining budget is shared.
 
 ### 2.21 `ReviewAdapter.neighbourSummary`
 
@@ -683,7 +685,7 @@ Nothing delivered moves.
 
 ### ✅ Review `PASS` — design.story (design.story)
 
-**0 do not hold · 0 could not be verified · 11 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-19T10:36:50.532Z
+**0 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-20T07:05:35.290Z
 
 Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
 

@@ -457,6 +457,22 @@ relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom], maxChars?: number) => 
 - Each relation in crossRelations is offered to relationCall exactly once per job.
 - Refusal (amended 2026-10-20 after review): a relation call refused for its size is asked again with maxChars = the reported size (else half the refused prompt); the calls returned replace the refused one and the relation is judged when all its calls are answered. A returned call that still exceeds maxChars names the relation (AtomTooLargeError); the refused prompt is never resent.
 
+### 2.23 `AdapterStage.countAs`
+
+```typescript
+countAs?: 'chunk' | 'relation' | undefined
+```
+
+**Returns:** `'chunk' | 'relation'` — The pipelineCalls role a divided review counts this stage's per-chunk calls under. Absent: 'chunk'.
+
+**Preconditions:**
+- Optional member of sc2's AdapterStage, owned by s1 (amended 2026-10-20 at Story s3's plan, by the stakeholder's decision). Read only for a model stage's chunk calls in a divided review; a single call is never counted in pipelineCalls.
+
+**Postconditions:**
+- Every call issued for the stage's chunks, including its re-issue under a new callId and the calls a size refusal re-divides it into, adds one to pipelineCalls[countAs ?? 'chunk'].
+- Counting only: the call's role stays 'chunk', so its retry, refusal re-division, carries and validation are unchanged.
+- Story s3 sets 'relation' on quality's compare and pair stages, which check symbols across chunks, so pipelineCalls.relation counts them beside the gather's relation calls, as s3's LLD data-model note says.
+
 ## 3. Data model changes
 
 ### 3.1 `config review.chunkTokens` — new

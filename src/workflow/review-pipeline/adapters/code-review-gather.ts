@@ -121,6 +121,18 @@ function relationReasons(answer: unknown, call: ReviewCall, material: ReviewMate
 	];
 }
 
+/** Every finding of a gather call is located at `file:line`, as today's single call locates it: never at
+ *  an evidence note id, which a reader cannot open (merge does not rewrite locations). Fixed-size reason. */
+function locationReasons(answer: unknown, call: ReviewCall): string[] {
+	if (call.role !== 'obligation' && call.role !== 'relation') return [];
+	const noteIds = new Set(call.carries.noteIds);
+	const bad = ((answer as { findings?: readonly { location?: string }[] }).findings ?? []).flatMap((f, i) => {
+		const m = /^(\S+):(\d+)(?::\d+)?$/.exec((f.location ?? '').trim());
+		return m !== null && !noteIds.has(m[1]!) ? [] : [`findings[${i}].location`];
+	});
+	return bad.length > 0 ? [`${bad.length} findings are not located at \`file:line\` in the code (first: ${bad[0]}); locate each at a file and line of a symbol the notes name, never at an evidence note id`] : [];
+}
+
 /** A promised test's judgement may report only promised-test findings: symbol coverage is
  *  graded in the chunks that hold the symbols, never at gather (and not at all with zero atoms). */
 function obligationReasons(answer: unknown, call: ReviewCall, material: ReviewMaterial): string[] {
@@ -150,7 +162,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 			chunk.obligationFraming ?? chunk.framing,
 			'This review was DIVIDED into chunks. You judge ONE obligation, once, on the evidence notes every chunk wrote about it and on its own context below. The notes are the whole evidence: a part of the change no note mentions did not bear on this obligation.',
 			chunk.judge ?? '',
-			`${refRule(ref)}, and is located at \`file:line\` in one of the Story's changed files (prefer the file of a symbol the notes name).`,
+			`${refRule(ref)}, and is located at \`file:line\` in one of the Story's changed files (prefer the file of a symbol the notes name), never at an evidence note id.`,
 			'If the obligation is met, return an EMPTY findings array. Never manufacture findings.',
 		].filter(s => s.length > 0).join('\n');
 		const user = [
@@ -230,7 +242,7 @@ export function codeReviewGather(args: CodeReviewGatherArgs): GatherPlan<Dimensi
 		reduceCall,
 		noteCapChars: Math.floor(args.limitChars / 4),
 		notesFrom: chunkNotesFrom,
-		validate: (answer, call) => [...obligationReasons(answer, call, args.material()), ...relationReasons(answer, call, args.material())],
+		validate: (answer, call) => [...locationReasons(answer, call), ...obligationReasons(answer, call, args.material()), ...relationReasons(answer, call, args.material())],
 		...(chunk.relation !== undefined ? { relationCall } : {}),
 		partOf: (g: GatherAnswer): DimensionResult => ({
 			dimension,

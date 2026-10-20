@@ -773,12 +773,35 @@ test('pipelineCalls counts chunk, obligation, relation and merge calls and is ab
 	assert.equal((result(job) as { pipelineCalls?: unknown }).pipelineCalls, undefined);
 });
 
-test('merge keeps identical findings once, expands note ids to atoms, moves out-of-set findings to outOfScope, and normalises coverage once', () => {
+test('merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once', () => {
 	// Identical findings from two obligations are kept once, in stage order after the chunk findings.
 	const same = { severity: 'MED', location: 'src/order/order.ts:4', message: 'placeOrder departs from the contract', expectationRef: 'LLD contract 1: placeOrder' };
 	const adherence = divided(adherenceSpec, 'controller', call => call.role === 'chunk' ? { notes: [] } : call.carries.key === 'lld:contract:1' || call.carries.key === 'plan:t1' ? { findings: [same] } : call.carries.key === 'lld:edge:1' ? { findings: [{ ...same, location: 'src/price/price.ts:1' }] } : { findings: [] }).result;
 	assert.deepEqual(adherence.findings.map(f => f.location), ['src/order/order.ts:4'], 'once');
 	assert.deepEqual(adherence.outOfScope?.map(f => f.location), ['src/price/price.ts:1'], 'out of set: outOfScope on the controller path');
+
+	// A finding located at an evidence note id (with or without a line) is re-asked, then fails the review;
+	// merge never rewrites a location.
+	{
+		const { job, adapter } = dividedJob(adherenceSpec);
+		let j = job;
+		let judged: ReviewCall | undefined;
+		for (let guard = 0; judged === undefined; guard++) {
+			assert.ok(guard < 100);
+			const call = nextCalls(j, adapter)[0]!;
+			if (call.role === 'obligation' && call.carries.noteIds.length > 0) { judged = call; break; }
+			j = applyOutput(j, adapter, call.callId, echo(call, call.role === 'chunk' ? { notes: [{ key: 'lld:contract:1', atomIds: [call.carries.atomIds[0]!], note: 'placeOrder realises it' }] } : { findings: [] }));
+		}
+		const noteId = judged.carries.noteIds[0]!;
+		assert.ok(userOf(judged).includes(`"noteId": "${noteId}"`), 'the call shows the note by id');
+		const atNote = { ...same, location: noteId };
+		const next = applyOutput(j, adapter, judged.callId, echo(judged, { findings: [atNote] }));
+		const again = next.pending.find(c => c.attempt === 2)!;
+		assert.ok(again !== undefined && again.carries.key === judged.carries.key, 're-asked');
+		assert.match(again.prompt.messages[0]!.content as string, /1 findings are not located at `file:line` in the code \(first: findings\[0\]\.location\)/);
+		assert.throws(() => applyOutput(next, adapter, again.callId, echo(again, { findings: [{ ...same, location: `${noteId}:1` }] })), (e: unknown) => e instanceof ReviewCallFailedError);
+		assert.deepEqual(adapter.gather!.validate!({ findings: [same] }, judged), [], 'a file:line location is accepted');
+	}
 
 	// Coverage: normalised once over the merged result, chunk and gather findings together.
 	const unreached = { severity: 'HIGH', location: 'src/order/order.ts:1', message: 'placeOrder is not exercised', findingKind: 'symbol-coverage', symbolId: 'id-placeOrder', confidence: 'breach' };

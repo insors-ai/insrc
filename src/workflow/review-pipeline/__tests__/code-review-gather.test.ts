@@ -26,7 +26,7 @@ import { chunkNotesFrom, NOTES_CHUNK_SCHEMA } from '../adapters/code-review-chun
 import { NO_EVIDENCE, REDUCE_NOTE_SCHEMA } from '../adapters/code-review-gather.js';
 import { ADHERENCE_LLD_EXCLUDED, ADHERENCE_LLD_SECTIONS } from '../adapters/code-review-obligations.js';
 import { codeReviewSnapshot, modelDimensionAdapter, type ModelDimensionSpec } from '../code-review.js';
-import { applyOutput, createReviewJob, nextCalls, result, ReviewCallFailedError } from '../job.js';
+import { applyFailure, applyOutput, createReviewJob, nextCalls, result, ReviewCallFailedError } from '../job.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import { envelopeMessages, promptChars } from '../envelope.js';
 import type { ReviewAdapter, ReviewCall, ReviewMaterial, ReviewPipelineJob } from '../types.js';
@@ -838,4 +838,64 @@ test('merge keeps identical findings once, accepts only file:line locations (a n
 	const dup = { severity: 'MED', location: 'src/order/cancel.ts:1', message: 'cancelOrder duplicates fill', counterpartRef: 'fill', confidence: 'breach' };
 	const quality = divided(qualitySpec, 'daemon', qualityReviewer(c => { const [f, sec] = listsOf(c); return f.includes('id-cancelOrder') && sec.includes('id-fill') ? [{ a: 'id-cancelOrder', b: 'id-fill', why: 'same' }] : f.includes('id-fill') && sec.includes('id-cancelOrder') ? [{ a: 'id-fill', b: 'id-cancelOrder', why: 'same' }] : []; }, () => ({ findings: [dup] }))).result;
 	assert.deepEqual(quality.findings.map(f => [f.location, (f as { counterpartRef?: string }).counterpartRef]), [['src/order/cancel.ts:1', 'fill']]);
+});
+
+test('a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair\'s two halves; a refused half names its row', () => {
+	const { job, adapter } = dividedJob(qualitySpec);
+	const pairsOf = (calls: readonly ReviewCall[]) => calls.flatMap(c => { const [f, sec] = listsOf(c); return f.flatMap(a => sec.map(b => `${a}|${b}`)); }).sort();
+	const review = qualityReviewer(c => { const [f, sec] = listsOf(c); return f.includes('id-cancelOrder') && sec.includes('id-discount') ? [{ a: 'id-cancelOrder', b: 'id-discount', why: 'same' }] : []; });
+	let j = job;
+	let compareDone = false;
+	for (let guard = 0; guard < 300; guard++) {
+		const call = nextCalls(j, adapter)[0]!;
+		if (call.stage === 'compare' && !compareDone) {
+			compareDone = true;
+			// The call declares the symbols of both its lists.
+			const [f, sec] = listsOf(call);
+			assert.deepEqual([...call.carries.atomIds].sort(), [...f, ...sec].sort());
+			// A provider refuses it below the configured limit: re-packed into smaller batches, each within the refused size.
+			const maxChars = Math.floor(call.chars * 0.6);
+			const next = applyFailure(j, adapter, call.callId, 'size-refusal', maxChars);
+			const replacements = next.pending.filter(c => c.stage === 'compare' && !j.pending.some(p => p.callId === c.callId));
+			assert.ok(replacements.length >= 2, 'smaller batches');
+			for (const r of replacements) {
+				assert.ok(r.chars <= maxChars, `a replacement of ${r.chars} within ${maxChars}`);
+				assert.notEqual(promptText(r.messages), promptText(call.messages), 'never resent');
+			}
+			assert.deepEqual(pairsOf(replacements), pairsOf([call]), 'the same pairs of symbols, still each compared once');
+			j = next;
+			continue;
+		}
+		if (call.stage === 'pair') {
+			assert.deepEqual([...call.carries.atomIds].sort(), ['id-cancelOrder', 'id-discount'], 'the pair call declares its two symbols');
+			assert.ok(!call.carries.key!.includes('|half:'), 'both rows fit the configured limit');
+			// Refused below that: its two halves, each within the refused size.
+			// Between a half (one row and a description line) and the call with both rows.
+			const maxChars = call.chars - 400;
+			const next = applyFailure(j, adapter, call.callId, 'size-refusal', maxChars);
+			const halves = next.pending.filter(c => c.stage === 'pair');
+			assert.equal(halves.length, 2);
+			assert.deepEqual(halves.map(h => /\|half:(.+)$/.exec(h.carries.key!)![1]).sort(), ['id-cancelOrder', 'id-discount']);
+			for (const h of halves) {
+				assert.ok(h.chars <= maxChars, `a half of ${h.chars} within ${maxChars}`);
+				assert.deepEqual([...h.carries.atomIds].sort(), ['id-cancelOrder', 'id-discount']);
+			}
+			// A half refused again has no smaller form: its own full row is named as too large, never cut or
+			// resent, even when the other half would not fit the refused size either.
+			const smallest = Math.min(...halves.map(h => h.chars)) - 10;
+			for (const half of halves) {
+				const full = /\|half:(.+)$/.exec(half.carries.key!)![1]!;
+				const label = full === 'id-cancelOrder' ? 'src/order/cancel.ts#cancelOrder' : 'src/price/discount.ts#discount';
+				const other = full === 'id-cancelOrder' ? 'src/price/discount.ts#discount (in' : 'src/order/cancel.ts#cancelOrder (in';
+				assert.throws(() => applyFailure(next, adapter, half.callId, 'size-refusal', smallest),
+					(e: unknown) => e instanceof AtomTooLargeError && e.message.includes(`${label} (in the duplicate check`) && !e.message.startsWith(`review: ${other}`), label);
+			}
+			// Refused below even a half's size: the row that cannot fit is named by the stage, not the call.
+			assert.throws(() => applyFailure(j, adapter, call.callId, 'size-refusal', smallest),
+				(e: unknown) => e instanceof AtomTooLargeError && /#(cancelOrder|discount) \(in the duplicate check/.test(e.message));
+			return;
+		}
+		j = applyOutput(j, adapter, call.callId, echo(call, review(call)));
+	}
+	assert.fail('no pair call was reached');
 });

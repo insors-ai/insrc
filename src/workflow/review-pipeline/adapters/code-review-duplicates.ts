@@ -21,6 +21,11 @@
  *            quality findings, a duplication naming the other symbol in
  *            counterpartRef. A row that cannot fit even so is named, never cut.
  *
+ * Every call declares the symbols it carries (s1's ChunkPrompt.carries), and each stage re-divides
+ * its own refused calls (s1's AdapterStage.redivide): a refused compare call is re-packed into
+ * smaller batches within the refused size; a refused pair call carrying both rows is replaced by
+ * its two halves; a refused half has no smaller form and names its row as too large.
+ *
  * Under the limit the review is one call: neither stage makes a call.
  */
 
@@ -89,14 +94,32 @@ function compareCall(first: readonly Described[], second: readonly Described[], 
 		'## Output',
 		'Return { "candidates": [ { "a": "<atomId from the first list>", "b": "<atomId from the second list>", "why": "..." } ] }.',
 	].join('\n');
-	return { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: COMPARE_SCHEMA, execution };
+	return {
+		messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: COMPARE_SCHEMA, execution,
+		carries: { atomIds: [...first, ...second].map(d => d.atomId) },
+	};
+}
+
+/** Every pair of batches of `first` and `second`, each batch within half of what `budget` leaves beside the framing. */
+function compareCalls(first: readonly Described[], second: readonly Described[], budget: number, execution: ExecutionMode): ChunkPrompt[] {
+	const overhead = sentChars(compareCall([], [], execution).messages);
+	const half = Math.floor((budget - overhead) / 2);
+	const size = (batch: readonly Described[]): number => JSON.stringify(batch, null, 2).length;
+	const firsts = packIntoBatches(first, size, half, d => d.symbol);
+	const seconds = packIntoBatches(second, size, half, d => d.symbol);
+	return firsts.flatMap(a => seconds.map(b => compareCall(a, b, execution)));
 }
 
 /** The two lists a compare call carried, read back from its own prompt. */
-function compareLists(call: ReviewCall): { first: Set<string>; second: Set<string> } {
+function compareDescribed(call: ReviewCall): { first: Described[]; second: Described[] } {
 	const user = call.prompt.messages[1]?.content;
 	const blocks = typeof user === 'string' ? [...user.matchAll(/```json\n([\s\S]*?)\n```/g)].map(m => JSON.parse(m[1]!) as Described[]) : [];
-	return { first: new Set((blocks[0] ?? []).map(d => d.atomId)), second: new Set((blocks[1] ?? []).map(d => d.atomId)) };
+	return { first: blocks[0] ?? [], second: blocks[1] ?? [] };
+}
+
+function compareLists(call: ReviewCall): { first: Set<string>; second: Set<string> } {
+	const { first, second } = compareDescribed(call);
+	return { first: new Set(first.map(d => d.atomId)), second: new Set(second.map(d => d.atomId)) };
 }
 
 export function compareStage(args: DuplicateStagesArgs): AdapterStage {
@@ -114,12 +137,12 @@ export function compareStage(args: DuplicateStagesArgs): AdapterStage {
 			// Every symbol of a later chunk: each pair of chunks is compared once.
 			const second = [...described.values()].filter(x => order(x.owner) > order(mine)).sort((p, q) => order(p.owner) - order(q.owner)).map(x => x.d);
 			if (first.length === 0 || second.length === 0) return [];
-			const overhead = sentChars(compareCall([], [], args.execution).messages);
-			const half = Math.floor((args.limitChars - overhead) / 2);
-			const size = (batch: readonly Described[]): number => JSON.stringify(batch, null, 2).length;
-			const firsts = packIntoBatches(first, size, half, d => d.symbol);
-			const seconds = packIntoBatches(second, size, half, d => d.symbol);
-			return firsts.flatMap(a => seconds.map(b => compareCall(a, b, args.execution)));
+			return compareCalls(first, second, args.limitChars, args.execution);
+		},
+		// Refused: the same two lists, re-packed into smaller batches within the refused size.
+		redivide: (call: ReviewCall, maxChars: number) => {
+			const { first, second } = compareDescribed(call);
+			return compareCalls(first, second, maxChars, args.execution);
 		},
 		validate: (answer: unknown, call: ReviewCall) => {
 			if (call.role !== 'chunk') return [];
@@ -131,11 +154,13 @@ export function compareStage(args: DuplicateStagesArgs): AdapterStage {
 	};
 }
 
-/** The pair a pair call judges, from its key. */
+/** The pair a pair call judges, from its key: `pair:<a>|<b>`, or `pair:<a>|<b>|half:<full>` for a
+ *  call that holds one row in full and the other's description. */
 const pairOf = (key: string | undefined): readonly [string, string] | undefined => {
-	const m = /^pair:(.+)\|(.+)$/.exec(key ?? '');
+	const m = /^pair:([^|]+)\|([^|]+)(?:\|half:[^|]+)?$/.exec(key ?? '');
 	return m === null ? undefined : [m[1]!, m[2]!];
 };
+const isHalf = (key: string | undefined): boolean => /\|half:[^|]+$/.test(key ?? '');
 
 export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 	const build = (full: readonly ReviewAtom[], described: { atom: ReviewAtom; description: string } | undefined, pair: readonly [ReviewAtom, ReviewAtom]): ChunkPrompt => {
@@ -151,8 +176,21 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 			'## Output',
 			'Return { "findings": [ { "severity": "HIGH|MED|LOW", "location": "file:line", "message": "...", "counterpartRef": "the other symbol", "confidence": "breach|observation" } ] }, or { "findings": [] }.',
 		].join('\n');
-		return { messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: args.schema, execution: args.execution, key: `pair:${a.id}|${b.id}` };
+		return {
+			messages: [{ role: 'system', content: system }, { role: 'user', content: user }], schema: args.schema, execution: args.execution,
+			key: `pair:${a.id}|${b.id}${described !== undefined ? `|half:${full[0]!.id}` : ''}`,
+			carries: { atomIds: [a.id, b.id] },
+		};
 	};
+	/** One full row against the other's description, in each direction, each within `budget`; a row
+	 *  that cannot fit even so is named, never cut. */
+	const halves = (a: ReviewAtom, b: ReviewAtom, budget: number, describe: (x: ReviewAtom) => string): ChunkPrompt[] =>
+		([[a, b], [b, a]] as const).map(([full, other]) => {
+			const half = build([full], { atom: other, description: describe(other) }, [a, b]);
+			const chars = sentChars(half.messages);
+			if (chars > budget) throw new AtomTooLargeError(`${full.label} (in the duplicate check of ${a.label} and ${b.label})`, chars, budget);
+			return half;
+		});
 	return {
 		id: 'pair', kind: 'model', after: ['compare'], onCallFailure: 'fail-review', countAs: 'relation',
 		singleCalls: () => [],
@@ -170,16 +208,24 @@ export function pairStage(args: DuplicateStagesArgs): AdapterStage {
 					if (a === undefined || b === undefined) continue;
 					const both = build([a, b], undefined, [a, b]);
 					if (sentChars(both.messages) <= args.limitChars) { calls.push(both); continue; }
-					// One full row against the other's description, in each direction; a row that cannot fit is named.
-					for (const [full, other] of [[a, b], [b, a]] as const) {
-						const half = build([full], { atom: other, description: described.get(other.id)?.d.description ?? other.label }, [a, b]);
-						const chars = sentChars(half.messages);
-						if (chars > args.limitChars) throw new AtomTooLargeError(`${full.label} (in the duplicate check of ${a.label} and ${b.label})`, chars, args.limitChars);
-						calls.push(half);
-					}
+					calls.push(...halves(a, b, args.limitChars, x => described.get(x.id)?.d.description ?? x.label));
 				}
 			}
 			return calls;
+		},
+		// Refused: a call holding both rows becomes its two halves within the refused size; a half has no
+		// smaller form, so its full row is named as too large.
+		redivide: (call: ReviewCall, maxChars: number, prior: StageOutputs) => {
+			const ids = pairOf(call.carries.key);
+			const material = args.material();
+			const a = material.atoms.find(x => x.id === ids?.[0]), b = material.atoms.find(x => x.id === ids?.[1]);
+			if (a === undefined || b === undefined) throw new Error(`code review quality: the refused pair call names no known pair (${call.carries.key ?? ''})`);
+			if (isHalf(call.carries.key)) {
+				const full = /\|half:([^|]+)$/.exec(call.carries.key!)![1]!;
+				throw new AtomTooLargeError(`${(full === a.id ? a : b).label} (in the duplicate check of ${a.label} and ${b.label})`, call.chars, maxChars);
+			}
+			const described = descriptionsOf(prior, args.chunkStage, material);
+			return halves(a, b, maxChars, x => described.get(x.id)?.d.description ?? x.label);
 		},
 		validate: (answer: unknown, call: ReviewCall) => {
 			if (call.role !== 'chunk') return [];

@@ -546,7 +546,7 @@ function lowestOrdinalLldId(repoPath: string, epicHash: string): string | undefi
  *  LLD heads a work item: the docs migrator sorts with it too, so the migrated
  *  folder and the runtime head can never disagree. */
 export function compareStoryOrdinal(a: string, b: string): number {
-	// The canonical parse (id.ts), so `s1`, `S1` and `S001` are one ordinal here
+	// The canonical parse (id.ts), so the stored spellings of one story are one ordinal here
 	// exactly as in a hierarchical id. An id it rejects sorts last.
 	const ordinal = (id: string): number => {
 		try { return storyIdToOrdinal(id); } catch { return Number.MAX_SAFE_INTEGER; }

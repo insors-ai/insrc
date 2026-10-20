@@ -13,8 +13,8 @@
  *
  *   - tracker issue : `#9`, `9`, or `owner/repo#9`  (globally unique)
  *   - structural    : `s1/t3` (task) or `s1` (story) — needs epic scope
- *   - hierarchical  : canonical `E<…>:S001:T003` or slug
- *                     `E<…>-S001-T003` (any level; see `workflow/id.ts`)
+ *   - hierarchical  : canonical `E<…>:S<nnn>:T<nnn>` or slug
+ *                     `E<…>-S<nnn>-T<nnn>` (any level; see `workflow/id.ts`)
  *
  * Disambiguation:
  *

@@ -225,13 +225,18 @@ test('paths over a WorkItemKey equal the paths built before and a story-scoped k
 	assert.throws(() => folderSegment({ epicHash: 'NOTHEX', epicCreatedAt: CREATED }), InvalidArtifactKeyError);
 });
 
-test('two artifacts of one Epic written on different days land in the same folder', () => {
-	// every artifact of the Epic carries the Epic's anchor time, not its own write time
-	const anchor = '2026-07-17T23:59:59.000Z';
+test('two artifacts of one Epic written on different days land in the same folder', (t) => {
+	// A controllable clock: the HLD is written on one day and the BUILD three days later. Both paths are
+	// built from the Epic's anchor, so the clock must not reach the folder.
+	t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-07-17T23:59:59.000Z').getTime() });
+	const anchor = '2026-07-17T07:42:28.275Z';
 	const hld = resolveArtifactMdPath('/repo', { epicHash: HASH, epicCreatedAt: anchor }, 'HLD', 'epic', SLUG);
+	t.mock.timers.setTime(new Date('2026-07-20T00:00:01.000Z').getTime());
+	assert.equal(new Date().toISOString().slice(0, 10), '2026-07-20', 'the clock moved to another day');
 	const build = resolveArtifactMdPath('/repo', { epicHash: HASH, epicCreatedAt: anchor, story: 's1' }, 'BUILD', 'epic', SLUG);
 	assert.equal(dirname(build), join(dirname(hld), 'S001'));
-	assert.equal(folderSegment({ epicHash: HASH, epicCreatedAt: anchor }), folderSegment({ epicHash: HASH, epicCreatedAt: '2026-07-17T00:00:00.000Z' }));
-	// a different anchor day is a different folder
-	assert.notEqual(folderSegment({ epicHash: HASH, epicCreatedAt: anchor }), folderSegment({ epicHash: HASH, epicCreatedAt: '2026-07-18T00:00:00.000Z' }));
+	assert.equal(folderSegment({ epicHash: HASH, epicCreatedAt: anchor }), EPIC_SEGMENT);
+	// the same anchor at another time of day is the same segment; a different anchor day is a different one
+	assert.equal(folderSegment({ epicHash: HASH, epicCreatedAt: '2026-07-17T00:00:00.000Z' }), EPIC_SEGMENT);
+	assert.notEqual(folderSegment({ epicHash: HASH, epicCreatedAt: '2026-07-18T00:00:00.000Z' }), EPIC_SEGMENT);
 });

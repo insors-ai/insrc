@@ -565,7 +565,7 @@ function stampsRangeBase(meta: ApprovableArtifactMeta): boolean {
  * HEAD as a FULL 40-hex sha, or `undefined` when it cannot be read.
  *
  * Uses the synchronous `execFileSync` idiom already present in this directory
- * (tracker/github.ts) because the approval path is
+ * (migrate-docs-tree.ts, tracker/github.ts) because the approval path is
  * synchronous. Deliberately NOT `revParse` from the git builtins: that helper
  * hard-codes `--short`, and an abbreviated sha in a PERSISTED range base can
  * collide as history grows — a base that silently resolves to the wrong commit is

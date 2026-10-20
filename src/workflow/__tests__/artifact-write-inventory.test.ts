@@ -61,6 +61,7 @@ test('every writer file is inventoried, annotated and classified as the design s
 	]) assert.equal(classOf(f), 'content', f);
 	for (const f of ['src/workflow/gates.ts', 'src/workflow/review/resolve.ts', 'src/workflow/review/run-artifact.ts', 'src/daemon/steps/review-step/phases/verdicts.ts']) assert.equal(classOf(f), 'mixed', f);
 	assert.equal(classOf('src/workflow/amendments/store.ts'), 'record');
+	assert.equal(classOf('src/workflow/migrate-docs-tree.ts'), 'migration');
 	// feedback is human provenance: appending it never mints a revision
 	assert.equal(classOf('src/workflow/artifacts/provenance/writer.ts'), 'meta-only');
 

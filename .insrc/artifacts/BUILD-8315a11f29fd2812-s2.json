@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s2",
+    "createdAt": "2026-10-20T13:26:20.493Z",
+    "updatedAt": "2026-10-20T13:44:16.305Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": false
+      }
+    ],
+    "summary": "s2/t3: each model dimension's adapter (src/workflow/review-pipeline/code-review.ts) returns codeReviewMaterial of its prepared grounding from the snapshot (coverage via the new optional ModelDimensionSpec.materialGrounding = prepareCoverageGrounding; the others the grounding itself) and uses neighbourSummary. ux and diagram stay deterministic with no chunk calls, so they keep no material. Under the limit nothing changes (single chunk, today's prompt). The chunking tests drive s1's prepare with the real adapter and a chunk-call fixture rendering rows as a JSON array plus context and neighbour lines (s3 owns the real chunk prompts): precedence (calls > same-file > same-module), neighbour lines on both sides of a cut call, whole atoms once, every call within the limit, too-large atoms named neighbour-free, a hub packed despite many neighbour lines; plus the coverage material unit test. Until s3, a real over-limit review still refuses (no chunk calls exist yet). 6 mutations each fail a test. Commit 9c6bd70f.",
+    "testRecord": {
+      "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/dimensions/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:44:16.305Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:44:16.305Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:44:16.305Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/adapters/code-review-material.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:44:16.305Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-pipeline/code-review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-20T13:44:16.305Z"
+      }
+    ],
+    "commit": "9c6bd70f"
+  }
+}

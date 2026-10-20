@@ -1,0 +1,397 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s2",
+    "createdAt": "2026-10-20T13:26:20.493Z",
+    "updatedAt": "2026-10-20T13:44:16.305Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e17479ed",
+        "ranAt": "2026-10-20T13:35:58.242Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+                "title": "each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+                "title": "a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+                "title": "same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a duplicate entityId throws an error naming it'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+                "title": "a duplicate entityId throws an error naming it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'the same grounding gives identical material and identical neighbour summaries every time'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+                "title": "the same grounding gives identical material and identical neighbour summaries every time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 535,
+            "titles": [
+              {
+                "title": "each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON",
+                "result": "pass"
+              },
+              {
+                "title": "a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none",
+                "result": "pass"
+              },
+              {
+                "title": "same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only",
+                "result": "pass"
+              },
+              {
+                "title": "a duplicate entityId throws an error naming it",
+                "result": "pass"
+              },
+              {
+                "title": "the same grounding gives identical material and identical neighbour summaries every time",
+                "result": "pass"
+              },
+              {
+                "title": "a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "57ccc141",
+        "ranAt": "2026-10-20T13:33:35.019Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+                "title": "a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'the same grounding gives identical material and identical neighbour summaries every time'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+                "title": "the same grounding gives identical material and identical neighbour summaries every time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 420,
+            "titles": [
+              {
+                "title": "each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON",
+                "result": "pass"
+              },
+              {
+                "title": "a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none",
+                "result": "pass"
+              },
+              {
+                "title": "same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only",
+                "result": "pass"
+              },
+              {
+                "title": "a duplicate entityId throws an error naming it",
+                "result": "pass"
+              },
+              {
+                "title": "the same grounding gives identical material and identical neighbour summaries every time",
+                "result": "pass"
+              },
+              {
+                "title": "a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "9c6bd70f",
+        "ranAt": "2026-10-20T13:44:16.305Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts: 'coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+                "title": "coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every changed symbol is whole in exactly one chunk and every chunk fits the limit'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "every changed symbol is whole in exactly one chunk and every chunk fits the limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a summary larger than the limit on its own raises AtomTooLargeError naming its file#name'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "a summary larger than the limit on its own raises AtomTooLargeError naming its file#name",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'under the limit the plan is one chunk and the dimension prompt is unchanged'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "under the limit the plan is one chunk and the dimension prompt is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts: 'an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+                "title": "an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 837,
+            "titles": [
+              {
+                "title": "over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory",
+                "result": "pass"
+              },
+              {
+                "title": "a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol",
+                "result": "pass"
+              },
+              {
+                "title": "every changed symbol is whole in exactly one chunk and every chunk fits the limit",
+                "result": "pass"
+              },
+              {
+                "title": "a summary larger than the limit on its own raises AtomTooLargeError naming its file#name",
+                "result": "pass"
+              },
+              {
+                "title": "under the limit the plan is one chunk and the dimension prompt is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars",
+                "result": "pass"
+              },
+              {
+                "title": "a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call",
+                "result": "pass"
+              },
+              {
+                "title": "an atom whose singleton call with neighbour summaries exceeds the limit, but fits once its related atoms share the chunk, is packed and not reported as too large",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 558,
+            "titles": [
+              {
+                "title": "each included summary is one atom with id entityId, label file#name, the file's directory as module, and text equal to the row's JSON",
+                "result": "pass"
+              },
+              {
+                "title": "a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none",
+                "result": "pass"
+              },
+              {
+                "title": "same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only",
+                "result": "pass"
+              },
+              {
+                "title": "a duplicate entityId throws an error naming it",
+                "result": "pass"
+              },
+              {
+                "title": "the same grounding gives identical material and identical neighbour summaries every time",
+                "result": "pass"
+              },
+              {
+                "title": "a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names",
+                "result": "pass"
+              },
+              {
+                "title": "coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -37,7 +37,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "S001 covers the shared pipeline, identified calls, centralized retries, provider-independent limit and Ollama review support required by its upstream scope.",
-          "evidence": "DEF S001/ac1\u2013ac5 and HLD \u00a75.1 assign these capabilities to S001. The LLD provides corresponding contracts and acceptance mappings. The existing driver sends calls serially with internalRetry:false, and limit.ts calculates review.chunkTokens \u00d7 3. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/limit.ts]",
+          "evidence": "DEF S001/ac1–ac5 and HLD §5.1 assign these capabilities to S001. The LLD provides corresponding contracts and acceptance mappings. The existing driver sends calls serially with internalRetry:false, and limit.ts calculates review.chunkTokens × 3. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/limit.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -49,7 +49,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "The delivered premise adapter preserves extraction, deterministic probing and per-premise daemon verification, including the verification timeout and not-judged fallback.",
-          "evidence": "premiseAdapter declares extract \u2192 probe \u2192 verify; daemon verification maps claims in order to buildVerifyPrompt with VERIFY_CALL_TIMEOUT_MS and cwd:opts.repo. Its failure policy is 'record-not-judged'; notJudgedFinding produces a MED finding. Controller verification instead uses one buildBatchedVerifyPrompt call. [files: src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/job.ts]",
+          "evidence": "premiseAdapter declares extract → probe → verify; daemon verification maps claims in order to buildVerifyPrompt with VERIFY_CALL_TIMEOUT_MS and cwd:opts.repo. Its failure policy is 'record-not-judged'; notJudgedFinding produces a MED finding. Controller verification instead uses one buildBatchedVerifyPrompt call. [files: src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/job.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -121,7 +121,7 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "S001 owns the generic contracts but leaves document chunking and controller protocol adoption to S004 and S005.",
-          "evidence": "HLD \u00a75 assigns sc1\u2013sc6 to S001, document section material/gather to S004 and sc7/controller frames to S005. The LLD follows those assignments. The current design adapter explicitly refuses divided reviews pending S004 while exposing separate daemon/controller stage plans. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/types.ts]",
+          "evidence": "HLD §5 assigns sc1–sc6 to S001, document section material/gather to S004 and sc7/controller frames to S005. The LLD follows those assignments. The current design adapter explicitly refuses divided reviews pending S004 while exposing separate daemon/controller stage plans. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/types.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -133,7 +133,7 @@
           "kind": "semantic",
           "severity": "MED",
           "premise": "An invalid answer is always re-issued with its validation reasons as a correction note.",
-          "evidence": "applyFailure explicitly says: 'A correction that would not fit is left out; the call is re-issued as planned.' It assigns the corrected prompt only when sentChars(corrected) <= job.plan.limitChars. Thus \u00a7\u00a72.19 and 6 promise correction feedback that the delivered implementation can silently omit, including for gather validation. [files: src/workflow/review-pipeline/job.ts]",
+          "evidence": "applyFailure explicitly says: 'A correction that would not fit is left out; the call is re-issued as planned.' It assigns the corrected prompt only when sentChars(corrected) <= job.plan.limitChars. Thus §§2.19 and 6 promise correction feedback that the delivered implementation can silently omit, including for gather validation. [files: src/workflow/review-pipeline/job.ts]",
           "action": "Specify the oversized-correction behavior and test it. If correction feedback is mandatory, define bounded correction rendering or re-planning instead of silently dropping the reasons.",
           "fixability": "manual",
           "outcome": "does-not-hold"
@@ -173,6 +173,11 @@
       "reviewedAt": "2026-10-20T15:31:23.282Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-20T15:47:19.136Z",
+    "reviewOverride": {
+      "reason": "User approved with override (2026-10-20, option A). Two full review cycles ran on the amended s1 LLD (six daemon rounds). Cycle 1: H2 M4 -> M1 -> M2; cycle 2: H3 -> H1 M1 -> M1. Every HIGH and MED was fixed in code, tests and the LLD (commits 9043c695, bfad6524, ada98c63, a3e09ee2, b6b2f216, 31fc6bf2, edfd803b). The last round's only finding (an invalid answer's correction silently dropped when it would not fit) was fixed in edfd803b without a further review: the correction is left out, never cut, the omission is logged, and a test pins it.",
+      "at": "2026-10-20T15:47:19.136Z"
     }
   },
   "body": {
@@ -349,7 +354,7 @@
           "internal": "The two controller steps' use of the job, and the MCP boundary that admits it: the new answers phase in the insrc_review_step and insrc_code_review_step input schemas in src/mcp/server.ts, their registered schema contracts and tool descriptions, with schema and surface tests (src/mcp/__tests__/schema-registry.test.ts); keeping it in step state, frame sizing, answer validation by call identifier, and offering a review under the limit today's prompts as identified calls in the same frame shape. Compatibility: the controller step states gain an optional pipeline field; a state without it (saved before the change) is resumed on today's path; both stores are memory-only, so, as today, a state does not survive a daemon restart. Tests: S005/ac1 a controller review over the limit is handed the daemon's chunks one frame at a time and records the same kind of result; ac2 a missing or wrong identifier in an answer is rejected and the call offered again under a new UUID; ac3 a new controller review under the limit is offered today's prompts, each as an identified call, and gives today's result; a pre-change state resumes on today's emit_judgements / judgements (code review), emit_claims / claims and emit_verdicts / verdicts (DEF/plan premise review) and emit_findings / findings (HLD/LLD template review) frames, each path tested. The answers phase also accepts a failure outcome per call (size refusal with the reported limit, stall, transient error), mapped to the driver's failure handling and admitted by both MCP input schemas; tested: a controller-reported size refusal re-divides the call, a reported stall or transient error re-issues it once under a new identifier."
         }
       ],
-      "rolloutPhase": "Phase A \u2014 the pipeline, single chunk everywhere",
+      "rolloutPhase": "Phase A — the pipeline, single chunk everywhere",
       "nonFunctional": {
         "performance": "Calls are serial (k6). A review under the limit makes the same number of calls as today. Every prompt sent, chunk or gather, is at most review.chunkTokens x 3 characters.",
         "security": "No new transport: calls go through the existing LLMProvider and the installed CLIs (k7). Reviewer sessions keep their read-only tool sets.",

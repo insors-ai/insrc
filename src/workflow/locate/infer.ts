@@ -96,13 +96,16 @@ export function buildDocPathIndex(repoPath: string): DocPathIndex {
 		try { meta = (JSON.parse(readFileSync(join(dir, f), 'utf8')) as { meta?: Record<string, unknown> }).meta ?? {}; } catch { continue; }
 		const md = deriveMdPath(repoPath, key.kind as ArtifactKind, meta);
 		if (md.length === 0) continue;
-		const ref: WorkItemRef = {
-			epicHash: key.epicHash,
-			...(key.story !== undefined ? { storyId: key.story } : {}),
-			slug: ArtifactIds.make(key.story !== undefined
-				? { kind: 'STORY', epicHash: key.epicHash, story: key.story }
-				: { kind: 'EPIC', epicHash: key.epicHash }),
-		};
+		let slug: string;
+		try {
+			// A SPEC or ISSUE may carry a hash shorter than an Epic's: its slug is then its own id, which resolves by prefix.
+			slug = key.epicHash.length < 16
+				? ArtifactIds.make({ kind: key.kind, epicHash: key.epicHash })
+				: ArtifactIds.make(key.story !== undefined
+					? { kind: 'STORY', epicHash: key.epicHash, story: key.story }
+					: { kind: 'EPIC', epicHash: key.epicHash });
+		} catch { continue; }
+		const ref: WorkItemRef = { epicHash: key.epicHash, ...(key.story !== undefined ? { storyId: key.story } : {}), slug };
 		byPath.set(resolve(md), ref);
 	}
 	return { repoPath, byPath };

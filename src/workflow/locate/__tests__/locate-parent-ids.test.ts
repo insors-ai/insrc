@@ -97,6 +97,17 @@ test('a parent is located and linked correctly in a repository with several epic
 		assert.equal(refFromDocPath(index, 'docs/epics/alpha-epic-E2026071711a1b2c3/s2/LLD.md'), null);
 		assert.equal(refFromDocPath(index, 'docs/epics/alpha-epic-E202607179999ffff/S001/LLD.md'), null);
 
+		// an ISSUE whose hash is shorter than an Epic's is indexed by its own id and does not abort the index
+		const SHORT = 'abcd1234';
+		writeJson(join(s.repo, `.insrc/artifacts/ISSUE-${SHORT}.json`), {
+			meta: { workflow: 'issue', issueHash: SHORT, epicSlug: 'short-bug', createdAt: CREATED_A, epicCreatedAt: CREATED_A, schemaVersion: 1 },
+			body: { title: 't', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [],
+		});
+		const withShort = buildDocPathIndex(s.repo);
+		const issueMd = deriveMdPath(s.repo, 'ISSUE', { issueHash: SHORT, epicSlug: 'short-bug', epicCreatedAt: CREATED_A });
+		assert.deepEqual(refFromDocPath(withShort, issueMd), { epicHash: SHORT, slug: `ISSUE-${SHORT}` });
+		assert.equal(refFromDocPath(withShort, lldB)?.epicHash, HASH_B, 'the other epics are still indexed');
+
 		// semantic hits map the same way
 		const ranked = mapSemanticHits([entity(lldB), entity(defB), entity('src/code.ts'), entity(lldA)], index);
 		assert.deepEqual(ranked.map(r => r.parentRef.epicHash), [HASH_B, HASH_B, HASH_A]);

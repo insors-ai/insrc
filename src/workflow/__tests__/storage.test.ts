@@ -35,6 +35,7 @@ import {
 } from '../storage.js';
 import { deriveWorkItemIdentity } from '../id.js';
 import { InvalidArtifactKeyError } from '../artifact-ids.js';
+import { readLldArtifact } from '../gates.js';
 import {
 	buildArtifactId,
 	codeReviewArtifactId,
@@ -718,6 +719,8 @@ test('lowercase-story artifacts keep their id and file name and resolve through 
 		assert.equal(paths.json.endsWith(`/.insrc/artifacts/LLD-${H}-s1.json`), true);
 		seedMeta(r.repo, `LLD-${H}-s1`, { createdAt: T5_CREATED, standalone: true });
 		assert.equal(inheritedStoryStandalone(r.repo, H, 's1'), true, 'a lookup resolves the lowercase LLD');
+		// the gate reads the same file the id names
+		assert.equal(readLldArtifact(r.repo, H, 's1').meta.createdAt, T5_CREATED, 'the LLD gate resolves the lowercase artifact');
 	} finally { r.cleanup(); }
 });
 
@@ -732,6 +735,10 @@ test('an artifact stored with an uppercase story fails with an error that points
 	const r = t5Repo();
 	try {
 		seedMeta(r.repo, `LLD-${H}-S001`, { createdAt: T5_CREATED, standalone: true });
+		assert.throws(
+			() => readLldArtifact(r.repo, H, 'S001'),
+			(err: Error) => err instanceof InvalidArtifactKeyError && /s9 conversion/.test(err.message),
+		);
 		assert.throws(
 			() => inheritedStoryStandalone(r.repo, H, 'S001'),
 			(err: Error) => err instanceof InvalidArtifactKeyError && /s9 conversion/.test(err.message),

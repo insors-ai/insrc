@@ -134,7 +134,7 @@ function handleStandaloneImplement(
 	if (epicHash === undefined) {
 		return err('no-identity', `insrc_build_step[implement]: a standalone Small build requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`);
 	}
-	const storyId = ctx.storyId ?? 's1';
+	const storyId = ctx.storyId ?? 'S001';
 	assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before admission, the stamp or the Trivial record
 
 	const verdict = admitStandaloneBuild(repoPath, epicHash, storyId, producesLld);

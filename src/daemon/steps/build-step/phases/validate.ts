@@ -319,7 +319,7 @@ async function handleStandaloneValidate(
 	if (epicHash === undefined) {
 		return err('no-identity', `insrc_build_step[validate]: a standalone Small validate requires \`standalone.epicHash\` + \`storyId\` (the approved LLD identity).`);
 	}
-	const storyId = ctx.storyId ?? 's1';
+	const storyId = ctx.storyId ?? 'S001';
 	assertMayBuild(repoPath, { epicHash, storyId });   // team gate: before any check runs or record is written
 
 	// Point the verdict gate at the standalone LLD when one exists (Small), and take

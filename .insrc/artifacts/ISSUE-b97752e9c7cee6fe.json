@@ -1,0 +1,70 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1792558533760-7lporh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-21T04:56:14.352Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 40585,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "b97752e9c7cee6fe",
+    "epicSlug": "scope-story-s-code-review-what",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "title": "Scope a Story's code review to what the Story changed, never a blind working-tree diff",
+    "reproduction": "1. Leave any uncommitted change in the repository that has nothing to do with the Story under review (2026-10-21: six ontology files, docs/mocks/ontology-*.html, docs/mocks/ontology-source/* and docs/ontology-builder-prd.{html,md}, edited outside the session).\n2. Run the daemon's code review of a Story whose own work is committed (codeReview.run for Epic c2ba6fa6 Story s1, whose commits carry its Insrc-Story trailer).\n\nObserved: the review's subject records changeSetAttribution 'working-tree' with 6 changed files, all of them the unrelated ontology files; the review judges those files and records block with two HIGH coverage findings located at docs/mocks/ontology-source/render.mjs:1. None of the Story's own files are reviewed.\nExpected: the review judges exactly what the Story changed (its trailer-scoped commits from its range base, plus any uncommitted edits to those same files), and an unrelated uncommitted change is left out of the review and reported as excluded.",
+    "rootCause": "The change set is chosen working-tree first. changedFiles collects the whole working-tree diff (unstaged and staged) and, as soon as it is non-empty, returns it as the Story's change set with attribution 'working-tree' (src/workflow/runners/build/changed-files.ts:142-156); the Story's own committed range, scoped by its Insrc-Story trailer (storyChangeSet), is consulted only when the working tree is clean (src/workflow/runners/build/changed-files.ts:158-162). Nothing ties a working-tree file to the Story: any uncommitted change, by anyone, becomes the Story's change. The code-review subject takes that set as is (src/workflow/code-review/subject.ts:179-180; its header still states that at review time the build's changes are the working-tree diff, src/workflow/code-review/subject.ts:28), and the diff-only grounding repeats the same working-tree-first order in its own sequence (src/workflow/code-review/grounding.ts:282-285). The same derivation also feeds the BUILD completion record and the build validate phase, so their change sets can absorb unrelated work the same way.",
+    "fixIntent": "Make the Story's own change set the authority for its scope. The review, the diff-only grounding and the build records derive the Story's files from the commits that carry its Insrc-Story trailer (from its range base); an uncommitted change counts as the Story's only when it is attributable to the Story (it touches a file the Story's own change set already contains), and every other uncommitted change is excluded from the review and reported as excluded on the record, never judged. A Story with no attributable change has nothing to review, rather than inheriting someone else's edits."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/runners/build/changed-files.ts:142-162",
+      "quotedText": "const kept = keep(working); if (kept.length > 0) { opts?.onAttribution?.({ attribution: 'working-tree', ... }); ... // Committed-range fallback: only when the working tree yielded nothing"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/subject.ts:28",
+      "quotedText": "the uncommitted working-tree diff (HEAD vs worktree, plus staged), so that is the \"Story's build changed\" set"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/grounding.ts:282-285",
+      "quotedText": "const working = ... await deps.workingTreeDiff(repoPath); if (working.files.length > 0) { attribution = 'working-tree'; return working; }"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/subject.ts:179-180",
+      "quotedText": "await deps.changedFiles(repoPath) : await deps.changedFiles(repoPath, attempt.opts)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/CR-c2ba6fa62a148ed1-s1.json",
+      "quotedText": "changeSetAttribution 'working-tree', 6 changed files; coverage HIGH at docs/mocks/ontology-source/render.mjs:1"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "Subho Ghosh, 2026-10-21",
+      "quotedText": "the real issue is how the reviewer decides the scope of the review, unrelated changes should be excluded from the scope, a blind git diff will always cause issues"
+    }
+  ]
+}

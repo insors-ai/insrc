@@ -72,4 +72,16 @@ describe('LifecycleService.apply integrity', () => {
 			assert.deepEqual(approved.entry.status, { from: 'draft', to: 'approved' });
 		} finally { k.done(); }
 	});
+
+	it('a review is logged with its verdict and counts', async () => {
+		const k = kit();
+		try {
+			const svc = service(k, stubEvidence([]));
+			await k.store.write(artifact(`DEF-${H}`), alice);
+			const result = await svc.apply(`DEF-${H}`, 'review', bob, { review: { reviewer: bob, party: 'daemon', verdict: 'warn', counts: { high: 0, med: 2, low: 1 } } });
+			assert.equal(result.entry.operation, 'review');
+			assert.deepEqual(result.entry.outcome, { result: 'warn', summary: 'reviewed by the daemon: warn', data: { counts: { high: 0, med: 2, low: 1 } } });
+			assert.equal(result.lifecycle.review?.verdict, 'warn');
+		} finally { k.done(); }
+	});
 });

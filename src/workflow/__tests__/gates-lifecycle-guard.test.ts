@@ -43,7 +43,7 @@ function head(workflow: string, stored: 'matching' | 'mismatched' | 'empty', ext
 	}, null, 2) + '\n';
 }
 const read = (p: string): string => readFileSync(p, 'utf8');
-const isApproved = (p: string): boolean => (JSON.parse(read(p)) as { meta?: { approvedAt?: string } }).meta?.approvedAt !== undefined;
+const isApproved = (p: string): boolean => (JSON.parse(read(p)) as { meta?: { approvedAt?: string | undefined } | undefined }).meta?.approvedAt !== undefined;
 
 test('approveWorkflowTarget refuses a conflicted BUILD target in both branches before ensureBuildRecordOnCompletion rewrites it', async () => {
 	await withRepo(async (repo, dir) => {

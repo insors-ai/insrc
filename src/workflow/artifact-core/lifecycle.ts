@@ -175,7 +175,7 @@ export function reconcileLifecycle(
 
 export interface TransitionDetail {
 	/** For review: who reviewed, as which party, with what verdict. The revision and time are filled in. */
-	readonly review?:        { readonly reviewer: Actor; readonly party: Review['party']; readonly verdict: Review['verdict']; readonly counts: Review['counts']; readonly report?: Reference | undefined };
+	readonly review?:        { readonly reviewer: Actor; readonly party: Review['party']; readonly verdict: Review['verdict']; readonly counts: Review['counts']; readonly report?: Reference | undefined } | undefined;
 	readonly override?:      { readonly reason: string } | undefined;
 	readonly request?:       Reference | undefined;
 	readonly signoffActors?: readonly Actor[] | undefined;

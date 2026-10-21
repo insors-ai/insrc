@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 55 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -334,3 +334,19 @@ Run at 2026-10-21T06:31:27.497Z on commit `29a9c401`. Tests check: **passed**. 6
 | `src/workflow/__tests__/gates-lifecycle-guard.test.ts` | 0 | 2 | 1.9 s |  |
 | `src/workflow/__tests__/gates-lifecycle-service.test.ts` | 0 | 3 | 2.3 s |  |
 | `src/workflow/review/__tests__/review-revision.test.ts` | 0 | 1 | 1.8 s |  |
+
+## t11
+
+Run at 2026-10-21T06:32:54.188Z on commit `9969f260`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/workflow/__tests__/docs-s3-follow-ups.test.ts: the plans doc lists the four hand-offs from the lifecycle Story**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | the plans doc lists the four hand-offs from the lifecycle Story | `src/workflow/__tests__/docs-s3-follow-ups.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/__tests__/docs-s3-follow-ups.test.ts` | 0 | 1 | 1.2 s |  |

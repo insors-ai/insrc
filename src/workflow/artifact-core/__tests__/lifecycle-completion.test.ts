@@ -1,8 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { IllegalTransitionError } from '../types.js';
+import { IllegalTransitionError, LifecycleConflictError } from '../types.js';
 import type { ChangeLogEntry } from '../types.js';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { artifactJsonPath } from '../../storage.js';
 import { H, bob, kit } from './store-kit.js';
 import type { Kit } from './store-kit.js';
 import { DIAGS, EPIC, RECORDS, STORY, T1, T2, TASKS, seedEpic, service, stubEvidence } from './lifecycle-kit.js';
@@ -108,6 +110,25 @@ describe('LifecycleService.completeIfRolledUp', () => {
 			const second = await svc.completeIfRolledUp(T2, bob);
 			assert.ok(second.completed.includes(STORY));
 			assert.equal(completes(await log(k, STORY)).length, 2);
+		} finally { k.done(); }
+	});
+
+	it('a member whose head and log disagree stops the unit from completing and nothing is frozen', async () => {
+		const k = kit();
+		try {
+			await seedEpic(k);
+			const svc = service(k, stubEvidence([T1, T2]));
+			await svc.apply(T1, 'complete', bob);
+			await svc.apply(T2, 'complete', bob);
+			// a member's head is changed by hand: its log no longer matches
+			const member = RECORDS[1] as string;
+			const path = artifactJsonPath(k.repo, member);
+			const head = JSON.parse(readFileSync(path, 'utf8'));
+			head.meta.lifecycle.revision.number = 9;
+			writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
+			await assert.rejects(svc.completeIfRolledUp(T2, bob), (e: unknown) => e instanceof LifecycleConflictError && e.artifactId === member && e.reason === 'head-ahead-of-log');
+			assert.notEqual(await status(k, STORY), 'completed');
+			assert.equal(await status(k, member), 'draft');
 		} finally { k.done(); }
 	});
 });

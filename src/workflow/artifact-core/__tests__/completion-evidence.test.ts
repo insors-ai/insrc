@@ -19,7 +19,7 @@ describe('createCompletionEvidence', () => {
 	it('storyCodeReview maps the gate, an explicit override wins over a stored one and an advisory warn is blocked without an override', async () => {
 		const repo = mkdtempSync(join(tmpdir(), 'evidence-'));
 		try {
-			const kind = async (options: { overrideReview?: string; enforce?: boolean } = {}, story = 's1') => createCompletionEvidence(repo, options).storyCodeReview(H, story);
+			const kind = async (options: { overrideReview?: string | undefined; enforce?: boolean | undefined } = {}, story = 's1') => createCompletionEvidence(repo, options).storyCodeReview(H, story);
 
 			// no record: missing
 			assert.deepEqual(await kind(), { kind: 'missing' });

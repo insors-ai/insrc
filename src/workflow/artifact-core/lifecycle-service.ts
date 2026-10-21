@@ -99,6 +99,9 @@ export class LifecycleService {
 				for (const member of members) await this.reopenMember(member, id, by);
 			} else if (op === 'approve' && detail.override !== undefined) {
 				outcome = { result: 'override', summary: detail.override.reason };
+			} else if (op === 'review' && detail.review !== undefined) {
+				const counts = detail.review.counts;
+				outcome = { result: detail.review.verdict, summary: `reviewed by the ${detail.review.party}: ${detail.review.verdict}`, data: { counts } };
 			}
 
 			// A unit is completed by its roll-up, which stands in for the approval a record needs, so it may start from any open status.
@@ -206,7 +209,11 @@ export class LifecycleService {
 	private async completeMember(member: string, unit: string, by: Actor): Promise<void> {
 		await this.deps.store.update(member, by, current => {
 			if (['completed', 'withdrawn', 'superseded'].includes(current.lifecycle.status)) return undefined;
-			const { changeLog: _log, ...head } = current;
+			const { changeLog, ...head } = current;
+			// A member is held to the same check as the unit: its head and its log have to agree before it is frozen.
+			const tail = [...changeLog].reverse().find(e => e.revision !== undefined);
+			const integrity = checkIntegrity({ description: head.description, payload: head.payload, lifecycle: head.lifecycle }, tail);
+			if (!integrity.ok) throw new LifecycleConflictError(member, integrity.reason);
 			return {
 				next: { ...head, lifecycle: nextLifecycle(head, 'complete', by, this.at(), { cascade: true }) },
 				options: { operation: 'complete', cascade: true, outcome: { result: 'completed', summary: `completed with ${unit}`, data: { frozenBy: unit } } },

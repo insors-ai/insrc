@@ -16,7 +16,7 @@ const T1 = '2026-10-21T00:00:00.000Z';
 const lc = (over: Partial<Lifecycle> = {}): Lifecycle => ({
 	status: 'draft', revision: { number: 0, contentHash: '', at: '', by: alice }, signoffs: [], ...over,
 });
-const head = (text: string, over: { lifecycle?: Lifecycle | undefined; description?: string; extra?: Record<string, unknown> } = {}) => ({
+const head = (text: string, over: { lifecycle?: Lifecycle | undefined; description?: string | undefined; extra?: Record<string, unknown> | undefined } = {}) => ({
 	meta: {
 		workflow: 'x',
 		envelope: { description: over.description ?? 'd', references: [], attachments: [] },
@@ -26,7 +26,7 @@ const head = (text: string, over: { lifecycle?: Lifecycle | undefined; descripti
 	body: { text },
 	citations: [],
 });
-const parse = (bytes: string) => JSON.parse(bytes) as { meta: { revision?: number; lifecycle: Lifecycle } };
+const parse = (bytes: string) => JSON.parse(bytes) as { meta: { revision?: number | undefined; lifecycle: Lifecycle } };
 
 describe('prepareArtifactWrite with meta.lifecycle', () => {
 	it('prepareArtifactWrite reconciles meta.lifecycle for a content write, leaves it for a meta-only write, mints no revision for a metadata-only or key-order-only change, and prepares a head without meta.lifecycle as before', () => {

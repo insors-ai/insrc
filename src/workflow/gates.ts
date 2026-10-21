@@ -878,9 +878,13 @@ async function mirrorLegacyReview(lifecycle: LifecycleService, jsonPath: string)
 	if (!REVIEWED_KINDS.includes(ArtifactIds.parse(id)?.kind ?? '')) return;
 	const seen = await lifecycle.inspect(id);
 	if (seen === undefined || seen.status !== 'draft' || seen.lifecycle.review?.revision === seen.lifecycle.revision.number) return;
-	const meta = (readJsonOrUndefined(jsonPath) as { meta?: { review?: ReviewReport; reviewResolutions?: Record<string, ReviewResolution> } } | undefined)?.meta;
+	const meta = (readJsonOrUndefined(jsonPath) as { meta?: { review?: ReviewReport | undefined; reviewResolutions?: Record<string, ReviewResolution> | undefined } | undefined } | undefined)?.meta;
 	const review = meta?.review;
 	if (review === undefined) return;
+	// A review made before the current revision was written did not review it: it is not mirrored.
+	const reviewedAt = Date.parse(review.reviewedAt);
+	const revisionAt = Date.parse(seen.lifecycle.revision.at);
+	if (!Number.isNaN(reviewedAt) && !Number.isNaN(revisionAt) && reviewedAt < revisionAt) return;
 	const reviewerParty = reviewerPartyOf(review);
 	const party = reviewerParty === 'daemon' ? 'daemon' : 'controller';
 	await lifecycle.apply(id, 'review', { id: `insrc:${party}`, kind: 'agent', properties: {} }, {
@@ -998,8 +1002,13 @@ export async function approveWorkflowTarget(
 			// directly), so the rule cannot be bypassed by skipping this one.
 		}
 		try {
+			const stampless = lifecycle !== undefined ? readFileSync(jsonPath, 'utf8') : undefined;
 			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });
-			await applyThroughService(jsonPath);
+			if (!(await applyThroughService(jsonPath)) && stampless !== undefined) {
+				// the service refused the approval: the legacy stamp is taken back, so nothing reads the target as approved
+				// raw-write: restores the bytes the gate stamped over; the lifecycle part of the head was never changed.
+				writeAtomic(jsonPath, stampless);
+			}
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
 				skipped.push({ path: jsonPath, reason: err.summary });

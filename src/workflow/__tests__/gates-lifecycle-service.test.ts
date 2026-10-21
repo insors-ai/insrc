@@ -89,7 +89,7 @@ const fixProvider = (): LLMProvider => envelopeProvider({
 	async *stream(): AsyncIterable<string> { /* unused */ },
 	async embed(): Promise<number[]> { return []; },
 	async completeStructured<T>(_m: LLMMessage[], schema: StructuredSchema, _o?: StructuredCompletionOpts): Promise<T> {
-		const props = (schema as { properties?: Record<string, unknown> }).properties ?? {};
+		const props = (schema as { properties?: Record<string, unknown> | undefined }).properties ?? {};
 		return ('claims' in props ? EXTRACT_JSON : {
 			severity: 'HIGH', evidence: 'ripgrep re-derived THREE `export const` sites, not two.', action: 'Correct the count to three.', fixability: 'auto',
 			proposedFix: { rationale: 'Grep found three.', artifactEdits: [{ find: 'two exported constants', replace: 'three exported constants' }] },
@@ -166,3 +166,36 @@ test('without a service the approval and review paths behave as before and meta.
 		assert.equal(after.changeLog.length, logBefore, 'and nothing is logged');
 	} finally { k.done(); }
 });
+
+test('with a service, an approval the service refuses takes the legacy stamp back, and a review made before the current revision is not mirrored', async () => {
+	const k = kit();
+	try {
+		await k.store.write(artifact(`DEF-${H}`), alice);
+		const lld = `LLD-${H}-s1`;
+		await k.store.write(artifact(lld), alice);
+		// the legacy review stamp is older than the revision it sits on
+		const path = artifactJsonPath(k.repo, lld);
+		const head = readHead(k, lld);
+		head.meta['review'] = { artifact: 'LLD', stage: 'design.story', verdict: 'pass', findings: [], counts: { high: 0, med: 0, low: 0 }, reviewedAt: '2020-01-01T00:00:00.000Z', model: 'm', reviewedBy: 'daemon' };
+		writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
+		const before = readFileSync(path, 'utf8');
+		const svc = serviceFor(k);
+
+		const refused = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob }, { enforce: false });
+		assert.deepEqual(refused.approved, []);
+		assert.equal(refused.skipped.length, 1);
+		assert.match(refused.skipped[0]?.reason ?? '', /review/i);
+		assert.equal(readFileSync(path, 'utf8'), before, 'the legacy stamp was taken back');
+		assert.equal((await k.store.read(lld)).lifecycle.status, 'draft');
+
+		// a review made after the revision is mirrored onto the lifecycle and the approval goes through
+		head.meta['review'] = { ...(head.meta['review'] as object), reviewedAt: '2099-01-01T00:00:00.000Z' };
+		writeFileSync(path, JSON.stringify(head, null, 2) + '\n');
+		const ok = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob }, { enforce: false });
+		assert.equal(ok.skipped.length, 0, JSON.stringify(ok.skipped));
+		const approved = await k.store.read(lld);
+		assert.equal(approved.lifecycle.status, 'approved');
+		assert.equal(approved.lifecycle.review?.revision, approved.lifecycle.revision.number);
+	} finally { k.done(); }
+});
+

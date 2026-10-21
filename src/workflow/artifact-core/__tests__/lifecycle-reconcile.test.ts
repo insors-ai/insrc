@@ -12,7 +12,7 @@ const T0 = '2026-10-20T00:00:00.000Z';
 const T1 = '2026-10-21T00:00:00.000Z';
 const ref = { entityId: 'x', type: 'ISSUE', relation: 'cites' as const };
 
-function view(over: { description?: string; body?: unknown; status?: Status; number?: number; stored?: string | undefined; rest?: Partial<Lifecycle> } = {}): ContentView {
+function view(over: { description?: string | undefined; body?: unknown; status?: Status | undefined; number?: number | undefined; stored?: string | undefined; rest?: Partial<Lifecycle> | undefined } = {}): ContentView {
 	const description = over.description ?? 'd';
 	const payload = { body: over.body ?? { a: 1 }, citations: [] };
 	const stored = 'stored' in over ? (over.stored ?? '') : contentHash(description, payload);

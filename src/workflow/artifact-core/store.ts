@@ -27,7 +27,7 @@ import type { History } from './history.js';
 import { createMemoryJournal } from './journal.js';
 import type { StagedOperation, WriteJournal } from './journal.js';
 import { TERMINAL, assertLegalStatusChange, checkHeadIntegrity, isLifecycleOperation } from './lifecycle.js';
-import { ArtifactNotFoundError, ArtifactShapeError, LifecycleConflictError } from './types.js';
+import { ArtifactNotFoundError, ArtifactShapeError, IllegalTransitionError, LifecycleConflictError } from './types.js';
 import type { Actor, Artifact, ChangeLogEntry, Feedback, Operation, Reference } from './types.js';
 
 const log = getLogger('artifact-store');
@@ -244,6 +244,10 @@ export class ArtifactStore {
 			? prior.artifact.lifecycle.status : undefined;
 		const lifecycle = cascadeFrom === undefined ? source.lifecycle : { ...source.lifecycle, status: cascadeFrom };
 		const reconciled = prepareArtifactWrite(path, { ...base, meta: { ...base.meta, envelope, lifecycle } }, 'content', { by, at: timestamp });
+		// A cascading complete freezes a member as it is: it may not carry a content change, which would have returned the head to draft.
+		if (cascadeFrom !== undefined && reconciled.contentChanged && prior !== undefined) {
+			throw new IllegalTransitionError(`${a.id} cannot be completed with a content change`);
+		}
 		const prepared = cascadeFrom === undefined ? reconciled : { ...reconciled, bytes: completedBytes(reconciled.bytes) };
 		const stored = decodeArtifactHead(a.id, prepared.bytes).artifact.lifecycle;
 		const from = prior?.artifact.lifecycle.status;

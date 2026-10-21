@@ -63,6 +63,15 @@ describe('ArtifactStore.write lifecycle rules', () => {
 			// a cascade lets complete start from draft
 			await jump('completed', { operation: 'complete', cascade: true });
 			assert.equal((await k.store.read(draft)).lifecycle.status, 'completed');
+			// a cascading complete freezes a head as it is: it cannot carry a content change
+			const frozen = `PLAN-${H}-s4`;
+			await k.store.write(artifact(frozen), alice);
+			const frozenHead = await k.store.read(frozen);
+			await assert.rejects(
+				k.store.write({ ...withLifecycle(frozenHead, { status: 'completed' }), payload: { body: { text: 'changed' }, citations: [] } }, bob, { operation: 'complete', cascade: true }),
+				IllegalTransitionError,
+			);
+			assert.equal((await k.store.read(frozen)).lifecycle.status, 'draft');
 			// a content operation other than create and update is not loggable by a write
 			await assert.rejects(k.store.write(artifact(`PLAN-${H}-s3`), alice, { operation: 'delete' }), ArtifactShapeError);
 			// a content change on a completed artifact is refused

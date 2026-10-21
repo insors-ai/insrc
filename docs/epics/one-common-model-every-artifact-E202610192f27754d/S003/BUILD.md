@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s3
 
-**Standalone:** no  ·  **Created:** 2026-10-21T05:22:31.620Z  ·  **Updated:** 2026-10-21T06:31:27.497Z
+**Standalone:** no  ·  **Created:** 2026-10-21T05:22:31.620Z  ·  **Updated:** 2026-10-21T06:32:54.188Z
 
-**Commit:** 29a9c401
+**Commit:** 9969f260
 
 ## Summary
 
@@ -22,45 +22,49 @@ Added LifecycleConflictError (artifactId, reason), IllegalTransitionError, Termi
 - ✓ `t8`
 - ✓ `t9`
 - ✓ `t10`
+- ✓ `t11`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/workflow/__tests__/artifact-write-inventory.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/__tests__/gates-lifecycle-guard.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/__tests__/gates-lifecycle-service.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/__tests__/prepare-lifecycle.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/codec-create.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/completion-evidence.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/content-hash.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/decode.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-errors.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-kit.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-members.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-service.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-table.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/store-children-strict.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/store-lifecycle-write.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/store-update.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/store-write.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/__tests__/types-contract.test.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/codecs.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/completion-evidence.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/lifecycle-service.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/lifecycle.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/store.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-core/types.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/artifact-write-inventory.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/gates.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/review/run-artifact.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/runners/build/completion-record.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/runners/build/standalone-record.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
-- `src/workflow/storage.ts` — **insrc-build** (2026-10-21T06:31:27.497Z)
+- `docs/epics/one-common-model-every-artifact-E202610192f27754d/S003/PLAN.md` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `docs/plans/core-data-model.md` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/__tests__/artifact-write-inventory.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/__tests__/docs-s3-follow-ups.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/__tests__/gates-lifecycle-guard.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/__tests__/gates-lifecycle-service.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/__tests__/prepare-lifecycle.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/codec-create.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/completion-evidence.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/content-hash.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/decode.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-ac7.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-completion.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-errors.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-integrity.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-kit.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-members.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-reconcile.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-service.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-table.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/pass-through-codecs.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/store-children-strict.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/store-lifecycle-write.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/store-update.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/store-write.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/__tests__/types-contract.test.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/codecs.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/completion-evidence.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/lifecycle-service.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/lifecycle.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/store.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-core/types.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/artifact-write-inventory.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/gates.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/review/run-artifact.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/runners/build/completion-record.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/runners/build/standalone-record.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)
+- `src/workflow/storage.ts` — **insrc-build** (2026-10-21T06:32:54.188Z)

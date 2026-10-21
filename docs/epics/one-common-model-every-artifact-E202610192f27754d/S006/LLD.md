@@ -559,6 +559,8 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
   - **resolved**: Accept as tracker bookkeeping — Recommended answer, approved with the LLD. _(2026-10-21T15:33:59.107Z)_
 - `q053e2839` — A Task unit keeps its issue record on the Plan's meta.tracker.units until s7 creates Task artifacts, so unit-issue.ts has two homes for a record (binding for Epic and Story, the Plan for Task). Resolve: accept for now and have s7 move Task records onto the Task artifact's binding (recommended), or have s6 create the Task artifacts (that is s7's scope).
   - **resolved**: Two homes, hidden behind one accessor — Recommended answer, approved with the LLD. _(2026-10-21T15:34:57.151Z)_
+- `qa6533c2b` — Until s9 creates Epic and Story artifacts, an Epic's binding sits on the Define and a Story's on the LLD (the artifacts that hold the unit's record today). Resolve: accept and record in docs/plans/core-data-model.md that s9 moves each binding onto the Epic and Story artifact it creates (recommended).
+  - **resolved**: Interim binding + documented s9 migration — Recommended answer, approved with the LLD. _(2026-10-21T15:35:58.410Z)_
 
 ## Citations
 

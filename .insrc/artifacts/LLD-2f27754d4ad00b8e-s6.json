@@ -270,6 +270,13 @@
         "choice": "Two homes, hidden behind one accessor",
         "rationale": "Recommended answer, approved with the LLD.",
         "resolvedAt": "2026-10-21T15:34:57.151Z"
+      },
+      "qa6533c2b": {
+        "question": "Until s9 creates Epic and Story artifacts, an Epic's binding sits on the Define and a Story's on the LLD (the artifacts that hold the unit's record today). Resolve: accept and record in docs/plans/core-data-model.md that s9 moves each binding onto the Epic and Story artifact it creates (recommended).",
+        "status": "resolved",
+        "choice": "Interim binding + documented s9 migration",
+        "rationale": "Recommended answer, approved with the LLD.",
+        "resolvedAt": "2026-10-21T15:35:58.410Z"
       }
     }
   },

@@ -33,11 +33,11 @@ import type { FileChangeLog, FeedbackRecord } from '../../../artifacts/provenanc
 
 const HASH = 'abc123def4567890';
 
-function withRepo(fn: (repo: string) => void): void {
+async function withRepo(fn: (repo: string) => void | Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-provenance-build-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 	mkdirSync(join(repo, 'docs', 'builds'), { recursive: true });
-	try { fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
+	try { await fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
 const readJson = (p: string): BuildRecord => JSON.parse(readFileSync(p, 'utf8')) as BuildRecord;
@@ -110,8 +110,8 @@ test('t4/t6c: a legacy record (body without the S002 keys) re-renders byte-ident
 //       re-validate whose body omits them (append-only)
 // ---------------------------------------------------------------------------
 
-test('t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of-band feedback', () => {
-	withRepo(async (repo) => {
+test('t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of-band feedback', async () => {
+	await withRepo(async (repo) => {
 		// First validate: persist a record carrying a change-log.
 		const { json } = await persistBuildRecord(repo, {
 			meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
@@ -136,8 +136,8 @@ test('t6a: a re-validate that omits changeLog KEEPS the prior changeLog + out-of
 // t6b — appendFeedback integration: lands on body.feedback + surfaces in render
 // ---------------------------------------------------------------------------
 
-test('t6b: appendFeedback on a written BUILD json with a source-file target → body.feedback + a rendered ## Feedback section', () => {
-	withRepo(async (repo) => {
+test('t6b: appendFeedback on a written BUILD json with a source-file target → body.feedback + a rendered ## Feedback section', async () => {
+	await withRepo(async (repo) => {
 		const { json } = await persistBuildRecord(repo, {
 			meta: { workflow: 'build', standalone: false, epicHash: HASH, storyId: 's1', createdAt: '2026-01-01T00:00:00.000Z' },
 			body: { tasks: [{ id: 't1', passed: true }], changeLog: CHANGELOG },

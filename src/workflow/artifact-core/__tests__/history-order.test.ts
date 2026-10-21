@@ -31,4 +31,16 @@ describe('history-order', () => {
 			assert.deepEqual((await h2.openFeedback(ID)).map(f => f.id), ['f-b'], 'an entry that sorts before it does not close it');
 		}
 	});
+
+	it('openFeedback compares instants, not their spelling: the same second written with and without milliseconds', async () => {
+		const h = new History(createMemorySidecar());
+		await h.appendFeedback(ID, { ...fb('f1'), timestamp: '2026-10-20T10:00:00Z' });
+		// half a second later, written with milliseconds: after the feedback although '.' sorts before 'Z'
+		await h.appendLog(ID, { ...entry('e1', ['f1']), timestamp: '2026-10-20T10:00:00.500Z' });
+		assert.deepEqual(await h.openFeedback(ID), []);
+		const earlier = new History(createMemorySidecar());
+		await earlier.appendFeedback(ID, { ...fb('f1'), timestamp: '2026-10-20T10:00:01Z' });
+		await earlier.appendLog(ID, { ...entry('e1', ['f1']), timestamp: '2026-10-20T10:00:00.500Z' });
+		assert.deepEqual((await earlier.openFeedback(ID)).map(f => f.id), ['f1']);
+	});
 });

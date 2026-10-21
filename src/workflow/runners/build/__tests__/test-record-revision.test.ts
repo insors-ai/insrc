@@ -25,11 +25,11 @@ const ANCHOR = '2026-10-01T09:00:00.000Z';
 const ident = (now: string) => ({ epicHash: HASH, storyId: 's1', now });
 const task = (taskId: string, commit: string) => ({ taskId, commit, ranAt: ANCHOR, testsPassed: true, tests: [], files: [] });
 
-function withRepo(fn: (repo: string) => void): void {
+async function withRepo(fn: (repo: string) => void | Promise<void>): Promise<void> {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-tests-revision-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 	writeFileSync(join(repo, '.insrc', 'artifacts', `LLD-${HASH}-s1.json`), JSON.stringify({ meta: { workflow: 'design.story', epicHash: HASH, storyId: 's1', createdAt: ANCHOR, epicCreatedAt: ANCHOR, epicSlug: 'tests-rev', standalone: true }, body: {} }, null, 2) + '\n');
-	try { fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
+	try { await fn(repo); } finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
 const revisionOf = (json: string): unknown => (JSON.parse(readFileSync(json, 'utf8')) as { meta: Record<string, unknown> }).meta['revision'];
@@ -40,8 +40,8 @@ function blockDocument(md: string): void {
 	mkdirSync(join(md, 'in-the-way'), { recursive: true });
 }
 
-test('a second persisted mapping bumps the revision, a rollback restores bytes and revision, and a failed restore is reported as inconsistent', () => {
-	withRepo(async repo => {
+test('a second persisted mapping bumps the revision, a rollback restores bytes and revision, and a failed restore is reported as inconsistent', async () => {
+	await withRepo(async repo => {
 		const { json, md } = await persistTestRecordTask(repo, ident('2026-10-02T00:00:00.000Z'), task('t1', 'aaa1111'));
 		assert.equal(revisionOf(json), 1, 'the first record is revision 1');
 		await persistTestRecordTask(repo, ident('2026-10-03T00:00:00.000Z'), task('t2', 'bbb2222'));

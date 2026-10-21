@@ -27,7 +27,7 @@ import { relative } from 'node:path';
 import { getLogger } from '../../../shared/logger.js';
 import { artifactIdMarker, artifactJsonPath, folderIdentityMeta, storyRecordFolderArgs, testsArtifactId, testsArtifactPaths, writeArtifact, writeAtomic } from '../../storage.js';
 import type { PathIntent } from '../../artifact-ids.js';
-import { storeRound, storedCitations } from './round-writer.js';
+import { storeRound, withStoredModel } from './round-writer.js';
 import type { RoundWriter } from './round-writer.js';
 
 const log = getLogger('workflow:test-record');
@@ -268,10 +268,9 @@ export async function persistTestRecordTask(
 	// in BOTH files, and must not find this turn's mapping stored. With one, the content and its change log entry
 	// are committed already, so nothing is rolled back: the next persist finds the content unchanged and renders the document.
 	const priorJson = existsSync(paths.json) ? readFileSync(paths.json, 'utf8') : undefined;
-	// A head the store holds carries its envelope and lifecycle in meta; the refresh keeps them.
-	const stored = through !== undefined && priorJson !== undefined ? storedModelMeta(priorJson) : {};
 	// content: a regenerated TESTS record is signoff-covered, so each write mints a revision.
-	writeArtifact(paths.json, { ...rec, ...(through !== undefined ? storedCitations(paths.json) : {}), meta: { ...stored, ...rec.meta } }, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
+	// A head the store holds carries its envelope, lifecycle and citations; the refresh keeps them.
+	writeArtifact(paths.json, through !== undefined ? withStoredModel(paths.json, rec) : rec, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
 	try {
 		// raw-write: markdown render of the TESTS record.
 		writeAtomic(paths.md, `${artifactIdMarker(testsArtifactId(ident.epicHash, ident.storyId))}\n\n${renderTestRecordMd(rec)}`);
@@ -295,14 +294,6 @@ export async function persistTestRecordTask(
 /** The outcome a TESTS round carries in the change log: whether the gate's tests check passed for the Task. */
 function testsRoundOutcome(task: TestRecordTask): { readonly result: string; readonly summary: string } {
 	return { result: task.testsPassed ? 'passed' : 'failed', summary: `TESTS round for ${task.taskId}: ${task.tests.length} named test(s), tests check ${task.testsPassed ? 'passed' : 'failed'}` };
-}
-
-/** The envelope and lifecycle parts of a stored head's meta, which a refresh of the meta must keep. */
-function storedModelMeta(head: string): Record<string, unknown> {
-	try {
-		const meta = (JSON.parse(head) as { meta?: Record<string, unknown> }).meta ?? {};
-		return Object.fromEntries(['envelope', 'lifecycle'].filter(k => k in meta).map(k => [k, meta[k]]));
-	} catch { return {}; }
 }
 
 /** The document write failed and the json could not be put back either, so the

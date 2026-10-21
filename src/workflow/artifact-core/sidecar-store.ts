@@ -53,14 +53,16 @@ function entryIdOf(entry: unknown): string {
 	return typeof id === 'string' ? id : '';
 }
 
-function timestampOf(entry: unknown): string {
+/** When an entry happened, as a number, so differently written stamps of one instant ('…:00Z', '…:00.000Z') compare as equal; unparseable stamps sort first. */
+function timeOf(entry: unknown): number {
 	const t = (entry as { timestamp?: unknown } | null)?.timestamp;
-	return typeof t === 'string' ? t : '';
+	const ms = typeof t === 'string' ? Date.parse(t) : Number.NaN;
+	return Number.isNaN(ms) ? Number.NEGATIVE_INFINITY : ms;
 }
 
-/** Order by timestamp, then entry id: the one reader order shared by the log and feedback files. */
+/** Order by time, then entry id: the one reader order shared by the log and feedback files. */
 export function compareEntries(a: unknown, b: unknown): number {
-	const ta = timestampOf(a), tb = timestampOf(b);
+	const ta = timeOf(a), tb = timeOf(b);
 	if (ta !== tb) return ta < tb ? -1 : 1;
 	const ia = entryIdOf(a), ib = entryIdOf(b);
 	return ia === ib ? 0 : ia < ib ? -1 : 1;

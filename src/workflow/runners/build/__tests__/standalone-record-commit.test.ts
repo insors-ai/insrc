@@ -63,8 +63,8 @@ test("a BUILD record persisted after another Story's commits names the Story's n
 	});
 });
 
-test('with no trailered commit the record names HEAD, and an explicit commit wins', () => {
-	withRepo(async (repo, git) => {
+test('with no trailered commit the record names HEAD, and an explicit commit wins', async () => {
+	await withRepo(async (repo, git) => {
 		commit(repo, git, 'a.ts', 'feat(build): S001/t1 untrailed');
 		const head = commit(repo, git, 'b.ts', `feat(build): S001/t2 a different Story\n\nInsrc-Story: 748edb69bd23f767/s1`);
 		assert.equal(await persistedCommit(repo), head);

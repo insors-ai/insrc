@@ -54,14 +54,6 @@ export function storeRound(through: RoundWriter, id: string, jsonPath: string, b
 	return through.writer.updateContent(id, through.actor, { body: body as HeadPayload['body'], citations: [] }, { create: true, outcome });
 }
 
-/** The `citations` key of the head the store holds, so the raw refresh of a round record leaves the head as the store wrote it (an absent key is not the same bytes as an empty list). */
-export function storedCitations(jsonPath: string): { readonly citations?: unknown } {
-	try {
-		const head = JSON.parse(readFileSync(jsonPath, 'utf8')) as { citations?: unknown };
-		return head.citations !== undefined ? { citations: head.citations } : {};
-	} catch { return {}; }
-}
-
 /**
  * `record` (a {meta, body} head being refreshed) with the envelope and lifecycle the store holds for it, and its citations, so the
  * raw refresh of a round record leaves what the store wrote as it was. Without a stored head the record is returned as it is.

@@ -34,7 +34,10 @@ export async function handleWorkflowApprove(
 	if (p.epicHash !== undefined && repoPath.length === 0) {
 		return { error: 'workflow.approve: `repo` is required for an epicHash batch' };
 	}
-	const repoForStore = repoPath.length > 0 ? repoPath : (p.artifactPath !== undefined ? repoOfArtifactPath(p.artifactPath) ?? '' : '');
+// The repository whose store holds the artifact: for a single artifact, the one its path sits in (the request's or the
+	// environment's repo may name another); for an epic batch, the request's repo.
+	const ofPath = p.artifactPath !== undefined ? repoOfArtifactPath(p.artifactPath) : undefined;
+	const repoForStore = ofPath ?? repoPath;
 	let lifecycle: LifecycleService;
 	let actor;
 	try {

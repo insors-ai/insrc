@@ -30,7 +30,7 @@ import { changeLogBodyLines, feedbackBodyLines } from '../../artifacts/format/bi
 import type { FileChangeLog, FeedbackRecord } from '../../artifacts/provenance/types.js';
 
 import { readTestRecord } from './test-record.js';
-import { storeRound, storedCitations } from './round-writer.js';
+import { storeRound, withStoredModel } from './round-writer.js';
 import type { RoundWriter } from './round-writer.js';
 import { resolveStoryRangeBase } from './range-base.js';
 import { newestStoryCommit } from './story-commits.js';
@@ -372,7 +372,7 @@ export async function persistBuildRecord(repoPath: string, rec: BuildRecord, thr
 	}
 	const { jsonPath, merged, intent } = prepared;
 	// content: a BUILD record is regenerated, so each persist mints a revision.
-	writeArtifact(jsonPath, through !== undefined ? { ...merged, ...storedCitations(jsonPath) } : merged, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
+	writeArtifact(jsonPath, through !== undefined ? withStoredModel(jsonPath, merged) : merged, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
 	const paths = pathsForMerged(repoPath, merged, intent);
 	// ONE renderer, every route — the former `meta.standalone` ternary is gone.
 	// The id marker is prepended HERE, not in the renderer, so the renderer's

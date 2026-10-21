@@ -131,3 +131,15 @@ test('the daemon approve handler, the review-decision step and workflowReviewSta
 	assert.equal(reviewLifecycle, lifecycleFor(repo).service);
 	assert.ok(sent.some(m => m.stream === 'done'), JSON.stringify(sent));
 });
+
+test('one registry entry per repository however its path is written, and a single-artifact approval uses the repository the artifact sits in, not the environment\'s', async () => {
+	const repo = await seeded();
+	assert.equal(lifecycleFor(repo), lifecycleFor(`${repo}/`));
+	assert.equal(lifecycleFor(repo), lifecycleFor(join(repo, '.', 'docs', '..')));
+	const other = mkdtempSync(join(tmpdir(), 'lifecycle-wiring-other-'));
+	repos.push(other);
+	// the environment names another repository: the approval still runs through the artifact's own store
+	const result = await handleWorkflowApprove({ artifactPath: artifactJsonPath(repo, PLAN_A) }, other) as WorkflowApproveResult;
+	assert.equal(result.approved.length, 1, JSON.stringify(result.skipped));
+	assert.equal((await lifecycleFor(repo).store.read(PLAN_A)).lifecycle.status, 'approved');
+});

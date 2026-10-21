@@ -241,6 +241,13 @@
         "choice": "By the decision that took effect (feedback to revision-request, approve and reject to comment)",
         "rationale": "A withheld approval records its comments under the feedback decision, which is a request to change the artifact; the legacy IPC kind feedback maps to revision-request.",
         "resolvedAt": "2026-10-21T11:51:36.440Z"
+      },
+      "qb737f0d4": {
+        "question": "The readers of body.feedback (companion headers, delivery) will show only entries written before s5 until the s9 conversion, while new feedback is in the line files: should s5 add the line-file entries to those readers, or leave the mixed view until s9?",
+        "status": "resolved",
+        "choice": "Leave the mixed view until s9",
+        "rationale": "The readers switch with the conversion; s5 adds no reader changes.",
+        "resolvedAt": "2026-10-21T11:52:19.055Z"
       }
     }
   },

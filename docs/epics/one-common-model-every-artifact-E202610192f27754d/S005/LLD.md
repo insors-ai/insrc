@@ -465,6 +465,8 @@ Keep the sc3 Feedback shape exactly as s2 shipped it. add() of a top-level entry
   - **resolved**: Keep on the parent artifact with the file path in anchor.section — No DIAG lookup; the file is not lost and the thread stays on the artifact the person reviewed. _(2026-10-21T11:51:00.707Z)_
 - `q937a3db7` — The legacy kind 'feedback' (a request to change the artifact) has no direct match: should it be stored as revision-request, as comment, or by the decision it came with (send-feedback to revision-request, approve and reject to comment)?
   - **resolved**: By the decision that took effect (feedback to revision-request, approve and reject to comment) — A withheld approval records its comments under the feedback decision, which is a request to change the artifact; the legacy IPC kind feedback maps to revision-request. _(2026-10-21T11:51:36.440Z)_
+- `qb737f0d4` — The readers of body.feedback (companion headers, delivery) will show only entries written before s5 until the s9 conversion, while new feedback is in the line files: should s5 add the line-file entries to those readers, or leave the mixed view until s9?
+  - **resolved**: Leave the mixed view until s9 — The readers switch with the conversion; s5 adds no reader changes. _(2026-10-21T11:52:19.055Z)_
 
 ## Citations
 

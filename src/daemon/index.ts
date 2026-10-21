@@ -646,39 +646,19 @@ async function main(): Promise<void> {
 		// artifact by path, or batch every still-pending artifact under an epic.
 		// Non-lossy — review-blocked artifacts come back in `skipped[]`.
 		'workflow.approve': async (params) => {
-			const p = (params ?? {}) as { repo?: string; artifactPath?: string; epicHash?: string; overrideReview?: string };
-			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';
-			// repo is only needed to locate the epic's artifacts dir for a batch;
-			// a single artifactPath is an absolute, repo-independent path.
-			if (p.epicHash !== undefined && repoPath.length === 0) {
-				return { error: 'workflow.approve: `repo` is required for an epicHash batch' };
-			}
-			const { approveWorkflowTarget } = await import('../workflow/gates.js');
-			const result = await approveWorkflowTarget({
-				repoPath,
-				...(p.artifactPath !== undefined ? { artifactPath: p.artifactPath } : {}),
-				...(p.epicHash !== undefined ? { epicHash: p.epicHash } : {}),
-				...(p.overrideReview !== undefined ? { overrideReview: p.overrideReview } : {}),
+			const { handleWorkflowApprove } = await import('./workflow-approve.js');
+			return handleWorkflowApprove(params, process.env['INSRC_REPO'], {
+				// DB-bound parent inference is bound to this daemon's graph handle (the same wiring the `locate.inferParents`
+				// IPC uses) and injected: the workflow layer stays DB-free.
+				followOn: async (approved, repoPath) => {
+					const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
+					return advanceApprovedBugfixes(approved, {
+						repoPath,
+						inferCandidates: async (req: InferParentsRequest) =>
+							inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
+					});
+				},
 			});
-			// Post-approval bugfix seam (a2 mount): approveWorkflowTarget is awaited
-			// (its completion hook writes the BUILD ledger); the async advance/close
-			// run here, one level up, over the artifacts it
-			// actually completed. DB-bound parent inference is bound to this daemon's
-			// graph handle (the same wiring the `locate.inferParents` IPC uses) and
-			// injected — the workflow layer stays DB-free. A seam throw is captured as
-			// an `ok:false` followOn, never failing the approval. Skipped when there is
-			// nothing completed to act on or no repo (a repo-independent single-path
-			// approve with no batch repo cannot resolve inference).
-			if (result.approved.length === 0 || repoPath.length === 0) {
-				return result;
-			}
-			const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
-			const followOn = await advanceApprovedBugfixes(result.approved, {
-				repoPath,
-				inferCandidates: async (req: InferParentsRequest) =>
-					inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
-			});
-			return followOn.length > 0 ? { ...result, followOn } : result;
 		},
 
 		// sc1 (ide-artifact-review-panel S001): the pending-approval artifact
@@ -752,10 +732,12 @@ async function main(): Promise<void> {
 		// graph handle.
 		'workflow.reviewDecision': async (params) => {
 			const { handleReviewDecision } = await import('../workflow/review-decision.js');
+			const { lifecycleFor } = await import('./lifecycle-registry.js');
 			return handleReviewDecision(
 				params as Parameters<typeof handleReviewDecision>[0],
 				process.env['INSRC_REPO'],
 				{
+					lifecycleFor: repoPath => lifecycleFor(repoPath).service,
 					followOn: async (approved, repoPath) => {
 						const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
 						return advanceApprovedBugfixes(approved, {
@@ -1962,7 +1944,8 @@ async function main(): Promise<void> {
 		// work here; a daemon-authored artifact is refused with an `error` frame.
 		'workflow.review': async (params, send, signal) => {
 			const mod = await import('./workflow-review-rpc.js');
-			return mod.workflowReviewStart(params, send, signal);
+			const { lifecycleFor } = await import('./lifecycle-registry.js');
+			return mod.workflowReviewStart(params, send, signal, { lifecycleFor: repoPath => lifecycleFor(repoPath).service });
 		},
 		// The step host (Epic c2ba6fa6, Story s11): runs one of the seven step
 		// tools for an MCP forwarder, in the caller's context, with this

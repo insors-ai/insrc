@@ -25,6 +25,7 @@ import { runWithRoutingContext } from '../analyze/context/shaper-provider.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
 import { getLogger } from '../shared/logger.js';
 import type { IpcStreamMessage, LLMProvider } from '../shared/types.js';
+import type { LifecycleService } from '../workflow/artifact-core/lifecycle-service.js';
 import { jsonPathForMd } from '../workflow/gates.js';
 import { reviewArtifactFile, SamePartyReviewError } from '../workflow/review/index.js';
 import type { ReviewArtifactResult } from '../workflow/review/index.js';
@@ -59,6 +60,8 @@ export interface WorkflowReviewDeps {
 	/** The provider for the `review` role and its label. */
 	readonly resolveProvider?: ((repoPath: string) => { provider: LLMProvider; model: string }) | undefined;
 	readonly review?: typeof reviewArtifactFile | undefined;
+	/** The repository's durable LifecycleService; the daemon passes its registry. Without it the review runs head-only. */
+	readonly lifecycleFor?: ((repoPath: string) => LifecycleService) | undefined;
 }
 
 export async function workflowReviewStart(
@@ -96,9 +99,11 @@ export async function workflowReviewStart(
 			data: { kind: 'stage', operation: 'workflow.review', stageId: label, stageLabel: label, index: stageIndex++, total: null },
 		});
 
+		const lifecycle = deps.lifecycleFor?.(repoPath);
 		const run = async (provider: LLMProvider, model: string): Promise<ReviewArtifactResult> =>
 			(deps.review ?? reviewArtifactFile)({
 				mdPath, jsonPath, repo: repoPath, provider, model,
+				...(lifecycle !== undefined ? { lifecycle } : {}),
 				reviewedAt: new Date().toISOString(),
 				onProgress: progress,
 				signal,

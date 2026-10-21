@@ -35,6 +35,8 @@ import {
 	FEEDBACK_CONTEXT_MAX, FEEDBACK_DECISIONS, FEEDBACK_QUOTE_MAX,
 	type FeedbackAnchor, type FeedbackDecision,
 } from './artifacts/provenance/types.js';
+import type { LifecycleService } from './artifact-core/lifecycle-service.js';
+import { approvalActorOf } from './artifact-core/approval-actor.js';
 import { approveWorkflowTarget, jsonPathForMd, rejectArtifactByJsonPath, type WorkflowApproveResult } from './gates.js';
 
 const log = getLogger('workflow:review-decision');
@@ -86,6 +88,8 @@ export interface ReviewDecisionError { readonly error: string }
 export interface ReviewDecisionDeps {
 	readonly reviewer?:    ReviewerDeps | undefined;
 	readonly approve?:     typeof approveWorkflowTarget | undefined;
+	/** The repository's durable LifecycleService; the daemon passes its registry. Without it the approval runs head-only. */
+	readonly lifecycleFor?: ((repoPath: string) => LifecycleService) | undefined;
 	readonly reject?:      typeof rejectArtifactByJsonPath | undefined;
 	readonly appendBatch?: typeof appendFeedbackBatch | undefined;
 	/** What 'workflow.approve' runs over the artifacts it approved (the bugfix
@@ -105,7 +109,7 @@ export async function handleReviewDecision(
 	repoEnv: string | undefined,
 	deps: ReviewDecisionDeps = {},
 ): Promise<ReviewDecisionResult | ReviewDecisionError> {
-	const p = (params ?? {}) as { repo?: unknown; mdPath?: unknown; decision?: unknown; comments?: unknown };
+	const p = (params ?? {}) as { repo?: unknown; mdPath?: unknown; decision?: unknown; comments?: unknown; actor?: unknown };
 	const repoPath = (typeof p.repo === 'string' && p.repo.length > 0 ? p.repo : repoEnv) ?? '';
 	if (repoPath.length === 0) return { error: `${P}: \`repo\` is required` };
 	if (typeof p.mdPath !== 'string' || p.mdPath.length === 0) return { error: `${P}: \`mdPath\` is required` };
@@ -161,7 +165,11 @@ export async function handleReviewDecision(
 	let approved: WorkflowApproveResult['approved'] = [];
 	try {
 		if (decision === 'approve') {
-			const res = await (deps.approve ?? approveWorkflowTarget)({ repoPath, artifactPath: jsonPath });
+			const lifecycle = deps.lifecycleFor?.(repoPath);
+			const res = await (deps.approve ?? approveWorkflowTarget)({
+				repoPath, artifactPath: jsonPath,
+				...(lifecycle !== undefined ? { lifecycle, actor: approvalActorOf(p.actor) } : {}),
+			});
 			approved = res.approved;
 			if (res.approved.length > 0) {
 				outcome = 'approved';

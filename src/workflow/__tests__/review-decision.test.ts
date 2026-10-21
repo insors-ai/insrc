@@ -401,10 +401,14 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 
 	// The three existing handlers, as they were: each still delegates to its own
 	// function and none goes through the new call.
+	// 'workflow.approve' delegates to its own function (s4 moved the body to workflow-approve.ts so it can be tested), which runs
+	// the same approval and the same bugfix follow-on.
 	const approve = handlerSource(src, 'workflow.approve');
-	assert.match(approve, /const result = await approveWorkflowTarget\(\{/);
-	assert.match(approve, /const followOn = await advanceApprovedBugfixes\(result\.approved, \{/);
-	assert.match(approve, /return followOn\.length > 0 \? \{ \.\.\.result, followOn \} : result;/);
+	assert.match(approve, /return handleWorkflowApprove\(params, process\.env\['INSRC_REPO'\]/);
+	assert.match(approve, /advanceApprovedBugfixes\(approved, \{/);
+	const approveSrc = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'workflow-approve.ts'), 'utf8');
+	assert.match(approveSrc, /await \(deps\.approve \?\? approveWorkflowTarget\)\(\{/);
+	assert.match(approveSrc, /const followOn = await deps\.followOn\(result\.approved, repoPath\);/);
 	assert.equal(handlerSource(src, 'workflow.resolveComment'), [
 		`\t\t'workflow.resolveComment': async (params) => {`,
 		`\t\t\tconst { handleResolveComment } = await import('../workflow/resolve-comment.js');`,

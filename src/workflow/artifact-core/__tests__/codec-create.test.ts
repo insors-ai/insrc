@@ -6,7 +6,6 @@ import { join } from 'node:path';
 
 import { codecFor, creationContextProvider, registeredKinds } from '../codecs.js';
 import { decodeArtifactHead } from '../decode.js';
-import { UnknownArtifactKindError } from '../types.js';
 import { ArtifactIds, MissingAnchorError } from '../../artifact-ids.js';
 import { workItemAnchorCreatedAt, artifactJsonPath, resolveEpicAnchor } from '../../storage.js';
 import { renderDefineMarkdown } from '../../artifacts/define.js';
@@ -83,8 +82,8 @@ describe('kind codecs', () => {
 		} finally { rmSync(repo, { recursive: true, force: true }); }
 	});
 
-	it('kinds with no stored head yet have no codec', () => {
-		assert.deepEqual([...registeredKinds()].sort(), ['AMD', 'BUILD', 'CR', 'DEF', 'EXT', 'HLD', 'ISSUE', 'LLD', 'PLAN', 'SPEC', 'TESTS']);
-		for (const k of ['EPIC', 'STORY', 'TASKS', 'TASK', 'DIAG'] as const) assert.throws(() => codecFor(k), UnknownArtifactKindError);
+	it('every artifact kind has a codec', () => {
+		assert.deepEqual([...registeredKinds()].sort(), ['AMD', 'BUILD', 'CR', 'DEF', 'DIAG', 'EPIC', 'EXT', 'HLD', 'ISSUE', 'LLD', 'PLAN', 'SPEC', 'STORY', 'TASK', 'TASKS', 'TESTS']);
+		for (const k of registeredKinds()) assert.doesNotThrow(() => codecFor(k));
 	});
 });

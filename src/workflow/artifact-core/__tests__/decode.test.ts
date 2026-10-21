@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { codecFor } from '../codecs.js';
 import { decodeArtifactHead } from '../decode.js';
-import { ArtifactShapeError, UnknownArtifactKindError } from '../types.js';
+import { ArtifactShapeError } from '../types.js';
 import { InvalidArtifactKeyError } from '../../artifact-ids.js';
 
 const H = '0123456789abcdef';
@@ -93,8 +93,9 @@ describe('decodeArtifactHead', () => {
 		assert.equal(decodeArtifactHead(LLD, head({ envelope: { binding: { reference: okRef, createdAtRevision: 1, posted: [{ kind: 'plan', at: 't' }] }, attachments: [{ target: okRef, revision: 1, at: 't' }] } })).artifact.attachments.length, 1);
 		// the AMD codec refuses a flat record on its own as well
 		assert.throws(() => codecFor('AMD').decode({ id: 'x' } as never), ArtifactShapeError);
-		assert.throws(() => decodeArtifactHead(`TASK-${H}-s1-t1`, head({})), UnknownArtifactKindError);
-		assert.throws(() => decodeArtifactHead(`STORY-${H}-s1`, head({})), UnknownArtifactKindError);
+		// an id that is not an artifact id has no kind
+		assert.throws(() => decodeArtifactHead('TASK-nope', head({})), InvalidArtifactKeyError);
+		assert.deepEqual(decodeArtifactHead(`TASK-${H}-s1-t1`, head({})).artifact.payload.body, { text: 'b' });
 
 		// a flat amendment is refused with a pointer to the conversion; a converted one decodes
 		const flat = JSON.stringify({ id: `AMD-${H}-1`, status: 'approved', amendment: {} });

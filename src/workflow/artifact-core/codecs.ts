@@ -101,9 +101,10 @@ const CODECS: ReadonlyMap<ArtifactIdKind, KindCodec> = new Map(([
 	['DEF', 'define'], ['HLD', 'design.epic'], ['LLD', 'design.story'], ['PLAN', 'plan'],
 	['SPEC', 'brainstorm'], ['ISSUE', 'issue'], ['BUILD', 'build'], ['CR', 'code-review'],
 	['TESTS', 'tests'], ['EXT', 'define'], ['AMD', 'design.epic'],
+	['EPIC', 'define'], ['STORY', 'define'], ['TASKS', 'plan'], ['TASK', 'plan'], ['DIAG', 'docgen'],
 ] as const).map(([kind, workflow]) => [kind, codec(kind, workflow)]));
 
-/** The codec of a kind; kinds with no stored head yet (EPIC, STORY, TASKS, TASK, DIAG) have none. */
+/** The codec of a kind. EPIC, STORY, TASKS, TASK and DIAG are pass-through: body and citations stay opaque until their stories type them. */
 export function codecFor(kind: ArtifactIdKind): KindCodec {
 	const c = CODECS.get(kind);
 	if (c === undefined) throw new UnknownArtifactKindError(`no codec is registered for artifact kind '${kind}'`);

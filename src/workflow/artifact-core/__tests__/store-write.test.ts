@@ -8,7 +8,7 @@ import { artifactJsonPath, workItemAnchorCreatedAt } from '../../storage.js';
 import { renderDefineMarkdown } from '../../artifacts/define.js';
 import type { DefineArtifact } from '../../artifacts/define.js';
 import { registeredKinds } from '../codecs.js';
-import { ArtifactShapeError, UnknownArtifactKindError } from '../types.js';
+import { ArtifactShapeError } from '../types.js';
 import type { Reference } from '../types.js';
 import { InvalidArtifactKeyError } from '../../artifact-ids.js';
 import { H, alice, artifact, kit } from './store-kit.js';
@@ -17,7 +17,9 @@ const keyFor = (kind: ArtifactIdKind): ArtifactKey => {
 	switch (kind) {
 		case 'SPEC': case 'ISSUE': return { kind, epicHash: '89abcdef' };
 		case 'AMD': return { kind, epicHash: H, seq: 1 };
-		case 'DEF': case 'HLD': return { kind, epicHash: H };
+		case 'DIAG': return { kind, epicHash: H, story: 's1', seq: 1 };
+		case 'TASK': return { kind, epicHash: H, story: 's1', task: 't1' };
+		case 'DEF': case 'HLD': case 'EPIC': return { kind, epicHash: H };
 		default: return { kind, epicHash: H, story: 's1' };
 	}
 };
@@ -97,8 +99,8 @@ describe('ArtifactStore.write', () => {
 			// a TASK's parent must be exactly its STORY
 			const task = `TASK-${H}-s1-t1`;
 			await assert.rejects(k.store.write(artifact(task, { parent: parent(`STORY-${H}-s2`) }), alice), (e: unknown) => e instanceof ArtifactShapeError && /has to be STORY-0123456789abcdef-s1/.test(e.message));
-			// the right parent passes the link check (a Task has no codec yet, so the kind is what stops it)
-			await assert.rejects(k.store.write(artifact(task, { parent: parent(`STORY-${H}-s1`) }), alice), UnknownArtifactKindError);
+			// the right parent passes the link check and the Task is written
+			await k.store.write(artifact(task, { parent: parent(`STORY-${H}-s1`) }), alice);
 			// an artifact-typed reference with a bad id
 			await assert.rejects(k.store.write(artifact(id, { references: [{ entityId: 'LLD-bad', type: 'LLD', relation: 'cites' }] }), alice), ArtifactShapeError);
 			// a valid id of another kind than the declared type
@@ -117,7 +119,6 @@ describe('ArtifactStore.write', () => {
 			assert.deepEqual((await k.store.read(id)).references, ok);
 			// bad ids, kinds and actors
 			await assert.rejects(k.store.write(artifact('LLD-nope'), alice), InvalidArtifactKeyError);
-			await assert.rejects(k.store.write(artifact(`TASK-${H}-s1-t1`), alice), UnknownArtifactKindError);
 			await assert.rejects(k.store.write(artifact(id), { ...alice, id: 'Alice' }), ArtifactShapeError);
 			// an actor with a good id but no kind is refused BEFORE staging, so it cannot block the artifact
 			await assert.rejects(k.store.write(artifact(id), { id: 'github:eve' } as never), ArtifactShapeError);

@@ -229,3 +229,14 @@ test('the identity file writer is classified and appendSidecarLine remains the o
 	assert.deepEqual(others.sort(), ['src/workflow/artifact-core/sidecar-store.ts', 'src/workflow/artifact-core/sidecar.ts']);
 	assert.equal(scanWriters(read('src/workflow/artifact-core/sidecar.ts'), 'src/workflow/artifact-core/sidecar.ts').rawCalls.filter(c => c.name === 'appendFileSync').length, 1);
 });
+
+test('the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry', () => {
+	const entry = byFile.get('src/workflow/tracker/binding.ts');
+	assert.equal(entry?.class, 'meta-only');
+	assert.match(entry?.note ?? '', /meta\.envelope\.binding/);
+	assert.deepEqual(checkInventoryEntry(read('src/workflow/tracker/binding.ts'), entry, 'src/workflow/tracker/binding.ts'), []);
+	assert.deepEqual(scanWriters(read('src/workflow/tracker/binding.ts'), 'src/workflow/tracker/binding.ts').rawCalls, [], 'it writes only through writeArtifact');
+	// the binding is written by this module alone: no other production file patches meta.envelope.binding
+	const others = productionFiles(join(ROOT, 'src')).filter(f => f !== 'src/workflow/tracker/binding.ts' && /envelope:\s*\{[^}]*binding:/.test(read(f)) && !/artifact-core\//.test(f));
+	assert.deepEqual(others, []);
+});

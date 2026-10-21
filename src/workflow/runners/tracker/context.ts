@@ -18,6 +18,7 @@
  */
 
 import { existsSync, readFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 import { readAmendment } from '../../amendments/store.js';
 import { readBaseHld, readDefineArtifact, requireApprovedEpic } from '../../gates.js';
@@ -27,6 +28,7 @@ import type { PlanArtifact } from '../../artifacts/plan.js';
 import { resolveGithubConfig, type ResolvedGithubConfig } from '../../config/github.js';
 import { artifactJsonPath, planArtifactId, planMdRel } from '../../storage.js';
 import { assertEpicHash } from '../../hash.js';
+import { taskIssueRefsOf } from '../../tasks/lookup.js';
 import type { StepRunnerContext } from '../../types.js';
 import type { PostContext, PushContext, PushTaskInfo, SyncContext } from './schemas.js';
 
@@ -82,8 +84,9 @@ export function assemblePushContext(ctx: StepRunnerContext): PushContext {
 					tests: t.tests.map(x => ({ level: x.level, name: x.name })),
 				})),
 			});
-			const priorTaskRefs = plan.meta.tracker?.taskRefs;
-			if (priorTaskRefs !== undefined && Object.keys(priorTaskRefs).length > 0) {
+			// a Task's own binding wins over the plan's record, which only a Task with no artifact still has
+			const priorTaskRefs = { ...(plan.meta.tracker?.taskRefs ?? {}), ...taskIssueRefsOf(dirname(planJson), epicHash, s.id) };
+			if (Object.keys(priorTaskRefs).length > 0) {
 				(existing.taskRefs ??= {})[s.id] = priorTaskRefs;
 			}
 		}

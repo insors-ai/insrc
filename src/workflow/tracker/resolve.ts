@@ -40,6 +40,7 @@ import { join } from 'node:path';
 import { ARTIFACTS_DIR, readEpicDefinitionCore, type TrackerBlock } from '../storage.js';
 import { ArtifactIds, type ArtifactKey } from '../artifact-ids.js';
 import { issueNumber } from './refs.js';
+import { taskHeadsIn } from '../tasks/lookup.js';
 import type { PlanTask } from '../artifacts/plan.js';
 import type { DefineStory } from '../artifacts/define.js';
 
@@ -81,6 +82,7 @@ const ISSUE_RE = /^ISSUE-([0-9a-f]{16})\.json$/;
 // Every route mints the lowercase `s<n>` story id; an uppercase file name is not an artifact until the s9 conversion.
 const LLD_RE  = /^LLD-([0-9a-f]{16})-(s\d+)\.json$/;
 const PLAN_RE = /^PLAN-([0-9a-f]{16})-(s\d+)\.json$/;
+const TASK_RE = /^TASK-([0-9a-f]{16})-(s\d+)-t\d+\.json$/;
 
 // ---------------------------------------------------------------------------
 // Minimal artifact reads
@@ -311,10 +313,17 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 	const defTracker = dmeta.tracker;
 
 	// Mint the artifact id. A key that is not a valid id (an uppercase story) makes the node unaddressable → null.
+	// A Task that has its own artifact is found by its number, else by the plan row it was made from; the row id is what the
+	// plan and the build record call it, the artifact's own id names the node.
+	const head = taskId !== undefined && storyId !== undefined
+		? taskHeadsIn(dir, epicHash, storyId).filter(h => h.status !== 'withdrawn').find(h => h.number === taskId.toLowerCase())
+			?? taskHeadsIn(dir, epicHash, storyId).filter(h => h.status !== 'withdrawn').find(h => h.planTaskId === taskId)
+		: undefined;
+	const rowId = head?.planTaskId ?? taskId;
 	let workflowId: string;
 	try {
 		workflowId = taskId !== undefined
-			? ArtifactIds.make({ kind: 'TASK', epicHash, story: storyId, task: taskId })
+			? ArtifactIds.make({ kind: 'TASK', epicHash, story: storyId, task: head?.number ?? taskId })
 			: storyId !== undefined
 				? ArtifactIds.make({ kind: 'STORY', epicHash, story: storyId })
 				: ArtifactIds.make({ kind: 'EPIC', epicHash });
@@ -334,8 +343,9 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 	let task: PlanTask | undefined;
 	if (taskId !== undefined && storyId !== undefined) {
 		const plan = readArtifact(storyArtifactPath(dir, 'PLAN', epicHash, storyId));
-		taskRef = plan?.meta?.tracker?.taskRefs?.[taskId];
-		task = plan?.body?.tasks?.find(t => t.id === taskId);
+		// the Task's own binding first; the plan's record only for a Task with no artifact
+		taskRef = head?.issue ?? plan?.meta?.tracker?.taskRefs?.[rowId ?? taskId];
+		task = plan?.body?.tasks?.find(t => t.id === (rowId ?? taskId));
 	}
 
 	const level: ResolvedRef['level'] = taskId !== undefined ? 'task' : storyId !== undefined ? 'story' : 'epic';
@@ -347,7 +357,7 @@ function buildRef(dir: string, epicHash: string, storyId?: string, taskId?: stri
 		epicSlug,
 		createdAt,
 		...(storyId !== undefined ? { storyId } : {}),
-		...(taskId  !== undefined ? { taskId }  : {}),
+		...(rowId   !== undefined ? { taskId: rowId } : {}),
 		workflowId,
 		slug:       workflowId,
 		...(issueRef !== undefined ? { issueRef } : {}),
@@ -370,7 +380,15 @@ function readTrackerBlock(path: string): TrackerBlock | undefined {
 function resolveByIssue(dir: string, number: string): ResolvedRef | null {
 	const files = listFiles(dir);
 
-	// Tasks (globally unique numbers live here most densely).
+	// Tasks with their own artifact: the issue on the Task's binding (a withdrawn Task's issue is closed and is not a match).
+	for (const f of files) {
+		const m = TASK_RE.exec(f);
+		if (m === null) continue;
+		const head = taskHeadsIn(dir, m[1]!, m[2]!).find(h => h.id === f.slice(0, -'.json'.length));
+		if (head !== undefined && head.status !== 'withdrawn' && head.issue !== undefined && refNumber(head.issue) === number) return buildRef(dir, m[1]!, m[2]!, head.number);
+	}
+
+	// Tasks recorded on their plan (a Task with no artifact).
 	for (const f of files) {
 		const m = PLAN_RE.exec(f);
 		if (m === null) continue;

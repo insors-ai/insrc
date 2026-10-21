@@ -133,6 +133,8 @@ import { priorFeedback } from './artifacts/provenance/writer.js';
 import type { FeedbackRecord } from './artifacts/provenance/types.js';
 import { linkDocsToIssues } from './tracker/link.js';
 import { patchTrackerMeta } from './tracker/refs.js';
+import { bindArtifact } from './tracker/binding.js';
+import { taskHeadIdOf } from './tasks/lookup.js';
 import { existsSync, readFileSync } from 'node:fs';
 import {
 	AmendmentApplyError,
@@ -2952,7 +2954,16 @@ function mutateEpicTrackerMeta(
 			for (const [storyId, taskRefs] of Object.entries(push.taskRefs)) {
 				const planJson = artifactJsonPath(repoPath, planArtifactId(epicHash, storyId));
 				if (!existsSync(planJson)) continue;
-				try { patchTrackerMeta(planJson, { taskRefs, pushedAt: new Date().toISOString() }); }
+				// a Task with its own artifact is recorded on that artifact's binding; the plan keeps only a Task with no artifact
+				const onPlan: Record<string, string> = {};
+				for (const [taskId, ref] of Object.entries(taskRefs)) {
+					const head = taskHeadIdOf(repoPath, epicHash, storyId, taskId);
+					if (head === undefined) { onPlan[taskId] = ref; continue; }
+					// a Task already bound keeps its issue (a unit has exactly one); nothing is written on the plan for it
+					const bound = bindArtifact(repoPath, head, ref);
+					if (!bound.ok) log.warn({ head, ref, why: bound.kind, reason: bound.reason }, 'tracker.push: the Task issue was not recorded on its Task artifact');
+				}
+				try { patchTrackerMeta(planJson, { ...(Object.keys(onPlan).length > 0 ? { taskRefs: onPlan } : {}), pushedAt: new Date().toISOString() }); }
 				catch { /* plan meta patch is best-effort */ }
 			}
 		}

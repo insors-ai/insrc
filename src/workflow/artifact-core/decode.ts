@@ -43,6 +43,8 @@ const isStr = (v: unknown): v is string => typeof v === 'string';
 /** An actor with a non-empty id, one of the three kinds and a properties object. Shared by heads and sidecar entries. */
 export const isActor = (v: unknown): boolean => isObject(v) && isStr(v['id']) && v['id'].length > 0
 	&& (v['kind'] === 'person' || v['kind'] === 'agent' || v['kind'] === 'system') && isObject(v['properties']);
+/** A namespaced lower-case actor id such as `github:alice` (shared by the store and the feedback service). */
+export const isNamespacedActorId = (id: unknown): id is string => typeof id === 'string' && /^[a-z][a-z0-9-]*:\S+$/.test(id) && id === id.toLowerCase();
 export const isReference = (v: unknown): boolean => isObject(v) && isStr(v['entityId']) && isStr(v['type']) && isStr(v['relation']);
 const isInt = (v: unknown): boolean => typeof v === 'number' && Number.isInteger(v);
 const isSignoff = (v: unknown): boolean => isObject(v) && isInt(v['revision']) && isReference(v['request'])

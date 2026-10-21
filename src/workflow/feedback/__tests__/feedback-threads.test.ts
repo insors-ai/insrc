@@ -22,7 +22,7 @@ describe('feedback-threads', () => {
 		const dir = mkdtempSync(join(tmpdir(), 'feedback-threads-'));
 		try {
 			const history = new History(new FileSidecarStore(dir));
-			const svc = new FeedbackService({ history });
+			const svc = new FeedbackService({ history, store: undefined as never });
 			// appended out of order: the reader orders them
 			await history.appendFeedback(ID, fb('r2', '2026-10-21T10:05:00Z', { inReplyTo: 'a' }));
 			await history.appendFeedback(ID, fb('b', '2026-10-21T10:02:00Z'));

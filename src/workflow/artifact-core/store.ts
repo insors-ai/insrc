@@ -209,6 +209,16 @@ export class ArtifactStore {
 		await this.enqueue(id, () => this.completePending(id, artifactJsonPath(this.deps.repoPath, id)));
 	}
 
+	/**
+	 * Run `run` with no write to `id` in between, on the same per-artifact queue as write, update and finishPending. For a
+	 * check-then-append on the artifact's history that has to be atomic within the process. `run` must not call write or
+	 * update on the same artifact: it would wait for itself.
+	 */
+	async exclusive<T>(id: string, run: () => Promise<T>): Promise<T> {
+		if (ArtifactIds.parse(id) === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
+		return this.enqueue(id, run);
+	}
+
 	/** One write at a time per artifact in this process: recovery, stage, append and replace must not interleave. */
 	private async enqueue<T>(id: string, run: () => Promise<T>): Promise<T> {
 		const lockKey = `${this.deps.repoPath}\0${id}`;

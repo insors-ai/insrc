@@ -99,8 +99,8 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---
 	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact; appendRunLog and appendProgressLog append to the jsonl run traces' },
 	{ file: 'src/workflow/artifact-core/sidecar.ts', class: 'non-artifact', via: 'raw', note: 'appendSidecarLine, the one function that appends a history record as a JSON line to the path it is given; the lines are history, not an artifact head' },
-	{ file: 'src/workflow/artifact-core/journal.ts', class: 'non-artifact', via: 'raw', note: 'the file WriteJournal replaces .insrc/journal/<id>.json atomically; a staged operation is a pending write, not an artifact head' },
-	{ file: 'src/workflow/artifact-core/sidecar-store.ts', class: 'non-artifact', via: 'raw', note: 'the file SidecarStore appends history records through appendSidecarLine; the lines are history, not an artifact head' },
+	{ file: 'src/workflow/artifact-core/journal.ts', class: 'non-artifact', via: 'raw', note: 'the durable WriteJournal replaces .insrc/journal/<id>.json atomically: a staged operation is a pending write kept for crash recovery (not committed, listed in the ignore file), not an artifact head' },
+	{ file: 'src/workflow/artifact-core/sidecar-store.ts', class: 'non-artifact', via: 'raw', note: 'the file SidecarStore appends history records through appendSidecarLine; its ensure step appends the missing merge rules to .gitattributes and the journal folder to .gitignore (repository configuration, never an artifact head)' },
 	{ file: 'src/daemon/fatal.ts', class: 'non-artifact', via: 'raw', note: 'appends the crash trace to daemon.crash.log' },
 	{ file: 'src/daemon/shutdown.ts', class: 'non-artifact', via: 'raw', note: 'appends the last line (reason and health) to the shutdown record' },
 	{ file: 'src/daemon/steps/analyze-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },

@@ -191,3 +191,20 @@ test('the lifecycle service file has an entry and a caller of ArtifactStore.upda
 	assert.equal(byFile.get('src/workflow/artifact-core/lifecycle-service.ts')?.class, 'meta-only');
 	assert.ok(scanWriters(read('src/workflow/artifact-core/lifecycle-service.ts'), 'src/workflow/artifact-core/lifecycle-service.ts').storeWrites.length > 0, 'the service calls update');
 });
+
+test('the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history', () => {
+	const classOf = (f: string): string | undefined => byFile.get(f)?.class;
+	// the durable history and journal writers are not artifact heads
+	for (const f of ['src/workflow/artifact-core/sidecar.ts', 'src/workflow/artifact-core/sidecar-store.ts', 'src/workflow/artifact-core/journal.ts']) assert.equal(classOf(f), 'non-artifact', f);
+	// the round writers that now store through the service are still content writers (the raw refresh of their json is content)
+	for (const f of ['src/workflow/runners/build/standalone-record.ts', 'src/workflow/runners/build/test-record.ts', 'src/workflow/code-review/runner.ts']) assert.equal(classOf(f), 'content', f);
+	// appendSidecarLine is the one function that appends a history record: the store goes through it and appends only repository configuration itself
+	const sidecar = scanWriters(read('src/workflow/artifact-core/sidecar.ts'), 'src/workflow/artifact-core/sidecar.ts');
+	assert.equal(sidecar.rawCalls.filter(c => c.name === 'appendFileSync').length, 1, 'one raw append in sidecar.ts');
+	const store = read('src/workflow/artifact-core/sidecar-store.ts');
+	assert.match(store, /appendSidecarLine\(join\(this\.repoPath/);
+	assert.doesNotMatch(store.replace(/function ensureLines[\s\S]*?\n}\n/, ''), /appendFileSync\(/, 'outside the ensure step the store appends no raw line');
+	// no other production file appends a history record
+	const others = productionFiles(join(ROOT, 'src')).filter(f => f !== 'src/workflow/artifact-core/sidecar.ts' && /appendSidecarLine\(/.test(read(f)));
+	assert.deepEqual(others, ['src/workflow/artifact-core/sidecar-store.ts']);
+});

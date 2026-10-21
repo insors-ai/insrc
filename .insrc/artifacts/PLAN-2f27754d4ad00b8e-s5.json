@@ -1,0 +1,436 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792583950287-qocmkb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T12:02:43.336Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 213039,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s5",
+    "lldRunId": "wf-1792582680524-ox15vn",
+    "lldEffectiveHash": "aea12dd762927abf6afe318a2bc2d336c6790ef686f86304c0f3d95944aa3cf0",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Story s5 lets a person leave feedback on any artifact, a Task included, reply to it, and see what is still open. Building it adds one field for replies, makes every content revision address open feedback by default (automated writers excepted), adds a feedback service and a thread view over the existing history, adds an identity service that links a person's accounts for display while the gates keep using the tracker, and moves the daemon's feedback and review-decision comment paths onto the service.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add inReplyTo to Feedback and validate it",
+        "summary": "Add the optional inReplyTo field to the Feedback type in src/workflow/artifact-core/types.ts (AMD-2f27754d4ad00b8e-9) and make validateFeedback in src/workflow/artifact-core/history.ts accept it only as a non-empty string different from the entry's own id, and refuse a reply (an entry with inReplyTo) that carries nested replies. Nothing else about the shape or the stored lines changes.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "an entry with inReplyTo set to a non-empty string appends and reads back with the field",
+          "inReplyTo equal to the entry's own id, empty, or not a string is refused with HistoryEntryError",
+          "a reply that carries nested feedback[] is refused",
+          "an entry without inReplyTo validates exactly as before"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "feedback-reply-shape.test.ts: History.validateFeedback accepts inReplyTo as a non-empty string other than its own id and refuses a reply that carries nested replies"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Apply the addresses rule in ArtifactStore.write",
+        "summary": "In ArtifactStore.writeUnlocked (src/workflow/artifact-core/store.ts), when the operation is update and the revision number moves and the writer gave no addresses, stamp addresses 'all' on the staged entry; when the writer gave a list, check before staging that every id is a root feedback entry of this artifact (no inReplyTo) that no earlier update entry addressed, and refuse with HistoryEntryError naming the bad ids; an update that moves no revision and a lifecycle operation address nothing. ContentWriteOptions and LifecycleService.updateContent pass addresses through.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a revision that moves the revision number logs addresses 'all' when none is given and openFeedback then returns nothing",
+          "a list addresses only those roots and the other roots stay open",
+          "a list naming an unknown id, a reply id, or an id an earlier revision addressed is refused and nothing is staged",
+          "an identical rewrite and a lifecycle operation such as approve or review log no addresses",
+          "an empty list is valid and addresses nothing",
+          "the s2, s3 and s4 store, lifecycle and recovery tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "addresses-rule.test.ts: ArtifactStore.write stamps addresses 'all' on a revision that moves the revision number, honours a list, refuses ids that are not roots or are already addressed, and addresses nothing on an identical rewrite or a lifecycle operation"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Make every automated content writer address nothing",
+        "summary": "Pass addresses [] from the three automated content callers: the controller's review auto-fix in src/daemon/steps/review-step/phases/verdicts.ts, the daemon review auto-fix in src/workflow/review/run-artifact.ts, and storeRound in src/workflow/runners/build/round-writer.ts (BUILD, TESTS and code-review rounds, also reached from ensureBuildRecordOnCompletion). Record the inventory of updateContent, update and write callers in the plans document with the decision for each.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a review auto-fix on the controller path and on the daemon path leaves an open revision request open",
+          "a BUILD, TESTS or code-review round record leaves open feedback on that record open",
+          "every production caller of updateContent, update and write is listed in the plans document with its decision",
+          "the review-step, run-artifact and round-recording tests pass"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "automated-writers-addresses.test.ts: a review auto-fix on either path and a BUILD, TESTS or code-review round leave open feedback open"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Build the thread view over History",
+        "summary": "Add the feedback module (src/workflow/feedback/) with FeedbackThread and a pure builder that nests reply lines under their root by inReplyTo in the reader's (timestamp, id) order, returns a reply whose parent is missing as an orphan root, never lists a reply on its own, and marks a thread addressed from the log; add FeedbackService.threads(artifactId, { open }) over History.feedback, History.log and History.openFeedback.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "replies nest under their root in time-then-id order",
+          "an orphan reply is returned as an orphan root and never dropped",
+          "threads with open true returns only threads whose root no later update addressed, and a reply never appears as an open item itself",
+          "a reply added after its root was addressed leaves the thread addressed",
+          "feedback and log entries with one timestamp are ordered by the shared rule whichever file is read first"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "feedback-threads.test.ts: FeedbackService.threads nests replies under their root in time-then-id order, returns an orphan reply as an orphan root, never lists a reply on its own as open, and filters to open threads"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add FeedbackService.add with retry comparison and per-artifact atomicity",
+        "summary": "Add FeedbackService.add(artifactId, input, actor): read the head for existence and the current revision, check the actor is a namespaced lower-case id, default the kind to comment, mint a 32-hex id and the time unless the caller gave an id, check a reply's parent is a root of this artifact, compare a repeated caller id on the caller-supplied fields (text, kind, anchor, inReplyTo, batchId, actor id) and return the stored entry unchanged on a match or refuse on a difference, and run the lookup and the append under the store's per-artifact queue (expose an exclusive-run method on ArtifactStore) so two concurrent adds cannot both append.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "one root entry is stored with the author, a minted id, the time and the head's revision, and the kind defaults to comment",
+          "blank text, a non-namespaced actor and a malformed anchor are refused and nothing is appended",
+          "a reply is stored as its own line; a missing parent, a parent on another artifact and a reply to a reply are refused",
+          "a retry with the same id and the same caller fields returns the stored entry with its original timestamp and revision and appends nothing; a different text under that id is refused",
+          "two concurrent adds with one id and different content leave exactly one line",
+          "feedback on a design, a plan and a Task lands in the right file, a Task's line in its Story's Tasks file, and survives a restart",
+          "a missing artifact is refused with ArtifactNotFoundError and nothing is written"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "feedback-service.test.ts: FeedbackService.add stores one root entry with the author, a minted id and time and the head's revision, defaults the kind to comment, and refuses blank text, a non-namespaced actor and a malformed anchor"
+          },
+          {
+            "level": "unit",
+            "name": "feedback-service.test.ts: FeedbackService.add stores a reply as its own line with inReplyTo, refuses a missing parent, a parent on another artifact and a reply to a reply, and a repeated caller id returns the stored entry or is refused when the content differs"
+          },
+          {
+            "level": "integration",
+            "name": "feedback-storage.test.ts: feedback on a design, a plan and a single Task is recorded once as a framed line in the right file, survives a restart, and a Task's line lands in its Story's Tasks file and reads back for that Task only"
+          },
+          {
+            "level": "integration",
+            "name": "feedback-storage.test.ts: a revision of an artifact addresses all its open feedback by default and only the listed roots when a list is given, in the shared (timestamp, id) order with the feedback file read first or last"
+          },
+          {
+            "level": "integration",
+            "name": "feedback-merge.test.ts: two clones that add feedback and replies to one artifact merge with no conflict and the threads read back once each in order"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add the IdentityService and the identity file",
+        "summary": "Add the identity module (src/workflow/identity/) with IdentityService.currentActor(repoPath), declare and show, and the ~/.insrc/identity.json file ({ primary, aliases[] }, atomic replace, ids namespaced and lower-case, no duplicates, at most 20 aliases, IdentityError). currentActor wraps resolveLearner and localIdentityDeps from src/understanding/identity.ts and TrackerPort.whoAmI as the github source, maps the result to a namespaced person Actor (github:<login>, git:<email>, os:<user>@<host>), copies the declared aliases into properties.aliases only onto the declared primary or an alias, never throws, and reports an invalid file without blocking attribution.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "currentActor returns github:<login> when the tracker answers, else git:<email>, else os:<user>@<host>, always lower-case and namespaced",
+          "the same inputs give the same identity through resolveLearner and through IdentityService",
+          "declared aliases are copied onto the declared primary or an alias and onto no other actor",
+          "declare rejects non-namespaced or upper-case ids, duplicates and more than 20 aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty",
+          "an invalid identity file leaves currentActor working without aliases and logs the problem"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "identity-service.test.ts: IdentityService.currentActor builds github:<login> from the tracker's whoAmI, falls back to git then os when the tracker does not answer, and copies the declared aliases only onto the declared primary or an alias"
+          },
+          {
+            "level": "unit",
+            "name": "identity-service.test.ts: IdentityService.declare validates namespaced lower-case ids, rejects duplicates and more than twenty aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Give the registry the services and add the daemon feedback and identity methods",
+        "summary": "Extend the repository entry in src/daemon/lifecycle-registry.ts with a FeedbackService (and its History) and the IdentityService, and register artifact.feedback.add, artifact.feedback.list, identity.show and identity.declare in the handler map of src/daemon/index.ts, with the request actor handled by approvalActorOf and the current actor as the default. A repository that cannot get an entry is refused with that error.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "artifact.feedback.add stores an entry for the request's actor id, or the current actor when none is given, through the repository's FeedbackService",
+          "artifact.feedback.list returns threads, open ones when asked, for any artifact id including a Task",
+          "identity.show and identity.declare read and write the identity file through the service",
+          "an actor that is not a namespaced lower-case id is refused and nothing is recorded",
+          "a repository whose registry entry cannot be created is refused"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "feedback-wiring.test.ts: the daemon's artifact.feedback.add, artifact.feedback.list, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Re-point artifact.feedback.append at the service",
+        "summary": "Make the daemon's artifact.feedback.append handler convert its legacy request (coerceRequest in src/workflow/artifacts/provenance/tool.ts) into FeedbackService.add: kind feedback becomes revision-request, suggestion and comment stay; the anchor maps quote, sectionSlug (as section), prefix and suffix; a target.file other than the artifact's own document goes into anchor.section; the author string becomes the actor name when no actor id is given; the result keeps its shape with the stored entry's id. The legacy appendFeedback writer stays for callers outside the daemon.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "a legacy request stores a Feedback line with the mapped kind and anchor and returns its id",
+          "a companion-file target is kept on the parent artifact with the file path in anchor.section",
+          "the request shape and the error shape of the handler are unchanged for existing clients",
+          "the legacy appendFeedback writer still works for callers outside the daemon and its tests pass"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "feedback-wiring.test.ts: the daemon's artifact.feedback.append handler stores a legacy request as a Feedback line with the mapped kind and anchor, keeps a companion-file target in anchor.section, and keeps its request and error shapes"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Re-point the review decision's comments at the service",
+        "summary": "Give ReviewDecisionDeps a feedbackFor seam and make handleReviewDecision (src/workflow/review-decision.ts) store the decision's comments through FeedbackService.add by the request's actor or the current actor, with the kind taken from the decision that took effect (feedback becomes revision-request, approve and reject become comment), one batchId, the anchor and the companion-file mapping of t8; keep commentsError and the result shape, and wire the daemon's reviewDecision handler to the registry's service. Update the review-decision tests and the source-pinning test with it.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "comments of an approved or rejected decision are stored as comment entries and of a send-feedback decision as revision-request entries, all with one batchId and the right actor",
+          "a withheld approval's comments are stored as revision requests",
+          "a failure saving comments after the decision reports commentsError and leaves the decision in place",
+          "entryIds are the stored Feedback ids and the result shape is otherwise unchanged",
+          "the existing review-decision tests pass in their updated form"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "review-decision.test.ts: handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Prove the gates ignore declared identities and record the s9 inputs",
+        "summary": "Add the gate-identity test (declaring the claimant's login as an alias of another person does not change a team gate's outcome, and nothing under src/workflow/team imports the identity module), classify the identity file writer in the write inventory, and record in docs/plans/core-data-model.md what s9 must do with body.feedback entries and that the body.feedback readers show a mixed view until then.",
+        "size": "S",
+        "order": 10,
+        "dependsOn": [
+          "t6",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "the team gate's outcome is the same with and without a declared alias for the claimant",
+          "no module under src/workflow/team imports the identity module or reads the identity file",
+          "the write inventory test passes with the identity writer classified",
+          "the plans document lists the s9 inputs from this Story"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "gate-identity.test.ts: the team gate decides on the tracker's whoAmI only: declaring the claimant's login as an alias of another person does not change the gate's outcome, and nothing under src/workflow/team imports the identity module"
+          },
+          {
+            "level": "integration",
+            "name": "artifact-write-inventory.test.ts: the identity file writer is classified and appendSidecarLine remains the one raw append for history"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "FeedbackService.add stores one root entry with the author, a minted id and time and the head's revision, defaults the kind to comment, and refuses blank text, a non-namespaced actor and a malformed anchor",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "FeedbackService.add stores a reply as its own line with inReplyTo, refuses a missing parent, a parent on another artifact and a reply to a reply, and a repeated caller id returns the stored entry or is refused when the content differs",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "FeedbackService.threads nests replies under their root in time-then-id order, returns an orphan reply as an orphan root, never lists a reply on its own as open, and filters to open threads",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "ArtifactStore.write stamps addresses 'all' on a revision that moves the revision number, honours a list, refuses ids that are not roots or are already addressed, and addresses nothing on an identical rewrite or a lifecycle operation",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "History.validateFeedback accepts inReplyTo as a non-empty string other than its own id and refuses a reply that carries nested replies",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "IdentityService.currentActor builds github:<login> from the tracker's whoAmI, falls back to git then os when the tracker does not answer, and copies the declared aliases only onto the declared primary or an alias",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "IdentityService.declare validates namespaced lower-case ids, rejects duplicates and more than twenty aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "feedback on a design, a plan and a single Task is recorded once as a framed line in the right file, survives a restart, and a Task's line lands in its Story's Tasks file and reads back for that Task only",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a revision of an artifact addresses all its open feedback by default and only the listed roots when a list is given, in the shared (timestamp, id) order with the feedback file read first or last",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "two clones that add feedback and replies to one artifact merge with no conflict and the threads read back once each in order",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "the daemon's artifact.feedback.add, artifact.feedback.list, artifact.feedback.append, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "the team gate decides on the tracker's whoAmI only: declaring the claimant's login as an alias of another person does not change the gate's outcome, and nothing under src/workflow/team imports the identity module",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 handoff: the inReplyTo field on Feedback and its validation (AMD-9)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 handoff: the addresses rule in ArtifactStore.write and the automated writers that pass an empty list"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 handoff: FeedbackService.add and threads, the retry comparison and per-artifact atomicity"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 handoff: the IdentityService, the identity file and the gates that keep the tracker identity"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 handoff: the registry, the daemon methods and the re-pointed feedback writers"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s5 handoff: the write inventory entry and the s9 inputs"
+    }
+  ]
+}

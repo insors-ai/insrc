@@ -9,6 +9,8 @@
  * with its own revision, status, log, feedback and issue binding. Every write goes through the store and the lifecycle service.
  */
 
+import { randomUUID } from 'node:crypto';
+
 import { ArtifactIds } from '../artifact-ids.js';
 import { artifactJsonPath } from '../storage.js';
 import type { PlanBody, PlanTask } from '../artifacts/plan.js';
@@ -16,15 +18,16 @@ import type { Citation } from '../types.js';
 import type { HeadPayload } from '../artifact-core/codecs.js';
 import type { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import type { ArtifactStore } from '../artifact-core/store.js';
-import { ArtifactNotFoundError } from '../artifact-core/types.js';
+import type { History } from '../artifact-core/history.js';
+import { ArtifactNotFoundError, LifecycleConflictError } from '../artifact-core/types.js';
 import { emptyLifecycle } from '../artifact-core/decode.js';
 import type { Actor, Artifact, Reference } from '../artifact-core/types.js';
 import { bindArtifact, readBinding, setPendingLink } from '../tracker/binding.js';
 import { readTrackerMeta } from '../tracker/refs.js';
 import { unitKey } from '../tracker/unit-issue.js';
 import { getLogger } from '../../shared/logger.js';
-import { assertPlanRows, taskPayloadFromRow } from './pure.js';
-import { TaskSetError } from './types.js';
+import { allocateNumber, assertPlanRows, checkTaskEdit, diffTask, taskPayloadFromRow } from './pure.js';
+import { TaskSetError, TaskStructureError } from './types.js';
 import type { TaskPayload, TasksPayload } from './types.js';
 
 const log = getLogger('workflow:tasks');
@@ -39,6 +42,26 @@ export interface TaskSetsDeps {
 	readonly repoPath: string;
 	readonly store:    ArtifactStore;
 	readonly service:  LifecycleService;
+	/** The history the store writes through: a Task's pending issue close is logged on it. */
+	readonly history:  History;
+	readonly now?:     (() => Date) | undefined;
+}
+
+/** What a re-plan did to the Task set. `closeFailed` lists the issues of withdrawn Tasks that could not be closed; the next call retries them. */
+export interface ReconcileResult {
+	readonly changed:     string[];
+	readonly withdrawn:   string[];
+	readonly added:       string[];
+	readonly closeFailed: { readonly taskId: string; readonly issue: string; readonly reason: string }[];
+}
+
+/** Closes a tracker issue by its `owner/repo#N` ref; supplied by the caller that has a tracker. */
+export type CloseIssue = (issue: string) => { readonly ok: true } | { readonly ok: false; readonly reason: string };
+
+export interface ReconcileOptions { readonly closeIssue?: CloseIssue | undefined }
+export interface EditOptions {
+	/** The revision the caller read the Task at; the edit is refused when the head has moved on since. */
+	readonly expectedRevision?: number | undefined;
 }
 
 /** What a plan head gave: its rows, citations, revision and the Story it belongs to. */
@@ -86,6 +109,8 @@ export class TaskSets {
 		for (const id of await this.deps.store.childrenOf(story)) {
 			if (ArtifactIds.parse(id)?.kind !== 'TASK') continue;
 			const head = await this.deps.store.read(id);
+			// a withdrawn Task keeps its id and is never brought back: a row that returns is a new Task
+			if (head.lifecycle.status === 'withdrawn') continue;
 			out.set((asBody(head) as TaskPayload).planTaskId, head);
 		}
 		return out;
@@ -132,15 +157,20 @@ export class TaskSets {
 		return { id: tasksId, tasks };
 	}
 
+	/** The references of a Task: the plan at its revision, and the Tasks its row depends on. */
+	private referencesFor(p: PlanRead, row: PlanTask, numbered: ReadonlyMap<string, string>): Reference[] {
+		const depends = row.dependsOn.map((dep): Reference => ({ entityId: this.taskId(p, numbered.get(dep) ?? dep), type: 'TASK', relation: 'depends-on' }));
+		return [this.planRef(p), ...depends];
+	}
+
 	private planRef(p: PlanRead): Reference { return { entityId: p.planId, type: 'PLAN', relation: 'derived-from', fragment: `revision ${p.revision}` }; }
 
 	/** One Task head: written when absent, approved when draft, and given the issue record the plan held for its row. */
 	private async ensureTask(p: PlanRead, row: PlanTask, id: string, numbered: ReadonlyMap<string, string>, by: Actor, have: Artifact<HeadPayload> | undefined): Promise<Artifact<HeadPayload>> {
 		const store = this.deps.store;
 		if (have === undefined) {
-			const depends: Reference[] = row.dependsOn.map(dep => ({ entityId: this.taskId(p, numbered.get(dep) ?? dep), type: 'TASK', relation: 'depends-on' as const }));
 			await store.write({
-				id, description: row.title, parent: this.storyRef(p), references: [this.planRef(p), ...depends], attachments: [],
+				id, description: row.title, parent: this.storyRef(p), references: this.referencesFor(p, row, numbered), attachments: [],
 				lifecycle: emptyLifecycle(0), payload: { body: taskPayloadFromRow(row) as unknown as Record<string, unknown>, citations: [] },
 			}, by);
 		}
@@ -171,6 +201,140 @@ export class TaskSets {
 				setPendingLink(this.deps.repoPath, taskArtifactId, { parent: issueRef(link.parent), ...(link.childId !== undefined ? { childId: link.childId } : {}), ...(link.child !== undefined ? { child: issueRef(link.child) } : {}) });
 			}
 		} catch (err) { log.warn({ taskArtifactId, err: (err as Error).message }, 'tasks: the plan\'s Task record was not moved'); }
+	}
+
+	/**
+	 * Bring the Tasks into line with a plan approved at a newer revision than the Tasks file records. The plan's rows are the
+	 * source: a Task whose row differs gets a new revision (and is approved again with the plan), a Task whose row is gone is
+	 * withdrawn and its issue closed, a row with no Task becomes a new Task under the next number. Rows are matched to Tasks by
+	 * `planTaskId`, a withdrawn Task is never matched again, and `nextNumber` only grows, so no Task id is reused. The Tasks file
+	 * records the new plan revision last: a call that fails part-way is finished by repeating it.
+	 */
+	async reconcile(planId: string, by: Actor, opts: ReconcileOptions = {}): Promise<ReconcileResult> {
+		const plan = await this.readPlan(planId);
+		const tasksId = this.tasksId(plan);
+		const tasks = await this.readTasksHead(tasksId);
+		if (tasks === undefined) throw new TaskSetError(`${tasksId} does not exist: use createFromPlan for a plan with no Tasks yet`);
+		if (plan.revision < tasks.planRevision) throw new TaskSetError(`${planId} is at revision ${plan.revision}, behind the ${tasks.planRevision} its Tasks were made from`);
+		const result: ReconcileResult = { changed: [], withdrawn: [], added: [], closeFailed: [] };
+		if (plan.revision === tasks.planRevision) { result.closeFailed.push(...await this.retryCloses(plan, tasks, by, opts)); return result; }
+
+		// the closes an earlier call could not make are retried first, so a Task withdrawn by this call is attempted once
+		result.closeFailed.push(...await this.retryCloses(plan, tasks, by, opts));
+		const existing = await this.existingTasks(plan);
+		const rowIds = new Set(plan.rows.map(r => r.id));
+		let working = tasks;
+		const numbered = new Map<string, string>();
+		for (const row of plan.rows) {
+			const have = existing.get(row.id);
+			if (have !== undefined) { numbered.set(row.id, ArtifactIds.parse(have.id)?.task ?? row.id); continue; }
+			const a = allocateNumber(working);
+			working = a.next;
+			numbered.set(row.id, a.taskId);
+		}
+
+		// changed Tasks: the plan's row replaces the Task's content; references follow the plan whether or not the content moved
+		for (const row of plan.rows) {
+			const have = existing.get(row.id);
+			if (have === undefined) continue;
+			const short = numbered.get(row.id) ?? row.id;
+			const references = this.referencesFor(plan, row, numbered);
+			const moved = !diffTask(asBody(have) as TaskPayload, row).unchanged;
+			if (!moved && JSON.stringify(have.references) === JSON.stringify(references)) continue;
+			await this.deps.store.update(have.id, by, current => {
+				this.assertRevision(current.lifecycle.revision.number, have.lifecycle.revision.number, have.id);
+				const { changeLog: _log, ...head } = current;
+				const body = moved ? taskPayloadFromRow(row) as unknown as Record<string, unknown> : head.payload.body;
+				return { next: { ...head, description: moved ? row.title : head.description, references, payload: { ...head.payload, body } }, options: { operation: 'update' } };
+			});
+			if (moved) {
+				result.changed.push(short);
+				if ((await this.deps.store.read(have.id)).lifecycle.status === 'draft') await this.deps.service.apply(have.id, 'approve', by);
+			}
+		}
+
+		// dropped Tasks: withdrawn with the plan's approval; the issue is closed, or the failed close is kept for the next call
+		for (const [rowId, have] of existing) {
+			if (rowIds.has(rowId)) continue;
+			await this.deps.service.apply(have.id, 'withdraw', by, { reason: `dropped by the re-plan (${planId} at revision ${plan.revision})` });
+			const short = ArtifactIds.parse(have.id)?.task ?? rowId;
+			result.withdrawn.push(short);
+			const failed = await this.closeIssueOf(have.id, short, by, opts);
+			if (failed !== undefined) result.closeFailed.push(failed);
+		}
+
+		// new Tasks under the numbers allocated above
+		for (const row of plan.rows) {
+			if (existing.has(row.id)) continue;
+			const short = numbered.get(row.id) ?? row.id;
+			await this.ensureTask(plan, row, this.taskId(plan, short), numbered, by, undefined);
+			result.added.push(short);
+		}
+
+		await this.deps.store.update(tasksId, by, current => {
+			const { changeLog: _log, ...head } = current;
+			const body: TasksPayload = { planRevision: plan.revision, taskIds: working.taskIds, nextNumber: working.nextNumber };
+			return { next: { ...head, references: [this.planRef(plan)], payload: { ...head.payload, body: body as unknown as Record<string, unknown> } }, options: { operation: 'update' } };
+		});
+		return result;
+	}
+
+	/**
+	 * Change a Task's own content: its title, summary, size, acceptance checks or tests. The Task moves to a new revision and
+	 * returns to draft (its re-approval is the local user's, and no signoff is opened); the plan and the other Tasks are not touched.
+	 * A patch that names order, a dependency or anything else the plan owns is refused with a pointer to a re-plan, as is a Task that
+	 * is completed, withdrawn or superseded. A patch that changes nothing writes nothing. With `expectedRevision` the edit is refused
+	 * (LifecycleConflictError) when the Task moved on after the caller read it.
+	 */
+	async edit(taskId: string, patch: Partial<TaskPayload>, by: Actor, opts: EditOptions = {}): Promise<void> {
+		if (ArtifactIds.parse(taskId)?.kind !== 'TASK') throw new TaskStructureError(`'${taskId}' is not a Task id`);
+		await this.deps.store.update(taskId, by, current => {
+			checkTaskEdit(patch as Record<string, unknown>, current.lifecycle.status);
+			if (opts.expectedRevision !== undefined) this.assertRevision(current.lifecycle.revision.number, opts.expectedRevision, taskId);
+			const { changeLog: _log, ...head } = current;
+			const body = { ...head.payload.body, ...patch } as Record<string, unknown>;
+			if (JSON.stringify(body) === JSON.stringify(head.payload.body)) return undefined;
+			return { next: { ...head, payload: { ...head.payload, body } }, options: { operation: 'update' } };
+		});
+	}
+
+	/** Refuses a write made from a read that is no longer the head. */
+	private assertRevision(current: number, read: number, id: string): void {
+		if (current !== read) throw new LifecycleConflictError(id, 'head-changed-after-stage', `${id} is at revision ${current}, not the ${read} this change was made from; read it again and retry`);
+	}
+
+	/** Close the issue of a Task that has one. Returns what failed, after logging it on the Task so a later call retries it. */
+	private async closeIssueOf(id: string, short: string, by: Actor, opts: ReconcileOptions): Promise<ReconcileResult['closeFailed'][number] | undefined> {
+		let issue: string | undefined;
+		try { issue = readBinding(this.deps.repoPath, id)?.reference.entityId; } catch { return undefined; }
+		if (issue === undefined) return undefined;
+		const closed = opts.closeIssue?.(issue) ?? { ok: false as const, reason: 'no tracker to close the issue on' };
+		await this.logClose(id, by, closed.ok ? { result: 'closed', summary: `closed ${issue}`, data: { issue } } : { result: 'pending-close', summary: `${issue} could not be closed: ${closed.reason}`, data: { issue } });
+		if (closed.ok) return undefined;
+		log.warn({ taskId: id, issue, reason: closed.reason }, 'tasks: a withdrawn Task\'s issue was not closed; the next call retries it');
+		return { taskId: short, issue, reason: closed.reason };
+	}
+
+	private async logClose(id: string, by: Actor, outcome: { result: string; summary: string; data: unknown }): Promise<void> {
+		await this.deps.store.exclusive(id, () => this.deps.history.appendLog(id, {
+			id: randomUUID(), actor: by, timestamp: (this.deps.now ?? (() => new Date()))().toISOString(), operation: 'update', outcome,
+		}));
+	}
+
+	/** Retry the closes that failed earlier: a withdrawn Task whose latest close entry is a pending one. */
+	private async retryCloses(p: PlanRead, tasks: TasksPayload, by: Actor, opts: ReconcileOptions): Promise<ReconcileResult['closeFailed']> {
+		const failed: ReconcileResult['closeFailed'] = [];
+		if (opts.closeIssue === undefined) return failed;
+		for (const short of tasks.taskIds) {
+			const id = this.taskId(p, short);
+			const head = await this.deps.store.read(id).catch(() => undefined);
+			if (head?.lifecycle.status !== 'withdrawn') continue;
+			const latest = [...await this.deps.history.log(id)].reverse().find(e => e.outcome?.result === 'pending-close' || e.outcome?.result === 'closed');
+			if (latest?.outcome?.result !== 'pending-close') continue;
+			const f = await this.closeIssueOf(id, short, by, opts);
+			if (f !== undefined) failed.push(f);
+		}
+		return failed;
 	}
 
 	private async readTasksHead(tasksId: string): Promise<TasksPayload | undefined> {

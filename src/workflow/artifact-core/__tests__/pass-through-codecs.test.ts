@@ -27,9 +27,13 @@ describe('pass-through codecs', () => {
 			];
 			const STORY = ArtifactIds.make(keys[2]!);
 			const TASK = ArtifactIds.make(keys[4]!);
+			const parents = new Map<string, string>();
 			for (const key of keys) {
 				const id = ArtifactIds.make(key);
-				const parent = key.kind === 'TASK' ? { parent: ref(STORY, 'STORY') } : {};
+				const expected = ArtifactIds.parentOf(key);
+				const parentId = expected === undefined ? undefined : ArtifactIds.make(expected);
+				if (parentId !== undefined) parents.set(id, parentId);
+				const parent = parentId === undefined || expected === undefined ? {} : { parent: ref(parentId, expected.kind) };
 				await k.store.write(artifact(id, { payload: { body: { opaque: [1, { two: 2 }] }, citations: [{ any: 'thing' }] }, ...parent }), alice);
 				const read = await k.store.read(id);
 				assert.deepEqual(read.payload.body, { opaque: [1, { two: 2 }] }, `${key.kind} body is opaque`);
@@ -37,14 +41,21 @@ describe('pass-through codecs', () => {
 				assert.equal(read.lifecycle.revision.number, 1);
 			}
 
-			// listed: the Task is a child of its Story
-			assert.deepEqual(await k.store.childrenOf(STORY), [TASK]);
+			for (const key of keys) {
+				const id = ArtifactIds.make(key);
+				// listed: a head that has a parent is among its parent's children
+				const parentId = parents.get(id);
+				if (parentId !== undefined) assert.ok((await k.store.childrenOf(parentId)).includes(id), `${key.kind} is listed under ${parentId}`);
 
-			// given a status: a Task moves from draft to approved with its content unchanged
-			const task = await k.store.read(TASK);
-			await k.store.write({ ...task, lifecycle: { ...task.lifecycle, status: 'approved' } }, alice);
-			assert.equal((await k.store.read(TASK)).lifecycle.status, 'approved');
-			assert.equal((await k.store.read(TASK)).lifecycle.revision.number, 1);
+				// given a status: draft to approved with the content unchanged moves no revision
+				const head = await k.store.read(id);
+				await k.store.write({ ...head, lifecycle: { ...head.lifecycle, status: 'approved' } }, alice);
+				const approved = await k.store.read(id);
+				assert.equal(approved.lifecycle.status, 'approved', key.kind);
+				assert.equal(approved.lifecycle.revision.number, 1, key.kind);
+			}
+			assert.deepEqual(await k.store.childrenOf(ArtifactIds.make(keys[1]!)), [STORY], 'the Story is listed under its Epic');
+			assert.ok(parents.has(TASK) && (await k.store.childrenOf(STORY)).includes(TASK));
 
 			// a Task with a wrong parent still fails on its parent first
 			await assert.rejects(k.store.write(artifact(TASK, { parent: ref(`STORY-${H}-s2`, 'STORY') }), alice), ArtifactShapeError);

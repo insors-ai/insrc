@@ -10,12 +10,13 @@
     "triageRationale": "bugfix/small (ISSUE-e940023a): two quadratic functions in one file freeze the daemon on a large review; a localized performance change with identical output.",
     "epicCreatedAt": "2026-10-21T09:42:09.459Z",
     "epicSlug": "stop-code-review-s-material-building",
-    "updatedAt": "2026-10-21T09:48:32.542Z"
+    "updatedAt": "2026-10-21T09:51:22.242Z",
+    "approvedAt": "2026-10-21T09:51:22.483Z"
   },
   "body": {
     "focus": "Make building and summarising the code review's material (src/workflow/review-pipeline/adapters/code-review-material.ts) scale with the material's size rather than its square, with byte-for-byte identical output: compute the name map and each atom's callers and callees once per material instead of on every neighbourSummary call, and pair atoms only within their directory group in codeReviewMaterial, keeping today's relation order. Signatures unchanged. Tests: identical output, and a time bound on a large synthetic material.",
     "producesLld": false,
-    "commit": "98f91aaf",
+    "commit": "448aaf71",
     "tasks": [
       {
         "id": "S001",
@@ -32,14 +33,28 @@
           "file": "src/workflow/review-pipeline/__tests__/code-review-material.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T09:48:32.542Z"
+        "timestamp": "2026-10-21T09:51:22.242Z"
       },
       {
         "target": {
           "file": "src/workflow/review-pipeline/adapters/code-review-material.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T09:48:32.542Z"
+        "timestamp": "2026-10-21T09:51:22.242Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-e940023a6962ede9-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T09:51:22.242Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-code-review-s-material-building-E20261021e940023a/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T09:51:22.242Z"
       }
     ]
   }

@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-21T09:43:51.737Z  ·  **Updated:** 2026-10-21T09:48:32.542Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-10-21T09:43:51.737Z  ·  **Updated:** 2026-10-21T09:51:22.242Z
 
-**Commit:** 98f91aaf
+**Commit:** 448aaf71
 
 ## Scope
 
@@ -26,5 +26,7 @@ neighbourSummary reads a name map and call adjacency built once per material (We
 
 ## Changes
 
-- `src/workflow/review-pipeline/__tests__/code-review-material.test.ts` — **insrc-build** (2026-10-21T09:48:32.542Z)
-- `src/workflow/review-pipeline/adapters/code-review-material.ts` — **insrc-build** (2026-10-21T09:48:32.542Z)
+- `src/workflow/review-pipeline/__tests__/code-review-material.test.ts` — **insrc-build** (2026-10-21T09:51:22.242Z)
+- `src/workflow/review-pipeline/adapters/code-review-material.ts` — **insrc-build** (2026-10-21T09:51:22.242Z)
+- `.insrc/artifacts/CR-e940023a6962ede9-S001.json` — **insrc-build** (2026-10-21T09:51:22.242Z)
+- `docs/standalone/stop-code-review-s-material-building-E20261021e940023a/S001/CR.md` — **insrc-build** (2026-10-21T09:51:22.242Z)

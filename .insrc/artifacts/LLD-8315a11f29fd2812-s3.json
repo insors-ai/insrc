@@ -161,6 +161,11 @@
       "reviewedAt": "2026-10-20T19:56:18.465Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-21T04:23:19.637Z",
+    "reviewOverride": {
+      "reason": "Stakeholder decision 2026-10-20 (option A) after two review cycles on the s3 LLD amendment. Cycle 1: H2 M1 (s1 signatures, merge owns filters, correction exception) -> H2 M1 (evidence parity, smoke plan log, baseline) -> H3 M1 (full adherence obligations, compare/pair carries and refusals via s1's new ChunkPrompt.carries/AdapterStage.redivide, which passed its own review); all fixed. Cycle 2: M2 -> M1 -> H1; all fixed. The last HIGH (s2's material dropped one direction of a mutual call) is fixed in code at 7af8328a, recorded in 2.4 and a new edge case, and proven by a mutual-call test with a caught mutation.",
+      "at": "2026-10-21T04:23:19.633Z"
     }
   },
   "body": {

@@ -269,6 +269,11 @@
         "rationale": "Approved with the LLD (owner chose A, recommended answers).",
         "resolvedAt": "2026-10-21T17:24:43.195Z"
       }
+    },
+    "approvedAt": "2026-10-21T17:25:02.170Z",
+    "reviewOverride": {
+      "reason": "Owner approved with override (option A): daemon review block, 2 HIGH and 6 MED after one round. The eight findings are settled as binding build requirements in docs/plans/core-data-model.md (\"s7 LLD approved with an override\"); the four open questions were resolved with the recommended answers.",
+      "at": "2026-10-21T17:25:02.168Z"
     }
   },
   "body": {

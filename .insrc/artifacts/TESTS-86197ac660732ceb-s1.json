@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s1",
+    "createdAt": "2026-10-21T15:03:00.014Z",
+    "updatedAt": "2026-10-21T15:03:00.014Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b038c9e4",
+        "ranAt": "2026-10-21T15:03:00.014Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a worker thread's LMDB open, read, write, close and exit keep the daemon's lock, and the main thread writes after another process opens and closes the store",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/worker-thread-lock.test.ts",
+                "title": "a worker thread's open, write, close and exit keep the daemon's lock, and the daemon writes after another process opens and closes the store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the lock probe reports a dropped lock after a stray descriptor on the lock file is closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/worker-thread-lock.test.ts",
+                "title": "control: the lock check reports a dropped lock after a stray descriptor on the lock file is closed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/worker-thread-lock.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 790,
+            "titles": [
+              {
+                "title": "a worker thread's open, write, close and exit keep the daemon's lock, and the daemon writes after another process opens and closes the store",
+                "result": "pass"
+              },
+              {
+                "title": "control: the lock check reports a dropped lock after a stray descriptor on the lock file is closed",
+                "result": "pass"
+              },
+              {
+                "title": "a worker thread and the daemon's lock on the store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

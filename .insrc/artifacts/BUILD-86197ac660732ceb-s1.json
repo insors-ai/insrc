@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s1",
+    "createdAt": "2026-10-21T15:03:00.014Z",
+    "updatedAt": "2026-10-21T15:03:00.014Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Added the gating test src/db/graph/__tests__/worker-thread-lock.test.ts (with helpers lmdb-worker.mjs and lmdb-open-close.mjs): on a temporary store with the daemon's open options, a real worker thread opens, reads, writes, closes and exits, another process opens and closes, and a separate-process lock check finds the daemon's lock held at every step while the daemon keeps writing. A control test shows the check reports a dropped lock after a stray descriptor on the lock file is closed. Both tests fail under their falsifying mutations (lock dropped mid-sequence; check that always says held). The gate passes, so the Story continues with graph direct.",
+    "testRecord": {
+      "md": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/helpers/lmdb-open-close.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:03:00.014Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/helpers/lmdb-worker.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:03:00.014Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/worker-thread-lock.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T15:03:00.014Z"
+      }
+    ],
+    "commit": "b038c9e4"
+  }
+}

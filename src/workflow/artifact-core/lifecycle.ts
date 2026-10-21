@@ -165,8 +165,8 @@ export function reconcileLifecycle(
 		return { lifecycle: { ...next.lifecycle, status: 'draft', revision: { number: revisionNumber, contentHash: hash, at, by } }, contentChanged };
 	}
 	assertLegalStatusChange(prior.lifecycle.status, next.lifecycle.status);
-	const { number: priorNumber, at: priorAt, by: priorBy } = prior.lifecycle.revision;
-	return { lifecycle: { ...next.lifecycle, revision: { number: priorNumber, contentHash: hash, at: priorAt, by: priorBy } }, contentChanged };
+	const { at: priorAt, by: priorBy } = prior.lifecycle.revision;
+	return { lifecycle: { ...next.lifecycle, revision: { number: revisionNumber, contentHash: hash, at: priorAt, by: priorBy } }, contentChanged };
 }
 
 // ---------------------------------------------------------------------------

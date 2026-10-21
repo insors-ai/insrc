@@ -42,7 +42,7 @@ import { dirname, join } from 'node:path';
 import { PATHS } from '../shared/paths.js';
 import { ArtifactIds, MissingAnchorError, type PathIntent } from './artifact-ids.js';
 import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme.js';
-import { reconcileLifecycle } from './artifact-core/lifecycle.js';
+import { contentHash, reconcileLifecycle } from './artifact-core/lifecycle.js';
 import type { ContentView } from './artifact-core/lifecycle.js';
 import { ArtifactShapeError } from './artifact-core/types.js';
 import type { Actor, Lifecycle, Status } from './artifact-core/types.js';
@@ -190,10 +190,12 @@ function reconcileLifecycleOf(
 	const status = (meta['lifecycle'] as { status?: unknown }).status;
 	if (!LIFECYCLE_STATUSES.includes(status as Status)) throw new ArtifactShapeError(`the lifecycle has an unknown status '${String(status)}'`);
 	const priorRevision = readRevision(prior);
-	return reconcileLifecycle(
-		prior === undefined ? undefined : contentViewOf(prior, priorRevision), contentViewOf({ ...next, meta }, priorRevision),
-		revisionNumber, opts.by ?? DEFAULT_ACTOR, opts.at ?? new Date().toISOString(),
-	);
+	const priorView = prior === undefined ? undefined : contentViewOf(prior, priorRevision);
+	const nextView = contentViewOf({ ...next, meta }, priorRevision);
+	// the number moves only with the content, whichever number the caller offers for a change
+	const unchanged = priorView !== undefined
+		&& contentHash(priorView.description, priorView.payload) === contentHash(nextView.description, nextView.payload);
+	return reconcileLifecycle(priorView, nextView, unchanged ? priorView.lifecycle.revision.number : revisionNumber, opts.by ?? DEFAULT_ACTOR, opts.at ?? new Date().toISOString());
 }
 
 /** What a write would put on disk. */

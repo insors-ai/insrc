@@ -31,7 +31,8 @@ import type { IpcStreamMessage, LLMProvider } from '../../../shared/types.js';
 import { assembleDiffCodeReviewGrounding, realDiffGroundingDeps, type DiffGroundingOptions } from '../grounding.js';
 import { DEFAULT_DEPS, runCodeReview, type RunCodeReviewOpts } from '../runner.js';
 import type { CodeReviewSubject, DimensionResult, ReviewDimension } from '../types.js';
-import { LEDGER_EXCLUDE_GLOBS } from '../../runners/build/changed-files.js';
+import { changedFiles, LEDGER_EXCLUDE_GLOBS } from '../../runners/build/changed-files.js';
+import { storyChangeSet } from '../../runners/build/story-commits.js';
 import { stampBuildStart } from '../../runners/build/range-base.js';
 import { artifactJsonPath, buildArtifactId } from '../../storage.js';
 import { codeReviewRunStart, type CodeReviewRunDeps } from '../../../daemon/code-review-rpc.js';
@@ -246,5 +247,32 @@ test('a Story commit that renames a file, to a path with a tab in it, is reviewe
 		const s = sig(res, NEW);
 		for (const edit of ['COMMITTED-EDIT', 'STAGED-EDIT', 'UNSTAGED-EDIT']) assert.match(s, new RegExp(`^\\+.*${edit}`, 'm'), `${edit} is grounded`);
 		assert.doesNotMatch(s, /\[no hunk text/);
+	} finally { rmSync(r, { recursive: true, force: true }); }
+});
+
+test('a Story file whose path has multibyte characters is in the Story set, the review subject and the diff-only grounding with its hunks', async () => {
+	const r = mkdtempSync(join(tmpdir(), 'insrc-diff-utf8-'));
+	const git = (...a: string[]): string => execFileSync('git', a, { cwd: r, encoding: 'utf8' }).trim();
+	const FILE = 'src/café/naïve-文件.ts';
+	try {
+		git('init', '-q', '-b', 'main'); git('config', 'user.email', 't@t'); git('config', 'user.name', 't'); git('config', 'commit.gpgsign', 'false');
+		writeFileSync(join(r, 'README.md'), 'base\n');
+		git('add', '-A'); git('commit', '-qm', 'base');
+		const base = git('rev-parse', 'HEAD');
+		mkdirSync(join(r, 'src/café'), { recursive: true });
+		writeFileSync(join(r, FILE), LINES({ 1: 'COMMITTED-EDIT' }));
+		git('add', '-A'); git('commit', '-qm', `feat(build): S001/t1 utf8\n\nInsrc-Story: ${KEY}`);
+		writeFileSync(join(r, FILE), LINES({ 1: 'COMMITTED-EDIT', 7: 'UNSTAGED-EDIT' }));
+		// Precondition: git quotes this path in its own displays.
+		assert.match(git('diff', '--name-only'), /^"src\/caf\\303\\251/);
+
+		assert.deepEqual(storyChangeSet(r, base, { storyKey: KEY, strict: true }).paths, [FILE]);
+		let excluded: readonly string[] | undefined;
+		assert.deepEqual([...await changedFiles(r, { base, storyKey: KEY, onAttribution: a => { excluded = a.excludedUncommitted; } })], [FILE]);
+		assert.deepEqual(excluded, [], 'its uncommitted edit is the Story\'s, not excluded');
+		const res = await assembleDiffCodeReviewGrounding(r, realDiffGroundingDeps(), { base, storyKey: KEY });
+		assert.deepEqual(res.changedFiles, [FILE]);
+		assert.match(sig(res, FILE), /^\+COMMITTED-EDIT$/m);
+		assert.match(sig(res, FILE), /^\+UNSTAGED-EDIT$/m);
 	} finally { rmSync(r, { recursive: true, force: true }); }
 });

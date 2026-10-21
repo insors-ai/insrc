@@ -11,6 +11,7 @@
  */
 
 import { spawn } from 'node:child_process';
+import { StringDecoder } from 'node:string_decoder';
 
 export interface ShellResult {
   stdout: string;
@@ -86,19 +87,30 @@ export function runShell(
     const onAbort = () => child.kill('SIGKILL');
     options.signal?.addEventListener('abort', onAbort, { once: true });
 
+    // One decoder per stream: a multibyte UTF-8 character split across two
+    // chunks is decoded whole instead of as two replacement characters
+    // (ISSUE-b97752e9). The byte accounting and the cap are unchanged.
+    const outDecoder = new StringDecoder('utf8');
+    const errDecoder = new StringDecoder('utf8');
     child.stdout?.on('data', (chunk: Buffer) => {
       stdoutBytes += chunk.length;
-      if (stdoutBytes <= maxBytes) { stdout += chunk.toString('utf8'); }
+      if (stdoutBytes <= maxBytes) { stdout += outDecoder.write(chunk); }
     });
     child.stderr?.on('data', (chunk: Buffer) => {
       stderrBytes += chunk.length;
-      if (stderrBytes <= maxBytes) { stderr += chunk.toString('utf8'); }
+      if (stderrBytes <= maxBytes) { stderr += errDecoder.write(chunk); }
     });
+    // A stream the cap cut keeps no partial character from before the cut.
+    const flush = (): void => {
+      if (stdoutBytes <= maxBytes) stdout += outDecoder.end();
+      if (stderrBytes <= maxBytes) stderr += errDecoder.end();
+    };
 
     child.on('error', err => {
       clearTimeout(timer);
       options.signal?.removeEventListener('abort', onAbort);
       spawnError = true;
+      flush();
       stderr += (stderr ? '\n' : '') + `[spawn] ${err.message}`;
       resolve({ stdout, stderr, code: null, spawnError, timedOut, stdoutTruncated: stdoutBytes > maxBytes });
     });
@@ -106,6 +118,7 @@ export function runShell(
     child.on('close', (code, signal) => {
       clearTimeout(timer);
       options.signal?.removeEventListener('abort', onAbort);
+      flush();
       resolve({
         stdout,
         stderr,

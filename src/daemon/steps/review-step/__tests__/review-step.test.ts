@@ -159,7 +159,7 @@ test('review-step drives the full loop and stamps meta.review with model=client'
 		assert.ok(verifyPrompt.user.includes('c-inv') && verifyPrompt.user.includes('c-cite'), 'batched prompt names both claims');
 
 		// --- verdicts ---
-		const doneOut = parse(await handleReviewStep({ phase: 'verdicts', verdicts: VERDICTS, state: state1 }));
+		const doneOut = parse(await handleReviewStep({ phase: 'verdicts', verdicts: VERDICTS, state: state1 }, { lifecycleFor: () => undefined }));
 		assert.equal(doneOut['next'], 'done');
 		assert.equal(doneOut['verdict'], 'block', 'a HIGH finding blocks (default blockOn HIGH+MED)');
 		assert.deepEqual(doneOut['counts'], { high: 1, med: 0, low: 1 });

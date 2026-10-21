@@ -1,0 +1,114 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * s4 t9: the controller's verdicts phase through the repository's durable LifecycleService: an applied fix is stored through
+ * the service (logged, revisioned), the review is stamped and recorded on the lifecycle, and a head that is ahead of its log is
+ * refused before anything is stamped.
+ *
+ * Run: npx tsx --test --test-force-exit src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts
+ */
+
+import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { after, afterEach, test } from 'node:test';
+
+import { closeGraphStore, setGraphStorePath } from '../../../../db/graph/store.js';
+
+const STORE_DIR = mkdtempSync(join(tmpdir(), 'insrc-test-store-'));
+setGraphStorePath(join(STORE_DIR, 'graph.lmdb'));
+after(async () => {
+	await closeGraphStore();
+	rmSync(STORE_DIR, { recursive: true, force: true });
+});
+
+import { artifact, alice, H } from '../../../../workflow/artifact-core/__tests__/store-kit.js';
+import { FileSidecarStore } from '../../../../workflow/artifact-core/sidecar-store.js';
+import { artifactJsonPath } from '../../../../workflow/storage.js';
+import { lifecycleFor, resetLifecycleRegistry } from '../../../lifecycle-registry.js';
+import { handleReviewStep } from '../handler.js';
+import { _clearReviewStateStoreForTests } from '../state-store.js';
+
+const PLAN = `PLAN-${H}-s1`;
+const MD = `<!-- insrc:artifact ${PLAN} -->\n\n# Story s1\n\n- t1: extend the two exported constants in foo.\n`;
+const CLAIMS = {
+	claims: [{ id: 'c-inv', ref: 's1/t1', kind: 'inventory', text: 'There are exactly two exported constants in foo.', anchors: ['src/foo.ts'], probe: { greps: ['^export const'] } }],
+};
+const WITH_AUTO_FIX = {
+	verdicts: [{
+		claimId: 'c-inv', severity: 'HIGH', evidence: 'ripgrep re-derived THREE `export const` sites.', action: 'Correct the count.', fixability: 'auto',
+		proposedFix: { rationale: 'three', artifactEdits: [{ find: 'two exported constants', replace: 'three exported constants' }] },
+	}],
+};
+
+const repos: string[] = [];
+afterEach(() => { resetLifecycleRegistry(); _clearReviewStateStoreForTests(); for (const r of repos.splice(0)) rmSync(r, { recursive: true, force: true }); });
+
+/** A repository with a daemon-authored PLAN draft in the durable store and its markdown under docs/. */
+async function fixture(): Promise<{ repo: string; md: string }> {
+	const repo = mkdtempSync(join(tmpdir(), 'verdicts-lifecycle-'));
+	repos.push(repo);
+	mkdirSync(join(repo, 'src'), { recursive: true });
+	writeFileSync(join(repo, 'src', 'foo.ts'), 'export const alpha = 1;\nexport const beta = 2;\nexport const gamma = 3;\n');
+	const { store } = lifecycleFor(repo);
+	await store.write(artifact(`DEF-${H}`), alice);
+	await store.write(artifact(PLAN, { payload: { body: { tasks: ['extend the two exported constants in foo.'] }, citations: [] } }), alice);
+	// the party that authored the plan is the daemon, so the controller reviews it
+	const head = JSON.parse(readFileSync(artifactJsonPath(repo, PLAN), 'utf8')) as { meta: Record<string, unknown> };
+	writeFileSync(artifactJsonPath(repo, PLAN), JSON.stringify({ ...head, meta: { ...head.meta, authoredBy: 'daemon', workflow: 'plan' } }, null, 2) + '\n');
+	const dir = join(repo, 'docs', 'epics', 'demo-E2026102100000000', 'S001');
+	mkdirSync(dir, { recursive: true });
+	const md = join(dir, 'PLAN.md');
+	writeFileSync(md, MD);
+	return { repo, md };
+}
+
+async function verdicts(fx: { repo: string; md: string }): Promise<{ next: string; applied?: number; error?: { message: string } }> {
+	const parse = (env: Awaited<ReturnType<typeof handleReviewStep>>) => JSON.parse(env.content[0]!.text) as { state: string; next: string; applied?: number; error?: { message: string } };
+	const start = parse(await handleReviewStep({ phase: 'start', artifact: fx.md, repo: fx.repo }));
+	await handleReviewStep({ phase: 'claims', claims: CLAIMS, state: start.state });
+	return parse(await handleReviewStep({ phase: 'verdicts', verdicts: WITH_AUTO_FIX, state: start.state } as never));
+}
+
+test('handleVerdicts with a service stores an applied fix through the service, stamps the review and records it on the lifecycle, and refuses a head that is ahead of its log', async () => {
+	const fx = await fixture();
+	const { store } = lifecycleFor(fx.repo);
+	const before = await store.readWithHistory(PLAN);
+
+	const done = await verdicts(fx);
+	assert.equal(done.next, 'done', JSON.stringify(done));
+	assert.equal(done.applied, 1);
+
+	const after = await store.readWithHistory(PLAN);
+	// the fix went through the store: a logged update by the review, with the next revision
+	const update = after.changeLog.at(-2);
+	assert.equal(after.lifecycle.revision.number, before.lifecycle.revision.number + 1);
+	assert.ok(after.changeLog.some(e => e.operation === 'update' && e.actor.id === 'insrc:review' && e.revision?.number === after.lifecycle.revision.number), JSON.stringify(update));
+	assert.deepEqual((after.payload.body as { tasks: string[] }).tasks, ['extend the three exported constants in foo.']);
+	// the review is stamped on the head and recorded on the lifecycle by the controller
+	const stamped = JSON.parse(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8')) as { meta: { review?: { model: string; reviewedBy: string } } };
+	assert.equal(stamped.meta.review?.model, 'client');
+	assert.equal(after.lifecycle.review?.party, 'controller');
+	assert.equal(after.lifecycle.review?.revision, after.lifecycle.revision.number);
+	assert.ok(after.changeLog.some(e => e.operation === 'review'));
+	assert.equal((await lifecycleFor(fx.repo).service.inspect(PLAN))?.integrity.ok, true);
+
+	// A head whose log is ahead of it (a merge brought in a later entry) is refused before anything is stamped.
+	const tail = after.changeLog.at(-1);
+	assert.ok(tail?.revision);
+	await new FileSidecarStore(fx.repo).appendRecord('log', {
+		artifactId: PLAN,
+		entry: { ...tail, id: 'from-another-clone', timestamp: new Date(Date.parse(tail.timestamp) + 1).toISOString(), revision: { number: tail.revision.number + 1, contentHash: tail.revision.contentHash } },
+	});
+	const headBefore = readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8');
+	const mdBefore = readFileSync(fx.md, 'utf8');
+	const refused = await verdicts(fx);
+	assert.equal(refused.next, 'error');
+	assert.match(refused.error?.message ?? '', /log-ahead-of-head/);
+	assert.equal(readFileSync(artifactJsonPath(fx.repo, PLAN), 'utf8'), headBefore, 'nothing was stamped');
+	assert.equal(readFileSync(fx.md, 'utf8'), mdBefore);
+});

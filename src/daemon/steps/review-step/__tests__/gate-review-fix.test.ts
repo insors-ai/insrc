@@ -82,7 +82,7 @@ async function verdictsReview(fx: ReturnType<typeof fixture>): Promise<{ next: s
 	_clearReviewStateStoreForTests();
 	const start = JSON.parse((await handleReviewStep({ phase: 'start', artifact: fx.md, repo: fx.repo })).content[0]!.text) as { state: string };
 	await handleReviewStep({ phase: 'claims', claims: CLAIMS, state: start.state });
-	return JSON.parse((await handleReviewStep({ phase: 'verdicts', verdicts: WITH_AUTO_FIX, state: start.state } as never)).content[0]!.text) as { next: string; applied: number };
+	return JSON.parse((await handleReviewStep({ phase: 'verdicts', verdicts: WITH_AUTO_FIX, state: start.state } as never, { lifecycleFor: () => undefined })).content[0]!.text) as { next: string; applied: number };
 }
 
 function provider(): LLMProvider {

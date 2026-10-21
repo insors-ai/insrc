@@ -20,6 +20,7 @@ import { appendFileSync } from 'node:fs';
 
 import { getLogger } from '../../../shared/logger.js';
 import { SamePartyReviewError } from '../../../workflow/review/party.js';
+import { lifecycleFor } from '../../lifecycle-registry.js';
 import { handleClaims } from './phases/claims.js';
 import { handleFindings } from './phases/findings.js';
 import { handleStart } from './phases/start.js';
@@ -62,7 +63,7 @@ async function dispatch(input: unknown, deps: ReviewStepDeps): Promise<ReviewSte
 		switch (step.phase) {
 			case 'start':    return await handleStart(step, deps);
 			case 'claims':   return await handleClaims(step);
-			case 'verdicts': return handleVerdicts(step);
+			case 'verdicts': return await handleVerdicts(step, deps.lifecycleFor ?? (repoPath => lifecycleFor(repoPath).service));
 			case 'findings': return handleFindings(step);
 			default:
 				return errorResult(

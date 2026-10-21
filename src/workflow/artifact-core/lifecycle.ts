@@ -12,7 +12,7 @@
 import { createHash } from 'node:crypto';
 
 import { ArtifactIds } from '../artifact-ids.js';
-import { ArtifactShapeError, IllegalTransitionError, ReviewRequiredError, TerminalArtifactError } from './types.js';
+import { IllegalTransitionError, ReviewRequiredError, TerminalArtifactError } from './types.js';
 import type {
 	Actor, Approval, Artifact, ChangeLogEntry, IntegrityReason, Lifecycle, Operation, Reference, Review, Signoff, Staleness, Status,
 } from './types.js';
@@ -152,9 +152,6 @@ export function checkIntegrity(a: ContentView, logTail: ChangeLogEntry | undefin
 export function reconcileLifecycle(
 	prior: ContentView | undefined, next: ContentView, revisionNumber: number, by: Actor, at: string,
 ): { readonly lifecycle: Lifecycle; readonly contentChanged: boolean } {
-	if (![...TERMINAL, ...NON_TERMINAL].includes(next.lifecycle.status)) {
-		throw new ArtifactShapeError(`the lifecycle has an unknown status '${String(next.lifecycle.status)}'`);
-	}
 	const hash = hashOf(next);
 	if (prior === undefined) {
 		if (next.lifecycle.status !== 'draft') throw new IllegalTransitionError(`a new artifact starts as draft, not ${next.lifecycle.status}`);

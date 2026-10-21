@@ -44,7 +44,8 @@ import { ArtifactIds, MissingAnchorError, type PathIntent } from './artifact-ids
 import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme.js';
 import { reconcileLifecycle } from './artifact-core/lifecycle.js';
 import type { ContentView } from './artifact-core/lifecycle.js';
-import type { Actor, Lifecycle } from './artifact-core/types.js';
+import { ArtifactShapeError } from './artifact-core/types.js';
+import type { Actor, Lifecycle, Status } from './artifact-core/types.js';
 
 // ---------------------------------------------------------------------------
 // Repo-relative dir constants
@@ -163,6 +164,9 @@ export function writeArtifact(path: string, next: unknown, kind: WriteKind, opts
 	return prepared.revision;
 }
 
+const LIFECYCLE_STATUSES: readonly Status[] = [
+	'draft', 'pending-review', 'approved', 'in-signoff', 'changes-requested', 'signed-off', 'rejected', 'completed', 'withdrawn', 'superseded',
+];
 const DEFAULT_ACTOR: Actor = { id: 'insrc:system', kind: 'system', properties: {} };
 
 /** The description, body and citations of a raw head, with the lifecycle it carries (a draft one when it has none). */
@@ -183,6 +187,8 @@ function reconcileLifecycleOf(
 	prior: Record<string, unknown> | undefined, next: Record<string, unknown>, meta: Record<string, unknown>, revisionNumber: number,
 	opts: { readonly by?: Actor | undefined; readonly at?: string | undefined },
 ): { readonly lifecycle: Lifecycle; readonly contentChanged: boolean } {
+	const status = (meta['lifecycle'] as { status?: unknown }).status;
+	if (!LIFECYCLE_STATUSES.includes(status as Status)) throw new ArtifactShapeError(`the lifecycle has an unknown status '${String(status)}'`);
 	const priorRevision = readRevision(prior);
 	return reconcileLifecycle(
 		prior === undefined ? undefined : contentViewOf(prior, priorRevision), contentViewOf({ ...next, meta }, priorRevision),

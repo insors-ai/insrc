@@ -349,6 +349,8 @@ tracker.syncComments is the single entry; the build phases are left alone.
 
 - `q57bc254e` — FeedbackInput gets an optional source field, which is a change to the s5 feedback service (src/workflow/feedback/feedback-service.ts). Resolve: accept it as an additive s8-owned change (recommended), or record a tracker comment's origin only in its entry id and text (no source on the entry).
   - **resolved**: Accept it as an additive s8-owned change (recommended) — Approved with the LLD (option A, recommended answers). _(2026-10-21T20:15:57.505Z)_
+- `qbbfede3b` — TrackerPort gains postComment so a post answers its comment id, an additive method on the sc6 port s6 owns. Resolve: accept it as additive with no HLD amendment (recommended), or file a sharedContract.methodAdd amendment on sc6 first.
+  - **resolved**: Accept as additive, no amendment — Approved with the LLD (option A). _(2026-10-21T20:16:41.194Z)_
 
 ## Citations
 

@@ -199,6 +199,13 @@
         "choice": "Accept it as an additive s8-owned change (recommended)",
         "rationale": "Approved with the LLD (option A, recommended answers).",
         "resolvedAt": "2026-10-21T20:15:57.505Z"
+      },
+      "qbbfede3b": {
+        "question": "TrackerPort gains postComment so a post answers its comment id, an additive method on the sc6 port s6 owns. Resolve: accept it as additive with no HLD amendment (recommended), or file a sharedContract.methodAdd amendment on sc6 first.",
+        "status": "resolved",
+        "choice": "Accept as additive, no amendment",
+        "rationale": "Approved with the LLD (option A).",
+        "resolvedAt": "2026-10-21T20:16:41.194Z"
       }
     }
   },

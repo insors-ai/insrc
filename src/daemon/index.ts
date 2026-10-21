@@ -669,6 +669,12 @@ async function main(): Promise<void> {
 			return handleTrackerAttach(params, process.env['INSRC_REPO']);
 		},
 
+		// s8: read a unit's issue comments in as feedback and post feedback entered here out. Commits nothing.
+		'tracker.syncComments': async (params) => {
+			const { handleTrackerSyncComments } = await import('./tracker-sync-comments.js');
+			return handleTrackerSyncComments(params, process.env['INSRC_REPO']);
+		},
+
 		// sc1 (ide-artifact-review-panel S001): the pending-approval artifact
 		// list the JetBrains review panel polls. A pure scan of the canonical
 		// `.insrc/artifacts` store (approvedAt absent AND rejectedAt absent) —

@@ -108,6 +108,8 @@ export interface BuildStepImplement {
 	readonly workflowId: string;
 	readonly issueRef?:  string | undefined;
 	readonly prompt:     string;
+	/** What the Task's comment sync recorded and posted, when it ran against an issue. */
+	readonly commentSync?: string | undefined;
 }
 
 /** Admission refused — the Story's plan is missing / unapproved / stale. */
@@ -121,6 +123,8 @@ export interface BuildStepDone {
 	readonly next:    'done';
 	readonly verdict: unknown;
 	readonly passed:  boolean;
+	/** What the Task's comment sync recorded and posted, when it ran against an issue. */
+	readonly commentSync?: string | undefined;
 }
 
 export interface BuildStepError {

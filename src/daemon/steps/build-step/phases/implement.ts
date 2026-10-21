@@ -31,6 +31,7 @@ import {
 	standaloneEpicHashFromFocus,
 } from '../../../../workflow/runners/build/standalone-record.js';
 import { roundWriterFor } from '../../../lifecycle-registry.js';
+import { runTaskCommentSync } from '../../../tracker-sync-comments.js';
 import { assertMayBuild } from '../../../../workflow/team/author-gate.js';
 import { mergeInProgressError, renderImplementPrompt, renderStandaloneImplementPrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import type {
@@ -93,6 +94,7 @@ export async function handleImplement(
 	}
 
 	const prompt = renderImplementPrompt(repoPath, ref, resolvedDecisions);
+	const commentSync = await runTaskCommentSync(repoPath, ref.epicHash, ref.storyId, ref.taskId);
 	log.info({ taskId: ref.taskId, storyId: ref.storyId, workflowId: ref.workflowId }, 'insrc_build_step[implement]: emitting prompt');
 	return {
 		next:       'implement',
@@ -100,6 +102,7 @@ export async function handleImplement(
 		workflowId: ref.workflowId,
 		issueRef:   ref.issueRef,
 		prompt,
+		...(commentSync !== undefined ? { commentSync } : {}),
 	};
 }
 

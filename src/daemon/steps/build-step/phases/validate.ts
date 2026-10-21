@@ -22,6 +22,7 @@ import { relative } from 'node:path';
 
 import { getLogger } from '../../../../shared/logger.js';
 import type { StructuredSchema } from '../../../../shared/types.js';
+import { runTaskCommentSync } from '../../../tracker-sync-comments.js';
 import { assertMayBuild } from '../../../../workflow/team/author-gate.js';
 import { mergeInProgressError, renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import { storyWorkflowFiles } from '../../../../workflow/runners/build/own-files.js';
@@ -221,11 +222,14 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	assertMayBuild(repoPath, ref);   // team gate: before any check runs or record is written
 	const mapping = resolveMapping(repoPath, input.tests, ref.task.tests, { epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId });
 	if (!mapping.ok) return mapping.error;
-	return runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence), {
+	const done = await runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence), {
 		epicHash: ref.epicHash,
 		storyId:  ref.storyId,
 		taskId:   ref.taskId,
 	}, planTaskCheckPlan(repoPath, ref.task, mapping.entries), input.summary, mapping.note);
+	if (done.next !== 'done') return done;
+	const commentSync = await runTaskCommentSync(repoPath, ref.epicHash, ref.storyId, ref.taskId);
+	return commentSync === undefined ? done : { ...done, commentSync };
 }
 
 /**

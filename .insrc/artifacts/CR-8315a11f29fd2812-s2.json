@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792512655227-d4wj7r",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-20T16:10:55.227Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 37196,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s2",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/review-pipeline/__tests__/code-review-material.test.ts",
+        "src/workflow/review-pipeline/adapters/code-review-material.ts",
+        "src/workflow/code-review/dimensions/coverage.ts",
+        "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts",
+        "src/workflow/review-pipeline/code-review.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/dimensions/coverage.ts",
+            "message": "buildCoveragePrompt is present but failing/unverified: its only listed reaching test file, single-chunk-parity.test.ts, is absent from the test record, so its pass-state is unverified. All promised tests are present and passing, including the daemon smoke test reported by the builder.",
+            "expectationRef": "buildCoveragePrompt",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "592877"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  }
+}

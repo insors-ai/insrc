@@ -1,0 +1,833 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s3",
+    "createdAt": "2026-10-20T16:44:27.482Z",
+    "updatedAt": "2026-10-21T04:47:37.943Z",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "aecee5ff",
+        "ranAt": "2026-10-20T16:45:32.296Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 771,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "79bfbdec",
+        "ranAt": "2026-10-20T18:02:15.148Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 813,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "eae69f84",
+        "ranAt": "2026-10-20T17:04:04.005Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 730,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "3f3345c3",
+        "ranAt": "2026-10-20T17:14:24.444Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key with no notes is adjudicated on the no-evidence statement'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a conventions candidate rejected by the module judgement is absent from the merged result'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 584,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "40c58e88",
+        "ranAt": "2026-10-20T18:28:43.500Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "3bb5726b",
+        "ranAt": "2026-10-20T18:40:12.120Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a pair answer naming a counterpart outside its two symbols is rejected'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a pair answer naming a counterpart outside its two symbols is rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'compare and pair calls are counted under pipelineCalls.relation, not chunk'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "compare and pair calls are counted under pipelineCalls.relation, not chunk",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 936,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "title": "every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit",
+                "result": "pass"
+              },
+              {
+                "title": "a pair answer naming a counterpart outside its two symbols is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "compare and pair calls are counted under pipelineCalls.relation, not chunk",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "6225fb6b",
+        "ranAt": "2026-10-21T04:36:46.306Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts: 'pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+                "title": "pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-gather.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1021,
+            "titles": [
+              {
+                "title": "each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild",
+                "result": "pass"
+              },
+              {
+                "title": "adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note",
+                "result": "pass"
+              },
+              {
+                "title": "a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's",
+                "result": "pass"
+              },
+              {
+                "title": "a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a key with no notes is adjudicated on the no-evidence statement",
+                "result": "pass"
+              },
+              {
+                "title": "a conventions candidate rejected by the module judgement is absent from the merged result",
+                "result": "pass"
+              },
+              {
+                "title": "a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing",
+                "result": "pass"
+              },
+              {
+                "title": "a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits",
+                "result": "pass"
+              },
+              {
+                "title": "a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "title": "every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit",
+                "result": "pass"
+              },
+              {
+                "title": "a pair answer naming a counterpart outside its two symbols is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "compare and pair calls are counted under pipelineCalls.relation, not chunk",
+                "result": "pass"
+              },
+              {
+                "title": "out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today",
+                "result": "pass"
+              },
+              {
+                "title": "a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today",
+                "result": "pass"
+              },
+              {
+                "title": "pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review",
+                "result": "pass"
+              },
+              {
+                "title": "merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once",
+                "result": "pass"
+              },
+              {
+                "title": "a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row",
+                "result": "pass"
+              },
+              {
+                "title": "a mutual call cut between chunks is checked in both directions, each at its own caller",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "72cb9d62",
+        "ranAt": "2026-10-21T04:47:37.943Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts: 'a gather call failing twice fails the review and records nothing'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+                "title": "a gather call failing twice fails the review and records nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review-pipeline/__tests__/code-review-divided.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 737,
+            "titles": [
+              {
+                "title": "a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways",
+                "result": "pass"
+              },
+              {
+                "title": "a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller",
+                "result": "pass"
+              },
+              {
+                "title": "two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef",
+                "result": "pass"
+              },
+              {
+                "title": "a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence",
+                "result": "pass"
+              },
+              {
+                "title": "a gather call failing twice fails the review and records nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

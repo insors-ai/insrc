@@ -144,7 +144,7 @@ test('storyChangeSet is empty when the range holds only a clean merge', () => {
 	try {
 		git(r, 'merge', '-q', '--no-ff', '-m', 'merge upstream', 'upstream');
 		const set = storyChangeSet(r, base);
-		assert.deepEqual(set, { paths: [], units: [], sharedPaths: [], foldedPaths: [], attribution: 'first-parent-range', sharedWithExcluded: [] });
+		assert.deepEqual(set, { paths: [], units: [], sharedPaths: [], foldedPaths: [], attribution: 'first-parent-range', sharedWithExcluded: [], perUnit: false });
 	} finally { cleanup(); }
 });
 

@@ -66,9 +66,9 @@ test('sections, documents, config, types, interfaces and every entity of a test 
 
 	// A diff review's per-file rows are never eligible: there is no symbol to grade.
 	const diff = await assembleDiffCodeReviewGrounding('/repo', {
-		workingTreeDiff: async () => ({ files: [{ path: 'src/a.ts', insertions: 1, deletions: 0, change: 'modified' }] as never, body: 'diff --git a/src/a.ts b/src/a.ts\n+x', truncated: false }),
-		lastCommitDiff: async () => ({ files: [], body: '', truncated: false }),
-	});
+		rangeDiff: async () => ({ files: [{ path: 'src/a.ts', insertions: 1, deletions: 0, change: 'modified' }] as never, body: 'diff --git a/src/a.ts b/src/a.ts\n+x', truncated: false }),
+		workingTreeDiff: async () => ({ files: [], body: '', truncated: false }),
+	}, { base: 'abc' });
 	assert.deepEqual(diff.grounding.symbols.map(s => s.coverageEligible), [false]);
 });
 

@@ -87,15 +87,16 @@ test('merge/idempotent: calling twice keeps exactly ONE BUILD json for the id', 
 });
 
 // ---------------------------------------------------------------------------
-// empty — an empty changed set omits the changeLog slot
+// empty — an empty changed set writes an empty changeLog (ISSUE-b97752e9: it
+// replaces a prior one; the md still omits the section)
 // ---------------------------------------------------------------------------
 
-test('empty: an empty changed set writes a record with NO changeLog key', async () => {
+test('empty: an empty changed set writes a record with an EMPTY changeLog', async () => {
 	await withRepo(async (repo) => {
 		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's2' }, async () => []);
 		assert.ok(out !== undefined);
 		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's2')));
-		assert.ok(!('changeLog' in rec.body), 'no changeLog key on an empty changed set');
+		assert.deepEqual(rec.body['changeLog'], [], 'an empty changeLog, which replaces a prior one');
 	});
 });
 
@@ -103,7 +104,7 @@ test('empty: an empty changed set writes a record with NO changeLog key', async 
 // failure swallow — the collector swallows a listChanged throw to []
 // ---------------------------------------------------------------------------
 
-test('failure swallow: a throwing listChanged still writes a record (no changeLog) and does NOT throw', async () => {
+test('failure swallow: a throwing listChanged still writes a record (an empty changeLog) and does NOT throw', async () => {
 	await withRepo(async (repo) => {
 		let out: { readonly md: string; readonly json: string } | undefined;
 		await assert.doesNotReject(async () => {
@@ -113,7 +114,7 @@ test('failure swallow: a throwing listChanged still writes a record (no changeLo
 		});
 		assert.ok(out !== undefined, 'a record is still written (collector swallows the throw to [])');
 		const rec = readJson(artifactJsonPath(repo, buildArtifactId(HASH, 's2')));
-		assert.ok(!('changeLog' in rec.body));
+		assert.deepEqual(rec.body['changeLog'], []);
 	});
 });
 

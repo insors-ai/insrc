@@ -29,6 +29,7 @@
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { functionalCoverageObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 import type { FunctionalRequirement } from '../../artifacts/functional-definition.js';
 
 const DIMENSION: ReviewDimension = 'functional-coverage';
@@ -140,6 +141,13 @@ export function functionalCoverageSpec(subject: CodeReviewSubject): ModelDimensi
 		dimension: DIMENSION,
 		schema:    FUNCTIONAL_COVERAGE_FINDINGS_SCHEMA,
 		prompt:    (grounding, _mode, note) => buildFunctionalCoveragePrompt(subject, grounding, note),
+		obligations: () => functionalCoverageObligations(functionalRequirementsOf(subject)),
+		// A divided review: chunks note how their code realises each FR; the gather judges each FR.
+		chunk: {
+			kind: 'notes',
+			judge: 'Judge whether the changed code GENUINELY realizes this FR. An FR no note shows realized is a HIGH finding, confidence "breach". An FR only partly realized, or whose realization cannot be confirmed from the notes, is a finding with confidence "observation" saying what is missing, not reported as wholly unrealized.',
+			framing: 'You are an independent code reviewer gathering evidence on FUNCTIONAL COVERAGE: whether each functional requirement (FR) the design declared is GENUINELY realized by the changed code. Genuine realization counts, not mere mention: a symbol whose name resembles an FR but does not implement its stated outcome does not realize it.',
+		},
 		toResult:  output => ({
 			dimension: DIMENSION,
 			findings: output.findings

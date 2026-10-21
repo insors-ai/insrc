@@ -19,6 +19,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
+import { storyChangeSet } from '../../../workflow/runners/build/story-commits.js';
 import { runInProcessGroup, type ProcessGroupOpts, type ProcessGroupResult } from '../../../shared/process-group.js';
 import type { NamedTestSource, TestCaseResult, TestRecordNamedTest, TestRecordReported } from '../../../workflow/runners/build/test-record.js';
 
@@ -225,6 +226,26 @@ function changedFiles(repoPath: string, base: string | undefined): string[] {
 }
 
 /**
+ * The Story's files (ISSUE-b97752e9): the paths of its own commits since `base`,
+ * read with a strict trailer scan, so neither another Story's commit nor an
+ * unrelated uncommitted or untracked file counts. An uncommitted edit of one of
+ * these files is already among them. Throws when there is no base (no Story
+ * set) or when git fails.
+ */
+function storyFiles(repoPath: string, base: string | undefined, storyKey: string): string[] {
+	if (base === undefined) throw new NoStoryBaseError(storyKey);
+	return [...storyChangeSet(repoPath, base, { storyKey, strict: true }).paths];
+}
+
+/** No range base resolves for the Story, so its files cannot be listed. */
+class NoStoryBaseError extends Error {
+	constructor(storyKey: string) {
+		super(`no range base for Story ${storyKey}`);
+		this.name = 'NoStoryBaseError';
+	}
+}
+
+/**
  * The TypeScript projects, other than the repository root's, that own one of
  * `files`: for each .ts / .tsx file, the nearest directory above it that holds
  * a tsconfig.json. The root's typecheck does not cover such a project (the VS
@@ -245,10 +266,24 @@ export function owningTypecheckProjects(repoPath: string, files: readonly string
 /**
  * The plan with the projects its test files and the build's changed files
  * belong to. `base` is the Story's range base, so a build of several commits is
- * covered whole; without it only the HEAD commit's files are known.
+ * covered whole; without it only the HEAD commit's files are known. With the
+ * Story's `storyKey` the build's files are the Story's own (ISSUE-b97752e9), so a
+ * project that owns only another Story's or an unrelated uncommitted file is not
+ * added; with no base that leaves only the test files' projects.
  */
-export function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string): ValidationCheckPlan {
-	const projects = owningTypecheckProjects(repoPath, [...plan.testFiles, ...changedFiles(repoPath, base)]);
+export function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string, storyKey?: string): ValidationCheckPlan {
+	let built: string[];
+	if (storyKey === undefined) {
+		built = changedFiles(repoPath, base);
+	} else {
+		try {
+			built = storyFiles(repoPath, base, storyKey);
+		} catch (err) {
+			log.warn({ repoPath, storyKey, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the Story\'s files; a project they belong to may go unchecked');
+			built = [];
+		}
+	}
+	const projects = owningTypecheckProjects(repoPath, [...plan.testFiles, ...built]);
 	return projects.length === 0 ? plan : { ...plan, typecheckProjects: projects };
 }
 
@@ -323,19 +358,27 @@ export function smallStandaloneCheckPlan(
  * Trivial standalone build (no LLD): the test files the build touched, possibly
  * none. With the Story's range base, that is every file changed in `base..HEAD`,
  * the same range the change log and the typecheck use; with none, the HEAD
- * commit's files (ISSUE-91640defac1b5816).
+ * commit's files (ISSUE-91640defac1b5816). With the Story's `storyKey` it is the
+ * test files of the Story's own commits that still exist (ISSUE-b97752e9), and no
+ * base fails the listing rather than running the HEAD commit's tests.
  */
-export function trivialCheckPlan(repoPath: string, base?: string | undefined): ValidationCheckPlan {
+export function trivialCheckPlan(repoPath: string, base?: string | undefined, storyKey?: string | undefined): ValidationCheckPlan {
 	let touched: string[] = [];
 	// A listing that failed is not "no tests": it fails the tests check rather than passing it.
 	let listError: string | undefined;
+	const isTest = (f: string): boolean => f.endsWith('.test.ts') && f.split('/').includes('__tests__');
 	try {
-		// --diff-filter=d leaves out files the build deleted: they no longer exist to run.
-		const args = base !== undefined
-			? ['diff', '--name-only', '--diff-filter=d', base, 'HEAD']
-			: ['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD'];
-		touched = execFileSync('git', args, { cwd: repoPath, encoding: 'utf8' })
-			.split('\n').filter(f => f.endsWith('.test.ts') && f.split('/').includes('__tests__'));
+		if (storyKey !== undefined) {
+			// The Story's commits list a file it deleted too: only one that still
+			// exists can be run, as --diff-filter=d keeps below.
+			touched = storyFiles(repoPath, base, storyKey).filter(f => isTest(f) && existsSync(join(repoPath, f)));
+		} else {
+			// --diff-filter=d leaves out files the build deleted: they no longer exist to run.
+			const args = base !== undefined
+				? ['diff', '--name-only', '--diff-filter=d', base, 'HEAD']
+				: ['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD'];
+			touched = execFileSync('git', args, { cwd: repoPath, encoding: 'utf8' }).split('\n').filter(isTest);
+		}
 	} catch (err) {
 		listError = err instanceof Error ? err.message : String(err);
 		log.warn({ repoPath, base, err: listError }, 'validate: could not list the build\'s files');

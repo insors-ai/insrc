@@ -18,8 +18,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { assembleDiffCodeReviewGrounding, realDiffGroundingDeps } from '../../../code-review/grounding.js';
-import { changedFiles } from '../changed-files.js';
-import { storyChangeSet, storyLines } from '../story-commits.js';
+import { NoBuildChangesError, changedFiles } from '../changed-files.js';
+import { newestStoryCommit, storyChangeSet, storyLines } from '../story-commits.js';
 
 const STORY = 'b47dadc7cf0cccb1/S001';
 const OTHER = '748edb69bd23f767/S001';
@@ -87,20 +87,41 @@ test("two standalone Stories both S001 are told apart by the trailer's epicHash"
 	} finally { cleanup(); }
 });
 
-test("with no trailered commit in the range, or when reading trailers fails, the set is today's and attribution is first-parent-range", () => {
+test("a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts", () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		const a = commit(r, { 'src/a.ts': '1\n' }, 'feat(build): S001/t1 untrailed');
+		commit(r, { 'src/b.ts': '1\n' }, 'feat(build): S001/t2 another Story', OTHER);
+		const today = storyChangeSet(r, base);
+		assert.equal(today.attribution, 'first-parent-range');
+		assert.deepEqual(today.paths, ['src/a.ts', 'src/b.ts'], 'without a story key nothing is filtered');
+		assert.equal(today.perUnit, false, 'an unfiltered range is read as a whole');
+
+		const none = storyChangeSet(r, base, { storyKey: STORY });
+		assert.equal(none.attribution, 'first-parent-range');
+		assert.deepEqual(none.units.map(u => u.ref), [a]);
+		assert.deepEqual(none.paths, ['src/a.ts']);
+		assert.deepEqual(none.sharedWithExcluded, []);
+		assert.equal(none.perUnit, true, 'a range another Story was left out of is read unit by unit');
+	} finally { cleanup(); }
+});
+
+test("with no foreign commit, a Story with no carrying commit gets today's first-parent range, read as a whole", () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		commit(r, { 'src/a.ts': '1\n' }, 'feat(build): S001/t1 untrailed');
+		commit(r, { 'src/b.ts': '1\n' }, 'feat(build): S001/t2 untrailed');
+		const set = storyChangeSet(r, base, { storyKey: STORY });
+		assert.deepEqual(set.units, storyChangeSet(r, base).units);
+		assert.deepEqual([set.attribution, set.perUnit], ['first-parent-range', false]);
+	} finally { cleanup(); }
+});
+
+test("when reading trailers fails without strict, the set is today's first-parent range", () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		commit(r, { 'src/a.ts': '1\n' }, 'feat(build): S001/t1 untrailed');
 		commit(r, { 'src/b.ts': '1\n' }, 'feat(build): S001/t2 another Story', OTHER);
-		const today = storyChangeSet(r, base);
-		assert.equal(today.attribution, 'first-parent-range');
-
-		const none = storyChangeSet(r, base, { storyKey: STORY });
-		assert.equal(none.attribution, 'first-parent-range');
-		assert.deepEqual(none.units, today.units);
-		assert.deepEqual(none.paths, ['src/a.ts', 'src/b.ts']);
-		assert.deepEqual(none.sharedWithExcluded, []);
-
 		commit(r, { 'src/c.ts': '1\n' }, 'feat(build): S001/t3 trailered', STORY);
 		assert.equal(storyChangeSet(r, base, { storyKey: STORY }).attribution, 'story-trailer', 'trailers read normally first');
 		// A bad log.date makes `git log` (the trailer read) fail while `rev-list` still works.
@@ -109,6 +130,38 @@ test("with no trailered commit in the range, or when reading trailers fails, the
 		assert.equal(failed.attribution, 'first-parent-range');
 		assert.deepEqual(failed.units, storyChangeSet(r, base).units);
 		assert.deepEqual(failed.paths, ['src/a.ts', 'src/b.ts', 'src/c.ts']);
+	} finally { cleanup(); }
+});
+
+test('with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range', () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		commit(r, { 'src/a.ts': '1\n' }, 'feat(build): S001/t1 untrailed');
+		commit(r, { 'src/c.ts': '1\n' }, 'feat(build): S001/t2 trailered', STORY);
+		assert.equal(storyChangeSet(r, base, { storyKey: STORY, strict: true }).attribution, 'story-trailer', 'strict reads normally when git works');
+		git(r, 'config', 'log.date', 'bogus');
+		assert.throws(() => storyChangeSet(r, base, { storyKey: STORY, strict: true }), NoBuildChangesError);
+		// newestStoryCommit keeps the lenient scan.
+		assert.equal(newestStoryCommit(r, base, STORY), undefined);
+	} finally { cleanup(); }
+});
+
+test("with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set", () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		commit(r, { 'src/b.ts': '1\n', 'src/shared.ts': 'other\n' }, 'feat(build): s3/t1 other', OTHER);
+		commit(r, { 'src/d.ts': '1\n' }, 'feat(build): s3/t2 a third Story', 'c2ba6fa6aaaaaaaa/s3');
+		const set = storyChangeSet(r, base, { storyKey: STORY });
+		assert.deepEqual(set.units, []);
+		assert.deepEqual(set.paths, []);
+		assert.deepEqual(set.sharedWithExcluded, []);
+		assert.equal(set.perUnit, true);
+
+		const a = commit(r, { 'src/a.ts': '1\n', 'src/shared.ts': 'mine\n' }, 'feat(build): S001/t1 untrailed');
+		const mixed = storyChangeSet(r, base, { storyKey: STORY });
+		assert.deepEqual(mixed.units.map(u => u.ref), [a]);
+		assert.deepEqual(mixed.paths, ['src/a.ts', 'src/shared.ts']);
+		assert.deepEqual(mixed.sharedWithExcluded, ['src/shared.ts'], "the other Story's commit also changed shared.ts");
 	} finally { cleanup(); }
 });
 
@@ -168,3 +221,48 @@ test('storyLines reads every whole Insrc-Story line and nothing else', () => {
 	assert.deepEqual(storyLines(`s\n\nsee Insrc-Story: ${STORY}\nInsrc-Storyline: x\n`), [], 'a mention or another key is not a Story line');
 	assert.deepEqual(storyLines(`Insrc-Story: ${STORY}\nInsrc-Story: ${OTHER}\n`), [STORY, OTHER]);
 });
+
+/** Merge `branches` into main with `msg`; with `edit`, change a file inside the merge commit. */
+function merge(r: string, branches: readonly string[], msg: string, edit?: Readonly<Record<string, string>>): string {
+	git(r, 'merge', '-q', '--no-ff', '--no-commit', ...branches);
+	for (const [f, body] of Object.entries(edit ?? {})) {
+		mkdirSync(dirname(join(r, f)), { recursive: true });
+		writeFileSync(join(r, f), body);
+	}
+	git(r, 'add', '-A');
+	git(r, 'commit', '-q', '-m', msg);
+	return git(r, 'rev-parse', 'HEAD').trim();
+}
+
+test("a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is", () => {
+	for (const carrying of [false, true]) {
+		const { repo: r, base, cleanup } = repo();
+		try {
+			git(r, 'checkout', '-q', '-b', 'up2', base);
+			commit(r, { 'up/b.ts': 'upstream b\n' }, 'upstream b');
+			git(r, 'checkout', '-q', '-b', 'up3', base);
+			commit(r, { 'up/c.ts': 'upstream c\n' }, 'upstream c');
+			git(r, 'checkout', '-q', 'main');
+
+			const own = carrying
+				? commit(r, { 'src/mine.ts': '1\n' }, 'feat(build): S001/t1 mine', STORY)
+				: commit(r, { 'src/mine.ts': '1\n' }, 'feat(build): S001/t1 untrailed');
+			// Another Story's two-parent merge, with an edit inside it.
+			merge(r, ['upstream'], `merge upstream\n\nInsrc-Story: ${OTHER}\n`, { 'src/their-fold.ts': 'theirs\n' });
+			// Another Story's octopus merge.
+			merge(r, ['up2', 'up3'], `octopus\n\nInsrc-Story: ${OTHER}\n`);
+			// An untrailered merge with an edit inside it: still the Story's.
+			git(r, 'checkout', '-q', '-b', 'up4', base);
+			commit(r, { 'up/d.ts': 'upstream d\n' }, 'upstream d');
+			git(r, 'checkout', '-q', 'main');
+			const plain = merge(r, ['up4'], 'merge up4 (no trailer)', { 'src/my-fold.ts': 'mine\n' });
+
+			const set = storyChangeSet(r, base, { storyKey: STORY });
+			assert.deepEqual(set.units.map(u => [u.kind, u.ref]), [['commit', own], ['merge-edit', plain]], `carrying=${carrying}`);
+			assert.deepEqual(set.paths, ['src/mine.ts', 'src/my-fold.ts'], `carrying=${carrying}`);
+			assert.equal(set.perUnit, true, `carrying=${carrying}`);
+			assert.equal(set.attribution, carrying ? 'story-trailer' : 'first-parent-range');
+		} finally { cleanup(); }
+	}
+});
+

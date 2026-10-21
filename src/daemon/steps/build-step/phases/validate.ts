@@ -351,7 +351,8 @@ async function handleStandaloneValidate(
 	} else {
 		// A trivial build names no tests: `tests` is ignored, and the test files
 		// the build's range touched are run.
-		checks = trivialCheckPlan(repoPath, resolveStoryRangeBase(repoPath, epicHash, storyId));
+		checks = trivialCheckPlan(repoPath, resolveStoryRangeBase(repoPath, epicHash, storyId),
+			epicHash.length > 0 && storyId.length > 0 ? `${epicHash}/${storyId}` : undefined);
 	}
 	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence });
 	// Carry the route the caller declared into the persist. This branch KNOWS it is
@@ -405,7 +406,9 @@ async function runValidateTurn(
 	log.info({ taskId: ident.taskId, storyId: ident.storyId, testFiles: checks.testFiles.length }, 'insrc_build_step[validate]: running checks');
 	// The typecheck also covers every other TypeScript project the Story's changes
 	// (from its range base) or its test files belong to (ISSUE-b4b6b835).
-	const planned = withTypecheckProjects(repoPath, checks, resolveStoryRangeBase(repoPath, ident.epicHash, ident.storyId));
+	// With the Story's key, only the Story's own files name a project (ISSUE-b97752e9).
+	const storyKey = ident.epicHash.length > 0 && ident.storyId.length > 0 ? `${ident.epicHash}/${ident.storyId}` : undefined;
+	const planned = withTypecheckProjects(repoPath, checks, resolveStoryRangeBase(repoPath, ident.epicHash, ident.storyId), storyKey);
 	const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, planned);
 
 	// The checks and the judge take minutes, and the claim may have moved meanwhile: ask the gate again
@@ -598,19 +601,20 @@ async function runValidateTurn(
 				// usually these, so the record would report that the Story changed its
 				// own ledger entries. The list is the one the completion record uses.
 				const exclude = storyWorkflowFiles(repoPath, rec, writeIntent);
-				// The Story's COMMITTED range base. Consulted by the derivation only
-				// when the working tree is clean — which is the normal case here,
-				// because the implement prompt commits before validation runs.
-				// `undefined` means no base could be established, which yields an
-				// empty change set rather than a substituted (wrong) range.
+				// The Story's COMMITTED range base and key: the change set is the
+				// Story's own commits, plus uncommitted edits of their files
+				// (ISSUE-b97752e9). `undefined` means no base could be established,
+				// which yields an empty change set rather than the working tree.
 				const base = resolveStoryRangeBase(repoPath, epicHash, storyId);
 				const changeLog = await collectBuildChangeLog(repoPath, {
-					author: 'insrc-build', timestamp: now, exclude,
+					author: 'insrc-build', timestamp: now, exclude, storyKey: `${epicHash}/${storyId}`,
 					...(base !== undefined ? { base } : {}),
 				});
+				// Written even when empty, so it replaces a prior changeLog that the
+				// old working-tree derivation filled with unrelated files.
 				persistBuildRecord(repoPath, {
 					...rec,
-					body: { ...rec.body, ...(changeLog.length > 0 ? { changeLog } : {}) },
+					body: { ...rec.body, changeLog },
 				});
 			} catch (err) {
 				if (err instanceof MissingAnchorError) throw err;

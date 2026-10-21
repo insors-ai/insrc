@@ -284,7 +284,8 @@ test('T16 a review whose deadline has passed fails before a repeat is started', 
 	const bad = answer(SPEC);
 	bad.items.pop();
 	const f = fakeProvider([bad, answer(SPEC)], { takesMs: 5 * MIN });
-	await assert.rejects(run(f, { deadlineMs: 4 * MIN }), /passed its time limit of 4 minutes/);
+	// Today's error, exactly: a plain Error with today's message, not ReviewSessionTimeoutError (s1 LLD 2.20).
+	await assert.rejects(run(f, { deadlineMs: 4 * MIN }), (e: unknown) => e instanceof Error && e.name === 'Error' && e.constructor === Error && /passed its time limit of 4 minutes \(template design-spec\)\. No review was recorded\./.test(e.message));
 	assert.equal(f.sessions.length, 1, 'the repeat was never started');
 });
 

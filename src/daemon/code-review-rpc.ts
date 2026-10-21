@@ -154,7 +154,7 @@ export async function codeReviewRunStart(
 				return;
 			}
 			outcome = await runCodeReview(
-				{ ...resolved.subject, changedFiles: diff.changedFiles, changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded }, provider,
+				{ ...resolved.subject, changedFiles: diff.changedFiles, changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded, excludedFromScope: diff.excludedFromScope }, provider,
 				{ ...base, groundingMode: 'degraded', capVerdictAtWarn: true, ...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}) },
 				{ ...runner.DEFAULT_DEPS, ...(deps.write !== undefined ? { write: deps.write } : {}), assembleGrounding: async () => diff.grounding },
 			);

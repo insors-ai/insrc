@@ -399,6 +399,7 @@ validate?(answer: unknown, call: ReviewCall): readonly string[]
 
 **Postconditions:**
 - The template stage supplies validateTemplateAnswer here.
+- Oversized correction (amended 2026-10-20 after review): when the call with the correction note would exceed the limit, the reasons are never cut down; the call is re-issued once as planned without the note, and the omission is logged with the reasons. A second invalid answer applies the stage's policy as usual. The same holds for a gather call's correction.
 
 ### 2.20 `ExecutionMode reviewer-session deadline`
 
@@ -412,7 +413,7 @@ validate?(answer: unknown, call: ReviewCall): readonly string[]
 **Returns:** `number` — Each session call, re-issue included, is sent with deadlineMs = min(deadlineAt - now, the per-session limit capped at HARD_REVIEW_DEADLINE_MS). A re-issue never restarts the job clock, and no single session runs longer than 30 minutes.
 
 **Errors:**
-- `ReviewSessionTimeoutError` when deadlineAt has passed: no further call is issued, and the review fails with today's time-limit message, never retried.
+- `Error (the adapter's deadlineError), else ReviewSessionTimeoutError` when deadlineAt has passed, or a session ran out its time: no further call is issued and the review fails, never retried. The error is the adapter's deadlineError when it supplies one: the template review supplies today's plain Error with today's time-limit message (runTemplateReview's timedOut), so its callers see exactly today's error. An adapter with no deadlineError gets ReviewSessionTimeoutError (amended 2026-10-20, after review: the contract now states the error each path actually raises).
 
 **Postconditions:**
 - A single-session template review keeps today's single limit, retries included.
@@ -455,6 +456,59 @@ relationCall?: ((pair: readonly [ReviewAtom, ReviewAtom], maxChars?: number) => 
 **Postconditions:**
 - Each relation in crossRelations is offered to relationCall exactly once per job.
 - Refusal (amended 2026-10-20 after review): a relation call refused for its size is asked again with maxChars = the reported size (else half the refused prompt); the calls returned replace the refused one and the relation is judged when all its calls are answered. A returned call that still exceeds maxChars names the relation (AtomTooLargeError); the refused prompt is never resent.
+
+### 2.23 `AdapterStage.countAs`
+
+```typescript
+countAs?: 'chunk' | 'relation' | undefined
+```
+
+**Returns:** `'chunk' | 'relation'` — The pipelineCalls role a divided review counts this stage's per-chunk calls under. Absent: 'chunk'.
+
+**Preconditions:**
+- Optional member of sc2's AdapterStage, owned by s1 (amended 2026-10-20 at Story s3's plan, by the stakeholder's decision). Read only for a model stage's chunk calls in a divided review; a single call is never counted in pipelineCalls.
+
+**Postconditions:**
+- Every call issued for the stage's chunks, including its re-issue under a new callId and the calls a size refusal re-divides it into, adds one to pipelineCalls[countAs ?? 'chunk'].
+- Counting only: the call's role stays 'chunk', so its retry, refusal re-division, carries and validation are unchanged.
+- Story s3 sets 'relation' on quality's compare and pair stages, which check symbols across chunks, so pipelineCalls.relation counts them beside the gather's relation calls, as s3's LLD data-model note says.
+
+### 2.24 `ChunkPrompt.carries`
+
+```typescript
+carries?: { readonly atomIds: readonly string[] } | undefined
+```
+
+**Returns:** `{ atomIds }` — The atoms a chunk-stage call actually carries, when that is not its whole chunk (a later stage that reads across chunks, such as Story s3's quality compare and pair calls). Absent: the chunk's atoms, as today.
+
+**Preconditions:**
+- Optional member of sc2's ChunkPrompt, owned by s1 (amended 2026-10-20 at Story s3's LLD review, by the stakeholder's decision). Every id names an atom of the material.
+
+**Postconditions:**
+- issueChunkCalls records call.carries.atomIds from prompt.carries when present, else from the chunk; the chunkId stays the chunk's.
+- Validation (AdapterStage.validate) and refusal re-planning read the call's recorded carries, so they see exactly the material the call sent.
+
+### 2.25 `AdapterStage.redivide`
+
+```typescript
+redivide?(call: ReviewCall, maxChars: number, prior: StageOutputs, snapshot: ReviewMaterialSnapshot): readonly ChunkPrompt[]
+```
+
+**Parameters:**
+- `call: ReviewCall` — The chunk-stage call refused for its size, with its recorded carries.
+- `maxChars: number` — The size every replacement must fit: the refusal's reported limit, else half the refused call, never above limitChars and always below the refused call's size.
+
+**Returns:** `readonly ChunkPrompt[]` — Replacement calls that together judge what the refused call carried, each within maxChars (for example one full atom against the other's summary, or smaller batches). Absent member: the generic re-division of the call's carried atoms into smaller chunks, as today.
+
+**Errors:**
+- `AtomTooLargeError` when A replacement does not fit maxChars: the material is named, never cut, and the review fails, as for any atom no call can hold.
+
+**Preconditions:**
+- Optional member of sc2's AdapterStage, owned by s1 (amended 2026-10-20 at Story s3's LLD review, by the stakeholder's decision). Read only for a chunk-stage call's size refusal.
+
+**Postconditions:**
+- applyFailure on a size refusal of a call whose stage has redivide replaces the refused call with the returned calls: role 'chunk', the same chunkId, each counted under the stage's countAs; the refused prompt is never resent.
+- The stage completes when every replacement is answered; their answers are the stage's answers for that material.
 
 ## 3. Data model changes
 
@@ -530,7 +584,7 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
   - User impact: None when the re-issue succeeds; otherwise the stage's policy (fail, not judged, or observation).
 - **An answer whose inner answer fails the adapter schema.** (recoverable)
   - Detection: validateAgainstSchema on the envelope's answer field after the callId check, then the stage's optional validate (for the template review, validateTemplateAnswer).
-  - Response: Re-issued once under a new callId with the validation errors as the correction note; then the stage's failure policy.
+  - Response: Re-issued once under a new callId with the validation errors as the correction note; then the stage's failure policy. When the correction would not fit the limit, it is left out (never shortened) and the omission is logged; the re-issue is otherwise the same.
   - User impact: As for a mismatch.
 - **The provider refuses the prompt for its size (completeStructured, claude session envelope, codex session).** (recoverable)
   - Detection: InputTooLargeError: from completeStructured as today, from the codex session as today (runCodex's sizeRefusalOr), and newly from the claude session's is_error envelope.
@@ -562,8 +616,8 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
   - User impact: Only providers that are neither CLI nor Ollama.
 - **The template review's time limit passes, possibly during a re-issue.** (terminal)
   - Detection: Before issuing, the driver compares now with job.deadlineAt; a session call already running is bounded by deadlineMs = deadlineAt - now.
-  - Response: ReviewSessionTimeoutError; no further call; the review fails with today's message and records nothing.
-  - User impact: As today: one limit for the whole review.
+  - Response: The adapter's deadlineError (the template review: today's plain Error with today's time-limit message), else ReviewSessionTimeoutError; no further call; the review fails and records nothing.
+  - User impact: As today for a single-session review: one limit, retries included. A divided review's budget is the per-session limit times its planned sessions, each session capped at 30 minutes (2.20).
 - **An Ollama reviewer session is cancelled mid tool loop.** (terminal)
   - Detection: The signal reaches the in-flight complete or completeStructured request and is checked before each turn and tool run.
   - Response: AbortError at once; no further turn; nothing recorded.
@@ -608,7 +662,7 @@ Optional signal?: AbortSignal on ProcessGroupOpts; aborted?: boolean on ProcessG
 **Test levels**
 
 - **unit** — The pipeline core: prepare, envelope, identifiers, pipeline-owned retries, failure policies, refusal re-division, snapshot discipline, bounded gather.
-  - Subjects: `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'`, `src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts and src/workflow/review-pipeline/__tests__/review-job-core.test.ts: the delivered ISSUE-aef82b03 tests, moved and rewritten to the new API`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a divided review whose result is an array keeps it an array, and its calls per role are read from the job'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions'`
+  - Subjects: `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review under the limit is one chunk whose calls carry today's messages and schema inside the envelope'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a missing or wrong callId is rejected and the call re-issued once under a new callId; no prompt hash repeats'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a transient error, a stall or an invalid answer is re-issued once under a new callId, then the stage failure policy applies'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a size refusal re-divides exactly the atoms and notes the call carried and never resends the prompt'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'refusal re-planning reads only the job snapshot, so a changed source between turns cannot change the material'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose evidence exceeds the limit is reduced level by level, every gather call fits and provenance is kept'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the default chunk limit is 384,000 characters for every provider and follows review.chunkTokens'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a review cancelled while a call is in flight ends at once with AbortError, no re-issue, nothing recorded'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'runStage commits a deterministic stage's output; extract claims and probe evidence enter the snapshot once and re-planning reads only them'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a re-issued reviewer-session call gets only the remaining time to the job deadline; past the deadline no call is issued and the review fails with today's message'`, `src/workflow/review-pipeline/__tests__/pack-into-batches.test.ts and src/workflow/review-pipeline/__tests__/review-job-core.test.ts: the delivered ISSUE-aef82b03 tests, moved and rewritten to the new API`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'usage summaries size a chunk and are always kept; proximity summaries are added while they fit, and a last-resort omission is logged'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an obligation whose own context does not fit its call is reduced with its evidence, every call fits, provenance names the context, and a context atom too large alone is named'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a divided review whose result is an array keeps it an array, and its calls per role are read from the job'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions'`, `src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged'`
   - Fixtures: `toy adapter with model and deterministic stages`, `scripted fake LLMProvider recording every prompt as sent`
 - **integration** — Today's reviews through the pipeline give today's calls and results; providers honour internalRetry and recognise session size refusals; Ollama runs a reviewer session.
   - Subjects: `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'adherence makes no call without an approved LLD or plan'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit DEF review makes one extract call, a probe and one verify call per premise with the 3-minute limit; extraction failing fails the review, a verify call failing twice records the premise as not judged'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an under-limit HLD review makes one reviewer-session call and gives today's report'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'a mock added or removed after prepare does not change the ux result'`, `src/agent/providers/__tests__/internal-retry.test.ts: 'internalRetry false makes exactly one attempt on CliProvider completeStructured, runReviewSession and OllamaProvider completeStructured; absent keeps today's counts'`, `src/agent/providers/__tests__/cli-review-session.test.ts: 'a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'an Ollama reviewer session reads the repo with read-only tools and returns a schema-checked answer within its deadline'`, `src/analyze/context/__tests__/driver-unit.test.ts (existing, still passes)`, `src/analyze/context/__tests__/run-shaper-wiring.test.ts (existing, still passes)`, `src/analyze/context/__tests__/shaper-errors.test.ts (existing, still passes)`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema'`, `src/agent/providers/__tests__/abort-in-flight.test.ts: 'aborting a CLI completeStructured or reviewer session in flight kills the process group and throws AbortError at once; an aborted Ollama request throws AbortError; neither is retried'`, `src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts: 'an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'cancelling an Ollama reviewer session mid tool loop aborts the in-flight turn and starts no further turn'`, `src/agent/providers/__tests__/ollama-review-session.test.ts: 'a returned file_write or Write call, or any tool outside the read-only allowlist, is refused before dispatch and never executed'`
@@ -695,3 +749,21 @@ Nothing delivered moves.
 - **[[c12]]** `step-output` `s8 checklist`
 - **[[c13]]** `code` `src/analyze/context/__tests__/run-shaper-wiring.test.ts`
 - **[[c14]]** `code` `src/workflow/code-review/review-job.ts:321`
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 9 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-20T19:45:51.738Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

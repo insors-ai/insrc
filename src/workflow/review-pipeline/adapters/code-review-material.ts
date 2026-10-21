@@ -44,7 +44,9 @@ export function codeReviewMaterial(grounding: CodeReviewGrounding): ReviewMateri
 	const seenPair = new Set<string>();
 	const relate = (from: string, to: string, kind: ReviewRelation['kind']): void => {
 		if (from === to) return;
-		const [a, b] = from < to ? [from, to] : [to, from];
+		// A call has a direction: A calling B and B calling A are two relations, each checked on its
+		// own caller's side when cut (s3). Same file and same module are symmetric: one relation per pair.
+		const [a, b] = kind === 'calls' || from < to ? [from, to] : [to, from];
 		// Ids can hold any character (a diff row's id is its path): an unambiguous key, never a joined string.
 		const key = JSON.stringify([kind, a, b]);
 		if (seenPair.has(key)) return;

@@ -44,6 +44,7 @@ import type {
 } from '../types.js';
 import { isCoverageEligible } from '../grounding.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { coverageObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 import { testRecordView } from './test-record-view.js';
 
 const DIMENSION: ReviewDimension = 'coverage';
@@ -296,6 +297,15 @@ export function coverageSpec(subject: CodeReviewSubject): ModelDimensionSpec<Cov
 		prompt:    (grounding, mode, note) => buildCoveragePrompt(subject, prepareCoverageGrounding(subject, grounding, mode), note, { groundingMode: mode }),
 		// The rows the prompt carries: only eligible symbols, each with its coverage evidence.
 		materialGrounding: (grounding, mode) => prepareCoverageGrounding(subject, grounding, mode),
+		// Each promised test, with its record evidence; with no symbols (a diff review) too.
+		obligations: () => coverageObligations(promisedTestsOf(subject), testRecordView(subject)),
+		// A divided review: chunks grade the symbols they hold and note the promised tests; each test is judged at gather.
+		chunk: {
+			kind: 'coverage', findings: COVERAGE_FINDINGS_SCHEMA,
+			obligationFraming: 'You are an independent code reviewer judging COVERAGE of ONE test the approved plan PROMISED: whether it is present and passing. Report only findings about this promised test, each with findingKind "promised-test"; never grade a symbol here.',
+			judge: 'Judge this promised test on its record evidence below and the notes. A test the record shows present and passing, or reported passed by the builder, needs no finding. A test present but failing, or whose pass-state cannot be confirmed, is a finding with confidence "observation" saying "present but failing/unverified", not "no test". A test no test file names and no reported result covers is a HIGH missing-promised-test finding, findingKind "promised-test", confidence "breach". Never assert a pass-state the record does not support; name a reported result as "reported by the builder".',
+			framing: 'You are an independent code reviewer judging COVERAGE: whether a Story\'s new/changed behaviour is actually exercised by passing tests. Each listed symbol carries its entityId and a coverageEvidence class: "no-edge-no-tests" is a not-exercised gap (HIGH, confidence "breach"); "no-edge-story-tests-pass" may be reported only as an observation (LOW/MED), because the graph may have missed the edge; "reached-passing" needs no finding; "reached-not-passing" is present-but-failing or unverified (confidence "observation"). Coverage is scoped to THIS Story\'s changed behaviour; never report a pre-existing gap, and never assert a pass-state the test record does not support.',
+		},
 		toResult:  (output, grounding, mode) => normalizeCoverageFindings({
 			dimension: DIMENSION,
 			findings: output.findings

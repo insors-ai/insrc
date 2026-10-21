@@ -23,6 +23,7 @@ import type { LLMMessage, LLMProvider, ReviewSessionOpts, StructuredCompletionOp
 import { runReviewJob } from '../driver.js';
 import { applyFailure, applyOutput, createReviewJob, MAX_GATHER_LEVELS, MaterialChangedError, nextCalls, pipelineCallsOf, relationJudged, requestNoteCall, result, ReviewCallFailedError, runStage } from '../job.js';
 import { DEFAULT_REVIEW_CHUNK_TOKENS, REVIEW_CHARS_PER_TOKEN, reviewLimitChars } from '../limit.js';
+import { getLogger } from '../../../shared/logger.js';
 import { AtomTooLargeError } from '../pack-into-batches.js';
 import type { AdapterStage, EvidenceNote, FailurePolicy, ReviewAdapter, ReviewCall, ReviewMaterialSnapshot, ReviewPipelineJob, ReviewRelation, StageAnswer } from '../types.js';
 import { asSent, atom, atomIdsIn, callIdIn, drive, NOTE_SCHEMA, RELATION_SCHEMA, seeingModel, todayMessages, TOY_SCHEMA, toyAdapter, toySnapshot, VERDICT_SCHEMA, type ToyOpts, type ToyResult } from './toy-adapter.js';
@@ -1059,5 +1060,133 @@ test('a refused obligation call that carried its raw context reduces that contex
 		assert.deepEqual(carried, [...(withNotes ? ['a1'] : []), 'x0', 'x1'].sort(), 'nothing it carried is lost');
 		for (const c of reductions) assert.ok(c.chars <= 1_400);
 		assert.ok(!job.pending.some(c => c.role === 'obligation'), 'the refused call is not resent');
+	}
+});
+
+test('an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged', () => {
+	// A call that fills the limit: the correction note would push it over.
+	const snap = toySnapshot([atom(1, LIMIT - 900)]);
+	const validate = (): readonly string[] => ['x'.repeat(2_000)];
+	const adapter = toyAdapter(snap, { validate });
+	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
+	const first = nextCalls(job, adapter)[0]!;
+	assert.equal(first.role, 'single');
+	const warnings: unknown[] = [];
+	const logger = getLogger('review-pipeline:job') as unknown as { warn: (...a: unknown[]) => void };
+	const original = logger.warn;
+	logger.warn = (...a: unknown[]) => { warnings.push(a); return original.apply(logger, a as never); };
+	try {
+		job = applyOutput(job, adapter, first.callId, { callId: first.callId, answer: { seen: ['a1'] } });
+	} finally { logger.warn = original; }
+	const second = nextCalls(job, adapter)[0]!;
+	assert.equal(second.attempt, 2, 're-issued once');
+	assert.equal(content(second), content(first), 'as planned: the correction is not in it');
+	assert.ok(second.chars <= LIMIT);
+	assert.ok(warnings.some(w => JSON.stringify(w).includes('without the correction')), 'the omission is logged');
+	// A second invalid answer fails the review, as for any invalid answer.
+	assert.throws(() => applyOutput(job, adapter, second.callId, { callId: second.callId, answer: { seen: ['a1'] } }), (e: unknown) => e instanceof ReviewCallFailedError);
+});
+
+test("a stage's countAs is the pipelineCalls role of its chunk calls, re-issues and re-divisions included; the calls keep role 'chunk'", () => {
+	const many = Array.from({ length: 24 }, (_, i) => atom(i));
+	const snap = toySnapshot(many);
+	// A second model stage, as quality's compare: one call per chunk, counted under relation.
+	const rebuild = (s: ReviewMaterialSnapshot): ReviewAdapter<unknown> => {
+		const a = toyAdapter(s);
+		const judge = a.stagesFor('daemon')[0]!;
+		const cross: AdapterStage = {
+			...judge, id: 'cross', after: ['judge'], countAs: 'relation',
+			singleCalls: () => [],
+			chunkCalls: (chunk, prior, snapshot) => judge.chunkCalls(chunk, prior, snapshot).map(p => ({ ...p, messages: [{ role: 'system' as const, content: 'Compare these atoms across chunks.' }, ...p.messages.slice(1)] })),
+		};
+		return { ...a, stagesFor: () => [judge, cross] } as ReviewAdapter<unknown>;
+	};
+	const adapter = rebuild(snap);
+	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
+	assert.equal(job.plan.single, false, 'divided');
+	const issued: ReviewCall[] = [];
+	let mismatched = false, refused = false;
+	for (let guard = 0; job.phase !== 'done'; guard++) {
+		assert.ok(guard < 1_000, 'progress');
+		const call = nextCalls(job, adapter)[0];
+		if (call === undefined) break;
+		if (!issued.some(c => c.callId === call.callId)) issued.push(call);
+		if (call.stage === 'cross' && !mismatched) { mismatched = true; job = applyOutput(job, adapter, call.callId, { callId: 'wrong', answer: { seen: [] } }); continue; }
+		if (call.stage === 'cross' && !refused && call.carries.atomIds.length > 1) { refused = true; job = applyFailure(job, adapter, call.callId, 'size-refusal', call.chars - 1); continue; }
+		job = applyOutput(job, adapter, call.callId, { callId: call.callId, answer: { seen: atomIdsIn(asSent(call.messages)) } });
+	}
+	assert.ok(mismatched && refused, 'a cross call was re-issued and one re-divided');
+	const of = (stage: string) => issued.filter(c => c.stage === stage);
+	assert.ok(of('cross').every(c => c.role === 'chunk'), "the calls keep role 'chunk'");
+	assert.ok(of('cross').some(c => c.attempt === 2), 'the re-issue is among them');
+	const calls = pipelineCallsOf(job)!;
+	assert.equal(calls.relation, of('cross').length, 'every cross call, re-issue and re-division included, counted under relation');
+	assert.equal(calls.chunk, of('judge').length, 'the judge stage, without countAs, counted under chunk');
+	assert.ok(calls.relation > job.plan.chunks.length, 'more than one per chunk: the re-issue and the re-division counted');
+});
+
+test("a stage's prompt may declare the atoms it carries, and a stage's redivide replaces a size-refused call with calls within the refused size", () => {
+	const many = Array.from({ length: 24 }, (_, i) => atom(i));
+	const snap = toySnapshot(many);
+	let budgetSeen: number | undefined;
+	// A later stage that reads across chunks: each call carries the chunk's first atom and one atom of another
+	// chunk; refused, it is replaced by one call per atom, smaller.
+	const rebuild = (s: ReviewMaterialSnapshot, oversize = false): ReviewAdapter<unknown> => {
+		const a = toyAdapter(s);
+		const judge = a.stagesFor('daemon')[0]!;
+		const cross: AdapterStage = {
+			...judge, id: 'cross', after: ['judge'], countAs: 'relation', singleCalls: () => [],
+			chunkCalls: chunk => {
+				const other = many.find(x => !chunk.atomIds.includes(x.id))!;
+				const ids = [chunk.atomIds[0]!, other.id];
+				return [{ messages: [{ role: 'system' as const, content: 'Compare across chunks.' }, { role: 'user' as const, content: JSON.stringify(ids.map(id => ({ id, text: many.find(x => x.id === id)!.text }))) }], schema: TOY_SCHEMA, execution: { mode: 'structured' as const, cwd: '/repo' }, carries: { atomIds: ids }, key: `cross:${ids.join('|')}` }];
+			},
+			redivide: (call, maxChars) => {
+				budgetSeen = maxChars;
+				return call.carries.atomIds.map(id => ({ messages: [{ role: 'system' as const, content: 'Compare across chunks, one side.' }, { role: 'user' as const, content: JSON.stringify([{ id, text: oversize ? 'x'.repeat(maxChars) : many.find(x => x.id === id)!.text }]) }], schema: TOY_SCHEMA, execution: { mode: 'structured' as const, cwd: '/repo' }, carries: { atomIds: [id] }, key: `cross-half:${id}` }));
+			},
+		};
+		return { ...a, stagesFor: () => [judge, cross] } as ReviewAdapter<unknown>;
+	};
+	const adapter = rebuild(snap);
+	let job = createReviewJob(adapter, 'daemon', snap, LIMIT);
+	const answer = (call: ReviewCall) => ({ callId: callIdIn(call.messages), answer: { seen: atomIdsIn(asSent(call.messages)) } });
+	let refused: ReviewCall | undefined;
+	const replaced: ReviewCall[] = [];
+	for (let guard = 0; job.phase !== 'done'; guard++) {
+		assert.ok(guard < 1_000);
+		const call = nextCalls(job, adapter)[0]!;
+		if (call.stage === 'cross' && refused === undefined) {
+			refused = call;
+			// The recorded carries are the prompt's, not the chunk's.
+			assert.deepEqual(call.carries.atomIds, JSON.parse(asSent(call.messages).split('\n\n')[1]!).map((x: { id: string }) => x.id));
+			const before = job.counts.relation;
+			job = applyFailure(job, adapter, call.callId, 'size-refusal', call.chars - 50);
+			replaced.push(...job.pending.filter(c => c.stage === 'cross' && c.carries.key?.startsWith('cross-half:')));
+			assert.equal(job.counts.relation, before + 2, 'the replacements counted under the stage countAs');
+			continue;
+		}
+		job = applyOutput(job, adapter, call.callId, answer(call));
+	}
+	assert.ok(refused !== undefined);
+	assert.equal(budgetSeen, refused.chars - 50, 'the stage is asked within the refused size');
+	assert.deepEqual(replaced.map(c => c.carries.atomIds), refused.carries.atomIds.map(id => [id]), 'one replacement per carried atom, each declaring its own carries');
+	for (const c of replaced) {
+		assert.ok(c.chars <= budgetSeen!, 'each within the refused size');
+		assert.equal(c.role, 'chunk');
+		assert.equal(c.carries.chunkId, refused.carries.chunkId);
+	}
+	assert.ok(!replaced.some(c => asSent(c.messages) === asSent(refused!.messages)), 'the refused prompt is never resent');
+	// A replacement that does not fit names the material; nothing is cut.
+	const big = rebuild(snap, true);
+	let j2 = createReviewJob(big, 'daemon', snap, LIMIT);
+	for (let guard = 0; ; guard++) {
+		assert.ok(guard < 1_000);
+		const call = nextCalls(j2, big)[0]!;
+		if (call.stage === 'cross') {
+			assert.throws(() => applyFailure(j2, big, call.callId, 'size-refusal', call.chars - 50), (e: unknown) => e instanceof AtomTooLargeError && e.message.includes('the cross call cross:'));
+			break;
+		}
+		j2 = applyOutput(j2, big, call.callId, answer(call));
 	}
 });

@@ -28,7 +28,7 @@
     "review": {
       "artifact": "design.story",
       "stage": "design.story",
-      "verdict": "block",
+      "verdict": "pass",
       "findings": [
         {
           "claimId": "coverage-of-intent.1",
@@ -36,8 +36,8 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S001 covers upstream requirements for ordinary-review parity, identified calls, a provider-independent limit, and Ollama review execution.",
-          "evidence": "DEF \u00a76.1 specifies these in ac1\u2013ac3 and ac5. The daemon driver sends identified calls serially with internalRetry:false; design adapters retain existing prompt builders; reviewLimitChars multiplies 128000 by 3; Ollama.runReviewSession uses the shared tool loop and structured emitter. Size-refusal coverage is assessed separately below. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/limit.ts, src/agent/providers/ollama.ts]",
+          "premise": "S001 designs the shared pipeline, identifier validation, provider-independent chunk limit and Ollama reviewer capability required by its upstream acceptance criteria.",
+          "evidence": "DEF §6.1 specifies ac1–ac5 for these capabilities; HLD §5.1 assigns their implementation to S001. The delivered driver sends calls serially with internalRetry:false, design-review adapters supply premise/template stages, limit.ts uses 128000 × 3, and OllamaProvider.runReviewSession uses the shared tool loop and structured emit. Document splitting and controller integration remain explicitly assigned to later Stories. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/limit.ts, src/agent/providers/ollama.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -48,8 +48,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The migration section's delivery note correctly identifies the main pipeline and Ollama reviewer session as already delivered.",
-          "evidence": "runReview and runTemplateReview construct jobs and call runReviewJob. Code-review dimensions use runDimensionJob. Ollama implements runReviewSession using runReadOnlyToolLoop followed by emitStructuredAnswer. The historical 'State before' statements should therefore be read under the explicit delivery note. [files: src/workflow/review/review.ts, src/workflow/review/template-review.ts, src/workflow/review-pipeline/code-review.ts, src/agent/providers/ollama.ts]",
+          "premise": "The delivery note correctly says the pipeline and both design-review execution paths already exist in the current code.",
+          "evidence": "runReview routes design stages to runTemplateReview; otherwise it constructs premiseAdapter and executes createReviewJob/runReviewJob. runTemplateReview constructs templateAdapter and uses the same driver. The premise adapter orders extract → probe → verify, with timeoutMs:VERIFY_CALL_TIMEOUT_MS and cwd:opts.repo on daemon verification calls. [files: src/workflow/review/review.ts, src/workflow/review/template-review.ts, src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/driver.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -60,8 +60,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The generic read-only loop is shared by the analyzer and Ollama reviewer, and enforces canonical tool permissions before dispatch.",
-          "evidence": "The analyzer wrapper and Ollama session both invoke runReadOnlyToolLoop. Its dispatch resolves getTool(name), checks 'args.allow.has(tool.id)', and returns refused(...) before execute(...) for prohibited tools. The final structured emitter is also shared. [files: src/agent/read-only-tool-loop.ts, src/analyze/context/driver.ts, src/agent/providers/ollama.ts]",
+          "premise": "packIntoBatches is reusable with the stated signature and whole-item behavior, and its old import path remains compatible.",
+          "evidence": "The full implementation accepts items, sizeOf, budget and an optional describe callback; it tests sizeOf([item]) and throws AtomTooLargeError(describe(item), alone, budget) rather than cutting an item. The old module exports both AtomTooLargeError and packIntoBatches from '../review-pipeline/pack-into-batches.js'. [files: src/workflow/review-pipeline/pack-into-batches.ts, src/workflow/code-review/pack-into-batches.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -72,20 +72,8 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The analyzer extraction must preserve both runShaperToolLoop and runShaper's legacy tail.",
-          "evidence": "Both production bodies call runToolLoop followed by runFinalStructuredEmit. The shared wrappers preserve the analyzer's configured turn budget, structured-output retry count, tracing conversion, and exhaustion handling. [files: src/analyze/context/driver.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "change-sites.2",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Raw responses must enter through applyOutput with the caller's expected identifier; applyAnswer handles matched answers.",
-          "evidence": "runReviewJob invokes 'applyOutput(job, adapter, call.callId, raw, now())'. applyOutput calls openEnvelope(raw, callId), classifies a failed match as identifier-mismatch, and only then invokes applyAnswer. applyAnswer resolves a pending call and validates its inner schema. [files: src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/job.ts]",
+          "premise": "The analyzer extraction must preserve both runShaperToolLoop and runShaper's legacy tail, because both invoke the tool loop and final structured emit.",
+          "evidence": "Both production paths call runToolLoop followed by runFinalStructuredEmit, passing configured turn/retry/output limits and tracing callbacks. The shared runToolLoop wrapper delegates to runReadOnlyToolLoop and retains analyzer-specific trace conversion and exhaustion/error handling. The design identifies both callers. [files: src/analyze/context/driver.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -96,20 +84,8 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "An older configuration without review.chunkTokens receives the default without a bespoke migration.",
-          "evidence": "CONFIG_CATALOG declares default 128000. reconcileConfig's fill branch writes cloneDefault(opt.default) for absent catalog keys. Independently, readReviewChunkTokens returns DEFAULT_REVIEW_CHUNK_TOKENS when the key or file is missing. [files: src/config/config-catalog.ts, src/config/reconcile.ts, src/workflow/review-pipeline/limit.ts]",
-          "action": "None.",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "data-compatibility.2",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Premise claims and evidence complete the snapshot once, and subsequent stages use those saved fields.",
-          "evidence": "The extract and probe stages declare snapshotField:'claims' and snapshotField:'evidence'. commit rejects an already-populated field with 'snapshot.${stage.snapshotField} is written once', clones and freezes the updated snapshot, and passes it to the next stage. Verify builds its calls from snap.claims and snap.evidence. [files: src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/job.ts]",
+          "premise": "Older configurations lacking review.chunkTokens receive the default without requiring a bespoke migration.",
+          "evidence": "CONFIG_CATALOG declares review.chunkTokens with default:128000. Reconciliation classifies an absent leaf as 'fill' and writes cloneDefault(opt.default). Independently, readReviewChunkTokens returns DEFAULT_REVIEW_CHUNK_TOKENS when the setting or file is missing, and reviewLimitChars multiplies it by 3. [files: src/config/config-catalog.ts, src/config/reconcile.ts, src/workflow/review-pipeline/limit.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -120,8 +96,8 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "S001 owns generic contracts and single-call adapters; document splitting and controller protocol adoption belong to later stories.",
-          "evidence": "HLD \u00a75 assigns sc1\u2013sc6 and single-call adapters to S001, document sections and gather to S004, and sc7/controller adoption to S005. The current design adapter explicitly rejects divided completion with 'dividing a design review is not available yet', consistent with that staged boundary. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/design-review.ts]",
+          "premise": "S001 owns sc1–sc6; document-specific chunking and controller frame/schema changes belong to S004 and S005.",
+          "evidence": "HLD §§5.1, 5.4 and 5.5 assign exactly these responsibilities. The current design-review adapter supplies empty material and chunkCalls and explicitly rejects divided design reviews with 'dividing a design review is not available yet', consistent with its single-chunk transitional scope. S001's generic stage contracts therefore do not themselves implement S004's section material or S005's MCP frames. [files: docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/design-review.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -131,12 +107,12 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Every size-refused call is re-planned from its carried atoms or notes, as the blanket failure contract states.",
-          "evidence": "applyFailure explicitly says 'A relation call reads one fixed pair: it cannot be divided, and is never resent' and immediately throws AtomTooLargeError for role==='relation' or role==='merge'. relationCall receives only a pair, with no reduced refusal budget or replanning callback. Thus an initially fitting relation call refused by the provider terminates the review rather than following the promised recovery. [files: src/workflow/review-pipeline/job.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md]",
-          "action": "Define relation-refusal replanning with the reduced budget and retained evidence, or explicitly resolve this exception against upstream S001/ac4. Add a relation-call refusal test.",
+          "severity": "LOW",
+          "premise": "A failed premise verification is retried once and then recorded as MED not judged, while extraction failure terminates the review.",
+          "evidence": "premiseAdapter sets extract.onCallFailure='fail-review' and daemon verify.onCallFailure='record-not-judged'. applyFailure reissues before the attempt limit, then either throws ReviewCallFailedError or appends notJudged. The adapter converts failed claims into severity:'MED' findings while retaining successful answers. [files: src/workflow/review-pipeline/design-review.ts, src/workflow/review-pipeline/job.ts]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "error-paths.2",
@@ -144,8 +120,8 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Cancellation interrupts the wait for a deterministic stage and prevents its result from being committed.",
-          "evidence": "runStage awaits 'untilAborted(stage.run(job.outputs, job.snapshot, opts.signal), opts.signal)', checks cancellation in its catch and again before commit, and propagates AbortError instead of applying the stage's observation policy. [files: src/workflow/review-pipeline/job.ts]",
+          "premise": "Cancellation during a deterministic stage ends the pipeline wait and prevents committing its output.",
+          "evidence": "runStage awaits untilAborted(stage.run(job.outputs, job.snapshot, opts.signal), opts.signal), checks cancellation in the catch path and again before commit, and propagates AbortError rather than applying the stage's recording policy. [files: src/workflow/review-pipeline/job.ts]",
           "action": "None.",
           "fixability": "manual",
           "outcome": "holds"
@@ -155,25 +131,30 @@
           "ref": "tests",
           "item": "tests",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "The cited live envelope test proves acceptance by both claude and codex.",
-          "evidence": "The test loops over both CLI names but executes 'if (!has(kind)) continue'. Its final assertion is only 'assert.ok(ran > 0, \"at least one CLI was available\")'. It can therefore pass without exercising one of the two providers, contrary to the design and HLD's explicit both-CLI validation requirement. [files: src/workflow/review-pipeline/__tests__/envelope.live.test.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md]",
-          "action": "Require both CLIs for the acceptance gate, or report separate provider results and require successful evidence for each before declaring the gate satisfied.",
+          "severity": "LOW",
+          "premise": "Each S001 acceptance criterion has a concrete test mapping supported by repository test assertions.",
+          "evidence": "Read test bodies covering ac1 prompt/order/findings/verdict parity for code, DEF and HLD reviews; ac2 missing/wrong identifiers, fresh IDs and distinct prompt hashes; ac3 the default and provider-independent configured limit; ac4 refusal replacement carrying the original evidence and excluding the refused prompt; and ac5 an Ollama session reading repository content and returning a schema-checked answer. The mapping exists; tests were inspected, not executed in this review. [files: src/workflow/review-pipeline/__tests__/single-chunk-parity.test.ts, src/workflow/review-pipeline/__tests__/pipeline-job.test.ts, src/agent/providers/__tests__/ollama-review-session.test.ts, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/DEF.md]",
+          "action": "None.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 1,
-        "med": 1,
+        "high": 0,
+        "med": 0,
         "low": 9,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-20T15:19:48.898Z",
+      "reviewedAt": "2026-10-20T19:45:51.738Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
-    }
+    },
+    "reviewOverride": {
+      "reason": "User approved with override (2026-10-20, option A). Two full review cycles ran on the amended s1 LLD (six daemon rounds). Cycle 1: H2 M4 -> M1 -> M2; cycle 2: H3 -> H1 M1 -> M1. Every HIGH and MED was fixed in code, tests and the LLD (commits 9043c695, bfad6524, ada98c63, a3e09ee2, b6b2f216, 31fc6bf2, edfd803b). The last round's only finding (an invalid answer's correction silently dropped when it would not fit) was fixed in edfd803b without a further review: the correction is left out, never cut, the omission is logged, and a test pins it.",
+      "at": "2026-10-20T15:47:19.136Z"
+    },
+    "approvedAt": "2026-10-21T04:26:45.329Z"
   },
   "body": {
     "summary": {
@@ -349,7 +330,7 @@
           "internal": "The two controller steps' use of the job, and the MCP boundary that admits it: the new answers phase in the insrc_review_step and insrc_code_review_step input schemas in src/mcp/server.ts, their registered schema contracts and tool descriptions, with schema and surface tests (src/mcp/__tests__/schema-registry.test.ts); keeping it in step state, frame sizing, answer validation by call identifier, and offering a review under the limit today's prompts as identified calls in the same frame shape. Compatibility: the controller step states gain an optional pipeline field; a state without it (saved before the change) is resumed on today's path; both stores are memory-only, so, as today, a state does not survive a daemon restart. Tests: S005/ac1 a controller review over the limit is handed the daemon's chunks one frame at a time and records the same kind of result; ac2 a missing or wrong identifier in an answer is rejected and the call offered again under a new UUID; ac3 a new controller review under the limit is offered today's prompts, each as an identified call, and gives today's result; a pre-change state resumes on today's emit_judgements / judgements (code review), emit_claims / claims and emit_verdicts / verdicts (DEF/plan premise review) and emit_findings / findings (HLD/LLD template review) frames, each path tested. The answers phase also accepts a failure outcome per call (size refusal with the reported limit, stall, transient error), mapped to the driver's failure handling and admitted by both MCP input schemas; tested: a controller-reported size refusal re-divides the call, a reported stall or transient error re-issues it once under a new identifier."
         }
       ],
-      "rolloutPhase": "Phase A \u2014 the pipeline, single chunk everywhere",
+      "rolloutPhase": "Phase A — the pipeline, single chunk everywhere",
       "nonFunctional": {
         "performance": "Calls are serial (k6). A review under the limit makes the same number of calls as today. Every prompt sent, chunk or gather, is at most review.chunkTokens x 3 characters.",
         "security": "No new transport: calls go through the existing LLMProvider and the installed CLIs (k7). Reviewer sessions keep their read-only tool sets.",
@@ -996,7 +977,8 @@
             "Optional member of sc2's AdapterStage, owned by s1; absent means schema validation only."
           ],
           "postconditions": [
-            "The template stage supplies validateTemplateAnswer here."
+            "The template stage supplies validateTemplateAnswer here.",
+            "Oversized correction (amended 2026-10-20 after review): when the call with the correction note would exceed the limit, the reasons are never cut down; the call is re-issued once as planned without the note, and the omission is logged with the reasons. A second invalid answer applies the stage's policy as usual. The same holds for a gather call's correction."
           ]
         },
         {
@@ -1016,8 +998,8 @@
           },
           "errors": [
             {
-              "type": "ReviewSessionTimeoutError",
-              "condition": "deadlineAt has passed: no further call is issued, and the review fails with today's time-limit message, never retried."
+              "type": "Error (the adapter's deadlineError), else ReviewSessionTimeoutError",
+              "condition": "deadlineAt has passed, or a session ran out its time: no further call is issued and the review fails, never retried. The error is the adapter's deadlineError when it supplies one: the template review supplies today's plain Error with today's time-limit message (runTemplateReview's timedOut), so its callers see exactly today's error. An adapter with no deadlineError gets ReviewSessionTimeoutError (amended 2026-10-20, after review: the contract now states the error each path actually raises)."
             }
           ],
           "preconditions": [],
@@ -1079,6 +1061,76 @@
           "postconditions": [
             "Each relation in crossRelations is offered to relationCall exactly once per job.",
             "Refusal (amended 2026-10-20 after review): a relation call refused for its size is asked again with maxChars = the reported size (else half the refused prompt); the calls returned replace the refused one and the relation is judged when all its calls are answered. A returned call that still exceeds maxChars names the relation (AtomTooLargeError); the refused prompt is never resent."
+          ]
+        },
+        {
+          "name": "AdapterStage.countAs",
+          "signature": "countAs?: 'chunk' | 'relation' | undefined",
+          "parameters": [],
+          "returns": {
+            "type": "'chunk' | 'relation'",
+            "meaning": "The pipelineCalls role a divided review counts this stage's per-chunk calls under. Absent: 'chunk'."
+          },
+          "errors": [],
+          "preconditions": [
+            "Optional member of sc2's AdapterStage, owned by s1 (amended 2026-10-20 at Story s3's plan, by the stakeholder's decision). Read only for a model stage's chunk calls in a divided review; a single call is never counted in pipelineCalls."
+          ],
+          "postconditions": [
+            "Every call issued for the stage's chunks, including its re-issue under a new callId and the calls a size refusal re-divides it into, adds one to pipelineCalls[countAs ?? 'chunk'].",
+            "Counting only: the call's role stays 'chunk', so its retry, refusal re-division, carries and validation are unchanged.",
+            "Story s3 sets 'relation' on quality's compare and pair stages, which check symbols across chunks, so pipelineCalls.relation counts them beside the gather's relation calls, as s3's LLD data-model note says."
+          ]
+        },
+        {
+          "name": "ChunkPrompt.carries",
+          "signature": "carries?: { readonly atomIds: readonly string[] } | undefined",
+          "parameters": [],
+          "returns": {
+            "type": "{ atomIds }",
+            "meaning": "The atoms a chunk-stage call actually carries, when that is not its whole chunk (a later stage that reads across chunks, such as Story s3's quality compare and pair calls). Absent: the chunk's atoms, as today."
+          },
+          "errors": [],
+          "preconditions": [
+            "Optional member of sc2's ChunkPrompt, owned by s1 (amended 2026-10-20 at Story s3's LLD review, by the stakeholder's decision). Every id names an atom of the material."
+          ],
+          "postconditions": [
+            "issueChunkCalls records call.carries.atomIds from prompt.carries when present, else from the chunk; the chunkId stays the chunk's.",
+            "Validation (AdapterStage.validate) and refusal re-planning read the call's recorded carries, so they see exactly the material the call sent."
+          ]
+        },
+        {
+          "name": "AdapterStage.redivide",
+          "signature": "redivide?(call: ReviewCall, maxChars: number, prior: StageOutputs, snapshot: ReviewMaterialSnapshot): readonly ChunkPrompt[]",
+          "parameters": [
+            {
+              "name": "call",
+              "type": "ReviewCall",
+              "purpose": "The chunk-stage call refused for its size, with its recorded carries.",
+              "optional": false
+            },
+            {
+              "name": "maxChars",
+              "type": "number",
+              "purpose": "The size every replacement must fit: the refusal's reported limit, else half the refused call, never above limitChars and always below the refused call's size.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "readonly ChunkPrompt[]",
+            "meaning": "Replacement calls that together judge what the refused call carried, each within maxChars (for example one full atom against the other's summary, or smaller batches). Absent member: the generic re-division of the call's carried atoms into smaller chunks, as today."
+          },
+          "errors": [
+            {
+              "type": "AtomTooLargeError",
+              "condition": "A replacement does not fit maxChars: the material is named, never cut, and the review fails, as for any atom no call can hold."
+            }
+          ],
+          "preconditions": [
+            "Optional member of sc2's AdapterStage, owned by s1 (amended 2026-10-20 at Story s3's LLD review, by the stakeholder's decision). Read only for a chunk-stage call's size refusal."
+          ],
+          "postconditions": [
+            "applyFailure on a size refusal of a call whose stage has redivide replaces the refused call with the returned calls: role 'chunk', the same chunkId, each counted under the stage's countAs; the refused prompt is never resent.",
+            "The stage completes when every replacement is answered; their answers are the stage's answers for that material."
           ]
         }
       ]
@@ -1182,7 +1234,7 @@
         {
           "scenario": "An answer whose inner answer fails the adapter schema.",
           "detection": "validateAgainstSchema on the envelope's answer field after the callId check, then the stage's optional validate (for the template review, validateTemplateAnswer).",
-          "response": "Re-issued once under a new callId with the validation errors as the correction note; then the stage's failure policy.",
+          "response": "Re-issued once under a new callId with the validation errors as the correction note; then the stage's failure policy. When the correction would not fit the limit, it is left out (never shortened) and the omission is logged; the re-issue is otherwise the same.",
           "userImpact": "As for a mismatch.",
           "recoverable": true
         },
@@ -1238,8 +1290,8 @@
         {
           "scenario": "The template review's time limit passes, possibly during a re-issue.",
           "detection": "Before issuing, the driver compares now with job.deadlineAt; a session call already running is bounded by deadlineMs = deadlineAt - now.",
-          "response": "ReviewSessionTimeoutError; no further call; the review fails with today's message and records nothing.",
-          "userImpact": "As today: one limit for the whole review.",
+          "response": "The adapter's deadlineError (the template review: today's plain Error with today's time-limit message), else ReviewSessionTimeoutError; no further call; the review fails and records nothing.",
+          "userImpact": "As today for a single-session review: one limit, retries included. A divided review's budget is the per-session limit times its planned sessions, each session capped at 30 minutes (2.20).",
           "recoverable": false
         },
         {
@@ -1347,7 +1399,8 @@
             "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'the gather stops, failing the review with nothing recorded, when an obligation's evidence cannot shrink or has not fit after the level limit'",
             "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a divided review whose result is an array keeps it an array, and its calls per role are read from the job'",
             "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a gather answer that passes its schema but fails the gather's validate is re-issued once with the reasons, then fails the review'",
-            "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions'"
+            "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'a refused obligation call that carried its raw context reduces that context with its evidence; a context-only obligation still plans reductions'",
+            "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts: 'an invalid answer whose correction would not fit the limit is re-issued once as planned, without the correction, and the omission is logged'"
           ],
           "fixturesNeeded": [
             "toy adapter with model and deterministic stages",

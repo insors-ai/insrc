@@ -23,12 +23,19 @@ import { isAbsolute, join } from 'node:path';
 import { buildRetryNote } from '../../agent/providers/structured-output.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
 import type { CompanionArtifactRef } from '../artifacts/companion/types.js';
-import type { CodeReviewGrounding, CodeReviewSubject, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
+import type { CodeReviewGrounding, CodeReviewSubject, DimensionFinding, DimensionResult, JudgeContext, ReviewDimension } from '../code-review/types.js';
 import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
+import { chunkCall, validateChunk, type ChunkSpec } from './adapters/code-review-chunk.js';
+import { compareStage, pairStage } from './adapters/code-review-duplicates.js';
+import { codeReviewGather } from './adapters/code-review-gather.js';
+import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
-import { createReviewJob } from './job.js';
+import { getLogger } from '../../shared/logger.js';
+import { createReviewJob, pipelineCallsOf, withCorrectionNote } from './job.js';
 import { reviewLimitChars } from './limit.js';
-import type { AdapterStage, ReviewAdapter, ReviewMaterialSnapshot, ReviewPath, StageAnswer } from './types.js';
+import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
+
+const log = getLogger('review-pipeline:code-review');
 
 /** What a code-review job's snapshot holds as its grounding. */
 interface GroundingFacts {
@@ -77,6 +84,13 @@ export interface ModelDimensionSpec<O> {
 	/** The dimension's prepared grounding, the rows its prompt carries (coverage:
 	 *  prepareCoverageGrounding's output). Absent: the grounding itself. */
 	readonly materialGrounding?: ((grounding: CodeReviewGrounding, mode: 'full' | 'degraded') => CodeReviewGrounding) | undefined;
+	/** What a divided review must judge (Story s3): the obligations and their context atoms,
+	 *  from the saved subject and the material's atoms only. Absent: none. */
+	readonly obligations?: ((material: ReviewMaterial) => DimensionObligations) | undefined;
+	/** A divided review's chunk call (Story s3): notes only (adherence, functional coverage,
+	 *  conventions), symbol coverage plus notes (coverage), or findings plus descriptions
+	 *  (quality). Absent: the dimension has no chunk call. */
+	readonly chunk?: ChunkSpec | undefined;
 }
 
 /** A deterministic dimension: run on the snapshot alone on the daemon path; the controller is offered its prompt. */
@@ -106,7 +120,8 @@ export const CONTROLLER_FINDINGS_SCHEMA: StructuredSchema = {
 	},
 };
 
-/** The one answer of a single-call stage. A divided review cannot be finished here (Stories s2, s3). */
+/** The one answer of a single-call stage. A deterministic dimension's controller prompt is never
+ *  divided into chunks (it has no atoms), so a divided one cannot be finished here. */
 function singleAnswer(outputs: Readonly<Record<string, unknown>>, stage: string, dimension: string, divided: boolean): unknown {
 	if (divided) {
 		throw new Error(`code review ${dimension}: the dimension's single call is over the review.chunkTokens limit, and dividing a code review is not available yet. No review was recorded.`);
@@ -117,32 +132,86 @@ function singleAnswer(outputs: Readonly<Record<string, unknown>>, stage: string,
 }
 
 /** A model dimension's adapter, built from the subject and the job's snapshot. */
-export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot): ReviewAdapter<DimensionResult> {
+/** The repo-relative file of a `file:line` location. */
+function fileOfLocation(location: string): string {
+	const i = location.indexOf(':');
+	return i >= 0 ? location.slice(0, i) : location;
+}
+
+/** The findings a divided review's chunks reported, in stage order (coverage's symbol findings,
+ *  quality's findings, then quality's pair findings); notes-only chunks report none. */
+function chunkFindings(outputs: Readonly<Record<string, unknown>>, dimension: ReviewDimension): DimensionFinding[] {
+	return ['judge', 'pair'].flatMap(stage => ((outputs[stage] ?? []) as readonly StageAnswer[])
+		.flatMap(a => ((a.answer as { findings?: readonly Omit<DimensionFinding, 'dimension'>[] }).findings ?? []).map(f => ({ ...f, dimension }))));
+}
+
+/**
+ * A model dimension's adapter, built from the subject and the job's snapshot. `path` is the
+ * job's: a divided review's out-of-set findings are dropped on the daemon path and kept in
+ * outOfScope on the controller path, as each path does today.
+ */
+export function modelDimensionAdapter<O>(spec: ModelDimensionSpec<O>, subject: CodeReviewSubject, snapshot: ReviewMaterialSnapshot, limitChars: number = reviewLimitChars(), path: ReviewPath = 'daemon'): ReviewAdapter<DimensionResult> {
 	const { grounding, groundingMode } = groundingOf(snapshot);
 	const execution = { mode: 'structured' as const, cwd: subject.repoPath };
-	const stages = (path: ReviewPath): readonly AdapterStage[] => {
+	// Story s2: the dimension's rows as whole atoms with their relations; Story s3: its
+	// obligations and their context. From the snapshot and the saved subject only.
+	const material = (): ReviewMaterial => {
+		const base = codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding);
+		const own = spec.obligations?.(base);
+		if (own === undefined) return base;
+		return { ...base, obligations: own.obligations, ...(own.context.length > 0 ? { context: own.context } : {}) };
+	};
+	const singleSchema = JSON.stringify(spec.schema);
+	// A divided review's merged findings through today's result filters, applied once over the whole.
+	const changed = new Set(subject.changedFiles);
+	const finalize = (findings: readonly DimensionFinding[]): DimensionResult => {
+		const result = spec.toResult({ findings } as unknown as O, grounding, groundingMode);
+		if (path !== 'controller') return result;
+		// The controller step's handler splits a dimension's findings into findings and outOfScope
+		// itself, as today (it rebuilds outOfScope from the findings it is given): hand it the
+		// out-of-set findings too, after today's other filters.
+		const outOfSet = findings.filter(f => !changed.has(fileOfLocation(f.location)));
+		return { ...result, findings: [...result.findings, ...outOfSet] };
+	};
+	const stages = (stagePath: ReviewPath): readonly AdapterStage[] => {
 		if (spec.skip !== undefined) {
 			// No call: the dimension's result is known without the model, on either path.
 			return [{ id: 'skip', kind: 'deterministic', after: [], onCallFailure: 'fail-review', singleCalls: () => [], chunkCalls: () => [], run: async () => spec.skip!() }];
 		}
-		void path;
-		return [{
+		void stagePath;
+		const chunkSpec = spec.chunk;
+		const judge: AdapterStage = {
 			id: 'judge', kind: 'model', after: [], onCallFailure: 'fail-review',
 			singleCalls: () => [{ messages: spec.prompt(grounding, groundingMode, undefined), schema: spec.schema, execution }],
-			chunkCalls: () => [],
-			// Today's correction: the prompt rebuilt with withStructuredRetry's note.
-			withCorrection: (prompt, reasons) => ({ ...prompt, messages: spec.prompt(grounding, groundingMode, buildRetryNote(reasons)) }),
-		}];
+			chunkCalls: chunk => chunkSpec !== undefined ? [chunkCall(chunkSpec, chunk, material(), execution)] : [],
+			// A chunk answer is checked against the obligations and the atoms its call carried.
+			validate: (answer, call) => call.role === 'chunk' && chunkSpec !== undefined ? validateChunk(chunkSpec, answer, call, material()) : [],
+			// Today's correction for today's call: the prompt rebuilt with withStructuredRetry's note.
+			// A chunk call keeps its own prompt, with the reasons appended.
+			withCorrection: (prompt, reasons) => JSON.stringify(prompt.schema) === singleSchema
+				? { ...prompt, messages: spec.prompt(grounding, groundingMode, buildRetryNote(reasons)) }
+				: withCorrectionNote(prompt, reasons),
+		};
+		// Story s3: quality compares descriptions across chunks, then judges each candidate pair.
+		if (chunkSpec?.kind !== 'quality') return [judge];
+		const dup = { material, execution, limitChars, schema: spec.schema, chunkStage: judge.id };
+		return [judge, compareStage(dup), pairStage(dup)];
 	};
 	return {
 		kind: 'code-review', dimension: spec.dimension,
-		// Story s2: the dimension's rows as whole atoms with their relations, from the snapshot only.
-		material: () => codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding),
+		material,
 		neighbourSummary,
 		stagesFor: stages,
-		finish: (outputs, ctx) => spec.skip !== undefined
-			? outputs['skip'] as DimensionResult
-			: spec.toResult(singleAnswer(outputs, 'judge', spec.dimension, ctx.divided) as O, grounding, groundingMode),
+		// Story s3: a divided review judges each obligation once, over every chunk's notes.
+		...(spec.chunk !== undefined && spec.skip === undefined
+			? { gather: codeReviewGather({ dimension: spec.dimension, chunk: spec.chunk, schema: spec.schema, material, execution, limitChars, changedFiles: subject.changedFiles, finalize }) }
+			: {}),
+		finish: (outputs, ctx) => {
+			if (spec.skip !== undefined) return outputs['skip'] as DimensionResult;
+			// Divided: the chunks' own findings, the first part gather.merge joins (and filters) with the rest.
+			if (ctx.divided) return { dimension: spec.dimension, findings: chunkFindings(outputs, spec.dimension) };
+			return spec.toResult(singleAnswer(outputs, 'judge', spec.dimension, false) as O, grounding, groundingMode);
+		},
 	};
 }
 
@@ -181,5 +250,19 @@ export async function runDimensionJob(
 	// The core is written over ReviewAdapter<unknown>; merge's parameter makes R invariant.
 	const adapter = build(snapshot) as unknown as ReviewAdapter<unknown>;
 	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars());
-	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal }) as DimensionResult;
+	// The plan, as one JSON object in the message (the daemon log is pretty-printed): once as
+	// prepared, so a job that fails still leaves its plan, and once as finished, after any
+	// refusal re-planning, with its calls per role (Story s3's smoke reads these lines).
+	logPlan('prepared', job, subject);
+	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
+}
+
+function logPlan(phase: 'prepared' | 'finished', job: ReviewPipelineJob, subject: CodeReviewSubject): void {
+	const plan = {
+		phase, epicHash: subject.epicHash, storyId: subject.storyId, dimension: job.dimension, reviewId: job.reviewId,
+		single: job.plan.single, limitChars: job.plan.limitChars,
+		chunks: job.plan.chunks.map(c => ({ id: c.id, atoms: c.atomIds.length, chars: c.chars })),
+		...(phase === 'finished' ? { pipelineCalls: pipelineCallsOf(job) ?? null } : {}),
+	};
+	log.info(`review pipeline: plan ${JSON.stringify(plan)}`);
 }

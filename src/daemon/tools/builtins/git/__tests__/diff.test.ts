@@ -18,9 +18,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { buildDiffArgv, buildStatArgv, gitDiffTool } from '../diff.js';
+import { buildDiffArgv, buildStatArgv, gitDiffTool, setGitDiffShellForTests } from '../diff.js';
 import type { GitDiffData } from '../diff.js';
 import type { ToolDeps } from '../../../types.js';
+import { runShell } from '../../../shell-helper.js';
 
 function git(repo: string, ...args: string[]): string {
 	return execFileSync('git', args, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -147,3 +148,21 @@ test('T25: the closed input schema declares exclude as an array of non-empty str
 	assert.equal(schema.properties['exclude']?.items?.type, 'string');
 	assert.equal(schema.properties['exclude']?.items?.minLength, 1);
 });
+
+test('when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure', async () => {
+	const { repo, base } = repoWithChange(['src/a.ts']);
+	// The real body command runs; the numstat command fails as git would.
+	setGitDiffShellForTests((argv, opts) => argv.includes('--numstat')
+		? Promise.resolve({ stdout: '', stderr: 'fatal: numstat read failed', code: 128, spawnError: false, timedOut: false, stdoutTruncated: false })
+		: runShell(argv, opts));
+	try {
+		const res = await gitDiffTool.execute({ cwd: repo, from: base }, deps(repo));
+		assert.equal(res.success, false);
+		assert.ok(res.error?.includes('numstat failed'), `the error names the stat read: ${res.error}`);
+		assert.ok(res.error?.includes('fatal: numstat read failed'), `the error carries git's message: ${res.error}`);
+	} finally {
+		setGitDiffShellForTests();
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+

@@ -29,6 +29,7 @@
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { CodeReviewSubject, CodeReviewGrounding, DimensionResult, DimensionFinding, JudgeContext, ReviewDimension } from '../types.js';
 import { modelDimensionAdapter, runDimensionJob, type ModelDimensionSpec } from '../../review-pipeline/code-review.js';
+import { conventionsObligations } from '../../review-pipeline/adapters/code-review-obligations.js';
 
 const DIMENSION: ReviewDimension = 'conventions';
 
@@ -147,6 +148,14 @@ export function conventionsSpec(subject: CodeReviewSubject): ModelDimensionSpec<
 		dimension: DIMENSION,
 		schema:    CONVENTIONS_FINDINGS_SCHEMA,
 		prompt:    (grounding, _mode, note) => buildConventionsPrompt(subject, grounding, note),
+		obligations: material => conventionsObligations(material.atoms),
+		// A divided review: chunks note idiom examples and candidate deviations per module; the gather judges each module.
+		chunk: {
+			kind: 'notes',
+			judge: 'Judge this module\'s conventions on the idiom examples and candidate deviations every chunk noted. A breach of a documented rule is a finding naming the rule id in expectationRef, confidence "breach", located at the symbol. A module idiom drawn from too few examples to be confident is reported as confidence "observation" (typically LOW), not a breach. A candidate deviation the evidence does not support is not reported.',
+			framing: 'You are an independent code reviewer gathering evidence on CONVENTIONS: whether a Story\'s changed code obeys the repo\'s DOCUMENTED coding rules (listed below) and the local idioms of the modules it touched. For a module, note the idiom examples you see and any candidate deviation, naming a breached documented rule by its id.',
+			reference: ['## Documented rules (the baseline — name a breached rule by its id)', '```json', JSON.stringify(DOCUMENTED_RULES, null, 2), '```'].join('\n'),
+		},
 		toResult:  output => ({
 			dimension: DIMENSION,
 			findings: output.findings

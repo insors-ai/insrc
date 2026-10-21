@@ -41,6 +41,7 @@ const okSubjectDeps: SubjectDeps = {
 	requireApprovedLld:  () => ({ meta: { workflow: 'design.story' } } as unknown as LldArtifact),
 	requireApprovedPlan: () => ({ meta: { workflow: 'plan' } } as unknown as PlanArtifact),
 	changedFiles:        async () => ['src/a.ts'],
+	resolveRangeBase:    () => 'abc',
 };
 
 const groundingDeps: GroundingDeps = {

@@ -6,8 +6,9 @@
 /**
  * Code-review s10 · T003 — `assembleDiffCodeReviewGrounding` (the diff-only,
  * degraded sc2 producer). Unit tests drive the assembler over a fake
- * `DiffGroundingDeps`; a gated integration test exercises the real `git_diff`
- * builtin last-commit fallback against a tiny throwaway repo.
+ * `DiffGroundingDeps`; gated integration tests run the real `git_diff` builtin
+ * against throwaway repos. Since ISSUE-b97752e9 the Story's range is the anchor:
+ * no base means no diff-only review, never the working tree or the last commit.
  */
 
 import { test } from 'node:test';
@@ -26,7 +27,6 @@ import {
 	type DiffResult,
 } from '../grounding.js';
 import type { GitDiffFileStat } from '../../../daemon/tools/builtins/git/diff.js';
-import { getLogger } from '../../../shared/logger.js';
 import { storyChangeSet, type StoryChangeSet } from '../../runners/build/story-commits.js';
 
 // ---- fixtures ----
@@ -41,37 +41,39 @@ function diffBody(...files: string[]): string {
 	).join('\n');
 }
 
-/** Build a fake DiffGroundingDeps with scriptable working-tree / last-commit
- *  results, counting how often each seam is called. */
+/** Fake DiffGroundingDeps: a scriptable Story range and working tree, counting
+ *  how often each seam is called. Every assembler call below passes a base. */
 function fakeDeps(opts: {
+	range?: DiffResult;
 	working?: DiffResult;
-	lastCommit?: DiffResult;
+	rangeThrows?: Error;
 	workingThrows?: Error;
-	lastCommitThrows?: Error;
-}): { deps: DiffGroundingDeps; calls: { working: number; lastCommit: number } } {
-	const calls = { working: 0, lastCommit: 0 };
+}): { deps: DiffGroundingDeps; calls: { range: number; working: number } } {
+	const calls = { range: 0, working: 0 };
 	const deps: DiffGroundingDeps = {
 		workingTreeDiff: async () => {
 			calls.working += 1;
 			if (opts.workingThrows) throw opts.workingThrows;
 			return opts.working ?? { files: [], body: '', truncated: false };
 		},
-		lastCommitDiff: async () => {
-			calls.lastCommit += 1;
-			if (opts.lastCommitThrows) throw opts.lastCommitThrows;
-			return opts.lastCommit ?? { files: [], body: '', truncated: false };
+		rangeDiff: async () => {
+			calls.range += 1;
+			if (opts.rangeThrows) throw opts.rangeThrows;
+			return opts.range ?? { files: [], body: '', truncated: false };
 		},
 	};
 	return { deps, calls };
 }
 
-// ---- working tree non-empty ----
+const BASE = { base: 'abc' };
 
-test('assembler: a non-empty working tree yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature) and does NOT call the HEAD^ seam', async () => {
+// ---- the Story's range ----
+
+test('assembler: the Story range yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature)', async () => {
 	const { deps, calls } = fakeDeps({
-		working: { files: [fileStat('src/a.ts'), fileStat('src/b.ts')], body: diffBody('src/a.ts', 'src/b.ts'), truncated: false },
+		range: { files: [fileStat('src/a.ts'), fileStat('src/b.ts')], body: diffBody('src/a.ts', 'src/b.ts'), truncated: false },
 	});
-	const { grounding, changedFiles } = await assembleDiffCodeReviewGrounding('/repo', deps);
+	const { grounding, changedFiles } = await assembleDiffCodeReviewGrounding('/repo', deps, BASE);
 	assert.deepEqual(changedFiles, ['src/a.ts', 'src/b.ts']);
 	assert.equal(grounding.symbols.length, 2);
 	const a = grounding.symbols[0]!;
@@ -80,75 +82,68 @@ test('assembler: a non-empty working tree yields one pseudo-symbol per changed f
 	assert.equal(a.file, 'src/a.ts');
 	assert.ok(a.signature.includes('+new src/a.ts'), 'the file hunks are carried in signature');
 	assert.deepEqual([a.callers, a.callees, a.testsReaching], [[], [], []], 'no graph edges on the diff path');
-	assert.equal(calls.lastCommit, 0, 'a non-empty working tree never falls back to HEAD^');
+	assert.deepEqual(calls, { range: 1, working: 1 }, 'the range, then the working tree, once each');
 });
 
-// ---- working tree empty -> HEAD^ fallback ----
-
-test('assembler: an empty working tree falls back to the last-commit diff (ac2)', async () => {
-	const { deps, calls } = fakeDeps({
-		working: { files: [], body: '', truncated: false },
-		lastCommit: { files: [fileStat('src/c.ts')], body: diffBody('src/c.ts'), truncated: false },
-	});
-	const { grounding, changedFiles } = await assembleDiffCodeReviewGrounding('/repo', deps);
-	assert.deepEqual(changedFiles, ['src/c.ts'], 'the last commit changed set is recovered');
-	assert.equal(calls.working, 1);
-	assert.equal(calls.lastCommit, 1, 'a clean tree falls back to the last commit');
-	assert.ok(grounding.symbols[0]!.signature.includes('+new src/c.ts'));
+test('assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9)', async () => {
+	const { deps, calls } = fakeDeps({ working: { files: [fileStat('src/c.ts')], body: diffBody('src/c.ts'), truncated: false } });
+	for (const opts of [undefined, {}, { base: '' }, { excludeGlobs: ['x/**'] }]) {
+		await assert.rejects(() => assembleDiffCodeReviewGrounding('/repo', deps, opts), DiffUnavailableError, `opts=${JSON.stringify(opts)}`);
+	}
+	assert.deepEqual(calls, { range: 0, working: 0 }, 'never the working tree, never a last commit');
 });
 
 // ---- binary file ----
 
 test('assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles', async () => {
 	const { deps } = fakeDeps({
-		working: { files: [fileStat('assets/logo.png', 'binary', 0, 0)], body: '', truncated: false },
+		range: { files: [fileStat('assets/logo.png', 'binary', 0, 0)], body: '', truncated: false },
 	});
-	const { grounding, changedFiles } = await assembleDiffCodeReviewGrounding('/repo', deps);
+	const { grounding, changedFiles } = await assembleDiffCodeReviewGrounding('/repo', deps, BASE);
 	assert.deepEqual(changedFiles, ['assets/logo.png']);
 	assert.match(grounding.symbols[0]!.signature, /binary file changed/);
 });
 
 // ---- both empty ----
 
-test('assembler: both the working tree and the last commit empty => a valid grounding with symbols:[] (no crash)', async () => {
-	const { deps } = fakeDeps({
-		working: { files: [], body: '', truncated: false },
-		lastCommit: { files: [], body: '', truncated: false },
-	});
-	const { grounding, changedFiles } = await assembleDiffCodeReviewGrounding('/repo', deps);
-	assert.deepEqual(grounding.symbols, []);
-	assert.deepEqual(changedFiles, []);
+test('assembler: an empty range and a clean tree => a valid grounding with symbols:[] (no crash)', async () => {
+	const { deps } = fakeDeps({});
+	const res = await assembleDiffCodeReviewGrounding('/repo', deps, BASE);
+	assert.deepEqual(res.grounding.symbols, []);
+	assert.deepEqual(res.changedFiles, []);
+	assert.equal(res.excludedFromScope, undefined, 'absent when nothing was left out');
 });
 
 // ---- truncated ----
 
 test('assembler: a truncated diff still yields a valid grounding (bounded hunks + a truncation note, review proceeds)', async () => {
 	const { deps } = fakeDeps({
-		working: { files: [fileStat('src/big.ts')], body: diffBody('src/big.ts'), truncated: true },
+		range: { files: [fileStat('src/big.ts')], body: diffBody('src/big.ts'), truncated: true },
 	});
-	const { grounding } = await assembleDiffCodeReviewGrounding('/repo', deps);
+	const { grounding } = await assembleDiffCodeReviewGrounding('/repo', deps, BASE);
 	assert.equal(grounding.symbols.length, 1, 'a bounded slice is still reviewable, not an error');
 	assert.match(grounding.symbols[0]!.signature, /diff truncated/);
 });
 
-// ---- both paths fail => propagate ----
+// ---- git failures propagate ----
 
 test('assembler: a working-tree git failure propagates (DiffUnavailableError)', async () => {
 	const { deps } = fakeDeps({ workingThrows: new DiffUnavailableError('not a git repo') });
-	await assert.rejects(() => assembleDiffCodeReviewGrounding('/repo', deps), DiffUnavailableError);
+	await assert.rejects(() => assembleDiffCodeReviewGrounding('/repo', deps, BASE), DiffUnavailableError);
 });
 
-test('assembler: a clean tree whose last-commit diff also fails propagates (both paths unavailable)', async () => {
-	const { deps } = fakeDeps({
-		working: { files: [], body: '', truncated: false },
-		lastCommitThrows: new DiffUnavailableError('git errored'),
+test('assembler: a range git failure propagates at once — no step-down to the working tree or a last commit', async () => {
+	const { deps, calls } = fakeDeps({
+		rangeThrows: new DiffUnavailableError('unknown revision abc'),
+		working: { files: [fileStat('src/wip.ts')], body: diffBody('src/wip.ts'), truncated: false },
 	});
-	await assert.rejects(() => assembleDiffCodeReviewGrounding('/repo', deps), DiffUnavailableError);
+	await assert.rejects(() => assembleDiffCodeReviewGrounding('/repo', deps, BASE), DiffUnavailableError);
+	assert.deepEqual(calls, { range: 1, working: 0 });
 });
 
-// ---- integration: the real git_diff last-commit fallback over a throwaway repo ----
+// ---- integration: no base, real git ----
 
-test('assembler (integration): a clean-working-tree repo recovers the last commit via the real git_diff HEAD^ fallback — read-only', async () => {
+test('assembler (integration): a real repo with no base is refused, and the assembler is read-only', async () => {
 	let git = true;
 	try { execFileSync('git', ['--version'], { stdio: 'ignore' }); } catch { git = false; }
 	if (!git) { return; }   // gated: skip cleanly where git is unavailable
@@ -162,14 +157,15 @@ test('assembler (integration): a clean-working-tree repo recovers the last commi
 		mkdirSync(join(repo, 'src'), { recursive: true });
 		writeFileSync(join(repo, 'src', 'a.ts'), 'export const a = 1;\n');
 		run('add', '-A'); run('commit', '-q', '-m', 'c1');
+		const base = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo }).toString().trim();
 		writeFileSync(join(repo, 'src', 'a.ts'), 'export const a = 2;\n');
-		run('add', '-A'); run('commit', '-q', '-m', 'c2');   // two commits => HEAD^..HEAD resolves
+		run('add', '-A'); run('commit', '-q', '-m', 'c2');
 
 		const logBefore = execFileSync('git', ['rev-list', '--count', 'HEAD'], { cwd: repo }).toString().trim();
-
-		// working tree is clean => the assembler falls back to the last commit (HEAD^..HEAD).
-		const { grounding, changedFiles } = await assembleDiffCodeReviewGrounding(repo, realDiffGroundingDeps());
-		assert.deepEqual(changedFiles, ['src/a.ts'], 'the last commit changed file is recovered from a clean tree');
+		await assert.rejects(() => assembleDiffCodeReviewGrounding(repo, realDiffGroundingDeps()), DiffUnavailableError,
+			'the last commit is no longer reviewed in place of the Story');
+		const { grounding, changedFiles } = await assembleDiffCodeReviewGrounding(repo, realDiffGroundingDeps(), { base });
+		assert.deepEqual(changedFiles, ['src/a.ts']);
 		assert.ok(grounding.symbols[0]!.signature.includes('+export const a = 2;'), 'the real hunks are carried');
 
 		// read-only: the assembler committed/reindexed nothing.
@@ -183,24 +179,22 @@ test('assembler (integration): a clean-working-tree repo recovers the last commi
 });
 
 // ---------------------------------------------------------------------------
-// ISSUE-5f7a7cb9 S001/t7 — the degraded review's base, exclusions and fallback.
+// ISSUE-5f7a7cb9 S001/t7, revised by ISSUE-b97752e9 — the degraded review's
+// base and exclusions. There is no fallback: the Story's range is the anchor.
 // ---------------------------------------------------------------------------
 
 type Call = readonly [seam: string, ...args: unknown[]];
 
-/** Seams that record every call WITH its arguments (`args.length` is part of
- *  what "today's calls" means) and can be scripted to throw. */
+/** Seams that record every call WITH its arguments and can be scripted to throw. */
 function recordingDeps(script: {
 	working?: (globs: readonly string[] | undefined) => DiffResult;
 	range?: (base: string, globs: readonly string[] | undefined) => DiffResult;
-	lastCommit?: (globs: readonly string[] | undefined) => DiffResult;
 	withRange?: boolean;
 } = {}): { deps: DiffGroundingDeps; calls: Call[] } {
 	const calls: Call[] = [];
 	const empty: DiffResult = { files: [], body: '', truncated: false };
 	const deps: DiffGroundingDeps = {
 		workingTreeDiff: async (...a: unknown[]) => { calls.push(['working', ...a]); return script.working?.(a[1] as readonly string[] | undefined) ?? empty; },
-		lastCommitDiff:  async (...a: unknown[]) => { calls.push(['lastCommit', ...a]); return script.lastCommit?.(a[1] as readonly string[] | undefined) ?? empty; },
 		...(script.withRange !== false
 			? { rangeDiff: async (...a: unknown[]) => { calls.push(['range', ...a]); return script.range?.(a[1] as string, a[2] as readonly string[] | undefined) ?? empty; } }
 			: {}),
@@ -211,113 +205,55 @@ function recordingDeps(script: {
 const one = (path: string): DiffResult => ({ files: [fileStat(path)], body: diffBody(path), truncated: false });
 const GLOBS = ['.insrc/artifacts/*.json', 'docs/standalone/**'];
 
-/** Capture the warnings the assembler logs while `fn` runs. */
-async function groundingWarnings(fn: () => Promise<unknown>): Promise<unknown[][]> {
-	const seen: unknown[][] = [];
-	const l = getLogger('workflow:code-review:grounding');
-	const orig = l.warn.bind(l);
-	(l as unknown as { warn: unknown }).warn = (...a: unknown[]) => { seen.push(a); return orig(...(a as [])); };
-	try { await fn(); } finally { (l as unknown as { warn: unknown }).warn = orig; }
-	return seen;
-}
-
-test('T47: with NO opts the calls on the seams, including their argument counts, are exactly the old ones', async () => {
-	const dirty = recordingDeps({ working: () => one('src/a.ts') });
-	await assembleDiffCodeReviewGrounding('/repo', dirty.deps);
-	assert.deepEqual(dirty.calls, [['working', '/repo']]);
-
-	const clean = recordingDeps({ lastCommit: () => one('src/a.ts') });
-	const res = await assembleDiffCodeReviewGrounding('/repo', clean.deps);
-	assert.deepEqual(clean.calls, [['working', '/repo'], ['lastCommit', '/repo']], 'one argument each, and the range seam is never touched');
+test('a base and no globs: the range then the working tree, with no excludeGlobs argument', async () => {
+	const r = recordingDeps({ range: () => one('src/a.ts') });
+	const res = await assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc' });
+	assert.deepEqual(r.calls, [['range', '/repo', 'abc'], ['working', '/repo']]);
 	assert.deepEqual(res.changedFiles, ['src/a.ts']);
-
-	// An empty opts object, and empty values, are the same as no opts.
-	for (const opts of [{}, { base: '' }, { excludeGlobs: [] }, { base: undefined, excludeGlobs: undefined }]) {
-		const r = recordingDeps();
-		await assembleDiffCodeReviewGrounding('/repo', r.deps, opts);
-		assert.deepEqual(r.calls, [['working', '/repo'], ['lastCommit', '/repo']], `opts=${JSON.stringify(opts)}`);
+	for (const opts of [{ base: 'abc', excludeGlobs: [] }, { base: 'abc', excludeGlobs: undefined }]) {
+		const e = recordingDeps();
+		await assembleDiffCodeReviewGrounding('/repo', e.deps, opts);
+		assert.deepEqual(e.calls, [['range', '/repo', 'abc'], ['working', '/repo']], `opts=${JSON.stringify(opts)}`);
 	}
 });
 
-test('a base and globs: the working tree is read with the globs; when it is clean the RANGE is read, with the base and the globs', async () => {
-	const r = recordingDeps({ range: () => one('src/story.ts'), lastCommit: () => one('src/someone-else.ts') });
+test('a base and globs: the RANGE is read first, then the working tree, both with the globs', async () => {
+	const r = recordingDeps({ range: () => one('src/story.ts') });
 	const res = await assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS });
-	assert.deepEqual(r.calls, [['working', '/repo', GLOBS], ['range', '/repo', 'abc', GLOBS]]);
+	assert.deepEqual(r.calls, [['range', '/repo', 'abc', GLOBS], ['working', '/repo', GLOBS]]);
 	assert.deepEqual(res.changedFiles, ['src/story.ts']);
 });
 
-test('a dirty working tree is reviewed as it is: neither the range nor the last commit is consulted', async () => {
-	const r = recordingDeps({ working: () => one('src/wip.ts'), range: () => one('src/story.ts') });
+test("a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope", async () => {
+	const r = recordingDeps({
+		range: () => ({ files: [fileStat('src/story.ts', 'modified', 2, 1)], body: diffBody('src/story.ts'), truncated: false, storyPaths: ['src/story.ts'] }),
+		working: () => ({ files: [fileStat('src/story.ts', 'modified', 3, 0), fileStat('src/wip.ts')], body: diffBody('src/wip.ts', 'src/story.ts'), truncated: false }),
+	});
 	const res = await assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS });
-	assert.deepEqual(r.calls, [['working', '/repo', GLOBS]]);
-	assert.deepEqual(res.changedFiles, ['src/wip.ts']);
+	assert.deepEqual(res.changedFiles, ['src/story.ts']);
+	assert.deepEqual(res.excludedFromScope, ['src/wip.ts']);
+	const sig = sigOf(res, 'src/story.ts');
+	assert.equal(sig.split('diff --git a/src/story.ts').length - 1, 2, 'the committed section and the uncommitted one');
+	assert.match(sig, /\[uncommitted change\]\ndiff --git a\/src\/story\.ts/);
+	assert.doesNotMatch(sig, /src\/wip\.ts/);
 });
 
-test('T45: a base whose range is EMPTY after exclusion gives an empty result — the last-commit fallback is NOT used', async () => {
-	const r = recordingDeps({ lastCommit: () => one('src/someone-else.ts') });   // range returns empty
+test('T45: a base whose range is EMPTY after exclusion gives an empty result, and an uncommitted file is only reported', async () => {
+	const r = recordingDeps({ working: () => one('src/someone-else.ts') });   // range returns empty
 	const res = await assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS });
 	assert.deepEqual(res.changedFiles, [], 'a Story that changed only ledger files has nothing to review');
 	assert.deepEqual(res.grounding.symbols, []);
-	assert.ok(!r.calls.some(c => c[0] === 'lastCommit'), 'the last commit would be somebody else\'s work');
+	assert.deepEqual(res.excludedFromScope, ['src/someone-else.ts']);
 });
 
-test('globs but NO base: the last-commit fallback runs, with the globs', async () => {
-	const r = recordingDeps({ lastCommit: () => one('src/a.ts') });
-	await assembleDiffCodeReviewGrounding('/repo', r.deps, { excludeGlobs: GLOBS });
-	assert.deepEqual(r.calls, [['working', '/repo', GLOBS], ['lastCommit', '/repo', GLOBS]]);
+test('seams without rangeDiff cannot anchor the Story: DiffUnavailableError, and the working tree is not read', async () => {
+	const r = recordingDeps({ withRange: false, working: () => one('src/a.ts') });
+	await assert.rejects(() => assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS }), DiffUnavailableError);
+	assert.deepEqual(r.calls, []);
 });
 
-test('seams written before rangeDiff existed: a base is ignored and the sequence is the globs-only one', async () => {
-	const r = recordingDeps({ withRange: false, lastCommit: () => one('src/a.ts') });
-	const res = await assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS });
-	assert.deepEqual(r.calls, [['working', '/repo', GLOBS], ['lastCommit', '/repo', GLOBS]]);
-	assert.deepEqual(res.changedFiles, ['src/a.ts']);
-});
-
-test('T46: a failing RANGE diff retries the sequence without the base; one warning', async () => {
-	const r = recordingDeps({
-		range: () => { throw new DiffUnavailableError('unknown revision abc'); },
-		lastCommit: () => one('src/a.ts'),
-	});
-	let res: Awaited<ReturnType<typeof assembleDiffCodeReviewGrounding>> | undefined;
-	const warned = await groundingWarnings(async () => { res = await assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS }); });
-	assert.deepEqual(r.calls, [
-		['working', '/repo', GLOBS], ['range', '/repo', 'abc', GLOBS],
-		['working', '/repo', GLOBS], ['lastCommit', '/repo', GLOBS],
-	]);
-	assert.deepEqual(res?.changedFiles, ['src/a.ts']);
-	assert.equal(warned.length, 1);
-});
-
-test('T46: failing EXCLUSIONS step all the way down to the old sequence, called with no excludeGlobs argument; two warnings', async () => {
-	const rejectGlobs = (g: readonly string[] | undefined): void => { if (g !== undefined) throw new DiffUnavailableError('this git rejects exclude pathspecs'); };
-	const r = recordingDeps({
-		working: g => { rejectGlobs(g); return { files: [], body: '', truncated: false }; },
-		range: (_b, g) => { rejectGlobs(g); return one('src/never.ts'); },
-		lastCommit: g => { rejectGlobs(g); return one('src/plain.ts'); },
-	});
-	let res: Awaited<ReturnType<typeof assembleDiffCodeReviewGrounding>> | undefined;
-	const warned = await groundingWarnings(async () => { res = await assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS }); });
-	assert.deepEqual(r.calls, [
-		['working', '/repo', GLOBS],            // base + exclusions: fails
-		['working', '/repo', GLOBS],            // exclusions only: fails
-		['working', '/repo'], ['lastCommit', '/repo'],   // the old sequence, one argument each
-	]);
-	assert.deepEqual(res?.changedFiles, ['src/plain.ts']);
-	assert.equal(warned.length, 2);
-});
-
-test('T46: when the OLD sequence itself fails, DiffUnavailableError still leaves the function', async () => {
-	const r = recordingDeps({ working: () => { throw new DiffUnavailableError('not a git repository'); } });
-	await assert.rejects(
-		() => assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS }),
-		(e: unknown) => e instanceof DiffUnavailableError,
-	);
-	assert.equal(r.calls.length, 3, 'all three attempts were made before giving up');
-});
-
-test('T46: an error that is not a diff failure propagates at once — the fallback does not swallow a bug', async () => {
-	const r = recordingDeps({ working: () => { throw new TypeError('a bug'); } });
+test('an error that is not a diff failure propagates at once', async () => {
+	const r = recordingDeps({ range: () => { throw new TypeError('a bug'); } });
 	await assert.rejects(() => assembleDiffCodeReviewGrounding('/repo', r.deps, { base: 'abc', excludeGlobs: GLOBS }), (e: unknown) => e instanceof TypeError);
 	assert.equal(r.calls.length, 1);
 });
@@ -365,19 +301,17 @@ test('T44 (integration, real git): ledger hunks larger than the diff cap that so
 	}
 });
 
-test('integration, real git: with no base and a clean tree the last commit is reviewed, minus ledger files', async () => {
+test('integration, real git: with no base and a clean tree nothing is reviewed in the Story\'s place', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'cr-diff-nobase-'));
 	const run = (...args: string[]): void => { execFileSync('git', args, { cwd: repo, stdio: 'ignore' }); };
 	try {
 		run('init', '-q'); run('config', 'user.email', 't@t'); run('config', 'user.name', 'T'); run('config', 'commit.gpgsign', 'false');
 		writeFileSync(join(repo, 'README.md'), 'base\n');
 		run('add', '-A'); run('commit', '-q', '-m', 'base');
-		mkdirSync(join(repo, 'src'), { recursive: true }); mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		mkdirSync(join(repo, 'src'), { recursive: true });
 		writeFileSync(join(repo, 'src', 'a.ts'), 'export const a = 1;\n');
-		writeFileSync(join(repo, '.insrc', 'artifacts', 'BUILD-x.json'), '{}\n');
-		run('add', '-A'); run('commit', '-q', '-m', 'work and its record');
-		const res = await assembleDiffCodeReviewGrounding(repo, realDiffGroundingDeps(), { excludeGlobs: ['.insrc/artifacts/*.json'] });
-		assert.deepEqual(res.changedFiles, ['src/a.ts']);
+		run('add', '-A'); run('commit', '-q', '-m', 'somebody\'s last commit');
+		await assert.rejects(() => assembleDiffCodeReviewGrounding(repo, realDiffGroundingDeps(), { excludeGlobs: ['.insrc/artifacts/*.json'] }), DiffUnavailableError);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -493,16 +427,16 @@ test("a shared path touched by two Story commits keeps both commits' hunks and a
 });
 
 test('without hunksByFile buildDiffSymbols splits the body as before', async () => {
-	const { deps } = fakeDeps({ working: { files: [fileStat('src/a.ts'), fileStat('src/b.ts')], body: diffBody('src/a.ts', 'src/b.ts'), truncated: false } });
-	const res = await assembleDiffCodeReviewGrounding('/repo', deps);
+	const { deps } = fakeDeps({ range: { files: [fileStat('src/a.ts'), fileStat('src/b.ts')], body: diffBody('src/a.ts', 'src/b.ts'), truncated: false } });
+	const res = await assembleDiffCodeReviewGrounding('/repo', deps, BASE);
 	assert.match(sigOf(res, 'src/a.ts'), /^diff --git a\/src\/a\.ts b\/src\/a\.ts/);
 	assert.match(sigOf(res, 'src/b.ts'), /^diff --git a\/src\/b\.ts b\/src\/b\.ts/);
 	// With hunksByFile, the map wins over the body.
 	const withMap: DiffGroundingDeps = {
-		workingTreeDiff: async () => ({ files: [fileStat('src/a.ts')], body: diffBody('src/a.ts'), truncated: false, hunksByFile: new Map([['src/a.ts', 'FROM-THE-MAP']]) }),
-		lastCommitDiff:  async () => ({ files: [], body: '', truncated: false }),
+		workingTreeDiff: async () => ({ files: [], body: '', truncated: false }),
+		rangeDiff:       async () => ({ files: [fileStat('src/a.ts')], body: diffBody('src/a.ts'), truncated: false, hunksByFile: new Map([['src/a.ts', 'FROM-THE-MAP']]) }),
 	};
-	assert.equal(sigOf(await assembleDiffCodeReviewGrounding('/repo', withMap), 'src/a.ts'), 'FROM-THE-MAP');
+	assert.equal(sigOf(await assembleDiffCodeReviewGrounding('/repo', withMap, BASE), 'src/a.ts'), 'FROM-THE-MAP');
 });
 
 test('the range diff applies the exclusions to every per-unit call', async () => {
@@ -524,7 +458,7 @@ test('the range diff applies the exclusions to every per-unit call', async () =>
 	]);
 });
 
-test('a truncated per-unit call marks the grounding truncated and a storyChangeSet failure steps down', async () => {
+test('a truncated per-unit call marks the grounding truncated and a storyChangeSet failure makes the review unavailable', async () => {
 	const set: StoryChangeSet = {
 		paths: ['shared.txt'],
 		units: [{ kind: 'commit', ref: 'c1', from: 'p1', to: 'c1', paths: ['shared.txt'] }],
@@ -534,19 +468,17 @@ test('a truncated per-unit call marks the grounding truncated and a storyChangeS
 	assert.equal(out.truncated, true);
 	const deps: DiffGroundingDeps = {
 		workingTreeDiff: async () => ({ files: [], body: '', truncated: false }),
-		lastCommitDiff:  async () => ({ files: [], body: '', truncated: false }),
 		rangeDiff:       async () => out,
 	};
 	const res = await assembleDiffCodeReviewGrounding('/repo', deps, { base: 'base' });
 	assert.match(sigOf(res, 'shared.txt'), /\[diff truncated/);
 
 	// An unresolvable base: the real rangeDiff raises DiffUnavailableError, and
-	// the assembler steps down to the last commit as before.
+	// so does the assembler; nothing steps down to the last commit (ISSUE-b97752e9).
 	const r = mergeRepo();
 	try {
 		r.put('src/story1.ts', 'export const s1 = 1;\n'); r.commit('story 1');
 		await assert.rejects(realDiffGroundingDeps().rangeDiff!(r.repo, 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef'), DiffUnavailableError);
-		const stepped = await assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' });
-		assert.deepEqual(stepped.changedFiles, ['src/story1.ts'], 'the last commit, as before');
+		await assert.rejects(() => assembleDiffCodeReviewGrounding(r.repo, realDiffGroundingDeps(), { base: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' }), DiffUnavailableError);
 	} finally { r.cleanup(); }
 });

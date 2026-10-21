@@ -164,9 +164,10 @@ export type CodeReviewFallbackReason =
  *  implementation-correctness; (B) LLD only → LLD-contract review; (C) neither
  *  → pure code review with no design contract. The conventions + quality
  *  dimensions read neither, so they are mode-agnostic. */
-/** How a review's changed set was scoped (ISSUE-b47dadc7): the uncommitted
- *  working tree, or the committed range by the Story's `Insrc-Story` trailer or
- *  by every first-parent commit. */
+/** How a review's changed set was scoped (ISSUE-b47dadc7): the committed range by
+ *  the Story's `Insrc-Story` trailer or by its first-parent commits. 'working-tree'
+ *  is kept for records written before ISSUE-b97752e9; a Story's review no longer
+ *  produces it. */
 export type ChangeSetAttribution = 'story-trailer' | 'first-parent-range' | 'working-tree';
 
 export interface CodeReviewSubject {
@@ -188,6 +189,9 @@ export interface CodeReviewSubject {
 	/** Story files that another Story's excluded commit also changed: a full review
 	 *  judges them whole (stated limit, ISSUE-b47dadc7). */
 	readonly sharedWithExcluded?: readonly string[] | undefined;
+	/** Uncommitted files left out because no Story commit changed them (sorted);
+	 *  absent when none (ISSUE-b97752e9). */
+	readonly excludedFromScope?: readonly string[] | undefined;
 }
 
 /** Resolving a subject either yields the subject, or a REASON that is NOT a
@@ -233,6 +237,9 @@ export interface CodeReviewBody {
 		/** Optional on read: records written before ISSUE-b47dadc7 lack both. */
 		readonly changeSetAttribution?: ChangeSetAttribution | undefined;
 		readonly sharedWithExcluded?: readonly string[] | undefined;
+		/** What the review left out and why: uncommitted files no Story commit
+		 *  changed (ISSUE-b97752e9). Absent when none, and on older records. */
+		readonly excludedFromScope?: readonly string[] | undefined;
 	};
 	/** All four dimension results (adherence / conventions / coverage / quality). */
 	readonly dimensions: readonly DimensionResult[];

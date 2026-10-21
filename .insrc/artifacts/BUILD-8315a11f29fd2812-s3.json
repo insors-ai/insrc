@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "8315a11f29fd2812",
+    "storyId": "s3",
+    "createdAt": "2026-10-20T16:44:27.482Z",
+    "updatedAt": "2026-10-21T04:47:37.943Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-19T04:32:14.895Z",
+    "epicSlug": "chunked-review-pipeline-every-review"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": false
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "Integration tests (code-review-divided.test.ts) drive runCodeReview end to end at a small limit and at a raised one: production runner, fold, record, dimension specs, adapters and s1's driver; judge slots mirror runDimensionJob with the test's limit (the configured limit lives in ~/.insrc); a scripted model judges only from what each call carries. Same verdicts per dimension and the same overall verdict both ways, each non-empty; cross-chunk contract mismatch reported at the caller; cross-chunk duplicate reported with counterpartRef; a degraded review whose coverage call is over the limit is divided with zero atoms (pipelineCalls chunk 0, one obligation per promised test) and judges each test on its evidence; an obligation answered at a note id twice fails the review with nothing written; every call within the limit.",
+    "testRecord": {
+      "md": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/mocks/ontology-editor.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T04:47:37.943Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-source/ontology.template.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T04:47:37.943Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-source/render.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T04:47:37.943Z"
+      },
+      {
+        "target": {
+          "file": "docs/mocks/ontology-viewer.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T04:47:37.943Z"
+      },
+      {
+        "target": {
+          "file": "docs/ontology-builder-prd.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T04:47:37.943Z"
+      },
+      {
+        "target": {
+          "file": "docs/ontology-builder-prd.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-21T04:47:37.943Z"
+      }
+    ],
+    "commit": "72cb9d62",
+    "feedback": [
+      {
+        "id": "c264a0b0",
+        "author": "Subho Ghosh",
+        "timestamp": "2026-10-20T18:06:21.662Z",
+        "target": {
+          "file": "docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/S003/BUILD.md"
+        },
+        "comment": "Stakeholder decision 2026-10-20 (option A): t2's fourth gate run satisfied all four acceptance checks and failed only on scope, because commit 581e1d76 (attributed to t2) also changed quality's description reasons to the same fixed-size form. That change is t3's surface (recorded on the plan) and is covered by t3's passing test. It is carried to this BUILD's approval as a scope override: '581e1d76 changed quality's reasons alongside t2's for one consistent validator module; the plan records it as t3's surface.' No re-attribution of history.",
+        "kind": "feedback"
+      }
+    ]
+  }
+}

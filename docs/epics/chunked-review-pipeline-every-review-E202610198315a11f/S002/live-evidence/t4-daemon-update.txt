@@ -1,0 +1,32 @@
+# s2/t4 — installed daemon update, 2026-10-20T16:08:39Z
+repo HEAD:      749857e0 docs(build): s2 t3 passes the build gate
+installed HEAD: 749857e0 docs(build): s2 t3 passes the build gate
+t1-t3 commits in the installed tree:
+749857e0 docs(build): s2 t3 passes the build gate
+8ffa4447 docs(plan): s2 t3 checks follow s1's amended prepare; a test for the last resort
+d7f6fe19 test(build): s2 a hub's directory lines are context, measured on the real call
+9c6bd70f feat(build): s2/t3 point the code-review adapter at the material and the neighbour summary
+e17479ed fix(build): s2/t1 a relation key cannot collide on ids holding the separator
+57ccc141 feat(build): s2/t2 neighbourSummary: a deterministic line for a related atom held elsewhere
+41b2038c feat(build): s2/t1 codeReviewMaterial: atoms and relations from a dimension's grounding
+240d5612 docs(design.story): LLD for Epic 8315a11f Story s2 (approved with override); s1 LLD amended
+built material module:
+-rw-r--r--@ 1 subhagho  staff  4779 Oct 20 21:38 /Users/subhagho/.insrc/daemon/out/workflow/review-pipeline/adapters/code-review-material.js
+/Users/subhagho/.insrc/daemon/out/workflow/code-review/dimensions/coverage.js:1
+/Users/subhagho/.insrc/daemon/out/workflow/review-pipeline/code-review.js:1
+daemon.status after restart:
+{"id":1,"result":{"uptime":8,"repos":[{"kind":"workspace","path":"/Users/subhagho/work/projects/insors/insrc","name":"insrc","addedAt":"2026-07-14T13:48:08.510Z","status":"ready","lastIndexed":"2026-1
+
+## The running process loaded this build (2026-10-20T16:09:52Z)
+daemon.status installedCommit (reported by the running daemon itself):
+  installedCommit 749857e075fc55b55b5010527a0cd1fb24f166b5  uptime 82s
+running daemon process (start time, local):
+  52869 Tue Oct 20 21:38:29 2026     /opt/homebrew/Cellar/node@22/22.23.2/bin/node --import tsx/esm /Users/subhagho/.insrc/daemon/out/daemon/index.js
+built files (mtime, local) — written before the process started:
+  2026-10-20T21:38:14 /Users/subhagho/.insrc/daemon/out/daemon/index.js
+  2026-10-20T21:38:13 /Users/subhagho/.insrc/daemon/out/workflow/review-pipeline/adapters/code-review-material.js
+  2026-10-20T21:38:13 /Users/subhagho/.insrc/daemon/out/workflow/review-pipeline/code-review.js
+compiled code-review.js uses the material and the neighbour summary:
+  21:import { codeReviewMaterial, neighbourSummary } from './adapters/code-review-material.js';
+  100:        material: () => codeReviewMaterial(spec.materialGrounding?.(grounding, groundingMode) ?? grounding),
+  101:        neighbourSummary,

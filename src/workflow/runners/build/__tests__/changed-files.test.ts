@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * S002 (provenance/feedback) t2/t3 — the shared git changed-file seam.
+ * s2 (provenance/feedback) t2/t3 — the shared git changed-file seam.
  *
  * `changedFiles` is the extracted, behaviour-preserving body of the code-review
  * resolver's former `realChangedFiles` — exercised here against a real tmp git
@@ -18,12 +18,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { changedFiles, collectBuildChangeLog, LEDGER_EXCLUDE_GLOBS, NoBuildChangesError } from '../changed-files.js';
-import { gitDiffTool } from '../../../../daemon/tools/builtins/git/diff.js';
+import { gitDiffTool, setGitDiffShellForTests } from '../../../../daemon/tools/builtins/git/diff.js';
+import { runShell } from '../../../../daemon/tools/shell-helper.js';
+import { ensureBuildRecordOnCompletion } from '../completion-record.js';
+import { stampBuildStart } from '../range-base.js';
 import type { GitDiffData } from '../../../../daemon/tools/builtins/git/diff.js';
 
 // ---------------------------------------------------------------------------
@@ -94,7 +97,7 @@ test('collectBuildChangeLog: a git derivation failure is SWALLOWED → [] (never
 });
 
 // ---------------------------------------------------------------------------
-// t3 (ISSUE-93081bff91ae5108 / S001) — the ADDITIVE options seam.
+// t3 (ISSUE-93081bff91ae5108 / s1) — the ADDITIVE options seam.
 //
 // Every assertion here is argument-level where it can be: the defect was in what
 // git was actually ASKED, so a result-level check would pass for the wrong
@@ -224,19 +227,23 @@ test('t3: a CLEAN tree + base derives the COMMITTED range — the base reaches g
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('t3: a DIRTY tree NEVER consults the base — the result cannot depend on which range was supplied', async () => {
+test('with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds', async () => {
 	const { repo, base } = mkRangeRepo();
 	try {
-		writeFileSync(join(repo, 'dirty.ts'), 'export const d = 1;\n');
-		execFileSync('git', ['add', 'dirty.ts'], { cwd: repo });
+		// Staged, unstaged, and untracked-then-added changes, none to a Story file.
+		writeFileSync(join(repo, 'staged.ts'), 'export const s = 1;\n');
+		execFileSync('git', ['add', 'staged.ts'], { cwd: repo });
+		writeFileSync(join(repo, 'base.ts'), 'export const v = 9;\n');   // unstaged edit of a file outside the range
+		writeFileSync(join(repo, 'added.ts'), 'export const a = 1;\n');
+		execFileSync('git', ['add', 'added.ts'], { cwd: repo });
 
-		const withBase    = await changedFiles(repo, { base });
-		const withoutBase = await changedFiles(repo);
-		assert.deepEqual(withBase, withoutBase,
-			'a dirty tree yields EXACTLY today\'s result whether or not a base is supplied');
-		assert.ok(withBase.includes('dirty.ts'));
-		assert.ok(!withBase.includes('shipped.ts'),
-			'the committed range is NOT unioned in — a dirty tree is left alone entirely');
+		let report: { attribution: string; excludedUncommitted: readonly string[] } | undefined;
+		const withBase = await changedFiles(repo, { base, onAttribution: a => { report = a; } });
+		assert.deepEqual([...withBase], ['shipped.ts'], 'only the committed range: no uncommitted file is the Story\'s');
+		assert.deepEqual(report?.excludedUncommitted, ['added.ts', 'base.ts', 'staged.ts']);
+		assert.equal(report?.attribution, 'first-parent-range');
+		// Without a base the working tree is still the derivation, for callers outside a Story.
+		assert.deepEqual([...await changedFiles(repo)].sort(), ['added.ts', 'base.ts', 'staged.ts']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -278,7 +285,7 @@ test('t3: an empty-string base behaves as ABSENT (contract pinned; the guard its
 test('t4 (WORKING-TREE derivation): the record\'s own json + md are dirty and are EXCLUDED, while a genuinely-changed artifact survives', async () => {
 	const { repo } = mkRangeRepo();
 	try {
-		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/S001/BUILD.md'];
+		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/s1/BUILD.md'];
 		const other = '.insrc/artifacts/LLD-abc-s1.json';     // a DIFFERENT artifact
 		for (const f of [...own, other, 'src/real.ts']) {
 			mkdirSync(join(repo, dirname(f)), { recursive: true });
@@ -305,7 +312,7 @@ test('t4 (RANGE derivation): the exclusion is honoured on a CLEAN tree deriving 
 		writeFileSync(join(repo, 'base.ts'), '0\n'); git('add', '.'); git('commit', '-qm', 'base');
 		const base = git('rev-parse', 'HEAD');
 		// COMMIT the record's own files plus real work — tree ends up clean.
-		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/S001/BUILD.md'];
+		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/s1/BUILD.md'];
 		for (const f of [...own, 'src/shipped.ts']) {
 			mkdirSync(join(repo, dirname(f)), { recursive: true });
 			writeFileSync(join(repo, f), 'x\n');
@@ -343,7 +350,7 @@ test('CR-1: a tree dirty with ONLY the record\'s own paths still derives the COM
 	try {
 		// mkRangeRepo already committed the Story's work (shipped.ts) on top of
 		// `base`, so the range base..HEAD is non-empty and the tree is clean.
-		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/S001/BUILD.md'];
+		const own = ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/s1/BUILD.md'];
 		for (const f of own) {
 			mkdirSync(join(repo, dirname(f)), { recursive: true });
 			writeFileSync(join(repo, f), 'placeholder\n');
@@ -365,21 +372,22 @@ test('CR-1: a tree dirty with ONLY the record\'s own paths still derives the COM
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('CR-1: a tree dirty with REAL work plus the record\'s own paths still does NOT consult the base — the fix must not widen the gate', async () => {
+test("CR-1: a tree dirty with unrelated work plus the record's own paths still derives the Story's committed range; the unrelated file is reported, the record's own paths are not", async () => {
 	const { repo, base } = mkRangeRepo();
 	try {
-		// One real dirty file alongside the record's own: the working tree genuinely
-		// has the Story's work in it, so the range must stay unconsulted. This pins
-		// the OTHER side of the gate, so a fix cannot simply always union the range.
+		// One unrelated dirty file alongside the record's own: neither is the Story's
+		// (no Story commit touched them), so the committed range decides the set
+		// (ISSUE-b97752e9). The record's paths are excluded, not reported.
 		writeFileSync(join(repo, 'wip.ts'), 'export const w = 1;\n');
 		const ownJson = '.insrc/artifacts/BUILD-abc-s1.json';
 		mkdirSync(join(repo, dirname(ownJson)), { recursive: true });
 		writeFileSync(join(repo, ownJson), 'x\n');
 		execFileSync('git', ['add', '-A'], { cwd: repo });
 
-		const derived = await changedFiles(repo, { base, exclude: [ownJson] });
-		assert.deepEqual(derived, ['wip.ts'],
-			'only the working tree\'s real file — `shipped.ts` from base..HEAD must NOT appear');
+		let excluded: readonly string[] | undefined;
+		const derived = await changedFiles(repo, { base, exclude: [ownJson], onAttribution: a => { excluded = a.excludedUncommitted; } });
+		assert.deepEqual(derived, ['shipped.ts']);
+		assert.deepEqual(excluded, ['wip.ts']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -397,12 +405,12 @@ test('t4: a Story that changed ONLY artifact files still yields a NON-EMPTY chan
 	const { repo } = mkRangeRepo();
 	try {
 		// Only artifacts dirty — but NOT this record's own two paths.
-		for (const f of ['.insrc/artifacts/LLD-other-s1.json', 'docs/epics/y/S002/LLD.md']) {
+		for (const f of ['.insrc/artifacts/LLD-other-s1.json', 'docs/epics/y/s2/LLD.md']) {
 			mkdirSync(join(repo, dirname(f)), { recursive: true });
 			writeFileSync(join(repo, f), 'x\n');
 		}
 		execFileSync('git', ['add', '-A'], { cwd: repo });
-		const filtered = await changedFiles(repo, { exclude: ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/S001/BUILD.md'] });
+		const filtered = await changedFiles(repo, { exclude: ['.insrc/artifacts/BUILD-abc-s1.json', 'docs/epics/x/s1/BUILD.md'] });
 		assert.equal(filtered.length, 2, `an artifact-only Story is still reported, got ${JSON.stringify(filtered)}`);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -419,7 +427,7 @@ test('t4: an exclusion path OUTSIDE the repo is left alone rather than relativis
 });
 
 // ---------------------------------------------------------------------------
-// ISSUE-5f7a7cb9 S001/t2 — excludeGlobs + LEDGER_EXCLUDE_GLOBS.
+// ISSUE-5f7a7cb9 s1/t2 — excludeGlobs + LEDGER_EXCLUDE_GLOBS.
 //
 // The globs are handed to git, so every assertion on what they match runs
 // against REAL git: a matcher re-implemented in the test would only agree with
@@ -439,9 +447,9 @@ const LEDGER_KEPT = [
 ];
 const LEDGER_DROPPED = [
 	'.insrc/artifacts/LLD-x.json',
-	'.insrc/build-start/x-S001.json',
-	'docs/epics/e/S001/LLD.md',
-	'docs/standalone/s/S001/BUILD.md',
+	'.insrc/build-start/x-s1.json',
+	'docs/epics/e/s1/LLD.md',
+	'docs/standalone/s/s1/BUILD.md',
 ];
 
 function mkLedgerRepo(): { repo: string; base: string } {
@@ -491,25 +499,25 @@ test('T28 (WORKING-TREE derivation): a tree dirty ONLY with an artifact json is 
 	try {
 		// The observed state: the Story is committed and an approval rewrote a
 		// TRACKED artifact json, leaving it as the only dirty path.
-		const artifact = '.insrc/artifacts/PLAN-abc-S001.json';
+		const artifact = '.insrc/artifacts/PLAN-abc-s1.json';
 		mkdirSync(join(repo, dirname(artifact)), { recursive: true });
 		writeFileSync(join(repo, artifact), '{"v":1}\n');
 		execFileSync('git', ['add', '-A'], { cwd: repo });
 		execFileSync('git', ['commit', '-qm', 'the plan'], { cwd: repo });
 		writeFileSync(join(repo, artifact), '{"v":2,"approvedAt":"now"}\n');   // unstaged
 
-		assert.deepEqual([...await changedFiles(repo, { base })], [artifact],
-			'fixture precondition: without the globs the dirty artifact IS the whole set and the range is never consulted');
+		assert.deepEqual([...await changedFiles(repo, { base })].sort(), [artifact, 'shipped.ts'],
+			'fixture precondition: without the globs the artifact is a file of the range, so its uncommitted edit joins');
 
 		const withGlobs = [...await changedFiles(repo, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS })];
-		assert.deepEqual(withGlobs, ['shipped.ts'], 'the artifact is not evidence of a dirty tree, so the committed range is derived — and the artifact is excluded from it too');
+		assert.deepEqual(withGlobs, ['shipped.ts'], 'with the globs the artifact is in neither the range nor the working tree');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
 test('T28 (STAGED derivation): a STAGED artifact json is excluded as well — the glob reaches both working-tree diffs', async () => {
 	const { repo, base } = mkRangeRepo();
 	try {
-		const artifact = '.insrc/artifacts/BUILD-abc-S001.json';
+		const artifact = '.insrc/artifacts/BUILD-abc-s1.json';
 		mkdirSync(join(repo, dirname(artifact)), { recursive: true });
 		writeFileSync(join(repo, artifact), '{}\n');
 		execFileSync('git', ['add', '-A'], { cwd: repo });   // staged, never committed
@@ -534,10 +542,11 @@ test('T29: WITHOUT excludeGlobs the inputs sent to git_diff are exactly today\'s
 	try {
 		for (const opts of [undefined, { base }, { base, exclude: ['x'] }, { base, excludeGlobs: [] as string[] }]) {
 			const seen = await recordDiffInputs(() => changedFiles(repo, opts));
+			// With a base the Story's range is read first, then the working tree.
 			assert.deepEqual(seen, [
+				...(opts?.base !== undefined ? [{ cwd: repo, from: base }] : []),
 				{ cwd: repo, staged: false },
 				{ cwd: repo, staged: true },
-				...(opts?.base !== undefined ? [{ cwd: repo, from: base }] : []),
 			], `opts=${JSON.stringify(opts)}`);
 		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -548,9 +557,9 @@ test('T29: WITH excludeGlobs every one of the three diffs carries them', async (
 	try {
 		const seen = await recordDiffInputs(() => changedFiles(repo, { base, excludeGlobs: ['a/**', 'b/*.json'] }));
 		assert.deepEqual(seen, [
+			{ cwd: repo, from: base,    exclude: ['a/**', 'b/*.json'] },
 			{ cwd: repo, staged: false, exclude: ['a/**', 'b/*.json'] },
 			{ cwd: repo, staged: true,  exclude: ['a/**', 'b/*.json'] },
-			{ cwd: repo, from: base,    exclude: ['a/**', 'b/*.json'] },
 		]);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
@@ -633,4 +642,174 @@ test('a committed ledger file stays out of the range result after a mid-build me
 		assert.equal(files.includes('.insrc/artifacts/BUILD-x-s1.json'), false, 'git still excludes the ledger file');
 		assert.equal(files.includes('upstream/merged.ts'), false);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-b97752e9: the Story's commits decide the set; the working tree only adds
+// edits of the Story's own files.
+// ---------------------------------------------------------------------------
+
+const STORY_KEY = '06f196a7ff528143/s1';
+const OTHER_KEY = 'c2ba6fa6aaaaaaaa/s1';
+
+/** A repo with a base commit; `commit` writes files and commits, with the Story trailer when `key` is given. */
+function mkStoryRepo(): { repo: string; base: string; commit: (files: Readonly<Record<string, string | null>>, subject: string, key?: string) => void; cleanup: () => void } {
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-story-scope-'));
+	const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+	git('init', '-q', '-b', 'main');
+	git('config', 'user.email', 'test@insrc.local');
+	git('config', 'user.name', 'insrc-test');
+	git('config', 'commit.gpgsign', 'false');
+	writeFileSync(join(repo, 'README.md'), 'base\n');
+	git('add', '-A'); git('commit', '-qm', 'base');
+	const base = git('rev-parse', 'HEAD');
+	const commit = (files: Readonly<Record<string, string | null>>, subject: string, key?: string): void => {
+		for (const [f, body] of Object.entries(files)) {
+			if (body === null) { git('rm', '-q', f); continue; }
+			mkdirSync(dirname(join(repo, f)), { recursive: true });
+			writeFileSync(join(repo, f), body);
+		}
+		git('add', '-A');
+		git('commit', '-qm', key !== undefined ? `${subject}\n\nInsrc-Story: ${key}\n` : subject);
+	};
+	return { repo, base, commit, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test("an uncommitted edit to a file the Story's commits changed is part of the Story's set", async () => {
+	const { repo, base, commit, cleanup } = mkStoryRepo();
+	try {
+		commit({ 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY_KEY);
+		commit({ 'src/theirs.ts': '1\n' }, 'feat(build): s1/t1 theirs', OTHER_KEY);
+		writeFileSync(join(repo, 'src/mine.ts'), '2\n');      // in progress, unstaged
+		writeFileSync(join(repo, 'src/theirs.ts'), '2\n');    // another Story's file
+		let excluded: readonly string[] | undefined;
+		const files = await changedFiles(repo, { base, storyKey: STORY_KEY, onAttribution: a => { excluded = a.excludedUncommitted; } });
+		assert.deepEqual([...files], ['src/mine.ts']);
+		assert.deepEqual(excluded, ['src/theirs.ts'], 'the edit was not reported as excluded, the other Story\'s was');
+	} finally { cleanup(); }
+});
+
+test('a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike', async () => {
+	const { repo, base, commit, cleanup } = mkStoryRepo();
+	try {
+		commit({ 'src/a.ts': '1\n' }, 'feat: untrailed a');
+		commit({ 'src/b.ts': '1\n' }, 'feat: untrailed b');
+		const reports: { attribution: string; excludedUncommitted: readonly string[] }[] = [];
+		const legacy = await changedFiles(repo, { base, storyKey: STORY_KEY, onAttribution: a => { reports.push(a); } });
+		assert.deepEqual([...legacy].sort(), ['src/a.ts', 'src/b.ts']);
+
+		commit({ 'src/c.ts': '1\n' }, 'feat(build): s1/t1 trailered', STORY_KEY);
+		const trailered = await changedFiles(repo, { base, storyKey: STORY_KEY, onAttribution: a => { reports.push(a); } });
+		assert.deepEqual([...trailered], ['src/c.ts']);
+		assert.deepEqual(reports.map(r => r.attribution), ['first-parent-range', 'story-trailer']);
+		assert.deepEqual(reports.map(r => r.excludedUncommitted), [[], []], 'a clean tree excludes nothing');
+	} finally { cleanup(); }
+});
+
+test('a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree', async () => {
+	const { repo, commit, cleanup } = mkStoryRepo();
+	try {
+		commit({ 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY_KEY);
+		writeFileSync(join(repo, 'unrelated.ts'), '1\n');
+		execFileSync('git', ['add', 'unrelated.ts'], { cwd: repo });
+		await assert.rejects(() => changedFiles(repo, { storyKey: STORY_KEY }), (e: unknown) => e instanceof NoBuildChangesError);
+		await assert.rejects(() => changedFiles(repo, { base: '', storyKey: STORY_KEY }), (e: unknown) => e instanceof NoBuildChangesError, 'an empty base is no base');
+		assert.deepEqual(await collectBuildChangeLog(repo, { ...CTX, storyKey: STORY_KEY }), []);
+		// The collector forwards the storyKey to the seam.
+		const seen: unknown[] = [];
+		await collectBuildChangeLog('/repo', { ...CTX, base: 'abc', storyKey: STORY_KEY }, async (_r: string, opts?: unknown) => { seen.push(opts); return []; });
+		assert.deepEqual(seen, [{ base: 'abc', storyKey: STORY_KEY }]);
+	} finally { cleanup(); }
+});
+
+test("a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change", async () => {
+	const { repo, base, commit, cleanup } = mkStoryRepo();
+	try {
+		// A Story built before the trailer: its commits are untrailered.
+		commit({ 'src/a.ts': '1\n', 'src/flip.ts': 'mine\n' }, 'feat: mine, untrailed');
+		// Another Story removes flip.ts again and adds its own file.
+		commit({ 'src/flip.ts': null, 'src/b.ts': '1\n' }, 'feat(build): s1/t1 theirs', OTHER_KEY);
+		let attribution: string | undefined;
+		const files = await changedFiles(repo, { base, storyKey: STORY_KEY, onAttribution: a => { attribution = a.attribution; } });
+		assert.deepEqual([...files].sort(), ['src/a.ts', 'src/flip.ts'], 'the reverted file stays; the other Story\'s file never appears');
+		assert.equal(attribution, 'first-parent-range');
+		assert.deepEqual([...await changedFiles(repo, { base })].sort(), ['src/a.ts', 'src/b.ts'], 'the unfiltered net range, for contrast');
+	} finally { cleanup(); }
+});
+
+test('a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set', async () => {
+	const { repo, base, commit, cleanup } = mkStoryRepo();
+	try {
+		commit({ 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY_KEY);
+		setGitDiffShellForTests((argv, opts) => argv.includes('--numstat')
+			? Promise.resolve({ stdout: '', stderr: 'fatal: numstat read failed', code: 128, spawnError: false, timedOut: false, stdoutTruncated: false })
+			: runShell(argv, opts));
+		try {
+			await assert.rejects(() => changedFiles(repo, { base, storyKey: STORY_KEY }), (e: unknown) => e instanceof NoBuildChangesError);
+		} finally { setGitDiffShellForTests(); }
+		assert.deepEqual([...await changedFiles(repo, { base, storyKey: STORY_KEY })], ['src/mine.ts'], 'and the same call succeeds once git works');
+	} finally { cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE-b97752e9 t6: the BUILD writers' changeLog is the Story's, and replaces
+// a prior one.
+// ---------------------------------------------------------------------------
+
+/** A Story repo with its build start stamped at the base, as the build does. */
+function mkStampedStoryRepo(storyId: string): ReturnType<typeof mkStoryRepo> {
+	const fx = mkStoryRepo();
+	execFileSync('git', ['checkout', '-q', fx.base], { cwd: fx.repo, stdio: 'ignore' });
+	assert.equal(stampBuildStart(fx.repo, STORY_KEY.split('/')[0]!, storyId), 'stamped');
+	execFileSync('git', ['checkout', '-q', 'main'], { cwd: fx.repo, stdio: 'ignore' });
+	return fx;
+}
+
+const changeLogOf = (jsonPath: string): string[] | undefined =>
+	(JSON.parse(readFileSync(jsonPath, 'utf8')) as { body: { changeLog?: { target: { file: string } }[] } }).body.changeLog?.map(e => e.target.file);
+
+test("a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change", async () => {
+	const { repo, commit, cleanup } = mkStampedStoryRepo('s1');
+	try {
+		commit({ 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY_KEY);
+		commit({ 'src/theirs.ts': '1\n' }, 'feat(build): s1/t1 theirs', OTHER_KEY);
+		writeFileSync(join(repo, 'unrelated.ts'), '1\n');
+		execFileSync('git', ['add', 'unrelated.ts'], { cwd: repo });
+		const out = await ensureBuildRecordOnCompletion(repo, { epicHash: STORY_KEY.split('/')[0]!, storyId: 's1' });
+		assert.ok(out !== undefined, 'the record was written');
+		assert.deepEqual(changeLogOf(out.json), ['src/mine.ts'], "neither the other Story's commit nor the uncommitted file");
+	} finally { cleanup(); }
+});
+
+test('rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included', async () => {
+	const epicHash = STORY_KEY.split('/')[0]!;
+	const { repo, commit, cleanup } = mkStampedStoryRepo('s1');
+	try {
+		commit({ 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY_KEY);
+		// A record the old working-tree derivation wrote: unrelated files in its changeLog.
+		const first = await ensureBuildRecordOnCompletion(repo, { epicHash, storyId: 's1' });
+		assert.ok(first !== undefined);
+		const prior = JSON.parse(readFileSync(first.json, 'utf8')) as { body: Record<string, unknown> };
+		prior.body['changeLog'] = [{ target: { file: 'docs/ontology.md' }, author: 'insrc-build', timestamp: '2026-10-20T00:00:00.000Z' }];
+		writeFileSync(first.json, JSON.stringify(prior));
+
+		const rewritten = await ensureBuildRecordOnCompletion(repo, { epicHash, storyId: 's1' });
+		assert.ok(rewritten !== undefined);
+		assert.deepEqual(changeLogOf(rewritten.json), ['src/mine.ts']);
+
+		// A Story with no range base: its record's changeLog becomes empty, not the
+		// working tree, and the stale one is replaced.
+		const noBase = { epicHash: 'ffffffffffffffff', storyId: 's2' };
+		writeFileSync(join(repo, 'unrelated.ts'), '1\n');
+		execFileSync('git', ['add', 'unrelated.ts'], { cwd: repo });
+		const seeded = await ensureBuildRecordOnCompletion(repo, noBase);
+		assert.ok(seeded !== undefined);
+		const stale = JSON.parse(readFileSync(seeded.json, 'utf8')) as { body: Record<string, unknown> };
+		stale.body['changeLog'] = [{ target: { file: 'unrelated.ts' }, author: 'insrc-build', timestamp: '2026-10-20T00:00:00.000Z' }];
+		writeFileSync(seeded.json, JSON.stringify(stale));
+		const emptied = await ensureBuildRecordOnCompletion(repo, noBase);
+		assert.ok(emptied !== undefined);
+		assert.deepEqual(changeLogOf(emptied.json), []);
+		assert.doesNotMatch(readFileSync(emptied.md, 'utf8'), /## Changes/, 'an empty changeLog renders no section');
+	} finally { cleanup(); }
 });

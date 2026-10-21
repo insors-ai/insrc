@@ -173,8 +173,8 @@ export async function realGroundingDeps(): Promise<GroundingDeps> {
 // confirm_wait/timeout decline), the code-review stage falls back to reviewing
 // the changed-file DIFF directly rather than graph symbol summaries. This
 // assembler is the sc2 producer for that path: it derives the changed set from
-// the working-tree diff, falls back to the last commit (`git_diff {from:'HEAD^'}`,
-// then the root commit) when the tree is clean, and emits a `CodeReviewGrounding`
+// the Story's commits since its range base, plus uncommitted edits of the Story's
+// own files (ISSUE-b97752e9), and emits a `CodeReviewGrounding`
 // whose `symbols[]` is ONE synthesized `ChangedSymbolSummary` PER CHANGED FILE
 // (kind:'file', name:the file, the file's unified-diff hunks carried in
 // `signature`, caller/callee/test edges empty). The four dimension prompt
@@ -183,10 +183,6 @@ export async function realGroundingDeps(): Promise<GroundingDeps> {
 // `groundingMode:'degraded'` so a downstream reader knows the review reasoned
 // over hunks, not entities. Read-only throughout (git_diff never mutates).
 // ---------------------------------------------------------------------------
-
-/** Git's canonical empty-tree object — diffing it against HEAD yields the whole
- *  root commit, so a single-commit repo (no HEAD^) is still reviewable. */
-const EMPTY_TREE_HASH = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
 /** One resolved diff: the per-file numstat + the raw unified-diff body (hunks). */
 export interface DiffResult {
@@ -201,10 +197,13 @@ export interface DiffResult {
 	readonly attribution?: StoryAttribution | undefined;
 	/** Story paths another Story's excluded commit also changed. */
 	readonly sharedWithExcluded?: readonly string[] | undefined;
+	/** Every path of the Story's own units (ISSUE-b97752e9), set by the range diff:
+	 *  an uncommitted change counts as the Story's only for one of these. */
+	readonly storyPaths?: readonly string[] | undefined;
 }
 
-/** Raised by a diff seam that cannot read a diff at all (not a git repository /
- *  git failed on BOTH the working-tree read and the last-commit fallback). The
+/** Raised when a diff cannot be read at all (not a git repository, git failed,
+ *  or no range base to anchor the Story's set on). The
  *  caller maps it to a `diff-unavailable` error — a diff that cannot be read must
  *  never silently produce an empty degraded pass. */
 export class DiffUnavailableError extends Error {
@@ -218,17 +217,12 @@ export class DiffUnavailableError extends Error {
  *  `git_diff` builtin; tests supply fakes so the assembler is exercised without a
  *  real repo. Both are READ-ONLY. */
 export interface DiffGroundingDeps {
-	/** The working-tree changed set (unstaged ∪ staged) + its hunks. Empty `files`
-	 *  ⇒ a clean tree (the caller falls back to `lastCommitDiff`); a git failure
-	 *  throws `DiffUnavailableError`. */
+	/** The working-tree changed set (unstaged ∪ staged) + its hunks; only the
+	 *  Story's own files are kept from it. A git failure throws `DiffUnavailableError`. */
 	readonly workingTreeDiff: (repoPath: string, excludeGlobs?: readonly string[]) => Promise<DiffResult>;
-	/** The last commit's changed set + hunks (`HEAD^..HEAD`, else the root commit
-	 *  vs the empty tree). A git failure throws `DiffUnavailableError`. */
-	readonly lastCommitDiff:  (repoPath: string, excludeGlobs?: readonly string[]) => Promise<DiffResult>;
 	/** The Story's committed range `base..HEAD` + its hunks (ISSUE-5f7a7cb9).
-	 *  OPTIONAL so seams written before it existed stay valid; without it the
-	 *  assembler behaves as if no base were known. A git failure throws
-	 *  `DiffUnavailableError`. */
+	 *  Without it the assembler has nothing to anchor on and throws
+	 *  `DiffUnavailableError`, as for a git failure. */
 	readonly rangeDiff?: ((repoPath: string, base: string, excludeGlobs?: readonly string[], storyKey?: string) => Promise<DiffResult>) | undefined;
 }
 
@@ -236,8 +230,8 @@ export interface DiffGroundingDeps {
  *  are optional; with neither, the assembler makes exactly the calls it made
  *  before they existed. */
 export interface DiffGroundingOptions {
-	/** The Story's range base. With a clean (after exclusion) working tree the
-	 *  reviewed diff is `base..HEAD` instead of only the last commit. */
+	/** The Story's range base: the reviewed set is the Story's commits since it.
+	 *  Without it the diff-only review is unavailable. */
 	readonly base?: string | undefined;
 	/** Globs git leaves out of every diff, so excluded hunks never count against
 	 *  the diff body cap. */
@@ -247,23 +241,27 @@ export interface DiffGroundingOptions {
 	readonly storyKey?: string | undefined;
 }
 
-/** The diff grounding plus how its changed set was scoped. The attribution is
- *  absent for the last-commit fallback (no range base), which none of the three
- *  names describes. */
+/** The diff grounding plus how its changed set was scoped. */
 export interface DiffGroundingResult {
 	readonly grounding:    CodeReviewGrounding;
 	readonly changedFiles: readonly string[];
 	readonly changeSetAttribution?: ChangeSetAttribution | undefined;
 	readonly sharedWithExcluded?: readonly string[] | undefined;
+	/** Uncommitted paths left out because no Story commit changed them, sorted;
+	 *  absent when none (ISSUE-b97752e9). */
+	readonly excludedFromScope?: readonly string[] | undefined;
 }
 
 /**
  * Assemble the diff-only (degraded) grounding for the Story's changed set.
- * Read-only. Derives the changed set from the working-tree diff; when that is
- * empty (a clean tree, e.g. after build → commit → review) it falls back to the
- * last commit. Emits one per-file pseudo-`ChangedSymbolSummary` carrying the
- * file's hunks. An empty result is a valid grounding (`symbols:[]`), NOT an
- * error; a git failure on both paths propagates as `DiffUnavailableError`.
+ * Read-only. The Story's commits since its range base decide the set
+ * (ISSUE-b97752e9): their hunks are read first, then the working tree, whose
+ * hunks join only for a file those commits changed; every other uncommitted file
+ * is reported as excludedFromScope, never reviewed. Emits one per-file
+ * pseudo-`ChangedSymbolSummary` carrying the file's hunks. An empty result is a
+ * valid grounding (`symbols:[]`), NOT an error. With no range base, or when git
+ * fails, it throws `DiffUnavailableError`: there is no fallback to the working
+ * tree or to the last commit, which would be somebody else's work.
  */
 export async function assembleDiffCodeReviewGrounding(
 	repoPath: string,
@@ -271,65 +269,46 @@ export async function assembleDiffCodeReviewGrounding(
 	opts?:    DiffGroundingOptions,
 ): Promise<DiffGroundingResult> {
 	const globs = opts?.excludeGlobs !== undefined && opts.excludeGlobs.length > 0 ? opts.excludeGlobs : undefined;
-	const base  = opts?.base !== undefined && opts.base.length > 0 && deps.rangeDiff !== undefined ? opts.base : undefined;
+	const base  = opts?.base !== undefined && opts.base.length > 0 ? opts.base : undefined;
+	if (base === undefined || deps.rangeDiff === undefined) {
+		throw new DiffUnavailableError(`no range base for the Story in ${repoPath}: the diff-only review has nothing to anchor on`);
+	}
 
-	// One sequence, run with progressively less asked of git. With neither a
-	// base nor globs every call below passes ONE argument, so it is exactly the
-	// sequence this function has always run.
-	let attribution: ChangeSetAttribution | undefined;
-	const sequence = async (b: string | undefined, g: readonly string[] | undefined): Promise<DiffResult> => {
-		attribution = undefined;
-		const working = g !== undefined ? await deps.workingTreeDiff(repoPath, g) : await deps.workingTreeDiff(repoPath);
-		if (working.files.length > 0) {
-			attribution = 'working-tree';
-			return working;
-		}
-		// Clean working tree. With the Story's base, review its whole committed
-		// range — and let that result STAND even when it is empty: a Story that
-		// changed only ledger files has nothing to review, and the last commit
-		// would be somebody else's.
-		if (b !== undefined && deps.rangeDiff !== undefined) {
-			const ranged = opts?.storyKey !== undefined
-				? await deps.rangeDiff(repoPath, b, g, opts.storyKey)
-				: await deps.rangeDiff(repoPath, b, g);
-			attribution = ranged.attribution ?? 'first-parent-range';
-			return ranged;
-		}
-		// No base: fall back to the last commit (HEAD^..HEAD, else root).
-		return g !== undefined ? deps.lastCommitDiff(repoPath, g) : deps.lastCommitDiff(repoPath);
-	};
+	const ranged = opts?.storyKey !== undefined
+		? await deps.rangeDiff(repoPath, base, globs, opts.storyKey)
+		: globs !== undefined ? await deps.rangeDiff(repoPath, base, globs) : await deps.rangeDiff(repoPath, base);
+	const working = globs !== undefined ? await deps.workingTreeDiff(repoPath, globs) : await deps.workingTreeDiff(repoPath);
 
-	// The base and the exclusions each ask more of git than the old sequence did
-	// (a resolvable commit; exclude pathspecs it accepts). Neither may become a
-	// new way for the review to be unavailable, so a failure steps down, and the
-	// last step is the old sequence. Only ITS failure leaves this function.
-	const attempts: ReadonlyArray<{ readonly label: string; readonly base: string | undefined; readonly globs: readonly string[] | undefined }> = [
-		...(base !== undefined ? [{ label: 'range base + exclusions', base, globs }] : []),
-		...(globs !== undefined ? [{ label: 'exclusions only', base: undefined, globs }] : []),
-		{ label: 'plain working-tree / last-commit sequence', base: undefined, globs: undefined },
-	];
-	let diff: DiffResult | undefined;
-	for (const [i, attempt] of attempts.entries()) {
-		try {
-			diff = await sequence(attempt.base, attempt.globs);
-			break;
-		} catch (err) {
-			const next = attempts[i + 1];
-			if (!(err instanceof DiffUnavailableError) || next === undefined) throw err;
-			log.warn(
-				{ repoPath, failed: attempt.label, fallingBackTo: next.label, err: err.message },
-				'assembleDiffCodeReviewGrounding: diff derivation failed; falling back to a plainer one',
-			);
+	// The Story's files, then each uncommitted change: a Story file's hunks are
+	// added to its committed ones; any other file is only reported.
+	const storyPaths = new Set(ranged.storyPaths ?? ranged.files.map(f => f.path));
+	const rangedHunks = ranged.hunksByFile ?? splitDiffByFile(ranged.body);
+	const workingHunks = working.hunksByFile ?? splitDiffByFile(working.body);
+	const stats = new Map<string, GitDiffFileStat>();
+	const hunks = new Map<string, string>();
+	for (const f of ranged.files) {
+		stats.set(f.path, f);
+		const section = rangedHunks.get(f.path) ?? rangedHunks.get(f.origPath ?? '');
+		if (section !== undefined) hunks.set(f.path, section);
+	}
+	const excluded: string[] = [];
+	for (const f of working.files) {
+		if (!storyPaths.has(f.path)) { excluded.push(f.path); continue; }
+		const prior = stats.get(f.path);
+		stats.set(f.path, prior === undefined ? f : { ...prior, insertions: prior.insertions + f.insertions, deletions: prior.deletions + f.deletions });
+		const section = workingHunks.get(f.path) ?? workingHunks.get(f.origPath ?? '');
+		if (section !== undefined) {
+			const committed = hunks.get(f.path);
+			hunks.set(f.path, `${committed !== undefined ? `${committed}\n` : ''}[uncommitted change]\n${section}`);
 		}
 	}
-	const symbols = buildDiffSymbols(diff as DiffResult);
+	const symbols = buildDiffSymbols({ files: [...stats.values()], body: '', truncated: ranged.truncated || working.truncated, hunksByFile: hunks });
 	const changedFiles = symbols.map(s => s.file);
 	return {
 		grounding: { symbols }, changedFiles,
-		...(attribution !== undefined ? {
-			changeSetAttribution: attribution,
-			sharedWithExcluded:   (diff?.sharedWithExcluded ?? []).filter(p => changedFiles.includes(p)),
-		} : {}),
+		changeSetAttribution: ranged.attribution ?? 'first-parent-range',
+		sharedWithExcluded:   (ranged.sharedWithExcluded ?? []).filter(p => changedFiles.includes(p)),
+		...(excluded.length > 0 ? { excludedFromScope: excluded.sort() } : {}),
 	};
 }
 
@@ -359,7 +338,9 @@ function buildDiffSymbols(diff: DiffResult): ChangedSymbolSummary[] {
 }
 
 /** Split a unified-diff body into per-file sections keyed by the new (`b/`) path.
- *  Robust to the deterministic `git diff --no-color` output the builtin emits. */
+ *  A body joined from several diffs (unstaged and staged, or several units) can
+ *  hold more than one section for a path: each is kept, in body order. Robust to
+ *  the deterministic `git diff --no-color` output the builtin emits. */
 function splitDiffByFile(body: string): Map<string, string> {
 	const map = new Map<string, string>();
 	if (!body) return map;
@@ -367,7 +348,10 @@ function splitDiffByFile(body: string): Map<string, string> {
 		if (!section.startsWith('diff --git')) continue;
 		const m = section.match(/^diff --git a\/(.+?) b\/(.+?)\s*$/m);
 		const path = m?.[2];
-		if (path) map.set(path, section.trimEnd());
+		if (path) {
+			const prior = map.get(path);
+			map.set(path, prior === undefined ? section.trimEnd() : `${prior}\n${section.trimEnd()}`);
+		}
 	}
 	return map;
 }
@@ -407,20 +391,22 @@ function excludeInput(globs: readonly string[] | undefined): { exclude?: string[
  * reaches the reviewer. A path edited inside a merge commit is marked. Every call
  * carries the same exclusions. An empty change set makes no git call at all.
  *
- * With 'story-trailer' attribution (ISSUE-b47dadc7) EVERY path takes the per-unit
- * route: another Story's commits sit inside base..HEAD, so a net diff of a file
- * both Stories edited would show the other Story's hunks too.
+ * When the units were chosen from the range (`perUnit`: 'story-trailer'
+ * attribution, ISSUE-b47dadc7, or a legacy range another Story's commit was left
+ * out of, ISSUE-b97752e9) EVERY path takes the per-unit route: the left-out
+ * commits sit inside base..HEAD, so a net diff of a file both Stories edited would
+ * show the other Story's hunks too, or lose this Story's change to their revert.
  */
 export async function storyRangeDiff(
 	repoPath:     string,
 	base:         string,
-	set:          StoryChangeSet & { readonly attribution?: StoryAttribution | undefined },
+	set:          StoryChangeSet & { readonly attribution?: StoryAttribution | undefined; readonly perUnit?: boolean | undefined },
 	excludeGlobs: readonly string[] | undefined,
 	run:          (repoPath: string, input: Record<string, unknown>) => Promise<DiffResult> = runDiff,
 ): Promise<DiffResult> {
 	if (set.paths.length === 0) return { files: [], body: '', truncated: false, hunksByFile: new Map() };
 
-	const shared = new Set(set.attribution === 'story-trailer' ? set.paths : set.sharedPaths);
+	const shared = new Set(set.perUnit === true || set.attribution === 'story-trailer' ? set.paths : set.sharedPaths);
 	const sections = new Map<string, string[]>();
 	const stats = new Map<string, GitDiffFileStat>();
 	let truncated = false;
@@ -463,30 +449,26 @@ export function realDiffGroundingDeps(): DiffGroundingDeps {
 			// Union the unstaged + staged diffs (matches subject.ts's changed set).
 			const unstaged = await runDiff(repoPath, { staged: false, ...excludeInput(excludeGlobs) });
 			const staged   = await runDiff(repoPath, { staged: true, ...excludeInput(excludeGlobs) });
+			// A file with staged AND unstaged edits: both counts, and (through the
+			// accumulating splitDiffByFile) both sections.
 			const byPath = new Map<string, GitDiffFileStat>();
-			for (const f of [...unstaged.files, ...staged.files]) byPath.set(f.path, f);
+			for (const f of [...unstaged.files, ...staged.files]) {
+				const prior = byPath.get(f.path);
+				byPath.set(f.path, prior === undefined ? f : { ...prior, insertions: prior.insertions + f.insertions, deletions: prior.deletions + f.deletions });
+			}
 			const body = [unstaged.body, staged.body].filter(Boolean).join('\n');
 			return { files: [...byPath.values()], body, truncated: unstaged.truncated || staged.truncated };
-		},
-		async lastCommitDiff(repoPath, excludeGlobs) {
-			// HEAD^..HEAD (the last commit). If HEAD has no parent (a single-commit
-			// repo), diff the empty tree against HEAD so the root commit is reviewable.
-			try {
-				return await runDiff(repoPath, { from: 'HEAD^', ...excludeInput(excludeGlobs) });
-			} catch (err) {
-				if (!(err instanceof DiffUnavailableError)) throw err;
-				return await runDiff(repoPath, { from: EMPTY_TREE_HASH, ...excludeInput(excludeGlobs) });
-			}
 		},
 		async rangeDiff(repoPath, base, excludeGlobs, storyKey) {
 			let set: AttributedStoryChangeSet;
 			try {
-				set = storyChangeSet(repoPath, base, { storyKey });
+				// Strict with a storyKey: a failed trailer read must not widen the set.
+				set = storyChangeSet(repoPath, base, { storyKey, ...(storyKey !== undefined ? { strict: true } : {}) });
 			} catch (err) {
 				throw new DiffUnavailableError(`the Story's change set is unavailable for ${repoPath}: ${err instanceof Error ? err.message : String(err)}`);
 			}
 			const diff = await storyRangeDiff(repoPath, base, set, excludeGlobs);
-			return { ...diff, attribution: set.attribution, sharedWithExcluded: set.sharedWithExcluded };
+			return { ...diff, attribution: set.attribution, sharedWithExcluded: set.sharedWithExcluded, storyPaths: set.paths };
 		},
 	};
 }

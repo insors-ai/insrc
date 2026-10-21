@@ -22,17 +22,24 @@
  * index or the working tree. No exclusions are applied here; consumers keep
  * excluding through git (`git_diff`'s `exclude`).
  *
- * Story attribution (ISSUE-b47dadc7): given a story key (`<epicHash>/<storyId>`),
- * a non-merge commit is a unit only when its message carries the trailer
- * `Insrc-Story: <storyKey>`, so another Story's commits on main in the same
- * window are left out. When no commit in the range carries it, or the trailers
- * cannot be read, the units are the first-parent ones above.
+ * Story attribution (ISSUE-b47dadc7, ISSUE-b97752e9): given a story key
+ * (`<epicHash>/<storyId>`), one rule covers every first-parent commit, ordinary,
+ * merge or octopus:
+ *   - a commit whose Insrc-Story lines all name OTHER Stories (a foreign commit)
+ *     is never a unit; its paths count as excluded;
+ *   - a commit carrying `Insrc-Story: <storyKey>` is a unit;
+ *   - an untrailered merge is a unit (merge edits are Story work unless they
+ *     say otherwise); an untrailered ordinary commit is a unit only when no
+ *     commit in the range carries the Story's trailer (a Story built before
+ *     the trailer).
+ * When the trailers cannot be read, the lenient scan falls back to the
+ * first-parent units above; with `strict` it throws instead, so an anchored
+ * caller is never widened by a git failure.
  *
  * Known limits: without the trailer, upstream brought in by a fast-forward or by
  * a committed `git merge --squash` leaves only ordinary commits on the
- * first-parent line, so those commits are counted as Story work. Merge edits are
- * kept whatever the trailer says, and an octopus merge is reviewed over its
- * whole change.
+ * first-parent line, so those commits are counted as Story work. An octopus
+ * merge is reviewed over its whole change.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -70,8 +77,13 @@ export type StoryAttribution = 'story-trailer' | 'first-parent-range';
 
 export interface AttributedStoryChangeSet extends StoryChangeSet {
 	readonly attribution:        StoryAttribution;
-	/** Story paths that a commit left out by the trailer also changed (empty for 'first-parent-range'). */
+	/** Story paths that a commit left out by the trailer also changed. */
 	readonly sharedWithExcluded: readonly string[];
+	/** True when the units were chosen from the range (trailer units, or a range a
+	 *  foreign commit was left out of): each unit must then be read on its own,
+	 *  since the net `base..HEAD` diff carries the left-out commits' changes. False
+	 *  only for an unfiltered first-parent range. */
+	readonly perUnit:            boolean;
 }
 
 /** The trailer every build commit of a Story carries (ISSUE-b47dadc7). */
@@ -98,27 +110,32 @@ function zPaths(out: string): string[] {
 interface TrailerScan {
 	/** Commits whose message carries the Story's trailer. */
 	readonly carrying: ReadonlySet<string>;
+	/** Commits whose Insrc-Story lines all name other Stories. */
+	readonly foreign:  ReadonlySet<string>;
 	/** Each commit's subject line, for the missed-commit warning. */
 	readonly subjects: ReadonlyMap<string, string>;
 	/** Abbreviated sha of the newest carrying commit on the first-parent line. */
 	readonly newest:   string | undefined;
 }
 
-/** The first-parent commits in the range that carry `Insrc-Story: <storyKey>`;
- *  undefined when the messages cannot be read. The line counts in any paragraph
+/** The first-parent commits in the range that carry `Insrc-Story: <storyKey>`,
+ *  and those that carry only other Stories' lines; undefined when the messages
+ *  cannot be read, or a throw with `strict`. The line counts in any paragraph
  *  of the message: git's trailer parser reads only the last paragraph, so a Story
  *  line followed by a blank line and a co-author block would be missed
  *  (ISSUE-f431a442). It must be a whole line of that form; a mention inside
  *  other text does not count. */
-function scanTrailers(repoPath: string, base: string, storyKey: string): TrailerScan | undefined {
+function scanTrailers(repoPath: string, base: string, storyKey: string, strict = false): TrailerScan | undefined {
 	let out: string;
 	try {
 		out = git(repoPath, ['log', '--first-parent', '--format=%H%x1f%h%x1f%s%x1f%B%x1e', `${base}..HEAD`]);
 	} catch (err) {
+		if (strict) throw err;
 		log.warn({ repoPath, storyKey, err: err instanceof Error ? err.message : String(err) }, 'storyChangeSet: could not read commit trailers; using the first-parent range');
 		return undefined;
 	}
 	const carrying = new Set<string>();
+	const foreign = new Set<string>();
 	const subjects = new Map<string, string>();
 	let newest: string | undefined;
 	// git log lists newest first, so the first carrying commit is the newest.
@@ -126,12 +143,15 @@ function scanTrailers(repoPath: string, base: string, storyKey: string): Trailer
 		const [sha, short, subject, ...rest] = record.trim().split('\x1f');
 		if (sha === undefined || sha.length === 0) continue;
 		subjects.set(sha, subject ?? '');
-		if (storyLines(rest.join('\x1f')).includes(storyKey)) {
+		const keys = storyLines(rest.join('\x1f'));
+		if (keys.includes(storyKey)) {
 			carrying.add(sha);
 			newest ??= short;
+		} else if (keys.length > 0) {
+			foreign.add(sha);
 		}
 	}
-	return { carrying, subjects, newest };
+	return { carrying, foreign, subjects, newest };
 }
 
 /** The keys of every whole `Insrc-Story: <key>` line in a commit message. */
@@ -152,16 +172,19 @@ export function newestStoryCommit(repoPath: string, base: string, storyKey: stri
 
 /**
  * The Story's own change units since `base` — see the module comment. Throws
- * {@link NoBuildChangesError} when git fails (for example, an unresolvable base).
+ * {@link NoBuildChangesError} when git fails (for example, an unresolvable base),
+ * and with `strict` also when the commit messages cannot be read.
  */
-export function storyChangeSet(repoPath: string, base: string, opts: { readonly storyKey?: string | undefined } = {}): AttributedStoryChangeSet {
+export function storyChangeSet(repoPath: string, base: string, opts: { readonly storyKey?: string | undefined; readonly strict?: boolean | undefined } = {}): AttributedStoryChangeSet {
 	// Each line: "<commit> <parent>..." along the first-parent line, oldest first.
 	const lines = git(repoPath, ['rev-list', '--first-parent', '--reverse', '--parents', `${base}..HEAD`])
 		.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
 	const { storyKey } = opts;
-	const scan = storyKey !== undefined ? scanTrailers(repoPath, base, storyKey) : undefined;
+	const scan = storyKey !== undefined ? scanTrailers(repoPath, base, storyKey, opts.strict === true) : undefined;
 	const byTrailer = scan !== undefined && scan.carrying.size > 0;
+	const foreign = (ref: string): boolean => scan?.foreign.has(ref) === true;
+	let leftOutForeign = false;
 	const storyId = storyKey?.split('/')[1];
 	const excludedPaths = new Set<string>();
 
@@ -177,9 +200,10 @@ export function storyChangeSet(repoPath: string, base: string, opts: { readonly 
 			const parent = parents[0];
 			const from = parent ?? (emptyTree ??= git(repoPath, ['hash-object', '-t', 'tree', '/dev/null']).trim());
 			const paths = zPaths(git(repoPath, ['diff-tree', '--no-commit-id', '--name-only', '-r', '-z', '--root', ref]));
-			if (byTrailer && !scan.carrying.has(ref)) {
+			if (foreign(ref) || (byTrailer && !scan.carrying.has(ref))) {
 				for (const p of paths) excludedPaths.add(p);
-				const subject = scan.subjects.get(ref) ?? '';
+				if (foreign(ref)) leftOutForeign = true;
+				const subject = scan?.subjects.get(ref) ?? '';
 				if (storyId !== undefined && subject.includes(`(build): ${storyId}/`)) {
 					log.warn({ repoPath, storyKey, commit: ref, subject }, 'storyChangeSet: a commit names this Story but lacks its trailer; left out of the change set');
 				}
@@ -194,6 +218,11 @@ export function storyChangeSet(repoPath: string, base: string, opts: { readonly 
 			// merge-tree cannot compute an octopus auto-merge: review the whole
 			// change rather than drop anything.
 			const paths = zPaths(git(repoPath, ['diff', '--name-only', '-z', first, ref]));
+			if (foreign(ref)) {
+				for (const p of paths) excludedPaths.add(p);
+				leftOutForeign = true;
+				continue;
+			}
 			log.warn({ repoPath, merge: ref, parents: parents.length }, 'storyChangeSet: octopus merge reviewed over its whole change');
 			if (paths.length > 0) units.push({ kind: 'merge-edit', ref, from: first, to: ref, paths });
 			continue;
@@ -205,6 +234,11 @@ export function storyChangeSet(repoPath: string, base: string, opts: { readonly 
 		if (auto.length === 0) throw new NoBuildChangesError(`git merge-tree printed no tree for ${ref} in ${repoPath}`);
 		for (const p of zPaths(git(repoPath, ['diff', '--name-only', '-z', first, auto]))) mergedIn.add(p);
 		const edited = zPaths(git(repoPath, ['diff', '--name-only', '-z', auto, ref]));
+		if (foreign(ref)) {
+			for (const p of edited) excludedPaths.add(p);
+			leftOutForeign = true;
+			continue;
+		}
 		if (edited.length > 0) units.push({ kind: 'merge-edit', ref, from: auto, to: ref, paths: edited });
 	}
 
@@ -216,6 +250,7 @@ export function storyChangeSet(repoPath: string, base: string, opts: { readonly 
 		foldedPaths: [...new Set(units.filter(u => u.kind === 'merge-edit').flatMap(u => u.paths))].sort(),
 		attribution: byTrailer ? 'story-trailer' : 'first-parent-range',
 		sharedWithExcluded: paths.filter(p => excludedPaths.has(p)),
+		perUnit: byTrailer || leftOutForeign,
 	};
 }
 

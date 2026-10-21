@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * ISSUE-b47dadc7 S001/t3 — the review subject is the Story's own files, with how
+ * ISSUE-b47dadc7 s1/t3 — the review subject is the Story's own files, with how
  * it was scoped (changeSetAttribution) and the files another Story also changed
  * (sharedWithExcluded) recorded on the subject and on the code-review record.
  * Real temporary repositories through the real changed-file derivation.
@@ -68,9 +68,9 @@ function deps(base: string, seam: SubjectDeps['changedFiles'] = changedFiles): S
 
 /** Story S001 commits around another Story's commit, plus its own ledger file. */
 function interleaved(r: string): void {
-	commit(r, { 'src/mine.ts': '1\n', 'src/shared.ts': 'mine\n', '.insrc/artifacts/BUILD-x.json': '{}\n' }, 'feat(build): S001/t1 mine', STORY);
+	commit(r, { 'src/mine.ts': '1\n', 'src/shared.ts': 'mine\n', '.insrc/artifacts/BUILD-x.json': '{}\n' }, 'feat(build): s1/t1 mine', STORY);
 	commit(r, { 'src/theirs.ts': '1\n', 'src/shared.ts': 'theirs\n' }, 'feat(build): s3/t1 theirs', 'c2ba6fa6aaaaaaaa/s3');
-	commit(r, { 'src/mine2.ts': '1\n' }, 'feat(build): S001/t2 mine again', STORY);
+	commit(r, { 'src/mine2.ts': '1\n' }, 'feat(build): s1/t2 mine again', STORY);
 }
 
 test("the review subject holds only the Story's own files and records attribution story-trailer", async () => {
@@ -86,37 +86,61 @@ test("the review subject holds only the Story's own files and records attributio
 	} finally { cleanup(); }
 });
 
-test('a dirty tree gives attribution working-tree and the step-down order is unchanged', async () => {
+test("a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		interleaved(r);
-		write(r, { 'README.md': 'uncommitted edit\n' });
-		const dirty = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base));
-		assert.ok(dirty.ok);
-		if (!dirty.ok) return;
-		assert.deepEqual([...dirty.subject.changedFiles], ['README.md']);
-		assert.equal(dirty.subject.changeSetAttribution, 'working-tree');
-		assert.deepEqual(dirty.subject.sharedWithExcluded, []);
+		write(r, { 'src/mine.ts': 'in progress\n', 'README.md': 'uncommitted edit\n', 'src/theirs.ts': 'theirs, edited\n' });
+		git(r, 'add', 'src/theirs.ts');
+		const res = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base));
+		assert.ok(res.ok);
+		if (!res.ok) return;
+		assert.deepEqual([...res.subject.changedFiles].sort(), ['src/mine.ts', 'src/mine2.ts', 'src/shared.ts']);
+		assert.equal(res.subject.changeSetAttribution, 'story-trailer');
+		assert.deepEqual(res.subject.excludedFromScope, ['README.md', 'src/theirs.ts'], 'the in-progress Story file is not excluded; the others are');
 
-		// A clean tree with no trailered commit: the first-parent range, as before.
-		git(r, 'checkout', '-q', '--', 'README.md');
+		// A clean tree: nothing excluded, and the field is absent.
+		git(r, 'checkout', '-q', '--', 'README.md', 'src/mine.ts');
+		git(r, 'reset', '-q', 'HEAD', '--', 'src/theirs.ts');
+		git(r, 'checkout', '-q', '--', 'src/theirs.ts');
+		const clean = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base));
+		assert.ok(clean.ok);
+		if (!clean.ok) return;
+		assert.equal(clean.subject.excludedFromScope, undefined);
+
+		// A Story with no carrying commit, in a range of only other Stories' commits:
+		// none of them is its work (ISSUE-b97752e9).
 		const untrailed = await resolveCodeReviewSubject(r, 'ffffffffffffffff', 's1', deps(base));
 		assert.ok(untrailed.ok);
 		if (!untrailed.ok) return;
 		assert.equal(untrailed.subject.changeSetAttribution, 'first-parent-range');
-		assert.deepEqual([...untrailed.subject.changedFiles].sort(), ['src/mine.ts', 'src/mine2.ts', 'src/shared.ts', 'src/theirs.ts']);
+		assert.deepEqual([...untrailed.subject.changedFiles], []);
+	} finally { cleanup(); }
+});
 
-		// Step down: the range attempt fails, then the ledger-only one, then the plain call.
-		const labels: string[] = [];
-		const stepping = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base, async (repoPath: string, opts?: ChangedFilesOptions) => {
-			labels.push(opts === undefined ? 'plain' : opts.base !== undefined ? 'range' : 'ledger');
-			if (opts !== undefined) throw new NoBuildChangesError('refused');
-			return changedFiles(repoPath);
+test('with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree', async () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		interleaved(r);
+		write(r, { 'README.md': 'uncommitted edit\n' });
+		const seen: (ChangedFilesOptions | undefined)[] = [];
+		const spy: SubjectDeps['changedFiles'] = async (repoPath, opts) => { seen.push(opts); return changedFiles(repoPath, opts); };
+
+		const noBase = await resolveCodeReviewSubject(r, EPIC, 's1', { ...deps(base, spy), resolveRangeBase: () => undefined });
+		assert.deepEqual(noBase, { ok: false, reason: 'no-build-record' });
+		assert.deepEqual(seen, [], 'the working tree is never read in the Story\'s place');
+
+		const failing = await resolveCodeReviewSubject(r, EPIC, 's1', deps(base, async (_repoPath, opts) => {
+			seen.push(opts);
+			throw new NoBuildChangesError('git failed');
 		}));
-		assert.deepEqual(labels, ['range', 'ledger', 'plain']);
-		assert.ok(stepping.ok);
-		if (!stepping.ok) return;
-		assert.equal(stepping.subject.changeSetAttribution, 'working-tree', 'a plainer attempt reads the working tree only');
+		assert.deepEqual(failing, { ok: false, reason: 'no-build-record' });
+		assert.equal(seen.length, 1, 'one anchored attempt, and no plainer one');
+		assert.equal(seen[0]?.base, base);
+
+		// A broken trailer read fails the anchored derivation (strict), so it declines too.
+		git(r, 'config', 'log.date', 'bogus');
+		assert.deepEqual(await resolveCodeReviewSubject(r, EPIC, 's1', deps(base)), { ok: false, reason: 'no-build-record' });
 	} finally { cleanup(); }
 });
 
@@ -136,12 +160,9 @@ test("a file another Story's excluded commit also changed is listed in sharedWit
 			assembleGrounding: async () => ({ symbols: [] }),
 			write: (path) => { written.push(path); },
 		};
-		// The review is filed beside the Story's records, so the subject carries the build record's stamp.
-		const stamp = '2026-10-05T00:00:00.000Z';
-		const subject: CodeReviewSubject = {
-			...res.subject,
-			buildRecord: { meta: { workflow: 'build', epicHash: EPIC, storyId: 's1', createdAt: stamp, epicCreatedAt: stamp }, body: { tasks: [] } } as unknown as CodeReviewSubject['buildRecord'],
-		};
+		const subject: CodeReviewSubject = res.subject;
+		// the record is filed under the work item's stamped anchor, so the work item needs a definition head that carries one
+		write(r, { [`.insrc/artifacts/DEF-${EPIC}.json`]: JSON.stringify({ meta: { epicHash: EPIC, createdAt: '2026-10-20T00:00:00.000Z', epicCreatedAt: '2026-10-20T00:00:00.000Z' }, body: {}, citations: [] }) });
 		const out = await runCodeReview(subject, {} as LLMProvider, { runId: 'r', modelLabel: 'test' }, runnerDeps);
 		assert.ok(out.ok, out.ok ? '' : out.error);
 		if (!out.ok) return;

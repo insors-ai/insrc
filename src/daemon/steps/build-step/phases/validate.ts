@@ -345,7 +345,8 @@ async function handleStandaloneValidate(
 	} else {
 		// A trivial build names no tests: `tests` is ignored, and the test files
 		// the build's range touched are run.
-		checks = trivialCheckPlan(repoPath, resolveStoryRangeBase(repoPath, epicHash, storyId));
+		checks = trivialCheckPlan(repoPath, resolveStoryRangeBase(repoPath, epicHash, storyId),
+			epicHash.length > 0 && storyId.length > 0 ? `${epicHash}/${storyId}` : undefined);
 	}
 	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence });
 	// Carry the route the caller declared into the persist. This branch KNOWS it is
@@ -386,7 +387,9 @@ async function runValidateSession(
 	log.info({ taskId: ident.taskId, storyId: ident.storyId, testFiles: checks.testFiles.length }, 'insrc_build_step[validate]: running checks');
 	// The typecheck also covers every other TypeScript project the Story's changes
 	// (from its range base) or its test files belong to (ISSUE-b4b6b835).
-	const planned = withTypecheckProjects(repoPath, checks, resolveStoryRangeBase(repoPath, ident.epicHash, ident.storyId));
+	// With the Story's key, only the Story's own files name a project (ISSUE-b97752e9).
+	const storyKey = ident.epicHash.length > 0 && ident.storyId.length > 0 ? `${ident.epicHash}/${ident.storyId}` : undefined;
+	const planned = withTypecheckProjects(repoPath, checks, resolveStoryRangeBase(repoPath, ident.epicHash, ident.storyId), storyKey);
 	const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, planned);
 
 	// ONE time and ONE resolved route flag for both of the Story's records.

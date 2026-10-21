@@ -1658,10 +1658,16 @@ test('ISSUE-b4b6b835: validate hands the check runner the other TypeScript proje
 		const before = await turn(repo, { tests: GOOD_MAPPING });
 		assert.equal(before.plans[0]!.typecheckProjects, undefined, 'nothing outside the root project was touched');
 
-		// A second project appears in the working tree: its own tsconfig.json and a source file.
+		// The build commits a second project: its own tsconfig.json and a source file.
 		mkdirSync(join(repo, 'plugin/src'), { recursive: true });
 		writeFileSync(join(repo, 'plugin/tsconfig.json'), '{}');
 		writeFileSync(join(repo, 'plugin/src/view.ts'), 'export const v = 1;\n');
+		execFileSync('git', ['add', 'plugin'], { cwd: repo });
+		execFileSync('git', ['commit', '-qm', 'the build touches the plugin', '--', 'plugin'], { cwd: repo, stdio: 'ignore' });
+		// And an unrelated project appears in the working tree only: not the Story's (ISSUE-b97752e9).
+		mkdirSync(join(repo, 'other/src'), { recursive: true });
+		writeFileSync(join(repo, 'other/tsconfig.json'), '{}');
+		writeFileSync(join(repo, 'other/src/x.ts'), 'export const x = 1;\n');
 		const after = await turn(repo, {});
 		assert.deepEqual(after.plans[0]!.typecheckProjects, ['plugin']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -2077,11 +2083,15 @@ test("on the standalone routes: a wrong mapping on a small build is refused with
 		assert.deepEqual(good.plans[0]!.namedTests.map(n => [n.name, n.source, n.level]), [[SUBJECT, 'mapping', 'unit'], ['works against the daemon', 'mapping', 'live']]);
 		assert.equal(readTests(repo).body.tasks[0]!.taskId, 's1');
 
-		// A trivial build ignores `tests`, even a wrong one: it runs what the commit touched.
+		// A trivial build ignores `tests`, even a wrong one. This one has no range
+		// base, so its own files cannot be listed: the listing fails the tests check
+		// rather than running the HEAD commit's tests (ISSUE-b97752e9).
 		const TRIVIAL_CTX = { standalone: true, epicHash: 'c1c2c3c4d5d6e7e8', storyId: 's1', sizeClass: 'trivial', focus: 'a guard' };
 		const trivial = await standalone({ standalone: TRIVIAL_CTX, tests: [{ name: 'no such subject', cases: [{ file: 'nowhere.test.ts', title: 't' }] }] });
 		assert.equal(trivial.out['next'], 'done', 'not refused');
-		assert.deepEqual(trivial.plans[0]!.namedTests, [{ name: FILTER_TEST, source: 'touched', cases: [], files: [FILTER_TEST] }]);
+		assert.deepEqual(trivial.plans[0]!.namedTests, []);
+		assert.equal(trivial.plans[0]!.noTests?.ok, false);
+		assert.match(trivial.plans[0]!.noTests?.note ?? '', /no range base for Story c1c2c3c4d5d6e7e8\/s1/);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

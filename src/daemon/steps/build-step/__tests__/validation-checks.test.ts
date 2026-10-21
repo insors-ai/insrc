@@ -750,3 +750,79 @@ test('ISSUE-7ba8cf15: when no report file can be made the file is not run, its e
 		rmSync(dir, { recursive: true, force: true });
 	}
 });
+
+// ---------------------------------------------------------------------------
+// ISSUE-b97752e9 t7: with the Story's key the gate selects from the Story's own
+// files, never another Story's commit or an unrelated uncommitted file.
+// ---------------------------------------------------------------------------
+
+const KEY = '06f196a7ff528143/S001';
+const OTHER = 'c2ba6fa6aaaaaaaa/s1';
+
+/** A repo on `main` with a base commit; `commit` adds the Story trailer when given a key. */
+function storyRepo(files: Readonly<Record<string, string>>): { repo: string; base: string; commit: (files: Readonly<Record<string, string | null>>, msg: string, key?: string) => void; cleanup: () => void } {
+	const repo = gitRepo(files);
+	const git = (...args: string[]): string => execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...args], { cwd: repo, encoding: 'utf8' });
+	const base = git('rev-parse', 'HEAD').trim();
+	const commit = (changes: Readonly<Record<string, string | null>>, msg: string, key?: string): void => {
+		for (const [rel, body] of Object.entries(changes)) {
+			if (body === null) { git('rm', '-q', rel); continue; }
+			mkdirSync(dirname(join(repo, rel)), { recursive: true });
+			writeFileSync(join(repo, rel), body);
+			git('add', rel);
+		}
+		git('commit', '-qm', key !== undefined ? `${msg}\n\nInsrc-Story: ${key}\n` : msg);
+	};
+	return { repo, base, commit, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
+}
+
+test("with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files", () => {
+	const { repo, base, commit, cleanup } = storyRepo({
+		'tsconfig.json': '{}',
+		'mine/tsconfig.json': '{}', 'mine/src/a.ts': '',
+		'theirs/tsconfig.json': '{}', 'theirs/src/b.ts': '',
+		'wip/tsconfig.json': '{}', 'wip/src/c.ts': '',
+		'tested/tsconfig.json': '{}', 'tested/src/__tests__/t.test.ts': '',
+	});
+	try {
+		commit({ 'mine/src/a.ts': '// mine\n' }, 'feat(build): S001/t1 mine', KEY);
+		commit({ 'theirs/src/b.ts': '// theirs\n' }, 'feat(build): s1/t1 theirs', OTHER);
+		writeFileSync(join(repo, 'wip/src/c.ts'), '// uncommitted, unrelated\n');
+		writeFileSync(join(repo, 'wip/src/new.ts'), '// untracked, unrelated\n');
+		const plan = trivialCheckPlan(repo, base, KEY);
+		const withTest: ValidationCheckPlan = { ...plan, testFiles: ['tested/src/__tests__/t.test.ts'] };
+		assert.deepEqual(withTypecheckProjects(repo, withTest, base, KEY).typecheckProjects, ['mine', 'tested']);
+		// Without a storyKey: today's listings, so the other Story's and the unrelated projects count.
+		assert.deepEqual(withTypecheckProjects(repo, withTest, base).typecheckProjects, ['mine', 'tested', 'theirs', 'wip']);
+		// With a storyKey and no base: only the test files' projects.
+		assert.deepEqual(withTypecheckProjects(repo, withTest, undefined, KEY).typecheckProjects, ['tested']);
+	} finally { cleanup(); }
+});
+
+test("with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests", () => {
+	const { repo, base, commit, cleanup } = storyRepo({ 'README.md': 'base' });
+	try {
+		commit({ 'src/a/__tests__/mine.test.ts': 'x' }, 'feat(build): S001/t1 mine', KEY);
+		commit({ 'src/b/__tests__/theirs.test.ts': 'x' }, 'feat(build): s1/t1 theirs', OTHER);
+		const plan = trivialCheckPlan(repo, base, KEY);
+		assert.deepEqual(plan.testFiles, ['src/a/__tests__/mine.test.ts']);
+		assert.equal(plan.noTests, undefined);
+		// Without the key, today's range: both Stories' tests.
+		assert.deepEqual(trivialCheckPlan(repo, base).testFiles, ['src/a/__tests__/mine.test.ts', 'src/b/__tests__/theirs.test.ts']);
+
+		const noBase = trivialCheckPlan(repo, undefined, KEY);
+		assert.deepEqual(noBase.testFiles, [], "not the HEAD commit's theirs.test.ts");
+		assert.equal(noBase.noTests?.ok, false, 'a failed listing fails the tests check');
+		assert.match(noBase.noTests?.note ?? '', /no range base for Story/);
+	} finally { cleanup(); }
+});
+
+test('with a storyKey, a trivial build that deletes a test file does not ask to run it', () => {
+	const { repo, base, commit, cleanup } = storyRepo(TREE);
+	try {
+		commit({ 'src/b/__tests__/chain.test.ts': null, 'src/a/__tests__/notice.test.ts': '// changed' }, 'feat(build): S001/t1 delete one test, change another', KEY);
+		commit({ 'src/a/__tests__/added.test.ts': 'x' }, 'feat(build): S001/t2 add a test', KEY);
+		commit({ 'src/a/__tests__/added.test.ts': null }, 'feat(build): S001/t3 remove it again', KEY);
+		assert.deepEqual(trivialCheckPlan(repo, base, KEY).testFiles, ['src/a/__tests__/notice.test.ts']);
+	} finally { cleanup(); }
+});

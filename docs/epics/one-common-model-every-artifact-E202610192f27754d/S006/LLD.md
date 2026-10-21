@@ -557,6 +557,8 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
   - **resolved**: s6 owns carryBinding in storage.ts — Approved LLD review: the owner approved with the recommended answers. _(2026-10-21T15:32:40.100Z)_
 - `qe02f1e05` — Binding and attachment bookkeeping appends no change log entry, although the HLD's observability line says every state change does; the record is in the binding itself (posted[].at, attachments[].at) and the log output. Resolve: accept this as tracker bookkeeping rather than artifact state (recommended), or add an Operation for it and have a sync path append through History (needs an HLD amendment to sc3).
   - **resolved**: Accept as tracker bookkeeping — Recommended answer, approved with the LLD. _(2026-10-21T15:33:59.107Z)_
+- `q053e2839` — A Task unit keeps its issue record on the Plan's meta.tracker.units until s7 creates Task artifacts, so unit-issue.ts has two homes for a record (binding for Epic and Story, the Plan for Task). Resolve: accept for now and have s7 move Task records onto the Task artifact's binding (recommended), or have s6 create the Task artifacts (that is s7's scope).
+  - **resolved**: Two homes, hidden behind one accessor — Recommended answer, approved with the LLD. _(2026-10-21T15:34:57.151Z)_
 
 ## Citations
 

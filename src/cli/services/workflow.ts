@@ -202,7 +202,9 @@ export function approve(artifactPath: string, withTracker = true, overrideReview
 	// Commit + push AFTER the tracker push, so the checked-in MD carries the
 	// re-rendered `**Tracker:**` link and the issue bodies link the committed blob.
 	const commit = commitApprovedArtifacts(approval);
-	const attached = attachApprovedDocuments(approval, commit);
+	let attached: ReturnType<typeof attachApprovedDocuments>;
+	try { attached = attachApprovedDocuments(approval, commit); }
+	catch (err) { log.warn({ workflow: approval.workflow, err: (err as Error).message }, 'approve: attaching the approved document failed'); attached = { attach: { error: (err as Error).message } }; }
 	const out: ApproveOutcome = { approval };
 	return {
 		...out, ...(tracker !== undefined ? { tracker } : {}), ...(commit !== undefined ? { commit } : {}),

@@ -1045,6 +1045,15 @@
     "reviewOverride": {
       "reason": "3 review rounds; HIGH resolved; remaining MEDs are unverifiable-evidence gaps (truncated probes, blank-line reads), with the load-bearing premises verified by hand. User approved option A on 2026-10-21; c3/c4 quotes replaced with the ISSUEs' verbatim text after round 3.",
       "at": "2026-10-21T12:16:25.766Z"
+    },
+    "questionResolutions": {
+      "q2f95abad": {
+        "question": "Item a2: the low-confidence assumption that each store (LMDB graph, Lance tables, in-memory DuckDB) can be used from several threads of one process, or must be fronted by one owning thread, is to be settled in design (Story s1).",
+        "status": "resolved",
+        "choice": "Verified policy per store, with semaphores (not owner threads) for stores that are not thread-safe: Story s1 establishes each store's threading contract. A store proven thread-safe is used directly from every thread. A store that is not thread-safe is guarded by a semaphore that every thread acquires before using it. Lock release must be guaranteed on every path (success, throw, cancellation, thread failure), and no lock is held in a way that can deadlock. The async access pattern is itself a consistency hazard: interleaving across awaits must not expose a partial operation to another caller.",
+        "rationale": "Stakeholder decision 2026-10-21: async access can cause consistency issues; non-thread-safe stores are controlled via semaphores; lock release must be ensured or it will deadlock.",
+        "resolvedAt": "2026-10-21T13:05:36.132Z"
+      }
     }
   },
   "body": {

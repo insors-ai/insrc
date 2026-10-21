@@ -196,3 +196,23 @@ Operators and clients can see which threads exist, which session each serves and
 
 - Item a2: the low-confidence assumption that each store (LMDB graph, Lance tables, in-memory DuckDB) can be used from several threads of one process, or must be fronted by one owning thread, is to be settled in design (Story s1).
 - How a session's end is detected (its client process has exited, or it has been idle beyond a limit) is a design decision for Story s4.
+
+## Resolved questions
+
+- `q2f95abad` — Item a2: the low-confidence assumption that each store (LMDB graph, Lance tables, in-memory DuckDB) can be used from several threads of one process, or must be fronted by one owning thread, is to be settled in design (Story s1).
+  - **resolved**: Verified policy per store, with semaphores (not owner threads) for stores that are not thread-safe: Story s1 establishes each store's threading contract. A store proven thread-safe is used directly from every thread. A store that is not thread-safe is guarded by a semaphore that every thread acquires before using it. Lock release must be guaranteed on every path (success, throw, cancellation, thread failure), and no lock is held in a way that can deadlock. The async access pattern is itself a consistency hazard: interleaving across awaits must not expose a partial operation to another caller. — Stakeholder decision 2026-10-21: async access can cause consistency issues; non-thread-safe stores are controlled via semaphores; lock release must be ensured or it will deadlock. _(2026-10-21T13:05:36.132Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `src/daemon/index.ts:507-2099` — "main() registers 166 RPC handlers (const rpcHandlers: RpcHandlers at line 507) and 15 stream handlers (const streamHandlers: StreamHandlers at line 1906), merges the understanding routes (7 RPC, 1 str"
+- **[[c2]]** `code` `src/daemon/server.ts:18-220` — "exports RpcHandler, StreamHandler, RpcHandlers, StreamHandlers, failureMessage and class IpcServer (members listen, close, attachedClients, disconnectClients, flushPendingWrites); each attached connec"
+- **[[c3]]** `prior-artifact` `docs/standalone/stop-code-review-s-material-building-E20261021e940023a/ISSUE.md:7` — "Observed on 2026-10-21: between the subject resolving (09:20:42) and the adherence review being divided (09:30:33) the daemon logged nothing, held 100% CPU and refused socket connections (ECONNREFUSED"
+- **[[c4]]** `prior-artifact` `docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/ISSUE.md:7` — "Observed on 2026-10-21: the daemon froze at 100% CPU and refused connections from 15:35 for over 10 minutes"
+- **[[c5]]** `stakeholder` `user 2026-10-21` — "for the multi-threaded approach, one thread per session, one thread for admin (like ping, TUI, etc.), one thread for indexing. cross-talk within a session can be problematic hence a session is blocked"
+- **[[c6]]** `convention` `CLAUDE.md#key-architectural-rules` — "Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only."
+- **[[c7]]** `code` `src/db/graph/store.ts:528-531` — "getGraphStore() returns the module-level _instance once open, or the shared _initPromise while opening: one GraphStore per process, reached from config storage, daemon RPC routes and code tools"
+- **[[c8]]** `convention` `CLAUDE.md` — "IPC method names, socket path (~/.insrc/daemon.sock), and payload shapes stay in lock-step across the two repos via mirrored types."
+- **[[c9]]** `convention` `CLAUDE.md#llm-provider-abstraction` — "Never Promise.all anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial for...of with sequential awaits."
+- **[[c10]]** `convention` `CLAUDE.md#project-principles` — "Accuracy is primary; cost is the least priority."
+- **[[c11]]** `prior-artifact` `ISSUE-5437d6e5` — "lmdb-js root.transaction commits a throwing callback's writes; fixed via childTransaction"
+- **[[c12]]** `code` `src/shared/ipc-client.ts:46-55` — "rpc() opens a new socket per call (createConnection) and sends client: { label: 'cli', pid: process.pid }; src/mcp/forward-step.ts:115-121 likewise opens a socket per step.call with client: { label: '"

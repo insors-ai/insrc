@@ -256,6 +256,11 @@
         "rationale": "The citations point at the s1 bundles; a documentation gap covered by the LLD approval override.",
         "resolvedAt": "2026-10-21T11:52:35.258Z"
       }
+    },
+    "approvedAt": "2026-10-21T11:52:56.469Z",
+    "reviewOverride": {
+      "reason": "Owner approved after one authoring pass; the daemon review blocked on 6 MED (0 HIGH), all valid. The fixes and the resolved questions are recorded as binding requirements for the plan and the build in docs/plans/core-data-model.md (\"s5 LLD approved with an override\").",
+      "at": "2026-10-21T11:52:56.468Z"
     }
   },
   "body": {

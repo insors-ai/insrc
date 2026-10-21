@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792585893916-ra6prz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-21T12:31:33.916Z",
+    "model": "codex:gpt-6-astra",
+    "elapsedMs": 25808,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d3a6b651962959a9",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-21T12:21:18.488Z",
+    "epicSlug": "read-codex-s-last-agent-message",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "d3a6b651962959a9",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/__tests__/cli-subprocess.test.ts",
+        "src/agent/providers/cli-provider.ts",
+        "src/workflow/review-pipeline/__tests__/pipeline-job.test.ts",
+        "src/workflow/review-pipeline/driver.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "docs/mocks/ontology-editor.html",
+        "docs/mocks/ontology-source/ontology.template.html",
+        "docs/mocks/ontology-source/render.mjs",
+        "docs/mocks/ontology-viewer.html",
+        "docs/ontology-builder-prd.html",
+        "docs/ontology-builder-prd.md"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 0
+    }
+  }
+}

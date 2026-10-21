@@ -11,8 +11,8 @@
 
 import { createHash } from 'node:crypto';
 
-import { ArtifactIds } from '../artifact-ids.js';
-import { IllegalTransitionError, ReviewRequiredError, TerminalArtifactError } from './types.js';
+import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
+import { IllegalTransitionError, ReviewRequiredError, TerminalArtifactError, UnreadableChildError } from './types.js';
 import type {
 	Actor, Approval, Artifact, ChangeLogEntry, IntegrityReason, Lifecycle, Operation, Reference, Review, Signoff, Staleness, Status,
 } from './types.js';
@@ -262,4 +262,92 @@ export function nextLifecycle(a: Pick<Artifact<unknown>, 'id' | 'lifecycle'>, op
 /** The sc4 transition: the next lifecycle for one operation at the current time. Nothing is written. */
 export async function transition(a: Pick<Artifact<unknown>, 'id' | 'lifecycle'>, op: Operation, by: Actor, detail?: TransitionDetail): Promise<Lifecycle> {
 	return nextLifecycle(a, op, by, new Date().toISOString(), detail);
+}
+
+// ---------------------------------------------------------------------------
+// Roll-up and unit membership
+// ---------------------------------------------------------------------------
+
+/** What roll-up and membership read: the strict child listing and the status of one head. */
+export interface ChildStatusReader {
+	childrenOfStrict(id: string): Promise<{ readonly children: readonly string[]; readonly unreadable: readonly string[] }>;
+	/** The status of a head, or undefined when there is none. */
+	statusOf(id: string): Promise<Status | undefined>;
+}
+
+/** The state of a Story's code review as completion sees it. Only clean and overridden allow a Story to complete. */
+export interface CodeReviewEvidence {
+	readonly kind:            'clean' | 'overridden' | 'blocked' | 'missing';
+	readonly overrideReason?: string | undefined;
+}
+
+/** What completion needs to know that is not in the heads. */
+export interface CompletionEvidence {
+	taskBuildPassed(taskId: string): Promise<boolean>;
+	storyCodeReview(epicHash: string, storyId: string): Promise<CodeReviewEvidence>;
+}
+
+const IGNORED_CHILD: readonly Status[] = ['withdrawn', 'superseded'];
+
+/** The children of `id` of one kind that count towards its completion, with their statuses. Throws when any head cannot be read. */
+async function countedChildren(id: string, kind: 'TASK' | 'STORY', reader: ChildStatusReader): Promise<Status[]> {
+	const { children, unreadable } = await reader.childrenOfStrict(id);
+	if (unreadable.length > 0) throw new UnreadableChildError(unreadable);
+	const statuses: Status[] = [];
+	const vanished: string[] = [];
+	for (const child of children) {
+		if (ArtifactIds.parse(child)?.kind !== kind) continue;
+		const status = await reader.statusOf(child);
+		if (status === undefined) vanished.push(child);
+		else if (!IGNORED_CHILD.includes(status)) statuses.push(status);
+	}
+	if (vanished.length > 0) throw new UnreadableChildError(vanished);
+	return statuses;
+}
+
+/**
+ * 'completed' when the unit's completion condition is true now, otherwise undefined. Reads only.
+ * A Task: its build passed. A Story: at least one counted Task, every counted Task completed, and a clean or overridden code
+ * review. An Epic: at least one counted Story and every counted Story completed. Withdrawn and superseded children are not
+ * counted; TASKS and DIAG children are not Tasks. Any other kind answers undefined.
+ */
+export async function rollUp(id: string, reader: ChildStatusReader, evidence: CompletionEvidence): Promise<Status | undefined> {
+	const key = ArtifactIds.parse(id);
+	if (key === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
+	if (key.kind === 'TASK') return (await evidence.taskBuildPassed(id)) ? 'completed' : undefined;
+	if (key.kind === 'STORY') {
+		const tasks = await countedChildren(id, 'TASK', reader);
+		if (tasks.length === 0 || !tasks.every(s => s === 'completed')) return undefined;
+		const review = await evidence.storyCodeReview(key.epicHash, key.story ?? '');
+		return review.kind === 'clean' || review.kind === 'overridden' ? 'completed' : undefined;
+	}
+	if (key.kind === 'EPIC') {
+		const stories = await countedChildren(id, 'STORY', reader);
+		return stories.length > 0 && stories.every(s => s === 'completed') ? 'completed' : undefined;
+	}
+	return undefined;
+}
+
+const STORY_RECORD_KINDS = ['LLD', 'PLAN', 'BUILD', 'CR', 'TESTS', 'EXT'] as const;
+
+/**
+ * The artifacts a unit's completion freezes with it. A Story's: its LLD, PLAN, BUILD, CR, TESTS and EXT heads, its STORY head,
+ * and the TASKS and DIAG heads that name it as parent (each DIAG keeps the sequence in its id). An Epic's: EPIC, DEF and HLD.
+ * The unit itself is never one of its own members. Some of the ids may have no head; the caller skips those.
+ */
+export async function unitMembers(id: string, reader: ChildStatusReader): Promise<string[]> {
+	const key = ArtifactIds.parse(id);
+	if (key === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
+	const members: string[] = [];
+	if (key.kind === 'STORY' && key.story !== undefined) {
+		for (const kind of STORY_RECORD_KINDS) members.push(ArtifactIds.make({ kind, epicHash: key.epicHash, story: key.story }));
+		members.push(ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }));
+		for (const child of (await reader.childrenOfStrict(id)).children) {
+			const kind = ArtifactIds.parse(child)?.kind;
+			if (kind === 'TASKS' || kind === 'DIAG') members.push(child);
+		}
+	} else if (key.kind === 'EPIC') {
+		for (const kind of ['EPIC', 'DEF', 'HLD'] as const) members.push(ArtifactIds.make({ kind, epicHash: key.epicHash }));
+	}
+	return [...new Set(members)].filter(m => m !== id);
 }

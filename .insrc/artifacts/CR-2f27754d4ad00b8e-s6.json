@@ -1,0 +1,188 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792600363295-yg8vhc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T16:32:43.295Z",
+    "model": "claude:opus",
+    "elapsedMs": 141580,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s6",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "docs/plans/core-data-model.md",
+        "src/cli/services/workflow.ts",
+        "src/daemon/index.ts",
+        "src/daemon/tracker-attach.ts",
+        "src/workflow/__tests__/approve-attach.test.ts",
+        "src/workflow/__tests__/approve-fallback-issues.test.ts",
+        "src/workflow/__tests__/approve-fallback-kit.ts",
+        "src/workflow/__tests__/artifact-write-inventory.test.ts",
+        "src/workflow/__tests__/s6-handoffs.test.ts",
+        "src/workflow/__tests__/tracker-attach-followon.test.ts",
+        "src/workflow/__tests__/tracker-auto.test.ts",
+        "src/workflow/__tests__/tracker-posts-once.test.ts",
+        "src/workflow/__tests__/tracker-push-modes.test.ts",
+        "src/workflow/__tests__/tracker-tasks.test.ts",
+        "src/workflow/artifact-core/__tests__/binding-carry.test.ts",
+        "src/workflow/artifact-core/__tests__/store-write.test.ts",
+        "src/workflow/artifact-core/decode.ts",
+        "src/workflow/artifact-core/store.ts",
+        "src/workflow/artifact-write-inventory.ts",
+        "src/workflow/gates.ts",
+        "src/workflow/storage.ts",
+        "src/workflow/tracker-auto.ts",
+        "src/workflow/tracker/__tests__/attach.test.ts",
+        "src/workflow/tracker/__tests__/binding-gate.test.ts",
+        "src/workflow/tracker/__tests__/binding-staged.test.ts",
+        "src/workflow/tracker/__tests__/binding.test.ts",
+        "src/workflow/tracker/__tests__/github-comments.test.ts",
+        "src/workflow/tracker/__tests__/issue-title-guard.test.ts",
+        "src/workflow/tracker/__tests__/unit-extras.test.ts",
+        "src/workflow/tracker/__tests__/unit-issue-bind-failures.test.ts",
+        "src/workflow/tracker/__tests__/unit-issue-binding.test.ts",
+        "src/workflow/tracker/__tests__/unit-issue-kit.ts",
+        "src/workflow/tracker/__tests__/unit-issue.test.ts",
+        "src/workflow/tracker/attach-unit.ts",
+        "src/workflow/tracker/attach.ts",
+        "src/workflow/tracker/binding.ts",
+        "src/workflow/tracker/github-adapter.ts",
+        "src/workflow/tracker/github.ts",
+        "src/workflow/tracker/port.ts",
+        "src/workflow/tracker/refs.ts",
+        "src/workflow/tracker/unit-issue.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/unit-issue.ts:671",
+            "message": "runUnitExtras treats a comment as the framework's earlier post if the marker appears anywhere in its text (`c.text.includes(step.marker)`). The LLD says only a comment whose text starts with the marker counts; the framework puts its markers at the start of the body for that reason. As written, a person's comment that quotes or mentions a marker, such as a reply that pastes the earlier post, is recorded as the design, review or plan post, and the real post is never made.",
+            "expectationRef": "LLD errorPaths.edgeCases: 'A comment on the issue quotes the marker text of a framework post' — expected: the framework posts its markers at the start of the body and only comments authored through the tracker whose text starts with the marker count"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/storage.ts:655",
+            "message": "storage.ts declares two identical plain-object type guards: isRecord (line 102) and isPlainObject (line 655). The same guard is also redeclared privately in artifact-core/decode.ts:33 (isObject), artifact-core/store.ts:36 (isObject) and tracker/binding.ts (isObject). Within the touched workflow modules the usual pattern is a single module-level guard, so this is idiom drift that should be merged into one shared helper. The touched modules give too few examples to call this a firm convention, so it is reported as an observation, not a breach.",
+            "expectationRef": "module-idiom:single-object-guard",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/approve-fallback-kit.ts:109",
+            "message": "trackerOf returns Record<string, any>. The sibling test helpers (tracker-auto.test.ts and tracker-tasks.test.ts, both trackerOf) declare Record<string, unknown>, which keeps strict type checking on the values. Use Record<string, unknown> here to match.",
+            "expectationRef": "module-idiom:unknown-over-any",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/index.ts:666",
+            "message": "The new daemon wiring has no test reach: the 'tracker.attach' RPC entry (line 666) and the BUILD-approval follow-on that adds followOnTrackerAttach to workflow.approve (lines 654-660 and 754-760) live inside main(), whose testsReaching is empty. The handlers behind them are covered directly: approve-attach.test.ts and tracker-attach-followon.test.ts call handleTrackerAttach and followOnTrackerAttach, and both files pass. What no test checks is the IPC registration and the joining of the bugfix and attach follow-ons. That is the part of s6 a broken import or a key typo would break unnoticed.",
+            "expectationRef": "main (tracker.attach RPC registration and the workflow.approve followOnTrackerAttach wiring)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/attach-unit.ts:110",
+            "message": "The grounding shows no direct test edge for the new attach chain: attachApprovedDocument, attachUnit, attachTargetsOf, approvedDocumentUnit, attachDocuments, openTracker, and attachApprovedDocuments/commitApprovedArtifacts in src/cli/services/workflow.ts. All of them are reached through callers that passing tests do exercise. approve(), covered by approve-attach.test.ts, calls attachApprovedDocuments → attachApprovedDocument. handleTrackerAttach, covered by two passing files, calls openTracker → attachUnit → attachTargetsOf/attachDocuments. The promised attach.test.ts title also covers attachDocuments and passes. So this is very likely coverage that the direct-edge grounding misses, not a real gap. The test record cannot confirm it per symbol.",
+            "expectationRef": "attachApprovedDocument / attachUnit / attachTargetsOf / attachApprovedDocuments (transitive-only reach)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/cli/services/workflow.ts:145",
+            "message": "attachApprovedDocuments only checks `commit === undefined` before attaching. It does not check `commit.committed` or `commit.pushed`. If the check-in commit succeeded locally but the push failed (offline, rejected or no upstream), attachDocuments still sees clean files and posts permalinks to `blob/<sha>` for a commit GitHub does not have, so the issue gets dead links. The Attachment records are then written and committed in a second commit, which also may not push. Skip the attach, or report it as skipped, unless `commit.pushed` is true.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/cli/services/workflow.ts:147",
+            "message": "approve() runs commitApprovedArtifacts and attachApprovedDocuments after the approval has already been written to disk. attachApprovedDocuments has no try/catch around openTracker, attachApprovedDocument (attachTargetsOf → folderOf/companionsOf read files) and the second commitAndPushArtifacts. An exception thrown there propagates out of approve(), so a successful approval comes back to the caller as an error. That breaks the 'best-effort, never breaks the approval' contract that commitApprovedArtifacts documents. Wrap the attach step and return its failure as `{ attach: { error } }`.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/tracker/attach-unit.ts:110",
+            "message": "attachApprovedDocument repeats attachUnit's preamble line for line: unitArtifactId → readBinding precheck in a try/catch → attachTargetsOf → error passthrough → attachDocuments. Only the target filter differs. Move the shared part into one helper that takes an optional target filter, so the binding precheck and its error wording cannot drift apart (they already differ: one error mentions 'approve its document first', the other does not).",
+            "counterpartRef": "attachUnit",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/cli/services/workflow.ts:138",
+            "message": "attachApprovedDocuments re-reads and re-parses approval.path for the same meta that commitApprovedArtifacts already parsed. It also recomputes workItemAnchorCreatedAt/workItemKindOf and the Define/LLD paths. Parse once in approve() and pass the meta to both.",
+            "counterpartRef": "commitApprovedArtifacts",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/tracker-attach.ts:31",
+            "message": "handleTrackerAttach casts `params: unknown` to TrackerAttachParams without checking types. `p.repo` is used through `.length` without a string check, and `p.unit` is never checked against 'epic'|'story'. An IPC caller that sends `unit: 'task'` or a non-string repo gets a misleading downstream error, or an odd one, instead of a clear validation message. `scope` is validated in the same function, so do the same for `unit` and `repo`.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/storage.ts:655",
+            "message": "storage.ts defines two identical plain-object guards, isRecord (line 102) and isPlainObject (line 655). The same guard is also copied as isObject in artifact-core/decode.ts, artifact-core/store.ts and tracker/binding.ts. Export one guard and reuse it.",
+            "counterpartRef": "isRecord",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/__tests__/tracker-attach-followon.test.ts:1",
+            "message": "The test helper `git(repo, ...args)` is copied in approve-attach.test.ts, tracker-attach-followon.test.ts and tracker/__tests__/attach.test.ts. It could live in a shared test kit, such as approve-fallback-kit.ts, which these tests already import.",
+            "counterpartRef": "git",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 3,
+      "low": 9
+    }
+  }
+}

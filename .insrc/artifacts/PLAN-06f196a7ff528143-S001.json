@@ -25,7 +25,8 @@
     "lldRunId": "wf-1792558677033-6cunie",
     "lldEffectiveHash": "06f196a7ff528143b3bc32a2d13ea4c4eb7695104abb3698180f21741444119f",
     "authoredBy": "controller",
-    "rangeBase": "9c32ce2855a7f771363bca0e613bce715d591474"
+    "rangeBase": "9c32ce2855a7f771363bca0e613bce715d591474",
+    "approvedAt": "2026-10-21T08:52:33.820Z"
   },
   "body": {
     "summary": {
@@ -242,7 +243,7 @@
           },
           {
             "level": "integration",
-            "name": "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'CHARACTERISATION C (TRIVIAL route \u2014 NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section'"
+            "name": "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section'"
           }
         ]
       },
@@ -650,7 +651,7 @@
         ]
       },
       {
-        "lldStrategyItem": "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'CHARACTERISATION C (TRIVIAL route \u2014 NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section'",
+        "lldStrategyItem": "src/daemon/steps/build-step/__tests__/build-step.test.ts: 'CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '## Changes' section'",
         "coveredByTaskIds": [
           "t6"
         ]

@@ -10,7 +10,7 @@ import { H, alice, artifact, kit } from './store-kit.js';
 
 const ref = (entityId: string, type: string): Reference => ({ entityId, type, relation: 'derived-from' });
 
-describe('pass-through codecs', () => {
+describe('pass-through codecs (EPIC, STORY, DIAG; TASK and TASKS keep a typed body)', () => {
 	it('a TASK, STORY, EPIC, TASKS and DIAG head is written, read, listed and given a status through the store, and registeredKinds lists sixteen kinds', async () => {
 		assert.equal(registeredKinds().length, 16);
 		for (const kind of registeredKinds()) assert.doesNotThrow(() => codecFor(kind), kind);
@@ -34,9 +34,11 @@ describe('pass-through codecs', () => {
 				const parentId = expected === undefined ? undefined : ArtifactIds.make(expected);
 				if (parentId !== undefined) parents.set(id, parentId);
 				const parent = parentId === undefined || expected === undefined ? {} : { parent: ref(parentId, expected.kind) };
-				await k.store.write(artifact(id, { payload: { body: { opaque: [1, { two: 2 }] }, citations: [{ any: 'thing' }] }, ...parent }), alice);
+				// a TASK and a TASKS body are typed (s7); the other kinds keep an opaque body
+				const body = key.kind === 'TASK' || key.kind === 'TASKS' ? artifact(id).payload.body : { opaque: [1, { two: 2 }] };
+				await k.store.write(artifact(id, { payload: { body, citations: [{ any: 'thing' }] }, ...parent }), alice);
 				const read = await k.store.read(id);
-				assert.deepEqual(read.payload.body, { opaque: [1, { two: 2 }] }, `${key.kind} body is opaque`);
+				assert.deepEqual(read.payload.body, body, `${key.kind} body round-trips`);
 				assert.deepEqual(read.payload.citations, [{ any: 'thing' }]);
 				assert.equal(read.lifecycle.revision.number, 1);
 			}

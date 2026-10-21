@@ -17,6 +17,7 @@ import { ArtifactIds } from '../artifact-ids.js';
 import type { ArtifactIdKind, ArtifactKey } from '../artifact-ids.js';
 import { requireEpicAnchor, stampRootAnchor } from '../storage.js';
 import { ArtifactShapeError, UnknownArtifactKindError } from './types.js';
+import { checkTaskBody, checkTasksBody } from './task-bodies.js';
 
 /** The stored head, as `writeArtifact` and every raw reader see it. */
 export interface HeadFile {
@@ -82,7 +83,14 @@ function identityMeta(key: ArtifactKey, ctx: CodecContext): Record<string, unkno
 	};
 }
 
+/** The body check of a kind whose payload is typed; the other kinds keep their body opaque. */
+const BODY_CHECKS: Readonly<Partial<Record<ArtifactIdKind, (body: unknown, where: string) => void>>> = {
+	TASK:  checkTaskBody,
+	TASKS: checkTasksBody,
+};
+
 function codec(kind: ArtifactIdKind, workflow: string): KindCodec {
+	const check = BODY_CHECKS[kind];
 	return {
 		kind,
 		workflow,
@@ -91,9 +99,10 @@ function codec(kind: ArtifactIdKind, workflow: string): KindCodec {
 			if (kind === 'AMD' && (typeof head.meta !== 'object' || head.meta === null || typeof head.body !== 'object' || head.body === null)) {
 				throw new ArtifactShapeError('a flat amendment has to be converted by the s9 conversion before it can be read');
 			}
+			check?.(head.body, `a ${kind} head`);
 			return { body: head.body, citations: head.citations ?? [] };
 		},
-		encode: (payload, key, ctx) => ({ meta: identityMeta(key, ctx), body: payload.body, citations: payload.citations }),
+		encode: (payload, key, ctx) => (check?.(payload.body, `the ${kind} payload`), { meta: identityMeta(key, ctx), body: payload.body, citations: payload.citations }),
 	};
 }
 
@@ -104,7 +113,7 @@ const CODECS: ReadonlyMap<ArtifactIdKind, KindCodec> = new Map(([
 	['EPIC', 'define'], ['STORY', 'define'], ['TASKS', 'plan'], ['TASK', 'plan'], ['DIAG', 'docgen'],
 ] as const).map(([kind, workflow]) => [kind, codec(kind, workflow)]));
 
-/** The codec of a kind. EPIC, STORY, TASKS, TASK and DIAG are pass-through: body and citations stay opaque until their stories type them. */
+/** The codec of a kind. EPIC, STORY and DIAG are pass-through: body and citations stay opaque until their stories type them; TASK and TASKS are typed (s7). */
 export function codecFor(kind: ArtifactIdKind): KindCodec {
 	const c = CODECS.get(kind);
 	if (c === undefined) throw new UnknownArtifactKindError(`no codec is registered for artifact kind '${kind}'`);

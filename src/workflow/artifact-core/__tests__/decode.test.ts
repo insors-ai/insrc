@@ -96,7 +96,9 @@ describe('decodeArtifactHead', () => {
 		// an id of no known kind is refused, and every kind a Task or Story can have decodes
 		assert.throws(() => decodeArtifactHead(`NOPE-${H}-s1`, head({})), InvalidArtifactKeyError);
 		assert.deepEqual(decodeArtifactHead(`STORY-${H}-s1`, head({})).artifact.payload.body, { text: 'b' });
-		assert.deepEqual(decodeArtifactHead(`TASK-${H}-s1-t1`, head({})).artifact.payload.body, { text: 'b' });
+		// a TASK and a TASKS body are typed: an opaque body is refused (s7)
+		assert.throws(() => decodeArtifactHead(`TASK-${H}-s1-t1`, head({})), ArtifactShapeError);
+		assert.throws(() => decodeArtifactHead(`TASKS-${H}-s1`, head({})), ArtifactShapeError);
 
 		// a flat amendment is refused with a pointer to the conversion; a converted one decodes
 		const flat = JSON.stringify({ id: `AMD-${H}-1`, status: 'approved', amendment: {} });

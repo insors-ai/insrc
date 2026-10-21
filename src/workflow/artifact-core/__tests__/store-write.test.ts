@@ -37,7 +37,7 @@ describe('ArtifactStore.write', () => {
 				const created = await k.store.read(id);
 				assert.equal(created.lifecycle.revision.number, 1, `${kind} create is revision 1`);
 				assert.equal(JSON.parse(readFileSync(artifactJsonPath(k.repo, id), 'utf8')).meta.revision, 1);
-				assert.deepEqual(created.payload.body, { text: 'one' });
+				assert.deepEqual(created.payload.body, artifact(id).payload.body);
 
 				// an identical rewrite keeps the revision and logs nothing
 				const logged = (await k.store.readWithHistory(id)).changeLog.length;
@@ -57,7 +57,7 @@ describe('ArtifactStore.write', () => {
 
 				// a payload change moves it by one
 				const described = await k.store.read(id);
-				await k.store.write({ ...described, payload: { body: { text: 'two' }, citations: [{ id: 'c1' }] } }, alice);
+				await k.store.write({ ...described, payload: { body: { ...artifact(id).payload.body, [kind === 'TASK' ? 'summary' : 'text']: 'two' }, citations: [{ id: 'c1' }] } }, alice);
 				const last = await k.store.read(id);
 				assert.equal(last.lifecycle.revision.number, 3, `${kind} payload`);
 				assert.equal(JSON.parse(readFileSync(artifactJsonPath(k.repo, id), 'utf8')).meta.revision, 3);

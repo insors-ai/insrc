@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { ArtifactIds } from '../../artifact-ids.js';
 import type { HeadPayload } from '../codecs.js';
 import { History } from '../history.js';
 import { createMemoryJournal } from '../journal.js';
@@ -71,10 +72,18 @@ export function kit(): Kit {
 	return { repo, sidecar, journal, faults, store: make(), restart: make, done: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
+/** The default body of a test artifact: opaque text, except a TASK and a TASKS head, whose bodies are typed. */
+function defaultBody(id: string): Record<string, unknown> {
+	const kind = ArtifactIds.parse(id)?.kind;
+	if (kind === 'TASK') return { title: 'a task', summary: 'one', size: 'S', order: 1, acceptanceChecks: ['done'], tests: [], planTaskId: 't1' };
+	if (kind === 'TASKS') return { planRevision: 1, taskIds: [], nextNumber: 1 };
+	return { text: 'one' };
+}
+
 export function artifact(id: string, over: Partial<Artifact<HeadPayload>> = {}): Artifact<HeadPayload> {
 	return {
 		id, description: 'd', references: [], attachments: [], lifecycle: emptyLifecycle(0),
-		payload: { body: { text: 'one' }, citations: [] },
+		payload: { body: defaultBody(id), citations: [] },
 		...over,
 	};
 }

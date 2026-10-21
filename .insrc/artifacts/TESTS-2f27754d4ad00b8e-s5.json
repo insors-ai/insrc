@@ -4,7 +4,7 @@
     "epicHash": "2f27754d4ad00b8e",
     "storyId": "s5",
     "createdAt": "2026-10-21T12:07:40.117Z",
-    "updatedAt": "2026-10-21T12:14:11.102Z",
+    "updatedAt": "2026-10-21T12:52:38.863Z",
     "epicCreatedAt": "2026-10-19T09:22:37.764Z",
     "epicSlug": "one-common-model-every-artifact"
   },
@@ -83,6 +83,557 @@
               },
               {
                 "title": "addresses-rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "4e1492ea",
+        "ranAt": "2026-10-21T12:17:30.633Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "automated-writers-addresses.test.ts: a review auto-fix on either path and a BUILD, TESTS or code-review round leave open feedback open",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts",
+                "title": "a review auto-fix on either path and a BUILD, TESTS or code-review round leave open feedback open",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/automated-writers-addresses.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1540,
+            "titles": [
+              {
+                "title": "a review auto-fix on either path and a BUILD, TESTS or code-review round leave open feedback open",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1818,
+            "titles": [
+              {
+                "title": "persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+                "result": "pass"
+              },
+              {
+                "title": "a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown",
+                "result": "pass"
+              },
+              {
+                "title": "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview with a RoundWriter stores the content through the service and logs the round on the daemon route and the controller route, and a failed store replaces no record",
+                "result": "pass"
+              },
+              {
+                "title": "the first BUILD round of a Trivial standalone build, with no earlier record in the work item, is created through the registry store on the record's own time",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable BUILD head is replaced by a round that keeps the time the build gave it, not the store's clock",
+                "result": "pass"
+              },
+              {
+                "title": "a round head with merge conflict markers or a meta the store cannot read is refused untouched, and one with nothing in it is replaced",
+                "result": "pass"
+              },
+              {
+                "title": "round-recording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "64dc48a0",
+        "ranAt": "2026-10-21T12:20:44.657Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "feedback-threads.test.ts: FeedbackService.threads nests replies under their root in time-then-id order, returns an orphan reply as an orphan root, never lists a reply on its own as open, and filters to open threads",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/feedback/__tests__/feedback-threads.test.ts",
+                "title": "FeedbackService.threads nests replies under their root in time-then-id order, returns an orphan reply as an orphan root, never lists a reply on its own as open, and filters to open threads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/feedback/__tests__/feedback-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2888,
+            "titles": [
+              {
+                "title": "FeedbackService.threads nests replies under their root in time-then-id order, returns an orphan reply as an orphan root, never lists a reply on its own as open, and filters to open threads",
+                "result": "pass"
+              },
+              {
+                "title": "feedback-threads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "37fc75ab",
+        "ranAt": "2026-10-21T12:38:24.028Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "feedback-service.test.ts: FeedbackService.add stores one root entry with the author, a minted id and time and the head's revision, defaults the kind to comment, and refuses blank text, a non-namespaced actor and a malformed anchor",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/feedback/__tests__/feedback-service.test.ts",
+                "title": "FeedbackService.add stores one root entry with the author, a minted id and time and the head's revision, defaults the kind to comment, and refuses blank text, a non-namespaced actor and a malformed anchor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "feedback-service.test.ts: FeedbackService.add stores a reply as its own line with inReplyTo, refuses a missing parent, a parent on another artifact and a reply to a reply, and a repeated caller id returns the stored entry or is refused when the content differs",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/feedback/__tests__/feedback-service.test.ts",
+                "title": "FeedbackService.add stores a reply as its own line with inReplyTo, refuses a missing parent, a parent on another artifact and a reply to a reply, and a repeated caller id returns the stored entry or is refused when the content differs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "feedback-storage.test.ts: feedback on a design, a plan and a single Task is recorded once as a framed line in the right file, survives a restart, and a Task's line lands in its Story's Tasks file and reads back for that Task only",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/feedback/__tests__/feedback-storage.test.ts",
+                "title": "feedback on a design, a plan and a single Task is recorded once as a framed line in the right file, survives a restart, and a Task's line lands in its Story's Tasks file and reads back for that Task only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "feedback-storage.test.ts: a revision of an artifact addresses all its open feedback by default and only the listed roots when a list is given, in the shared (timestamp, id) order with the feedback file read first or last",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/feedback/__tests__/feedback-storage.test.ts",
+                "title": "a revision of an artifact addresses all its open feedback by default and only the listed roots when a list is given, in the shared (timestamp, id) order with the feedback file read first or last",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "feedback-merge.test.ts: two clones that add feedback and replies to one artifact merge with no conflict and the threads read back once each in order",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/feedback/__tests__/feedback-merge.test.ts",
+                "title": "two clones that add feedback and replies to one artifact merge with no conflict and the threads read back once each in order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/feedback/__tests__/feedback-merge.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1232,
+            "titles": [
+              {
+                "title": "two clones that add feedback and replies to one artifact merge with no conflict and the threads read back once each in order",
+                "result": "pass"
+              },
+              {
+                "title": "feedback-merge",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/feedback/__tests__/feedback-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1105,
+            "titles": [
+              {
+                "title": "FeedbackService.add stores one root entry with the author, a minted id and time and the head's revision, defaults the kind to comment, and refuses blank text, a non-namespaced actor and a malformed anchor",
+                "result": "pass"
+              },
+              {
+                "title": "FeedbackService.add stores a reply as its own line with inReplyTo, refuses a missing parent, a parent on another artifact and a reply to a reply, and a repeated caller id returns the stored entry or is refused when the content differs",
+                "result": "pass"
+              },
+              {
+                "title": "feedback-service",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/feedback/__tests__/feedback-storage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1068,
+            "titles": [
+              {
+                "title": "feedback on a design, a plan and a single Task is recorded once as a framed line in the right file, survives a restart, and a Task's line lands in its Story's Tasks file and reads back for that Task only",
+                "result": "pass"
+              },
+              {
+                "title": "a revision of an artifact addresses all its open feedback by default and only the listed roots when a list is given, in the shared (timestamp, id) order with the feedback file read first or last",
+                "result": "pass"
+              },
+              {
+                "title": "feedback-storage",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "4dc1e4bb",
+        "ranAt": "2026-10-21T12:41:04.731Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "identity-service.test.ts: IdentityService.currentActor builds github:<login> from the tracker's whoAmI, falls back to git then os when the tracker does not answer, and copies the declared aliases only onto the declared primary or an alias",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/identity/__tests__/identity-service.test.ts",
+                "title": "IdentityService.currentActor builds github:<login> from the tracker's whoAmI, falls back to git then os when the tracker does not answer, and copies the declared aliases only onto the declared primary or an alias",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "identity-service.test.ts: IdentityService.declare validates namespaced lower-case ids, rejects duplicates and more than twenty aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/identity/__tests__/identity-service.test.ts",
+                "title": "IdentityService.declare validates namespaced lower-case ids, rejects duplicates and more than twenty aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/identity/__tests__/identity-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 713,
+            "titles": [
+              {
+                "title": "IdentityService.currentActor builds github:<login> from the tracker's whoAmI, falls back to git then os when the tracker does not answer, and copies the declared aliases only onto the declared primary or an alias",
+                "result": "pass"
+              },
+              {
+                "title": "IdentityService.declare validates namespaced lower-case ids, rejects duplicates and more than twenty aliases, and replaces the file atomically; show reports an invalid file instead of treating it as empty",
+                "result": "pass"
+              },
+              {
+                "title": "identity-service",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "8c4fb73b",
+        "ranAt": "2026-10-21T12:43:24.859Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "feedback-wiring.test.ts: the daemon's artifact.feedback.add, artifact.feedback.list, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/feedback-wiring.test.ts",
+                "title": "the daemon's artifact.feedback.add, artifact.feedback.list, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/feedback-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1212,
+            "titles": [
+              {
+                "title": "the daemon's artifact.feedback.add, artifact.feedback.list, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service",
+                "result": "pass"
+              },
+              {
+                "title": "feedback-wiring",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "544ecd21",
+        "ranAt": "2026-10-21T12:46:25.291Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "feedback-wiring.test.ts: the daemon's artifact.feedback.append handler stores a legacy request as a Feedback line with the mapped kind and anchor, keeps a companion-file target in anchor.section, and keeps its request and error shapes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/feedback-wiring.test.ts",
+                "title": "the daemon's artifact.feedback.append handler stores a legacy request as a Feedback line with the mapped kind and anchor, keeps a companion-file target in anchor.section, and keeps its request and error shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/feedback-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1618,
+            "titles": [
+              {
+                "title": "the daemon's artifact.feedback.add, artifact.feedback.list, identity.show and identity.declare handlers use the repository's FeedbackService and the identity service",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon's artifact.feedback.append handler stores a legacy request as a Feedback line with the mapped kind and anchor, keeps a companion-file target in anchor.section, and keeps its request and error shapes",
+                "result": "pass"
+              },
+              {
+                "title": "feedback-wiring",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "993d3fff",
+        "ranAt": "2026-10-21T12:50:19.690Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review-decision.test.ts: handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/review-decision.test.ts",
+                "title": "handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/review-decision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 891,
+            "titles": [
+              {
+                "title": "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a decision with no comments writes no feedback entry",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a failing comment write after the decision took effect reports the outcome with commentsError",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: the author is the one resolveReviewer gives and is never taken from the request",
+                "result": "pass"
+              },
+              {
+                "title": "handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision",
+                "result": "pass"
+              },
+              {
+                "title": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "87b58b47",
+        "ranAt": "2026-10-21T12:52:38.863Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "gate-identity.test.ts: the team gate decides on the tracker's whoAmI only: declaring the claimant's login as an alias of another person does not change the gate's outcome, and nothing under src/workflow/team imports the identity module",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/identity/__tests__/gate-identity.test.ts",
+                "title": "the team gate decides on the tracker's whoAmI only: declaring the claimant's login as an alias of another person does not change the gate's outcome, and nothing under src/workflow/team imports the identity module",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "artifact-write-inventory.test.ts: the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3542,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised",
+                "result": "pass"
+              },
+              {
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/identity/__tests__/gate-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1309,
+            "titles": [
+              {
+                "title": "the team gate decides on the tracker's whoAmI only: declaring the claimant's login as an alias of another person does not change the gate's outcome, and nothing under src/workflow/team imports the identity module",
                 "result": "pass"
               }
             ],

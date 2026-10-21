@@ -110,10 +110,10 @@ function EpicDetail(props: {
 
 	const refresh = (): void => { setReload(n => n + 1); props.onChanged(); };
 
-	const doApprove = (item: ActionItem): void => {
+	const doApprove = async (item: ActionItem): Promise<void> => {
 		try {
 			if (item.kind === 'artifact') {
-				const r = svc.workflow.approve(item.path);
+				const r = await svc.workflow.approve(item.path);
 				ui.toast(`approved ${r.approval.workflow}${r.tracker !== undefined ? ` · tracker ${r.tracker.status}` : ''}`);
 			} else {
 				svc.workflow.approveAmendment(props.repoPath, item.id, APPROVER);
@@ -136,7 +136,7 @@ function EpicDetail(props: {
 		if (key.escape || input === 'b') { props.onBack(); return; }
 		if (key.upArrow)   setCursor(c => Math.max(0, c - 1));
 		else if (key.downArrow) setCursor(c => Math.min(actions.length - 1, c + 1));
-		else if (input === 'a' && focused !== undefined) doApprove(focused);
+		else if (input === 'a' && focused !== undefined) void doApprove(focused);
 		else if (input === 'x' && focused !== undefined) { setRejecting(focused); ui.capture(true); }
 	}, { isActive: rejecting === undefined && !captured });
 

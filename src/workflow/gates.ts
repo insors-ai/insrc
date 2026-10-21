@@ -825,11 +825,13 @@ export interface CodeReviewApprovalOutcome {
  *  (src/workflow/bugfix/mount.ts) — the daemon `workflow.approve` handler runs the
  *  seam AFTER this function returns and attaches the outcomes here. */
 export interface FollowOnOutcome {
-	readonly kind:        'bugfix-advance' | 'bugfix-complete' | 'tracker-attach';
+	readonly kind:        'bugfix-advance' | 'bugfix-complete' | 'tracker-attach' | 'tasks-sync';
 	readonly artifactPath: string;
 	readonly ok:          boolean;
 	readonly note?:       string;
 	/** For `tracker-attach`: the links posted, the links already recorded, and each file refused with its reason. */
+	/** For `tasks-sync`: the Task ids the plan approval created, changed, withdrew and added. */
+	readonly tasks?:      { readonly created: readonly string[]; readonly changed: readonly string[]; readonly withdrawn: readonly string[]; readonly added: readonly string[] };
 	readonly attach?:     { readonly attached: readonly string[]; readonly reconciled: readonly string[]; readonly skipped: readonly string[]; readonly failed: readonly { readonly target: string; readonly reason: string }[] };
 }
 

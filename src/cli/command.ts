@@ -239,7 +239,7 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 				return ['usage: workflow approve <path> --override <reason>'];
 			}
 			try {
-				const r = svc.workflow.approve(rest[0], true, override);
+				const r = await svc.workflow.approve(rest[0], true, override);
 				return [`approved ${r.approval.workflow}${override !== undefined ? ' (review overridden)' : ''}${r.tracker !== undefined ? ` · tracker ${r.tracker.status}` : ''}`];
 			} catch (err) {
 				if (err instanceof Error && err.name === 'ReviewBlockedError') {

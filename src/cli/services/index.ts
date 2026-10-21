@@ -55,7 +55,7 @@ export interface Services {
 		listEpics(repoPath: string): EpicSummary[];
 		chain(repoPath: string, epicHash: string): ChainReport;
 		chainText(repoPath: string, epicHash: string): string;
-		approve(artifactPath: string, withTracker?: boolean, overrideReview?: string): ApproveOutcome;
+		approve(artifactPath: string, withTracker?: boolean, overrideReview?: string): Promise<ApproveOutcome>;
 		reviewArtifact(repoPath: string, artifactPath: string): Promise<import('../../workflow/review/index.js').ReviewArtifactResult>;
 		reviewFindings(artifactPath: string): import('./workflow.js').ReviewFindingsResult;
 		resolveFinding(artifactPath: string, findingId: string, action: import('../../workflow/review/index.js').ReviewAction, note?: string): import('../../workflow/review/index.js').ResolveReviewResult;

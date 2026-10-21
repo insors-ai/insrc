@@ -116,7 +116,8 @@ export class TaskSets {
 		const rows = [...body.tasks].sort((a, b) => a.order - b.order);
 		const citations = plan.payload.citations as unknown as Citation[];
 		assertPlanRows(rows, citations);
-		return { planId, epicHash: key.epicHash, storyId: key.story, revision: plan.lifecycle.revision.number, rows, citations };
+		return { planId, epicHash: key.epicHash, storyId: key.story, // a plan written before revisions were stamped reads as revision 0; the Tasks file records revisions from 1
+		revision: Math.max(1, plan.lifecycle.revision.number), rows, citations };
 	}
 
 	private tasksId(p: PlanRead): string { return ArtifactIds.make({ kind: 'TASKS', epicHash: p.epicHash, story: p.storyId }); }

@@ -50,7 +50,7 @@ function anchorAll(repo: string): void {
 	}
 }
 
-test('approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed', () => {
+test('approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed', async () => {
 	const fx = seed({ pushTasks: false });
 	try {
 		repoWithGit(fx.repo); anchorAll(fx.repo);
@@ -65,7 +65,7 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 
 		// HLD approval: the document is committed first, then linked at that commit
 		stampOtherPartyReview(fx.hld);
-		const epic = approve(fx.hld);
+		const epic = await approve(fx.hld);
 		assert.equal(epic.commit?.committed, true, JSON.stringify(epic.commit));
 		const hldMd = hldArtifactPaths(fx.repo, HASH, CREATED, 'epic', SLUG).md;
 		const rel = hldMd.slice(fx.repo.length + 1);
@@ -81,14 +81,14 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 
 		// LLD approval links the LLD to the Story's issue
 		stampOtherPartyReview(fx.lld);
-		const story = approve(fx.lld);
+		const story = await approve(fx.lld);
 		const lldRel = lldArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md.slice(fx.repo.length + 1);
 		assert.ok(story.attach !== undefined && 'attached' in story.attach && story.attach.attached.length === 1, JSON.stringify(story.attach));
 		assert.match(attachCalls.at(-1) ?? '', new RegExp(`/blob/[0-9a-f]{40}/${lldRel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`));
 
 		// plan approval links the plan to the Story's issue, at the commit that carries it
 		stampOtherPartyReview(fx.plan);
-		const planOut = approve(fx.plan);
+		const planOut = await approve(fx.plan);
 		const planRel = planArtifactPaths(fx.repo, HASH, 's1', CREATED, 'epic', SLUG).md.slice(fx.repo.length + 1);
 		const planSha = git(fx.repo, 'log', '-1', '--format=%H', '--', planRel);
 		assert.ok(planOut.attach !== undefined && 'attached' in planOut.attach, JSON.stringify(planOut.attach));
@@ -122,7 +122,7 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 		_setTrackerExecForTests(realGitExec);
 		_setAutoPushDepsForTests({ policy: teamPolicy, port: t.port });
 		stampOtherPartyReview(off.hld);
-		const out = approve(off.hld);
+		const out = await approve(off.hld);
 		assert.equal(out.commit, undefined);
 		assert.deepEqual(out.attach, { skipped: 'attachments skipped: the artifacts are not committed' });
 	} finally { off.cleanup(); }

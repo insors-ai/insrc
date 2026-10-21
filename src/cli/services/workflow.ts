@@ -60,6 +60,8 @@ import {
 import { githubConfigPath, resolveGithubConfig } from '../../workflow/config/github.js';
 import { syncTracker, type SyncResult } from '../../workflow/tracker/sync.js';
 import { openTracker } from '../../workflow/tracker-auto.js';
+import { syncPlanTasks } from '../../daemon/tasks-sync.js';
+import type { SyncResult as TaskSyncResult } from '../../workflow/tasks/task-set.js';
 import { attachApprovedDocument } from '../../workflow/tracker/attach-unit.js';
 import type { AttachUnitResult } from '../../workflow/tracker/attach-unit.js';
 import { getLogger } from '../../shared/logger.js';
@@ -90,6 +92,8 @@ export interface ApproveOutcome {
 	readonly approval: ApprovalResult;
 	readonly tracker?: AutoPushResult;
 	readonly commit?:  CommitArtifactsResult;
+	/** What a plan approval did to the Story's Task set, or why it could not (the approval stands either way). */
+	readonly tasks?:   TaskSyncResult;
 	/** The approved document's links on its unit's issue, or why none were attached. */
 	readonly attach?:  AttachUnitResult | { readonly skipped: string };
 	/** The second commit, of the unit head that records the attachments. */
@@ -191,10 +195,12 @@ export function chainText(repoPath: string, epicHash: string): string {
 /** Approve an artifact by its `.md`/`.json` path. When `withTracker`
  *  is true (default), an approved HLD/LLD auto-pushes to the GitHub
  *  tracker — mirroring the old `insrc workflow approve` flow. */
-export function approve(artifactPath: string, withTracker = true, overrideReview?: string): ApproveOutcome {
+export async function approve(artifactPath: string, withTracker = true, overrideReview?: string): Promise<ApproveOutcome> {
 	const jsonPath = jsonPathForMd(artifactPath);
 	const approval = approveArtifactByJsonPath(jsonPath, overrideReview !== undefined ? { overrideReview } : undefined);
-	if (!withTracker) return { approval };
+	// An approved plan makes the Story's Tasks artifacts, before their issues are pushed; never fails the approval
+	const tasks = approval.workflow === 'plan' ? await syncPlanTasks(approval.path) : undefined;
+	if (!withTracker) return { approval, ...(tasks !== undefined ? { tasks } : {}) };
 	let tracker: AutoPushResult | undefined;
 	if (approval.workflow === 'design.epic')       tracker = autoPushEpicOnHld(approval.path);
 	else if (approval.workflow === 'design.story') tracker = autoPushStoryOnLld(approval.path);
@@ -207,7 +213,7 @@ export function approve(artifactPath: string, withTracker = true, overrideReview
 	catch (err) { log.warn({ workflow: approval.workflow, err: (err as Error).message }, 'approve: attaching the approved document failed'); attached = { attach: { error: (err as Error).message } }; }
 	const out: ApproveOutcome = { approval };
 	return {
-		...out, ...(tracker !== undefined ? { tracker } : {}), ...(commit !== undefined ? { commit } : {}),
+		...out, ...(tasks !== undefined ? { tasks } : {}), ...(tracker !== undefined ? { tracker } : {}), ...(commit !== undefined ? { commit } : {}),
 		...(attached !== undefined ? { attach: attached.attach, ...(attached.commit !== undefined ? { attachCommit: attached.commit } : {}) } : {}),
 	};
 }

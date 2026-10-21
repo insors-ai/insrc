@@ -652,12 +652,13 @@ async function main(): Promise<void> {
 				followOn: async (approved, repoPath) => {
 					const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
 					const { followOnTrackerAttach } = await import('./tracker-attach.js');
+					const { followOnTasksSync } = await import('./tasks-sync.js');
 					const bugfix = await advanceApprovedBugfixes(approved, {
 						repoPath,
 						inferCandidates: async (req: InferParentsRequest) =>
 							inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
 					});
-					return [...(bugfix ?? []), ...followOnTrackerAttach(approved, repoPath)];
+					return [...(bugfix ?? []), ...await followOnTasksSync(approved, repoPath), ...followOnTrackerAttach(approved, repoPath)];
 				},
 			});
 		},
@@ -752,12 +753,13 @@ async function main(): Promise<void> {
 					followOn: async (approved, repoPath) => {
 						const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
 						const { followOnTrackerAttach } = await import('./tracker-attach.js');
+						const { followOnTasksSync } = await import('./tasks-sync.js');
 						const bugfix = await advanceApprovedBugfixes(approved, {
 							repoPath,
 							inferCandidates: async (req: InferParentsRequest) =>
 								inferParentCandidates(daemonInferencePorts(db, req.repoPath), buildOwnershipIndex(req.repoPath), req),
 						});
-						return [...(bugfix ?? []), ...followOnTrackerAttach(approved, repoPath)];
+						return [...(bugfix ?? []), ...await followOnTasksSync(approved, repoPath), ...followOnTrackerAttach(approved, repoPath)];
 					},
 				},
 			);

@@ -261,7 +261,9 @@
     "reviewOverride": {
       "reason": "Owner approved after one authoring pass; the daemon review blocked on 6 MED (0 HIGH), all valid. The fixes and the resolved questions are recorded as binding requirements for the plan and the build in docs/plans/core-data-model.md (\"s5 LLD approved with an override\").",
       "at": "2026-10-21T11:52:56.468Z"
-    }
+    },
+    "staleAckedAt": "2026-10-21T11:59:09.135Z",
+    "staleAckedReason": "AMD-9 is the amendment this LLD proposed (an additive Feedback.inReplyTo on sc3); the LLD already designs against it and does not change"
   },
   "body": {
     "summary": {

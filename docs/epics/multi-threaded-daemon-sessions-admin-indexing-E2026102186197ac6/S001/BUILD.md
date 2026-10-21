@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-10-21T15:03:00.014Z  ·  **Updated:** 2026-10-21T15:44:08.534Z
+**Standalone:** no  ·  **Created:** 2026-10-21T15:03:00.014Z  ·  **Updated:** 2026-10-21T15:50:23.544Z
 
-**Commit:** 8a608951
+**Commit:** 9ef84e1d
 
 ## Summary
 
@@ -19,34 +19,67 @@ Added src/daemon/threads/step-state.ts: SharedStepStateStore with today's per-ki
 - ✓ `t5`
 - ✓ `t6`
 - ✓ `t7`
+- ✓ `t8`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/db/graph/__tests__/helpers/lmdb-open-close.mjs` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/graph/__tests__/helpers/lmdb-worker.mjs` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/graph/__tests__/worker-thread-lock.test.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/__tests__/helpers/store-guard-worker.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/__tests__/store-guard.test.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/store-guard.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/__tests__/channel.test.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/__tests__/helpers/hub-worker.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/channel.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/__tests__/helpers/board-worker.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/__tests__/registry-board.test.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/registry.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/status-board.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/graph/__tests__/helpers/health-worker.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/graph/__tests__/store-health-threads.test.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/graph/store.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/store-health-hub.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/graph/__tests__/helpers/health-hub-worker.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/db/duckdb-pool.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/__tests__/cross-thread-stores.test.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/__tests__/helpers/duckdb-query-worker.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/__tests__/helpers/lance-reader-worker.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/db/lance/conn.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/__tests__/helpers/step-state-worker.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/__tests__/step-state.test.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
-- `src/daemon/threads/step-state.ts` — **insrc-build** (2026-10-21T15:44:08.534Z)
+- `src/db/graph/__tests__/helpers/lmdb-open-close.mjs` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/graph/__tests__/helpers/lmdb-worker.mjs` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/graph/__tests__/worker-thread-lock.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/__tests__/helpers/store-guard-worker.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/__tests__/store-guard.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/store-guard.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/__tests__/channel.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/__tests__/helpers/hub-worker.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/channel.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/__tests__/helpers/board-worker.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/__tests__/registry-board.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/registry.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/status-board.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/graph/__tests__/helpers/health-worker.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/graph/__tests__/store-health-threads.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/graph/store.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/store-health-hub.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/graph/__tests__/helpers/health-hub-worker.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/db/duckdb-pool.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/__tests__/cross-thread-stores.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/__tests__/helpers/duckdb-query-worker.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/__tests__/helpers/lance-reader-worker.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/db/lance/conn.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/__tests__/helpers/step-state-worker.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/__tests__/step-state.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/threads/step-state.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/__tests__/analyze-step-bundle-report.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/__tests__/analyze-step-measure.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/__tests__/analyze-step-narrow.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/__tests__/analyze-step-scope.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/__tests__/analyze-step-state.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/__tests__/step-host.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/analyze-step/phases/bundle.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/analyze-step/phases/narrow.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/analyze-step/phases/plan.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/analyze-step/phases/start.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/analyze-step/state-store.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/analyze-step/state.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/amendments-e2e.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/brainstorm-state.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/define-e2e.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/design-story-e2e.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/handler.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/questions-gate-e2e.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/__tests__/tracker-tasks-coarse.test.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/phases/plan.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/phases/start.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/phases/step.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/phases/synthesize.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/state-store.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)
+- `src/daemon/steps/workflow-step/state.ts` — **insrc-build** (2026-10-21T15:50:23.544Z)

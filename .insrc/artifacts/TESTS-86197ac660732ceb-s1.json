@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:44:08.534Z",
+    "updatedAt": "2026-10-21T15:50:23.544Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -506,6 +506,200 @@
               },
               {
                 "title": "step state minted in one worker is read in another after the first exits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "9ef84e1d",
+        "ranAt": "2026-10-21T15:50:23.544Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/__tests__/analyze-step-state.test.ts passes unchanged in meaning against the hub-backed store",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "encodeState + decodeState round-trip preserves every field",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "decodeState rejects a bogus token with StepStateDecodeError",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "releaseState drops the entry so a subsequent decodeState fails",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+                "title": "analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts passes unchanged in meaning, with today's not-found messages",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "save + load round-trip",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "replaceState is mint-before-release: the new token always exists even as the old is dropped",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+                "title": "replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/analyze-step-state.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 741,
+            "titles": [
+              {
+                "title": "encodeState + decodeState round-trip preserves every field",
+                "result": "pass"
+              },
+              {
+                "title": "encodeState mints a short URL-safe base64 token (22 chars, no padding)",
+                "result": "pass"
+              },
+              {
+                "title": "decodeState rejects a bogus token with StepStateDecodeError",
+                "result": "pass"
+              },
+              {
+                "title": "decodeState rejects a token of the wrong shape (too short)",
+                "result": "pass"
+              },
+              {
+                "title": "assertStage passes for a matching stage",
+                "result": "pass"
+              },
+              {
+                "title": "assertStage throws on a stage mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "releaseState drops the entry so a subsequent decodeState fails",
+                "result": "pass"
+              },
+              {
+                "title": "token round-trips a state with an executed plan attached",
+                "result": "pass"
+              },
+              {
+                "title": "analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted",
+                "result": "pass"
+              },
+              {
+                "title": "analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)",
+                "result": "pass"
+              },
+              {
+                "title": "analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/state-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 563,
+            "titles": [
+              {
+                "title": "save + load round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "release drops the entry",
+                "result": "pass"
+              },
+              {
+                "title": "load throws on unknown token",
+                "result": "pass"
+              },
+              {
+                "title": "token is URL-safe base64 (no +, /, =)",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: decodeState on a structurally-garbage token throws code 'malformed' (distinct from 'not-found')",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: assertStage on a valid token at the wrong stage throws 'wrong-stage' (unchanged)",
+                "result": "pass"
+              },
+              {
+                "title": "s5/t2: the WorkflowStateDecodeError code union carries 'not-found' plus the original three",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState(undefined, ...) behaves exactly like saveState (first-mint: nothing released)",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState is mint-before-release: the new token always exists even as the old is dropped",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState never deletes the just-minted token in the degenerate prev===next case",
+                "result": "pass"
+              },
+              {
+                "title": "replaceState LRU: a run of > MAX_ENTRIES turns keeps its active token (never evicted)",
+                "result": "pass"
+              },
+              {
+                "title": "reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev)",
                 "result": "pass"
               }
             ],

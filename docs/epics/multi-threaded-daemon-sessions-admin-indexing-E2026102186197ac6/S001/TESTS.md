@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -202,3 +202,34 @@ Run at 2026-10-21T15:44:08.534Z on commit `8a608951`. Tests check: **passed**. 3
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/step-state.test.ts` | 0 | 3 | 0.8 s |  |
+
+## t8
+
+Run at 2026-10-21T15:50:23.544Z on commit `9ef84e1d`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: src/daemon/steps/__tests__/analyze-step-state.test.ts passes unchanged in meaning against the hub-backed store**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | encodeState + decodeState round-trip preserves every field | `src/daemon/steps/__tests__/analyze-step-state.test.ts` |
+| pass | decodeState rejects a bogus token with StepStateDecodeError | `src/daemon/steps/__tests__/analyze-step-state.test.ts` |
+| pass | releaseState drops the entry so a subsequent decodeState fails | `src/daemon/steps/__tests__/analyze-step-state.test.ts` |
+| pass | analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted | `src/daemon/steps/__tests__/analyze-step-state.test.ts` |
+| pass | analyze reencodeState: version guard throws wrong-version, else delegates (releases prev) | `src/daemon/steps/__tests__/analyze-step-state.test.ts` |
+
+**unit: src/daemon/steps/workflow-step/__tests__/state-store.test.ts passes unchanged in meaning, with today's not-found messages**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | save + load round-trip | `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` |
+| pass | s5/t2: decodeState on an unknown/released token throws code 'not-found' with the plain message | `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` |
+| pass | replaceState is mint-before-release: the new token always exists even as the old is dropped | `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` |
+| pass | reencodeState: version guard throws wrong-version, else delegates to replaceState (releases prev) | `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` |
+| pass | replaceState: mints a new token, releases the (defined+distinct) previous one — store stays ~1 | `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/analyze-step-state.test.ts` | 0 | 11 | 0.7 s |  |
+| `src/daemon/steps/workflow-step/__tests__/state-store.test.ts` | 0 | 14 | 0.6 s |  |

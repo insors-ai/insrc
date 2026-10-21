@@ -98,13 +98,14 @@ test('a dirty tree gives attribution working-tree and the step-down order is unc
 		assert.equal(dirty.subject.changeSetAttribution, 'working-tree');
 		assert.deepEqual(dirty.subject.sharedWithExcluded, []);
 
-		// A clean tree with no trailered commit: the first-parent range, as before.
+		// A clean tree where every commit carries another Story's trailer: a Story
+		// with no carrying commit gets none of them (ISSUE-b97752e9).
 		git(r, 'checkout', '-q', '--', 'README.md');
 		const untrailed = await resolveCodeReviewSubject(r, 'ffffffffffffffff', 'S001', deps(base));
 		assert.ok(untrailed.ok);
 		if (!untrailed.ok) return;
 		assert.equal(untrailed.subject.changeSetAttribution, 'first-parent-range');
-		assert.deepEqual([...untrailed.subject.changedFiles].sort(), ['src/mine.ts', 'src/mine2.ts', 'src/shared.ts', 'src/theirs.ts']);
+		assert.deepEqual([...untrailed.subject.changedFiles], []);
 
 		// Step down: the range attempt fails, then the ledger-only one, then the plain call.
 		const labels: string[] = [];

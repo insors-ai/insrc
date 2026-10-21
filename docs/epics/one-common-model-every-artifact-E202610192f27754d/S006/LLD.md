@@ -562,3 +562,21 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
 - **[[c7]]** `code` `src/workflow/tracker-auto.ts:495-620` — "approve-time extras and teamPush functions"
 - **[[c8]]** `code` `src/workflow/storage.ts:125-250` — "carryTracker and prepareArtifactWrite"
 - **[[c9]]** `code` `src/workflow/team/gate.ts:204-225` — "synchronous teamContext resolve and ensure"
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-21T15:26:27.062Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

@@ -1,0 +1,2 @@
+.insrc/artifacts/*.log.jsonl merge=union
+.insrc/artifacts/*.feedback.jsonl merge=union

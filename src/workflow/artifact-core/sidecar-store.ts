@@ -11,12 +11,13 @@
  * module; a TASK id shares the files of its Story's TASKS artifact.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { ARTIFACTS_DIR } from '../storage.js';
+import { JOURNAL_DIR } from './journal.js';
 import { appendSidecarLine } from './sidecar.js';
 import type { SidecarFile, SidecarIo } from './sidecar.js';
 import { HistoryReadError } from './types.js';
@@ -130,4 +131,35 @@ export class FileSidecarStore implements SidecarStore {
 		});
 		return [...seen.values()].map(v => v.entry).sort(compareEntries);
 	}
+}
+
+/** Append the lines of `wanted` that `file` lacks. True when it wrote; a file that cannot be read or written is a warning, not an error. */
+function ensureLines(file: string, wanted: readonly string[]): boolean {
+	try {
+		const text = existsSync(file) ? readFileSync(file, 'utf8') : '';
+		const have = new Set(text.split('\n').map(l => l.trim()));
+		const missing = wanted.filter(l => !have.has(l));
+		if (missing.length === 0) return false;
+		appendFileSync(file, (text !== '' && !text.endsWith('\n') ? '\n' : '') + missing.join('\n') + '\n', 'utf8');
+		return true;
+	} catch (err) {
+		log.warn({ file, err: (err as Error).message }, 'could not add the sidecar rules to the file; add these lines yourself: ' + wanted.join(' | '));
+		return false;
+	}
+}
+
+/**
+ * Add the two merge=union rules to the repository's .gitattributes and the journal folder to its .gitignore, adding
+ * only the lines that are missing. Never rewrites a line; a file it cannot write is a warning and the store still works.
+ */
+export function ensureSidecarRepoRules(repoPath: string, store: SidecarStore): void {
+	ensureLines(join(repoPath, '.gitattributes'), store.mergeAttributes());
+	ensureLines(join(repoPath, '.gitignore'), [`${JOURNAL_DIR}/`]);
+}
+
+/** A file sidecar store whose repository carries the merge rules and the journal ignore entry. The way production creates one. */
+export function createFileSidecarStore(repoPath: string): FileSidecarStore {
+	const store = new FileSidecarStore(repoPath);
+	ensureSidecarRepoRules(repoPath, store);
+	return store;
 }

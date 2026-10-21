@@ -23,3 +23,5 @@ __pycache__/
 # into every `git clone`, incl. the daemon install at ~/.insrc/daemon).
 # NOTE: .insrc/artifacts/ stays tracked (workflow artifacts, by design).
 .insrc/config.json
+# the write journal is a local crash-recovery file, never committed
+.insrc/journal/

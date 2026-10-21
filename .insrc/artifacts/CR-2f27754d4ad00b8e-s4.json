@@ -1,0 +1,259 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1792579651082-9vtkzq",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T10:47:34.498Z",
+    "model": "claude:opus",
+    "elapsedMs": 145388,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s4",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s4",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        ".gitattributes",
+        ".gitignore",
+        "docs/plans/core-data-model.md",
+        "src/daemon/__tests__/code-review-rpc-fallback.test.ts",
+        "src/daemon/__tests__/code-review-rpc.test.ts",
+        "src/daemon/__tests__/lifecycle-wiring.test.ts",
+        "src/daemon/code-review-rpc.ts",
+        "src/daemon/index.ts",
+        "src/daemon/lifecycle-registry.ts",
+        "src/daemon/steps/build-step/__tests__/build-start.test.ts",
+        "src/daemon/steps/build-step/__tests__/build-step.test.ts",
+        "src/daemon/steps/build-step/phases/implement.ts",
+        "src/daemon/steps/build-step/phases/validate.ts",
+        "src/daemon/steps/code-review-step/__tests__/coverage-normalized-paths.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/routing.test.ts",
+        "src/daemon/steps/code-review-step/__tests__/ux-handler.test.ts",
+        "src/daemon/steps/code-review-step/handler.ts",
+        "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts",
+        "src/daemon/steps/review-step/__tests__/review-step-routing.test.ts",
+        "src/daemon/steps/review-step/__tests__/review-step.test.ts",
+        "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts",
+        "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts",
+        "src/daemon/steps/review-step/handler.ts",
+        "src/daemon/steps/review-step/phases/verdicts.ts",
+        "src/daemon/steps/review-step/types.ts",
+        "src/daemon/workflow-approve.ts",
+        "src/daemon/workflow-review-rpc.ts",
+        "src/workflow/__tests__/anchor-folders.test.ts",
+        "src/workflow/__tests__/artifact-kinds.test.ts",
+        "src/workflow/__tests__/artifact-write-inventory.test.ts",
+        "src/workflow/__tests__/ledger-record-identity.test.ts",
+        "src/workflow/__tests__/review-decision.test.ts",
+        "src/workflow/artifact-core/__tests__/durable-kit.ts",
+        "src/workflow/artifact-core/__tests__/history-order.test.ts",
+        "src/workflow/artifact-core/__tests__/journal-durable.test.ts",
+        "src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts",
+        "src/workflow/artifact-core/__tests__/lifecycle-update-outcome.test.ts",
+        "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+        "src/workflow/artifact-core/__tests__/seed-rules.ts",
+        "src/workflow/artifact-core/__tests__/sidecar-append.test.ts",
+        "src/workflow/artifact-core/__tests__/sidecar-files.test.ts",
+        "src/workflow/artifact-core/__tests__/sidecar-merge.test.ts",
+        "src/workflow/artifact-core/__tests__/sidecar-read.test.ts",
+        "src/workflow/artifact-core/__tests__/sidecar.test.ts",
+        "src/workflow/artifact-core/approval-actor.ts",
+        "src/workflow/artifact-core/codecs.ts",
+        "src/workflow/artifact-core/history.ts",
+        "src/workflow/artifact-core/journal.ts",
+        "src/workflow/artifact-core/lifecycle-service.ts",
+        "src/workflow/artifact-core/sidecar-store.ts",
+        "src/workflow/artifact-core/sidecar.ts",
+        "src/workflow/artifact-core/store.ts",
+        "src/workflow/artifact-core/types.ts",
+        "src/workflow/artifact-write-inventory.ts",
+        "src/workflow/code-review/__tests__/grounding-eligibility.test.ts",
+        "src/workflow/code-review/runner.ts",
+        "src/workflow/review-decision.ts",
+        "src/workflow/runners/build/__tests__/build-record-enrichment.test.ts",
+        "src/workflow/runners/build/__tests__/build-record.test.ts",
+        "src/workflow/runners/build/__tests__/completion-record.test.ts",
+        "src/workflow/runners/build/__tests__/provenance-build.test.ts",
+        "src/workflow/runners/build/__tests__/record-intent.test.ts",
+        "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts",
+        "src/workflow/runners/build/__tests__/test-record-revision.test.ts",
+        "src/workflow/runners/build/__tests__/test-record.test.ts",
+        "src/workflow/runners/build/completion-record.ts",
+        "src/workflow/runners/build/own-files.ts",
+        "src/workflow/runners/build/round-writer.ts",
+        "src/workflow/runners/build/standalone-record.ts",
+        "src/workflow/runners/build/test-record.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/daemon/workflow-review-rpc.ts:102",
+            "message": "workflowReviewStart now passes the repository's LifecycleService to reviewArtifactFile, but it does not pass an actor. The LLD says ReviewArtifactOpts \"carries lifecycle and actor, which workflowReviewStart now always sets\". The daemon review path therefore records its lifecycle review under whatever default reviewArtifactFile picks, not an actor this caller supplies.",
+            "expectationRef": "LLD contractDetails.api reviewArtifactFile / workflowReviewStart: \"Carries lifecycle and actor, which workflowReviewStart now always sets\""
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/sidecar-store.ts:130",
+            "message": "When two frames repeat an (artifactId, entry id) with different content, readRecords raises HistoryReadError naming only the second frame's line (`where`). The LLD requires the error to name both lines. The first frame's line number is not kept in `seen`, so it cannot be reported.",
+            "expectationRef": "LLD errorPaths: \"different content raises HistoryReadError naming both lines\"; SidecarIo.readRecords errors: \"the file and line number are named\""
+          },
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/sidecar-store.ts:150",
+            "message": "When .gitattributes or .gitignore cannot be written, ensureLines only logs a warning, and it lists every wanted line rather than only the missing ones. The failure is not reported in the daemon's status as the LLD error path requires.",
+            "expectationRef": "LLD errorPaths (.gitattributes rules cannot be written): \"logged as a warning naming the missing lines and reported in the daemon's status\""
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/workflow-approve.ts:42",
+            "message": "`let actor;` is declared with no type annotation and gets its type from a later assignment inside the try block (an evolving `any`). The touched modules otherwise annotate deferred locals; the line above declares `let lifecycle: LifecycleService`. Annotate it as `let actor: Actor;`.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/workflow-approve.ts:37",
+            "message": "The comment line `// The repository whose store holds the artifact...` starts at column 0, but its continuation line and the code around it are tab-indented inside the function body. This breaks the module's indentation idiom.",
+            "expectationRef": "module-idiom:indentation",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/daemon/lifecycle-registry.ts:14",
+            "message": "`realpathSync` is imported from 'node:fs' in a second import statement, directly below `import { existsSync, statSync } from 'node:fs'`. The touched modules merge named imports from the same module into one statement.",
+            "expectationRef": "module-idiom:import-grouping",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/sidecar-store.ts:47",
+            "message": "`decodeFrame` reads the regex capture with `m[2] as string`, a cast that skips the `T | undefined` handling noUncheckedIndexedAccess asks for. The group always exists once the match succeeds, so the risk is low, but a `?? ''` fallback or an explicit check would keep it within the rule.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/daemon/steps/build-step/phases/validate.ts:633",
+            "message": "Not covered: the validate turn now puts a BUILD persist failure into the verdict's evidence as `buildRecordNote`, and no test in the changed set or the test record exercises that branch. No test makes `persistBuildRecord` throw a non-MissingAnchorError and then checks that `verdict.evidence.buildRecordNote` names the error while `passed` stays the same. `build-step.test.ts` was changed but is not listed in the test record, so whether it passes is unverified too.",
+            "expectationRef": "validate.ts runValidateTurn buildRecordNote (BUILD persist failure named in the verdict evidence)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/__tests__/round-recording.test.ts:198",
+            "message": "Present but not verified: the test 'the first BUILD round of a Trivial standalone build, with no earlier record in the work item, is created through the registry store on the record's own time' is in the file but not in the test record. The record's latest run of round-recording.test.ts lists only the other four titles. This test is the only one that exercises `rootKinds` in codecs.ts, the `isFirst` createdAt/epicCreatedAt restore in `persistBuildRecord`, and `roundWriterFor` on the Trivial path that implement.ts now takes.",
+            "expectationRef": "codecs.ts creationContextProvider rootKinds; standalone-record.ts persistBuildRecord isFirst branch; implement.ts handleStandaloneImplement roundWriterFor",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/__tests__/lifecycle-wiring.test.ts:133",
+            "message": "Present but not verified: the round-1 test 'one registry entry per repository however its path is written, and a single-artifact approval uses the repository the artifact sits in, not the environment's' is not in the test record. The record's run of lifecycle-wiring.test.ts (t8, before the review-round fixes) lists only the first test. That leaves the realpath normalisation in `lifecycleFor` and `repoOfArtifactPath` in `handleWorkflowApprove` with no confirmed result.",
+            "expectationRef": "lifecycle-registry.ts lifecycleFor path normalisation; repoOfArtifactPath; workflow-approve.ts repoForStore",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/__tests__/history-order.test.ts:35",
+            "message": "Present but not verified: the round-1 test 'openFeedback compares instants, not their spelling' is not in the test record. The record's history-order.test.ts run (t4) lists only the first test, so whether `compareEntries`/`timeOf` handle stamps with and without milliseconds correctly is unconfirmed.",
+            "expectationRef": "sidecar-store.ts compareEntries/timeOf (instant comparison)",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/runners/build/own-files.ts:44",
+            "message": "Not verified: `storyWorkflowFiles` now also lists the BUILD/TESTS line files, and `ensureBuildRecordOnCompletion` now delegates to `persistBuildRecord(…, through)`. The tests that check this (completion-record.test.ts, build-step.test.ts, build-record.test.ts, test-record.test.ts and the other migrated persist tests) were changed but are not in the test record. These tests exist, but their pass state cannot be confirmed from the record.",
+            "expectationRef": "own-files.ts storyWorkflowFiles sidecar entries; completion-record.ts ensureBuildRecordOnCompletion through RoundWriter",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/lifecycle-registry.ts:1",
+            "message": "Grounding caveat: this review ran on degraded (diff-only) grounding. Every changed entry is a file-level diff with an empty `testsReaching`, test files included, so empty edges are not evidence of missing coverage, and I have not reported them as HIGH breaches. Instead I checked coverage against the test record. All 21 promised tests are present and passing there: the sidecar, journal, history-order, merge, lifecycle-update-outcome, lifecycle-wiring, verdicts-lifecycle, round-recording and inventory tests. The record predates the round-1 and round-2 fix commits (latest run 10:22, t12), so it does not confirm the fixes made in those commits (verdicts inspect-before-read, head-changed-after-stage reason).",
+            "expectationRef": "all changed production files (empty testsReaching under diff grounding)",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/runners/build/standalone-record.ts:362",
+            "message": "`isFirst` is computed as `!existsSync(jsonPath)` before `storeRound`, but `storeRound` (via `discardUnreadableHead`) also deletes an existing head it cannot read and lets the store create a fresh one on its own clock. In that case `isFirst` is false, so the code that restores the build's own `createdAt`/`epicCreatedAt` is skipped. The second `prepareBuildRecord` then merges onto the store-created head, where the prior `createdAt` wins, so the record takes the store's clock instead of the time the build gave it. That differs from the true first-write path and can re-date the record. Take the 'first' signal from `discardUnreadableHead`'s return value as well as from `existsSync`.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/artifact-core/journal.ts:83",
+            "message": "The same try { return Promise.resolve(...) } catch (err) { return Promise.reject(err instanceof Error ? err : new Error(String(err))) } wrapper is written out three times here (stage/pending/clear) and twice more in FileSidecarStore.appendRecord/readRecords. `async` arrow functions or methods would give the same reject-on-throw behaviour without the boilerplate.",
+            "counterpartRef": "FileSidecarStore.appendRecord",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/lifecycle-registry.ts:14",
+            "message": "`node:fs` is imported on two separate lines (existsSync/statSync, then realpathSync). Merge them into one import. Style only.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/daemon/workflow-approve.ts:37",
+            "message": "The comment line '// The repository whose store holds the artifact…' has lost its leading tab, so it is out of line with the block it describes. Style only.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 15
+    }
+  }
+}

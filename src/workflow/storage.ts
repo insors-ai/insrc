@@ -241,10 +241,10 @@ export function prepareArtifactWrite(
 			contentChanged = true;
 		}
 	} else {
-		// A meta-only write never moves the revision; a lifecycle-bearing head still has its hash and times reconciled.
-		if (isRecord(meta['lifecycle'])) {
-			const reconciled = reconcileLifecycleOf(prior, next, meta, readRevision(prior), opts);
-			if (!reconciled.contentChanged) meta['lifecycle'] = reconciled.lifecycle;
+		// A meta-only write never moves the revision: the lifecycle keeps the revision (number, hash, time, author) already stored.
+		const priorLifecycle = priorMeta?.['lifecycle'];
+		if (isRecord(meta['lifecycle']) && isRecord(priorLifecycle) && isRecord(priorLifecycle['revision'])) {
+			meta['lifecycle'] = { ...meta['lifecycle'], revision: priorLifecycle['revision'] };
 		}
 		if (priorMeta !== undefined && 'revision' in priorMeta) meta['revision'] = priorMeta['revision'];
 		else delete meta['revision'];

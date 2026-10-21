@@ -76,11 +76,16 @@ describe('prepareArtifactWrite with meta.lifecycle', () => {
 			assert.equal(metaOnly.revision, 1);
 			assert.equal(metaOnly.contentChanged, false);
 			assert.equal(parse(metaOnly.bytes).meta.lifecycle.status, 'approved');
+			assert.deepEqual(parse(metaOnly.bytes).meta.lifecycle.revision, created.meta.lifecycle.revision);
+			// even a forged revision supplied with a meta-only write is replaced by the stored one
+			const forgedMeta = prepareArtifactWrite(path, head('one', { lifecycle: lc({ status: 'approved', revision: { number: 7, contentHash: 'abc', at: 'x', by: bob } }) }), 'meta-only', opts);
+			assert.deepEqual(parse(forgedMeta.bytes).meta.lifecycle.revision, created.meta.lifecycle.revision);
 
 			// a meta-only write of changed content leaves the lifecycle as given and the revision alone
 			const metaOnlyChanged = prepareArtifactWrite(path, head('three', { lifecycle: approved }), 'meta-only', opts);
 			assert.equal(metaOnlyChanged.revision, 1);
 			assert.equal(parse(metaOnlyChanged.bytes).meta.lifecycle.status, 'approved');
+			assert.deepEqual(parse(metaOnlyChanged.bytes).meta.lifecycle.revision, created.meta.lifecycle.revision);
 
 			// a head without meta.lifecycle is prepared as before: legacy comparison, no lifecycle added
 			const legacy = join(dir, 'legacy.json');

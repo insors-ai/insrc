@@ -86,9 +86,8 @@ export function assertLegalStatusChange(from: Status, to: Status, op?: Operation
 function sortKeys(v: unknown): unknown {
 	if (Array.isArray(v)) return v.map(sortKeys);
 	if (typeof v === 'object' && v !== null) {
-		const out: Record<string, unknown> = {};
-		for (const k of Object.keys(v).sort()) out[k] = sortKeys((v as Record<string, unknown>)[k]);
-		return out;
+		// fromEntries defines own properties, so a JSON-owned '__proto__' key survives
+		return Object.fromEntries(Object.keys(v).sort().map(k => [k, sortKeys((v as Record<string, unknown>)[k])]));
 	}
 	return v;
 }

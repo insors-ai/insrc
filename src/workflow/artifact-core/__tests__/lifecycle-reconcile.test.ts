@@ -37,9 +37,11 @@ describe('reconcileLifecycle', () => {
 		assert.equal(same.lifecycle.revision.at, T0, 'an identical rewrite keeps the revision time and author');
 		assert.equal(same.lifecycle.revision.by.id, 'github:alice');
 
-		// a reference-only change is not a content change: the views carry the same description and payload
-		assert.equal(reconcileLifecycle(prior, { ...view({ number: 2 }) }, 2, bob, T1).contentChanged, false);
-		void ref;
+		// a reference-only change is not a content change: the next view differs from the prior only in references and parent
+		const withRefs = { ...view({ number: 2 }), references: [ref], parent: ref } as ContentView;
+		const refOnly = reconcileLifecycle(prior, withRefs, 2, bob, T1);
+		assert.equal(refOnly.contentChanged, false);
+		assert.equal(refOnly.lifecycle.revision.number, 2);
 
 		// an empty stored hash on the prior head: its own content decides, so an identical rewrite stays at the number
 		const unhashed = reconcileLifecycle(view({ number: 4, stored: '' }), view({ number: 4, stored: '' }), 4, alice, T1);
@@ -64,8 +66,8 @@ describe('reconcileLifecycle', () => {
 			review: { revision: 2, reviewer: alice, party: 'controller', verdict: 'pass', counts: {}, at: T0 },
 			signoffs: [{ revision: 2, request: ref, state: 'completed', actors: [alice], at: T0 }],
 		};
-		const prior = view({ number: 2, status: 'signed-off', rest });
-		const out = reconcileLifecycle(prior, view({ number: 2, status: 'signed-off', body: { a: 2 }, rest }), 3, bob, T1);
+		const prior = view({ number: 2, status: 'approved', rest });
+		const out = reconcileLifecycle(prior, view({ number: 2, status: 'approved', body: { a: 2 }, rest }), 3, bob, T1);
 		assert.equal(out.contentChanged, true);
 		assert.equal(out.lifecycle.status, 'draft');
 		assert.equal(out.lifecycle.revision.number, 3);

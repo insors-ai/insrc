@@ -14,6 +14,7 @@ import { isActor, isReference } from './decode.js';
 import { HistoryEntryError, HistoryReadError } from './types.js';
 import type { ChangeLogEntry, Feedback, Operation } from './types.js';
 import type { SidecarIo, SidecarFile } from './sidecar.js';
+import { compareEntries } from './sidecar-store.js';
 
 const OPERATIONS: readonly Operation[] = [
 	'create', 'update', 'delete', 'reparent', 'request-review', 'review', 'approve', 'reject', 'open-signoff',
@@ -88,12 +89,6 @@ function validateFeedback(f: Feedback): void {
 	}
 }
 
-/** When an entry happened, as a number; unparseable stamps sort first. */
-function at(timestamp: string): number {
-	const t = Date.parse(timestamp);
-	return Number.isNaN(t) ? Number.NEGATIVE_INFINITY : t;
-}
-
 export class History {
 	constructor(private readonly io: SidecarIo) {}
 
@@ -118,12 +113,16 @@ export class History {
 
 	feedback(id: string): Promise<Feedback[]> { return this.read<Feedback>('feedback', id, f => validateFeedback(f)); }
 
-	/** The feedback no later log entry addresses (by listing its id, or with `all`). */
+	/**
+	 * The feedback no later log entry addresses (by listing its id, or with `all`). "Later" is the order the reader
+	 * returns entries in: by timestamp, then entry id, so an entry made in the same instant is ordered the same
+	 * whichever file is read first.
+	 */
 	async openFeedback(id: string): Promise<Feedback[]> {
 		const feedback = await this.feedback(id);
 		const log = await this.log(id);
 		return feedback.filter(f => !log.some(e =>
-			at(e.timestamp) > at(f.timestamp)
+			compareEntries(e, f) > 0
 			&& (e.addresses === 'all' || (Array.isArray(e.addresses) && e.addresses.includes(f.id)))));
 	}
 

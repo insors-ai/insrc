@@ -165,6 +165,7 @@ export class LifecycleService {
 	 */
 	async inspect(id: string): Promise<{ readonly status: Status; readonly integrity: Integrity; readonly lifecycle: Lifecycle } | undefined> {
 		try {
+			await this.deps.store.finishPending(id);
 			const stored = await this.deps.store.readWithHistory(id);
 			const tail = [...stored.changeLog].reverse().find(e => e.revision !== undefined);
 			const integrity = checkIntegrity({ description: stored.description, payload: stored.payload, lifecycle: stored.lifecycle }, tail);

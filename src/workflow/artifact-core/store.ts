@@ -27,7 +27,7 @@ import { checkSidecarEntrySize } from './sidecar.js';
 import type { History } from './history.js';
 import { createMemoryJournal, headHashOf } from './journal.js';
 import type { StagedOperation, WriteJournal } from './journal.js';
-import { TERMINAL, assertLegalStatusChange, checkHeadIntegrity, isLifecycleOperation } from './lifecycle.js';
+import { TERMINAL, assertLegalStatusChange, checkHeadIntegrity, checkIntegrity, isLifecycleOperation } from './lifecycle.js';
 import { ArtifactNotFoundError, ArtifactShapeError, IllegalTransitionError, LifecycleConflictError } from './types.js';
 import type { Actor, Artifact, ChangeLogEntry, Feedback, Operation, Reference } from './types.js';
 
@@ -59,6 +59,14 @@ export interface UpdateResult {
 function completedBytes(bytes: string): string {
 	const head = JSON.parse(bytes) as { meta: { lifecycle: Record<string, unknown> } };
 	head.meta.lifecycle['status'] = 'completed';
+	return JSON.stringify(head, null, 2) + '\n';
+}
+
+/** The head text with its revision (the file's and the lifecycle's) set to `number`: a conflict resolution moves the head past the log. */
+function revisedBytes(bytes: string, number: number): string {
+	const head = JSON.parse(bytes) as { meta: { revision?: number; lifecycle: { revision: Record<string, unknown> } } };
+	head.meta.revision = number;
+	head.meta.lifecycle.revision['number'] = number;
 	return JSON.stringify(head, null, 2) + '\n';
 }
 
@@ -191,6 +199,16 @@ export class ArtifactStore {
 		});
 	}
 
+	/**
+	 * Finish the operation the journal still holds for `id`, under the artifact's queue. For a reader that has to see the
+	 * head and the log agree (a crash between the log append and the head replace leaves them apart). Refuses with
+	 * LifecycleConflictError when the head moved on after the write was staged.
+	 */
+	async finishPending(id: string): Promise<void> {
+		if (ArtifactIds.parse(id) === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
+		await this.enqueue(id, () => this.completePending(id, artifactJsonPath(this.deps.repoPath, id)));
+	}
+
 	/** One write at a time per artifact in this process: recovery, stage, append and replace must not interleave. */
 	private async enqueue<T>(id: string, run: () => Promise<T>): Promise<T> {
 		const lockKey = `${this.deps.repoPath}\0${id}`;
@@ -228,10 +246,19 @@ export class ArtifactStore {
 		}
 		// An ordinary write on a head whose stored hash differs from its content is refused; a conflict-resolved write adopts the head's content.
 		const resolving = options.outcome?.result === 'conflict-resolved';
-		if (prior !== undefined && !resolving) {
+		// After a merge the union of both clones' log lines can be ahead of the head git kept; only an explicit conflict
+		// resolution may write over that, because a matching head hash does not show the log was reconciled. The
+		// resolution moves the head's revision past the log's, so the head and the log agree again afterwards.
+		let revisionFloor: number | undefined;
+		if (prior !== undefined) {
 			const view = { description: prior.artifact.description, payload: prior.artifact.payload, lifecycle: prior.artifact.lifecycle };
-			const integrity = checkHeadIntegrity(view);
-			if (!integrity.ok) throw new LifecycleConflictError(a.id, integrity.reason);
+			const tail = (await this.deps.history.log(a.id)).reverse().find(e => e.revision !== undefined);
+			if (!resolving) {
+				const integrity = checkIntegrity(view, tail);
+				if (!integrity.ok && integrity.reason !== 'head-ahead-of-log') throw new LifecycleConflictError(a.id, integrity.reason);
+			} else if (tail?.revision !== undefined && tail.revision.number > prior.artifact.lifecycle.revision.number) {
+				revisionFloor = tail.revision.number + 1;
+			}
 		}
 		const source = resolving && prior !== undefined ? { ...a, description: prior.artifact.description, payload: prior.artifact.payload } : a;
 
@@ -258,7 +285,9 @@ export class ArtifactStore {
 		if (cascadeFrom !== undefined && reconciled.contentChanged && prior !== undefined) {
 			throw new IllegalTransitionError(`${a.id} cannot be completed with a content change`);
 		}
-		const prepared = cascadeFrom === undefined ? reconciled : { ...reconciled, bytes: completedBytes(reconciled.bytes) };
+		const completed = cascadeFrom === undefined ? reconciled : { ...reconciled, bytes: completedBytes(reconciled.bytes) };
+		const prepared = revisionFloor !== undefined && completed.revision < revisionFloor
+			? { ...completed, bytes: revisedBytes(completed.bytes, revisionFloor), revision: revisionFloor } : completed;
 		const stored = decodeArtifactHead(a.id, prepared.bytes).artifact.lifecycle;
 		const from = prior?.artifact.lifecycle.status;
 		if (from !== undefined && isLifecycleOperation(operation)) assertLegalStatusChange(from, stored.status, operation, options.cascade === true);

@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "S001",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T08:59:36.959Z",
+    "updatedAt": "2026-10-21T09:02:40.553Z",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
     "epicSlug": "scope-story-s-code-review-what"
@@ -2420,6 +2420,152 @@
               },
               {
                 "title": "a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "c66188c6",
+        "ranAt": "2026-10-21T09:02:40.553Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+                "title": "a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/__tests__/subject.test.ts",
+                "title": "resolveCodeReviewSubject: an empty Story set declines with no-build-record — nothing attributable to review (ISSUE-b97752e9)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2298,
+            "titles": [
+              {
+                "title": "the review subject holds only the Story's own files and records attribution story-trailer",
+                "result": "pass"
+              },
+              {
+                "title": "a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree",
+                "result": "pass"
+              },
+              {
+                "title": "with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree",
+                "result": "pass"
+              },
+              {
+                "title": "a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record",
+                "result": "pass"
+              },
+              {
+                "title": "a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched",
+                "result": "pass"
+              },
+              {
+                "title": "a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/__tests__/subject.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1534,
+            "titles": [
+              {
+                "title": "resolveCodeReviewSubject: changedFiles equals the git set exactly, build record not mutated",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: an empty Story set declines with no-build-record — nothing attributable to review (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: git derivation failure -> no-build-record",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: UnregisteredRepoError propagates (not collapsed to a reason)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveCodeReviewSubject: read-only — only the injected read seams are called",
+                "result": "pass"
+              },
+              {
+                "title": "T39: the Story committed and ONLY an approval-stamped artifact json dirty -> changedFiles is exactly the Story's source files",
+                "result": "pass"
+              },
+              {
+                "title": "T39: the Story's committed ledger files (artifact json, build-start, rendered docs) are not in the reviewed set either",
+                "result": "pass"
+              },
+              {
+                "title": "T40: a Story that edited .insrc/artifacts/templates/t.json (and other user-authored .insrc files) keeps them in changedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "T41: a base naming a commit that does not exist -> no-build-record, never the working tree, and exactly one warning (ISSUE-b97752e9)",
+                "result": "pass"
+              },
+              {
+                "title": "T41: with NO resolvable base the review declines and the changed-file seam is never called — no base is invented",
+                "result": "pass"
+              },
+              {
+                "title": "the resolver is asked for THIS Story's base, and that base plus the ledger globs reach the seam",
+                "result": "pass"
+              },
+              {
+                "title": "T43: a seam that throws on the anchored derivation -> no-build-record after ONE attempt; there is no plainer one",
+                "result": "pass"
+              },
+              {
+                "title": "T43: an error that is NOT a derivation failure propagates from the first attempt — it is not swallowed by the fallback",
+                "result": "pass"
+              },
+              {
+                "title": "the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built",
                 "result": "pass"
               }
             ],

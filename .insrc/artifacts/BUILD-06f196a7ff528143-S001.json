@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "S001",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T08:59:36.959Z",
+    "updatedAt": "2026-10-21T09:02:40.553Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
@@ -43,9 +43,13 @@
       {
         "id": "t9",
         "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
       }
     ],
-    "summary": "A pre-trailer Story's range ends at the commit its BUILD record names (resolveStoryRangeEnd); an end equal to the base gives an empty set; an end off the first-parent line is ignored; the missing-trailer warning names only untrailered commits; persistBuildRecord keeps a resolving prior commit for a Story with no trailered commit. Fixtures in build-start.test.ts and build-step.test.ts that committed Story work untrailered after the first record now carry the trailer, which tightened T33/T34 to exactly the two task files.",
+    "summary": "An empty anchored Story set declines with no-build-record in resolveCodeReviewSubject; codeReview.run (degraded) ends with reason no-build-record and the step handler with its existing subject-decline code 'no-subject' carrying no-build-record, both before any judge or write. The 'empty diff is a valid trivial subject' test is replaced and the read-only test's seam returns a file so it still reaches the record read.",
     "testRecord": {
       "md": "docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/TESTS.md"
     },
@@ -55,240 +59,240 @@
           "file": "src/daemon/tools/builtins/git/__tests__/diff.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/git/diff.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/subject-attribution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/story-commits.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/story-commits.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/changed-files.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/changed-files.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/diff-attribution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/diff-grounding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/grounding-eligibility.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/grounding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/daemon/code-review-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/code-review-step/handler.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/grounding-ipc.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/runner.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/__tests__/subject.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/runner.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/subject.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/phases/validate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/completion-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/completion-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/build-step/validation-checks.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-06f196a7ff528143-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-06f196a7ff528143-S001.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/__tests__/build-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/range-base.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       },
       {
         "target": {
           "file": "src/workflow/runners/build/standalone-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T08:59:36.959Z"
+        "timestamp": "2026-10-21T09:02:40.553Z"
       }
     ],
-    "commit": "3983ca96"
+    "commit": "c66188c6"
   }
 }

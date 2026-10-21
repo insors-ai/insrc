@@ -23,8 +23,9 @@ import { codecFor, creationContextProvider } from './codecs.js';
 import type { CreationContextProvider, HeadFile, HeadPayload } from './codecs.js';
 import { decodeArtifactHead, isActor } from './decode.js';
 import { validateLogEntry } from './history.js';
+import { checkSidecarEntrySize } from './sidecar.js';
 import type { History } from './history.js';
-import { createMemoryJournal } from './journal.js';
+import { createMemoryJournal, headHashOf } from './journal.js';
 import type { StagedOperation, WriteJournal } from './journal.js';
 import { TERMINAL, assertLegalStatusChange, checkHeadIntegrity, isLifecycleOperation } from './lifecycle.js';
 import { ArtifactNotFoundError, ArtifactShapeError, IllegalTransitionError, LifecycleConflictError } from './types.js';
@@ -279,8 +280,9 @@ export class ArtifactStore {
 		};
 		// Never stage what a later read or append would refuse: it would block every later write of this artifact.
 		validateLogEntry(entry);
+		checkSidecarEntrySize({ artifactId: a.id, entry });
 		decodeArtifactHead(a.id, prepared.bytes);
-		const op: StagedOperation = { operationId, priorRevision, bytes: prepared.bytes, entry };
+		const op: StagedOperation = { operationId, priorRevision, priorHeadHash: headHashOf(priorBytes), bytes: prepared.bytes, entry };
 
 		await this.deps.journal.stage(a.id, op);
 		await this.deps.history.appendLog(a.id, entry);
@@ -293,14 +295,32 @@ export class ArtifactStore {
 		return entry;
 	}
 
-	/** Finish the operation the journal holds for `id`: append its entry if the log lacks it, replace the head if it differs, clear. */
+	/**
+	 * Finish the operation the journal holds for `id`: append its entry if the log lacks it, replace the head if it differs, clear.
+	 * The head is replaced only while it still hashes to the head the write started from; a head that moved on is never
+	 * overwritten and the journal file is kept. A staged entry the log would refuse is discarded, or it would block every later write.
+	 */
 	private async completePending(id: string, path: string): Promise<void> {
 		const op = await this.deps.journal.pending(id);
 		if (op === undefined) return;
+		try {
+			validateLogEntry(op.entry);
+			checkSidecarEntrySize({ artifactId: id, entry: op.entry });
+		} catch (err) {
+			log.warn({ id, operationId: op.operationId, err: (err as Error).message }, 'discarding a staged operation whose entry is invalid');
+			await this.deps.journal.clear(id, op.operationId);
+			return;
+		}
+		const current = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+		const replace = current !== op.bytes;
+		if (replace && headHashOf(current) !== op.priorHeadHash) {
+			log.warn({ id, operationId: op.operationId, priorHeadHash: op.priorHeadHash, stagedHeadHash: headHashOf(op.bytes), currentHeadHash: headHashOf(current) },
+				'the head moved on after the write was staged; it is not overwritten');
+			throw new LifecycleConflictError(id, 'head-ahead-of-log', `${id} changed after a write was staged (operation ${op.operationId}); the staged write was not applied and a person has to resolve it`);
+		}
 		const entries = await this.deps.history.log(id);
 		if (!entries.some(e => e.id === op.entry.id)) await this.deps.history.appendLog(id, op.entry);
-		const current = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
-		if (current !== op.bytes) (this.deps.writeHead ?? writeAtomic)(path, op.bytes);
+		if (replace) (this.deps.writeHead ?? writeAtomic)(path, op.bytes);
 		await this.clearQuietly(id, op.operationId);
 	}
 

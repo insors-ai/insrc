@@ -13,6 +13,7 @@ import { ArtifactIds } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { checkIntegrity, isLifecycleOperation, nextLifecycle, rollUp, unitMembers } from './lifecycle.js';
 import type { ChildStatusReader, CompletionEvidence, Integrity, TransitionDetail } from './lifecycle.js';
+import type { HeadPayload } from './codecs.js';
 import type { ArtifactStore, WriteOptions } from './store.js';
 import {
 	ArtifactNotFoundError, IllegalTransitionError, LifecycleConflictError,
@@ -161,9 +162,16 @@ export class LifecycleService {
 		}
 	}
 
-	/** Bring the log in step with a head that a writer outside the store has just changed. */
-	recordWrite(id: string, by: Actor): Promise<boolean> {
-		return this.deps.store.recordExternalWrite(id, by);
+	/**
+	 * Replace the content (body and citations) of a stored artifact, through the store: the change is staged, logged with its
+	 * revision and applied under the per-artifact queue, and a content change returns a non-terminal head to draft. For the
+	 * writers (the BUILD record hook, the review auto-fix) that used to rewrite a head behind the store's back.
+	 */
+	updateContent(id: string, by: Actor, payload: HeadPayload): Promise<boolean> {
+		return this.deps.store.update(id, by, current => {
+			const { changeLog: _log, ...head } = current;
+			return { next: { ...head, payload }, options: { operation: 'update' } };
+		});
 	}
 
 	private evidenceFor(ctx: EvidenceContext): CompletionEvidence {

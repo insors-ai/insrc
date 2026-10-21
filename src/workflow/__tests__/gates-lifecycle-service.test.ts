@@ -144,6 +144,10 @@ test('with a service, a review auto-fix or BUILD hook rewrite keeps the log in s
 		assert.equal(tail?.revision?.contentHash, build.lifecycle.revision.contentHash, 'the log ends at the head the hook left');
 		assert.ok(build.changeLog.length >= before + 1, 'the approval was logged');
 		assert.equal(build.lifecycle.status, 'approved');
+		// the hook added body.tasks, a content change: it went through the store as an update, before the approval
+		assert.equal(build.lifecycle.revision.number, 2);
+		assert.deepEqual(build.changeLog.slice(-2).map(e => e.operation), ['update', 'approve']);
+		assert.equal(build.lifecycle.approval?.revision, 2, 'the approval is of the revision the hook left');
 	} finally { k.done(); }
 });
 

@@ -142,9 +142,16 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	const stamped: ReviewReport = { ...report, reviewedBy: 'daemon' };
 	const nextJson = { ...artifact, meta: { ...artifact.meta, review: stamped }, body: fixed.body };
 	// auto-fixes change the body (content); a report-only review changes only meta.
-	writeArtifact(opts.jsonPath, nextJson, fixed.applied.length > 0 ? 'content' : 'meta-only');
-	// The write above is outside the store, so the change log is brought in step with it here.
-	if (opts.lifecycle !== undefined) await opts.lifecycle.recordWrite(artifactId, reviewer);
+	if (opts.lifecycle !== undefined && fixed.applied.length > 0) {
+		// With a service the content goes through the store (staged, logged, revisioned); the review stamp then follows as a meta-only write.
+		const stored = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { citations?: unknown };
+		const citations = Array.isArray(stored.citations) ? stored.citations : [];
+		await opts.lifecycle.updateContent(artifactId, reviewer, { body: fixed.body as Record<string, unknown>, citations });
+		const current = JSON.parse(readFileSync(opts.jsonPath, 'utf8')) as { meta: Record<string, unknown> };
+		writeArtifact(opts.jsonPath, { ...current, meta: { ...current.meta, review: stamped } }, 'meta-only');
+	} else {
+		writeArtifact(opts.jsonPath, nextJson, fixed.applied.length > 0 ? 'content' : 'meta-only');
+	}
 	const nextMd = `${fixed.markdown.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`;
 	// raw-write: markdown render of the review.
 	writeAtomic(opts.mdPath, nextMd);

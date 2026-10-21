@@ -934,11 +934,11 @@ export async function approveWorkflowTarget(
 		skipped.push({ path: jsonPath, reason: new LifecycleConflictError(artifactIdOf(jsonPath), seen.integrity.reason).message });
 		return true;
 	};
-	/** The BUILD record hook rewrites the record outside the store, so the log is brought in step right after it. */
+	/** The BUILD record hook; with a service its content goes through the service's store, so the log stays in step. */
 	const runBuildHook = async (jsonPath: string): Promise<void> => {
 		const ref = buildRefFor(jsonPath);
-		if (ref !== undefined) await ensureBuildRecordOnCompletion(req.repoPath, ref);
-		if (lifecycle !== undefined) await lifecycle.recordWrite(artifactIdOf(jsonPath), actor);
+		if (ref === undefined) return;
+		await ensureBuildRecordOnCompletion(req.repoPath, ref, undefined, lifecycle !== undefined ? { writer: lifecycle, actor } : undefined);
 	};
 	/** With a service: apply the approval through it once the legacy gates have passed, then complete what the BUILD approval finishes. */
 	const applyThroughService = async (jsonPath: string): Promise<boolean> => {

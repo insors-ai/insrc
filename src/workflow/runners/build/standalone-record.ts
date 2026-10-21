@@ -304,7 +304,8 @@ function storyCommit(repoPath: string, epicHash: string, storyId: string): strin
 	return base !== undefined ? newestStoryCommit(repoPath, base, `${epicHash}/${storyId}`) : undefined;
 }
 
-export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string } {
+/** The record `persistBuildRecord` would write: the new write merged on the prior one, with the commit and the folder identity. */
+function prepareBuildRecord(repoPath: string, rec: BuildRecord): { readonly jsonPath: string; readonly merged: BuildRecord; readonly intent: PathIntent } {
 	// The json path is hash-flat (identity-free), so resolve + merge FIRST, then
 	// key the nested md folder on the MERGED record. mergeWithPrior preserves the
 	// original createdAt across an upsert, and for a Trivial standalone (no LLD)
@@ -332,6 +333,16 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	// A write roots the anchor on this record's own time when nothing anchors yet.
 	const intent: PathIntent = { kind: 'write', root: { createdAt: unstamped.meta.createdAt } };
 	const merged: BuildRecord = { ...unstamped, meta: { ...unstamped.meta, ...folderIdentityMeta(folderArgsForMerged(repoPath, unstamped, intent)) } };
+	return { jsonPath, merged, intent };
+}
+
+/** The body `persistBuildRecord` would write for `rec`, so a caller can store it through the artifact store first. Reads only. */
+export function buildRecordBody(repoPath: string, rec: BuildRecord): BuildRecord['body'] {
+	return prepareBuildRecord(repoPath, rec).merged.body;
+}
+
+export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: string; json: string } {
+	const { jsonPath, merged, intent } = prepareBuildRecord(repoPath, rec);
 	// content: a BUILD record is regenerated, so each persist mints a revision.
 	writeArtifact(jsonPath, merged, 'content', { replaceUnreadable: true });   // a regenerable ledger record: an unreadable one is replaced
 	const paths = pathsForMerged(repoPath, merged, intent);

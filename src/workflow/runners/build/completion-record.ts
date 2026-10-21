@@ -19,11 +19,19 @@
  */
 
 import { storyWorkflowFiles } from './own-files.js';
-import { persistBuildRecord, type BuildRecord } from './standalone-record.js';
+import { buildRecordBody, persistBuildRecord, type BuildRecord } from './standalone-record.js';
 import { resolveStoryRangeBase } from './range-base.js';
-import { inheritedStoryStandalone } from '../../storage.js';
+import { buildArtifactId, inheritedStoryStandalone } from '../../storage.js';
+import { ArtifactNotFoundError } from '../../artifact-core/types.js';
+import type { Actor } from '../../artifact-core/types.js';
+import type { HeadPayload } from '../../artifact-core/codecs.js';
 import { collectBuildChangeLog } from './changed-files.js';
 import { getLogger } from '../../../shared/logger.js';
+
+/** Where the record's content goes first when a lifecycle service is in play: its artifact store, so the change log stays in step. */
+export interface BuildContentWriter {
+	updateContent(id: string, by: Actor, payload: HeadPayload): Promise<boolean>;
+}
 
 /**
  * Ensure a BUILD ledger record exists for a completing story, mirroring the
@@ -35,6 +43,7 @@ export async function ensureBuildRecordOnCompletion(
 	repoPath: string,
 	ref: { readonly epicHash: string; readonly storyId: string },
 	listChanged?: (repoPath: string) => Promise<readonly string[]>,
+	through?: { readonly writer: BuildContentWriter; readonly actor: Actor },
 ): Promise<{ readonly md: string; readonly json: string } | undefined> {
 	if (ref.epicHash.length === 0 || ref.storyId.length === 0) return undefined;
 	try {
@@ -85,6 +94,15 @@ export async function ensureBuildRecordOnCompletion(
 			...base,
 			body: { ...base.body, ...(changeLog.length > 0 ? { changeLog } : {}) },
 		};
+		if (through !== undefined) {
+			// The content of an existing record goes through the store (staged, logged, revisioned); the persist below then
+			// finds the content unchanged and only refreshes the meta and the rendered markdown. A first write has no head to update.
+			try {
+				await through.writer.updateContent(buildArtifactId(ref.epicHash, ref.storyId), through.actor, { body: buildRecordBody(repoPath, rec) as unknown as HeadPayload['body'], citations: [] });
+			} catch (err) {
+				if (!(err instanceof ArtifactNotFoundError)) throw err;
+			}
+		}
 		return persistBuildRecord(repoPath, rec);
 	} catch (err) {
 		getLogger('completion-record').warn(

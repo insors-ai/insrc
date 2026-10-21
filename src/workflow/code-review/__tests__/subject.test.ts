@@ -49,11 +49,11 @@ test('resolveCodeReviewSubject: changedFiles equals the git set exactly, build r
 	assert.deepEqual(recordArg, ['/repo', 'epic', 's1']);
 });
 
-test('resolveCodeReviewSubject: empty diff is a valid trivial subject (not an error)', async () => {
-	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({ changedFiles: async () => [] }));
-	assert.equal(res.ok, true);
-	if (!res.ok) return;
-	assert.deepEqual(res.subject.changedFiles, []);
+test('resolveCodeReviewSubject: an empty Story set declines with no-build-record — nothing attributable to review (ISSUE-b97752e9)', async () => {
+	let readRecord = false;
+	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({ changedFiles: async () => [], readBuildRecord: () => { readRecord = true; return null; } }));
+	assert.deepEqual(res, { ok: false, reason: 'no-build-record' });
+	assert.equal(readRecord, false, 'it declines before reading anything else');
 });
 
 // ---- S001: LLD + PLAN both OPTIONAL — three modes keyed on presence ----
@@ -134,7 +134,7 @@ test('resolveCodeReviewSubject: read-only — only the injected read seams are c
 	await resolveCodeReviewSubject('/repo', 'epic', 's1', {
 		requireApprovedLld:  () => { calls.push('lld'); return fakeLld; },
 		requireApprovedPlan: () => { calls.push('plan'); return fakePlan; },
-		changedFiles:        async () => { calls.push('diff'); return []; },
+		changedFiles:        async () => { calls.push('diff'); return ['src/a.ts']; },
 		readBuildRecord:     () => { calls.push('build'); return null; },
 		resolveRangeBase:    () => 'abc',
 	});

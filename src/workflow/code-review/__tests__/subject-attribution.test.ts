@@ -25,7 +25,12 @@ import type { ChangedFilesOptions } from '../../runners/build/changed-files.js';
 import { resolveCodeReviewSubject, type SubjectDeps } from '../subject.js';
 import { runCodeReview, type CodeReviewRunnerDeps } from '../runner.js';
 import type { CodeReviewSubject, DimensionResult, ReviewDimension } from '../types.js';
-import type { LLMProvider } from '../../../shared/types.js';
+import type { IpcStreamMessage, LLMProvider } from '../../../shared/types.js';
+import { assembleDiffCodeReviewGrounding } from '../grounding.js';
+import { stampBuildStart } from '../../runners/build/range-base.js';
+import { codeReviewRunStart } from '../../../daemon/code-review-rpc.js';
+import { handleCodeReviewStep } from '../../../daemon/steps/code-review-step/handler.js';
+import { _clearCodeReviewStateStoreForTests } from '../../../daemon/steps/code-review-step/state-store.js';
 
 const EPIC = 'b47dadc7cf0cccb1';
 const STORY = `${EPIC}/S001`;
@@ -109,12 +114,8 @@ test("a Story's review subject is its trailered commits plus edits of its own fi
 		assert.equal(clean.subject.excludedFromScope, undefined);
 
 		// A Story with no carrying commit, in a range of only other Stories' commits:
-		// none of them is its work (ISSUE-b97752e9).
-		const untrailed = await resolveCodeReviewSubject(r, 'ffffffffffffffff', 'S001', deps(base));
-		assert.ok(untrailed.ok);
-		if (!untrailed.ok) return;
-		assert.equal(untrailed.subject.changeSetAttribution, 'first-parent-range');
-		assert.deepEqual([...untrailed.subject.changedFiles], []);
+		// none of them is its work, so it has nothing to review (ISSUE-b97752e9).
+		assert.deepEqual(await resolveCodeReviewSubject(r, 'ffffffffffffffff', 'S001', deps(base)), { ok: false, reason: 'no-build-record' });
 	} finally { cleanup(); }
 });
 
@@ -185,5 +186,63 @@ test("a pre-trailer Story's review leaves out an uncommitted edit of a file only
 		assert.deepEqual([...res.subject.changedFiles], ['src/legacy.ts']);
 		assert.deepEqual(res.subject.excludedFromScope, ['docs/ontology.md']);
 		assert.equal(res.subject.changeSetAttribution, 'first-parent-range');
+	} finally { cleanup(); }
+});
+
+test('a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record', async () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		// Only another Story's commit since the base: nothing is this Story's.
+		commit(r, { 'src/theirs.ts': '1\n' }, 'feat(build): s3/t1 theirs', 'c2ba6fa6aaaaaaaa/s3');
+		writeFileSync(join(r, '.git', 'info', 'exclude'), '.insrc/\n');
+		const head = git(r, 'rev-parse', 'HEAD').trim();
+		git(r, 'checkout', '-q', base);
+		assert.equal(stampBuildStart(r, EPIC, 'S001'), 'stamped');
+		git(r, 'checkout', '-q', 'main');
+		assert.equal(git(r, 'rev-parse', 'HEAD').trim(), head);
+
+		// 1. The graph path: the subject declines.
+		assert.deepEqual(await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base)), { ok: false, reason: 'no-build-record' });
+
+		// The diff-only callers, handed a subject that resolved, see an empty diff.
+		const subjectFor = (repoPath: string): CodeReviewSubject => ({
+			repoPath, epicHash: EPIC, storyId: 'S001', changedFiles: ['src/old.ts'],
+			approvedLld: null, approvedPlan: null, buildRecord: null, testRecord: null,
+		});
+		let judged = 0;
+		const writes: string[] = [];
+		const countingReview = (async () => { judged++; return { ok: false, error: 'must not run' }; }) as never;
+
+		// 2. codeReview.run, degraded.
+		const frames: IpcStreamMessage[] = [];
+		await codeReviewRunStart({ repo: r, epicHash: EPIC, storyId: 'S001', groundingMode: 'degraded' }, m => frames.push(m), new AbortController().signal, {
+			resolveSubject: async (repoPath) => ({ ok: true, subject: subjectFor(repoPath) }),
+			resolveProvider: () => ({ provider: {} as LLMProvider, modelLabel: 'cli-codex:gpt' }),
+			write: (path) => { writes.push(path); },
+			runReview: countingReview,
+		});
+		const last = frames[frames.length - 1]!;
+		assert.equal(last.stream, 'error');
+		assert.equal((last.data as { reason?: string }).reason, 'no-build-record');
+
+		// 3. insrc_code_review_step: a hollow graph grounding diverts to the diff review.
+		_clearCodeReviewStateStoreForTests();
+		const out = await handleCodeReviewStep({ phase: 'start', epicHash: EPIC, storyId: 'S001', repo: r }, {
+			resolveSubject: async () => ({ ok: true, subject: subjectFor(r) }),
+			fetchGrounding: async () => ({ ok: true, grounding: { symbols: [] } }),
+			fetchFreshness: async () => ({ ok: true, isProcessing: false, staleFiles: [] }),
+			assembleDiffGrounding: assembleDiffCodeReviewGrounding,
+			runReview: countingReview,
+			write: (path) => { writes.push(path); },
+			sleep: async () => {}, now: () => 0, freshnessTimeoutMs: () => 120000,
+			readBuildAuthor: () => 'daemon',
+		});
+		const step = JSON.parse(out.content[0]!.text) as { next: string; error?: { code: string; message: string } };
+		assert.equal(step.next, 'error', JSON.stringify(step));
+		assert.equal(step.error?.code, 'no-subject');
+		assert.match(step.error?.message ?? '', /no-build-record/);
+
+		assert.equal(judged, 0, 'no judge ran');
+		assert.deepEqual(writes, [], 'no record was written');
 	} finally { cleanup(); }
 });

@@ -27,8 +27,9 @@
  * (ISSUE-b97752e9): the units since its range base that carry its Insrc-Story
  * trailer, and the working tree only adds edits of files those commits changed.
  * Every other uncommitted file is left out and listed as excludedFromScope, never
- * reviewed; there is no fallback to the working tree. An empty set is a valid
- * (trivial) subject, NOT an error.
+ * reviewed; there is no fallback to the working tree. An EMPTY set declines with
+ * 'no-build-record': the Story has nothing attributable to review, and running
+ * the judges over nothing would write a vacuous pass.
  *
  * The gate + git seams are injectable (`SubjectDeps`) so the unit tests fake
  * them; the defaults wire the real `requireApprovedLld` / `requireApprovedPlan`
@@ -162,6 +163,11 @@ export async function resolveCodeReviewSubject(
 	} catch (err) {
 		if (!(err instanceof NoBuildChangesError)) throw err;
 		log.warn({ repoPath, epicHash, storyId, err: err.message }, 'resolveCodeReviewSubject: the Story\'s change set could not be derived');
+		return { ok: false, reason: 'no-build-record' };
+	}
+
+	if (changedFiles.length === 0) {
+		log.info({ repoPath, epicHash, storyId }, 'resolveCodeReviewSubject: the Story has no attributable change; nothing to review');
 		return { ok: false, reason: 'no-build-record' };
 	}
 

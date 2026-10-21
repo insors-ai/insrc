@@ -418,6 +418,12 @@ async function beginDiffOnlyReview(
 		throw err;
 	}
 
+	// An empty Story scope has nothing to review: the same decline the subject
+	// gives, before any judge runs or any record is written (ISSUE-b97752e9).
+	if (changedFiles.length === 0) {
+		return errorResult('no-subject', 'insrc_code_review_step: cannot review — no-build-record (the Story\'s change set is empty).', false);
+	}
+
 	// Re-key the subject to the diff-derived changed set and to how the diff scoped
 	// it (ISSUE-b47dadc7), including what it left out (ISSUE-b97752e9).
 	const diffSubject: CodeReviewSubject = { ...subject, changedFiles, ...scoped };

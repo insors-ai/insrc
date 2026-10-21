@@ -14,9 +14,10 @@
  *
  *   1. the decision: approve through approveWorkflowTarget, reject through
  *      rejectArtifactByJsonPath; feedback changes no state;
- *   2. the comments: one appendFeedbackBatch call, each entry carrying the
- *      decision that took effect. An approval the review gate withheld saves
- *      its comments as feedback.
+ *   2. the comments: one Feedback entry each, stored through the repository's
+ *      FeedbackService under one batch id, by the request's actor or the current
+ *      one. The kind follows the decision that took effect: send feedback (and so a
+ *      withheld approval) is a revision request, approve and reject are comments.
  *
  * So a comment is never saved with a decision that did not happen. Every refusal
  * is a structured { error } and writes nothing. A comment write that fails after
@@ -30,12 +31,14 @@ import { basename } from 'node:path';
 import { getLogger } from '../shared/logger.js';
 import { docPathOf, resolveDocsMarkdown } from './artifact-content.js';
 import { resolveReviewer, type ReviewerDeps } from './artifacts/companion/header.js';
-import { appendFeedbackBatch, type FeedbackEntryInput } from './artifacts/provenance/writer.js';
 import {
 	FEEDBACK_CONTEXT_MAX, FEEDBACK_DECISIONS, FEEDBACK_QUOTE_MAX,
 	type FeedbackAnchor, type FeedbackDecision,
 } from './artifacts/provenance/types.js';
 import type { LifecycleService } from './artifact-core/lifecycle-service.js';
+import type { Actor, Feedback } from './artifact-core/types.js';
+import type { FeedbackService } from './feedback/feedback-service.js';
+import { feedbackAnchorOf } from './feedback/legacy-anchor.js';
 import { approvalActorOf } from './artifact-core/approval-actor.js';
 import { approveWorkflowTarget, jsonPathForMd, rejectArtifactByJsonPath, type WorkflowApproveResult } from './gates.js';
 
@@ -84,6 +87,12 @@ export interface ReviewDecisionResult {
 
 export interface ReviewDecisionError { readonly error: string }
 
+/** What the decision needs to save its comments: the repository's feedback service and the current actor. */
+export interface DecisionFeedback {
+	readonly feedback:     Pick<FeedbackService, 'add'>;
+	readonly currentActor: (repoPath: string) => Promise<Actor>;
+}
+
 /** Seams for the writes and the machine lookups, so tests can pin them. */
 export interface ReviewDecisionDeps {
 	readonly reviewer?:    ReviewerDeps | undefined;
@@ -91,7 +100,8 @@ export interface ReviewDecisionDeps {
 	/** The repository's durable LifecycleService; the daemon passes its registry. Without it the approval runs head-only. */
 	readonly lifecycleFor?: ((repoPath: string) => LifecycleService) | undefined;
 	readonly reject?:      typeof rejectArtifactByJsonPath | undefined;
-	readonly appendBatch?: typeof appendFeedbackBatch | undefined;
+	/** The repository's feedback service; the daemon passes its registry's. Without it a decision's comments cannot be saved. */
+	readonly feedbackFor?: ((repoPath: string) => DecisionFeedback) | undefined;
 	/** What 'workflow.approve' runs over the artifacts it approved (the bugfix
 	 *  advance). Bound by the daemon, which owns the graph it reads. */
 	readonly followOn?:    ((approved: WorkflowApproveResult['approved'], repoPath: string) => Promise<WorkflowApproveResult['followOn']>) | undefined;
@@ -157,6 +167,12 @@ export async function handleReviewDecision(
 		}
 	}
 
+	// The request's person, if it names one, is checked before anything is written.
+	let named: Actor | undefined;
+	if (p.actor !== undefined && p.actor !== null) {
+		try { named = approvalActorOf(p.actor); } catch (err) { return { error: `${P}: ${(err as Error).message}` }; }
+	}
+
 	const author = resolveReviewer(repoPath, deps.reviewer ?? {}).name;
 
 	// 1. The decision.
@@ -168,7 +184,7 @@ export async function handleReviewDecision(
 			const lifecycle = deps.lifecycleFor?.(repoPath);
 			const res = await (deps.approve ?? approveWorkflowTarget)({
 				repoPath, artifactPath: jsonPath,
-				...(lifecycle !== undefined ? { lifecycle, actor: approvalActorOf(p.actor) } : {}),
+				...(lifecycle !== undefined ? { lifecycle, actor: named ?? approvalActorOf(undefined) } : {}),
 			});
 			approved = res.approved;
 			if (res.approved.length > 0) {
@@ -189,25 +205,26 @@ export async function handleReviewDecision(
 	}
 
 	// 2. The comments, with the decision that took effect.
-	const took: FeedbackDecision = outcome === 'approved' ? 'approve' : outcome === 'rejected' ? 'reject' : 'feedback';
-	let entryIds: string[] = [];
+	const kind: Feedback['kind'] = outcome === 'approved' || outcome === 'rejected' ? 'comment' : 'revision-request';
+	const entryIds: string[] = [];
 	let commentsError: string | undefined;
 	if (comments.length > 0) {
 		const batchId = randomUUID().slice(0, 8);
-		const entries: FeedbackEntryInput[] = comments.map(c => ({
-			author,
-			comment: c.comment,
-			kind:    'comment',
-			target:  { file: c.file, ...(c.version !== undefined ? { version: c.version } : {}) },
-			...(c.anchor !== undefined ? { anchor: c.anchor } : {}),
-			decision: took,
-			batchId,
-		}));
 		try {
-			entryIds = (deps.appendBatch ?? appendFeedbackBatch)({ artifactPath: jsonPath, entries }).entryIds;
+			const through = deps.feedbackFor?.(repoPath);
+			if (through === undefined) throw new Error('no feedback service is available to save the comments');
+			const base = named ?? await through.currentActor(repoPath);
+			const actor: Actor = { ...base, properties: { ...base.properties, name: author } };
+			for (const c of comments) {
+				const stored = await through.feedback.add(artifactId, {
+					text: c.comment, kind, batchId,
+					anchor: feedbackAnchorOf(c.anchor, { file: c.file }, c.file === docPath),
+				}, actor);
+				entryIds.push(stored.id);
+			}
 		} catch (err) {
 			commentsError = (err as Error).message;
-			log.warn({ artifactId, decision, outcome, err: commentsError }, 'the decision took effect but its comments were not saved');
+			log.warn({ artifactId, decision, outcome, saved: entryIds.length, err: commentsError }, 'the decision took effect but its comments were not saved');
 		}
 	}
 

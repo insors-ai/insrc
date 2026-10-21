@@ -15,6 +15,7 @@ import { ArtifactIds } from '../workflow/artifact-ids.js';
 import { ArtifactFeedbackError } from '../workflow/artifacts/provenance/writer.js';
 import { coerceRequest } from '../workflow/artifacts/provenance/tool.js';
 import type { AppendFeedbackRequest, AppendFeedbackResult } from '../workflow/artifacts/provenance/writer.js';
+import { feedbackAnchorOf } from '../workflow/feedback/legacy-anchor.js';
 import { approvalActorOf } from '../workflow/artifact-core/approval-actor.js';
 import type { Actor, Feedback } from '../workflow/artifact-core/types.js';
 import type { FeedbackThread } from '../workflow/feedback/threads.js';
@@ -100,19 +101,7 @@ export async function handleFeedbackAppend(params: unknown, deps: FeedbackHandle
 		const base = raw.actor !== undefined && raw.actor !== null ? approvalActorOf(raw.actor) : await found.identity.currentActor(repo);
 		const actor: Actor = { ...base, properties: { ...base.properties, name: author } };
 
-		const a = entry.anchor;
-		const own = isOwnDocument(entry.target.file, artifactId, abs);
-		const section = own ? a?.sectionSlug : (a?.sectionSlug !== undefined ? `${entry.target.file}#${a.sectionSlug}` : entry.target.file);
-		const segment = entry.target.segment;
-		const anchor: Feedback['anchor'] = a !== undefined || !own || segment !== undefined
-			? {
-				...(a !== undefined ? { quote: a.quote } : {}),
-				...(a?.prefix !== undefined ? { prefix: a.prefix } : {}),
-				...(a?.suffix !== undefined ? { suffix: a.suffix } : {}),
-				...(section !== undefined ? { section } : {}),
-				...(segment !== undefined ? { lines: [segment.startLine, segment.endLine] as const } : {}),
-			}
-			: undefined;
+		const anchor = feedbackAnchorOf(entry.anchor, entry.target, isOwnDocument(entry.target.file, artifactId, abs));
 		const stored = await found.feedback.add(artifactId, {
 			text: entry.comment.trim(), kind: kindOf(entry), anchor, batchId: entry.batchId,
 		}, actor);

@@ -724,8 +724,8 @@ async function main(): Promise<void> {
 
 		// One decision from the review pane (Story E202610138d4b90c9:S001): approve,
 		// reject or send feedback, with the reviewer's comments. The decision is
-		// recorded first, then the comments are appended to the artifact's
-		// feedback in one write, with the author the daemon resolves. Every
+		// recorded first, then the comments are stored through the repository's
+		// FeedbackService under one batch id, with the author the daemon resolves. Every
 		// refusal is a structured { error } and writes nothing. The follow-on of
 		// an approval is the one 'workflow.approve' runs, bound to this daemon's
 		// graph handle.
@@ -737,6 +737,10 @@ async function main(): Promise<void> {
 				process.env['INSRC_REPO'],
 				{
 					lifecycleFor: repoPath => lifecycleFor(repoPath).service,
+					feedbackFor: repoPath => {
+						const entry = lifecycleFor(repoPath);
+						return { feedback: entry.feedback, currentActor: path => entry.identity.currentActor(path) };
+					},
 					followOn: async (approved, repoPath) => {
 						const { advanceApprovedBugfixes } = await import('../workflow/bugfix/index.js');
 						return advanceApprovedBugfixes(approved, {

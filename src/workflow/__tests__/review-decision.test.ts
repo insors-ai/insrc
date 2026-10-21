@@ -26,7 +26,9 @@ import {
 } from '../review-decision.js';
 import { handleArtifactContent } from '../artifact-content.js';
 import { ARTIFACTS_DIR } from '../storage.js';
-import type { FeedbackEntry } from '../artifacts/provenance/types.js';
+import type { Feedback } from '../artifact-core/types.js';
+import { IdentityService } from '../identity/identity-service.js';
+import { lifecycleFor, resetLifecycleRegistry } from '../../daemon/lifecycle-registry.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
 
 const HASH = '8d4b90c9ab301e66';
@@ -37,7 +39,15 @@ const HTML_REL = `${DIR_REL}/sequence-diagram.html`;
 const MD_BODY = `<!-- insrc:artifact ${ID} -->\n\n# Demo\n\nThe header is cut to 8 lines.\n`;
 
 const REVIEWER = { gitUserName: () => 'Rev Iewer\n', osUserName: () => 'rev' };
-const DEPS: ReviewDecisionDeps = { reviewer: REVIEWER };
+/** Who the current actor is when the request names none: no tracker, no git email, so the OS user. */
+const IDENTITY = new IdentityService({
+	path: join(tmpdir(), 'insrc-review-decision-no-identity.json'), hostId: 'h', osUser: () => 'dana', hostname: () => 'box',
+	loadTracker: () => ({ ok: false, kind: 'rejected', reason: 'none' }),
+	run: async () => ({ stdout: '', stderr: '', code: 1, spawnError: false, timedOut: false, stdoutTruncated: false }),
+});
+/** The comments are saved through the repository's real registry entry (its FeedbackService), as the daemon wires them. */
+const feedbackFor: NonNullable<ReviewDecisionDeps['feedbackFor']> = repo => ({ feedback: lifecycleFor(repo).feedback, currentActor: p => IDENTITY.currentActor(p) });
+const DEPS: ReviewDecisionDeps = { reviewer: REVIEWER, feedbackFor };
 
 interface Fixture { readonly repo: string; readonly jsonPath: string }
 
@@ -66,11 +76,15 @@ function makeFixture(opts: { meta?: Record<string, unknown>; reviewed?: boolean;
 	return { repo, jsonPath };
 }
 
-function cleanup(repo: string): void { rmSync(repo, { recursive: true, force: true }); }
+function cleanup(repo: string): void { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
+
+/** The comments stored for the fixture's artifact, however the reader orders them. */
+const entriesOf = (fx: Fixture): Promise<Feedback[]> => lifecycleFor(fx.repo).feedback.entries(ID);
+const byText = (all: readonly Feedback[], text: string): Feedback => all.find(e => e.text === text)!;
 
 interface Stored {
 	readonly meta: { approvedAt?: string; rejectedAt?: string; rejectReason?: string };
-	readonly body: { feedback?: FeedbackEntry[] };
+	readonly body: Record<string, unknown>;
 }
 function stored(jsonPath: string): Stored { return JSON.parse(readFileSync(jsonPath, 'utf8')) as Stored; }
 
@@ -90,14 +104,16 @@ test('review decision: approve approves first and then saves the comments with d
 	try {
 		const order: string[] = [];
 		const { approveWorkflowTarget } = await import('../gates.js');
-		const { appendFeedbackBatch } = await import('../artifacts/provenance/writer.js');
 		const r = await decide(fx, { decision: 'approve', comments: [INLINE, WHOLE, ON_HTML] }, {
 			...DEPS,
 			approve: async (req, o) => { order.push('approve'); return approveWorkflowTarget(req, o); },
-			appendBatch: req => {
-				order.push('comments');
-				assert.equal(typeof stored(fx.jsonPath).meta.approvedAt, 'string', 'the approval is on disk before the comments are written');
-				return appendFeedbackBatch(req);
+			feedbackFor: repo => {
+				const through = feedbackFor(repo);
+				return { ...through, feedback: { add: (id, input, actor) => {
+					if (!order.includes('comments')) order.push('comments');
+					assert.equal(typeof stored(fx.jsonPath).meta.approvedAt, 'string', 'the approval is on disk before the comments are written');
+					return through.feedback.add(id, input, actor);
+				} } };
 			},
 		});
 		assert.deepEqual(order, ['approve', 'comments']);
@@ -108,19 +124,15 @@ test('review decision: approve approves first and then saves the comments with d
 		assert.equal(r.author, 'Rev Iewer');
 		assert.equal('commentsError' in r, false);
 
-		const s = stored(fx.jsonPath);
-		assert.equal(typeof s.meta.approvedAt, 'string');
-		const fb = s.body.feedback!;
-		assert.deepEqual(fb.map(e => e.id), r.entryIds);
-		assert.deepEqual(fb.map(e => e.comment), ['Say what the header shows.', WHOLE.comment, ON_HTML.comment], 'in order, trimmed');
-		assert.ok(fb.every(e => e.decision === 'approve' && e.kind === 'comment' && e.author === 'Rev Iewer'));
+		assert.equal(typeof stored(fx.jsonPath).meta.approvedAt, 'string');
+		const fb = await entriesOf(fx);
+		assert.deepEqual(fb.map(e => e.id).sort(), [...r.entryIds].sort(), 'entryIds are the stored Feedback ids');
+		assert.deepEqual(fb.map(e => e.text).sort(), ['Say what the header shows.', WHOLE.comment, ON_HTML.comment].sort(), 'trimmed');
+		assert.ok(fb.every(e => e.kind === 'comment' && e.actor.properties['name'] === 'Rev Iewer' && e.actor.id === 'os:dana@box'));
 		assert.equal(new Set(fb.map(e => e.batchId)).size, 1, 'one batch id');
-		assert.equal(new Set(fb.map(e => e.timestamp)).size, 1, 'one write, one timestamp');
-		assert.deepEqual(fb[0]!.target, { file: MD_REL, version: 'abcdef0123456789' });
-		assert.deepEqual(fb[0]!.anchor, INLINE.anchor);
-		assert.deepEqual(fb[1]!.target, { file: MD_REL }, 'the .md is the default file');
-		assert.equal('anchor' in fb[1]!, false);
-		assert.deepEqual(fb[2]!.target, { file: HTML_REL });
+		assert.deepEqual(byText(fb, 'Say what the header shows.').anchor, { quote: 'cut to 8 lines', prefix: 'The header is ', suffix: '.', section: 'demo' });
+		assert.equal(byText(fb, WHOLE.comment).anchor, undefined, 'the .md is the default file and a whole-document comment has no anchor');
+		assert.deepEqual(byText(fb, ON_HTML.comment).anchor, { section: HTML_REL }, 'a companion file rides in anchor.section');
 	} finally { cleanup(fx.repo); }
 
 	// Withheld: the review gate holds the approval back (no other-party review).
@@ -133,7 +145,7 @@ test('review decision: approve approves first and then saves the comments with d
 		assert.equal(r.recorded, 2);
 		const s = stored(held.jsonPath);
 		assert.equal(s.meta.approvedAt, undefined, 'the artifact stays pending');
-		assert.ok(s.body.feedback!.every(e => e.decision === 'feedback'), 'a comment is never saved with a decision that did not take effect');
+		assert.ok((await entriesOf(held)).every(e => e.kind === 'revision-request'), 'a comment is never saved with a decision that did not take effect');
 	} finally { cleanup(held.repo); }
 });
 
@@ -148,7 +160,7 @@ test('review decision: reject records the rejection with the first whole-documen
 		assert.equal(typeof s.meta.rejectedAt, 'string');
 		assert.equal(s.meta.rejectReason, WHOLE.comment);
 		assert.equal(s.meta.approvedAt, undefined);
-		assert.ok(s.body.feedback!.every(e => e.decision === 'reject' && e.author === 'Rev Iewer'));
+		assert.ok((await entriesOf(fx)).every(e => e.kind === 'comment' && e.actor.properties['name'] === 'Rev Iewer'));
 		assert.equal(handleArtifactContentState(fx), 'rejected');
 	} finally { cleanup(fx.repo); }
 
@@ -159,7 +171,7 @@ test('review decision: reject records the rejection with the first whole-documen
 		assert.equal(r.outcome, 'rejected');
 		assert.equal(r.reason, 'Rejected in the review pane by Rev Iewer');
 		assert.equal(stored(inlineOnly.jsonPath).meta.rejectReason, 'Rejected in the review pane by Rev Iewer');
-		assert.equal(stored(inlineOnly.jsonPath).body.feedback!.length, 1);
+		assert.equal((await entriesOf(inlineOnly)).length, 1);
 	} finally { cleanup(inlineOnly.repo); }
 
 	// No comments at all: the default reason too.
@@ -195,18 +207,17 @@ test('review decision: feedback saves the comments and changes no state, in any 
 			const s = stored(fx.jsonPath);
 			assert.equal(JSON.stringify(s.meta), metaBefore, `${state}: the meta is untouched`);
 			assert.equal(handleArtifactContentState(fx), state);
-			assert.ok(s.body.feedback!.every(e => e.decision === 'feedback'));
+			assert.ok((await entriesOf(fx)).every(e => e.kind === 'revision-request'));
 		} finally { cleanup(fx.repo); }
 	}
 
-	// Appended after what was already there.
+	// What was in body.feedback before stays where it is (the line files are separate until s9).
 	const prior = [{ id: 'old1', author: 'A', timestamp: '2026-10-12T09:00:00.000Z', target: { file: MD_REL }, comment: 'Earlier.' }];
 	const fx = makeFixture({ feedback: prior });
 	try {
 		await decide(fx, { decision: 'feedback', comments: [WHOLE] });
-		const fb = stored(fx.jsonPath).body.feedback!;
-		assert.deepEqual(fb[0], prior[0]);
-		assert.equal(fb.length, 2);
+		assert.deepEqual(stored(fx.jsonPath).body['feedback'], prior);
+		assert.equal((await entriesOf(fx)).length, 1);
 	} finally { cleanup(fx.repo); }
 
 	// With no comments it is refused, and nothing is written.
@@ -225,15 +236,15 @@ test('review decision: a decision with no comments writes no feedback entry', as
 	const approved = makeFixture({ reviewed: true });
 	try {
 		let appended = 0;
-		const { appendFeedbackBatch } = await import('../artifacts/provenance/writer.js');
-		const r = await decide(approved, { decision: 'approve' }, { ...DEPS, appendBatch: req => { appended += 1; return appendFeedbackBatch(req); } });
+		const r = await decide(approved, { decision: 'approve' }, { ...DEPS, feedbackFor: repo => { appended += 1; return feedbackFor(repo); } });
 		assert.equal(r.outcome, 'approved');
 		assert.equal(r.recorded, 0);
 		assert.deepEqual(r.entryIds, []);
-		assert.equal(appended, 0, 'the feedback writer is not called');
+		assert.equal(appended, 0, 'the feedback service is not asked for');
 		const s = stored(approved.jsonPath);
 		assert.equal(typeof s.meta.approvedAt, 'string');
 		assert.equal('feedback' in s.body, false);
+		assert.deepEqual(await entriesOf(approved), []);
 	} finally { cleanup(approved.repo); }
 
 	const rejected = makeFixture();
@@ -242,6 +253,7 @@ test('review decision: a decision with no comments writes no feedback entry', as
 		assert.equal(r.outcome, 'rejected');
 		assert.equal(r.recorded, 0);
 		assert.equal('feedback' in stored(rejected.jsonPath).body, false);
+		assert.deepEqual(await entriesOf(rejected), []);
 	} finally { cleanup(rejected.repo); }
 });
 
@@ -317,18 +329,18 @@ test('review decision: an invalid request (unknown decision, blank or over-long 
 		assert.ok(!('error' in viaEnv));
 
 		// An approve or reject call that throws is an error, and no comment is saved.
-		const feedbackBefore = stored(fx.jsonPath).body.feedback!.length;
+		const feedbackBefore = (await entriesOf(fx)).length;
 		const thrown = await handleReviewDecision({ repo: fx.repo, mdPath: MD_REL, decision: 'reject', comments: [WHOLE] }, undefined, {
 			...DEPS, reject: () => { throw new Error('disk full'); },
 		});
 		assert.ok('error' in thrown && /disk full/.test(thrown.error));
-		assert.equal(stored(fx.jsonPath).body.feedback!.length, feedbackBefore);
+		assert.equal((await entriesOf(fx)).length, feedbackBefore);
 		assert.equal(stored(fx.jsonPath).meta.rejectedAt, undefined);
 	} finally { cleanup(fx.repo); }
 });
 
 test('review decision: a failing comment write after the decision took effect reports the outcome with commentsError', async () => {
-	const failing: ReviewDecisionDeps = { ...DEPS, appendBatch: () => { throw new Error('cannot write the artifact'); } };
+	const failing: ReviewDecisionDeps = { ...DEPS, feedbackFor: () => ({ feedback: { add: async () => { throw new Error('cannot write the artifact'); } }, currentActor: async () => ({ id: 'os:dana@box', kind: 'person', properties: {} }) }) };
 
 	const approved = makeFixture({ reviewed: true });
 	try {
@@ -361,15 +373,15 @@ test('review decision: the author is the one resolveReviewer gives and is never 
 			comments: [{ ...WHOLE, author: 'Mallory' } as never],
 		});
 		assert.equal(r.author, 'Rev Iewer');
-		assert.equal(stored(fx.jsonPath).body.feedback![0]!.author, 'Rev Iewer');
+		assert.equal((await entriesOf(fx))[0]!.actor.properties['name'], 'Rev Iewer');
 		assert.ok(!readFileSync(fx.jsonPath, 'utf8').includes('Mallory'));
 
 		// With no git name the OS login is the author; with neither, 'unknown'.
-		const os = await decide(fx, { decision: 'feedback', comments: [WHOLE] }, { reviewer: { ...REVIEWER, gitUserName: () => undefined } });
+		const os = await decide(fx, { decision: 'feedback', comments: [WHOLE] }, { reviewer: { ...REVIEWER, gitUserName: () => undefined }, feedbackFor });
 		assert.equal(os.author, 'rev');
-		const unknown = await decide(fx, { decision: 'feedback', comments: [WHOLE] }, { reviewer: { gitUserName: () => undefined, osUserName: () => undefined } });
+		const unknown = await decide(fx, { decision: 'feedback', comments: [WHOLE] }, { reviewer: { gitUserName: () => undefined, osUserName: () => undefined }, feedbackFor });
 		assert.equal(unknown.author, 'unknown');
-		assert.deepEqual(stored(fx.jsonPath).body.feedback!.map(e => e.author), ['Rev Iewer', 'rev', 'unknown']);
+		assert.deepEqual((await entriesOf(fx)).map(e => e.actor.properties['name']).sort(), ['Rev Iewer', 'rev', 'unknown']);
 	} finally { cleanup(fx.repo); }
 
 	// The reject default reason names the same author.
@@ -378,6 +390,67 @@ test('review decision: the author is the one resolveReviewer gives and is never 
 		const r = await decide(rejected, { decision: 'reject', author: 'Mallory' }, { reviewer: { ...REVIEWER, gitUserName: () => undefined } });
 		assert.equal(r.reason, 'Rejected in the review pane by rev');
 	} finally { cleanup(rejected.repo); }
+});
+
+test("handleReviewDecision stores its comments as Feedback entries by the request's actor or the current actor, with kind revision-request for send-feedback and one batchId, and still reports commentsError when saving fails after the decision", async () => {
+	// send feedback: revision requests, by the request's actor
+	const fb = makeFixture();
+	try {
+		const r = await decide(fb, { decision: 'feedback', actor: { id: 'github:erin' }, comments: [INLINE, WHOLE] });
+		const all = await entriesOf(fb);
+		assert.equal(all.length, 2);
+		assert.deepEqual(all.map(e => e.id).sort(), [...r.entryIds].sort());
+		assert.ok(all.every(e => e.kind === 'revision-request' && e.actor.id === 'github:erin' && e.actor.properties['name'] === 'Rev Iewer'));
+		assert.equal(new Set(all.map(e => e.batchId)).size, 1);
+		assert.ok(all[0]!.batchId !== undefined && all[0]!.batchId.length > 0);
+	} finally { cleanup(fb.repo); }
+
+	// approve and reject: comments, by the current actor when the request names none
+	for (const decision of ['approve', 'reject'] as const) {
+		const fx = makeFixture({ reviewed: true });
+		try {
+			await decide(fx, { decision, comments: [WHOLE] });
+			const [e] = await entriesOf(fx);
+			assert.equal(e?.kind, 'comment', decision);
+			assert.equal(e?.actor.id, 'os:dana@box', decision);
+		} finally { cleanup(fx.repo); }
+	}
+
+	// an actor that is not a namespaced lower-case id is refused before anything is written
+	const bad = makeFixture({ reviewed: true });
+	try {
+		const before = readFileSync(bad.jsonPath);
+		const res = await handleReviewDecision({ repo: bad.repo, mdPath: MD_REL, decision: 'approve', comments: [WHOLE], actor: { id: 'Erin' } } as never, undefined, DEPS);
+		assert.ok('error' in res && /actor/.test(res.error));
+		assert.ok(readFileSync(bad.jsonPath).equals(before));
+	} finally { cleanup(bad.repo); }
+
+	// a save that fails after the decision: commentsError, the decision stands, and the entries saved before it are reported
+	const part = makeFixture();
+	try {
+		let calls = 0;
+		const r = await decide(part, { decision: 'reject', comments: [WHOLE, { comment: 'second' }] }, {
+			...DEPS,
+			feedbackFor: repo => {
+				const through = feedbackFor(repo);
+				return { ...through, feedback: { add: (id, input, actor) => { if (++calls === 2) throw new Error('disk full'); return through.feedback.add(id, input, actor); } } };
+			},
+		});
+		assert.equal(r.outcome, 'rejected');
+		assert.equal(r.commentsError, 'disk full');
+		assert.equal(typeof stored(part.jsonPath).meta.rejectedAt, 'string', 'the rejection stands');
+		assert.equal(r.recorded, 1);
+		assert.equal((await entriesOf(part)).length, 1);
+	} finally { cleanup(part.repo); }
+
+	// no feedback service at all: the decision stands and the comments are reported as not saved
+	const none = makeFixture();
+	try {
+		const r = await decide(none, { decision: 'reject', comments: [WHOLE] }, { reviewer: REVIEWER });
+		assert.equal(r.outcome, 'rejected');
+		assert.match(r.commentsError ?? '', /no feedback service/);
+		assert.equal(r.recorded, 0);
+	} finally { cleanup(none.repo); }
 });
 
 /** The source of one handler in the daemon's handler map: from its key to the next key. */
@@ -397,6 +470,8 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 	assert.match(decision, /await import\('\.\.\/workflow\/review-decision\.js'\)/);
 	assert.match(decision, /return handleReviewDecision\(/);
 	assert.match(decision, /process\.env\['INSRC_REPO'\]/);
+	assert.match(decision, /feedbackFor: repoPath => \{/, 'the comments are saved through the registry\'s FeedbackService');
+	assert.match(decision, /feedback: entry\.feedback/);
 	assert.match(decision, /advanceApprovedBugfixes/, 'the follow-on of an approval is the one workflow.approve runs');
 
 	// The three existing handlers, as they were: each still delegates to its own

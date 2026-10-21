@@ -1,0 +1,533 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792574352414-de57n2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T09:23:31.459Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 259028,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s4",
+    "lldRunId": "wf-1792573425917-mpgdhm",
+    "lldEffectiveHash": "aea12dd762927abf6afe318a2bc2d336c6790ef686f86304c0f3d95944aa3cf0",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-21T09:27:49.183Z",
+    "rangeBase": "51b45f07df1abadfe785eabc0b0a479eb8d957a0"
+  },
+  "body": {
+    "summary": {
+      "prose": "Story s4 makes the history of every artifact durable and mergeable. Each artifact gets framed line files for its change log and feedback, a durable journal that finishes a half-done write exactly once, and git rules that union the line files when two clones merge. The daemon then runs approval, review and the BUILD, TESTS and code-review rounds through one per-repository lifecycle service, so every round is logged by the same staged write that stores it.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Frame the sidecar line and guard a torn append",
+        "summary": "In src/workflow/artifact-core/sidecar.ts make appendSidecarLine write one line of the form <byte length of the json> TAB <json> NEWLINE with one append-mode write, begin with a newline when the file does not end in one, and refuse an entry larger than 256 KiB with HistoryEntryError; export the line framer and the size check so the journal step can use the same check. The in-memory sidecar is unchanged.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a record is appended as one framed line whose length counts bytes, including multi-byte text and escaped newlines",
+          "an append after a file whose last line has no newline starts on a new line, so a torn fragment stays a line of its own",
+          "an entry over 256 KiB is refused with HistoryEntryError and nothing is appended",
+          "appendSidecarLine is still the only function that writes a line file"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sidecar-append.test.ts: appendRecord writes one framed line, counts bytes for multi-byte text, starts a new line after a torn one, and refuses an oversize entry"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the file-backed sidecar store and its reader",
+        "summary": "Add the file SidecarIo and SidecarStore: filesOf (a TASK id maps to its Story's TASKS files), appendRecord through appendSidecarLine, and readRecords that keeps the lines of the requested artifact, skips an abandoned fragment and merge debris with a log line, refuses a complete frame with bad json or a repeated (artifactId, entry id) with different content with HistoryReadError, collapses identical repeats and orders by timestamp then entry id; mergeAttributes returns the two union rules.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "filesOf names the head, log and feedback files of an id and gives every Task of a Story the same Tasks files",
+          "readRecords skips a torn fragment and later records are still read, and a complete frame with bad json raises HistoryReadError naming the file and line",
+          "repeated identical frames count once and a conflicting duplicate raises",
+          "entries are ordered by timestamp then entry id, and lines of other artifacts in the file are ignored",
+          "a torn append, a later append, a re-read and a journal retry leave the entry once"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sidecar-files.test.ts: filesOf maps an id to its head, log and feedback files and a TASK id to its Story's Tasks files, and mergeAttributes returns the two union rules"
+          },
+          {
+            "level": "unit",
+            "name": "sidecar-read.test.ts: readRecords filters by artifact id, collapses repeated entries, orders by timestamp then id, skips an abandoned fragment and merge debris, and refuses a complete frame with bad json and a conflicting duplicate"
+          },
+          {
+            "level": "unit",
+            "name": "sidecar-append.test.ts: a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the durable journal and stage the head a write started from",
+        "summary": "Add the file WriteJournal (.insrc/journal/<id>.json, atomic replace, clear removes it, an invalid file is an error) and add priorHeadHash to StagedOperation. In ArtifactStore.write stage priorHeadHash, validate the serialised entry size before staging, and make completePending finish an operation only when the head still hashes to priorHeadHash or already equals the staged bytes, otherwise throw LifecycleConflictError, keep the journal file and log the three hashes; discard a staged entry that is invalid.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "the journal stages, reports and clears one file per artifact and refuses a file that is not a staged operation",
+          "a staged write is finished at each crash point (before the append, after the append, after the replace) exactly once",
+          "a head that moved on after the stage is never overwritten and the write is refused with LifecycleConflictError",
+          "an oversized entry is rejected before it is staged and a later valid write of the artifact goes through",
+          "the existing store, journal and recovery tests pass unchanged against the memory journal"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "journal-durable.test.ts: the journal stages, reports and clears one file per artifact and refuses an invalid file"
+          },
+          {
+            "level": "unit",
+            "name": "journal-recovery-durable.test.ts: a staged write is finished at each crash point and refused with LifecycleConflictError when the head moved on, and the head is never overwritten"
+          },
+          {
+            "level": "unit",
+            "name": "journal-recovery-durable.test.ts: an oversized entry is rejected before it is staged and a later valid write of the artifact goes through"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Order open feedback, finish a staged write on inspect and refuse a write on a log ahead of its head",
+        "summary": "Give History.openFeedback the shared (timestamp, id) order; make LifecycleService.inspect finish a staged write under the artifact's queue before it reads; make ArtifactStore.write refuse an ordinary write when the log tail is ahead of the head's revision unless options.outcome.result is conflict-resolved.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "a feedback entry and a log entry with the same timestamp are ordered by the shared rule whichever file is read first",
+          "inspect after a crash between the log append and the head replace reports an agreeing head and log",
+          "an ordinary write on an artifact whose log is ahead of its head is refused with LifecycleConflictError and a conflict-resolved write is accepted",
+          "the s2 and s3 store, lifecycle and recovery tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "history-order.test.ts: openFeedback orders a feedback entry and a log entry with the same timestamp by the shared rule"
+          },
+          {
+            "level": "unit",
+            "name": "journal-recovery-durable.test.ts: LifecycleService.inspect finishes a staged write before it reads"
+          },
+          {
+            "level": "unit",
+            "name": "journal-recovery-durable.test.ts: an ordinary write on an artifact whose log is ahead of its head is refused and a conflict-resolved write is accepted"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Ensure the merge rules and the journal ignore entry",
+        "summary": "Add the idempotent ensure step that adds the two merge=union rules from mergeAttributes to the repository's .gitattributes and the .insrc/journal/ entry to its ignore file, adding only missing lines and logging a warning when a file cannot be written; call it when the file sidecar store is created; commit the two files for this repository.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a repository with no .gitattributes gets the two rules, one with other rules keeps them and gains only the missing lines, and a second call writes nothing",
+          "an unwritable file is a warning and the store still works",
+          "this repository's .gitattributes and .gitignore carry the new lines"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sidecar-files.test.ts: the ensure step adds only the missing lines to .gitattributes and .gitignore, is idempotent, and an unwritable file is a warning"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Prove the merge with real git clones",
+        "summary": "Add the real-git tests: two clones that append different log and feedback entries to one artifact merge with no conflict and a reader sees every entry once in order, and two clones that change the same head conflict in git while the line files of the same merge still union.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "a merge of two branches that appended different log and feedback entries completes with no conflict and the reader returns every entry once, in timestamp then id order",
+          "a head changed on both branches makes git report a conflict, and the sidecar files of that merge are still unioned",
+          "the tests skip cleanly when git is not available"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "sidecar-merge.test.ts: two clones that append different log and feedback entries to one artifact merge with no conflict and a reader sees every entry once, in timestamp then id order"
+          },
+          {
+            "level": "integration",
+            "name": "sidecar-merge.test.ts: a head changed in two clones conflicts in git and the line files of the same merge still union"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Let updateContent carry an outcome and name the round writer shape",
+        "summary": "Give LifecycleService.updateContent an optional outcome and references that ride on the staged ChangeLogEntry through the queued mutation, and define the shared RoundWriter shape ({ writer, actor }) next to ensureBuildRecordOnCompletion's existing one so the round persisters can take it.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "an update with an outcome logs that outcome and the new revision, and an update without one behaves as before",
+          "the first round of a record can be created through the store, so a later replacement keeps it readable in the log",
+          "an identical rewrite logs nothing and moves no revision"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "lifecycle-update-outcome.test.ts: updateContent with an outcome and references logs them with the new revision, an update without behaves as before, and an identical rewrite logs nothing"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Create the per-repository registry and wire the approval and daemon review paths",
+        "summary": "Add the daemon's per-repository registry (file sidecar store, file journal, History, ArtifactStore, LifecycleService with createCompletionEvidence as its per-call factory) and pass its service and the request's person actor, falling back to insrc:approval, to the workflow.approve handler in src/daemon/index.ts, the review-decision step and workflowReviewStart; a registry entry that cannot be created refuses the request with that error.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "workflow.approve, the review-decision step and workflow.review each use the repository's durable service and refuse a head that is ahead of its log",
+          "the actor is the request's person actor when supplied and insrc:approval otherwise",
+          "a repository whose registry entry cannot be created is refused and the head-only path is not used inside the daemon",
+          "the existing gates, review-decision and daemon workflow tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "lifecycle-wiring.test.ts: the daemon approve handler, the review-decision step and workflowReviewStart use the repository's durable LifecycleService, refuse a head ahead of its log, use the request's person actor or insrc:approval, and a repository whose registry entry cannot be created is refused"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Make the controller's verdicts phase use the service",
+        "summary": "Make handleVerdicts async and give it the repository's LifecycleService; the review-step handler awaits it with the registry's service for the run's repository. An applied fix goes through updateContent, the meta.review stamp stays a meta-only write, and the review is applied on the lifecycle when the status allows one; migrate gate-review-fix.test.ts and the other tests of handleVerdicts with it.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "handleVerdicts with a service stores an applied fix through the service, stamps the review and records it on the lifecycle",
+          "a head that is ahead of its log is refused before anything is stamped",
+          "without a service handleVerdicts writes as before",
+          "the tests of handleVerdicts pass in their async forms"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "verdicts-lifecycle.test.ts: handleVerdicts with a service stores an applied fix through the service, stamps the review and records it on the lifecycle, and refuses a head that is ahead of its log"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Store the BUILD and TESTS rounds through the service",
+        "summary": "Make persistBuildRecord, persistStandaloneBuildRecord and persistTestRecordTask async with an optional RoundWriter that stores the content through updateContent before the raw writers refresh meta and markdown; await them in the validate and implement phases and in ensureBuildRecordOnCompletion with the registry's RoundWriter; a TESTS markdown failure after the content was stored is not rolled back; a failed store fails the persist; migrate the tests of these writers and their callers with them.",
+        "size": "L",
+        "order": 10,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "a BUILD and a TESTS round are logged with their outcome by the staged write that replaces the record, and the earlier round stays readable in the log",
+          "a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown",
+          "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so approval is not refused",
+          "without a RoundWriter the writers behave as before, including the TESTS json-then-markdown rollback"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "round-recording.test.ts: persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log"
+          },
+          {
+            "level": "integration",
+            "name": "round-recording.test.ts: a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown"
+          },
+          {
+            "level": "integration",
+            "name": "round-recording.test.ts: a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Store the code-review round through the service on both routes",
+        "summary": "Add through to the code-review runner dependencies and store the record's body through updateContent before deps.write refreshes the json and markdown; supply the registry's RoundWriter from the code-review step handler and in every branch of codeReviewRunStart (degraded, injected write, default); migrate the tests of runCodeReview and the code-review step.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "the daemon route (codeReviewRunStart) and the controller route (the step handler) both log the code-review round through the service",
+          "a failed store fails the run's finalize and replaces no record",
+          "without through the finalize is unchanged"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "round-recording.test.ts: runCodeReview with a RoundWriter stores the content through the service and logs the round on the daemon route and the controller route, and a failed store replaces no record"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Classify the new writers and record the s9 inputs",
+        "summary": "Add the inventory entries for the file sidecar store, the file journal, the ensure step and the changed round writers, and record the s9 inputs in docs/plans/core-data-model.md (existing artifacts have no line files; the conversion back-fills history and writes the first entries).",
+        "size": "S",
+        "order": 12,
+        "dependsOn": [
+          "t9",
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "the write inventory test passes with the new files classified and appendSidecarLine still the one raw append for history",
+          "the plans doc lists the s9 inputs from this Story"
+        ],
+        "derivedFrom": [
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "artifact-write-inventory.test.ts: the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "SidecarStore.filesOf maps an id to its head, log and feedback files and a TASK id to its Story's Tasks files",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "SidecarIo.readRecords filters by artifact id, collapses repeated entries, orders by timestamp then id, skips an abandoned fragment and merge debris, and refuses a complete frame with bad json and a conflicting duplicate",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "SidecarIo.appendRecord writes one framed line, starts a new line after a torn one, counts bytes for multi-byte text, and refuses an oversize entry",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a torn append, a later append, a re-read and a journal retry as one sequence",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "SidecarStore.mergeAttributes and the ensure step add only the missing lines to .gitattributes and .gitignore and are idempotent",
+        "coveredByTaskIds": [
+          "t5",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "WriteJournal stage, pending and clear over files, including an invalid journal file",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "completePending decisions for each crash point and for a head that moved on, using priorHeadHash",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "LifecycleService.inspect finishes a staged write before it reads",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "History.openFeedback ordering when a feedback entry and a log entry share a timestamp",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "two real clones of a temporary git repository append different log and feedback entries to one artifact and merge with no conflict",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "two clones change the same head and git reports a conflict",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "persistBuildRecord, persistTestRecordTask and runCodeReview with a RoundWriter each store the content through the LifecycleService, log the round and refresh the meta and markdown, and the earlier round stays readable",
+        "coveredByTaskIds": [
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry and the next persist renders the markdown",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so approval is not blocked",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "the daemon workflow.approve handler, the review-decision step, workflowReviewStart and the review step's verdicts phase each use the repository's durable LifecycleService and refuse a head that is ahead of its log",
+        "coveredByTaskIds": [
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "controller verdict persistence: handleVerdicts with an auto-fix stores the content through the service, stamps the review and records it on the lifecycle",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "a restart between each step of a write leaves the repository in the state the recovery decisions expect and the next write completes it once",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the write inventory test classifies the new files and the changed writers and still finds one raw append for history",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: framed per-head line files and the file-backed sidecar store and reader"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: durable journal with priorHeadHash and size-before-stage"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: shared feedback order, inspect finishing a staged write, log-ahead-of-head refusal"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: merge=union attributes, journal ignore entry and the real-git merge proof"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: per-repository registry and the approval, review-decision and workflow.review wiring"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: async handleVerdicts using the lifecycle service"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: round writers storing BUILD, TESTS and code-review content through updateContent with outcomes"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 handoff: write inventory classification and the s9 inputs"
+    }
+  ]
+}

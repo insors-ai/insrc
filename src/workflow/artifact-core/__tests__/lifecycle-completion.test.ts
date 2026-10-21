@@ -72,14 +72,22 @@ describe('LifecycleService.completeIfRolledUp', () => {
 			assert.equal(await status(k, T1), 'draft');
 			await svc.completeIfRolledUp(T1, bob);
 
-			// the first head replace of the completion fails: a member's entry is logged but its head is still old
+			// the last Task is completed on its own, so the failure below falls in the Story's cascade and not in the Task's write
+			assert.equal((await svc.apply(T2, 'complete', bob)).recorded, true);
+
+			// the first head replace of the Story's cascade fails: a member's entry is logged but its head is still old
 			k.faults.replace = true;
 			await assert.rejects(svc.completeIfRolledUp(T2, bob), /injected replace failure/);
 			assert.notEqual(await status(k, STORY), 'completed', 'the unit is not completed after a failure part-way');
+			assert.equal(completes(await log(k, STORY)).length, 0, 'the unit has no complete entry yet');
+			const stalled = (await Promise.all(MEMBERS.filter(m => m !== STORY).map(async m => [m, await status(k, m), completes(await log(k, m)).length] as const)))
+				.filter(([, , entries]) => entries === 1);
+			assert.equal(stalled.length, 1, 'exactly one member has its entry logged');
+			assert.notEqual(stalled[0]?.[1], 'completed', 'and its head was not replaced');
 
 			// the retry finishes it, and nothing is recorded twice
 			const retry = await svc.completeIfRolledUp(T2, bob);
-			assert.ok(retry.completed.includes(STORY) && retry.completed.includes(EPIC));
+			assert.deepEqual(retry.completed, [STORY, EPIC]);
 			for (const id of [...MEMBERS, EPIC, T1, T2]) {
 				assert.equal(await status(k, id), 'completed', id);
 				assert.equal(completes(await log(k, id)).length, 1, `${id} has one complete entry`);

@@ -63,15 +63,16 @@ describe('ac7: a content change to an approved artifact', () => {
 		try {
 			const path = artifactJsonPath(k2.repo, ID);
 			const head = (text: string, lifecycle: Lifecycle) => ({ meta: { workflow: 'plan', envelope: { description: 'd', references: [], attachments: [] }, lifecycle }, body: { text }, citations: [] });
-			writeArtifact(path, head('one', { ...approved, status: 'draft' }), 'content');
+			writeArtifact(path, head('one', { ...approved, status: 'draft', approval: undefined }), 'content');
 			const stored = decodeArtifactHead(ID, readFileSync(path, 'utf8')).artifact.lifecycle;
-			writeArtifact(path, head('one', { ...stored, status: 'approved', approval: { revision: 1, by: alice, at: T0 } }), 'meta-only');
+			writeArtifact(path, head('one', { ...stored, status: 'approved', approval: { revision: 1, by: alice, at: T0 }, review: approved.review }), 'meta-only');
 			assert.equal(decodeArtifactHead(ID, readFileSync(path, 'utf8')).artifact.lifecycle.status, 'approved');
 			writeArtifact(path, head('two', decodeArtifactHead(ID, readFileSync(path, 'utf8')).artifact.lifecycle), 'content');
 			const written = decodeArtifactHead(ID, readFileSync(path, 'utf8')).artifact.lifecycle;
 			assert.equal(written.status, 'draft');
 			assert.equal(written.revision.number, 2);
 			assert.equal(written.approval?.revision, 1);
+			assert.equal(written.review?.revision, 1, 'the review stays at the revision it was made at');
 			assert.equal(written.revision.contentHash, contentHash('d', { body: { text: 'two' }, citations: [] }));
 		} finally { k2.done(); }
 	});

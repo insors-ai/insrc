@@ -305,3 +305,12 @@ Follow-ups left open for later Stories:
 6. **Recovery runs first.** Pending journal operations are recovered under the queue before `update` reads the head or the history, so a failed head replace after the log append is finished by a retry of `LifecycleService.apply`. Test: fail the replace after the append, then retry.
 
 Also open: `AMD-2f27754d4ad00b8e-8` (s4 becomes a consumer of sc4 and wires the durable `LifecycleService`) is pending and must be resolved before the s3 plan. The sc2 additions (update, childrenOfStrict, options on write, five pass-through codecs, the lifecycle reconcile in `prepareArtifactWrite`) and the optional `detail` parameter of `transition` are not amended; the gates keep writing the legacy `meta.approvedAt` family until the owner retires it.
+
+## s3 build: hand-offs to later Stories
+
+The lifecycle rules are built (pure `lifecycle.ts`, the reconcile inside `prepareArtifactWrite`, `ArtifactStore.write` with `WriteOptions`, `update`, `childrenOfStrict`, the pass-through codecs, `LifecycleService`, the gate guards and the optional service on the approval and review paths). Four things are left to other Stories:
+
+1. **s4 wires a durable `LifecycleService` (AMD-8).** Nothing in production passes a service yet: the daemon has no durable `History` or `WriteJournal`, so the approval and review paths run the synchronous head-only guard and behave as before. s4 builds the store over the durable sidecar and journal, creates the service with `createCompletionEvidence` as its per-call evidence factory, and puts it on `WorkflowApproveRequest.lifecycle` and `ReviewArtifactOpts.lifecycle`. The gate also mirrors the legacy `meta.review` onto `lifecycle.review` before it applies an approval of a DEF, HLD or LLD, so s4 does not have to.
+2. **The gates keep the legacy meta fields until s9.** `meta.approvedAt`, `rejectedAt`, `staleAckedAt` and `meta.review` are still written for the delivery board, beside `meta.lifecycle`. s9 back-fills the lifecycle from them; the fields and their readers are then retired together.
+3. **The pass-through codecs are refined by s7 and s9.** EPIC, STORY, TASKS, TASK and DIAG keep `body` and `citations` opaque. s7 types the Task payload, and s9 settles the shapes the conversion writes.
+4. **s7 replaces the Task side of `CompletionEvidence`.** `taskBuildPassed` reads the BUILD record's per-task results, because no Task head has a payload. s7 moves it to the Task artifact's own build rounds.

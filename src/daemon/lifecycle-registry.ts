@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The daemon's per-repository lifecycle registry (s4): one durable artifact store, history and LifecycleService for each
+ * The daemon's per-repository lifecycle registry (s4): one durable artifact store, history, LifecycleService, FeedbackService and IdentityService for each
  * repository, shared by every approval, review and round-record path in the daemon. A repository that cannot get an entry
  * (not a directory, a store that will not open) is refused with that error; there is no head-only fallback inside the daemon.
  */
@@ -21,6 +21,8 @@ import { createFileJournal } from '../workflow/artifact-core/journal.js';
 import { LifecycleService } from '../workflow/artifact-core/lifecycle-service.js';
 import { createFileSidecarStore } from '../workflow/artifact-core/sidecar-store.js';
 import { ArtifactStore } from '../workflow/artifact-core/store.js';
+import { FeedbackService } from '../workflow/feedback/feedback-service.js';
+import { IdentityService } from '../workflow/identity/identity-service.js';
 import type { RoundWriter } from '../workflow/runners/build/round-writer.js';
 import type { Actor } from '../workflow/artifact-core/types.js';
 
@@ -28,9 +30,16 @@ import type { Actor } from '../workflow/artifact-core/types.js';
 export interface RepoLifecycle {
 	readonly store:   ArtifactStore;
 	readonly service: LifecycleService;
+	/** Feedback and replies on this repository's artifacts, over the same history and store (and so the same write queue). */
+	readonly feedback: FeedbackService;
+	/** Who is acting, and the person's declared ids. The identity file is per user, not per repository. */
+	readonly identity: IdentityService;
 }
 
 const ENTRIES = new Map<string, RepoLifecycle>();
+
+/** The one identity service: the identity file is per user, so every repository's entry and the identity methods share it. */
+export const identityService = new IdentityService();
 
 /** The registry entry of `repoPath`, created on first use. Throws when it cannot be created; a failed creation is not cached. */
 export function lifecycleFor(requested: string): RepoLifecycle {
@@ -48,7 +57,7 @@ export function lifecycleFor(requested: string): RepoLifecycle {
 	const contexts = creationContextProvider(repoPath, { rootKinds: ['BUILD', 'TESTS', 'CR'] });
 	const store = new ArtifactStore({ repoPath, history, journal: createFileJournal(repoPath), contexts });
 	const service = new LifecycleService({ store, evidence: ctx => createCompletionEvidence(repoPath, { overrideReview: ctx.overrideReview }) });
-	const entry = { store, service };
+	const entry = { store, service, feedback: new FeedbackService({ history, store }), identity: identityService };
 	ENTRIES.set(repoPath, entry);
 	return entry;
 }

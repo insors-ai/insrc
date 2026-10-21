@@ -628,6 +628,13 @@ async function main(): Promise<void> {
 			}
 		},
 
+		// s5: feedback and replies on any artifact (a Task included) through the repository's FeedbackService, the threads of an
+		// artifact (open ones on request), and the person's declared ids. Each returns { error } on a bad request, never a throw.
+		'artifact.feedback.add': async (params) => (await import('./feedback-handlers.js')).handleFeedbackAdd(params, process.env['INSRC_REPO']),
+		'artifact.feedback.list': async (params) => (await import('./feedback-handlers.js')).handleFeedbackList(params, process.env['INSRC_REPO']),
+		'identity.show': async () => (await import('./feedback-handlers.js')).handleIdentityShow(),
+		'identity.declare': async (params) => (await import('./feedback-handlers.js')).handleIdentityDeclare(params),
+
 		// Session-aware repo resolution: given a session CWD, return the
 		// registered repo whose path contains it (most-specific on nesting), or
 		// null. Keeps the CWD→repo containment match daemon-side, next to the

@@ -50,10 +50,10 @@ const isInt = (v: unknown): boolean => typeof v === 'number' && Number.isInteger
 const isSignoff = (v: unknown): boolean => isObject(v) && isInt(v['revision']) && isReference(v['request'])
 	&& (v['state'] === 'open' || v['state'] === 'changes-requested' || v['state'] === 'completed')
 	&& Array.isArray(v['actors']) && v['actors'].every(isActor) && isStr(v['at']);
-const isAttachment = (v: unknown): boolean => isObject(v) && isReference(v['target']) && isInt(v['revision']) && isStr(v['at']);
+export const isAttachment = (v: unknown): boolean => isObject(v) && isReference(v['target']) && isInt(v['revision']) && isStr(v['at']);
 const isPendingLink = (v: unknown): boolean => isObject(v) && isReference(v['parent'])
 	&& (v['child'] === undefined || isReference(v['child'])) && (v['childId'] === undefined || isInt(v['childId']));
-const isBinding = (v: unknown): boolean => isObject(v) && isReference(v['reference']) && isInt(v['createdAtRevision'])
+export const isBinding = (v: unknown): boolean => isObject(v) && isReference(v['reference']) && isInt(v['createdAtRevision'])
 	&& Array.isArray(v['posted']) && v['posted'].every(p => isObject(p) && isStr(p['kind']) && isStr(p['at']))
 	&& (v['pendingLink'] === undefined || isPendingLink(v['pendingLink']));
 

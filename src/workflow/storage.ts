@@ -135,6 +135,19 @@ export function carryTracker(prior: unknown, next: unknown): Record<string, unkn
 	return merged;
 }
 
+/**
+ * The envelope of a content write with the binding and attachments of the head already on disk (s6). They are written only by
+ * the tracker binding module, as meta-only patches, so a content write that prepares after a patch has to keep them: for an
+ * existing head the on-disk values win over the caller's, and a head with no envelope yet takes what the caller gave.
+ */
+export function carryBinding(prior: unknown, next: unknown): Record<string, unknown> | undefined {
+	if (!isRecord(prior)) return isRecord(next) ? next : undefined;
+	const merged: Record<string, unknown> = { ...(isRecord(next) ? next : {}) };
+	if (prior['binding'] !== undefined) merged['binding'] = prior['binding']; else delete merged['binding'];
+	if (Array.isArray(prior['attachments'])) merged['attachments'] = prior['attachments'];
+	return merged;
+}
+
 function withoutRevision(artifact: Record<string, unknown>): string {
 	const meta = isRecord(artifact['meta']) ? { ...artifact['meta'] } : {};
 	delete meta['revision'];
@@ -151,7 +164,8 @@ function sameApartFromRevision(a: Record<string, unknown>, b: Record<string, unk
  *
  *  - `content`: revision = (revision of the file already at `path`, or 0) + 1,
  *    unless the write changes nothing (then the revision is kept); the whole
- *    prior `meta.tracker` block is carried into `next`.
+ *    prior `meta.tracker` block, and the binding and attachments of the prior
+ *    `meta.envelope`, are carried into `next`.
  *  - `meta-only`: the on-disk revision is copied into `next` (or left absent
  *    when the file has none), so a meta-only write never changes it.
  *
@@ -227,6 +241,8 @@ export function prepareArtifactWrite(
 	if (kind === 'content') {
 		const tracker = carryTracker(priorMeta?.['tracker'], meta['tracker']);
 		if (tracker !== undefined) meta['tracker'] = tracker;
+		const envelope = carryBinding(priorMeta?.['envelope'], meta['envelope']);
+		if (envelope !== undefined) meta['envelope'] = envelope;
 		// A content write that changes nothing keeps the revision: the revision
 		// names the content, so rewriting identical content must not invalidate
 		// anything bound to it.

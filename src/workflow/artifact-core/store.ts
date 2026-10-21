@@ -21,7 +21,7 @@ import { ARTIFACTS_DIR, artifactJsonPath, prepareArtifactWrite, writeAtomic } fr
 import { getLogger } from '../../shared/logger.js';
 import { codecFor, creationContextProvider } from './codecs.js';
 import type { CreationContextProvider, HeadFile, HeadPayload } from './codecs.js';
-import { decodeArtifactHead, isActor } from './decode.js';
+import { decodeArtifactHead, isActor, isAttachment, isBinding } from './decode.js';
 import { validateLogEntry } from './history.js';
 import { checkSidecarEntrySize } from './sidecar.js';
 import type { History } from './history.js';
@@ -398,6 +398,10 @@ export class ArtifactStore {
 		}
 		for (const r of a.references) checkReference(r, `a reference of ${a.id}`);
 		for (const t of a.attachments) checkReference(t.target, `an attachment of ${a.id}`);
+		// A store write of an existing head keeps the binding and attachments already on disk (carryBinding), so a malformed one
+		// is refused here rather than silently dropped.
+		if (!a.attachments.every(isAttachment)) throw new ArtifactShapeError(`an attachment of ${a.id} is malformed`);
+		if (a.binding !== undefined && !isBinding(a.binding)) throw new ArtifactShapeError(`the binding of ${a.id} is malformed`);
 		if (a.binding !== undefined) {
 			checkReference(a.binding.reference, `the binding of ${a.id}`);
 			if (a.binding.pendingLink !== undefined) {

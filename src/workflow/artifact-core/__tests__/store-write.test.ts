@@ -77,13 +77,15 @@ describe('ArtifactStore.write', () => {
 			const b = await k.store.read(id);
 			assert.equal(b.lifecycle.status, 'approved');
 			assert.equal(b.lifecycle.revision.number, 1, 'a lifecycle change is meta-only');
+			// the binding module is the one writer of attachments after creation: a store write of an existing head keeps the ones on disk
 			await k.store.write({ ...b, attachments: [{ target: external, revision: 1, at: 't' }] }, alice);
 			assert.equal((await k.store.read(id)).lifecycle.revision.number, 1, 'attachments are meta-only');
+			assert.deepEqual((await k.store.read(id)).attachments, [], 'a store write does not change the attachments of an existing head');
 			await k.store.write({ ...(await k.store.read(id)), description: 'new words' }, alice);
 			assert.equal((await k.store.read(id)).lifecycle.revision.number, 2, 'a description change is content');
 			// the revision in the log and in the lifecycle is the one the prepare step returned
 			const log = (await k.store.readWithHistory(id)).changeLog;
-			assert.deepEqual(log.map(e => [e.operation, e.revision?.number]), [['create', 1], ['update', 1], ['update', 1], ['update', 2]]);
+			assert.deepEqual(log.map(e => [e.operation, e.revision?.number]), [['create', 1], ['update', 1], ['update', 2]]);
 			assert.equal(log[0]?.actor.id, 'github:alice');
 		} finally { k.done(); }
 	});

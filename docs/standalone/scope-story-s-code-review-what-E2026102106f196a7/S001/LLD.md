@@ -413,3 +413,21 @@ The subject resolver and the diff-only path check the working tree first; any no
 - **[[c12]]** `step-output` `s6 test strategy`
 - **[[c13]]** `step-output` `s7 migration`
 - **[[c14]]** `step-output` `s8 checklist`
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 9 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-21T05:25:02.054Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

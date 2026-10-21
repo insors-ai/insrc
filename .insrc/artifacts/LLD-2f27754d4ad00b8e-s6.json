@@ -284,6 +284,13 @@
         "choice": "Accept unpushed sha",
         "rationale": "Recommended answer, approved with the LLD.",
         "resolvedAt": "2026-10-21T15:36:41.535Z"
+      },
+      "q5f82d762": {
+        "question": "No step commits the build, review and test records: the TUI approve() commits only the Define for a BUILD, and the daemon workflow.approve commits nothing. s6 adds no commit. The BUILD approval's followOn calls attachDocuments for those records and the new tracker.attach method attaches them on demand, in each case only for files git reports clean (the build flow's controller commits the records before approval, as it does for the s4 and s5 BUILD and TESTS records). Resolve: accept (recommended), or add a commit of the Story's records to the BUILD completion path (a change to the build gate outside s6).",
+        "status": "resolved",
+        "choice": "Accept: the controller commits, attach runs only on clean files",
+        "rationale": "Recommended answer, approved with the LLD.",
+        "resolvedAt": "2026-10-21T15:37:07.506Z"
       }
     }
   },

@@ -563,6 +563,8 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
   - **resolved**: Interim binding + documented s9 migration — Recommended answer, approved with the LLD. _(2026-10-21T15:35:58.410Z)_
 - `qaedce153` — A permalink names the last commit that touched the file but the commit may not be pushed, so the link is dead on GitHub until it is. Resolve: accept; the sha link becomes valid when the commit is pushed (recommended), or refuse to attach until the commit is on a remote branch.
   - **resolved**: Accept unpushed sha — Recommended answer, approved with the LLD. _(2026-10-21T15:36:41.535Z)_
+- `q5f82d762` — No step commits the build, review and test records: the TUI approve() commits only the Define for a BUILD, and the daemon workflow.approve commits nothing. s6 adds no commit. The BUILD approval's followOn calls attachDocuments for those records and the new tracker.attach method attaches them on demand, in each case only for files git reports clean (the build flow's controller commits the records before approval, as it does for the s4 and s5 BUILD and TESTS records). Resolve: accept (recommended), or add a commit of the Story's records to the BUILD completion path (a change to the build gate outside s6).
+  - **resolved**: Accept: the controller commits, attach runs only on clean files — Recommended answer, approved with the LLD. _(2026-10-21T15:37:07.506Z)_
 
 ## Citations
 

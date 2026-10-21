@@ -33,6 +33,8 @@ import {
 } from '../standalone-record.js';
 import { artifactJsonPath, buildArtifactId } from '../../../storage.js';
 import { ensureBuildRecordOnCompletion } from '../completion-record.js';
+import { stampBuildStart } from '../range-base.js';
+import { storyChangeSet } from '../story-commits.js';
 import { persistTestRecordTask, readTestRecord } from '../test-record.js';
 import { approveWorkflowTarget } from '../../../gates.js';
 import {
@@ -469,7 +471,7 @@ test('t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD
 	});
 });
 
-test('t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD (the specified "at persist time" semantics)', async () => {
+test('t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist whose prior commit does not resolve records HEAD (ISSUE-b97752e9: one that resolves is kept)', async () => {
 	await withGitRepo((repo, head) => {
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
 		// A caller that knows the commit can supply it, and it beats HEAD.
@@ -484,9 +486,11 @@ test('t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later 
 		// LLD says `body.commit` comes "from git HEAD at persist time", so a later
 		// write that supplies none refreshes it. Pinned as the specified semantics
 		// rather than quietly changing the code to match the wrong expectation.
+		// Since ISSUE-b97752e9 a prior commit that RESOLVES is kept (see the
+		// pre-trailer test below); 'deadbee' does not, so HEAD is recorded.
 		persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-02-02T00:00:00.000Z'));
 		assert.equal(readJson(json).body['commit'], head,
-			'a later persist supplying no commit records HEAD at THAT persist time');
+			'a later persist whose prior commit does not resolve records HEAD at that persist time');
 	});
 });
 
@@ -851,5 +855,32 @@ test('with a test record on disk and no build record, a first build record writt
 		persistBuildRecord(repo, { meta: { workflow: 'build', epicHash: HASH, storyId: 'S001', createdAt: T0, updatedAt: T0 }, body: { tasks: [] } });
 		assert.equal(readJson(build.json).meta['createdAt'], LATER);
 		assert.equal(folderOf(tests.md), folderOf(build.md));
+	});
+});
+
+test("a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it", async () => {
+	await withGitRepo(async (repo) => {
+		const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
+		writeFileSync(join(repo, '.git', 'info', 'exclude'), '.insrc/\ndocs/builds/\n');
+		const base = git('rev-parse', 'HEAD');
+		assert.equal(stampBuildStart(repo, HASH, 's1'), 'stamped');
+		const work = (file: string, msg: string): string => { writeFileSync(join(repo, file), `${msg}\n`); git('add', file); git('commit', '-qm', msg); return git('rev-parse', '--short', 'HEAD'); };
+		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
+
+		const mine = work('mine.ts', 'the Story, untrailed');
+		persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-10-18T00:00:00.000Z'));
+		assert.equal(readJson(json).body['commit'], mine);
+
+		work('later.ts', 'someone else, later, untrailed');
+		persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-10-19T00:00:00.000Z'));   // a validate rerun
+		assert.equal(readJson(json).body['commit'], mine, 'a validate rerun keeps the recorded commit');
+		await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' });                   // the completion rewrite
+		assert.equal(readJson(json).body['commit'], mine, 'so does the completion rewrite');
+		assert.deepEqual(storyChangeSet(repo, base, { storyKey: `${HASH}/s1` }).paths, ['mine.ts'], 'and the review after them stays bounded');
+
+		// A trailered commit is new Story work: it advances the commit.
+		writeFileSync(join(repo, 'more.ts'), 'more\n'); git('add', 'more.ts'); git('commit', '-qm', `the Story, trailered\n\nInsrc-Story: ${HASH}/s1\n`);
+		persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-10-20T00:00:00.000Z'));
+		assert.equal(readJson(json).body['commit'], git('rev-parse', '--short', 'HEAD'));
 	});
 });

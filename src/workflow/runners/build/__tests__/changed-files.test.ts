@@ -813,3 +813,19 @@ test('rewriting a BUILD record whose changeLog held unrelated files replaces it 
 		assert.doesNotMatch(readFileSync(emptied.md, 'utf8'), /## Changes/, 'an empty changeLog renders no section');
 	} finally { cleanup(); }
 });
+
+test('on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits', async () => {
+	const { repo, base, commit, cleanup } = mkStoryRepo();
+	try {
+		writeFileSync(join(repo, '.git', 'info', 'exclude'), '.insrc/\n');
+		commit({ 'src/legacy.ts': '1\n' }, 'feat: the Story, before trailers');
+		const end = execFileSync('git', ['rev-parse', '--short', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+		const [epic, story] = STORY_KEY.split('/');
+		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+		writeFileSync(join(repo, '.insrc', 'artifacts', `BUILD-${epic}-${story}.json`), JSON.stringify({ meta: { workflow: 'build', epicHash: epic, storyId: story, createdAt: '2026-10-18T00:00:00.000Z' }, body: { tasks: [], commit: end } }));
+		commit({ 'docs/later.md': 'x\n' }, 'docs: someone else, later');
+		assert.equal(execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }), '', 'precondition: clean tree');
+		assert.deepEqual([...await changedFiles(repo, { base, storyKey: STORY_KEY })], ['src/legacy.ts']);
+		assert.deepEqual([...await changedFiles(repo, { base })].sort(), ['docs/later.md', 'src/legacy.ts'], 'unbounded without the key');
+	} finally { cleanup(); }
+});

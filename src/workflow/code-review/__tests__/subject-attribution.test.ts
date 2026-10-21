@@ -169,3 +169,21 @@ test("a file another Story's excluded commit also changed is listed in sharedWit
 		assert.ok(written.length > 0, 'the record was written');
 	} finally { cleanup(); }
 });
+
+test("a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched", async () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		writeFileSync(join(r, '.git', 'info', 'exclude'), '.insrc/\n');
+		commit(r, { 'src/legacy.ts': '1\n' }, 'feat: the Story, before trailers');
+		const end = git(r, 'rev-parse', '--short', 'HEAD').trim();
+		write(r, { [`.insrc/artifacts/BUILD-${EPIC}-S001.json`]: JSON.stringify({ meta: { workflow: 'build', epicHash: EPIC, storyId: 'S001', createdAt: '2026-10-18T00:00:00.000Z' }, body: { tasks: [], commit: end } }) });
+		commit(r, { 'docs/ontology.md': 'added later by someone else\n' }, 'docs: add ontology PRD');
+		write(r, { 'docs/ontology.md': 'edited, uncommitted\n' });
+		const res = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base));
+		assert.ok(res.ok);
+		if (!res.ok) return;
+		assert.deepEqual([...res.subject.changedFiles], ['src/legacy.ts']);
+		assert.deepEqual(res.subject.excludedFromScope, ['docs/ontology.md']);
+		assert.equal(res.subject.changeSetAttribution, 'first-parent-range');
+	} finally { cleanup(); }
+});

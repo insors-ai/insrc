@@ -745,7 +745,7 @@ test('t10 END-TO-END: a trivial-routed build produces ONE record carrying the ch
 			// The build commits its work before validate, as the implement prompt
 			// requires: since ISSUE-b97752e9 only the Story's commits decide its set.
 			beforeValidate: () => {
-				execFileSync('git', ['commit', '-qm', 'the Story work', '--', 'shipped.ts', 'added.ts'], { cwd: repo, stdio: 'ignore' });
+				execFileSync('git', ['commit', '-qm', `the Story work\n\nInsrc-Story: ${HASH}/s1`, '--', 'shipped.ts', 'added.ts'], { cwd: repo, stdio: 'ignore' });
 				head = gitOut(repo, 'rev-parse', '--short', 'HEAD');
 			},
 		});
@@ -868,7 +868,7 @@ test('t4: the validate writer EXCLUDES its own json + md from its own change-log
 		// does, so the record's own files ARE in the Story's committed range,
 		// alongside a genuine source change.
 		writeFileSync(join(repo, 'real-work.ts'), 'export const w = 1;\n');
-		git('add', '-A'); git('commit', '-qm', 'work: real-work.ts and the record');
+		git('add', '-A'); git('commit', '-qm', `work: real-work.ts and the record\n\nInsrc-Story: ${HASH}/s1`);
 		const raw = git('diff', '--name-only', base, 'HEAD').split('\n').filter(Boolean);
 		assert.ok(raw.some(f => f.endsWith('.json') && f.includes('BUILD-')),
 			`precondition: the record's own json IS in the range, got ${JSON.stringify(raw)}`);
@@ -1663,7 +1663,7 @@ test('ISSUE-b4b6b835: validate hands the check runner the other TypeScript proje
 		writeFileSync(join(repo, 'plugin/tsconfig.json'), '{}');
 		writeFileSync(join(repo, 'plugin/src/view.ts'), 'export const v = 1;\n');
 		execFileSync('git', ['add', 'plugin'], { cwd: repo });
-		execFileSync('git', ['commit', '-qm', 'the build touches the plugin', '--', 'plugin'], { cwd: repo, stdio: 'ignore' });
+		execFileSync('git', ['commit', '-qm', `the build touches the plugin\n\nInsrc-Story: ${HASH}/s1`, '--', 'plugin'], { cwd: repo, stdio: 'ignore' });
 		// And an unrelated project appears in the working tree only: not the Story's (ISSUE-b97752e9).
 		mkdirSync(join(repo, 'other/src'), { recursive: true });
 		writeFileSync(join(repo, 'other/tsconfig.json'), '{}');

@@ -48,6 +48,7 @@ import { isAbsolute, join } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
 import { NoBuildChangesError } from './changed-files.js';
+import { resolveStoryRangeEnd } from './range-base.js';
 
 const log = getLogger('workflow:build:story-commits');
 
@@ -183,9 +184,28 @@ export function storyChangeSet(repoPath: string, base: string, opts: { readonly 
 	const { storyKey } = opts;
 	const scan = storyKey !== undefined ? scanTrailers(repoPath, base, storyKey, opts.strict === true) : undefined;
 	const byTrailer = scan !== undefined && scan.carrying.size > 0;
-	const foreign = (ref: string): boolean => scan?.foreign.has(ref) === true;
+	const [epicHash, storyId] = storyKey?.split('/') ?? [];
+	// A pre-trailer Story's range ends at its recorded build commit (ISSUE-b97752e9):
+	// the commits after it are later work, not the Story's. An end equal to the base
+	// means nothing committed yet; one off the first-parent line is ignored.
+	const afterEnd = new Set<string>();
+	if (scan !== undefined && !byTrailer && epicHash !== undefined && storyId !== undefined) {
+		const end = resolveStoryRangeEnd(repoPath, epicHash, storyId);
+		if (end !== undefined) {
+			const refs = lines.map(l => l.split(' ')[0] ?? '');
+			const at = refs.indexOf(end);
+			if (at >= 0) {
+				for (const r of refs.slice(at + 1)) afterEnd.add(r);
+			} else if (end === git(repoPath, ['rev-parse', '--verify', `${base}^{commit}`]).trim()) {
+				for (const r of refs) afterEnd.add(r);
+			} else {
+				log.warn({ repoPath, storyKey, end }, 'storyChangeSet: the recorded build commit is not on the range\'s first-parent line; the range runs to HEAD');
+			}
+		}
+	}
+	// Left out: another Story's commit, or a commit after a pre-trailer Story's end.
+	const foreign = (ref: string): boolean => scan?.foreign.has(ref) === true || afterEnd.has(ref);
 	let leftOutForeign = false;
-	const storyId = storyKey?.split('/')[1];
 	const excludedPaths = new Set<string>();
 
 	let emptyTree: string | undefined;
@@ -204,7 +224,8 @@ export function storyChangeSet(repoPath: string, base: string, opts: { readonly 
 				for (const p of paths) excludedPaths.add(p);
 				if (foreign(ref)) leftOutForeign = true;
 				const subject = scan?.subjects.get(ref) ?? '';
-				if (storyId !== undefined && subject.includes(`(build): ${storyId}/`)) {
+				// Only an untrailered commit can be this Story's missing a trailer.
+				if (!foreign(ref) && storyId !== undefined && subject.includes(`(build): ${storyId}/`)) {
 					log.warn({ repoPath, storyKey, commit: ref, subject }, 'storyChangeSet: a commit names this Story but lacks its trailer; left out of the change set');
 				}
 				continue;

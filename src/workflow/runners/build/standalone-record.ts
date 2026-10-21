@@ -19,7 +19,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
@@ -296,6 +296,20 @@ export function buildRecordPathsFor(repoPath: string, rec: BuildRecord): { md: s
 	return pathsForMerged(repoPath, mergeWithPrior(jsonPath, rec));
 }
 
+/** The prior record's `body.commit`, when the record exists and that commit still
+ *  resolves; undefined otherwise. Never throws. */
+function priorCommit(repoPath: string, jsonPath: string): string | undefined {
+	try {
+		if (!existsSync(jsonPath)) return undefined;
+		const commit = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { body?: { commit?: unknown } }).body?.commit;
+		if (typeof commit !== 'string' || commit.length === 0) return undefined;
+		execFileSync('git', ['cat-file', '-e', `${commit}^{commit}`], { cwd: repoPath, stdio: 'ignore' });
+		return commit;
+	} catch {
+		return undefined;
+	}
+}
+
 /** The Story's newest trailered commit since its range base; undefined when the
  *  base cannot be resolved or no commit carries the trailer. Never throws. */
 function storyCommit(repoPath: string, epicHash: string, storyId: string): string | undefined {
@@ -316,11 +330,13 @@ export function persistBuildRecord(repoPath: string, rec: BuildRecord): { md: st
 	//
 	// It is the Story's newest commit carrying its `Insrc-Story` trailer since the
 	// range base (ISSUE-b47dadc7), so another Story's later commits on main do not
-	// stand in for it. With no trailered commit it is HEAD AT PERSIST TIME, as
-	// before — so a re-persist REFRESHES it rather than preserving the earlier
-	// value. A caller that knows better can supply `body.commit` explicitly and it
-	// wins for that write.
-	const commit = rec.body.commit ?? storyCommit(repoPath, rec.meta.epicHash, rec.meta.storyId) ?? headShortSha(repoPath);
+	// stand in for it. With no trailered commit it is the prior record's commit
+	// when that still resolves, else HEAD AT PERSIST TIME: once a pre-trailer
+	// Story's record names a commit it never moves, because that commit is where
+	// its range ends (ISSUE-b97752e9) and later HEADs are other people's work. A
+	// trailered commit advances it. A caller that knows better can supply
+	// `body.commit` explicitly and it wins for that write.
+	const commit = rec.body.commit ?? storyCommit(repoPath, rec.meta.epicHash, rec.meta.storyId) ?? priorCommit(repoPath, jsonPath) ?? headShortSha(repoPath);
 	const withCommit: BuildRecord = commit !== undefined
 		? { ...rec, body: { ...rec.body, commit } }
 		: rec;

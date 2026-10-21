@@ -690,24 +690,18 @@ FileSidecarStore appends every record to .insrc/history/log.jsonl or .insrc/hist
 - The daemon's approval actor today is the gate itself (insrc:approval); the live tracker identity that k5 requires is s5's, so should s4 pass a person actor from the request when the client supplies one and fall back to the gate actor otherwise?
 - Making persistBuildRecord, persistStandaloneBuildRecord, persistTestRecordTask and handleVerdicts async touches many existing tests; should the tests be moved to the async forms in the same tasks as the writers, or kept on a thin synchronous test-only wrapper?
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q162d5894` — After a merge the union of both clones' log lines can be ahead of the head git kept (log-ahead-of-head), and ArtifactStore.write refuses only a hash-mismatch: should a write on a log-ahead-of-head artifact also need the conflict-resolved option, or should the next ordinary write move the head up to the log?
+  - **resolved**: Require explicit conflict resolution — Recommended: a matching head hash alone does not establish that the merged log has been reconciled. _(2026-10-21T09:16:44.137Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**3 do not hold · 0 could not be verified · 5 hold** · template `design-spec` · model `cli-codex:gpt-6-astra` · reviewed 2026-10-21T09:10:27.150Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| coverage-of-intent | HIGH | Storing round content through the existing updateContent preserves earlier round outcomes in the log and satisfies ac12. | DEF ac12 requires an entry 'with the round's outcome, so earlier rounds can still be read'. LifecycleService.updateContent supplies only `options: { operation: 'update' }`. ArtifactStore constructs entries with revision number/hash and includes outcome only when `options.outcome !== undefined`; it stores neither the old payload nor the new payload in the entry. The proposed three-argument RoundWriter cannot supply an outcome. Creating the first round without logging also leaves that round unavailable after its replacement. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, src/workflow/artifact-core/lifecycle-service.ts, src/workflow/artifact-core/store.ts] | Specify how round outcomes enter the staged ChangeLogEntry, including preservation of the first overwritten round. Extend the writer contract or explicitly derive the outcome inside the queued mutation. |
-| change-sites | HIGH | Supplying RoundWriter from the code-review step handler covers production CR record persistence. | The daemon also registers `codeReview.run` through codeReviewRunStart. src/daemon/code-review-rpc.ts calls runCodeReview directly in degraded, injected-write and default branches; the default branch supplies no dependencies. The step handler routes daemon reviews to this RPC. This production writer is absent from the design's registry and RoundWriter change-site inventories, so those reviews retain the explicitly unchanged no-through finalize path. [files: src/daemon/index.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts] | Add codeReviewRunStart and its dependency contract to the change sites. Supply the repository RoundWriter in every runner branch and test both daemon and controller review routes. |
-| error-paths | HIGH | An oversized entry rejected by appendRecord can be recovered simply by shortening the outcome and retrying. | ArtifactStore calls `journal.stage` before `history.appendLog`. Subsequent writes and updates execute completePending first, which retries the immutable staged entry. The proposed size check occurs only at appendRecord, so an oversized entry becomes a permanently failing pending operation; a shorter replacement cannot reach staging. [files: src/workflow/artifact-core/store.ts, src/workflow/artifact-core/history.ts, src/workflow/artifact-core/journal.ts] | Validate serialized entry size before staging, using the same framing validator as appendRecord. Specify recovery for already-staged invalid entries and test that a rejected oversized operation does not block a later valid write. |
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `src/workflow/artifact-core/history.ts`
+- **[[c2]]** `analyze-bundle` `src/workflow/artifact-core/store.ts`
+- **[[c3]]** `analyze-bundle` `src/workflow/runners/build/test-record.ts`
+- **[[c4]]** `analyze-bundle` `src/workflow/artifact-core/sidecar.ts`
+- **[[c5]]** `analyze-bundle` `src/workflow/gates.ts`
+- **[[c6]]** `analyze-bundle` `src/daemon/index.ts`
+- **[[c7]]** `doc` `docs/plans/core-data-model.md`
+- **[[c8]]** `prior-artifact` `docs/epics/one-common-model-every-artifact-E202610192f27754d/HLD.md`

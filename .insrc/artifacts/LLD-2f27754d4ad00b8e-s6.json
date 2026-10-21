@@ -248,7 +248,16 @@
       "signoffs": []
     },
     "revision": 6,
-    "approvedAt": "2026-10-21T15:30:48.174Z"
+    "approvedAt": "2026-10-21T15:30:48.174Z",
+    "questionResolutions": {
+      "q0430b408": {
+        "question": "The binding and attachments are written by sync meta-only patches, not through ArtifactStore.update, because the team gate and the draft-issue hook that record a unit's issue are synchronous and the store is async; making them async would rewrite every teamGate caller. To keep a store write from undoing a patch, prepareArtifactWrite carries meta.envelope.binding and meta.envelope.attachments from the head on disk into every content write of an existing artifact (carryBinding, as carryTracker does for meta.tracker). That touches the store's write path owned by s2 and s4. Resolve: accept it as an s6-owned change to src/workflow/storage.ts (recommended), or move the two sync recording points to the async store and make the gate async (a large change outside s6).",
+        "status": "resolved",
+        "choice": "s6 owns carryBinding in storage.ts",
+        "rationale": "Approved LLD review: the owner approved with the recommended answers.",
+        "resolvedAt": "2026-10-21T15:32:40.100Z"
+      }
+    }
   },
   "body": {
     "summary": {

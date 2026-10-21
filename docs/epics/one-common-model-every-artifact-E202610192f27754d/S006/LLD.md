@@ -1,6 +1,6 @@
 <!-- insrc:artifact LLD-2f27754d4ad00b8e-s6 -->
 
-# LLD: STORY-2f27754d4ad00b8e-s6
+# LLD: E202610212f27754d:S006
 
 ## Summary
 
@@ -551,6 +551,11 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
 - No step commits the build, review and test records: the TUI approve() commits only the Define for a BUILD, and the daemon workflow.approve commits nothing. s6 adds no commit. The BUILD approval's followOn calls attachDocuments for those records and the new tracker.attach method attaches them on demand, in each case only for files git reports clean (the build flow's controller commits the records before approval, as it does for the s4 and s5 BUILD and TESTS records). Resolve: accept (recommended), or add a commit of the Story's records to the BUILD completion path (a change to the build gate outside s6).
 - Individual mode currently has its own push functions (named legacy in src/workflow/tracker-auto.ts) with their own issue creation and unmarked best-effort comments. This LLD removes them and runs both modes through one path so both get the binding, once-only posts and attachments. Resolve: accept (recommended; the owner asked for both modes to be complete), or keep two paths and bind and mark in each.
 
+## Resolved questions
+
+- `q0430b408` — The binding and attachments are written by sync meta-only patches, not through ArtifactStore.update, because the team gate and the draft-issue hook that record a unit's issue are synchronous and the store is async; making them async would rewrite every teamGate caller. To keep a store write from undoing a patch, prepareArtifactWrite carries meta.envelope.binding and meta.envelope.attachments from the head on disk into every content write of an existing artifact (carryBinding, as carryTracker does for meta.tracker). That touches the store's write path owned by s2 and s4. Resolve: accept it as an s6-owned change to src/workflow/storage.ts (recommended), or move the two sync recording points to the async store and make the gate async (a large change outside s6).
+  - **resolved**: s6 owns carryBinding in storage.ts — Approved LLD review: the owner approved with the recommended answers. _(2026-10-21T15:32:40.100Z)_
+
 ## Citations
 
 - **[[c1]]** `analyze-bundle` `src/workflow/tracker/refs.ts:26-47` — "UnitIssue record with pendingLink and extrasDone"
@@ -562,21 +567,3 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
 - **[[c7]]** `code` `src/workflow/tracker-auto.ts:495-620` — "approve-time extras and teamPush functions"
 - **[[c8]]** `code` `src/workflow/storage.ts:125-250` — "carryTracker and prepareArtifactWrite"
 - **[[c9]]** `code` `src/workflow/team/gate.ts:204-225` — "synchronous teamContext resolve and ensure"
-
-<!-- insrc:review -->
-
-## Review
-
-### ✅ Review `PASS` — design.story (design.story)
-
-**0 do not hold · 0 could not be verified · 15 hold** · template `design-spec` · model `cli-claude:opus` · reviewed 2026-10-21T15:26:27.062Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._

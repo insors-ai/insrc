@@ -47,7 +47,7 @@ changedFiles(repoPath: string, opts?: ChangedFilesOptions): Promise<readonly str
 - `NoBuildChangesError` when opts.storyKey is given without a base: a Story's set has no anchor, so the seam refuses instead of returning the working tree (callers outside a Story pass neither and keep today's working-tree derivation).
 
 **Preconditions:**
-- A base, when given, is a commit the repository can resolve (resolveStoryRangeBase).
+- A base, when given, is a CANDIDATE commit (resolveStoryRangeBase checks only the build-start stamp with commitExists; an upstream artifact's meta.rangeBase is returned unchecked). One that does not resolve makes git fail, which is the NoBuildChangesError decline below, never a wider set.
 
 **Postconditions:**
 - With a base, the result never contains a working-tree path outside the Story's committed set, whatever the working tree holds.

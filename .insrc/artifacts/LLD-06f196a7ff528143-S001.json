@@ -37,9 +37,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers the upstream requirement to scope reviews and BUILD records to Story work, report unrelated edits, and decline when nothing is attributable.",
-          "evidence": "The ISSUE's Fix intent explicitly requires these behaviors. The inspected consumers are resolveCodeReviewSubject, assembleDiffCodeReviewGrounding, ensureBuildRecordOnCompletion, and the validate phase; the design addresses each, including both diff-only entry points and empty-set rejection. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Retain this coverage.",
+          "premise": "The design covers the upstream requirement to scope reviews, diff grounding and BUILD records to Story changes, report unrelated edits, and decline empty subjects.",
+          "evidence": "The ISSUE's Fix intent explicitly requires these behaviors. The inspected subject resolver, diff assembler and two BUILD writers are the corresponding consumers. The design addresses each, including the currently missing empty-subject guards. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "Retain the empty-subject amendments alongside the already implemented scoping changes.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -49,9 +49,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The trivial route can initially persist a BUILD commit equal to its range base, requiring the proposed equal-end handling.",
-          "evidence": "implement.ts calls 'noteBuildStart(repoPath, epicHash, storyId)' before 'persistStandaloneBuildRecord'. The latter delegates to persistBuildRecord, whose commit expression falls back to headShortSha(repoPath). With no intervening commit, both record the same HEAD. [files: src/daemon/steps/build-step/phases/implement.ts, src/workflow/runners/build/range-base.ts, src/workflow/runners/build/standalone-record.ts]",
-          "action": "Keep the end-equals-base case and its regression test.",
+          "premise": "Empty subjects currently reach the judges, and the trivial implement route writes its initial BUILD record immediately after recording the build start.",
+          "evidence": "resolveCodeReviewSubject returns ok:true without checking changedFiles.length. runCodeReview executes 'for (const slot of judges)' without an empty-file guard. implement.ts calls noteBuildStart before persistStandaloneBuildRecord; persistence falls back to HEAD when there is no Story commit. These support both proposed amendments. [files: src/workflow/code-review/subject.ts, src/workflow/code-review/runner.ts, src/daemon/steps/build-step/phases/implement.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "Implement and test the empty-set refusal and recorded-end-equals-base cases.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -60,12 +60,12 @@
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The capture helper can drop output while the captured string remains below its cap.",
-          "evidence": "runShell increments stdoutBytes before checking 'if (stdoutBytes <= maxBytes)' and drops the entire overflowing chunk. It reports 'stdoutTruncated: stdoutBytes > maxBytes'. git_diff currently checks only 'diff.stdout.length >= maxBytes', exactly the gap addressed by the amendment. [files: src/daemon/tools/shell-helper.ts, src/daemon/tools/builtins/git/diff.ts]",
-          "action": "Implement the stated body-truncation and incomplete-numstat checks.",
+          "severity": "MED",
+          "premise": "resolveStoryRangeBase guarantees that a returned base resolves to a commit.",
+          "evidence": "Only the build-start stamp is checked with commitExists. stampedBase accepts 'typeof base === \"string\" && base.length > 0', and resolveStoryRangeBase then executes 'if (base !== undefined) return base'. An upstream artifact's stale or invalid meta.rangeBase is therefore returned without commit validation. The design's downstream Git-failure handling limits the impact, but its stated precondition is not guaranteed by this resolver. [files: src/workflow/runners/build/range-base.ts, src/workflow/runners/build/story-commits.ts]",
+          "action": "Describe the base as a candidate that can fail Git resolution, or explicitly design commit validation for upstream artifact stamps.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -73,9 +73,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed range-end resolver complements existing base resolution and reuses the established BUILD persistence seam.",
-          "evidence": "range-base.ts provides resolveStoryRangeBase but no resolveStoryRangeEnd. standalone-record.ts already centralizes commit selection and persistence; both completion-record.ts and validate.ts call persistBuildRecord. storyChangeSet already supplies attribution, units, sharedWithExcluded, strict scanning, and perUnit, consistent with the documented partial implementation. [files: src/workflow/runners/build/range-base.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Add end resolution without duplicating the existing base or persistence logic.",
+          "premise": "The legacy range end is new; strict trailer attribution, per-unit reads and dirty-tree scoping are existing reusable mechanisms at the amendment's implementation stage.",
+          "evidence": "Searching src found no resolveStoryRangeEnd. storyChangeSet already exposes strict and perUnit, records foreign commits and filters ordinary and merge units. changedFiles already reads committed units before working-tree changes; storyRangeDiff already supports perUnit. This agrees with the migration progress note rather than treating all listed changes as unimplemented. [files: src/workflow/runners/build/range-base.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Extend these existing mechanisms for the recorded end instead of creating a separate attribution implementation.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -84,12 +84,12 @@
           "ref": "change-sites",
           "item": "change-sites",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "The listed numstat and diff-header changes are sufficient to preserve literal UTF-8 paths and make file inventories agree with Story paths.",
-          "evidence": "The unchanged capture layer decodes each Buffer independently: 'stdout += chunk.toString(\"utf8\")'. A multibyte character split between chunks is corrupted before the proposed NUL parser receives it. A read-only reproduction using that exact decoding operation turned '1\\t0\\tcaf\u00e9.ts\\u0000' into '1\\t0\\tcaf\ufffd\ufffd.ts\\u0000'; the terminal NUL remained intact. Thus neither stdoutTruncated nor incomplete-record detection catches it. storyRangeDiff matches stats against set.paths, so such a Story file can disappear from grounding despite a successful, complete stat read. [files: src/daemon/tools/shell-helper.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/code-review/grounding.ts, src/workflow/runners/build/story-commits.ts]",
-          "action": "Add UTF-8-safe streaming capture to the change sites: accumulate buffers before decoding or use StringDecoder while preserving byte-cap accounting. Test a numstat path whose multibyte character crosses a chunk boundary, including downstream Story membership.",
+          "severity": "LOW",
+          "premise": "Both production diff-only entry points already pass the Story base and storyKey and are the necessary locations for empty-grounding refusal.",
+          "evidence": "The RPC degraded branch and beginDiffOnlyReview both pass resolveStoryRangeBase(...), LEDGER_EXCLUDE_GLOBS and the epicHash/storyId key. The RPC immediately invokes runCodeReview after assembly; the controller path saves state and emits judgements. Neither currently checks the assembled changedFiles for emptiness. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "Add the specified guards before invoking the runner or saving judgement state.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "change-sites.2",
@@ -97,9 +97,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Both diff-only callers already pass the Story base and key, and the validate phase owns the stated project/test selection calls.",
-          "evidence": "code-review-rpc.ts and code-review-step/handler.ts pass resolveStoryRangeBase, LEDGER_EXCLUDE_GLOBS, and the epicHash/storyId key to the assembler. Production-call searches locate withTypecheckProjects and trivialCheckPlan in validate.ts, matching the design's inventory. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/daemon/steps/build-step/phases/validate.ts, src/daemon/steps/build-step/validation-checks.ts]",
-          "action": "Place the proposed empty-result guards before runCodeReview and emitJudgementsResult respectively.",
+          "premise": "Both BUILD changeLog writers converge on persistBuildRecord, so stable commit preservation belongs in that shared persistence function.",
+          "evidence": "completion-record.ts and validate.ts collect changeLog with storyKey, write it even when empty, and call persistBuildRecord. That function currently computes 'rec.body.commit ?? storyCommit(...) ?? headShortSha(repoPath)' before merging the prior record. Changing this precedence centrally reaches both writers. [files: src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "Apply prior-commit preservation centrally and retain explicit-commit precedence.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -109,9 +109,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Optional review exclusions preserve older records, and explicitly writing an empty changeLog replaces contaminated prior entries.",
-          "evidence": "Review types retain 'working-tree' and declare excludedFromScope optional. The runner stamps exclusions only when nonempty, and validateArtifact does not require them. Both BUILD writers explicitly supply changeLog; mergeWithPrior uses '...prior.body, ...rec.body', replacing the prior array. renderBuildRecordMd omits sections whose rendered content is empty. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Retain optional review fields and unconditional changeLog writes.",
+          "premise": "Optional review exclusion fields preserve older record shapes, and an explicitly empty new changeLog replaces a contaminated prior changeLog.",
+          "evidence": "CodeReviewSubject and CodeReviewBody.subject declare excludedFromScope optional; ChangeSetAttribution retains 'working-tree'. The runner conditionally stamps nonempty exclusions, and its artifact validator does not require that field. BUILD mergeWithPrior spreads '...prior.body, ...rec.body', so changeLog:[] replaces the old value; rendering uses the existing empty-section omission. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "Preserve these optional fields and unconditional changeLog writes.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -121,9 +121,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "This work is a standalone bugfix rather than a Story allocated shared contracts by a parent HLD.",
-          "evidence": "The ISSUE metadata has standalone:true. The LLD metadata identifies standalone:true and sizeClass:'bugfix'. The inspected changes use existing internal attribution and persistence seams and retain the existing CodeReviewSubjectResult decline reason. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, .insrc/artifacts/LLD-06f196a7ff528143-S001.json, src/workflow/code-review/types.ts]",
-          "action": "Preserve the existing review result contract.",
+          "premise": "This is a standalone bugfix without parent-HLD shared contracts to redesign.",
+          "evidence": "The ISSUE metadata declares standalone:true and magnitude:'sized'; the LLD metadata declares standalone:true and sizeClass:'bugfix'. The proposed changes use existing internal attribution, Git-tool and persistence seams; the review subject retains its existing 'no-build-record' decline reason. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, .insrc/artifacts/LLD-06f196a7ff528143-S001.json, src/workflow/code-review/types.ts, src/daemon/tools/builtins/git/diff.ts]",
+          "action": "Keep the changes within these internal seams.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -133,9 +133,9 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The existing exception seams support the proposed fail-closed review behavior and fail-open BUILD changeLog behavior.",
-          "evidence": "scanTrailers rethrows when strict is true; collectDiff rejects unsuccessful git_diff results with NoBuildChangesError. The subject maps that error to no-build-record. Grounding wraps attribution failures as DiffUnavailableError, and runDiff rejects unsuccessful tool results. collectBuildChangeLog catches derivation failures and returns []. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Route the new incomplete-numstat failures through these existing seams.",
+          "premise": "Failed or incomplete Git inventories can use existing consumer error paths, while output truncation requires the proposed additional detection.",
+          "evidence": "collectDiff converts success:false to NoBuildChangesError; runDiff converts it to DiffUnavailableError; collectBuildChangeLog catches failures and returns []. git_diff already rejects a failed numstat command but currently computes truncation only from captured string length. runShell drops chunks after its byte cap and reports stdoutTruncated, confirming why the proposed flag check and incomplete-inventory rejection are needed. [files: src/workflow/runners/build/changed-files.ts, src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts, src/daemon/tools/shell-helper.ts]",
+          "action": "Implement capture-flag propagation and complete NUL-record validation, preserving the existing rejection paths.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -145,21 +145,33 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The stated acceptance criteria have concrete test mappings covering their real consumers.",
-          "evidence": "The design maps ac1\u2013ac5 to scope/exclusion, own-file hunks, refusal, BUILD/gate integration, and installed-daemon smoke cases. Inspected test bodies already exercise real repositories for dirty-tree exclusions, missing bases, strict-scan failures, per-Story hunks, project selection, and deleted tests. The plan explicitly adds boundary, rename, capture-cap, and empty-review cases. This verifies the test plan; the filesystem-writing suites and installed-daemon smoke were not run. [files: src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
-          "action": "Add the UTF-8 chunk-boundary regression identified above and execute the planned suites and smoke after implementation.",
+          "premise": "The acceptance criteria have concrete planned tests supported by the existing real-Git test infrastructure.",
+          "evidence": "The design maps ac1\u2013ac5 to scoping/exclusion, own-file hunks, refusal, BUILD/gate integration and installed-daemon smoke. Inspected test bodies create temporary repositories and assert subject exclusions, filtered legacy hunks, staged-plus-unstaged accumulation, project selection and deleted-test filtering. The proposed boundary, parser and empty-review cases extend these appropriate seams. This verifies the test plan, not execution. [files: src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
+          "action": "Add the amendment cases and update existing assertions that still accept empty subjects before running the suites.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The installed-daemon smoke will demonstrate correct scoping for the observed legacy Story.",
+          "evidence": "The inspected BUILD record lists tasks t1\u2013t7, with t3 failed, and still contains the six unrelated ontology paths. It provides no successful t8 smoke result. I did not run filesystem-writing tests or an installed-daemon review. The analyzer also failed with shaper-llm-unavailable caused by an invalid response schema; repository verification continued through direct reads. [files: docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/BUILD.md, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
+          "action": "After implementing the remaining amendments, rebuild the installed daemon and record the actual scoped subject and exclusions from the specified smoke.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
         }
       ],
       "counts": {
-        "high": 1,
-        "med": 0,
-        "low": 9,
-        "unverified": 0
+        "high": 0,
+        "med": 1,
+        "low": 10,
+        "unverified": 1
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T08:32:16.657Z",
+      "reviewedAt": "2026-10-21T08:35:29.693Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     },
@@ -219,7 +231,7 @@
             }
           ],
           "preconditions": [
-            "A base, when given, is a commit the repository can resolve (resolveStoryRangeBase)."
+            "A base, when given, is a CANDIDATE commit (resolveStoryRangeBase checks only the build-start stamp with commitExists; an upstream artifact's meta.rangeBase is returned unchecked). One that does not resolve makes git fail, which is the NoBuildChangesError decline below, never a wider set."
           ],
           "postconditions": [
             "With a base, the result never contains a working-tree path outside the Story's committed set, whatever the working tree holds.",

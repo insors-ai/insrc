@@ -97,7 +97,7 @@ const fixProvider = (): LLMProvider => envelopeProvider({
 	},
 });
 
-async function reviewedPlan(withService: boolean): Promise<{ approvalError: unknown; logTail: number | undefined; headRevision: number }> {
+async function reviewedPlan(withService: boolean): Promise<{ approvalError: unknown; logTail: number | undefined; headRevision: number; reviewed: number | undefined; operations: string[] }> {
 	const k = kit();
 	try {
 		await k.store.write(artifact(`DEF-${H}`), alice);
@@ -116,7 +116,7 @@ async function reviewedPlan(withService: boolean): Promise<{ approvalError: unkn
 		assert.equal(head.lifecycle.revision.number, 2, 'the auto-fix minted a revision');
 		const tail = [...head.changeLog].reverse().find(e => e.revision !== undefined);
 		const approvalError = await svc.apply(PLAN, 'approve', bob).then(() => undefined, (e: unknown) => e);
-		return { approvalError, logTail: tail?.revision?.number, headRevision: head.lifecycle.revision.number };
+		return { approvalError, logTail: tail?.revision?.number, headRevision: head.lifecycle.revision.number, reviewed: head.lifecycle.review?.revision, operations: head.changeLog.map(e => e.operation) };
 	} finally { k.done(); }
 }
 
@@ -130,6 +130,10 @@ test('with a service, a review auto-fix or BUILD hook rewrite keeps the log in s
 	const withService = await reviewedPlan(true);
 	assert.equal(withService.logTail, withService.headRevision);
 	assert.equal(withService.approvalError, undefined);
+	// the review itself is recorded on the lifecycle too, bound to the revision the auto-fix left
+	assert.equal(withService.reviewed, withService.headRevision);
+	assert.deepEqual(withService.operations, ['create', 'update', 'review']);
+	assert.equal(without.reviewed, undefined, 'without a service the review stays in meta.review only');
 
 	// the BUILD hook: a record rewritten by ensureBuildRecordOnCompletion is followed by its entry as well
 	const k = kit();
@@ -196,6 +200,23 @@ test('with a service, an approval the service refuses takes the legacy stamp bac
 		const approved = await k.store.read(lld);
 		assert.equal(approved.lifecycle.status, 'approved');
 		assert.equal(approved.lifecycle.review?.revision, approved.lifecycle.revision.number);
+	} finally { k.done(); }
+});
+
+test('with a service, an artifact in a status the table has no approval from is refused and its legacy stamp taken back', async () => {
+	const k = kit();
+	try {
+		await k.store.write(artifact(`DEF-${H}`), alice);
+		await k.store.write(artifact(PLAN), alice);
+		const svc = serviceFor(k);
+		await svc.apply(PLAN, 'reject', bob, { reason: 'not this one' });
+		const path = artifactJsonPath(k.repo, PLAN);
+		const before = readFileSync(path, 'utf8');
+		const result = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob }, { enforce: false });
+		assert.deepEqual(result.approved, []);
+		assert.match(result.skipped[0]?.reason ?? '', /cannot be approved from rejected/);
+		assert.equal(readFileSync(path, 'utf8'), before, 'the legacy stamp was taken back');
+		assert.equal((await k.store.read(PLAN)).lifecycle.status, 'rejected');
 	} finally { k.done(); }
 });
 

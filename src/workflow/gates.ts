@@ -868,6 +868,7 @@ function pendingArtifactJsonPaths(repoPath: string, epicHash: string): string[] 
 const GATE_ACTOR: Actor = { id: 'insrc:approval', kind: 'system', properties: {} };
 const artifactIdOf = (jsonPath: string): string => basename(jsonPath).replace(/\.json$/, '');
 const REVIEWED_KINDS: readonly string[] = ['DEF', 'HLD', 'LLD'];
+const APPROVED_OR_BEYOND: readonly string[] = ['approved', 'in-signoff', 'changes-requested', 'signed-off', 'completed'];
 
 /**
  * A DEF, HLD or LLD is approved by the lifecycle only against a review bound to its revision. The review a design stage
@@ -944,17 +945,21 @@ export async function approveWorkflowTarget(
 		if (ref === undefined) return;
 		await ensureBuildRecordOnCompletion(req.repoPath, ref, undefined, lifecycle !== undefined ? { writer: lifecycle, actor } : undefined);
 	};
-	/** With a service: apply the approval through it once the legacy gates have passed, then complete what the BUILD approval finishes. */
-	const applyThroughService = async (jsonPath: string): Promise<boolean> => {
+	/**
+	 * With a service: apply the approval through it once the legacy gates have passed. False when the service refuses it (the caller
+	 * takes the legacy stamp back). An artifact already approved or beyond stays as it is; one in a status the closed table has no
+	 * approval from (rejected, pending review, withdrawn, ...) is refused.
+	 */
+	const approveThroughService = async (jsonPath: string): Promise<boolean> => {
 		if (lifecycle === undefined) return true;
 		const id = artifactIdOf(jsonPath);
-		const ctx = { overrideReview: req.overrideReview };
 		try {
 			await mirrorLegacyReview(lifecycle, jsonPath);
 			const seen = await lifecycle.inspect(id);
-			if (seen !== undefined && seen.status === 'draft') {
-				await lifecycle.apply(id, 'approve', actor, req.overrideReview !== undefined && req.overrideReview.length > 0 ? { override: { reason: req.overrideReview } } : {}, ctx);
-			}
+			if (seen === undefined || APPROVED_OR_BEYOND.includes(seen.status)) return true;
+			if (seen.status !== 'draft') throw new IllegalTransitionError(`${id} cannot be approved from ${seen.status}`);
+			await lifecycle.apply(id, 'approve', actor, req.overrideReview !== undefined && req.overrideReview.length > 0 ? { override: { reason: req.overrideReview } } : {}, { overrideReview: req.overrideReview });
+			return true;
 		} catch (err) {
 			if (err instanceof ReviewRequiredError || err instanceof IllegalTransitionError || err instanceof LifecycleConflictError) {
 				approved.pop();
@@ -963,11 +968,14 @@ export async function approveWorkflowTarget(
 			}
 			throw err;
 		}
-		const key = ArtifactIds.parse(id);
+	};
+	/** With a service: a BUILD approval completes the Story, and then the Epic, once their roll-up is true. The approval itself stands. */
+	const completeThroughService = async (jsonPath: string): Promise<void> => {
+		if (lifecycle === undefined) return;
+		const key = ArtifactIds.parse(artifactIdOf(jsonPath));
 		if (key?.kind === 'BUILD' && key.story !== undefined) {
-			await lifecycle.completeIfRolledUp(ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }), actor, ctx);
+			await lifecycle.completeIfRolledUp(ArtifactIds.make({ kind: 'STORY', epicHash: key.epicHash, story: key.story }), actor, { overrideReview: req.overrideReview });
 		}
-		return true;
 	};
 
 	const approveOne = async (jsonPath: string): Promise<void> => {
@@ -1001,14 +1009,20 @@ export async function approveWorkflowTarget(
 			// function is the one every approval goes through (the TUI calls it
 			// directly), so the rule cannot be bypassed by skipping this one.
 		}
+		let completeAfter = false;
 		try {
 			const stampless = lifecycle !== undefined ? readFileSync(jsonPath, 'utf8') : undefined;
 			approved.push({ path: jsonPath, result: approveArtifactByJsonPath(jsonPath, approveOpts) });
-			if (!(await applyThroughService(jsonPath)) && stampless !== undefined) {
-				// the service refused the approval: the legacy stamp is taken back, so nothing reads the target as approved
+			const restoreStamp = (): void => {
+				// the service did not approve: the legacy stamp is taken back, so nothing reads the target as approved
 				// raw-write: restores the bytes the gate stamped over; the lifecycle part of the head was never changed.
-				writeAtomic(jsonPath, stampless);
-			}
+				if (stampless !== undefined) writeAtomic(jsonPath, stampless);
+			};
+			let applied: boolean;
+			try { applied = await approveThroughService(jsonPath); }
+			catch (err) { restoreStamp(); throw err; }
+			if (!applied) restoreStamp();
+			else completeAfter = true;
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {
 				skipped.push({ path: jsonPath, reason: err.summary });
@@ -1020,6 +1034,8 @@ export async function approveWorkflowTarget(
 				throw err;   // ArtifactMissingError / no-meta — surface, not skip
 			}
 		}
+		// The approval stands whatever completing the Story finds: a failure here surfaces to the caller, and a retry finishes it.
+		if (completeAfter) await completeThroughService(jsonPath);
 	};
 
 	if (req.artifactPath !== undefined) {

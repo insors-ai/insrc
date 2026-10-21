@@ -42,7 +42,7 @@ import { dirname, join } from 'node:path';
 import { PATHS } from '../shared/paths.js';
 import { ArtifactIds, MissingAnchorError, type PathIntent } from './artifact-ids.js';
 import { fileSeg, resolveArtifactMdPath, type WorkItemKind } from './path-scheme.js';
-import { contentHash, reconcileLifecycle } from './artifact-core/lifecycle.js';
+import { assertLegalStatusChange, contentHash, reconcileLifecycle } from './artifact-core/lifecycle.js';
 import type { ContentView } from './artifact-core/lifecycle.js';
 import { ArtifactShapeError } from './artifact-core/types.js';
 import type { Actor, Lifecycle, Status } from './artifact-core/types.js';
@@ -252,6 +252,11 @@ export function prepareArtifactWrite(
 		// A meta-only write never moves the revision: the lifecycle keeps the revision (number, hash, time, author) already stored.
 		const priorLifecycle = priorMeta?.['lifecycle'];
 		if (isRecord(meta['lifecycle']) && isRecord(priorLifecycle) && isRecord(priorLifecycle['revision'])) {
+			// a status change without a content change has to be a step of the closed table, whichever kind of write makes it
+			const from = priorLifecycle['status'] as Status;
+			const to = meta['lifecycle']['status'] as Status;
+			if (!LIFECYCLE_STATUSES.includes(to)) throw new ArtifactShapeError(`the lifecycle has an unknown status '${String(to)}'`);
+			if (LIFECYCLE_STATUSES.includes(from)) assertLegalStatusChange(from, to);
 			meta['lifecycle'] = { ...meta['lifecycle'], revision: priorLifecycle['revision'] };
 		}
 		if (priorMeta !== undefined && 'revision' in priorMeta) meta['revision'] = priorMeta['revision'];

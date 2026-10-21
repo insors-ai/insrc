@@ -188,6 +188,15 @@ export interface TransitionDetail {
 
 const REVIEW_REQUIRED_KINDS: readonly string[] = ['DEF', 'HLD', 'LLD'];
 
+const isRecordValue = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
+const hasText = (v: unknown): boolean => typeof v === 'string' && v.length > 0;
+/** A reference needs the three text fields every Reference has. */
+function needReference(value: Reference | undefined, op: string, what: string): Reference {
+	const ref = need(value, op, what);
+	if (!hasText(ref.entityId) || !hasText(ref.type) || !hasText(ref.relation)) throw new IllegalTransitionError(`${op} needs ${what} with an entityId, a type and a relation`);
+	return ref;
+}
+
 function need<T>(value: T | undefined, op: string, what: string): T {
 	if (value === undefined || (typeof value === 'string' && value.trim().length === 0)) {
 		throw new IllegalTransitionError(`${op} needs ${what}`);
@@ -209,6 +218,10 @@ export function nextLifecycle(a: Pick<Artifact<unknown>, 'id' | 'lifecycle'>, op
 	switch (op) {
 		case 'review': {
 			const r = need(detail.review, op, 'a review');
+			if (!isRecordValue(r.reviewer) || !hasText(r.reviewer.id) || (r.party !== 'controller' && r.party !== 'daemon')
+				|| (r.verdict !== 'pass' && r.verdict !== 'warn' && r.verdict !== 'block') || !isRecordValue(r.counts)) {
+				throw new IllegalTransitionError('review needs a reviewer, a party (controller or daemon), a verdict (pass, warn or block) and counts');
+			}
 			return { ...lc, status, review: { revision, reviewer: r.reviewer, party: r.party, verdict: r.verdict, counts: r.counts, at, ...(r.report !== undefined ? { report: r.report } : {}) } };
 		}
 		case 'approve': {
@@ -229,10 +242,10 @@ export function nextLifecycle(a: Pick<Artifact<unknown>, 'id' | 'lifecycle'>, op
 			need(detail.reason, op, 'a reason');
 			return { ...lc, status };
 		case 'supersede':
-			need(detail.supersededBy, op, 'the superseding reference');
+			needReference(detail.supersededBy, op, 'the superseding reference');
 			return { ...lc, status };
 		case 'open-signoff': {
-			const request = need(detail.request, op, 'the request reference');
+			const request = needReference(detail.request, op, 'the request reference');
 			const signoff: Signoff = { revision, request, state: 'open', actors: [], at };
 			return { ...lc, status, signoffs: [...lc.signoffs, signoff] };
 		}
@@ -245,6 +258,8 @@ export function nextLifecycle(a: Pick<Artifact<unknown>, 'id' | 'lifecycle'>, op
 		}
 		case 'mark-stale': {
 			const u = need(detail.upstream, op, 'the upstream reference and revision');
+			needReference(u.upstream, op, 'the upstream reference');
+			if (!Number.isInteger(u.upstreamRevision)) throw new IllegalTransitionError(`${op} needs an integer upstream revision`);
 			const stale: Staleness = { upstream: u.upstream, upstreamRevision: u.upstreamRevision, since: at };
 			return { ...lc, stale };
 		}

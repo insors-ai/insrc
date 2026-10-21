@@ -152,6 +152,18 @@ export async function reviewArtifactFile(opts: ReviewArtifactOpts): Promise<Revi
 	} else {
 		writeArtifact(opts.jsonPath, nextJson, fixed.applied.length > 0 ? 'content' : 'meta-only');
 	}
+	// With a service the review is also recorded on the lifecycle (lifecycle.review and a log entry), when the status allows one.
+	if (opts.lifecycle !== undefined) {
+		const seen = await opts.lifecycle.inspect(artifactId);
+		if (seen !== undefined && (seen.status === 'draft' || seen.status === 'pending-review')) {
+			await opts.lifecycle.apply(artifactId, 'review', reviewer, {
+				review: {
+					reviewer: { id: 'insrc:daemon', kind: 'agent', properties: {} }, party: 'daemon', verdict: report.verdict,
+					counts: { high: report.counts.high, med: report.counts.med, low: report.counts.low },
+				},
+			});
+		}
+	}
 	const nextMd = `${fixed.markdown.replace(/\s+$/, '')}\n\n${REVIEW_SECTION}\n\n## Review\n\n${renderReviewReport(report)}\n`;
 	// raw-write: markdown render of the review.
 	writeAtomic(opts.mdPath, nextMd);

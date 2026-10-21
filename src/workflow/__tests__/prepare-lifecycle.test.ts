@@ -6,6 +6,7 @@ import { join } from 'node:path';
 
 import { prepareArtifactWrite, writeArtifact } from '../storage.js';
 import { contentHash } from '../artifact-core/lifecycle.js';
+import { ArtifactShapeError, IllegalTransitionError } from '../artifact-core/types.js';
 import type { Actor, Lifecycle } from '../artifact-core/types.js';
 
 const alice: Actor = { id: 'github:alice', kind: 'person', properties: {} };
@@ -86,6 +87,10 @@ describe('prepareArtifactWrite with meta.lifecycle', () => {
 			assert.equal(metaOnlyChanged.revision, 1);
 			assert.equal(parse(metaOnlyChanged.bytes).meta.lifecycle.status, 'approved');
 			assert.deepEqual(parse(metaOnlyChanged.bytes).meta.lifecycle.revision, created.meta.lifecycle.revision);
+
+			// a meta-only write cannot make a status change that is not a step of the closed table
+			assert.throws(() => prepareArtifactWrite(path, head('one', { lifecycle: lc({ status: 'pending-review' }) }), 'meta-only', opts), IllegalTransitionError);
+			assert.throws(() => prepareArtifactWrite(path, head('one', { lifecycle: lc({ status: 'nope' as never }) }), 'meta-only', opts), ArtifactShapeError);
 
 			// a head without meta.lifecycle is prepared as before: legacy comparison, no lifecycle added
 			const legacy = join(dir, 'legacy.json');

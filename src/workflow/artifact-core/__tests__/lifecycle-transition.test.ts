@@ -55,6 +55,12 @@ describe('transition', () => {
 		assert.throws(() => nextLifecycle(art('PLAN', lcOf('draft')), 'complete', by, at), IllegalTransitionError);
 		assert.equal(nextLifecycle(art('PLAN', lcOf('completed')), 'reopen', by, at).status, 'draft');
 
+		// a detail with the wrong shape is refused like a missing one
+		assert.throws(() => nextLifecycle(art('LLD', lcOf('draft')), 'review', rev, at, { review: {} as never }), IllegalTransitionError);
+		assert.throws(() => nextLifecycle(art('PLAN', approved), 'supersede', by, at, { supersededBy: {} as never }), IllegalTransitionError);
+		assert.throws(() => nextLifecycle(art('PLAN', approved), 'open-signoff', by, at, { request: { entityId: '' } as never }), IllegalTransitionError);
+		assert.throws(() => nextLifecycle(art('PLAN', approved), 'mark-stale', by, at, { upstream: { upstream: ref, upstreamRevision: 1.5 } }), IllegalTransitionError);
+
 		// the async form reads the clock
 		assert.equal((await transition(art('PLAN', lcOf('draft')), 'approve', by)).status, 'approved');
 	});

@@ -208,3 +208,24 @@ test('the sidecar files, the journal folder and the changed round writers are cl
 	const others = productionFiles(join(ROOT, 'src')).filter(f => f !== 'src/workflow/artifact-core/sidecar.ts' && /appendSidecarLine\(/.test(read(f)));
 	assert.deepEqual(others, ['src/workflow/artifact-core/sidecar-store.ts']);
 });
+
+test('the identity file writer is classified and appendSidecarLine remains the one raw append for history', () => {
+	// the identity file is a per-user declaration, not an artifact head: its one writer is listed as non-artifact
+	const entry = byFile.get('src/workflow/identity/identity-service.ts');
+	assert.equal(entry?.class, 'non-artifact');
+	assert.deepEqual(checkInventoryEntry(read('src/workflow/identity/identity-service.ts'), entry, 'src/workflow/identity/identity-service.ts'), []);
+	const identity = scanWriters(read('src/workflow/identity/identity-service.ts'), 'src/workflow/identity/identity-service.ts');
+	assert.deepEqual(identity.rawCalls.map(c => c.name), ['writeAtomic'], 'one write, the atomic replace of the file');
+	assert.equal(identity.rawCalls.filter(c => c.name === 'appendFileSync').length, 0, 'the identity module appends nothing');
+
+	// the feedback service writes through History, never a file of its own, so it is not a writer at all
+	for (const f of ['src/workflow/feedback/feedback-service.ts', 'src/workflow/feedback/threads.ts', 'src/workflow/feedback/legacy-anchor.ts', 'src/daemon/feedback-handlers.ts']) {
+		assert.equal(byFile.has(f), false, `${f} needs no entry`);
+		assert.deepEqual(checkInventoryEntry(read(f), undefined, f), [], `${f} writes no file`);
+	}
+
+	// appendSidecarLine stays the one function that appends a history record
+	const others = productionFiles(join(ROOT, 'src')).filter(f => /appendSidecarLine\(/.test(read(f)));
+	assert.deepEqual(others.sort(), ['src/workflow/artifact-core/sidecar-store.ts', 'src/workflow/artifact-core/sidecar.ts']);
+	assert.equal(scanWriters(read('src/workflow/artifact-core/sidecar.ts'), 'src/workflow/artifact-core/sidecar.ts').rawCalls.filter(c => c.name === 'appendFileSync').length, 1);
+});

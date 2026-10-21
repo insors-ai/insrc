@@ -33,6 +33,7 @@ import type { IssueRef, PortFailureKind, PortResult, TrackerComment, TrackerPort
 import { bindArtifact, readBinding, recordPosted, setPendingLink, TRACKER_ISSUE_TYPE } from './binding.js';
 import type { PostedKind } from './binding.js';
 import { unitArtifactId } from './attach.js';
+import { taskHeadIdOf } from '../tasks/lookup.js';
 import type { Reference } from '../artifact-core/types.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitIssue, type UnitRef } from './refs.js';
 
@@ -72,8 +73,15 @@ const before = (reason: string, kind: PortFailureKind = 'rejected'): EnsureResul
 
 const ID_RE = /^[A-Za-z0-9_-]+$/;
 
+/** A Task unit is named by its plan row id; once the Task has its own artifact, its label and keys use the Task artifact's number. */
+function taskHeadOf(unit: UnitRef): string | undefined {
+	if (unit.unit !== 'task' || unit.storyId === undefined || unit.taskId === undefined) return undefined;
+	return taskHeadIdOf(unit.repoPath, unit.epicHash, unit.storyId, unit.taskId);
+}
+
 function lc(unit: UnitRef): { story: string | undefined; task: string | undefined } {
-	return { story: unit.storyId?.toLowerCase(), task: unit.taskId?.toLowerCase() };
+	const head = taskHeadOf(unit);
+	return { story: unit.storyId?.toLowerCase(), task: head !== undefined ? ArtifactIds.parse(head)?.task ?? unit.taskId?.toLowerCase() : unit.taskId?.toLowerCase() };
 }
 
 /**
@@ -139,11 +147,12 @@ function mapEntry(map: Readonly<Record<string, string>> | undefined, id: string 
 const issueRefOf = (ref: string): Reference => ({ entityId: ref, type: TRACKER_ISSUE_TYPE, relation: 'tracked-by' });
 
 /**
- * Where a unit's issue record lives (s6). An Epic's is the binding on its Define and a Story's the binding on its LLD; a Task's
- * stays under meta.tracker.units on the Plan until s7 creates Task artifacts. Every read and write of a record goes through here.
+ * Where a unit's issue record lives (s6, s7). An Epic's is the binding on its Define and a Story's the binding on its LLD; a Task's
+ * is the binding on its Task artifact. A Task with no artifact (its Story was planned before Tasks were artifacts) keeps its
+ * record under meta.tracker.units on the Plan until s9 gives it one. Every read and write of a record goes through here.
  */
 function bindingHome(unit: UnitRef): { readonly repoPath: string; readonly artifactId: string } | undefined {
-	const artifactId = unitArtifactId(unit);
+	const artifactId = unit.unit === 'task' ? taskHeadOf(unit) : unitArtifactId(unit);
 	return artifactId === undefined ? undefined : { repoPath: unit.repoPath, artifactId };
 }
 
@@ -202,7 +211,7 @@ function recordSiblings(unit: UnitRef, issue: IssueRef, now: string): boolean {
 function recordUnit(unit: UnitRef, issue: IssueRef, now: string, pendingLink?: UnitIssue['pendingLink']): boolean {
 	const home = bindingHome(unit);
 	if (home === undefined) {
-		// a Task: the Plan's record and taskRefs, as before s6
+		// a Task with no artifact: the Plan's record and taskRefs, as before s6
 		const own = ownJson(unit);
 		const prior = readTrackerMeta(own)?.units?.[unitKey(unit)];
 		const record: UnitIssue = prior !== undefined && prior.issue === issue
@@ -262,7 +271,8 @@ function reconcile(unit: UnitRef, issue: IssueRef, now: string): void {
 	const siblings: boolean =
 		unit.unit === 'epic'  ? nonEmpty(readTrackerMeta(defineJson(unit))?.epicRef) && (!fileHas(hldJson(unit)) || nonEmpty(readTrackerMeta(hldJson(unit))?.epicRef)) :
 		unit.unit === 'story' ? nonEmpty(own?.storyRef) && nonEmpty(mapEntry(readTrackerMeta(defineJson(unit))?.storyRefs, unit.storyId)) :
-		nonEmpty(mapEntry(own?.taskRefs, unit.taskId));
+		// a Task with an artifact has its record on the binding alone; one without keeps the plan's taskRefs entry
+		bindingHome(unit) !== undefined || nonEmpty(mapEntry(own?.taskRefs, unit.taskId));
 	if (readRecord(unit) !== undefined && siblings) return;
 	recordUnit(unit, issue, now);
 }
@@ -563,7 +573,9 @@ function buildSpec(
 	const taskId = unit.taskId ?? '';
 	const task = (plan.body?.tasks ?? []).find(t => t.id === taskId || t.id.toLowerCase() === taskId.toLowerCase());
 	if (task === undefined) return { error: `Task '${taskId}' is not in the plan of Story '${storyId}'` };
-	const made = idOf({ kind: 'TASK', epicHash: unit.epicHash, story: story.id, task: task.id });
+	// the Task artifact's own id when it has one (its number can differ from the plan row's after a re-plan)
+	const headId = taskHeadOf(unit);
+	const made = headId !== undefined ? { id: headId } : idOf({ kind: 'TASK', epicHash: unit.epicHash, story: story.id, task: task.id });
 	if ('error' in made) return made;
 	return { token: made.id, value: { title: `${made.id} \u2014 ${task.title}`, body: renderTaskBody(parentRef ?? '', story.id, task, epicSlug, unit.epicHash, createdAt, repo, made.id), labels, issueType: cfg.taskIssueType } };
 }
@@ -615,10 +627,10 @@ const POSTED_KIND: Readonly<Record<ExtraName, PostedKind>> = { milestone: 'miles
 
 /** The stable marker a comment of kind `name` carries on the unit's issue: '<!-- insrc:post:<artifactId>:<kind> -->'. */
 export function postMarker(unit: UnitRef, name: ExtraName): string {
-	return `<!-- insrc:post:${unitArtifactId(unit) ?? unitKey(unit)}:${POSTED_KIND[name]} -->`;
+	return `<!-- insrc:post:${bindingHome(unit)?.artifactId ?? unitKey(unit)}:${POSTED_KIND[name]} -->`;
 }
 
-/** The extras already posted for the unit, each with the time it was recorded: the binding's posted list. A Task unit has none yet (s7). */
+/** The extras already posted for the unit, each with the time it was recorded: the binding's posted list. A Task with no artifact has none. */
 function marksOf(unit: UnitRef): { readonly [K in ExtraName]?: string | undefined } {
 	const home = bindingHome(unit);
 	if (home === undefined) return {};

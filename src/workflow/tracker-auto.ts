@@ -42,7 +42,7 @@ import { createGithubTracker } from './tracker/github-adapter.js';
 import type { IssueOps, PortResult, TrackerComment, TrackerPort } from './tracker/port.js';
 import { renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList } from './tracker/conventions.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitRef } from './tracker/refs.js';
-import { ensureUnitIssueDetailed, postMarker, runUnitExtras, type ExtraStep } from './tracker/unit-issue.js';
+import { ensureUnitIssueDetailed, postMarker, resolveUnitIssueLocal, runUnitExtras, type ExtraStep } from './tracker/unit-issue.js';
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
 import { renderReviewReport } from './review/index.js';
@@ -342,7 +342,12 @@ function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps, mo
 	const out = runUnitExtras(storyUnit, (review === undefined ? [] : [
 		{ name: 'planComment', marker: postMarker(storyUnit, 'planComment'), run: () => ops.comment(story.value.issue, `${postMarker(storyUnit, 'planComment')}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) },
 	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, story.value.issue) });
-	const taskRefs = readTrackerMeta(planJsonPath)?.taskRefs ?? {};
+	// each Task's issue, from its binding (or the plan's record for a Task with no artifact)
+	const taskRefs: Record<string, string> = {};
+	for (const task of tasks) {
+		const ref = resolveUnitIssueLocal({ unit: 'task', repoPath, epicHash, storyId, taskId: task.id });
+		if (ref !== null) taskRefs[task.id] = ref;
+	}
 	return withExtras(createdCount > 0 ? { status: 'created' as const, taskRefs } : { status: 'already-exists' as const, taskRefs }, out.failed);
 }
 

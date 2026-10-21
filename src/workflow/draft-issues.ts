@@ -11,7 +11,7 @@
  *
  *   Define / HLD  the Epic
  *   LLD           the Epic, then the Story
- *   plan          the Epic, the Story, then each Task in plan order
+ *   plan          the Epic, the Story (the Tasks get theirs when the plan is approved)
  *
  * It never throws and never undoes the draft: every failure becomes `not-ready`
  * with a message for the author. A failure before the create call means nothing
@@ -66,7 +66,7 @@ interface DraftMeta {
 }
 
 /** The units the draft covers, in the order they must exist. */
-function unitsOf(meta: DraftMeta, tasksOf: () => readonly string[]): UnitRef[] | null {
+function unitsOf(meta: DraftMeta): UnitRef[] | null {
 	const { workflow, repoPath, epicHash, storyId } = meta;
 	if (typeof repoPath !== 'string' || typeof epicHash !== 'string') return null;
 	const epic: UnitRef = { unit: 'epic', repoPath, epicHash };
@@ -74,7 +74,8 @@ function unitsOf(meta: DraftMeta, tasksOf: () => readonly string[]): UnitRef[] |
 	if (typeof storyId !== 'string') return null;
 	const story: UnitRef = { unit: 'story', repoPath, epicHash, storyId };
 	if (workflow === 'design.story') return [epic, story];
-	if (workflow === 'plan') return [epic, story, ...tasksOf().map((taskId): UnitRef => ({ unit: 'task', repoPath, epicHash, storyId, taskId }))];
+	// a plan draft claims the Epic and the Story: a Task exists, with its issue, only once the plan is approved (its Task set)
+	if (workflow === 'plan') return [epic, story];
 	return null;
 }
 
@@ -98,7 +99,7 @@ export function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = {}): I
 		const tasksOf = (): string[] => [...(doc.body?.tasks ?? [])]
 			.sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0))
 			.map(t => t.id).filter((id): id is string => typeof id === 'string');
-		let units = unitsOf(meta, tasksOf);
+		let units = unitsOf(meta);
 		if (units === null) return { status: 'not-applicable', reason: 'no-claim-unit' };
 		// A plan with no Tasks has no unit to claim: ready, with no units and no tracker call (policy permitting).
 		const noTasks = meta.workflow === 'plan' && tasksOf().length === 0;

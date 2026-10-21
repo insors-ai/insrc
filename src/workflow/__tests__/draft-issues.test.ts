@@ -157,10 +157,10 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 		assert.deepEqual(l1, { status: 'ready', units: [{ unit: 'epic', issue: 'acme/demo#1', created: false }, { unit: 'story:s1', issue: 'acme/demo#2', created: true }] });
 		assert.equal(h.seen.creates, 2);
 
-		// the plan draft with pushTasks off: both Tasks, in plan order
+		// the plan draft claims the Story only here (the Epic is checked only when the Story has no issue yet): its Tasks get their issues when the plan is approved (s7)
 		const p1 = ensureDraftIssues(fx.plan, h.deps());
-		assert.deepEqual(p1.status === 'ready' ? p1.units.filter(u => u.created).map(u => u.unit) : null, ['task:s1/t1', 'task:s1/t2']);
-		assert.equal(h.seen.creates, 4);
+		assert.deepEqual(p1.status === 'ready' ? p1.units.map(u => [u.unit, u.created]) : null, [['story:s1', false]]);
+		assert.equal(h.seen.creates, 2);
 
 		// every unit is recorded now: a second write of each draft creates nothing and loads no tracker (sign-in may be lost)
 		const loadsBefore = h.seen.loads;
@@ -177,29 +177,25 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 			assert.equal(r.status, 'ready');
 			assert.equal(r.status === 'ready' ? r.units.every(u => !u.created) : false, true);
 		}
-		assert.equal(h.seen.creates, 4);
+		assert.equal(h.seen.creates, 2);
 		assert.equal(h.seen.loads, loadsBefore);
 		assert.equal(h.seen.finds, findsBefore, 'no tracker call at all');
 		assert.deepEqual(ghCalls, [], 'no gh command ran for the second writes (sign-in lost)');
 		_setTrackerExecForTests();
 	} finally { _setTrackerExecForTests(); fx.cleanup(); }
 
-	// a failure on the second Task keeps the first, stops, and reports the second as unconfirmed
+	// a failure on the Story's create keeps the Epic, stops, and reports the Story as unconfirmed; no Task is attempted
 	const fy = seed();
 	try {
-		const withThree = JSON.parse(readFileSync(fy.plan, 'utf8'));
-		withThree.body.tasks.push({ id: 't3', title: 'Persist the filter', summary: 's', size: 'S', order: 3, dependsOn: ['t2'], acceptanceChecks: ['persists'], derivedFrom: [], tests: [] });
-		writeFileSync(fy.plan, JSON.stringify(withThree));
-		const h = harness({ failCreateAt: 4 });   // the Epic, the Story, Task t1, then t2 fails; t3 must not be attempted
+		const h = harness({ failCreateAt: 2 });   // the Epic, then the Story fails
 		const r = ensureDraftIssues(fy.plan, h.deps());
 		assert.equal(r.status, 'not-ready');
 		if (r.status !== 'not-ready') return;
-		assert.equal(r.unit, 'task:s1/t2');
+		assert.equal(r.unit, 'story:s1');
 		assert.equal(r.outcomeKnown, false);
-		assert.deepEqual(r.readyUnits.map(u => u.unit), ['epic', 'story:s1', 'task:s1/t1']);
-		assert.equal(JSON.parse(readFileSync(fy.plan, 'utf8')).meta.tracker.taskRefs.t1, 'acme/demo#3', 'the first Task is recorded');
-		assert.equal(h.seen.creates, 4, 'no later Task is attempted');
-		assert.equal(JSON.parse(readFileSync(fy.plan, 'utf8')).meta.tracker.taskRefs.t3, undefined, 'Task t3 has no issue');
+		assert.deepEqual(r.readyUnits.map(u => u.unit), ['epic']);
+		assert.equal(h.seen.creates, 2, 'no Task is attempted');
+		assert.equal(JSON.parse(readFileSync(fy.plan, 'utf8')).meta.tracker?.taskRefs, undefined, 'no Task has an issue');
 	} finally { fy.cleanup(); }
 });
 

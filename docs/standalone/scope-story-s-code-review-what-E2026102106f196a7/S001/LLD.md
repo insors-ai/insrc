@@ -44,6 +44,7 @@ changedFiles(repoPath: string, opts?: ChangedFilesOptions): Promise<readonly str
 
 **Errors:**
 - `NoBuildChangesError` when git fails on the anchored derivation (as today).
+- `NoBuildChangesError` when opts.storyKey is given without a base: a Story's set has no anchor, so the seam refuses instead of returning the working tree (callers outside a Story pass neither and keep today's working-tree derivation).
 
 **Preconditions:**
 - A base, when given, is a commit the repository can resolve (resolveStoryRangeBase).
@@ -52,8 +53,33 @@ changedFiles(repoPath: string, opts?: ChangedFilesOptions): Promise<readonly str
 - With a base, the result never contains a working-tree path outside the Story's committed set, whatever the working tree holds.
 - The order no longer depends on whether the tree is dirty: the Story's units are always read first.
 - onAttribution reports attribution ('story-trailer' | 'first-parent-range'), sharedWithExcluded and excludedUncommitted (the working-tree paths left out, sorted).
+- When opts.storyKey is given, storyChangeSet is called with strict: true, so a failed trailer scan fails the derivation instead of widening it to the first-parent range.
 
-### 2.2 `resolveCodeReviewSubject`
+### 2.2 `storyChangeSet`
+
+```typescript
+storyChangeSet(repoPath: string, base: string, opts?: { readonly storyKey?: string | undefined; readonly strict?: boolean | undefined }): AttributedStoryChangeSet
+```
+
+**Parameters:**
+- `repoPath: string` — The repository.
+- `base: string` — The Story's range base.
+- `opts.storyKey: string` _(optional)_ — <epicHash>/<storyId>: the trailer the Story's commits carry.
+- `opts.strict: boolean` _(optional)_ — Anchored use (changedFiles with a storyKey, the diff-only grounding, the validate gate's selection): a trailer scan that cannot read the commit messages throws instead of falling back to the first-parent range. newestStoryCommit keeps the lenient scan.
+
+**Returns:** `AttributedStoryChangeSet` — With commits carrying the Story's trailer: those units ('story-trailer'), as today. With a storyKey and NO commit carrying it: the first-parent commits that carry NO Insrc-Story line at all ('first-parent-range', the legacy pre-trailer Story); a commit carrying another Story's trailer is left out and its paths count as excluded (sharedWithExcluded). When every commit in the range belongs to another Story, the set is empty. Without a storyKey: unchanged.
+
+**Errors:**
+- `NoBuildChangesError` when git fails on rev-list or a unit's diff (as today); with strict: true, also when the trailer scan cannot read the commit messages (today it logs and falls back).
+
+**Preconditions:**
+- base resolves in the repository.
+
+**Postconditions:**
+- With a storyKey, the set never contains a unit from a commit carrying another Story's Insrc-Story trailer.
+- With strict: true, the attribution is never widened by a git failure.
+
+### 2.3 `resolveCodeReviewSubject`
 
 ```typescript
 resolveCodeReviewSubject(repoPath: string, epicHash: string, storyId: string, deps?: SubjectDeps): Promise<CodeReviewSubjectResult>
@@ -76,7 +102,7 @@ resolveCodeReviewSubject(repoPath: string, epicHash: string, storyId: string, de
 - changeSetAttribution is never 'working-tree' on a resolved subject.
 - The module header states the rule: the Story's commits decide its scope; the working tree only adds edits of its own files.
 
-### 2.3 `assembleDiffCodeReviewGrounding`
+### 2.4 `assembleDiffCodeReviewGrounding`
 
 ```typescript
 assembleDiffCodeReviewGrounding(repoPath: string, deps?: DiffGroundingDeps, opts?: DiffGroundingOptions): Promise<DiffGroundingResult>
@@ -97,7 +123,7 @@ assembleDiffCodeReviewGrounding(repoPath: string, deps?: DiffGroundingDeps, opts
 **Postconditions:**
 - The diff-only review never grounds on a working-tree hunk of a file outside the Story's committed set, nor on another Story's last commit.
 
-### 2.4 `collectBuildChangeLog`
+### 2.5 `collectBuildChangeLog`
 
 ```typescript
 collectBuildChangeLog(repoPath: string, ctx: { author: string; timestamp: string; version?: string; base?: string; exclude?: readonly string[]; storyKey?: string }, listChanged?: (repoPath: string, opts?: ChangedFilesOptions) => Promise<readonly string[]>): Promise<ChangeLog>
@@ -110,6 +136,39 @@ collectBuildChangeLog(repoPath: string, ctx: { author: string; timestamp: string
 
 **Postconditions:**
 - The completion record and the validate phase pass the Story's storyKey, so an unrelated uncommitted file never enters a BUILD record's changeLog.
+- With ctx.storyKey and no ctx.base (resolveStoryRangeBase returned undefined), the seam refuses (NoBuildChangesError) and the swallow yields an empty changeLog: a Story's BUILD record never falls back to the working tree.
+
+### 2.6 `withTypecheckProjects`
+
+```typescript
+withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string, storyKey?: string): ValidationCheckPlan
+```
+
+**Parameters:**
+- `repoPath: string` — The repository.
+- `plan: ValidationCheckPlan` — The gate's plan; plan.testFiles still always contribute their projects.
+- `base: string` _(optional)_ — The Story's range base.
+- `storyKey: string` _(optional)_ — <epicHash>/<storyId>; validate.ts passes it at both call sites (the plan-driven runValidateSession and the trivial route).
+
+**Returns:** `ValidationCheckPlan` — Stays synchronous. With a storyKey, the private changedFiles helper lists the Story's set synchronously: storyChangeSet(repoPath, base, { storyKey, strict: true }).paths plus the uncommitted and untracked paths already in that set; with a storyKey and no base, no changed files (only plan.testFiles' projects). A listing that fails is logged and contributes nothing, as today. Without a storyKey: today's three listings.
+
+**Postconditions:**
+- With a storyKey, a project that owns only unrelated uncommitted or untracked files is not added to typecheckProjects.
+- The projects of plan.testFiles are always included, whatever the change set.
+
+### 2.7 `trivialCheckPlan`
+
+```typescript
+trivialCheckPlan(repoPath: string, base?: string | undefined, storyKey?: string | undefined): ValidationCheckPlan
+```
+
+**Parameters:**
+- `storyKey: string` _(optional)_ — <epicHash>/<storyId>, passed by validate.ts's trivial route.
+
+**Returns:** `ValidationCheckPlan` — With a storyKey and a base, the test files are those in the Story's set (storyChangeSet with strict: true) instead of every file in base..HEAD; with a storyKey and no base, the listing fails as 'no range base' (listError), failing the tests check rather than running the HEAD commit's tests. Without a storyKey: unchanged.
+
+**Postconditions:**
+- A trivial build never runs another Story's tests as its own.
 
 ## 3. Data model changes
 
@@ -162,6 +221,14 @@ A resolved subject's attribution is 'story-trailer' or 'first-parent-range'; 'wo
   - Detection: The working-tree diff is read after the Story's units; each path not in the Story's set is set aside.
   - Response: Left out of changedFiles and the grounding; reported on the subject and the review record as excludedFromScope (sorted); logged once per review with the count.
   - User impact: The review judges only the Story; the reader sees exactly which uncommitted files were left out.
+- **The trailer scan cannot read the commit messages (git log fails) on an anchored derivation.** (recoverable)
+  - Detection: storyChangeSet's scanTrailers throws instead of returning undefined, because the anchored callers pass strict: true.
+  - Response: NoBuildChangesError: the review declines with 'no-build-record' (DiffUnavailableError on the diff-only path), the BUILD changeLog is empty, and the gate's typecheck selection adds no changed-file projects. The derivation never widens to the first-parent range on a failure.
+  - User impact: A git failure cannot turn into a review of other Stories' commits.
+- **A Story's BUILD record is written but no range base resolves for the Story.** (recoverable)
+  - Detection: resolveStoryRangeBase returns undefined in completion-record.ts or validate.ts; collectBuildChangeLog is called with storyKey and no base.
+  - Response: changedFiles refuses (NoBuildChangesError) and collectBuildChangeLog swallows it to []: the record carries no changeLog rather than the working tree's files.
+  - User impact: The BUILD record says nothing about files rather than claiming unrelated ones.
 
 **Edge cases**
 
@@ -170,9 +237,11 @@ A resolved subject's attribution is 'story-trailer' or 'first-parent-range'; 'wo
 | An uncommitted edit to a file the Story's commits already changed. | Included: the file stays in changedFiles and its working-tree hunks join the diff-only grounding; it is not reported as excluded. |
 | A Story whose work is all uncommitted (no commit carries its trailer yet). | Its committed set is empty, so every working-tree path is excluded and reported; the subject resolves with an empty changedFiles, which today's review already treats as nothing to judge. |
 | A clean working tree. | Exactly today's committed-range result (attribution 'story-trailer' or 'first-parent-range'); excludedFromScope is absent, so the record is unchanged. |
-| No commit carries the Story's trailer, but the range has the Story's first-parent commits (an older Story built before the trailer). | Today's 'first-parent-range' set; working-tree paths outside it excluded as above. |
+| No commit carries the Story's trailer, but the range has the Story's first-parent commits (an older Story built before the trailer). | The legacy 'first-parent-range' set, restricted to first-parent commits that carry no Insrc-Story line; working-tree paths outside it are excluded as above. |
 | An uncommitted change only to the workflow's own ledger files (.insrc/artifacts/*.json, docs/epics/**, docs/standalone/**). | Left out by the ledger exclusion before attribution, as today; not reported as excluded scope. |
 | A caller with no Story (no base passed). | changedFiles keeps today's working-tree derivation; no review or BUILD record path calls it that way after this fix. |
+| No commit carries the Story's trailer and every first-parent commit since the base carries another Story's trailer. | The set is empty: none of the other Stories' files are reviewed or logged; every uncommitted path is excluded and reported, and the review has nothing to judge. |
+| The validate gate runs with unrelated uncommitted or untracked TypeScript files in another project. | That project is not added to typecheckProjects; the projects of the Story's files and of plan.testFiles are. |
 
 **Invariants to preserve**
 
@@ -189,8 +258,8 @@ A resolved subject's attribution is 'story-trailer' or 'first-parent-range'; 'wo
 **Test levels**
 
 - **unit** — The anchored rule in the shared seam, on real git repositories with trailered commits and a dirty working tree.
-  - Subjects: `src/workflow/runners/build/__tests__/changed-files.test.ts: 'with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'an uncommitted edit to a file the Story's commits changed is part of the Story's set'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike'`
-  - Fixtures: `a git repository with a base commit, two commits carrying the Story's Insrc-Story trailer, one carrying another Story's, and unstaged, staged and untracked-then-added changes inside and outside the Story's files`
+  - Subjects: `src/workflow/runners/build/__tests__/changed-files.test.ts: 'with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'an uncommitted edit to a file the Story's commits changed is part of the Story's set'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike'`, `src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set'`, `src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree'`, `src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files'`, `src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'`
+  - Fixtures: `a git repository with a base commit, two commits carrying the Story's Insrc-Story trailer, one carrying another Story's, and unstaged, staged and untracked-then-added changes inside and outside the Story's files`, `a range where the only commits carry other Stories' trailers; a repository whose git log fails (for example, a corrupted object in the range) for the strict scan; a nested project with its own tsconfig.json holding an unrelated untracked file`
 - **integration** — Every consumer follows the rule: the review subject, the diff-only grounding, the BUILD records.
   - Subjects: `src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree'`, `src/workflow/code-review/__tests__/subject-attribution.test.ts: 'with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree'`, `src/workflow/code-review/__tests__/diff-attribution.test.ts: 'the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change'`, `src/workflow/code-review/__tests__/runner.test.ts: 'the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were'`
   - Fixtures: `the same repository fixture, with approved LLD and PLAN artifacts for the Story`
@@ -202,10 +271,10 @@ A resolved subject's attribution is 'story-trailer' or 'first-parent-range'; 'wo
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `src/workflow/runners/build/__tests__/changed-files.test.ts: 'with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds'`, `src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree'`, `src/workflow/code-review/__tests__/runner.test.ts: 'the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were'` |
+| `ac1` | `src/workflow/runners/build/__tests__/changed-files.test.ts: 'with a base, an uncommitted change to a file no Story commit touched is left out and reported as excludedUncommitted, whatever else the tree holds'`, `src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree'`, `src/workflow/code-review/__tests__/runner.test.ts: 'the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were'`, `src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set'` |
 | `ac2` | `src/workflow/runners/build/__tests__/changed-files.test.ts: 'an uncommitted edit to a file the Story's commits changed is part of the Story's set'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike'` |
-| `ac3` | `src/workflow/code-review/__tests__/subject-attribution.test.ts: 'with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree'` |
-| `ac4` | `src/workflow/code-review/__tests__/diff-attribution.test.ts: 'the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change'` |
+| `ac3` | `src/workflow/code-review/__tests__/subject-attribution.test.ts: 'with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree'`, `src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree'` |
+| `ac4` | `src/workflow/code-review/__tests__/diff-attribution.test.ts: 'the diff-only grounding carries the Story's units and the working-tree hunks of its own files only, never an unrelated file's hunks or another Story's last commit'`, `src/workflow/runners/build/__tests__/changed-files.test.ts: 'a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change'`, `src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files'`, `src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'` |
 | `ac5` | `Installed daemon: Epic c2ba6fa6 Story s1's code review, run while unrelated files are uncommitted, reviews only the Story's committed files and lists the unrelated ones as excludedFromScope on the record (recorded in the BUILD record)` |
 
 ## 6. Migration
@@ -218,12 +287,12 @@ A resolved subject's attribution is 'story-trailer' or 'first-parent-range'; 'wo
 
 **Steps**
 
-1. Change the shared seam's order for callers that pass a base: anchor on the Story's units, then add working-tree paths already in the set, and report the rest; add excludedUncommitted to the attribution report. — ↩ rollbackable
+1. Change the shared seam's order for callers that pass a base: anchor on the Story's units, then add working-tree paths already in the set, and report the rest; add excludedUncommitted to the attribution report. storyChangeSet gains strict and, with a storyKey but no carrying commit, leaves out commits carrying another Story's trailer; changedFiles refuses a storyKey without a base. — ↩ rollbackable
 2. Remove the review subject's two working-tree fallbacks, carry excludedFromScope on the subject, and update its module header to the new rule. — ↩ rollbackable
 3. Apply the same rule in the diff-only grounding (Story units plus own-file working-tree hunks; no working-tree-first or last-commit step) and in both diff-only callers. — ↩ rollbackable
 4. Stamp excludedFromScope on the review record (optional field, absent when none). — ↩ rollbackable
-5. Pass the Story's storyKey from the BUILD completion writer and the validate phase, and select the validate gate's typecheck projects from the Story's set. — ↩ rollbackable
-6. Update the tests that asserted working-tree-first scoping; rebuild and update the installed daemon; re-run the observed case (a review with unrelated uncommitted files) on it. — ↩ rollbackable
+5. Pass the Story's storyKey from the BUILD completion writer and the validate phase (an unresolved base then yields an empty changeLog), and pass it to withTypecheckProjects and trivialCheckPlan (both stay synchronous, through storyChangeSet with strict) at both validate.ts call sites. — ↩ rollbackable
+6. Update the tests (including validation-checks.test.ts's uncommitted/untracked expectations, now only without a storyKey) that asserted working-tree-first scoping; rebuild and update the installed daemon; re-run the observed case (a review with unrelated uncommitted files) on it. — ↩ rollbackable
 
 **Backward compat:** No IPC payload or public signature changes: changedFiles, resolveCodeReviewSubject, assembleDiffCodeReviewGrounding and collectBuildChangeLog keep their signatures (one optional ctx field, storyKey, is added to collectBuildChangeLog). New record fields (excludedFromScope, excludedUncommitted) are optional and absent when nothing is excluded, so existing records validate. 'working-tree' stays in the ChangeSetAttribution type so older records still parse. Behaviour change by design: a review that used to judge a dirty tree now judges the Story's commits and lists the rest; a review with no resolvable base now declines.
 

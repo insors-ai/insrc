@@ -1597,8 +1597,8 @@ export function asNumericValue(v: number | string | null | undefined): number | 
 	return Number.isFinite(n) ? n : null;
 }
 
-function buildOrchestratorOptions(deps: OrchestratorDeps): { asTableExpr?: string; paramStartIndex?: number } {
-	const out: { asTableExpr?: string; paramStartIndex?: number } = {};
+function buildOrchestratorOptions(deps: OrchestratorDeps): { asTableExpr?: string; paramStartIndex?: number; xShift?: number } {
+	const out: { asTableExpr?: string; paramStartIndex?: number; xShift?: number } = {};
 	if (deps.asTableExpr !== undefined) out.asTableExpr = deps.asTableExpr;
 	if (deps.paramStartIndex !== undefined) out.paramStartIndex = deps.paramStartIndex;
 	return out;
@@ -1766,6 +1766,8 @@ export interface CompiledTemporalTrend {
 	/** True when the SQL emits direct REGR_* aggregates; false when it
 	 *  emits the SUM-based moments for JS-side computation. */
 	readonly native: boolean;
+	/** The query for the earliest timestamp, over the same rows and values; the expression path measures from it. */
+	readonly originText: string;
 }
 
 export function compileTemporalTrend(
@@ -1773,7 +1775,7 @@ export function compileTemporalTrend(
 	request: TemporalTrendRequest,
 	knownColumns: readonly string[],
 	dialect: Dialect,
-	opts?: { asTableExpr?: string; paramStartIndex?: number },
+	opts?: { asTableExpr?: string; paramStartIndex?: number; xShift?: number },
 ): CompiledTemporalTrend {
 	const tsCol = quoteAndValidateColumn(request.timestampColumn, knownColumns, dialect);
 	const yCol  = quoteAndValidateColumn(request.valueColumn,    knownColumns, dialect);
@@ -1785,12 +1787,13 @@ export function compileTemporalTrend(
 
 	const text = dialect.supportsNativeRegr
 		? buildNativeRegrSql(yCol, xExpr, tableExpr, whereClause)
-		: buildExpressionRegrSql(yCol, xExpr, tableExpr, whereClause);
+		: buildExpressionRegrSql(yCol, xExpr, tableExpr, whereClause, opts?.xShift);
 
 	if (looksLikeMutation(text)) {
 		throw new Error(`data-driver: refused suspicious SQL: ${text}`);
 	}
-	return { text, values: where.values, native: dialect.supportsNativeRegr };
+	const originText = `SELECT MIN(CASE WHEN ${yCol} IS NOT NULL AND ${xExpr} IS NOT NULL THEN ${xExpr} END) AS min_x FROM ${tableExpr}${whereClause}`;
+	return { text, values: where.values, native: dialect.supportsNativeRegr, originText };
 }
 
 function quoteAndValidateColumn(name: string, known: readonly string[], dialect: Dialect): string {
@@ -1813,13 +1816,35 @@ function buildNativeRegrSql(yCol: string, xExpr: string, quotedTarget: string, w
 	].join(' ');
 }
 
-function buildExpressionRegrSql(yCol: string, xExpr: string, quotedTarget: string, whereClause: string): string {
+/**
+ * Epoch seconds are about 1.7e9, so their squares (3e18) overflow a 64-bit integer SUM after a few rows (SQLite refuses with
+ * "integer overflow"), and as doubles they lose the variance to rounding. With `xShift` (the earliest timestamp, see
+ * {@link executeTemporalTrend}) the moments are taken on x - xShift, as doubles: the slope, r² and the centred moments do not
+ * depend on the shift, and the intercept adds it back. Without it the SQL is the plain one.
+ */
+function buildExpressionRegrSql(yCol: string, xExpr: string, quotedTarget: string, whereClause: string, xShift?: number): string {
 	// `x*y` (and the other products) are NULL when either side is NULL,
 	// so SUM ignores them naturally -- but we wrap the linear sums in
 	// a CASE so SUM(x), SUM(y), SUM(x*x), SUM(y*y) are also restricted
 	// to the pair-non-null subset (otherwise SUM(x) would include rows
 	// where x is non-null but y is null, giving inconsistent moments).
 	const pair = `${yCol} IS NOT NULL AND ${xExpr} IS NOT NULL`;
+	if (xShift !== undefined) {
+		const x = `(CAST(${xExpr} AS DOUBLE PRECISION) - ${xShift})`;
+		const y = `CAST(${yCol} AS DOUBLE PRECISION)`;
+		return [
+			'SELECT',
+			`  SUM(CASE WHEN ${pair} THEN 1 ELSE 0 END)                  AS n,`,
+			`  SUM(CASE WHEN ${pair} THEN ${x}                      END) AS sx,`,
+			`  SUM(CASE WHEN ${pair} THEN ${y}                      END) AS sy,`,
+			`  SUM(CASE WHEN ${pair} THEN ${x} * ${x}               END) AS sxx,`,
+			`  SUM(CASE WHEN ${pair} THEN ${y} * ${y}               END) AS syy,`,
+			`  SUM(CASE WHEN ${pair} THEN ${x} * ${y}               END) AS sxy,`,
+			`  MIN(CASE WHEN ${pair} THEN ${xExpr}                  END) AS min_x,`,
+			`  MAX(CASE WHEN ${pair} THEN ${xExpr}                  END) AS max_x`,
+			`FROM ${quotedTarget}${whereClause}`,
+		].join(' ');
+	}
 	return [
 		'SELECT',
 		`  SUM(CASE WHEN ${pair} THEN 1 ELSE 0 END)                  AS n,`,
@@ -1846,6 +1871,7 @@ export function readTemporalTrendRow(
 	timestampColumn: string,
 	valueColumn: string,
 	native: boolean,
+	xShift = 0,
 ): TemporalTrendResult {
 	if (row === undefined) {
 		return {
@@ -1901,7 +1927,7 @@ export function readTemporalTrendRow(
 	let r2: number | null;
 	if (Sxx > 0) {
 		slope     = Sxy / Sxx;
-		intercept = (sy - slope * sx) / n;
+		intercept = (sy - slope * sx) / n - slope * xShift;   // sx is of the shifted x when xShift is not 0
 		r2        = Syy > 0 ? (Sxy * Sxy) / (Sxx * Syy) : null;
 	} else {
 		// Zero variance in X: regression slope is undefined.
@@ -1934,13 +1960,28 @@ export async function executeTemporalTrend(
 		deps.dialect,
 		buildOrchestratorOptions(deps),
 	);
-	const rows = await deps.runRows(compiled.text, compiled.values);
+	let shift: number | undefined;
+	let text = compiled.text;
+	if (!compiled.native) {
+		// The moments of the expression path are taken on the timestamps measured from the earliest one: ask for it first.
+		const first = await deps.runRows(compiled.originText, compiled.values);
+		const origin = asNumericValue(first[0]?.['min_x'] as number | string | null | undefined);
+		if (origin !== null && Number.isFinite(origin)) {
+			shift = origin;
+			text = compileTemporalTrend(
+				deps.target, deps.request, deps.knownColumns, deps.dialect,
+				{ ...buildOrchestratorOptions(deps), xShift: origin },
+			).text;
+		}
+	}
+	const rows = await deps.runRows(text, compiled.values);
 	return readTemporalTrendRow(
 		rows[0],
 		deps.target,
 		deps.request.timestampColumn,
 		deps.request.valueColumn,
 		compiled.native,
+		shift ?? 0,
 	);
 }
 

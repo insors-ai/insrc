@@ -25,6 +25,7 @@ afterAll(async () => {
 	rmSync(STORE_DIR, { recursive: true, force: true });
 });
 
+import { envelopeProvider } from '../../../../workflow/review-pipeline/__tests__/enveloped.js';
 import { handleReviewStep } from '../handler.js';
 import { _clearReviewStateStoreForTests } from '../state-store.js';
 import { reviewArtifactFile } from '../../../../workflow/review/run-artifact.js';
@@ -85,8 +86,13 @@ async function verdictsReview(fx: ReturnType<typeof fixture>): Promise<{ next: s
 }
 
 function provider(): LLMProvider {
+	return envelopeProvider(rawProvider());
+}
+
+function rawProvider(): LLMProvider {
 	const extract = { claims: [CLAIMS.claims[0]] };
-	const verdict = WITH_AUTO_FIX.verdicts[0];
+	// the one-call review answers a claim's verdict without the claim id the step protocol carries
+	const { claimId: _claimId, ...verdict } = WITH_AUTO_FIX.verdicts[0]!;
 	return {
 		supportsTools: false,
 		capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },

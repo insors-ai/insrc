@@ -1,0 +1,511 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1792597053828-5k4rl7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-21T15:41:00.788Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 206927,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2f27754d4ad00b8e",
+    "epicSlug": "one-common-model-every-artifact",
+    "storyId": "s6",
+    "lldRunId": "wf-1792589176560-aszz3i",
+    "lldEffectiveHash": "bd468fd6cd6cbb10f41ed03278a9990a06432e2f2bb796797ade5f7c51974189",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s6 gives every Epic and Story one typed tracker binding and lets design documents, plans and build records be linked from the unit's issue at the commit that holds them. The work starts with the tracker port additions and the storage carry rule, then adds the binding and attach modules, moves the unit-issue bookkeeping and the approve-time posts onto the binding with once-only markers, runs team mode and individual mode through one push path, and finishes with the tracker.attach method, the approve-time attach and the recorded hand-offs to s7 and s9.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add listComments and attach to the tracker port and the GitHub adapter",
+        "summary": "Add the TrackerComment type, TrackerPort.listComments(issue, since?) and TrackerPort.attach(issue, artifact, link) to src/workflow/tracker/port.ts, two gh wrappers in src/workflow/tracker/github.ts (a paged read of an issue's comments in ascending time order with since, and a comment post that returns the comment id) and their binding in createGithubTracker. A failed gh is a classified failure, never an empty list; attach posts one comment that holds the link and names the artifact. Give every in-memory fake port a stub only where a test calls it.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "listComments returns every comment of the issue in ascending time order across pages, passes since to gh, and fails with a classified kind when gh fails",
+          "attach posts one comment holding the link and returns its id as externalId",
+          "TrackerPort declares both methods and the project typechecks"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "github-comments.test.ts: the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Carry the envelope binding and attachments through a content write",
+        "summary": "Add carryBinding beside carryTracker in src/workflow/storage.ts and call it in the content branch of prepareArtifactWrite: for an existing artifact the meta.envelope.binding and meta.envelope.attachments on disk win over the caller's, and a first write keeps what the caller gave. The change moves no revision number and no content hash.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a content write of an existing artifact through the store keeps the on-disk binding and attachments whatever the caller's artifact carries",
+          "a first write keeps the binding and attachments the caller gave",
+          "the revision number and content hash are unchanged by the carry",
+          "the existing storage and store write tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "binding-carry.test.ts: a content write by the store keeps the binding and attachments on disk, a first write keeps what the caller gave, and the carry leaves the revision number and content hash alone"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the binding module with the staged-write check",
+        "summary": "Add src/workflow/tracker/binding.ts with readBinding, bindArtifact, recordPosted and setPendingLink as synchronous meta-only patches of meta.envelope.binding, each refusing while the artifact has a pending journal file (.insrc/journal/<id>.json); bindArtifact writes { reference: { entityId: issue, type: 'github:issue', relation: 'tracked-by' }, createdAtRevision, posted: [] }, is idempotent for the same issue and refuses a different one; record the module in ARTIFACT_WRITE_INVENTORY as a meta-only writer.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "bindArtifact writes the typed binding with createdAtRevision and leaves the revision number and content hash unchanged, is idempotent for the same issue and refuses a different issue",
+          "readBinding returns undefined for an unbound or missing artifact and reports a malformed binding",
+          "recordPosted records a kind once and setPendingLink keeps a child ref or a child id and clears on undefined",
+          "every writer refuses while the store has a write staged for the artifact, and the staged write then completes with no head-changed-after-stage conflict; the test stages a write with the durable-kit store's journal (fail after stage), patches, then completes the staged write",
+          "the write inventory has an entry for the module and its test passes"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "binding.test.ts: bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact"
+          },
+          {
+            "level": "unit",
+            "name": "binding.test.ts: recordPosted and setPendingLink record one entry per kind and a pending link that names a child ref or a child id, never twice, and without moving the revision"
+          },
+          {
+            "level": "integration",
+            "name": "binding-staged.test.ts: a binding, post or attachment patch is refused while the store has a write staged for the artifact, and the staged write then completes with no head-changed-after-stage conflict"
+          },
+          {
+            "level": "integration",
+            "name": "artifact-write-inventory.test.ts: the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the attach module with commit-pinned links",
+        "summary": "Add src/workflow/tracker/attach.ts with the permalink (blob/<last commit that touched the file>/<path> on the repository's GitHub host) and attachDocuments(unit, port, targets, deps): refuse a dirty or untracked file, skip an Attachment already recorded for (target, revision), find a link already posted through listComments and record it without posting again, otherwise port.attach and record an Attachment { target, revision, at, externalId } on the head of the unit's own artifact; honour the staged-write check; record the module in ARTIFACT_WRITE_INVENTORY.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "the link names the last commit that touched the rendered file and a new commit adds a new link while the old attachment stays",
+          "a dirty or untracked file, an unbound unit and a failing tracker are reported in failed[] and nothing is posted or recorded for them",
+          "a link found in listComments is recorded as reconciled and not posted again, and a recorded (target, revision) is skipped with no tracker call",
+          "the write inventory has an entry for the module and its test passes"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "attach.test.ts: attachDocuments builds a link to the file at the last commit that touched it, refuses a dirty or untracked file, skips a recorded (target, revision), adds a new link for a new commit and keeps the old attachment, and records a link found already posted without posting it again"
+          },
+          {
+            "level": "integration",
+            "name": "artifact-write-inventory.test.ts: the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Move Epic and Story unit records onto the binding",
+        "summary": "Switch resolveUnitIssueLocal, recordUnit, the pending-link save and retry and isUnitSettled in src/workflow/tracker/unit-issue.ts from meta.tracker.units to the binding for an Epic or Story unit, behind one record accessor whose Task branch keeps the Plan record until s7. With no binding the older epicRef, storyRef or storyRefs is read as a one-way rebind source. Update the tests that seed units so the draft hook, the gate and the handoff check read the binding.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan",
+          "a failed link under the parent is stored as the binding's pending link, retried by the next ensure and cleared once done and not retried again",
+          "a pre-s6 head with only the old ref is rebound once from it with no new issue",
+          "the draft hook, the gate and the handoff check read the binding and the tests that seed units (unit-issue, draft-issues, redraft-preserves-tracker, artifact-writer, gate-approve, pending, draft-issues-synthesize and the cli tests) are updated and pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "unit-issue-binding.test.ts: ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan"
+          },
+          {
+            "level": "integration",
+            "name": "unit-issue-binding.test.ts: a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again"
+          },
+          {
+            "level": "integration",
+            "name": "unit-issue-binding.test.ts: the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue"
+          },
+          {
+            "level": "integration",
+            "name": "binding-gate.test.ts: the team gate resolves a bound unit's issue synchronously from the binding with no tracker call"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Bind after the duplicate check and define the failure results",
+        "summary": "In src/workflow/tracker/unit-issue.ts bind an issue this call creates only after the duplicate check, so tieBreak binds the lowest-numbered issue once and closes this call's own as a duplicate (keeping the created issue when the listing fails); a head that cannot be read (malformed binding, missing file) fails ensureUnitIssueDetailed before any lookup or create; a bind that fails to write after a create or adopt returns ok with the issue and leaves the unit unsettled, never a before-create failure.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "two racing creates bind the lowest-numbered issue once and close the other as a duplicate, and keep the created issue when the duplicate check cannot list",
+          "a malformed binding makes ensureUnitIssueDetailed fail before creating anything and the store read of that artifact keeps failing until repaired",
+          "a bind that fails to write after the create returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "unit-issue-bind-failures.test.ts: two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list"
+          },
+          {
+            "level": "integration",
+            "name": "unit-issue-bind-failures.test.ts: a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired"
+          },
+          {
+            "level": "integration",
+            "name": "unit-issue-bind-failures.test.ts: a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Make the approve-time posts once-only with markers",
+        "summary": "Switch runUnitExtras to the binding's posted list for an Epic or Story unit, add marker?: string to ExtraStep and reconciled to ExtrasOutcome, put the marker '<!-- insrc:post:<artifactId>:<kind> -->' in the design, review and plan comment bodies built in src/workflow/tracker-auto.ts, and reconcile an unrecorded comment step through one listComments read shared by the unit's steps before posting; a failed list fails the step and posts nothing. Remove extrasDone from UnitIssue and update the extras tests.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "a kind already in the binding is skipped and an unrecorded comment step whose marker is found is recorded as reconciled and not posted",
+          "the comment list is read once for several steps, and a failed list fails the step with nothing posted",
+          "a post whose record failed is reported and the next run reconciles it by its marker instead of repeating it",
+          "extrasDone is gone from UnitIssue and the extras tests pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "unit-extras.test.ts: runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it"
+          },
+          {
+            "level": "integration",
+            "name": "tracker-posts-once.test.ts: the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Run team mode and individual mode through one push path",
+        "summary": "Remove legacyPushEpic, legacyPushStory, legacyPushTasks, pickMode's legacy branch and the createTracker test seam from src/workflow/tracker-auto.ts: autoPushEpicOnHld, autoPushStoryOnLld and autoPushTasksOnPlan call the shared ensure, extras and binding path in both modes, individual mode keeping the pushTasks policy for Task issues and making no claim, and extrasFailed reported in both modes. Move the individual-mode cases of the tracker-auto, tracker-tasks and approve-fallback tests onto the shared path.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "the three pushes bind the Epic or Story, post each comment once, retry a pending link and report extrasFailed the same way in team mode and in individual mode",
+          "individual mode keeps its pushTasks policy (no Task issues when it is off) and makes no claim",
+          "a repository with no tracker is skipped before anything is looked up and has no binding",
+          "no production file or test references legacyPushEpic, legacyPushStory, legacyPushTasks or the createTracker seam, and the tracker-auto, tracker-tasks and approve-fallback tests pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "tracker-push-modes.test.ts: the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Add tracker.attach, the approve-time attach and the follow-on kind",
+        "summary": "Add the tracker.attach daemon method (resolve the unit's targets: HLD or LLD, plan and the Story's BUILD, CR and TESTS rendered files and diagram companions; call attachDocuments; commit nothing; return the outcome or { error }), call attachDocuments from the TUI approve() after commitApprovedArtifacts for the HLD, LLD and plan and commit the unit's head with the Attachment records in a second commit (skip with 'attachments skipped: the artifacts are not committed' when commitArtifacts is false), add the 'tracker-attach' kind to FollowOnOutcome and wire the BUILD approval's follow-on at both sites in src/daemon/index.ts.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t4",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "approve() attaches the approved HLD, LLD and plan documents after its commit so the links name that commit, commits the attachment records in a second commit and skips with a stated reason when commitArtifacts is false",
+          "tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed and returns { error } for a repository with no tracker or binding",
+          "the BUILD approval's follow-on attaches the build, review and test records that git reports clean, reports the dirty ones and commits nothing",
+          "the tracker-attach follow-on kind is wired at both follow-on sites and the existing follow-on tests pass"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4",
+          "c5",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "approve-attach.test.ts: approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed"
+          },
+          {
+            "level": "integration",
+            "name": "tracker-attach-followon.test.ts: the BUILD approval's follow-on attaches the build, review and test records that git reports clean and reports the dirty ones, and the daemon workflow.approve commits nothing"
+          },
+          {
+            "level": "integration",
+            "name": "tracker-attach-followon.test.ts: the design document, plan and build, review and test records are attached to the unit's issue with a link per revision"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Record the s9 and s7 hand-offs",
+        "summary": "Add a section to docs/plans/core-data-model.md recording what s6 leaves: the Epic and Story bindings sit on the Define and the LLD until s9 moves each onto the Epic and Story artifact it creates and removes the epicRef, storyRef, storyRefs and taskRefs fallback and the renderers' use of them; the Task record accessor and the Plan record that s7 moves onto the Task artifact's binding; the binding bookkeeping carve-out from the change log; the cross-process lost-update window and its reconciliation; the pre-s6 comments without markers that may post once more; and the carryBinding rule.",
+        "size": "S",
+        "order": 10,
+        "dependsOn": [
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "the plans document has a section that names each hand-off: Epic and Story bindings to s9 with the fallback removal, the Task accessor and Plan record to s7, the change-log carve-out, the lost-update window with its recovery, the unmarked pre-s6 comments, and the carryBinding rule",
+          "no code changes"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s6-handoffs.test.ts: the plans document names each s6 hand-off to s7 and s9 and each carve-out this Story chose"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "bindArtifact writes the typed binding with createdAtRevision, leaves the revision number and content hash unchanged, is idempotent for the same issue, refuses a different issue, and readBinding returns undefined for an unbound artifact",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "recordPosted and setPendingLink record one entry per kind and a pending link that names a child ref or a child id, never twice, and without moving the revision",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "attachDocuments builds a link to the file at the last commit that touched it, refuses a dirty or untracked file, skips a recorded (target, revision), adds a new link for a new commit and keeps the old attachment, and records a link found already posted without posting it again",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit keeps its record on the Plan",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a failed link under the parent is stored as the binding's pending link, retried by the next ensure, cleared once done and not retried again",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a content write by the store keeps the binding and attachments on disk, a binding patch leaves the revision and content hash alone, and the team gate resolves a bound unit's issue synchronously with no tracker call",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the approve-time pushes post each comment once: a crash after a successful post is reconciled by the marker on the next approve and posts nothing twice, and the design document, plan and build, review and test records are attached to the unit's issue with a link per revision",
+        "coveredByTaskIds": [
+          "t7",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "approve() attaches the approved HLD, LLD and plan documents after its commit so the files are clean and the links name that commit, commits the attachment records in a second commit, skips attachment with a stated reason when commitArtifacts is false, and tracker.attach attaches a diagram companion or any target refused as uncommitted once it is committed",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the BUILD approval's follow-on attaches the build, review and test records that git reports clean and reports the dirty ones, and the daemon workflow.approve commits nothing",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the three approve-time pushes run one path in team mode and in individual mode: each binds the Epic or Story, posts each comment once, retries a pending link and attaches the documents, individual mode keeps its pushTasks policy and makes no claim, and a repository with no tracker has no binding",
+        "coveredByTaskIds": [
+          "t8",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "a binding, post or attachment patch is refused while the store has a write staged for the artifact, and the staged write then completes with no head-changed-after-stage conflict",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails: TrackerPort.listComments and TrackerPort.attach"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails: readBinding, bindArtifact, recordPosted, setPendingLink, attachDocuments, runUnitExtras, ensureUnitIssueDetailed and the three approve-time pushes"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges: TrackerBinding, Attachment, TrackerComment, UnitIssue, ExtraStep and carryBinding"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 errorPaths: error cases, edge cases and invariants to preserve"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 testStrategy: test levels, subjects and acceptance mapping"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration: the seven ordered steps and the backward compatibility note"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 openQuestions: the seven resolved questions"
+    }
+  ]
+}

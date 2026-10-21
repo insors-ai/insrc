@@ -37,9 +37,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design covers the upstream request's three consumers and exclusion reporting.",
-          "evidence": "The ISSUE's Fix intent names review, diff-only grounding, BUILD records, and reporting excluded changes. The inspected subject resolver, grounding assembler, both BUILD writers, and review-record builder implement the corresponding propagation described by the design. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Retain this scope.",
+          "premise": "The design covers the upstream request's review scoping, excluded-file reporting, BUILD provenance, and refusal when nothing is attributable.",
+          "evidence": "The ISSUE's Fix intent requires the review, diff-only grounding, and build records to use Story commits, report unrelated changes as excluded, and treat no attributable change as nothing to review. Sections 2.1\u20132.9 cover those consumers; the inspected implementations confirm these are the actual scope-producing paths. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
+          "action": "Retain this coverage while correcting the range-end boundary finding below.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -49,9 +49,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The amendment correctly distinguishes the implemented scoping changes from the remaining legacy-end and rename work.",
-          "evidence": "changedFiles already reads Story units before working-tree changes and uses strict trailer scanning. storyChangeSet already excludes foreign commits and returns perUnit, but does not resolve a recorded end. persistBuildRecord still falls back directly to headShortSha. git_diff still parses newline-delimited numstat. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/standalone-record.ts, src/daemon/tools/builtins/git/diff.ts]",
-          "action": "Keep the historical 'State before' clearly distinguished from the current implementation.",
+          "premise": "An empty subject currently reaches the judges and can produce a persisted review.",
+          "evidence": "resolveCodeReviewSubject returns 'ok: true' after derivation without checking changedFiles.length. runCodeReview executes 'for (const slot of judges)' and subsequently builds and writes the artifact. subject-attribution.test.ts also explicitly accepts an empty subject for a range containing only other Stories' commits. [files: src/workflow/code-review/subject.ts, src/workflow/code-review/runner.ts, src/workflow/code-review/__tests__/subject-attribution.test.ts]",
+          "action": "Implement the proposed empty-set guards and update both the dedicated empty-subject test and the empty-result assertion in subject-attribution.test.ts.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -60,12 +60,12 @@
           "ref": "current-behaviour",
           "item": "current-behaviour",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "An empty changedFiles result is already treated by the review pipeline as nothing to judge.",
-          "evidence": "resolveCodeReviewSubject returns 'ok: true' after deriving an empty list. runCodeReview then unconditionally executes 'for (const slot of judges)', folds a verdict, and calls 'deps.write(paths.json, ...)'. Neither review entry point guards an empty subject; the controller can divert empty grounding into a degraded review. Thus an empty Story scope can still produce a review verdict and record. [files: src/workflow/code-review/subject.ts, src/workflow/code-review/runner.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts]",
-          "action": "Specify an explicit empty-scope outcome and its handling in both review entry points. Add a test proving that no judges or misleading verdict record are produced if 'nothing to review' is the intended behavior.",
+          "severity": "LOW",
+          "premise": "The remaining amendments correctly identify the current BUILD commit refresh and unsafe rename parsing.",
+          "evidence": "persistBuildRecord computes 'rec.body.commit ?? storyCommit(...) ?? headShortSha(repoPath)' before merging the prior record. buildStatArgv omits '-z'; parseNumstat splits on newlines and matches '/^(.+?) => (.+)$/', which misinterprets compact rename displays. splitDiffByFile accepts only the unquoted 'a/... b/...' header form. [files: src/workflow/runners/build/standalone-record.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/code-review/grounding.ts, src/workflow/runners/build/__tests__/build-record.test.ts]",
+          "action": "Proceed with the stable-end and literal-path amendments, subject to the boundary correction below.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "new-versus-reuse.1",
@@ -73,9 +73,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design reuses the existing attribution and diff seams, while resolveStoryRangeEnd supplies a capability those seams currently lack.",
-          "evidence": "storyChangeSet already exposes strict, attribution, sharedWithExcluded, and perUnit; storyRangeDiff already supports per-unit reads. range-base.ts resolves the start through build-start stamps and upstream artifacts, but contains no BUILD-commit end resolver. A source search found no resolveStoryRangeEnd implementation. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/range-base.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Implement the end resolver beside the existing base resolver and reuse the current per-unit machinery.",
+          "premise": "The partially implemented design can reuse the existing strict trailer scan, per-unit selection, and shared changed-file seam.",
+          "evidence": "storyChangeSet already accepts storyKey and strict, records carrying and foreign commits, and returns perUnit. changedFiles already calls it with strict when a Story key is supplied and branches on set.perUnit. realDiffGroundingDeps wraps attribution failures as DiffUnavailableError. This matches the migration section's declaration that the first implementation tasks are already built. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Extend these existing seams rather than introduce a second attribution implementation.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -85,9 +85,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The listed production consumers pass the Story identity through the intended seams.",
-          "evidence": "Both diff-grounding callers supply base, LEDGER_EXCLUDE_GLOBS, and storyKey. Completion and validate both pass storyKey to collectBuildChangeLog and persist changeLog even when empty. validate.ts contains the production calls to withTypecheckProjects and trivialCheckPlan and supplies the Story key. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/daemon/steps/build-step/validation-checks.ts]",
-          "action": "Preserve these arguments when adding the recorded-end behavior.",
+          "premise": "Both diff-only callers already supply the Story identity and base, and the named validate call sites cover project and trivial-test selection.",
+          "evidence": "The RPC and beginDiffOnlyReview both pass resolveStoryRangeBase(...), LEDGER_EXCLUDE_GLOBS, and '<epicHash>/<storyId>' to the assembler. Production-call searches found the withTypecheckProjects call in shared validation and the trivialCheckPlan call in the trivial route, both already passing the key. Both BUILD changeLog writers also pass the key and persist an empty changeLog. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/completion-record.ts]",
+          "action": "Place the proposed diff-empty guards before runCodeReview or saveState respectively.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -96,10 +96,22 @@
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Rejecting a recorded end outside base..HEAD safely handles every valid BUILD record, including a Story with no committed work.",
+          "evidence": "The Trivial implement route calls 'noteBuildStart(repoPath, epicHash, storyId)' and immediately 'persistStandaloneBuildRecord(...)' before emitting the implementation prompt. The persister falls back to HEAD, so this real producer creates body.commit equal to rangeBase. Git's 'base..HEAD' excludes base itself. Under the proposed rule, that valid empty-range end is therefore ignored; a later unrelated untrailered commit becomes a legacy Story unit instead of producing the promised empty-set decline. Preserving the prior commit does not fix this because the range-end membership check still rejects it. [files: src/daemon/steps/build-step/phases/implement.ts, src/workflow/runners/build/range-base.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/story-commits.ts]",
+          "action": "Accept an end equal to base as a valid empty committed range. Explicitly distinguish the initial task-less tracking record from a completed build end, and add a regression starting through the Trivial implement route, followed by unrelated untrailered work.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
           "severity": "LOW",
-          "premise": "Optional review-record fields preserve older record shapes, and an explicitly empty changeLog replaces a stale prior value.",
-          "evidence": "CodeReviewBody.subject declares excludedFromScope optional, and ChangeSetAttribution retains 'working-tree'. The record builder omits excludedFromScope when empty. mergeWithPrior constructs the body with '...prior.body, ...rec.body', so changeLog: [] replaces the previous array. The renderer delegates empty Changes content to an omit-slot. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Retain optional persisted fields and unconditional changeLog replacement.",
+          "premise": "Optional review-record fields and an explicitly empty changeLog preserve compatibility with older records.",
+          "evidence": "CodeReviewSubject and CodeReviewBody.subject declare excludedFromScope optional; ChangeSetAttribution retains 'working-tree'. buildArtifact omits excludedFromScope when empty. mergeWithPrior spreads '...prior.body, ...rec.body', so changeLog: [] replaces stale contents. renderBuildRecordMd omits sections whose rendered content is empty. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts, src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/standalone-record.ts]",
+          "action": "Keep excludedUncommitted's required internal callback shape distinct from the optional persisted excludedFromScope field in the compatibility wording.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -109,9 +121,9 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "This is standalone work using existing internal contracts rather than redesigning an HLD-owned Story boundary.",
-          "evidence": "The persisted LLD metadata marks standalone: true and sizeClass: 'bugfix'. The upstream ISSUE concerns these same review and BUILD consumers. Inspected entry points already carry epicHash/storyId; the proposed changes reuse that identity without requiring new RPC request fields. [files: .insrc/artifacts/LLD-06f196a7ff528143-S001.json, docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/daemon/code-review-rpc.ts, src/daemon/steps/build-step/phases/validate.ts]",
-          "action": "Keep the changes within the existing internal seams.",
+          "premise": "This is a standalone bugfix using existing Story identity rather than redesigning a parent HLD or IPC request contract.",
+          "evidence": "The artifact metadata declares 'standalone: true' and 'sizeClass: bugfix'. The upstream ISSUE concerns the same review and BUILD consumers. Both inspected review entry points already receive epicHash and storyId, from which they construct storyKey; no additional request field is necessary. [files: .insrc/artifacts/LLD-06f196a7ff528143-S001.json, docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "Keep the range-end lookup internal to the existing attribution machinery.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -121,11 +133,23 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Missing anchors and failed git derivations can propagate through the documented refusal and BUILD-log handling.",
-          "evidence": "changedFiles rejects storyKey without base. Strict scanTrailers rethrows git failures. The subject maps NoBuildChangesError to no-build-record; realDiffGroundingDeps wraps change-set failures in DiffUnavailableError, and both diff callers handle that error before running review. collectBuildChangeLog catches derivation failures and returns []. git_diff already returns success: false for stat.spawnError or nonzero stat.code. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/daemon/tools/builtins/git/diff.ts]",
-          "action": "Preserve these failure paths in the new end resolver and numstat parser.",
+          "premise": "Git failures can propagate through the existing refusal and empty-changeLog paths without widening scope.",
+          "evidence": "collectDiff throws NoBuildChangesError for unsuccessful tool results; the subject catches that class and returns no-build-record. runDiff throws DiffUnavailableError, which both diff callers handle as diff-unavailable. collectBuildChangeLog catches derivation failures and returns []. The strict trailer scan rethrows rather than using the lenient fallback. [files: src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts, src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts]",
+          "action": "Preserve these error conversions when adding range-end resolution and NUL-delimited parsing.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Fixing header decoding and accumulation guarantees that every listed Story file has all its hunk text.",
+          "evidence": "git_diff sets 'DEFAULT_MAX_BYTES = 256 * 1024' for the body while reading numstat separately. buildDiffSymbols explicitly permits '[no hunk text for ...]' and adds '[diff truncated \u2014 reviewed over a bounded slice]'. Consequently, a file listed by numstat can lie beyond the captured body even with a correct header parser; sections 2.10\u20132.11 overstate completeness. [files: src/daemon/tools/builtins/git/diff.ts, src/daemon/tools/shell-helper.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Qualify the lossless-hunk guarantees to exclude explicitly truncated output, or design bounded per-file retrieval and failure handling that actually guarantees complete grounding. Add a multi-file diff exceeding the body cap.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "tests.1",
@@ -133,33 +157,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The acceptance mapping provides tests for scoping, own-file edits, refusal, downstream consumers, and the observed daemon case.",
-          "evidence": "The ac1\u2013ac5 mapping covers those behaviors. Inspected test bodies assert excluded subject paths, no-base refusal without calling the seam, strict-scan failure, both diff callers' persisted attribution, committed plus staged/unstaged hunks, Story-only typecheck projects, and deleted-test filtering. The legacy-end and rename cases are proposed tests; the daemon smoke remains planned. Tests were inspected, not executed. [files: src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
-          "action": "Complete the proposed amendment tests and installed-daemon smoke; add the empty-scope regression identified above.",
+          "premise": "The stated acceptance criteria each have a corresponding test or smoke procedure.",
+          "evidence": "The ac1\u2013ac5 mapping covers scoped files and reporting, retained own-file edits, refusal paths, consumer consistency, and the installed-daemon reproduction. Inspected test bodies assert subject exclusions, strict-scan refusal, both diff callers' persisted attribution, Story-only project selection, and deleted-test filtering. The legacy-end, rename, and empty-review amendments remain proposed coverage. Tests were inspected, not executed; the smoke was not performed. [files: docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md, src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts, src/workflow/runners/build/__tests__/build-record.test.ts]",
+          "action": "Add the end-equals-base regression and truncation case identified above. Update the existing empty-subject assertions as well as adding the proposed new tests.",
           "fixability": "manual",
           "outcome": "holds"
-        },
-        {
-          "claimId": "tests.2",
-          "ref": "tests",
-          "item": "tests",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "The test migration inventory accounts for existing expectations invalidated by preserving the prior BUILD commit.",
-          "evidence": "build-record.test.ts contains 'an explicitly SUPPLIED commit wins for that write; a later persist REFRESHES to HEAD'. Its body persists commit: 'deadbee', persists again without commit, then asserts the stored commit equals HEAD. The proposed prior.body.commit precedence instead preserves 'deadbee'. The design names new stability tests but does not identify this existing contradictory expectation. [files: src/workflow/runners/build/__tests__/build-record.test.ts, src/workflow/runners/build/standalone-record.ts]",
-          "action": "Explicitly replace this refresh expectation with the new preservation contract, including the behavior of an unresolvable prior commit.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
         }
       ],
       "counts": {
         "high": 1,
         "med": 1,
-        "low": 8,
+        "low": 9,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T08:10:23.446Z",
+      "reviewedAt": "2026-10-21T08:13:22.146Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     },
@@ -260,7 +272,7 @@
           ],
           "returns": {
             "type": "AttributedStoryChangeSet",
-            "meaning": "With commits carrying the Story's trailer: those units ('story-trailer'), as today. With a storyKey and NO commit carrying it: the first-parent commits that carry NO Insrc-Story line at all ('first-parent-range', the legacy pre-trailer Story); a commit carrying another Story's trailer is left out and its paths count as excluded (sharedWithExcluded). When every commit in the range belongs to another Story, the set is empty. Without a storyKey: unchanged. The result gains perUnit: boolean \u2014 true for 'story-trailer' and for a legacy range from which at least one other-Story commit was left out; false only for an unfiltered legacy range. FOREIGN COMMITS: the trailer scan records, besides the commits carrying the Story's trailer, the 'foreign' commits whose Insrc-Story lines all name other Stories. One rule then applies to every first-parent commit kind \u2014 an ordinary commit, a two-parent merge's merge-edit unit, and an octopus merge's whole-change unit: a foreign commit is never a unit (its paths are added to the excluded set and surface in sharedWithExcluded); a commit carrying the Story's trailer is a unit; an untrailered commit is a unit for a merge always (today's rule: merge edits are Story work unless they say otherwise) and, for an ordinary commit, only when no commit carries the Story's trailer (the legacy range). Leaving out a foreign commit makes perUnit true. PRE-TRAILER END (amendment 2026-10-21, after the t8 smoke on Epic c2ba6fa6 Story s1): in the legacy case (a storyKey and no commit carrying it), the range also ENDS at the Story's recorded build commit, resolveStoryRangeEnd: a first-parent commit after it is never a unit (it is later work, typically another person's untrailered commit such as 7d0e6402), its paths count as excluded, and perUnit is true. An end that does not resolve, or is not on the first-parent line of base..HEAD, is ignored with a warning (the legacy range runs to HEAD, as before). With a carrying commit the end is not consulted."
+            "meaning": "With commits carrying the Story's trailer: those units ('story-trailer'), as today. With a storyKey and NO commit carrying it: the first-parent commits that carry NO Insrc-Story line at all ('first-parent-range', the legacy pre-trailer Story); a commit carrying another Story's trailer is left out and its paths count as excluded (sharedWithExcluded). When every commit in the range belongs to another Story, the set is empty. Without a storyKey: unchanged. The result gains perUnit: boolean \u2014 true for 'story-trailer' and for a legacy range from which at least one other-Story commit was left out; false only for an unfiltered legacy range. FOREIGN COMMITS: the trailer scan records, besides the commits carrying the Story's trailer, the 'foreign' commits whose Insrc-Story lines all name other Stories. One rule then applies to every first-parent commit kind \u2014 an ordinary commit, a two-parent merge's merge-edit unit, and an octopus merge's whole-change unit: a foreign commit is never a unit (its paths are added to the excluded set and surface in sharedWithExcluded); a commit carrying the Story's trailer is a unit; an untrailered commit is a unit for a merge always (today's rule: merge edits are Story work unless they say otherwise) and, for an ordinary commit, only when no commit carries the Story's trailer (the legacy range). Leaving out a foreign commit makes perUnit true. PRE-TRAILER END (amendment 2026-10-21, after the t8 smoke on Epic c2ba6fa6 Story s1): in the legacy case (a storyKey and no commit carrying it), the range also ENDS at the Story's recorded build commit, resolveStoryRangeEnd: a first-parent commit after it is never a unit (it is later work, typically another person's untrailered commit such as 7d0e6402), its paths count as excluded, and perUnit is true. An end that does not resolve, or is not on the first-parent line of base..HEAD, is ignored with a warning (the legacy range runs to HEAD, as before). With a carrying commit the end is not consulted. An end EQUAL to the base is valid and means the Story has committed nothing attributable yet: the trivial implement route (src/daemon/steps/build-step/phases/implement.ts) persists the first BUILD record right after noting the build start, so its body.commit is the base. The legacy set is then empty (every first-parent commit since the base is after the end) and the review declines with 'no-build-record'. An end that is neither the base nor on the first-parent line of base..HEAD is ignored with a warning."
           },
           "errors": [
             {
@@ -277,7 +289,8 @@
             "perUnit is false exactly when the result equals today's unfiltered first-parent range, so the net-range read stays valid only there.",
             "No unit of any kind (commit, merge-edit, octopus) comes from a foreign commit; untrailered merge edits are still kept, so today's 'only commits carrying the Story's trailer and merge edits are units' test is unchanged.",
             "For a pre-trailer Story with a resolvable recorded end, no unit comes from a commit after that end, so an uncommitted edit of a file only a later commit touched is excluded, not joined.",
-            "The 'names this Story but lacks its trailer' warning fires only for an untrailered commit, never for a foreign one whose subject happens to read `<storyId>/`."
+            "The 'names this Story but lacks its trailer' warning fires only for an untrailered commit, never for a foreign one whose subject happens to read `<storyId>/`.",
+            "A recorded end equal to the base yields an empty legacy set, never the whole range; since a pre-trailer end never moves, an untrailered build begun on the trivial route is never attributed later untrailered work (the build prompt requires the trailer, which switches it to trailer attribution)."
           ]
         },
         {
@@ -522,7 +535,7 @@
           "preconditions": [],
           "postconditions": [
             "A file with both staged and unstaged edits keeps both sets of hunks in the diff-only grounding.",
-            "Every file git_diff lists has its hunks found by its literal path, including a renamed file and a path git quotes, so no Story file falls back to `[no hunk text for ...]`."
+            "Every file git_diff lists has its hunks found by its literal path, including a renamed file and a path git quotes, so no Story file falls back to `[no hunk text for ...]` while the diff body is complete. When git_diff's body cap (256 KB by default) truncates the body, a file past the cap may still carry no hunk text; the grounding is then marked `[diff truncated \u2014 reviewed over a bounded slice]`, as today, and that limit stands."
           ]
         },
         {
@@ -554,7 +567,7 @@
           ],
           "preconditions": [],
           "postconditions": [
-            "No staged or unstaged hunk of a Story file is lost or double-counted when the two are combined with the Story's committed hunks."
+            "No staged or unstaged hunk of a Story file is lost or double-counted when the two are combined with the Story's committed hunks. (within an untruncated body; see splitDiffByFile)"
           ]
         },
         {
@@ -742,6 +755,14 @@
         {
           "input": "A Story commit renames a file, and the renamed file then has staged and unstaged edits. The new path may contain a tab or another character git quotes.",
           "expected": "The committed unit, the review subject and the diff-only grounding all name the new path; the uncommitted edits at the new path join as the Story's (not excluded), and both sets of hunks are kept."
+        },
+        {
+          "input": "A Story started on the trivial route (first BUILD record written at implement time, body.commit equal to the base), followed by someone else's untrailered commits, with no commit carrying the Story's trailer.",
+          "expected": "The recorded end equals the base, so the legacy set is empty and the review declines with 'no-build-record'; the later untrailered commits are never the Story's."
+        },
+        {
+          "input": "A Story diff larger than git_diff's body cap.",
+          "expected": "Files past the cap are listed but may carry no hunk text, and the grounding says it is truncated; this stated limit is unchanged by this fix."
         }
       ],
       "invariantsToPreserve": [
@@ -796,7 +817,8 @@
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'on a clean tree, a pre-trailer Story with a BUILD record whose commit is before HEAD leaves out the later untrailered commits'",
             "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces'",
-            "src/workflow/code-review/__tests__/diff-grounding.test.ts: 'splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes'"
+            "src/workflow/code-review/__tests__/diff-grounding.test.ts: 'splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes'",
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits'"
           ],
           "fixturesNeeded": [
             "a git repository with a base commit, two commits carrying the Story's Insrc-Story trailer, one carrying another Story's, and unstaged, staged and untracked-then-added changes inside and outside the Story's files",
@@ -852,7 +874,8 @@
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is'",
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored'",
             "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched'",
-            "src/workflow/runners/build/__tests__/build-record.test.ts: 'a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it'"
+            "src/workflow/runners/build/__tests__/build-record.test.ts: 'a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it'",
+            "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits'"
           ]
         },
         {

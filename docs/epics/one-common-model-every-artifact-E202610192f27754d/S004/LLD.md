@@ -696,6 +696,8 @@ FileSidecarStore appends every record to .insrc/history/log.jsonl or .insrc/hist
   - **resolved**: Require explicit conflict resolution — Recommended: a matching head hash alone does not establish that the merged log has been reconciled. _(2026-10-21T09:16:44.137Z)_
 - `q0e79065e` — The daemon's approval actor today is the gate itself (insrc:approval); the live tracker identity that k5 requires is s5's, so should s4 pass a person actor from the request when the client supplies one and fall back to the gate actor otherwise?
   - **resolved**: Optional request actor with fallback — Recommended: person attribution in s4 while preserving existing approvals; live tracker identity stays with s5. _(2026-10-21T09:17:31.996Z)_
+- `qcfedb02f` — Making persistBuildRecord, persistStandaloneBuildRecord, persistTestRecordTask and handleVerdicts async touches many existing tests; should the tests be moved to the async forms in the same tasks as the writers, or kept on a thin synchronous test-only wrapper?
+  - **resolved**: Migrate tests with writers — Recommended: tests exercise the real async interfaces. _(2026-10-21T09:18:05.123Z)_
 
 ## Citations
 

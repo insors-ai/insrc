@@ -162,6 +162,13 @@
         "choice": "Optional request actor with fallback",
         "rationale": "Recommended: person attribution in s4 while preserving existing approvals; live tracker identity stays with s5.",
         "resolvedAt": "2026-10-21T09:17:31.996Z"
+      },
+      "qcfedb02f": {
+        "question": "Making persistBuildRecord, persistStandaloneBuildRecord, persistTestRecordTask and handleVerdicts async touches many existing tests; should the tests be moved to the async forms in the same tasks as the writers, or kept on a thin synchronous test-only wrapper?",
+        "status": "resolved",
+        "choice": "Migrate tests with writers",
+        "rationale": "Recommended: tests exercise the real async interfaces.",
+        "resolvedAt": "2026-10-21T09:18:05.123Z"
       }
     }
   },

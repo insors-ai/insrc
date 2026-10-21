@@ -4,7 +4,7 @@
     "epicHash": "06f196a7ff528143",
     "storyId": "S001",
     "createdAt": "2026-10-21T05:47:38.616Z",
-    "updatedAt": "2026-10-21T06:31:25.759Z",
+    "updatedAt": "2026-10-21T06:37:50.385Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-10-21T05:02:26.565Z",
@@ -31,9 +31,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "The review subject derives the Story's set once from its range base (no base or a git failure declines with no-build-record; the working-tree attempts are gone) and carries excludedFromScope, which the runner stamps on the record and both diff-only callers thread through. Test fixtures that had no range base (grounding-ipc.test.ts, subject.test.ts) now supply one, and diff-attribution.test.ts checks the two callers record excludedFromScope.",
+    "summary": "Both BUILD writers (completion-record.ts, validate.ts) pass the Story's key to collectBuildChangeLog and always write the changeLog, empty included, so a rewrite replaces a contaminated prior one. The writers' own tests (build-step.test.ts, build-start.test.ts, completion-record.test.ts) that pinned an absent changeLog or validated uncommitted work with no base were updated to the rule, and a validate-phase writer test was added beside them.",
     "testRecord": {
       "md": "docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/TESTS.md"
     },
@@ -43,44 +47,44 @@
           "file": "docs/mocks/ontology-editor.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:31:25.759Z"
+        "timestamp": "2026-10-21T06:37:50.385Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-source/ontology.template.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:31:25.759Z"
+        "timestamp": "2026-10-21T06:37:50.385Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-source/render.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:31:25.759Z"
+        "timestamp": "2026-10-21T06:37:50.385Z"
       },
       {
         "target": {
           "file": "docs/mocks/ontology-viewer.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:31:25.759Z"
+        "timestamp": "2026-10-21T06:37:50.385Z"
       },
       {
         "target": {
           "file": "docs/ontology-builder-prd.html"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:31:25.759Z"
+        "timestamp": "2026-10-21T06:37:50.385Z"
       },
       {
         "target": {
           "file": "docs/ontology-builder-prd.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-10-21T06:31:25.759Z"
+        "timestamp": "2026-10-21T06:37:50.385Z"
       }
     ],
-    "commit": "73362b2b"
+    "commit": "666a5332"
   }
 }

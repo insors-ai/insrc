@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 28 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -167,3 +167,29 @@ Run at 2026-10-21T06:31:25.759Z on commit `73362b2b`. Tests check: **passed**. 6
 | `src/workflow/code-review/__tests__/runner.test.ts` | 0 | 19 | 0.6 s |  |
 | `src/workflow/code-review/__tests__/subject-attribution.test.ts` | 0 | 4 | 1.4 s |  |
 | `src/workflow/code-review/__tests__/subject.test.ts` | 0 | 19 | 1.6 s |  |
+
+## t6
+
+Run at 2026-10-21T06:37:50.385Z on commit `666a5332`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/workflow/runners/build/__tests__/changed-files.test.ts: 'a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change | `src/workflow/runners/build/__tests__/changed-files.test.ts` |
+| pass | the validate phase's changeLog leaves out another Story's commit and replaces a stale changeLog (ISSUE-b97752e9) | `src/daemon/steps/build-step/__tests__/build-step.test.ts` |
+| pass | t6: a DIRTY tree still yields the Story's committed change set, and an unrelated uncommitted file is left out (ISSUE-b97752e9) | `src/daemon/steps/build-step/__tests__/build-step.test.ts` |
+
+**integration: src/workflow/runners/build/__tests__/changed-files.test.ts: 'rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included | `src/workflow/runners/build/__tests__/changed-files.test.ts` |
+| pass | the validate phase's changeLog leaves out another Story's commit and replaces a stale changeLog (ISSUE-b97752e9) | `src/daemon/steps/build-step/__tests__/build-step.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/build-step/__tests__/build-step.test.ts` | 0 | 64 | 12.5 s |  |
+| `src/workflow/runners/build/__tests__/changed-files.test.ts` | 0 | 42 | 5.3 s |  |

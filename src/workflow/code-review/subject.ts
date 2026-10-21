@@ -15,19 +15,20 @@
  *     LONGER a failure. The review MODE is then derivable from which contracts
  *     are present: (A) both → implementation-correctness, (B) LLD only →
  *     LLD-contract review, (C) neither → pure code review;
- *   - a changed-file set that cannot be derived (git unavailable / not a repo)
- *     => {ok:false, reason:'no-build-record'} — nothing was built to review.
- *     This is now the ONLY decline reason;
+ *   - no range base for the Story, or a changed-file set that cannot be derived
+ *     (git unavailable / not a repo) => {ok:false, reason:'no-build-record'} —
+ *     there is no anchored Story to review. This is the ONLY decline reason;
  *   - `UnregisteredRepoError` (and any other non-Artifact error) PROPAGATES
  *     unchanged (operator misconfiguration, not a missing-contract condition).
  *
  * The changed-file set is git-DERIVED — the build record is never re-recorded or
  * duplicated (k9). The BUILD and TESTS records are read for the coverage
- * dimension's pass-state (ISSUE-1102dc71). Since the tracked
- * workflow runs build → review → commit, at review time the build's changes are
- * the uncommitted working-tree diff (HEAD vs worktree, plus staged), so that is
- * the "Story's build changed" set. An empty diff is a valid (trivial) subject,
- * NOT an error.
+ * dimension's pass-state (ISSUE-1102dc71). The Story's commits decide its scope
+ * (ISSUE-b97752e9): the units since its range base that carry its Insrc-Story
+ * trailer, and the working tree only adds edits of files those commits changed.
+ * Every other uncommitted file is left out and listed as excludedFromScope, never
+ * reviewed; there is no fallback to the working tree. An empty set is a valid
+ * (trivial) subject, NOT an error.
  *
  * The gate + git seams are injectable (`SubjectDeps`) so the unit tests fake
  * them; the defaults wire the real `requireApprovedLld` / `requireApprovedPlan`
@@ -141,67 +142,43 @@ export async function resolveCodeReviewSubject(
 		if (!(err instanceof ArtifactMissingError || err instanceof ArtifactNotApprovedError)) throw err;
 	}
 
-	// 2. The git-derived changed-file set.
+	// 2. The git-derived changed-file set, anchored on the Story's commits.
 	//
-	// The review measures from the Story's range base and leaves the workflow's
-	// own ledger files out (ISSUE-5f7a7cb9): with the Story committed, the only
-	// dirty path is often an approval-stamped artifact json, and without this that
-	// one file became the whole reviewed set.
-	//
-	// That derivation asks more of git than the old one did — a base it can
-	// resolve and exclude pathspecs it accepts — so it must not become a new way
-	// for the review to fail to start. Each attempt that throws steps DOWN to a
-	// plainer one, and the last is the call this function has always made. Only
-	// when THAT fails is the answer 'no-build-record', exactly as before.
+	// It measures from the Story's range base, keeps only the Story's trailered
+	// commits (ISSUE-b47dadc7) and leaves the workflow's own ledger files out
+	// (ISSUE-5f7a7cb9). There is no plainer attempt to step down to: without a
+	// base, or when git fails, the only derivation left would be the working
+	// tree, which holds whatever else is in progress (ISSUE-b97752e9).
 	const base = (deps.resolveRangeBase ?? resolveStoryRangeBase)(repoPath, epicHash, storyId);
-	// The range-base attempt keeps only the Story's trailered commits and says how
-	// it scoped the set (ISSUE-b47dadc7). The plainer attempts take no base, so
-	// they can only derive from the working tree.
+	if (base === undefined) {
+		log.info({ repoPath, epicHash, storyId }, 'resolveCodeReviewSubject: no range base for the Story; nothing anchored to review');
+		return { ok: false, reason: 'no-build-record' };
+	}
 	const seen: { report?: ChangeSetAttributionReport | undefined } = {};
 	const onAttribution = (a: ChangeSetAttributionReport): void => { seen.report = a; };
-	// Read through a function: the seam sets it during the await, which narrowing cannot see.
-	const reported = (): ChangeSetAttributionReport | undefined => seen.report;
-	const attempts: ReadonlyArray<{ readonly label: string; readonly opts: ChangedFilesOptions | undefined }> = [
-		...(base !== undefined ? [{
-			label: 'range base + ledger exclusion',
-			opts: { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: `${epicHash}/${storyId}`, onAttribution },
-		}] : []),
-		{ label: 'ledger exclusion only', opts: { excludeGlobs: LEDGER_EXCLUDE_GLOBS } },
-		{ label: 'plain working-tree derivation', opts: undefined },
-	];
-	let changedFiles: readonly string[] | undefined;
-	let changeSetAttribution: ChangeSetAttributionReport['attribution'] | undefined;
-	for (const [i, attempt] of attempts.entries()) {
-		try {
-			seen.report = undefined;
-			// The last attempt passes ONE argument, so it is byte-for-byte the old call.
-			changedFiles = attempt.opts === undefined
-				? await deps.changedFiles(repoPath)
-				: await deps.changedFiles(repoPath, attempt.opts);
-			changeSetAttribution = attempt.opts?.base !== undefined ? reported()?.attribution : 'working-tree';
-			break;
-		} catch (err) {
-			if (!(err instanceof NoBuildChangesError)) throw err;
-			const next = attempts[i + 1];
-			if (next === undefined) return { ok: false, reason: 'no-build-record' };
-			log.warn(
-				{ repoPath, epicHash, storyId, failed: attempt.label, fallingBackTo: next.label, err: err.message },
-				'resolveCodeReviewSubject: changed-set derivation failed; falling back to a plainer one',
-			);
-		}
+	let changedFiles: readonly string[];
+	try {
+		changedFiles = await deps.changedFiles(repoPath, { base, excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: `${epicHash}/${storyId}`, onAttribution });
+	} catch (err) {
+		if (!(err instanceof NoBuildChangesError)) throw err;
+		log.warn({ repoPath, epicHash, storyId, err: err.message }, 'resolveCodeReviewSubject: the Story\'s change set could not be derived');
+		return { ok: false, reason: 'no-build-record' };
 	}
-	if (changedFiles === undefined) return { ok: false, reason: 'no-build-record' };
 
 	const buildRecord = deps.readBuildRecord?.(repoPath, epicHash, storyId) ?? null;
 	const testRecord  = deps.readTestRecord?.(repoPath, epicHash, storyId) ?? null;
-	const scoped      = reported();
+	// Read through the holder: the seam sets it during the await, which narrowing cannot see.
+	const scoped = seen.report as ChangeSetAttributionReport | undefined;
+	if (scoped !== undefined && scoped.excludedUncommitted.length > 0) {
+		log.info({ repoPath, epicHash, storyId, excluded: scoped.excludedUncommitted.length }, 'resolveCodeReviewSubject: uncommitted files outside the Story left out of the review');
+	}
 
 	return {
 		ok: true,
 		subject: {
 			repoPath, epicHash, storyId, changedFiles, approvedLld, approvedPlan, buildRecord, testRecord,
-			...(changeSetAttribution !== undefined ? { changeSetAttribution } : {}),
-			...(scoped !== undefined ? { sharedWithExcluded: scoped.sharedWithExcluded } : {}),
+			...(scoped !== undefined ? { changeSetAttribution: scoped.attribution, sharedWithExcluded: scoped.sharedWithExcluded } : {}),
+			...(scoped !== undefined && scoped.excludedUncommitted.length > 0 ? { excludedFromScope: scoped.excludedUncommitted } : {}),
 		},
 	};
 }

@@ -372,7 +372,8 @@ async function handleStart(
 
 /**
  * s10 — the DIFF-ONLY (degraded) review path, reached from the decline branch.
- * Builds the diff-only grounding (working-tree diff, else the last commit), saves
+ * Builds the diff-only grounding (the Story's commits since its range base, plus
+ * uncommitted edits of its own files; ISSUE-b97752e9), saves
  * a `groundingMode:'degraded'` emit_judgements state, and hands the controller the
  * SAME four charges over the diff hunks. The subject's `changedFiles` is REPLACED
  * with the diff-derived set so the record subject + the judgements scope-drop
@@ -397,7 +398,7 @@ async function beginDiffOnlyReview(
 
 	let grounding: CodeReviewGrounding;
 	let changedFiles: readonly string[];
-	let scoped: Pick<CodeReviewSubject, 'changeSetAttribution' | 'sharedWithExcluded'>;
+	let scoped: Pick<CodeReviewSubject, 'changeSetAttribution' | 'sharedWithExcluded' | 'excludedFromScope'>;
 	try {
 		// The same base and the same ledger exclusion the graph path's subject uses
 		// (ISSUE-5f7a7cb9), so the two paths review the same Story range. `undefined`
@@ -409,7 +410,7 @@ async function beginDiffOnlyReview(
 		});
 		grounding = diff.grounding;
 		changedFiles = diff.changedFiles;
-		scoped = { changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded };
+		scoped = { changeSetAttribution: diff.changeSetAttribution, sharedWithExcluded: diff.sharedWithExcluded, excludedFromScope: diff.excludedFromScope };
 	} catch (err) {
 		if (err instanceof DiffUnavailableError) {
 			return errorResult('diff-unavailable', `insrc_code_review_step: could not read the changed-file diff — ${err.message}.`, true);
@@ -417,9 +418,8 @@ async function beginDiffOnlyReview(
 		throw err;
 	}
 
-	// Re-key the subject to the diff-derived changed set (post-commit the s9
-	// working-tree set is empty; the diff path recovers it from the last commit),
-	// and to how the diff scoped it (ISSUE-b47dadc7).
+	// Re-key the subject to the diff-derived changed set and to how the diff scoped
+	// it (ISSUE-b47dadc7), including what it left out (ISSUE-b97752e9).
 	const diffSubject: CodeReviewSubject = { ...subject, changedFiles, ...scoped };
 
 	const token = saveState({

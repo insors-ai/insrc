@@ -91,7 +91,7 @@ function spyAssembler(seen: (DiffGroundingOptions | undefined)[]): typeof assemb
 	return async (repoPath, deps, opts) => { seen.push(opts); return assembleDiffCodeReviewGrounding(repoPath, deps, opts); };
 }
 
-test("without a story key the diff is today's, and both diff callers record the attribution on the subject", async () => {
+test("without a story key the diff is today's, and both diff callers record the attribution and what was left out on the subject", async () => {
 	const r = repo();
 	try {
 		// Without a key: today's diff — the net range over every first-parent commit.
@@ -100,6 +100,7 @@ test("without a story key the diff is today's, and both diff callers record the 
 		assert.match(sig(today, 'src/shared.ts'), /THEIRS-EDIT/);
 		assert.equal(today.changeSetAttribution, 'first-parent-range');
 
+
 		// Both callers resolve the range base from the Story's build-start file.
 		writeFileSync(join(r.repo, '.git', 'info', 'exclude'), '.insrc/\n');
 		const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: r.repo, encoding: 'utf8' }).trim();
@@ -107,6 +108,10 @@ test("without a story key the diff is today's, and both diff callers record the 
 		assert.equal(stampBuildStart(r.repo, EPIC, STORY), 'stamped');
 		execFileSync('git', ['checkout', '-q', 'main'], { cwd: r.repo });
 		assert.equal(execFileSync('git', ['rev-parse', 'HEAD'], { cwd: r.repo, encoding: 'utf8' }).trim(), head);
+
+		// An uncommitted edit of the other Story's file: both callers leave it out
+		// and put it on the record as excludedFromScope (ISSUE-b97752e9).
+		writeFileSync(join(r.repo, 'src/theirs.ts'), 'theirs, edited\n');
 
 		// 1. codeReview.run, degraded.
 		const json = artifactJsonPath(r.repo, buildArtifactId(EPIC, STORY));
@@ -128,7 +133,7 @@ test("without a story key the diff is today's, and both diff callers record the 
 		assert.equal(frames[frames.length - 1]!.stream, 'done', JSON.stringify(frames[frames.length - 1]!.data));
 		assert.equal(rpcSeen[0]?.storyKey, KEY);
 		const rpcBody = (JSON.parse(rpcWrites.find(w => w.path.endsWith('.json'))!.content) as { body: { subject: Record<string, unknown> } }).body;
-		assert.deepEqual(rpcBody.subject, { changedFiles: ['src/mine.ts', 'src/shared.ts'], changeSetAttribution: 'story-trailer', sharedWithExcluded: ['src/shared.ts'] });
+		assert.deepEqual(rpcBody.subject, { changedFiles: ['src/mine.ts', 'src/shared.ts'], changeSetAttribution: 'story-trailer', sharedWithExcluded: ['src/shared.ts'], excludedFromScope: ['src/theirs.ts'] });
 
 		// 2. insrc_code_review_step: a hollow graph grounding diverts to the diff review.
 		_clearCodeReviewStateStoreForTests();
@@ -151,7 +156,7 @@ test("without a story key the diff is today's, and both diff callers record the 
 		const done = parse(await handleCodeReviewStep({ phase: 'judgements', judgements: NO_FINDINGS(['adherence', 'conventions', 'coverage', 'quality']), state: start.state }, stepDeps));
 		assert.ok(done.next === 'done', JSON.stringify(done));
 		const stepBody = (JSON.parse(stepWrites.find(w => w.path.endsWith('.json'))!.content) as { body: { subject: Record<string, unknown> } }).body;
-		assert.deepEqual(stepBody.subject, { changedFiles: ['src/mine.ts', 'src/shared.ts'], changeSetAttribution: 'story-trailer', sharedWithExcluded: ['src/shared.ts'] });
+		assert.deepEqual(stepBody.subject, { changedFiles: ['src/mine.ts', 'src/shared.ts'], changeSetAttribution: 'story-trailer', sharedWithExcluded: ['src/shared.ts'], excludedFromScope: ['src/theirs.ts'] });
 	} finally { r.cleanup(); }
 });
 

@@ -340,3 +340,22 @@ test('s10 ac6: runCodeReview with NO groundingMode/cap opts stamps full and the 
 	assert.equal(out.artifact.body.groundingMode, 'full', 'default groundingMode is full');
 	assert.equal(out.artifact.body.verdict, 'pass', 'without the cap a clean fold is pass (unchanged)');
 });
+
+// ---- ISSUE-b97752e9: what the review left out is on the record ----
+
+test('the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were', async () => {
+	const { deps, provider, writes } = makeDeps();
+	const out = await runCodeReview({ ...subject(), changeSetAttribution: 'story-trailer', excludedFromScope: ['README.md', 'docs/notes.md'] }, provider, runOpts().opts, deps);
+	assert.ok(out.ok);
+	assert.deepEqual(out.artifact.body.subject, { changedFiles: [...CHANGED], changeSetAttribution: 'story-trailer', excludedFromScope: ['README.md', 'docs/notes.md'] });
+	const json = writes.find(w => w.path.endsWith('.json'));
+	assert.ok(json !== undefined);
+	assert.deepEqual((JSON.parse(json.content) as { body: { subject: { excludedFromScope?: string[] } } }).body.subject.excludedFromScope, ['README.md', 'docs/notes.md'], 'and in the json that is written');
+
+	for (const excludedFromScope of [undefined, []]) {
+		const none = makeDeps();
+		const res = await runCodeReview({ ...subject(), ...(excludedFromScope !== undefined ? { excludedFromScope } : {}) }, none.provider, runOpts().opts, none.deps);
+		assert.ok(res.ok);
+		assert.ok(!('excludedFromScope' in res.artifact.body.subject), `absent for ${JSON.stringify(excludedFromScope)}`);
+	}
+});

@@ -86,39 +86,61 @@ test("the review subject holds only the Story's own files and records attributio
 	} finally { cleanup(); }
 });
 
-test('a dirty tree still gives the Story\'s trailered commits, and the step-down order is unchanged', async () => {
+test("a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		interleaved(r);
-		write(r, { 'README.md': 'uncommitted edit\n' });
-		// The uncommitted README.md is no Story commit's file: it is left out (ISSUE-b97752e9).
-		const dirty = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base));
-		assert.ok(dirty.ok);
-		if (!dirty.ok) return;
-		assert.deepEqual([...dirty.subject.changedFiles].sort(), ['src/mine.ts', 'src/mine2.ts', 'src/shared.ts']);
-		assert.equal(dirty.subject.changeSetAttribution, 'story-trailer');
-		assert.deepEqual(dirty.subject.sharedWithExcluded, ['src/shared.ts']);
+		write(r, { 'src/mine.ts': 'in progress\n', 'README.md': 'uncommitted edit\n', 'src/theirs.ts': 'theirs, edited\n' });
+		git(r, 'add', 'src/theirs.ts');
+		const res = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base));
+		assert.ok(res.ok);
+		if (!res.ok) return;
+		assert.deepEqual([...res.subject.changedFiles].sort(), ['src/mine.ts', 'src/mine2.ts', 'src/shared.ts']);
+		assert.equal(res.subject.changeSetAttribution, 'story-trailer');
+		assert.deepEqual(res.subject.excludedFromScope, ['README.md', 'src/theirs.ts'], 'the in-progress Story file is not excluded; the others are');
 
-		// A clean tree where every commit carries another Story's trailer: a Story
-		// with no carrying commit gets none of them (ISSUE-b97752e9).
-		git(r, 'checkout', '-q', '--', 'README.md');
+		// A clean tree: nothing excluded, and the field is absent.
+		git(r, 'checkout', '-q', '--', 'README.md', 'src/mine.ts');
+		git(r, 'reset', '-q', 'HEAD', '--', 'src/theirs.ts');
+		git(r, 'checkout', '-q', '--', 'src/theirs.ts');
+		const clean = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base));
+		assert.ok(clean.ok);
+		if (!clean.ok) return;
+		assert.equal(clean.subject.excludedFromScope, undefined);
+
+		// A Story with no carrying commit, in a range of only other Stories' commits:
+		// none of them is its work (ISSUE-b97752e9).
 		const untrailed = await resolveCodeReviewSubject(r, 'ffffffffffffffff', 'S001', deps(base));
 		assert.ok(untrailed.ok);
 		if (!untrailed.ok) return;
 		assert.equal(untrailed.subject.changeSetAttribution, 'first-parent-range');
 		assert.deepEqual([...untrailed.subject.changedFiles], []);
+	} finally { cleanup(); }
+});
 
-		// Step down: the range attempt fails, then the ledger-only one, then the plain call.
-		const labels: string[] = [];
-		const stepping = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base, async (repoPath: string, opts?: ChangedFilesOptions) => {
-			labels.push(opts === undefined ? 'plain' : opts.base !== undefined ? 'range' : 'ledger');
-			if (opts !== undefined) throw new NoBuildChangesError('refused');
-			return changedFiles(repoPath);
+test('with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree', async () => {
+	const { repo: r, base, cleanup } = repo();
+	try {
+		interleaved(r);
+		write(r, { 'README.md': 'uncommitted edit\n' });
+		const seen: (ChangedFilesOptions | undefined)[] = [];
+		const spy: SubjectDeps['changedFiles'] = async (repoPath, opts) => { seen.push(opts); return changedFiles(repoPath, opts); };
+
+		const noBase = await resolveCodeReviewSubject(r, EPIC, 'S001', { ...deps(base, spy), resolveRangeBase: () => undefined });
+		assert.deepEqual(noBase, { ok: false, reason: 'no-build-record' });
+		assert.deepEqual(seen, [], 'the working tree is never read in the Story\'s place');
+
+		const failing = await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base, async (_repoPath, opts) => {
+			seen.push(opts);
+			throw new NoBuildChangesError('git failed');
 		}));
-		assert.deepEqual(labels, ['range', 'ledger', 'plain']);
-		assert.ok(stepping.ok);
-		if (!stepping.ok) return;
-		assert.equal(stepping.subject.changeSetAttribution, 'working-tree', 'a plainer attempt reads the working tree only');
+		assert.deepEqual(failing, { ok: false, reason: 'no-build-record' });
+		assert.equal(seen.length, 1, 'one anchored attempt, and no plainer one');
+		assert.equal(seen[0]?.base, base);
+
+		// A broken trailer read fails the anchored derivation (strict), so it declines too.
+		git(r, 'config', 'log.date', 'bogus');
+		assert.deepEqual(await resolveCodeReviewSubject(r, EPIC, 'S001', deps(base)), { ok: false, reason: 'no-build-record' });
 	} finally { cleanup(); }
 });
 

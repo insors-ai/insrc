@@ -301,6 +301,7 @@ function buildArtifact(
 			changedFiles: subject.changedFiles,
 			...(subject.changeSetAttribution !== undefined ? { changeSetAttribution: subject.changeSetAttribution } : {}),
 			...(subject.sharedWithExcluded !== undefined ? { sharedWithExcluded: subject.sharedWithExcluded } : {}),
+			...(subject.excludedFromScope !== undefined && subject.excludedFromScope.length > 0 ? { excludedFromScope: subject.excludedFromScope } : {}),
 		},
 		dimensions,
 		verdict,

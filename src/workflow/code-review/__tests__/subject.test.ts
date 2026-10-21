@@ -13,6 +13,7 @@ import { dirname, join } from 'node:path';
 import { resolveCodeReviewSubject, NoBuildChangesError, type SubjectDeps } from '../subject.js';
 import { ArtifactMissingError, ArtifactNotApprovedError } from '../../gates.js';
 import { changedFiles as realChangedFiles, LEDGER_EXCLUDE_GLOBS } from '../../runners/build/changed-files.js';
+import { stampBuildStart } from '../../runners/build/range-base.js';
 import { getLogger } from '../../../shared/logger.js';
 import { UnregisteredRepoError } from '../../../db/repos.js';
 import type { LldArtifact } from '../../artifacts/lld.js';
@@ -21,12 +22,14 @@ import type { PlanArtifact } from '../../artifacts/plan.js';
 const fakeLld  = { meta: { workflow: 'design.story' } } as unknown as LldArtifact;
 const fakePlan = { meta: { workflow: 'plan' } } as unknown as PlanArtifact;
 
-/** Base deps: approved contract + a known 2-file changed set. Tests override. */
+/** Base deps: approved contract, a resolvable range base and a known 2-file
+ *  changed set. Tests override. */
 function deps(over: Partial<SubjectDeps> = {}): SubjectDeps {
 	return {
 		requireApprovedLld:  () => fakeLld,
 		requireApprovedPlan: () => fakePlan,
 		changedFiles:        async () => ['src/a.ts', 'src/b.ts'],
+		resolveRangeBase:    () => 'abc',
 		...over,
 	};
 }
@@ -133,6 +136,7 @@ test('resolveCodeReviewSubject: read-only — only the injected read seams are c
 		requireApprovedPlan: () => { calls.push('plan'); return fakePlan; },
 		changedFiles:        async () => { calls.push('diff'); return []; },
 		readBuildRecord:     () => { calls.push('build'); return null; },
+		resolveRangeBase:    () => 'abc',
 	});
 	// exactly the read seams, no mutation surface exists in the resolver at all
 	assert.deepEqual(calls, ['lld', 'plan', 'diff', 'build']);
@@ -213,28 +217,26 @@ test('T40: a Story that edited .insrc/artifacts/templates/t.json (and other user
 	} finally { fx.cleanup(); }
 });
 
-test('T41: a base naming a commit that does not exist -> ok, the same set today\'s call returns, and exactly one warning', async () => {
+test('T41: a base naming a commit that does not exist -> no-build-record, never the working tree, and exactly one warning (ISSUE-b97752e9)', async () => {
 	const fx = mkStoryRepo(['src/a.ts']);
 	try {
-		const todays = [...await realChangedFiles(fx.repo)];
+		writeFileSync(join(fx.repo, 'unrelated.ts'), 'x\n');
+		fx.git('add', 'unrelated.ts');
 		let res: Awaited<ReturnType<typeof resolveCodeReviewSubject>> | undefined;
 		const warned = await warningsDuring(async () => { res = await resolveCodeReviewSubject(fx.repo, 'epic', 'S001', realDeps('1'.repeat(40))); });
-		assert.ok(res !== undefined && res.ok, 'the review must still be able to start');
-		if (res === undefined || !res.ok) return;
-		assert.deepEqual([...res.subject.changedFiles], todays, 'a clean tree with an unusable base reviews what it reviewed before');
-		assert.equal(warned.length, 1, 'one step down, one warning');
-		assert.match(JSON.stringify(warned[0]), /range base \+ ledger exclusion/);
+		assert.deepEqual(res, { ok: false, reason: 'no-build-record' });
+		assert.equal(warned.length, 1);
 	} finally { fx.cleanup(); }
 });
 
-test('T41: with NO resolvable base the first attempt is the ledger-exclusion one — no base is invented', async () => {
+test('T41: with NO resolvable base the review declines and the changed-file seam is never called — no base is invented', async () => {
 	const calls: unknown[] = [];
 	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
 		resolveRangeBase: () => undefined,
 		changedFiles: async (_r, opts) => { calls.push(opts); return ['src/a.ts']; },
 	}));
-	assert.equal(res.ok, true);
-	assert.deepEqual(calls, [{ excludeGlobs: LEDGER_EXCLUDE_GLOBS }]);
+	assert.deepEqual(res, { ok: false, reason: 'no-build-record' });
+	assert.deepEqual(calls, []);
 });
 
 test('the resolver is asked for THIS Story\'s base, and that base plus the ledger globs reach the seam', async () => {
@@ -251,42 +253,14 @@ test('the resolver is asked for THIS Story\'s base, and that base plus the ledge
 	assert.equal(typeof onAttribution, 'function');
 });
 
-test('T42: a seam that throws whenever excludeGlobs is passed -> the THIRD attempt is called with no options and its result is returned', async () => {
-	const calls: unknown[][] = [];
-	let res: Awaited<ReturnType<typeof resolveCodeReviewSubject>> | undefined;
-	const warned = await warningsDuring(async () => {
-		res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
-			resolveRangeBase: () => 'abc',
-			changedFiles: async (...a: unknown[]) => {
-				calls.push(a);
-				if ((a[1] as { excludeGlobs?: unknown } | undefined)?.excludeGlobs !== undefined) throw new NoBuildChangesError('this git rejects exclude pathspecs');
-				return ['plain/result.ts'];
-			},
-		}));
-	});
-	// The range-base attempt also carries the Story key and its attribution callback (ISSUE-b47dadc7).
-	const first = calls[0]?.[1] as { onAttribution?: unknown } | undefined;
-	assert.equal(typeof first?.onAttribution, 'function');
-	const { onAttribution: _cb, ...firstOpts } = first ?? {};
-	assert.deepEqual([calls[0]?.[0], firstOpts, ...calls.slice(1)], [
-		'/repo', { base: 'abc', excludeGlobs: LEDGER_EXCLUDE_GLOBS, storyKey: 'epic/s1' },
-		['/repo', { excludeGlobs: LEDGER_EXCLUDE_GLOBS }],
-		['/repo'],                                   // exactly the old call: one argument
-	]);
-	assert.ok(res !== undefined && res.ok);
-	if (res === undefined || !res.ok) return;
-	assert.deepEqual([...res.subject.changedFiles], ['plain/result.ts']);
-	assert.equal(warned.length, 2, 'two steps down, two warnings');
-});
-
-test('T43: a seam that ALWAYS throws -> no-build-record, after all three attempts', async () => {
+test('T43: a seam that throws on the anchored derivation -> no-build-record after ONE attempt; there is no plainer one', async () => {
 	let n = 0;
 	const res = await resolveCodeReviewSubject('/repo', 'epic', 's1', deps({
 		resolveRangeBase: () => 'abc',
 		changedFiles: async () => { n++; throw new NoBuildChangesError('not a git repo'); },
 	}));
 	assert.deepEqual(res, { ok: false, reason: 'no-build-record' });
-	assert.equal(n, 3);
+	assert.equal(n, 1);
 });
 
 test('T43: an error that is NOT a derivation failure propagates from the first attempt — it is not swallowed by the fallback', async () => {
@@ -309,6 +283,11 @@ test('T43: an error that is NOT a derivation failure propagates from the first a
 test('the default deps read the Story\'s BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built', async () => {
 	const fx = mkStoryRepo(['src/story.ts']);
 	try {
+		// The production base resolver needs the Story's build start: stamp it at the base.
+		fx.git('checkout', '-q', fx.base);
+		assert.equal(stampBuildStart(fx.repo, 'x', 'S009'), 'stamped');
+		fx.git('checkout', '-q', '-');
+
 		const artifacts = join(fx.repo, '.insrc', 'artifacts');
 		const build = { meta: { workflow: 'build', epicHash: 'x', storyId: 'S009', createdAt: '2026-10-17T00:00:00.000Z' }, body: { tasks: [{ id: 't1', passed: true }] } };
 		const tests = { meta: { workflow: 'tests', epicHash: 'x', storyId: 'S009', createdAt: '2026-10-17T00:00:00.000Z', updatedAt: '2026-10-17T00:00:00.000Z' },

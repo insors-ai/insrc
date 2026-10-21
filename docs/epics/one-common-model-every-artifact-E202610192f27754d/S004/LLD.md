@@ -694,6 +694,8 @@ FileSidecarStore appends every record to .insrc/history/log.jsonl or .insrc/hist
 
 - `q162d5894` — After a merge the union of both clones' log lines can be ahead of the head git kept (log-ahead-of-head), and ArtifactStore.write refuses only a hash-mismatch: should a write on a log-ahead-of-head artifact also need the conflict-resolved option, or should the next ordinary write move the head up to the log?
   - **resolved**: Require explicit conflict resolution — Recommended: a matching head hash alone does not establish that the merged log has been reconciled. _(2026-10-21T09:16:44.137Z)_
+- `q0e79065e` — The daemon's approval actor today is the gate itself (insrc:approval); the live tracker identity that k5 requires is s5's, so should s4 pass a person actor from the request when the client supplies one and fall back to the gate actor otherwise?
+  - **resolved**: Optional request actor with fallback — Recommended: person attribution in s4 while preserving existing approvals; live tracker identity stays with s5. _(2026-10-21T09:17:31.996Z)_
 
 ## Citations
 

@@ -155,6 +155,13 @@
         "choice": "Require explicit conflict resolution",
         "rationale": "Recommended: a matching head hash alone does not establish that the merged log has been reconciled.",
         "resolvedAt": "2026-10-21T09:16:44.137Z"
+      },
+      "q0e79065e": {
+        "question": "The daemon's approval actor today is the gate itself (insrc:approval); the live tracker identity that k5 requires is s5's, so should s4 pass a person actor from the request when the client supplies one and fall back to the gate actor otherwise?",
+        "status": "resolved",
+        "choice": "Optional request actor with fallback",
+        "rationale": "Recommended: person attribution in s4 while preserving existing approvals; live tracker identity stays with s5.",
+        "resolvedAt": "2026-10-21T09:17:31.996Z"
       }
     }
   },

@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * The daemon's feedback and identity methods (s5): `artifact.feedback.add`, `artifact.feedback.list`, `identity.show` and
- * `identity.declare`. Each goes through the repository's registry entry, so it shares the store's write queue, and answers
+ * The daemon's feedback and identity methods (s5): `artifact.feedback.add`, `artifact.feedback.list`,
+ * `artifact.feedback.append` (the legacy request, stored through the service), `identity.show` and `identity.declare`. Each goes through the repository's registry entry, so it shares the store's write queue, and answers
  * `{ error }` for a bad request rather than throwing.
  */
 
@@ -66,9 +66,9 @@ export async function handleFeedbackAdd(params: unknown, repoEnv: string | undef
 }
 
 /** Whether `file` is the artifact's own document (its JSON, its id or its kind's markdown mirror) and not a companion file. */
-function isOwnDocument(file: string, artifactId: string, artifactPath: string): boolean {
+function isOwnDocument(file: string, artifactId: string, artifactPath: string, repo: string): boolean {
 	const name = basename(file).replace(/\.(json|md)$/, '');
-	return resolve(file) === artifactPath || name === artifactId || name === ArtifactIds.parse(artifactId)?.kind;
+	return resolve(repo, file) === artifactPath || name === artifactId || name === ArtifactIds.parse(artifactId)?.kind;
 }
 
 /** The legacy kind, or failing that the decision it came with, as a Feedback kind. */
@@ -98,16 +98,17 @@ export async function handleFeedbackAppend(params: unknown, deps: FeedbackHandle
 		const found = (deps.lifecycleFor ?? lifecycleFor)(repo);
 
 		const raw = (params ?? {}) as { actor?: unknown };
-		const base = raw.actor !== undefined && raw.actor !== null ? approvalActorOf(raw.actor) : await found.identity.currentActor(repo);
-		const actor: Actor = { ...base, properties: { ...base.properties, name: author } };
+		// The author text names the current actor; a request that names an actor id is recorded as that actor.
+		const named = raw.actor !== undefined && raw.actor !== null ? approvalActorOf(raw.actor) : undefined;
+		const actor: Actor = named ?? await found.identity.currentActor(repo).then(a => ({ ...a, properties: { ...a.properties, name: author } }));
 
-		const anchor = feedbackAnchorOf(entry.anchor, entry.target, isOwnDocument(entry.target.file, artifactId, abs));
+		const anchor = feedbackAnchorOf(entry.anchor, entry.target, isOwnDocument(entry.target.file, artifactId, abs, repo));
 		const stored = await found.feedback.add(artifactId, {
 			text: entry.comment.trim(), kind: kindOf(entry), anchor, batchId: entry.batchId,
 		}, actor);
 		return { artifactPath: abs, entryId: stored.id, total: (await found.feedback.entries(artifactId)).length };
 	} catch (err) {
-		return { error: `${method}: ${err instanceof ArtifactFeedbackError ? err.message : (err as Error).message}` };
+		return { error: `${method}: ${(err as Error).message}` };
 	}
 }
 

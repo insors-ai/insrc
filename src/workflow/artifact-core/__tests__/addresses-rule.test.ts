@@ -15,7 +15,6 @@ const reviewer: Actor = { id: 'github:carol', kind: 'person', properties: {} };
 // before the kit's clock starts (2026-10-20T12:00:00Z), so every revision is later than the feedback it addresses
 const T = '2026-10-20T11:00:00.000Z';
 const fb = (id: string, over: Partial<Feedback> = {}): Feedback => ({ id, text: `feedback ${id}`, actor: reviewer, timestamp: T, feedback: [], kind: 'revision-request', ...over });
-/** A moment just after the latest log entry, so the feedback is made after the revision before it and before the next one. */
 
 const body = (text: string) => ({ body: { text }, citations: [] });
 

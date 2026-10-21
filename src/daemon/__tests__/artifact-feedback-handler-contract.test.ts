@@ -49,6 +49,16 @@ test("index.ts registers an 'artifact.feedback.append' handler that delegates to
 	assert.match(handlersSrc, /feedback\.add\(/, 'the entry is stored through FeedbackService.add');
 });
 
+test("index.ts registers the four s5 methods, each falling back to the daemon's INSRC_REPO or taking no repo", () => {
+	for (const method of ['artifact.feedback.add', 'artifact.feedback.list', 'identity.show', 'identity.declare']) {
+		assert.match(indexSrc, new RegExp(`'${method.replace('.', '\\.')}':\\s*async`), `${method} is registered`);
+	}
+	assert.match(indexSrc, /handleFeedbackAdd\(params, process\.env\['INSRC_REPO'\]\)/);
+	assert.match(indexSrc, /handleFeedbackList\(params, process\.env\['INSRC_REPO'\]\)/);
+	assert.match(indexSrc, /handleIdentityShow\(\)/);
+	assert.match(indexSrc, /handleIdentityDeclare\(params\)/);
+});
+
 test("the append handler returns { error } (not throw) on a bad request / ArtifactFeedbackError", () => {
 	const start = handlersSrc.indexOf('export async function handleFeedbackAppend');
 	const body = handlersSrc.slice(start, handlersSrc.indexOf('\n}\n', start));

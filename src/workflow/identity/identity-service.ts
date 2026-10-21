@@ -121,8 +121,12 @@ export class IdentityService {
 					if (who?.ok === true && who.value.trim() !== '') {
 						return { source: 'github', status: 'available', identities: [{ source: 'github', authority: 'https://github.com', subject: who.value.trim() }] };
 					}
+					log.info({ reason: loaded.ok ? (who?.ok === false ? who.reason : 'blank login') : loaded.reason }, 'the tracker did not answer whoAmI; falling back to git, then the OS user');
 					return { source: 'github', status: 'unavailable', identities: [] };
-				} catch { return { source: 'github', status: 'unavailable', identities: [] }; }
+				} catch (err) {
+					log.info({ reason: (err as Error).message }, 'the tracker did not answer whoAmI; falling back to git, then the OS user');
+					return { source: 'github', status: 'unavailable', identities: [] };
+				}
 			};
 			const deps: IdentityDeps = { ...base, providers: [{ source: 'github', lookup: github }] };
 			const { learner } = await resolveLearner(repoPath, deps);

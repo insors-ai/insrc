@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -67,3 +67,25 @@ Run at 2026-10-21T15:16:42.801Z on commit `e61cc5a3`. Tests check: **passed**. 5
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/store-guard.test.ts` | 0 | 5 | 0.9 s |  |
+
+## t3
+
+Run at 2026-10-21T15:18:51.724Z on commit `ce92f270`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: a worker's hub request is answered with its own requestId**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a worker's hub request is answered with its own requestId | `src/daemon/threads/__tests__/channel.test.ts` |
+
+**integration: closing the port rejects every pending hub request with HubUnavailableError**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | closing the port rejects every pending hub request with HubUnavailableError | `src/daemon/threads/__tests__/channel.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/channel.test.ts` | 0 | 2 | 0.6 s |  |

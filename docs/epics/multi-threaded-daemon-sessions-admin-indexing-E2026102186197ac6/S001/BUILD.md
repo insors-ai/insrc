@@ -2,26 +2,30 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-10-21T15:03:00.014Z  ·  **Updated:** 2026-10-21T15:16:42.801Z
+**Standalone:** no  ·  **Created:** 2026-10-21T15:03:00.014Z  ·  **Updated:** 2026-10-21T15:18:51.724Z
 
-**Commit:** e61cc5a3
+**Commit:** ce92f270
 
 ## Summary
 
-Added src/db/store-guard.ts: a process-wide SharedArrayBuffer block (permit counter and health word per store, per-acquisition holder records with thread id and time), and StoreGuard with withStore (asynchronous Atomics.waitAsync wait with time limit and abort signal, release in finally, a per-thread arrival-order queue, nesting refused per async call chain via AsyncLocalStorage), policy (graph and lance direct, duckdb guarded with one permit), holders, reclaim (waits for a per-store quiescence probe, marks the store unhealthy past limitMs) and quiescence, plus installStoreGuard/getStoreGuard. Nothing calls withStore yet (t5/t6 wire the stores). Tests in src/db/__tests__/store-guard.test.ts with a real worker in helpers/store-guard-worker.ts; four falsifying mutations (no release in finally, no nesting check, timeout naming no holder, reclaim ignoring quiescence) each fail a test. Left out: cross-thread fairness beyond arrival order on each thread.
+Added src/daemon/threads/channel.ts: the sc3 request-routing envelopes (RequestEnvelope, ReplyEnvelope, FrameEnvelope, CancelEnvelope, MethodClass, SessionId), the hub protocol (HubRequest answered by one HubReply, one-way HubMessage), serveHub for the main-thread side (unknown ops and throwing services answered with an error, never left unanswered), and HubClient for workers (request/send, replies matched by requestId, every pending request rejected with HubUnavailableError when the port closes; a payload that cannot be cloned rejects the request). Tests in src/daemon/threads/__tests__/channel.test.ts run a real worker over a MessageChannel; two falsifying mutations (replies matched in arrival order; no close handling) each fail their target test. The registry and status board are t4.
 
 ## Tasks validated
 
 - ✓ `t1`
 - ✓ `t2`
+- ✓ `t3`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/db/graph/__tests__/helpers/lmdb-open-close.mjs` — **insrc-build** (2026-10-21T15:16:42.801Z)
-- `src/db/graph/__tests__/helpers/lmdb-worker.mjs` — **insrc-build** (2026-10-21T15:16:42.801Z)
-- `src/db/graph/__tests__/worker-thread-lock.test.ts` — **insrc-build** (2026-10-21T15:16:42.801Z)
-- `src/db/__tests__/helpers/store-guard-worker.ts` — **insrc-build** (2026-10-21T15:16:42.801Z)
-- `src/db/__tests__/store-guard.test.ts` — **insrc-build** (2026-10-21T15:16:42.801Z)
-- `src/db/store-guard.ts` — **insrc-build** (2026-10-21T15:16:42.801Z)
+- `src/db/graph/__tests__/helpers/lmdb-open-close.mjs` — **insrc-build** (2026-10-21T15:18:51.724Z)
+- `src/db/graph/__tests__/helpers/lmdb-worker.mjs` — **insrc-build** (2026-10-21T15:18:51.724Z)
+- `src/db/graph/__tests__/worker-thread-lock.test.ts` — **insrc-build** (2026-10-21T15:18:51.724Z)
+- `src/db/__tests__/helpers/store-guard-worker.ts` — **insrc-build** (2026-10-21T15:18:51.724Z)
+- `src/db/__tests__/store-guard.test.ts` — **insrc-build** (2026-10-21T15:18:51.724Z)
+- `src/db/store-guard.ts` — **insrc-build** (2026-10-21T15:18:51.724Z)
+- `src/daemon/threads/__tests__/channel.test.ts` — **insrc-build** (2026-10-21T15:18:51.724Z)
+- `src/daemon/threads/__tests__/helpers/hub-worker.ts` — **insrc-build** (2026-10-21T15:18:51.724Z)
+- `src/daemon/threads/channel.ts` — **insrc-build** (2026-10-21T15:18:51.724Z)

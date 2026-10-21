@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s1",
     "createdAt": "2026-10-21T15:03:00.014Z",
-    "updatedAt": "2026-10-21T15:16:42.801Z",
+    "updatedAt": "2026-10-21T15:18:51.724Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -164,6 +164,59 @@
               },
               {
                 "title": "a worker terminated while holding a permit has it reclaimed and another worker then acquires it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ce92f270",
+        "ranAt": "2026-10-21T15:18:51.724Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "a worker's hub request is answered with its own requestId",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/channel.test.ts",
+                "title": "a worker's hub request is answered with its own requestId",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "closing the port rejects every pending hub request with HubUnavailableError",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/channel.test.ts",
+                "title": "closing the port rejects every pending hub request with HubUnavailableError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/channel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 580,
+            "titles": [
+              {
+                "title": "a worker's hub request is answered with its own requestId",
+                "result": "pass"
+              },
+              {
+                "title": "closing the port rejects every pending hub request with HubUnavailableError",
                 "result": "pass"
               }
             ],

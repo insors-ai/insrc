@@ -37,9 +37,9 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The design addresses the upstream defect across review subjects, diff grounding, and BUILD records.",
-          "evidence": "The approved ISSUE requires trailer-scoped commits, inclusion of uncommitted edits only to attributable files, and reporting unrelated edits as excluded. These correspond to contracts 2.1\u20132.5. Reading the implementation confirms that these consumers currently derive their scope through the affected seams. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Retain this scope while correcting the implementation gaps below.",
+          "premise": "The design covers the upstream defect across review subjects, diff grounding, and BUILD records.",
+          "evidence": "The approved ISSUE requires trailer-scoped commits, uncommitted edits only to attributable files, and excluded-file reporting. The implementation confirms that subject resolution and BUILD collection share changedFiles, while degraded grounding has its own working-tree-first derivation. Contracts 2.1\u20132.6 address these consumers. [files: docs/standalone/scope-story-s-code-review-what-E20261021b97752e9/ISSUE.md, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Retain the proposed scope.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -49,9 +49,9 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Current change derivation prioritizes dirty working-tree files and review paths fall back to broader derivations.",
-          "evidence": "changedFiles returns immediately when `kept.length > 0`, reporting 'working-tree'. subject.ts explicitly attempts 'ledger exclusion only' and 'plain working-tree derivation' after the anchored attempt. Grounding reads workingTreeDiff first and uses lastCommitDiff without a base. [files: src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Remove these fallback paths as proposed.",
+          "premise": "Current derivation prioritizes dirty working-tree files, and review paths fall back to broader derivations.",
+          "evidence": "changedFiles returns at `if (kept.length > 0)` with attribution 'working-tree'. Subject resolution subsequently attempts 'ledger exclusion only' and 'plain working-tree derivation'. The grounding sequence reads workingTreeDiff first and calls lastCommitDiff without a base. [files: src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Remove these fallbacks as specified.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -61,9 +61,9 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Existing attribution structures and synchronous Story-unit derivation can support the proposed reuse.",
-          "evidence": "storyChangeSet is synchronous and returns units with ref/from/to/paths, attribution, and sharedWithExcluded. changedFiles already diffs trailer-selected units separately. strict and excludedUncommitted are absent today, so they are genuine additions. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts]",
-          "action": "Reuse these structures and explicitly specify changes to the legacy diff consumer.",
+          "premise": "Synchronous Story-unit derivation and per-unit diff grounding already exist; strict scanning and perUnit are additions.",
+          "evidence": "storyChangeSet synchronously uses execFileSync and returns units with ref/from/to/paths plus attribution metadata. storyRangeDiff already reads each unit for trailer-attributed paths. Its current options and result types have neither strict nor perUnit. [files: src/workflow/runners/build/story-commits.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Reuse these seams, adding the specified strict and perUnit behavior.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -73,9 +73,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Both production diff-only callers already pass the Story key and resolved range base.",
-          "evidence": "The RPC degraded branch and beginDiffOnlyReview both pass resolveStoryRangeBase(...), LEDGER_EXCLUDE_GLOBS, and `${epicHash}/${storyId}` to the assembler. Both explicitly copy attribution fields into the review subject, matching the proposed propagation sites. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Add excludedFromScope to both copies and to DiffGroundingResult.",
+          "premise": "Both production diff-only callers already supply the Story key, range base, and ledger exclusions.",
+          "evidence": "The degraded RPC branch and beginDiffOnlyReview both call the assembler with resolveStoryRangeBase(...), LEDGER_EXCLUDE_GLOBS, and the epicHash/storyId key. Both explicitly copy attribution fields into the replacement subject. [files: src/daemon/code-review-rpc.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Propagate excludedFromScope through both copies and add it to DiffGroundingResult.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -85,21 +85,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "HIGH",
-          "premise": "Filtering legacy units while preserving the current first-parent diff algorithm is sufficient to exclude another Story's changes.",
-          "evidence": "storyRangeDiff uses `set.attribution === 'story-trailer' ? set.paths : set.sharedPaths`, then reads `{ from: base, paths: plain }` for remaining files. sharedWithExcluded is not considered. After the proposed legacy filtering, an untrailered commit and an excluded other-Story commit editing the same file still produce a net diff containing both Stories' hunks. changedFiles likewise uses a net range filtered by own paths, so another Story reverting the legacy change can remove the file entirely. [files: src/workflow/code-review/grounding.ts, src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/story-commits.ts]",
-          "action": "Explicitly update storyRangeDiff and changedFiles for filtered legacy ranges: derive retained changes from retained units, including shared-with-excluded and reverted files. Add same-file interleaving and reversion tests.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "change-sites.3",
-          "ref": "change-sites",
-          "item": "change-sites",
-          "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Replacing trivialCheckPlan's listing with Story-unit paths preserves runnable test selection.",
-          "evidence": "trivialCheckPlan currently uses `--diff-filter=d`, explicitly to omit deleted tests. storyChangeSet collects diff-tree paths without that filter and unions paths across units, including deleted tests and tests added then removed. Taking test paths directly from that set would ask the gate to run nonexistent files. The existing test 'a trivial build that deletes a test file does not ask to run it' confirms this required behavior. [files: src/daemon/steps/build-step/validation-checks.ts, src/workflow/runners/build/story-commits.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts]",
-          "action": "Specify filtering attributable test paths against files that remain runnable in the current checkout, and extend the deletion regression to the storyKey route.",
+          "premise": "The existing working-tree diff representation can supply all staged and unstaged hunks when assembling the proposed combined grounding.",
+          "evidence": "realDiffGroundingDeps.workingTreeDiff concatenates `[unstaged.body, staged.body]` and supplies no hunksByFile. splitDiffByFile then uses `map.set(path, section.trimEnd())`, replacing earlier sections for the same path. A Story file with both staged and unstaged edits therefore loses its unstaged section when consumed through the existing splitter. The design promises both sets of hunks but does not specify repairing this producer/splitter. [files: src/workflow/code-review/grounding.ts]",
+          "action": "Specify lossless per-file accumulation across committed, staged, and unstaged sections, including the workingTreeDiff producer. Add a regression with distinct staged and unstaged edits to the same attributable file.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -109,9 +97,9 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Optional review-subject metadata can be added without rewriting existing review records.",
-          "evidence": "CodeReviewBody.subject currently has optional attribution metadata; ChangeSetAttribution includes 'working-tree'. The runner's artifact validation checks dimensions, counts, verdict, and grounding consistency without requiring new subject metadata. Keeping excludedFromScope optional and retaining the old attribution value preserves these existing shapes. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
-          "action": "Keep the persisted field optional and test an older record without it.",
+          "premise": "Writing an explicit empty changeLog replaces contaminated prior BUILD provenance, and the renderer omits its Changes section.",
+          "evidence": "Both current writers omit an empty collection. mergeWithPrior merges body using `...prior.body, ...rec.body`, so the proposed explicit `changeLog: []` replaces the prior value. changeLogBodyLines returns [] when the log is undefined or empty. [files: src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/standalone-record.ts, src/workflow/artifacts/format/bindings.ts]",
+          "action": "Apply explicit empty writes in both writers and retain the rewrite regression.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -120,24 +108,12 @@
           "ref": "data-compatibility",
           "item": "data-compatibility",
           "kind": "semantic",
-          "severity": "HIGH",
-          "premise": "Returning an empty collected changeLog ensures an existing BUILD record contains no changeLog when its base is unavailable.",
-          "evidence": "Both writers use `...(changeLog.length > 0 ? { changeLog } : {})`. persistBuildRecord calls mergeWithPrior, whose body is `{ ...prior.body, ...rec.body, ... }`. Consequently an empty collection omits the new field and preserves a previous changeLog, including unrelated files recorded by the old behavior. The promised 'record carries no changeLog' does not follow from the proposed collector change. [files: src/workflow/runners/build/completion-record.ts, src/daemon/steps/build-step/phases/validate.ts, src/workflow/runners/build/standalone-record.ts]",
-          "action": "Define explicit clearing semantics for an authoritatively empty Story scope, update both writers/persistence accordingly, and test rewriting a previously contaminated BUILD record.",
+          "severity": "LOW",
+          "premise": "Optional excludedFromScope metadata can preserve existing review-record shapes.",
+          "evidence": "CodeReviewBody.subject already has optional attribution fields, and ChangeSetAttribution includes 'working-tree'. The runner's artifact validator checks dimensions, counts, verdict, and grounding consistency without requiring attribution metadata. Retaining the old enum value and making the new persisted field optional fits these existing contracts. [files: src/workflow/code-review/types.ts, src/workflow/code-review/runner.ts]",
+          "action": "Keep the persisted field optional and verify reading a record without it.",
           "fixability": "manual",
-          "outcome": "does-not-hold"
-        },
-        {
-          "claimId": "data-compatibility.3",
-          "ref": "data-compatibility",
-          "item": "data-compatibility",
-          "kind": "semantic",
-          "severity": "MED",
-          "premise": "All clean-tree committed-range results remain byte-for-byte unchanged.",
-          "evidence": "The existing trailer test creates an untrailered src/a.ts commit and another Story's src/b.ts commit, then asserts `none.paths` equals `['src/a.ts', 'src/b.ts']` when the requested Story has no carrying commit. Contract 2.2 intentionally removes src/b.ts. The clean-tree compatibility invariant and its proposed blanket regression therefore contradict the required new behavior. [files: src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/workflow/runners/build/story-commits.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
-          "action": "Limit the preservation guarantee to unaffected ranges; explicitly document and test changes to mixed and other-Story-only legacy ranges.",
-          "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "boundaries.1",
@@ -146,8 +122,8 @@
           "kind": "semantic",
           "severity": "LOW",
           "premise": "This is a standalone bugfix without a parent HLD's shared contracts.",
-          "evidence": "The approved ISSUE metadata declares standalone:true and magnitude:'sized'. The LLD metadata declares standalone:true, sizeClass:'bugfix', and no HLD amendments. Its proposed changes concern internal scope derivation and existing consumers. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, .insrc/artifacts/LLD-06f196a7ff528143-S001.json]",
-          "action": "Keep the work within this bugfix's attribution and consumer contracts.",
+          "evidence": "The approved ISSUE metadata declares standalone:true and magnitude:'sized'. The LLD metadata declares standalone:true, sizeClass:'bugfix', and an empty hldAmendmentsApplied array. The proposed changes concern existing internal attribution and review/build consumers. [files: .insrc/artifacts/ISSUE-b97752e9c7cee6fe.json, .insrc/artifacts/LLD-06f196a7ff528143-S001.json]",
+          "action": "Keep changes within these attribution and consumer contracts.",
           "fixability": "manual",
           "outcome": "holds"
         },
@@ -157,11 +133,23 @@
           "item": "error-paths",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The proposed strict trailer scan closes an existing silent widening path, with compatible error handling seams.",
-          "evidence": "scanTrailers currently catches git failure, logs that it is using the first-parent range, and returns undefined. The git helper already throws NoBuildChangesError. The subject recognizes that error, collectBuildChangeLog catches derivation failures, and the real rangeDiff wraps Story derivation failures in DiffUnavailableError. These support the proposed strict propagation and decline behavior. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
-          "action": "Implement strict propagation at every anchored consumer and retain lenient newestStoryCommit behavior as specified.",
+          "premise": "Strict trailer scanning can close the current silent widening path using existing error seams.",
+          "evidence": "scanTrailers catches git failure and returns undefined, causing first-parent fallback. Its git helper already throws NoBuildChangesError; the subject recognizes that error, collectBuildChangeLog catches failures, and rangeDiff converts derivation failures to DiffUnavailableError. These support the proposed strict propagation. [files: src/workflow/runners/build/story-commits.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Pass strict at every anchored consumer while retaining lenient newestStoryCommit behavior.",
           "fixability": "manual",
           "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "A git failure during anchored diff derivation is always detected and causes review refusal.",
+          "evidence": "gitDiffTool executes separate body and numstat commands but uses `const files = stat.code === 0 ? parseNumstat(stat.stdout) : []` and subsequently returns `success: true`. A successful body read with a failed numstat read therefore becomes an apparently successful empty file list. collectDiff and runDiff only reject unsuccessful results or missing data, so the design's strict trailer handling does not close this failure path. [files: src/daemon/tools/builtins/git/diff.ts, src/workflow/runners/build/changed-files.ts, src/workflow/code-review/grounding.ts]",
+          "action": "Make numstat execution failure fail the diff tool, or expose and reject an explicit incomplete result in both consumers. Add a regression where the body command succeeds and the stat command fails.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "tests.1",
@@ -169,21 +157,21 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The planned tests cover the principal upstream scoping requirements through existing test seams.",
-          "evidence": "The real-git attribution suites exercise subjects, per-file hunks, and persisted attribution; diff-attribution.test.ts also exercises both production callers. validation-checks.test.ts covers project selection and trivial plans. The proposed mappings add dirty-tree exclusion, own-file edits, missing-base refusal, BUILD propagation, strict scanning, and installed-daemon reproduction. These are planned tests, not verified passing implementations. [files: src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
-          "action": "Retain these mappings and add regressions for filtered legacy shared-file hunks, deleted tests, and clearing a prior BUILD changeLog identified above.",
+          "premise": "The design maps its five acceptance criteria to feasible tests using existing repository test seams.",
+          "evidence": "The attribution suites use real temporary git repositories and assert selected files, hunk content, and subject attribution; diff-attribution.test.ts exercises both production callers. validation-checks.test.ts already tests deletion filtering. The proposed mapping covers scope exclusion, own-file edits, refusal, consumer propagation, and installed-daemon reproduction. This verifies the test plan, not execution of the proposed tests. [files: src/workflow/runners/build/__tests__/story-commits-trailer.test.ts, src/workflow/code-review/__tests__/subject-attribution.test.ts, src/workflow/code-review/__tests__/diff-attribution.test.ts, src/daemon/steps/build-step/__tests__/validation-checks.test.ts, docs/standalone/scope-story-s-code-review-what-E2026102106f196a7/S001/LLD.md]",
+          "action": "Retain these mappings and add the same-file staged/unstaged and numstat-failure regressions identified above.",
           "fixability": "manual",
           "outcome": "holds"
         }
       ],
       "counts": {
-        "high": 3,
-        "med": 1,
-        "low": 8,
+        "high": 2,
+        "med": 0,
+        "low": 9,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T05:07:54.471Z",
+      "reviewedAt": "2026-10-21T05:10:55.818Z",
       "model": "cli-codex:gpt-6-astra",
       "reviewedBy": "daemon"
     }
@@ -480,6 +468,85 @@
             "A trivial build never runs another Story's tests as its own.",
             "A test file the Story deleted is never in the plan."
           ]
+        },
+        {
+          "name": "splitDiffByFile",
+          "signature": "splitDiffByFile(body: string): Map<string, string>",
+          "parameters": [
+            {
+              "name": "body",
+              "type": "string",
+              "purpose": "A unified-diff body, possibly the concatenation of several git diff outputs (unstaged, staged, per-unit).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Map<string, string>",
+            "meaning": "Per new (b/) path, every section for that path in body order, joined with a newline; a later section is appended, never replacing an earlier one (today map.set keeps only the last)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A file with both staged and unstaged edits keeps both sets of hunks in the diff-only grounding."
+          ]
+        },
+        {
+          "name": "realDiffGroundingDeps().workingTreeDiff",
+          "signature": "workingTreeDiff(repoPath: string, excludeGlobs?: readonly string[]): Promise<DiffResult>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository.",
+              "optional": false
+            },
+            {
+              "name": "excludeGlobs",
+              "type": "readonly string[]",
+              "purpose": "Ledger exclusions, as today.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DiffResult>",
+            "meaning": "The union of the unstaged and staged diffs: per path, the file stats are summed (insertions and deletions of both), not overwritten by the staged entry; the body keeps both sections, which the accumulating splitDiffByFile then keeps per file. The anchored grounding keeps only the paths in the Story's set."
+          },
+          "errors": [
+            {
+              "type": "DiffUnavailableError",
+              "condition": "Either git diff read fails (runDiff rejects), as today."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "No staged or unstaged hunk of a Story file is lost or double-counted when the two are combined with the Story's committed hunks."
+          ]
+        },
+        {
+          "name": "gitDiffTool.execute",
+          "signature": "gitDiffTool.execute(input: GitDiffInput, deps: ToolDeps): Promise<ToolResult>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "GitDiffInput",
+              "purpose": "As today (cwd, from/to, staged, paths, exclusions).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ToolResult>",
+            "meaning": "When the numstat command exits non-zero (the body command succeeded), the result is success: false with error naming the numstat failure, instead of success: true with an empty file list. Its consumers (changed-files.ts collectDiff and grounding.ts runDiff) already reject an unsuccessful result, so a failed stat read becomes NoBuildChangesError / DiffUnavailableError and the review declines."
+          },
+          "errors": [
+            {
+              "type": "{ success: false, error }",
+              "condition": "git cannot be spawned, the diff body command fails (as today), or the numstat command fails (new)."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "An apparently empty file list from git_diff always means git reported no changed file, never a failed read."
+          ]
         }
       ]
     },
@@ -559,6 +626,13 @@
           "response": "changedFiles refuses (NoBuildChangesError) and collectBuildChangeLog swallows it to []: the record carries no changeLog rather than the working tree's files.",
           "userImpact": "The BUILD record says nothing about files rather than claiming unrelated ones.",
           "recoverable": true
+        },
+        {
+          "scenario": "The git_diff builtin's diff body command succeeds but its numstat command fails.",
+          "detection": "stat.code !== 0 in src/daemon/tools/builtins/git/diff.ts.",
+          "response": "The tool returns success: false; collectDiff throws NoBuildChangesError and runDiff rejects, so the review declines with 'no-build-record' (DiffUnavailableError on the diff-only path) and a BUILD changeLog is empty.",
+          "userImpact": "A partial git failure can no longer pass as 'the Story changed nothing'.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -601,6 +675,10 @@
         {
           "input": "A Story's BUILD record from before this fix carries a changeLog with unrelated files, and it is written again.",
           "expected": "The new write carries the Story-scoped changeLog (possibly empty), which replaces the old one in the merged record."
+        },
+        {
+          "input": "A file in the Story's set has committed hunks, staged hunks and different unstaged hunks.",
+          "expected": "The diff-only grounding carries all three sets for that file; its stats are the sums."
         }
       ],
       "invariantsToPreserve": [
@@ -643,11 +721,14 @@
             "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests'",
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change'",
-            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, a trivial build that deletes a test file does not ask to run it'"
+            "src/daemon/steps/build-step/__tests__/validation-checks.test.ts: 'with a storyKey, a trivial build that deletes a test file does not ask to run it'",
+            "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure'",
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set'"
           ],
           "fixturesNeeded": [
             "a git repository with a base commit, two commits carrying the Story's Insrc-Story trailer, one carrying another Story's, and unstaged, staged and untracked-then-added changes inside and outside the Story's files",
-            "a range where the only commits carry other Stories' trailers; a repository whose git log fails (for example, a corrupted object in the range) for the strict scan; a nested project with its own tsconfig.json holding an unrelated untracked file"
+            "a range where the only commits carry other Stories' trailers; a repository whose git log fails (for example, a corrupted object in the range) for the strict scan; a nested project with its own tsconfig.json holding an unrelated untracked file",
+            "a git_diff run whose numstat command is made to fail while the body command succeeds (an injected exec seam)"
           ]
         },
         {
@@ -660,7 +741,8 @@
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change'",
             "src/workflow/code-review/__tests__/runner.test.ts: 'the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were'",
             "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'storyRangeDiff on a filtered legacy range grounds only the kept units' hunks of a file another Story also edited'",
-            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included'"
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included'",
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding'"
           ],
           "fixturesNeeded": [
             "the same repository fixture, with approved LLD and PLAN artifacts for the Story"
@@ -694,7 +776,8 @@
           "provingTests": [
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'an uncommitted edit to a file the Story's commits changed is part of the Story's set'",
             "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a clean tree gives exactly the committed-range set, trailer units and first-parent ranges alike'",
-            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change'"
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a filtered legacy range reads each kept unit's own diff: a file another Story also edited, or later reverted, carries only this Story's change'",
+            "src/workflow/code-review/__tests__/diff-attribution.test.ts: 'a Story file with distinct staged and unstaged edits keeps both sets of hunks, and its stats are their sum, in the diff-only grounding'"
           ]
         },
         {
@@ -702,7 +785,9 @@
           "provingTests": [
             "src/workflow/code-review/__tests__/subject-attribution.test.ts: 'with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree'",
             "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts: 'with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range'",
-            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree'"
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a storyKey without a base is refused, and collectBuildChangeLog turns it into an empty changeLog, never the working tree'",
+            "src/daemon/tools/builtins/git/__tests__/diff.test.ts: 'when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure'",
+            "src/workflow/runners/build/__tests__/changed-files.test.ts: 'a git_diff result that fails its stat read makes the anchored derivation refuse, never return an empty set'"
           ]
         },
         {
@@ -741,7 +826,7 @@
         },
         {
           "order": 3,
-          "action": "Apply the same rule in the diff-only grounding (Story units plus own-file working-tree hunks; no working-tree-first or last-commit step) and in both diff-only callers. storyRangeDiff selects per-unit reads by set.perUnit.",
+          "action": "Apply the same rule in the diff-only grounding (Story units plus own-file working-tree hunks; no working-tree-first or last-commit step) and in both diff-only callers. storyRangeDiff selects per-unit reads by set.perUnit. splitDiffByFile accumulates every section per file and workingTreeDiff sums staged and unstaged stats.",
           "rollbackable": true
         },
         {
@@ -756,11 +841,16 @@
         },
         {
           "order": 6,
+          "action": "Make the git_diff builtin fail (success: false) when its numstat command fails.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
           "action": "Update the tests (including validation-checks.test.ts's uncommitted/untracked expectations, now only without a storyKey) that asserted working-tree-first scoping; rebuild and update the installed daemon; re-run the observed case (a review with unrelated uncommitted files) on it.",
           "rollbackable": true
         }
       ],
-      "backwardCompat": "No IPC payload or public signature changes: changedFiles, resolveCodeReviewSubject, assembleDiffCodeReviewGrounding and collectBuildChangeLog keep their signatures (one optional ctx field, storyKey, is added to collectBuildChangeLog). New record fields (excludedFromScope, excludedUncommitted) are optional and absent when nothing is excluded, so existing records validate. 'working-tree' stays in the ChangeSetAttribution type so older records still parse. Behaviour change by design: a review that used to judge a dirty tree now judges the Story's commits and lists the rest; a review with no resolvable base now declines. Deliberate behaviour change for legacy ranges containing other Stories' trailered commits; the affected trailer-test expectation is updated.",
+      "backwardCompat": "No IPC payload or public signature changes: changedFiles, resolveCodeReviewSubject, assembleDiffCodeReviewGrounding and collectBuildChangeLog keep their signatures (one optional ctx field, storyKey, is added to collectBuildChangeLog). New record fields (excludedFromScope, excludedUncommitted) are optional and absent when nothing is excluded, so existing records validate. 'working-tree' stays in the ChangeSetAttribution type so older records still parse. Behaviour change by design: a review that used to judge a dirty tree now judges the Story's commits and lists the rest; a review with no resolvable base now declines. Deliberate behaviour change for legacy ranges containing other Stories' trailered commits; the affected trailer-test expectation is updated. git_diff now reports a failed numstat read as a failure; every consumer already handles success: false.",
       "zeroDowntime": true,
       "dataRewriteRequired": false
     },

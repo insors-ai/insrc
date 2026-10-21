@@ -42,8 +42,8 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "ac17, ac18 and ac19 are each designed, and narrowing ac18 to GitHub links only (no GitLab link, no Jira attachment) is an upstream ruling rather than a gap.",
-          "evidence": "DEF.md:205-207 states ac17-ac19 with GitLab and Jira wording for ac18. docs/plans/core-data-model.md:221 owner ruling 1: 'Tracker scope: GitHub only... (This narrows ac18 and the GitLab / Jira wording of the Define.)'. The LLD designs the binding (ac17, sections 2.3, 2.4 and 2.9), commit-pinned links with a new link per revision (ac18, section 2.7) and the pending-link and post retry without repeats (ac19, sections 2.6 and 2.8). [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, docs/plans/core-data-model.md]",
+          "premise": "ac18 can be narrowed to GitHub only (link at a commit), with no GitLab link and no Jira upload built",
+          "evidence": "DEF.md ac18 names GitHub, GitLab and Jira, but docs/plans/core-data-model.md:221 records the owner ruling 'Tracker scope: GitHub only ... (This narrows ac18 and the GitLab / Jira wording of the Define.)'. The LLD builds listComments/attach for the GitHub adapter only and answers 'unsupported' elsewhere. [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md, docs/plans/core-data-model.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -54,8 +54,8 @@
           "item": "coverage-of-intent",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Binding requirement 4 for s6 (once-only outbound posting: a stable marker in the outbound comment plus reconciliation through listComments before an uncertain post is retried) is designed.",
-          "evidence": "core-data-model.md:232 says 's6 (port) and s8 (sync): once-only outbound posting... a stable marker in the outbound comment, and reconciliation through listComments before an uncertain post is retried'. LLD section 2.8 and section 3.5 add the marker '<!-- insrc:post:<artifactId>:<kind> -->' and reconcile through one listComments read. The receipt 'keyed by feedback id' belongs to s8's feedback posting, not to s6's approve-time posts. [files: docs/plans/core-data-model.md]",
+          "premise": "HLD binding requirement 4 (once-only outbound posting via a stable marker and listComments reconciliation before an uncertain retry) is designed for s6's own posts",
+          "evidence": "core-data-model.md:232 requires for s6 (port) and s8 (sync) 'a stable marker in the outbound comment, and reconciliation through listComments before an uncertain post is retried'; the receipt keyed by feedback id belongs to s8's feedback posts. LLD §2.8/§3.5 add marker '<!-- insrc:post:<artifactId>:<kind> -->' and one listComments read before an unrecorded comment step, and §2.7 reconciles attach by link. [files: docs/plans/core-data-model.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -66,8 +66,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "runUnitExtras today marks a step only after a successful post, so a failed mark write repeats the post on the next run.",
-          "evidence": "unit-issue.ts:546-552: 'The one residual repeat: the mark write fails after a successful post, so the next run posts that step again.' Lines 566-571 catch the mark failure and report 'the next approve may post it again'. [files: src/workflow/tracker/unit-issue.ts]",
+          "premise": "Today runUnitExtras marks a step after it posts, so a failed mark leads the next run to post again",
+          "evidence": "unit-issue.ts:553-576: marks read from units[key].extrasDone; after step.run() succeeds, mark() is called; the catch reports 'the next approve may post it again'. IssueOps.comment returns PortResult<void> (port.ts:61), so no comment id exists today. [files: src/workflow/tracker/unit-issue.ts, src/workflow/tracker/port.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -78,20 +78,8 @@
           "item": "current-behaviour",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The team gate's teamContext resolves the unit's issue synchronously through resolveUnitIssueLocal, so a synchronous readBinding is needed and a sync meta-only patch is the reason for not using the async ArtifactStore.",
-          "evidence": "team/gate.ts:204-225: 'export function teamContext(...): TeamContext' is synchronous and calls resolveUnitIssueLocal(u) then ensureUnitIssue. draft-issues.ts:113-133 also calls resolveUnitIssueLocal, isUnitSettled and ensureUnitIssueDetailed synchronously. decodeArtifactHead (decode.ts:81) is synchronous, so readBinding can be built on it. [files: src/workflow/team/gate.ts, src/workflow/draft-issues.ts, src/workflow/artifact-core/decode.ts]",
-          "action": "none",
-          "fixability": "manual",
-          "outcome": "holds"
-        },
-        {
-          "claimId": "current-behaviour.3",
-          "ref": "current-behaviour",
-          "item": "current-behaviour",
-          "kind": "semantic",
-          "severity": "LOW",
-          "premise": "The envelope's binding and attachments already exist with the sc6 shape and are decoded and validated, but no production path sets them.",
-          "evidence": "types.ts:158-178 declares TrackerBinding and Attachment exactly as the HLD sketch (HLD.md:143-144). decode.ts:109-118 validates attachments and binding and throws ArtifactShapeError 'has a malformed binding'. store.ts:279-285 passes source.binding and source.attachments through, but no caller builds a binding. [files: src/workflow/artifact-core/types.ts, src/workflow/artifact-core/decode.ts, src/workflow/artifact-core/store.ts]",
+          "premise": "The TUI approve() commits only the Define for a BUILD approval, and the daemon workflow.approve commits nothing",
+          "evidence": "cli/services/workflow.ts:116-121: design.epic adds HLD+Define, design.story adds LLD+Define, plan adds the plan, else (BUILD) only the Define; gated on cfg.commitArtifacts. daemon/index.ts:647-660 workflow.approve calls handleWorkflowApprove with only the bugfix followOn, and no commit call exists in that path. [files: src/cli/services/workflow.ts, src/daemon/index.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -102,8 +90,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "TrackerPort has no listComments or attach today, while findIssuesByTitleToken (reused for the title lookup) exists with the stated behaviour.",
-          "evidence": "port.ts:69-87 lists whoAmI, readAssignee, setAssignee, addAssignee, createIssue, findIssue, findIssues, findIssuesByTitleToken, openSignoffRequest and readSignoffState, with no listComments and no attach. IssueOps.comment (port.ts:61) returns PortResult<void>, and github.ts:275 posts with discardOutput, so attach needs a new gh api call to return the comment id, as the LLD's return type implies. [files: src/workflow/tracker/port.ts, src/workflow/tracker/github.ts]",
+          "premise": "listComments and attach are new on TrackerPort; findIssuesByTitleToken already exists and is reused",
+          "evidence": "port.ts:69-87 TrackerPort has whoAmI, readAssignee, setAssignee, addAssignee, createIssue, findIssue, findIssues, findIssuesByTitleToken, openSignoffRequest, readSignoffState, and no listComments or attach. github-adapter.ts:190 implements findIssuesByTitleToken. [files: src/workflow/tracker/port.ts, src/workflow/tracker/github-adapter.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -114,8 +102,8 @@
           "item": "new-versus-reuse",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "A binding reference { entityId: 'owner/repo#N', type: 'github:issue' } passes the store's reference check, because that check applies only to artifact-kind types.",
-          "evidence": "store.ts:90-95: 'function checkReference(r, where) { if (!isArtifactIdKind(r.type)) return; ...}'. checkLinks (store.ts:401-406) applies it to binding.reference and pendingLink. core-data-model.md:144 names 'github:issue' as a namespaced external type. [files: src/workflow/artifact-core/store.ts, docs/plans/core-data-model.md]",
+          "premise": "TrackerBinding and Attachment already exist with the sc6 shape and are decoded and validated, and a 'github:issue' reference passes the store's link check",
+          "evidence": "artifact-core/types.ts:158-178 match the HLD sc6 sketch. decode.ts:109-118 validates attachments and binding. store.ts:90-91 checkReference returns early when !isArtifactIdKind(r.type), so an external type 'github:issue' is not checked as an artifact id. store.ts:401-407 checks binding.reference and pendingLink. [files: src/workflow/artifact-core/types.ts, src/workflow/artifact-core/decode.ts, src/workflow/artifact-core/store.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -126,8 +114,8 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The follow-on outcome union is at gates.ts:827-832, and the two follow-on wiring sites are daemon/index.ts:652 (workflow.approve) and :744 (workflow.reviewDecision).",
-          "evidence": "gates.ts:827-832: 'export interface FollowOnOutcome { readonly kind: 'bugfix-advance' | 'bugfix-complete'; readonly artifactPath; readonly ok; readonly note? }'. daemon/index.ts:652 and :744 both read 'followOn: async (approved, repoPath) => { ... advanceApprovedBugfixes'. Adding a 'tracker-attach' kind that carries an AttachOutcome also needs a new optional field on FollowOnOutcome; that is additive. [files: src/workflow/gates.ts, src/daemon/index.ts]",
+          "premise": "The follow-on outcome union is at gates.ts:827-832 and is wired at the two daemon follow-on sites, workflow.approve and workflow.reviewDecision",
+          "evidence": "gates.ts:827-832 FollowOnOutcome { kind: 'bugfix-advance' | 'bugfix-complete'; artifactPath; ok; note? }. daemon/index.ts:652 (workflow.approve) and :744 (workflow.reviewDecision) are the only two followOn sites. [files: src/workflow/gates.ts, src/daemon/index.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -138,8 +126,8 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The inventory of readers and writers of meta.tracker.units and extrasDone for Epic and Story (refs.ts, unit-issue.ts, draft-issues.ts, team/gate.ts and handoff.ts through teamContext) is complete.",
-          "evidence": "A grep for '.units', extrasDone, isUnitSettled and resolveUnitIssueLocal outside the tests finds only refs.ts:25-46, unit-issue.ts (139, 176-207, 235, 271, 340-400, 538-556), draft-issues.ts:28/113/118/133 and team/gate.ts:23/215. handoff.ts:395 reaches it through teamContext(createIssue:false). Other '.units' hits (changed-files.ts and code-review/grounding.ts) are an unrelated field. [files: src/workflow/tracker/unit-issue.ts, src/workflow/draft-issues.ts, src/workflow/team/gate.ts, src/workflow/team/handoff.ts]",
+          "premise": "Only unit-issue.ts reads or writes meta.tracker.units and extrasDone, so the switch in unit-issue.ts plus the listed tests covers every change site",
+          "evidence": "A grep for '.units', 'units?.' and 'extrasDone' outside the tests finds only refs.ts (type) and unit-issue.ts:139-556. Tests that seed tracker units or extrasDone: unit-issue, unit-extras, redraft-preserves-tracker, approve-fallback-issues, artifact-writer and draft-issues. All are in the LLD's step 7 list. store-write.test.ts:153 seeds units only to test the carry rule. [files: src/workflow/tracker/unit-issue.ts, src/workflow/tracker/refs.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -150,9 +138,9 @@
           "item": "change-sites",
           "kind": "semantic",
           "severity": "MED",
-          "premise": "The change sites list every file the new write paths touch.",
-          "evidence": "artifact-write-inventory.ts:12-24: 'Every production file that writes a file with writeArtifact ... has one entry in ARTIFACT_WRITE_INVENTORY', enforced by __tests__/artifact-write-inventory.test.ts. The design adds new production writers: the binding module (section 8.1 names src/workflow/tracker/binding-service.ts; bindArtifact, recordPosted and setPendingLink are meta-only writes) and attachDocuments (the Attachment meta-only write). Neither section 3 nor migration step 7 adds an ARTIFACT_WRITE_INVENTORY entry or names artifact-write-inventory.ts. The inventory test fails as soon as the new file writes. [files: src/workflow/artifact-write-inventory.ts]",
-          "action": "Add src/workflow/artifact-write-inventory.ts to the change sites. Add one entry per new writer file (class meta-only, via writeArtifact) with a note naming meta.envelope.binding and attachments, and list the inventory test among the tests to update.",
+          "premise": "The BUILD approval follow-on can attach the build, review and test records 'that git reports clean'. The design states which file of each target is the attach path and which head records the Attachment.",
+          "evidence": "approveArtifactByJsonPath (gates.ts:684-694) writes approvedAt into the BUILD json with writeArtifact(jsonPath, next, 'meta-only') just before the daemon follow-on runs. So the BUILD .json is always dirty when the follow-on's git check runs. The LLD's AttachTarget is { artifactId, relPath }, but it never says whether relPath is the .json under .insrc/artifacts or the rendered .md under docs/. §2.7/§3.2 also do not say whether the Attachment is written to the target's head or the unit's (Define/LLD) head. That decides which file becomes dirty, and what the TUI approve's 'second commit' must include (commitApprovedArtifacts for a plan commits only the plan files). [files: src/workflow/gates.ts, src/cli/services/workflow.ts]",
+          "action": "State that the attach link names the rendered .md (or say why the json is clean), and name the head each Attachment is written to. Then list that file in the second commit of approve() and in the follow-on's dirty check.",
           "fixability": "manual",
           "outcome": "does-not-hold"
         },
@@ -162,8 +150,8 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "A carry rule in the content branch of prepareArtifactWrite covers every store write, including lifecycle operations, and the existing meta-only writers re-read the head, so they do not drop a binding.",
-          "evidence": "store.ts:293 always calls prepareArtifactWrite(path, ..., 'content', ...) and puts source.binding and source.attachments in the envelope (279-285), so the on-disk value has to win, as the LLD states. carryTracker (storage.ts:127-136, used at 228-229) is the precedent. The meta-only writers (gates.ts:522 and :1022-1027, verdicts.ts:137, findings.ts:91, refs.ts:132) build 'next' from a fresh read of the file just before writing. [files: src/workflow/storage.ts, src/workflow/artifact-core/store.ts, src/workflow/gates.ts]",
+          "premise": "carryBinding can mirror carryTracker in the content branch of prepareArtifactWrite, so a content write keeps the on-disk binding and attachments",
+          "evidence": "storage.ts:227-229 already carries meta.tracker from the prior head in the content branch via carryTracker(priorMeta?.['tracker'], meta['tracker']), and the store routes its writes through prepareArtifactWrite(path, ..., 'content', ...) at store.ts:293. The LLD says plainly that a store write already prepared before a patch can still overwrite it (bytes held across journal.stage/appendLog at store.ts:331-333). It gives a reconciliation recovery for that case. [files: src/workflow/storage.ts, src/workflow/artifact-core/store.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -174,8 +162,8 @@
           "item": "data-compatibility",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Leaving old extrasDone marks unread, so a pre-s6 unit's design, review or plan comment may be posted once more, is permitted by the upstream rulings.",
-          "evidence": "core-data-model.md:222 owner ruling 2: 'No compatibility code. Nothing is left in the code only to cope with older data ... artifacts are handled manually where needed.' The LLD states the possible repeat in section 7 and in the edge-case table, and leaves the conversion of the old records to s9. [files: docs/plans/core-data-model.md]",
+          "premise": "Older heads with meta.tracker.units/extrasDone and no binding may cause one repeat post, and this is allowed",
+          "evidence": "core-data-model.md:222 owner ruling 2 'No compatibility code. Nothing is left in the code only to cope with older data'. The LLD states the one-time repeat risk, rebinds from the older refs that resolveUnitIssueLocal already reads (unit-issue.ts:183-188), and hands the rest to s9. [files: docs/plans/core-data-model.md, src/workflow/tracker/unit-issue.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -186,8 +174,8 @@
           "item": "boundaries",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "The one change to code owned by another Story (carryBinding in storage.ts, owned by s2 and s4) is stated openly, raised as an open question, and does not redesign sc2 or sc5.",
-          "evidence": "LLD section 3.6 and open question 1 name the change to src/workflow/storage.ts and offer the alternative. The rule only adds a carry next to carryTracker (storage.ts:127-136, 228-229) and leaves the envelope shape and the decoding (decode.ts:101-131) unchanged. Task records stay on the Plan for s7, and Epic and Story artifacts are left to s9 (open questions 3 and 4). [files: src/workflow/storage.ts]",
+          "premise": "Adding carryBinding to storage.ts (the store write path owned by s2/s4) and keeping Task records on the Plan (s7's scope) are raised openly rather than silently redesigning another Story's contract",
+          "evidence": "LLD §10 open questions 1 and 3 name the storage.ts change and the Task record split for owner resolution. The change is additive, beside the existing carryTracker (storage.ts:125-136), and leaves the s2 decode, codec and s4 sidecar rules untouched. [files: src/workflow/storage.ts]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -197,24 +185,24 @@
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "LOW",
-          "premise": "Writing a binding or attachment as a meta-only patch does not trip the integrity check against the log tail.",
-          "evidence": "lifecycle-service.ts:87-90 and store.ts:264-268 call checkIntegrity({ description, payload, lifecycle }, tail). The binding and attachments are not in that view. storage.ts:251-263 keeps the lifecycle revision on a meta-only write. [files: src/workflow/artifact-core/lifecycle-service.ts, src/workflow/artifact-core/store.ts, src/workflow/storage.ts]",
-          "action": "none",
+          "severity": "MED",
+          "premise": "Every failure of ensureUnitIssueDetailed after this change has a stated result, including a bind write that fails after the issue was created",
+          "evidence": "Today, after create, recordUnit's failure returns { issue, created: true, duplicateCheck: 'not-run' } (unit-issue.ts:334-336), and the draft hook then reports 'exists but could not be recorded' via isUnitSettled (draft-issues.ts:133-135). The LLD moves the record to bindArtifact after tieBreak. Its only stated head failure is 'EnsureResult failure (phase before-create) when the artifact head ... cannot be read or written ... nothing is created'. That is untrue for a write that fails after create (disk full). Reporting it as before-create would make the draft hook claim outcomeKnown 'no issue was created' (draft-issues.ts:81-85, 131). [files: src/workflow/tracker/unit-issue.ts, src/workflow/draft-issues.ts]",
+          "action": "State the result when bindArtifact fails after a create or adopt: an ok result with the issue, as today, or a phase 'create' failure. Never before-create. Add it to the error table and a test.",
           "fixability": "manual",
-          "outcome": "holds"
+          "outcome": "does-not-hold"
         },
         {
           "claimId": "error-paths.2",
           "ref": "error-paths",
           "item": "error-paths",
           "kind": "semantic",
-          "severity": "MED",
-          "premise": "With carryBinding, 'a content write by the store can never undo a binding patched by BindingService' (section 3.6).",
-          "evidence": "In ArtifactStore.write, prepareArtifactWrite runs at store.ts:293, which is where the on-disk binding would be carried. The bytes are then held across 'await this.deps.journal.stage(a.id, op)' and 'await this.deps.history.appendLog(a.id, entry)' (331-332) before '(this.deps.writeHead ?? writeAtomic)(path, prepared.bytes)' at 333, with no re-check of the head. A synchronous bindArtifact, recordPosted or setPendingLink in that window is overwritten, whether it comes from the daemon's draft hook or gate, or from the TUI approve(), which runs autoPush in a separate CLI process (cli/services/workflow.ts:162-172). The next ensure rebinds through the label, so no duplicate issue is created, but posted marks, a pending link or attachments are lost silently. Section 5 does not name this failure. [files: src/workflow/artifact-core/store.ts, src/cli/services/workflow.ts]",
-          "action": "Weaken the claim, or close the window. Either re-carry the binding and attachments from disk just before the head replace (or have writeHead check the head hash it prepared from, as completePending does at 365-377), or state the lost-update window in section 5 with its recovery: rebind by label, reconcile posts by marker, reconcile attachments by link.",
+          "severity": "LOW",
+          "premise": "A malformed binding is detectable and stops ensure before any tracker lookup or create",
+          "evidence": "decode.ts:117-118 throws ArtifactShapeError on a malformed binding. ensureUnitIssueDetailed already returns before() failures ahead of any lookup (unit-issue.ts:241-258). The LLD puts readBinding before the local resolve, so the failure is detectable and phase before-create holds there. [files: src/workflow/artifact-core/decode.ts, src/workflow/tracker/unit-issue.ts]",
+          "action": "none",
           "fixability": "manual",
-          "outcome": "does-not-hold"
+          "outcome": "holds"
         },
         {
           "claimId": "tests.1",
@@ -222,8 +210,8 @@
           "item": "tests",
           "kind": "semantic",
           "severity": "LOW",
-          "premise": "Each acceptance criterion maps to at least one named test, including the narrowed ac18 behaviour (a link per revision, the dirty-file refusal, the diagram companion through tracker.attach).",
-          "evidence": "The section 6 acceptance mapping lists ac17 (bind, adopt, no tracker, race, rebind and malformed-head tests), ac18 (attachDocuments, adapter listComments and attach, approve() after commit, tracker.attach companion, BUILD follow-on) and ac19 (pending-link retry, runUnitExtras reconciliation, crash after post). The fixtures they name are the runGh seam (github.ts:85) and the fakePort style cast 'as unknown as TrackerPort' (team/__tests__/gate.test.ts:72); both exist. [files: src/workflow/tracker/github.ts, src/workflow/team/__tests__/gate.test.ts]",
+          "premise": "Each of ac17, ac18 and ac19 maps to at least one named test",
+          "evidence": "DEF.md:205-207 define ac17-ac19. LLD §6 acceptance mapping lists 6 tests for ac17 (bind, adopt, no tracker, race, rebind, malformed), 5 for ac18 (permalink, adapter, approve-time attach, approve() commit, BUILD follow-on) and 4 for ac19 (pending link retry, marker reconciliation). The tests run under node:test with fixtures that exist (durable-kit, fake port). [files: docs/epics/one-common-model-every-artifact-E202610192f27754d/DEF.md]",
           "action": "none",
           "fixability": "manual",
           "outcome": "holds"
@@ -232,11 +220,11 @@
       "counts": {
         "high": 0,
         "med": 2,
-        "low": 14,
+        "low": 13,
         "unverified": 0
       },
       "template": "design-spec",
-      "reviewedAt": "2026-10-21T15:11:24.386Z",
+      "reviewedAt": "2026-10-21T15:16:13.405Z",
       "model": "cli-claude:opus",
       "reviewedBy": "daemon"
     },
@@ -248,9 +236,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "32f2f0e44ec992ff88462562684e8a44e2fced00ec638777b8e35e55f77f53cc",
-        "at": "2026-10-21T15:16:05.218Z",
+        "number": 5,
+        "contentHash": "858470011e84993d09f833c36212e89c95dc07c665eb3938e7a89dd1addeddb8",
+        "at": "2026-10-21T15:19:26.873Z",
         "by": {
           "id": "github:claude",
           "kind": "agent",
@@ -259,7 +247,7 @@
       },
       "signoffs": []
     },
-    "revision": 4
+    "revision": 5
   },
   "body": {
     "summary": {
@@ -739,7 +727,7 @@
             {
               "name": "targets",
               "type": "{ artifactId: string; relPath: string }[]",
-              "purpose": "The files to attach: a plan, a design document, a diagram or a build, review or test record, each with its repo-relative path.",
+              "purpose": "The files to attach, each the rendered markdown (or html companion) under docs/ with its repo-relative path: a plan, a design document, a diagram, or a build, review or test record. The link names this file, never the json under .insrc/artifacts, which an approval always leaves dirty.",
               "optional": false
             },
             {
@@ -768,7 +756,9 @@
             "a link already recorded for (target, revision) is skipped; a new revision commits to a new sha, so it adds a new link and the old comment stays",
             "before posting, listComments is searched for the link; a comment holding it is recorded and not posted again",
             "an Attachment { target, revision, at, externalId } is recorded per link as one meta-only write",
-            "the Attachment records it writes change the artifact head, so the caller commits them with a second commit; a target that was refused as uncommitted is not recorded and is attached by the next call, which recomputes the targets and skips the recorded ones"
+            "the Attachment records it writes change the artifact head, so the caller commits them with a second commit; a target that was refused as uncommitted is not recorded and is attached by the next call, which recomputes the targets and skips the recorded ones",
+            "every Attachment is written to the head of the unit's own artifact (the Define for an Epic unit, the LLD for a Story unit), the artifact that holds the binding, with target naming the attached artifact; the attached file's own head is not changed",
+            "the head that carries the Attachment records is left changed and uncommitted by this call; the TUI approve() commits it in its second commit, and a follow-on called from the daemon's approval leaves it for the next commit of that artifact"
           ]
         },
         {
@@ -846,7 +836,7 @@
             },
             {
               "type": "EnsureResult failure (phase before-create)",
-              "condition": "the artifact head that holds the unit's binding cannot be read or written, so the issue could not be recorded; nothing is created."
+              "condition": "the artifact head that holds the unit's binding cannot be read, so the issue could not be recorded; checked before any lookup or create, so nothing is created."
             }
           ],
           "preconditions": [],
@@ -856,7 +846,8 @@
             "an issue a person created first is adopted through the label or title lookup and bound the same way",
             "an issue this call creates is bound only after the duplicate check: the unit label is listed first and the lowest-numbered issue is bound once (tieBreak), this call's own issue being commented on and closed as a duplicate when it is not the lowest; when the listing fails the created issue is bound and kept, as today",
             "bindArtifact is therefore called once per unit by a create and never needs to replace a binding; a crash between the create and the bind is found again by the unit label at the next call",
-            "when the unit's artifact head cannot be read (malformed binding or missing file) the call returns a before-create failure naming the head, before any issue is looked up or created"
+            "when the unit's artifact head cannot be read (malformed binding or missing file) the call returns a before-create failure naming the head, before any issue is looked up or created",
+            "a bind that fails to write after the issue was created or adopted (disk full, head unwritable) is never a before-create failure: the call returns ok with the issue (created true and duplicateCheck 'not-run' for a create, as today), the binding stays absent, isUnitSettled is false so the draft hook reports 'exists but could not be recorded', and the next call finds the issue by its label or title and binds it"
           ]
         },
         {
@@ -1073,6 +1064,13 @@
           "response": "Recovery is by reconciliation, never by a second remote action: the next ensureUnitIssueDetailed rebinds the unit through its label or title (or the older ref), a post mark that was lost is reconciled by the marker through listComments, a lost attachment by its link, and a lost pending link is found again because the child is looked up by label and linked again.",
           "userImpact": "A recorded post, link or attachment may be briefly forgotten locally; nothing is posted twice and no second issue is created.",
           "recoverable": true
+        },
+        {
+          "scenario": "The binding cannot be written after the issue was created or adopted",
+          "detection": "bindArtifact returns { ok: false } from a write error (not from reading another binding) inside ensureUnitIssueDetailed after the create or the adopt",
+          "response": "The call returns ok with the issue (created true, duplicateCheck 'not-run' for a create), logs the failure, and leaves the binding absent; isUnitSettled reports false so the draft hook says 'the issue exists but could not be recorded'. The next ensure finds the issue by its unit label or title and binds it.",
+          "userImpact": "The unit has an issue that is not yet recorded locally; the author is told to write the draft again; no second issue is created.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -1179,7 +1177,8 @@
             "the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue",
             "a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired",
             "the BUILD approval's follow-on attaches the build, review and test records that git reports clean and reports the dirty ones, and the daemon workflow.approve commits nothing",
-            "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry"
+            "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+            "a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label"
           ],
           "fixturesNeeded": [
             "a fake gh runner for the adapter (the runGh seam used by src/workflow/tracker/github.ts tests)",
@@ -1197,7 +1196,8 @@
             "two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list",
             "the draft hook and the handoff check read the binding for an Epic or Story unit, and a pre-s6 head with only the old ref is rebound once from it with no new issue",
             "a malformed binding makes ensureUnitIssueDetailed fail before creating anything and leaves the store read of that artifact failing until repaired",
-            "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry"
+            "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+            "a bind that fails to write after the issue was created returns ok with the issue, leaves the unit unsettled so the draft hook reports it, and the next ensure binds it by label"
           ]
         },
         {
@@ -1253,7 +1253,7 @@
         },
         {
           "order": 6,
-          "action": "Add the tracker.attach daemon method. Call attachDocuments from the TUI approve() after its commit step for the HLD, LLD and plan documents (their diagram companions are attached by tracker.attach once committed), committing the attachment records in a second commit; skip it with a stated reason when commitArtifacts is false. Call it from the daemon's BUILD approval followOn for the build, review and test records, only for files git reports clean. The follow-on outcome union in src/workflow/gates.ts:827-832 gains a 'tracker-attach' kind carrying the AttachOutcome, wired at both follow-on sites in src/daemon/index.ts (workflow.approve at :652 and workflow.reviewDecision at :744).",
+          "action": "Add the tracker.attach daemon method. Call attachDocuments from the TUI approve() after its commit step for the HLD, LLD and plan documents (their diagram companions are attached by tracker.attach once committed), committing the unit's head (the Define for an Epic, the LLD for a Story) that carries the Attachment records in a second commit; skip it with a stated reason when commitArtifacts is false. Call it from the daemon's BUILD approval followOn for the build, review and test records, only for files git reports clean. The follow-on outcome union in src/workflow/gates.ts:827-832 gains a 'tracker-attach' kind carrying the AttachOutcome, wired at both follow-on sites in src/daemon/index.ts (workflow.approve at :652 and workflow.reviewDecision at :744). The attach targets are the rendered markdown files (HLD.md, LLD.md, PLAN.md, BUILD.md, CR.md, TESTS.md and the html companions), whose cleanliness git decides; an approval's meta-only write to a record's json does not affect them.",
           "rollbackable": true
         },
         {

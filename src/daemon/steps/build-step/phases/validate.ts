@@ -26,6 +26,7 @@ import { assertMayBuild } from '../../../../workflow/team/author-gate.js';
 import { mergeInProgressError, renderValidatePrompt, renderStandaloneValidatePrompt, resolveRepoPath, resolveTaskRef } from '../render.js';
 import { storyWorkflowFiles } from '../../../../workflow/runners/build/own-files.js';
 import { roundWriterFor } from '../../../lifecycle-registry.js';
+import { recordTaskRound } from '../../../tasks-sync.js';
 import { headShortSha, persistBuildRecord, standaloneEpicHashFromFocus } from '../../../../workflow/runners/build/standalone-record.js';
 import { resolveStoryRangeBase } from '../../../../workflow/runners/build/range-base.js';
 import {
@@ -630,7 +631,14 @@ async function runValidateTurn(
 				buildRecordNote = `the BUILD record was not written (${message}); the verdict is unchanged`;
 			}
 		}
-		return { next: 'done', verdict: buildRecordNote !== undefined ? { ...verdict, evidence: { ...verdict.evidence, buildRecordNote } } : verdict, passed };
+		// The round also goes into the Task's own log (a Task that has an artifact); a failure is named in the evidence, never an error.
+		let taskRoundNote: string | undefined;
+		if (epicHash.length > 0 && storyId.length > 0 && ident.standalone === undefined) {
+			taskRoundNote = await recordTaskRound(repoPath, epicHash, storyId, taskId, { passed, summary: typeof verdict.reason === 'string' && verdict.reason.length > 0 ? verdict.reason : passed ? 'passed' : 'failed', data: { testsPassed, typecheckClean } });
+			if (taskRoundNote !== undefined) log.warn({ storyId, taskId }, `insrc_build_step[validate]: ${taskRoundNote}`);
+		}
+		const notes = { ...(buildRecordNote !== undefined ? { buildRecordNote } : {}), ...(taskRoundNote !== undefined ? { taskRoundNote } : {}) };
+		return { next: 'done', verdict: Object.keys(notes).length > 0 ? { ...verdict, evidence: { ...verdict.evidence, ...notes } } : verdict, passed };
 	});
 }
 

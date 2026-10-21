@@ -19,7 +19,9 @@ import type { FollowOnOutcome, WorkflowApproveResult } from '../workflow/gates.j
 import { TaskSets } from '../workflow/tasks/task-set.js';
 import type { CloseIssue, SyncResult } from '../workflow/tasks/task-set.js';
 import { autoPushTasksOnPlan, openTracker } from '../workflow/tracker-auto.js';
-import { lifecycleFor } from './lifecycle-registry.js';
+import { taskHeadIdOf } from '../workflow/tasks/lookup.js';
+import type { BuildRound } from '../workflow/tasks/task-set.js';
+import { BUILD_ACTOR, lifecycleFor } from './lifecycle-registry.js';
 
 /** Who the Task heads and their approval are recorded as: the plan's approval, as the gate itself records it. */
 const APPROVAL_ACTOR: Actor = { id: 'insrc:approval', kind: 'system', properties: {} };
@@ -73,4 +75,22 @@ export async function followOnTasksSync(approved: WorkflowApproveResult['approve
 		});
 	}
 	return out;
+}
+
+/**
+ * Record one build round on the Task artifact made from plan row `rowId`, in the Task's own log. Answers a note when the round
+ * was not recorded (the Story has no Task artifact for that row, or the write failed); never throws, so a verdict is never
+ * turned into an error by it.
+ */
+export async function recordTaskRound(repoPath: string, epicHash: string, storyId: string, rowId: string, round: BuildRound): Promise<string | undefined> {
+	const head = taskHeadIdOf(repoPath, epicHash, storyId, rowId);
+	if (head === undefined) return undefined;
+	try {
+		const entry = lifecycleFor(repoPath);
+		await new TaskSets({ repoPath, store: entry.store, service: entry.service, history: new History(createFileSidecarStore(repoPath)) }).recordBuildRound(head, round, BUILD_ACTOR);
+		return undefined;
+	} catch (err) {
+		const note = `the build round was not recorded on ${head} (${err instanceof Error ? err.message : String(err)})`;
+		return note;
+	}
 }

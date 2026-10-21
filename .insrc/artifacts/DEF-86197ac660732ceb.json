@@ -1,0 +1,1668 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1792579405451-23ydnp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-21T10:47:43.545Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 258093,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "86197ac660732ceb",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "p01",
+          "ref": "1",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The current daemon handles all client requests, index-queue work, and graph, vector and data-store access on one JavaScript thread.",
+          "evidence": "Unverifiable. src/daemon/index.ts:507 confirms only `const rpcHandlers: RpcHandlers = {`; index.ts:2099 is a closing brace, and src/daemon/server.ts:18 declares `readonly connectedAt: number;`. The truncated grep results show documentation and recorded artifacts, not source execution paths establishing thread placement. No supplied source reads establish index-queue execution, graph/vector/data-store access, or the absence of worker threads.",
+          "action": "Gather source-scoped, untruncated worker/thread probes and source reads tracing IPC dispatch, queue processing, and each store access before asserting that all execute on one JavaScript thread.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence neither confirms nor contradicts the universal threading claim; no concrete build-breaking failure or safe mechanical correction is established.",
+            "options": [
+              "Retain the premise provisionally and gather direct source evidence for every named execution path.",
+              "Mark the threading premise as unverified pending source-level execution-path checks."
+            ]
+          }
+        },
+        {
+          "claimId": "p02",
+          "ref": "1",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "Synchronous execution on the daemon's shared JavaScript thread prevents that thread from servicing other clients until execution yields.",
+          "evidence": "Unverifiable from the supplied evidence. The only direct source read, src/daemon/server.ts:18, is `readonly connectedAt: number;`, which does not establish execution or dispatch behavior. The grep is truncated at 50 matches and supplies documentation references and unrelated test handlers, not the daemon's actual dispatch implementation or shared-thread execution model.",
+          "action": "Gather source-scoped evidence of daemon startup, socket dispatch, and handler execution to establish whether client requests share the JavaScript thread.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the premise; no mechanical artifact correction is supported.",
+            "options": [
+              "Re-run probes scoped to src/daemon/server.ts and src/daemon/index.ts, reading the surrounding dispatch and startup code.",
+              "Mark the premise as an unverified runtime assumption pending evidence of the daemon's execution model."
+            ]
+          }
+        },
+        {
+          "claimId": "p03",
+          "ref": "1",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "ISSUE-e940023a6962ede9 records a chunked code review performing minutes of synchronous CPU work and freezing the daemon for every session.",
+          "evidence": "The original ISSUE.md:1 verifies the artifact ID but provides no incident description. Its S001/BUILD.md:15 confirms two quadratic functions froze the daemon on a large review. DEF.md:184 repeats the premise, rather than independently substantiating it. The minutes-long CPU saturation and another session losing access appear in ISSUE-2f4cb54c's ISSUE.md:7, describing an incident after ISSUE-e940023a. Thus the supplied evidence does not verify the full claim attributed to ISSUE-e940023a.",
+          "action": "Read the original issue's incident description to verify the attribution, or narrow the premise to the daemon freeze documented in its BUILD.md.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports a large-review daemon freeze, but does not establish the duration and cross-session impact for the cited original incident. No concrete build-breaking consequence is established.",
+            "options": [
+              "Obtain the original ISSUE.md incident description and retain the premise if it confirms the duration and cross-session impact.",
+              "Narrow the premise to two quadratic functions freezing the daemon on a large review, citing S001/BUILD.md:15.",
+              "Attribute the documented over-ten-minute CPU saturation and another session's loss of access to ISSUE-2f4cb54c, explicitly identifying it as the subsequent incident."
+            ]
+          }
+        },
+        {
+          "claimId": "p04",
+          "ref": "1",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The cited incident evidence establishes that unanswered requests and liveness pings led to connection refusals, another session restarting the daemon, and loss of in-flight work on 2026-10-21.",
+          "evidence": "Unverifiable from the supplied evidence. docs/daemon.md:145 and :190–191 describe graceful stop/restart behavior; docs/epics/build-insrc-vs-code-extension-v1-E20260921ad0d45c9/S001/LLD.md:200 describes ENOENT/ECONNREFUSED reachability handling. Neither establishes the claimed incident sequence. The truncated matches contain no incident evidence from ISSUE-e940023a6962ede9 or ISSUE-2f4cb54c0df2e9e0 confirming unanswered requests, liveness pings, another session restarting the daemon, or lost in-flight work on 2026-10-21.",
+          "action": "Provide targeted reads of the two cited issues and their c3/c4 evidence establishing the incident chronology and causal links, or qualify the premise as unverified.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied matches establish general lifecycle and connection-error behavior, not the dated incident or its causality; no mechanical correction is supported.",
+            "options": [
+              "Supply targeted issue and c3/c4 reads supporting each claimed event and causal link.",
+              "Reword the premise as an unverified incident report pending supporting evidence."
+            ]
+          }
+        },
+        {
+          "claimId": "p05",
+          "ref": "1",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Both daemon-ctl start and daemon-ctl restart stop any running daemon before starting a new daemon.",
+          "evidence": "Unverifiable: README.md:216 and README.md:233 list start/stop/restart commands but do not establish their execution order. The remaining supplied matches concern CAMON/mitmproxy. The grep output is truncated at 50 matches and contains no daemon-ctl implementation or startDaemon/stopDaemon call sequence.",
+          "action": "Gather targeted source reads for daemon-ctl start and restart, including their lifecycle helpers, to verify whether both await stopping the running daemon before starting another.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the ordering premise; no evidence-derived artifact correction is safe.",
+            "options": [
+              "Provide the start and restart handler bodies and relevant lifecycle helper implementations for verification.",
+              "Defer reliance on this ordering premise until targeted source evidence is available."
+            ]
+          }
+        },
+        {
+          "claimId": "p06",
+          "ref": "3",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "ISSUE-2f4cb54c0df2e9e0 tracks review material being rebuilt per model call and blocking the event loop.",
+          "evidence": "docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/ISSUE.md:1 confirms the artifact ID. Its S001/BUILD.md:15 states that material() rebuilt the whole review material on every call and a frozen-daemon CPU profile spent 57 of 60 seconds there. docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/DEF.md:185 explicitly links c4 to this issue as “material rebuilt per model call blocked the event loop.” The regression test at src/workflow/review-pipeline/__tests__/code-review-material.test.ts:258 also identifies this issue with building adapter material once across repeated reads.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the issue identity and the tracked repeated-material-building event-loop problem."
+          }
+        },
+        {
+          "claimId": "p07",
+          "ref": "3",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "ISSUE-e940023a and ISSUE-2f4cb54c cover the individual slow-path fixes excluded from this threading Epic.",
+          "evidence": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/DEF.md:68 explicitly excludes individual slow-path fixes and assigns them to both issues. docs/standalone/stop-code-review-s-material-building-E20261021e940023a/S001/BUILD.md:15 identifies two quadratic functions causing daemon freezes; docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/S001/BUILD.md:15 identifies material rebuilding on every call. src/workflow/review-pipeline/__tests__/code-review-material.test.ts:217,231,241,258 contains corresponding equivalence, performance, and material-reuse tests. These matches confirm the separate scope claimed by the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p08",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/index.ts:507 declares the RpcHandlers map inside main().",
+          "evidence": "src/daemon/index.ts:127 declares async function main(): Promise<void>; the grep match and direct read at src/daemon/index.ts:507 confirm the indented declaration `const rpcHandlers: RpcHandlers = {`, consistent with the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the cited declaration; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p09",
+          "ref": "c1",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The RPC handler map registered directly in main() contains 166 handlers before understanding routes are merged.",
+          "evidence": "UNVERIFIABLE: src/daemon/index.ts:507 confirms `const rpcHandlers: RpcHandlers = {`; line 2099 contains only `}`. The grep output is truncated at 50 unrelated camon matches. These reads do not establish 166 handlers, registration within main(), or the understanding-route merge boundary.",
+          "action": "Gather the complete rpcHandlers inventory and its surrounding main()/merge context, then verify the pre-merge count before retaining or correcting 166.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports the map declaration but supplies no verified replacement count.",
+            "options": [
+              "Obtain a scoped, complete handler inventory and verify or correct the count and merge boundary.",
+              "Reword the premise to mark the count and registration context as unverified pending scoped evidence."
+            ]
+          }
+        },
+        {
+          "claimId": "p10",
+          "ref": "c1",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "src/daemon/index.ts:1906 declares the StreamHandlers map inside main().",
+          "evidence": "The source grep match and direct read at src/daemon/index.ts:1906 both show `const streamHandlers: StreamHandlers = {`, confirming the cited declaration and line.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The cited source declaration matches the premise."
+          }
+        },
+        {
+          "claimId": "p11",
+          "ref": "c1",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The stream handler map registered directly in main() contains 15 handlers before understanding routes are merged.",
+          "evidence": "UNVERIFIABLE: src/daemon/index.ts:1906 confirms `const streamHandlers: StreamHandlers = {`, while line 2099 shows only `}`. No intervening entries or understanding-route merge are supplied. The truncated grep results contain unrelated camon matches, so they cannot establish the count of 15 or registration inside main().",
+          "action": "Gather the complete streamHandlers initializer and its surrounding main()/merge context, then verify the number of directly registered handlers.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports the declaration but provides no evidence-derived replacement count.",
+            "options": [
+              "Supply the complete initializer and merge context to verify or correct the inventory.",
+              "Reword the premise to acknowledge that the handler count and merge ordering remain unverified."
+            ]
+          }
+        },
+        {
+          "claimId": "p12",
+          "ref": "c1",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The understanding routes contribute seven RPC handlers and one stream handler to the daemon's handler maps.",
+          "evidence": "Unverifiable: src/daemon/index.ts:507 shows only `const rpcHandlers: RpcHandlers = {`, and :2099 shows only `}`. The truncated grep results include documentation references to understanding files but no handler definitions or registrations establishing seven RPC handlers and one stream handler.",
+          "action": "Gather the understanding handler definitions and their registration into rpcHandlers and streamHandlers, then verify the counts.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the inventory; no corrected count is supported.",
+            "options": [
+              "Obtain targeted source reads of the understanding handler maps and daemon registration sites to verify the counts.",
+              "Reword the premise to explicitly mark the handler counts as unverified pending targeted evidence."
+            ]
+          }
+        },
+        {
+          "claimId": "p13",
+          "ref": "4",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The effective daemon registry contains 189 distinct handlers, comprising 173 RPC handlers and 16 stream handlers after understanding routes are merged.",
+          "evidence": "Unverifiable: src/daemon/index.ts:507 declares rpcHandlers and :1906 declares streamHandlers, but neither read shows their entries. Line 2099 shows only a closing brace. The capped grep returns unrelated camon matches and supplies no handler inventory or understanding-route merge evidence. Thus the 173 RPC, 16 stream, and 189 distinct totals are unsupported.",
+          "action": "Gather the complete registry entries and understanding-route merge operations, then count effective keys after merges and check cross-registry duplicates before asserting totals.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence establishes registry declarations but supports no replacement counts.",
+            "options": [
+              "Retain the counts as explicitly unverified pending a complete registry inventory.",
+              "Limit the premise to the verified existence of rpcHandlers and streamHandlers, omitting totals and the merge claim."
+            ]
+          }
+        },
+        {
+          "claimId": "p14",
+          "ref": "4",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The declared handler inventory includes every daemon request handler through main() registration and the merged understanding routes.",
+          "evidence": "The grep output is truncated at 50 matches and contains documentation references, not the actual registration maps. For example, docs/epics/add-daemon-driven-code-review-stage-E20260803761a43a6/S006/PLAN.md:67 describes registering 'codeReview.run' but does not establish the complete inventory. The only source read, src/daemon/index.ts:2099, returns merely `}`. Neither main() registration nor rpcHandlers, streamHandlers, or the merged understanding routes is shown sufficiently to verify completeness. No concrete contradiction or build-breaking failure is established.",
+          "action": "Gather untruncated source evidence for main(), both handler maps, and all merged understanding routes; compare their registered keys against the declared inventory.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence cannot establish completeness or support an exact artifact correction.",
+            "options": [
+              "Supply the complete registration and merge source plus the declared inventory for an exhaustive comparison.",
+              "Qualify the completeness claim as unverified until that comparison is available."
+            ]
+          }
+        },
+        {
+          "claimId": "p15",
+          "ref": "4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Nearly all existing daemon handlers have an unambiguous assignment to an admin, session or indexing class.",
+          "evidence": "src/daemon/index.ts:507 confirms the rpcHandlers declaration; :1906 confirms the streamHandlers declaration. Neither read includes handler entries or behavior. The truncated grep results provide no handler classification evidence, so the claim that nearly all handlers map unambiguously to these three classes is unverifiable.",
+          "action": "Gather the complete handler inventory and relevant behavior, then document classification criteria, assignments, and ambiguous cases before relying on this premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence establishes the handler maps' declarations, but cannot establish classification coverage or ambiguity.",
+            "options": [
+              "Retain the premise pending a complete handler inventory and evidence-backed classification.",
+              "Reword the premise as an unverified design assumption and require explicit resolution of ambiguous handlers."
+            ]
+          }
+        },
+        {
+          "claimId": "p16",
+          "ref": "c2",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "src/daemon/server.ts exports RpcHandler, StreamHandler, RpcHandlers, StreamHandlers, failureMessage and IpcServer.",
+          "evidence": "All six named exports are confirmed in src/daemon/server.ts: RpcHandler at line 39, StreamHandler at 42, RpcHandlers at 48, StreamHandlers at 49, failureMessage at 71, and IpcServer at 79. All fall within the cited 18–220 range. The seventh grep match is a documentation quote, not an additional source export.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The source matches confirm the complete stated inventory; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p17",
+          "ref": "c2",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "IpcServer exposes the members listen, close, attachedClients, disconnectClients and flushPendingWrites.",
+          "evidence": "Unverifiable: the grep output is truncated at 50 matches and contains no member declarations from src/daemon/server.ts. The supplied reads show only `readonly connectedAt: number;` at line 18 and a blank line at 220. Documentation and historical test-output mentions of attachedClients() do not verify the current five-member inventory. No concrete build-breaking contradiction is established.",
+          "action": "Re-run the member probe scoped to src/daemon/server.ts and read the IpcServer declarations to verify all five members.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence cannot establish a corrected inventory, so no safe text replacement is available.",
+            "options": [
+              "Gather scoped source evidence for all five IpcServer members and retain the premise if confirmed.",
+              "Revise the inventory to the members confirmed by fresh source reads."
+            ]
+          }
+        },
+        {
+          "claimId": "p18",
+          "ref": "c5",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The cited stakeholder instruction of 2026-10-21 requires one serial thread per session, one admin thread and one indexing thread.",
+          "evidence": "No probes were run, and no stakeholder instruction or source excerpts were supplied. The claimed threading requirements and anchors user 2026-10-21, c5, k1, k2, and k3 are unverifiable from the supplied evidence.",
+          "action": "Supply the cited stakeholder instruction and verify the threading requirements against its exact wording.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence neither confirms nor contradicts the external contract; no evidence-derived text correction is available.",
+            "options": [
+              "Provide the dated stakeholder instruction to verify the premise.",
+              "Reword the threading requirements as an unverified assumption pending stakeholder confirmation."
+            ]
+          }
+        },
+        {
+          "claimId": "p19",
+          "ref": "4",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "Expected deployment has only a handful of concurrent client sessions, making one thread per session affordable.",
+          "evidence": "No probes were run. The supplied evidence establishes neither expected concurrent session counts nor the affordability of one thread per session; the premise is unverifiable.",
+          "action": "Confirm the deployment concurrency bound and validate thread resource costs at that bound before relying on this premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "No evidence supports a mechanical correction or a concrete build-breaking failure.",
+            "options": [
+              "Establish an explicit deployment concurrency limit and validate one-thread-per-session resource usage at that limit.",
+              "Treat concurrency and thread affordability as unresolved assumptions pending deployment requirements and capacity measurements."
+            ]
+          }
+        },
+        {
+          "claimId": "p20",
+          "ref": "c6",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "CLAUDE.md's key architectural rules require the daemon to own all database access and require CLI, MCP and IDE clients to communicate through IPC.",
+          "evidence": "Unverifiable from the gathered evidence: CLAUDE.md:1 confirms only the document title, and CLAUDE.md:39 describes database technologies. Neither includes the cited key architectural rules. The truncated grep results include IPC descriptions in other artifacts, but do not establish what CLAUDE.md requires.",
+          "action": "Gather the Key architectural rules section of CLAUDE.md and verify the daemon ownership and client IPC requirements against its actual text.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence does not expose the cited rule, so no evidence-derived artifact correction is justified.",
+            "options": [
+              "Read the cited section and retain the premise if it confirms both requirements.",
+              "If the section does not confirm both requirements, revise the premise to match the retrieved text."
+            ]
+          }
+        },
+        {
+          "claimId": "p21",
+          "ref": "k4",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The daemon process is currently the sole process opening LMDB, Lance and DuckDB stores for the application.",
+          "evidence": "Unverifiable: the probe is truncated at 50 matches and supplies no current source reads establishing all database openers or their process boundaries. S004/LLD.md:325 and :327 describe historical MCP access and a temporary permitted-reader exception; S011/LLD.md:294 describes a planned ownership check. These document matches do not establish whether that exception remains in current code, nor establish exclusive daemon ownership of LanceDB and DuckDB.",
+          "action": "Gather source-only, untruncated opener matches and trace their callers to daemon, CLI and MCP entrypoints before asserting sole-process ownership.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence cannot prove process exclusivity or establish a concrete build-breaking contradiction.",
+            "options": [
+              "Retain the premise pending complete source evidence for all three engines and their entrypoint reachability.",
+              "Mark sole-process ownership as unverified and make verification a prerequisite for work depending on it."
+            ]
+          }
+        },
+        {
+          "claimId": "p22",
+          "ref": "c7",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "src/db/graph/store.ts:528-531 implements getGraphStore() using a module-level _instance and a shared _initPromise.",
+          "evidence": "src/db/graph/store.ts:528 declares getGraphStore(), and line 531 returns _initPromise when non-null. The supplied reads omit lines 529–530 and the variable declarations, so they do not verify use of _instance or module-level scope. The truncated grep supplies no source matches establishing those details.",
+          "action": "Obtain the variable declarations and complete lines 528–531 to verify the remaining claims, or narrow the premise to the confirmed behavior.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The function anchor and promise reuse are confirmed; the singleton and variable-scope claims remain unverifiable.",
+            "options": [
+              "Retain the premise pending source evidence for _instance and both variables’ module-level declarations.",
+              "Narrow the premise to: src/db/graph/store.ts:528 declares getGraphStore(); line 531 returns _initPromise when non-null."
+            ]
+          }
+        },
+        {
+          "claimId": "p23",
+          "ref": "c7",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The current getGraphStore() singleton mechanism yields one GraphStore per daemon process.",
+          "evidence": "Unverifiable from the supplied evidence. src/db/graph/store.ts:528 confirms getGraphStore(): Promise<GraphStore>; :531 confirms reuse of a non-null _initPromise. Neither read shows _instance reuse, initialization assignment, or the daemon's module/worker topology needed to establish one GraphStore per process. The truncated grep supplies documentary assertions but no further implementation evidence establishing that scope.",
+          "action": "Gather the singleton declarations and complete getGraphStore initialization, plus daemon worker entry/import evidence, to verify whether sharing is process-wide or limited to a module instance.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The shared-promise guard supports a narrower claim but does not establish the asserted process-wide singleton.",
+            "options": [
+              "Retain the premise pending source evidence establishing singleton initialization and daemon execution scope.",
+              "Narrow the premise to the verified fact: getGraphStore returns the existing _initPromise when it is non-null."
+            ]
+          }
+        },
+        {
+          "claimId": "p24",
+          "ref": "c7",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "Config storage, daemon RPC routes and code tools all obtain graph access through getGraphStore().",
+          "evidence": "src/db/graph/store.ts:528 confirms getGraphStore() exists; :531 confirms it returns _initPromise when initialization is pending. The grep is truncated at 50 matches, primarily in documentation, and supplies no actual source call sites in src/config or src/daemon. Documentation claims about those callers do not verify the current source inventory. The premise is therefore unverifiable, not contradicted; no concrete build-breaking failure is established.",
+          "action": "Gather source-scoped call-site evidence for config storage, daemon RPC handlers and code tools, including any indirect graph-access wrappers, before treating this inventory as verified.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied source reads establish the accessor but not the three claimed consumer groups; no mechanical correction is supported.",
+            "options": [
+              "Retain the premise pending source-scoped probes confirming graph access in all three consumer groups.",
+              "Narrow the premise to the verified accessor definition and pending-initialization behavior, leaving consumer coverage explicitly unverified."
+            ]
+          }
+        },
+        {
+          "claimId": "p25",
+          "ref": "E2026102186197ac6:FR005",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "The cited graph-store evidence supports the assertion that LMDB lock behavior has previously caused daemon problems.",
+          "evidence": "src/db/graph/store.ts:528 declares getGraphStore(); line 531 returns _initPromise when non-null. Neither supplied line establishes LMDB lock behavior or prior daemon problems. The grep results are truncated at 50 matches and contain no evidence of such an incident; c7's contents were not supplied. The historical assertion is unverifiable, with no concrete build-breaking failure established.",
+          "action": "Supply evidence linking LMDB locking to a prior daemon problem, or remove the unsupported historical assertion.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence does not establish the claimed history; correcting it requires additional grounding or a wording decision.",
+            "options": [
+              "Retain the assertion only after supplying a source that documents an LMDB lock-related daemon incident.",
+              "Remove the historical assertion and state that the cited lines show reuse of an initialization promise."
+            ]
+          }
+        },
+        {
+          "claimId": "p26",
+          "ref": "4",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The stores relevant to the threading change are the LMDB graph, Lance vector tables and the in-memory DuckDB query engine used by db_file_* tools.",
+          "evidence": "AGENTS.md:39 and CLAUDE.md:39 explicitly identify LMDB as the graph substrate, LanceDB as the vector database, and DuckDB as an in-memory query engine backing db_file_* tools rather than persistent storage. design/analyze-framework-data.md:498 additionally describes the in-process DuckDB query pool serving file-family tools. These matches support the stated inventory.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence confirms the named engines and their stated roles; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p27",
+          "ref": "4",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "Each of LMDB, Lance and DuckDB can preserve the required consistency through either safe access from multiple daemon threads or access mediated by a single owning thread.",
+          "evidence": "Unverifiable: the grep results are truncated at 50 matches and primarily show documentation about transactions, not engine threading contracts. docs/daemon.md:1348 describes transactional LMDB backup, which does not establish worker-thread access safety. The sole source read, src/db/graph/store.ts:528, exposes only the getGraphStore(): Promise<GraphStore> signature. No supplied evidence establishes that LMDB, Lance and DuckDB each preserve the required consistency under either proposed access model; nor does it demonstrate a concrete failure.",
+          "action": "Define the required consistency guarantees and gather per-engine evidence for the proposed thread ownership and access model before treating this premise as established.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports neither verification nor a mechanical correction of the external contract.",
+            "options": [
+              "Mark the premise as an unverified assumption pending per-engine contract evidence and consistency tests.",
+              "Specify a single owning-thread design and validate its ordering, transaction and failure guarantees for each engine.",
+              "Retain the alternative access models only after documenting and validating the supported model for each engine."
+            ]
+          }
+        },
+        {
+          "claimId": "p28",
+          "ref": "c8",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md states that IPC method names, the ~/.insrc/daemon.sock socket path and payload shapes are mirrored in lock-step between the backend and IDE repositories.",
+          "evidence": "CLAUDE.md:31 directly matches the socket path and payload-shape clause; CLAUDE.md:131 confirms ~/.insrc/daemon.sock. The gathered match at docs/epics/e1-delivery-read-model-daemon-from-E202610072ff0dfda/DEF.md:208 quotes CLAUDE.md:30–32 explicitly: IPC method names, socket path, and payload shapes stay in lock-step across the two repos via mirrored types. This supports the premise about the documented contract.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports the citation; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p29",
+          "ref": "E2026102186197ac6:FR008",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The clients whose compatibility must be preserved are the MCP server, VS Code plugin, JetBrains plugin, TUI and daemon-ctl.",
+          "evidence": "README.md:68,287,296–302 identifies VS Code and JetBrains plugins; docs/daemon.md:186–194 documents daemon-ctl.sh; docs/epics/build-insrc-vs-code-extension-v1-E20260921ad0d45c9/DEF.md:3 mentions CLI/TUI users. However, the supplied matches are truncated at 50 and contain no source reads establishing the MCP server's client role or confirming that these five comprise the compatibility inventory. The premise is partially supported, but not fully verifiable; no concrete build-breaking contradiction is shown.",
+          "action": "Gather source evidence for each named client's daemon interface usage, particularly MCP and TUI, before treating this as a verified compatibility inventory.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The available evidence supports several named surfaces but cannot establish the full inventory or justify removing any member.",
+            "options": [
+              "Retain the five-client requirement and obtain source-level evidence for each client's daemon interface usage.",
+              "Describe the five clients as the intended compatibility scope, with their current interface usage pending verification."
+            ]
+          }
+        },
+        {
+          "claimId": "p30",
+          "ref": "E2026102186197ac6:FR008",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "All listed existing clients consume daemon functionality exclusively through the IPC contract.",
+          "evidence": "Unverifiable from the supplied evidence. AGENTS.md:31 and :131 document the IPC contract and daemon socket. docs/epics/build-insrc-vs-code-extension-v1-E20260921ad0d45c9/S001/LLD.md:182 is not among the supplied matches; the supplied S004/LLD.md:182 describes IPC access for workspace registration only. The grep is truncated at 50 matches and contains documentation rather than direct implementation evidence covering all listed clients. The sole direct read, CLAUDE.md:1, is a heading. These results neither establish exclusive IPC consumption across the MCP server, VS Code plugin, JetBrains plugin, TUI, and daemon-ctl nor demonstrate a contradiction or concrete build failure.",
+          "action": "Gather implementation evidence for each listed client's daemon access and relevant imports, including possible direct storage or daemon-module access, before asserting exclusivity.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The universal exclusivity claim requires client-by-client verification; the supplied documentation and truncated search cannot support a mechanical correction.",
+            "options": [
+              "Retain the premise as unverified pending implementation probes for every listed client.",
+              "Recast IPC-only consumption as a required architectural constraint, with compliance checks for each listed client."
+            ]
+          }
+        },
+        {
+          "claimId": "p31",
+          "ref": "k5",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "Existing IPC consumers remain compatible when new response fields are added while all existing request shapes, method names, socket paths and response-field meanings remain unchanged.",
+          "evidence": "Unverifiable: the grep results are truncated and supply documentation rather than consumer implementation reads. design/indexer.html:369 documents daemon.status fields; docs/epics/build-insrc-vs-code-extension-v1-E20260921ad0d45c9/S001/LLD.md:204 describes JSON.parse error handling, but does not establish whether consumers reject unknown response fields. The additionalProperties:false matches concern review-output schemas, not IPC consumers. CLAUDE.md:1 supplies only a heading. No supplied evidence establishes compatibility across existing consumers or contradicts it with a concrete failure.",
+          "action": "Gather consumer deserialization and validation code, plus compatibility checks using responses with added fields; qualify the compatibility claim until those checks establish unknown-field tolerance.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The available evidence cannot establish the external consumers' handling of additional response fields.",
+            "options": [
+              "Retain the premise after supplying consumer implementation evidence and compatibility test results.",
+              "Reword compatibility as a requirement to verify for each existing consumer before shipping added response fields."
+            ]
+          }
+        },
+        {
+          "claimId": "p32",
+          "ref": "c9",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "CLAUDE.md's LLM provider abstraction rule forbids Promise.all for operations reaching any LLM provider and requires sequential awaits.",
+          "evidence": "CLAUDE.md:122 explicitly states: “Never `Promise.all` anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial `for...of` with sequential awaits.” AGENTS.md:122 repeats the same rule, directly confirming the premise.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence directly confirms the premise; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p33",
+          "ref": "c10",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "CLAUDE.md's project principles place accuracy first and cost last.",
+          "evidence": "The supplied read at CLAUDE.md:1 confirms only the heading “# CLAUDE.md — insrc backend”. It does not show the project principles or substantiate the accuracy/cost ordering; no evidence for k7 was supplied.",
+          "action": "Provide the project-principles lines establishing the accuracy/cost priorities and re-evaluate the premise.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence cannot verify the premise or support a text correction.",
+            "options": [
+              "Supply the relevant project-principles lines to verify the claim.",
+              "Remove the unsupported premise if supporting evidence cannot be supplied."
+            ]
+          }
+        },
+        {
+          "claimId": "p34",
+          "ref": "c11",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "ISSUE-5437d6e5 records lmdb-js root.transaction committing writes made by a throwing callback and a fix using childTransaction.",
+          "evidence": "Not judged: the reviewing model call failed twice. Last error: codex exited with -9. stderr=Reading prompt from stdin...\n stdout={\"type\":\"thread.started\",\"thread_id\":\"01a15e5a-49dc-7481-8f22-d7077bde8476\"}\n{\"type\":\"turn.started\"}\n",
+          "action": "Re-run the review, or judge this premise by hand.",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "p35",
+          "ref": "s1/lc1",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "The transaction mechanism used for graph writes must roll back every change when its write callback fails.",
+          "evidence": "UNVERIFIABLE: The grep results are truncated at 50 matches and contain no graph-write implementation, childTransaction/transactionSync call, or rollback test. Matches such as design/analyze-context-builder.md:179 concern pipeline aborts; docs/apm-integration-prd.md:135 concerns command side effects. Neither establishes rollback on a failed graph-write callback.",
+          "action": "Gather targeted evidence for the graph-write transaction wrapper and its underlying transaction contract, plus a test that writes then throws and verifies all affected graph state remains unchanged.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the rollback guarantee; no mechanical artifact correction is supported.",
+            "options": [
+              "Retain the premise pending targeted implementation, dependency-contract, and rollback-test evidence.",
+              "Explicitly mark rollback behavior as an unverified prerequisite to establish before implementation."
+            ]
+          }
+        },
+        {
+          "claimId": "p36",
+          "ref": "c12",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "src/shared/ipc-client.ts:46-55 opens a new socket for each rpc() call and sends client metadata containing label 'cli' and process.pid.",
+          "evidence": "src/shared/ipc-client.ts:46 confirms rpc's default connection factory is () => createConnection(PATHS.sockFile), but the supplied reads omit the function body; :55 contains only `});`. src/cli/services/__tests__/debug-mcp.test.ts:119,129 describe and assert the expected client metadata, but do not show the production request construction. The truncated grep therefore does not fully verify a new socket and the stated metadata on each call.",
+          "action": "Obtain the rpc body showing invocation of connect() and construction and transmission of the client metadata, then reassess the citation.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence partially supports the premise but does not establish its full runtime behavior; no evidence-derived artifact correction is justified.",
+            "options": [
+              "Supply the complete rpc implementation covering socket creation and request transmission.",
+              "Narrow the premise to the default connection factory verified at src/shared/ipc-client.ts:46."
+            ]
+          }
+        },
+        {
+          "claimId": "p37",
+          "ref": "c12",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "src/mcp/forward-step.ts:115-121 opens a new socket for each step.call and sends client metadata with a label and process id.",
+          "evidence": "The supplied reads show src/mcp/forward-step.ts:115 selecting `deps.connect ?? _connectOverride` and :121 setting `params: { tool, args: rawArgs, context }`. Neither establishes a new socket per call or client metadata containing a label and process id. The truncated grep results contain artifact references, but no source matches verifying those claims. The premise is unverifiable from this evidence, not contradicted.",
+          "action": "Gather the intervening connection and request-envelope source lines, including the default connector and client metadata, before retaining the full claim.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The available source lines support only connector selection and request parameters; they cannot establish socket lifetime or metadata contents.",
+            "options": [
+              "Re-probe src/mcp/forward-step.ts for the connection invocation, default connector, and client envelope, then reassess the full premise.",
+              "Narrow the premise to the verified connector selection at line 115 and request parameters at line 121."
+            ]
+          }
+        },
+        {
+          "claimId": "p38",
+          "ref": "4",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "Every daemon request from every supported client carries a self-reported client label and process id.",
+          "evidence": "Unverifiable: src/shared/ipc-client.ts:46 shows only the rpc signature; src/mcp/forward-step.ts:115 shows only connection selection. Neither read shows the serialized request or identity fields. The truncated grep includes historical artifact claims about a client envelope, but no current request construction or IpcServer handling establishing coverage of every supported client.",
+          "action": "Gather current request-construction and server-handling evidence for each supported client before asserting universal label/PID coverage.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence establishes neither universal coverage nor a concrete counterexample; a mechanical correction is unsupported.",
+            "options": [
+              "Retain the premise only after verifying label and PID serialization for every supported client.",
+              "Narrow the premise to individually verified request paths after gathering their serialization evidence."
+            ]
+          }
+        },
+        {
+          "claimId": "p39",
+          "ref": "4",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "All supported clients create a new IPC connection for each request, so a session spans multiple connections.",
+          "evidence": "src/shared/ipc-client.ts:46 shows rpc's default connection factory calls createConnection(PATHS.sockFile), but the supplied line does not show its invocation. src/mcp/forward-step.ts:115 only selects deps.connect ?? _connectOverride. The grep results are truncated at 50 matches and include no exhaustive supported-client inventory or connection lifecycles. The c12 match at DEF.md:193 repeats the claim rather than independently verifying it. Thus 'all supported clients' and the session-wide conclusion remain unverifiable; no concrete build-breaking contradiction is established.",
+          "action": "Establish the supported-client inventory and inspect each request's connection lifecycle, or narrow the premise to the behavior demonstrated by the supplied source.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports a default connection factory but does not establish universal per-request connection behavior or session lifetime.",
+            "options": [
+              "Narrow the premise to: src/shared/ipc-client.ts:46 defines rpc with a default factory that creates an IPC connection.",
+              "Retain the universal premise only after gathering complete supported-client coverage and source reads showing connection creation, reuse or closure, and session continuity."
+            ]
+          }
+        },
+        {
+          "claimId": "p40",
+          "ref": "E2026102186197ac6:S004:FR001",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "A request's client-label and process-id pair identifies exactly one client-process session across that session's connections.",
+          "evidence": "Unverifiable from the supplied evidence. src/shared/ipc-client.ts:46 confirms rpc() defaults to createConnection(PATHS.sockFile); src/mcp/forward-step.ts:115 only selects a connection dependency. Neither read shows the transmitted label/pid or establishes session uniqueness across connections. DEF.md:193 describes those envelopes, but is an artifact assertion rather than source verification. The grep output is truncated and does not establish the identity guarantee.",
+          "action": "Gather source evidence for identity production, server-side identity handling, and session lifetime before relying on label/pid as a unique session key.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied reads do not establish or contradict the claimed uniqueness; no evidence-derived text correction is available.",
+            "options": [
+              "Retain the premise pending targeted source reads and tests establishing uniqueness across a session's connections.",
+              "Reword it as a proposed identity contract, with uniqueness and session lifetime explicitly requiring validation."
+            ]
+          }
+        },
+        {
+          "claimId": "p41",
+          "ref": "E2026102186197ac6:S003:FR001",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The existing index queue has two lanes: code indexing and document summaries.",
+          "evidence": "AGENTS.md:123 and CLAUDE.md:123 explicitly state that the daemon's index queue has an index lane and a document-summary lane, referencing src/daemon/queue.ts. They also describe the summary lane yielding to code work, confirming the two stated responsibilities.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied matches directly confirm the premise."
+          }
+        },
+        {
+          "claimId": "p42",
+          "ref": "s3/ac3",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "The current index queue gives code indexing priority by making document-summary work yield to code work.",
+          "evidence": "AGENTS.md:123 and CLAUDE.md:123 explicitly document that summaries start only while the index lane is idle, with an already-running summary allowed to overlap arriving code work. However, the truncated evidence contains no matches or reads from src/daemon/queue.ts, so the current implementation's ordering is unverifiable.",
+          "action": "Provide src/daemon/queue.ts evidence showing the summary-start guard and index-lane idle condition, or qualify the premise as documented behavior.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports the documented policy but does not establish its implementation.",
+            "options": [
+              "Supply queue implementation reads to verify that summary work yields to code indexing.",
+              "Reword the premise to state that AGENTS.md and CLAUDE.md document this priority policy."
+            ]
+          }
+        },
+        {
+          "claimId": "p43",
+          "ref": "s3/ac4",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Existing session or admin request handlers read queue status or wait for indexing to become idle.",
+          "evidence": "Unverifiable: the supplied matches show indexer code waiting for index idle at src/indexer/index.ts:960–961 and :988. They show no session or admin request handler reading queue status or awaiting idle, and include no source reads from src/daemon/index.ts or src/daemon/queue.ts. These matches neither establish nor disprove the claimed handler behavior.",
+          "action": "Provide source evidence identifying the session/admin handlers and their queue access, or revise the premise to describe only the demonstrated indexer behavior.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence establishes indexer idle checks, but changing the premise's scope requires confirming the acceptance criterion's intent.",
+            "options": [
+              "Retain the premise pending source reads of the session/admin handlers and their queue access.",
+              "Reword the premise to describe the indexer idle checks demonstrated at src/indexer/index.ts:960–961 and :988, if that matches the intended scope."
+            ]
+          }
+        },
+        {
+          "claimId": "p44",
+          "ref": "s1/ac1",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "The current indexing write path commits graph changes before writing corresponding vectors.",
+          "evidence": "Unverifiable: the grep results are truncated at 50 matches and contain no implementation reads from src/indexer, src/db/graph, or src/db/lance. design/indexer.html:356 describes writing entities without embeddings and enqueueing reembedding, but does not establish the current graph commit versus vector write ordering.",
+          "action": "Gather source reads showing the indexing write sequence and the graph transaction completion semantics before asserting this ordering.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence establishes neither the claimed ordering nor its opposite; no evidence-derived replacement is available.",
+            "options": [
+              "Supply implementation evidence showing graph commits complete before corresponding vector writes.",
+              "Mark the ordering premise as unverified pending targeted source probes."
+            ]
+          }
+        },
+        {
+          "claimId": "p45",
+          "ref": "s1/ac1",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "Current graph transactions expose either the pre-transaction or post-transaction state to readers without exposing partial transaction changes.",
+          "evidence": "UNVERIFIABLE: The grep output is truncated at 50 matches and contains no reads or matches from src/db/graph/store.ts. docs/daemon.md:1348 describes LMDB backup copying as transactional, while docs/cross-session-agent-memory-spec.md:188 prescribes an atomic reconciliation commit; neither establishes current graph transaction visibility to readers. No supplied evidence confirms or contradicts the premise.",
+          "action": "Gather targeted evidence from graph transaction implementations and reader paths, plus applicable isolation tests or LMDB binding guarantees, before treating s1/ac1 as established.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence does not establish reader isolation, so no mechanical factual correction is supported.",
+            "options": [
+              "Retain the premise pending targeted implementation and reader-isolation evidence.",
+              "Reword it as an isolation requirement to verify, rather than a confirmed property of current graph transactions."
+            ]
+          }
+        },
+        {
+          "claimId": "p46",
+          "ref": "s4/ac5",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Existing session request paths issue provider calls serially with sequential awaits.",
+          "evidence": "AGENTS.md:122 and CLAUDE.md:122 require sequential provider calls, but establish a convention rather than actual session request behavior. design/indexer.html:823–824 shows sequential awaits in a documentation example. The supplied grep output is truncated at 50 matches and contains no session request implementation reads; it neither verifies nor contradicts the premise.",
+          "action": "Gather source reads covering session request entry points and their provider calls, including surrounding control flow, to verify sequential execution.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence supports the documented rule but cannot establish implementation compliance.",
+            "options": [
+              "Retain the premise as unverified pending targeted session-path source evidence.",
+              "Reword the premise as a documented requirement: AGENTS.md:122 and CLAUDE.md:122 require sequential awaits for provider calls."
+            ]
+          }
+        },
+        {
+          "claimId": "p47",
+          "ref": "s4/ac6",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "Workflow, analyze, review and build MCP step flows all use tokens that can resume work in a later request.",
+          "evidence": "UNVERIFIABLE: AGENTS.md:223,226,228–229 identify the four step tools and describe multi-turn behavior, but do not establish resumable tokens. design/analyze-framework.md:419 describes file-based run recovery, not MCP state-token continuation. The supplied grep results are truncated at 50 matches and contain no src/mcp implementation evidence confirming token production and consumption for all four flows.",
+          "action": "Gather implementation evidence for each flow showing a token returned by one request and consumed by a later request to restore work state.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence establishes the tools exist but cannot verify the shared token-resumption contract; no mechanical correction is supported.",
+            "options": [
+              "Retain the premise pending implementation evidence for token production and resumption in all four flows.",
+              "Narrow the premise to the documented existence and purposes of the four MCP step tools, removing the token-resumption claim."
+            ]
+          }
+        },
+        {
+          "claimId": "p48",
+          "ref": "s4/ac6",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Existing step-token state and any referenced daemon state support resuming an earlier turn's workflow, analyze, review or build operation.",
+          "evidence": "Unverifiable: the 50-match truncated result contains design/documentation matches, with no implementation reads from src/mcp, src/workflow, or src/analyze. design/analyze-framework.md:419 describes resumability, and docs/epics/add-daemon-driven-code-review-stage-E20260803761a43a6/S008/PLAN.md:14–16 prescribes token storage and resume tests; neither establishes existing implementation behavior across workflow, analyze, review, and build. No concrete build-breaking contradiction is demonstrated.",
+          "action": "Gather scoped implementation reads for each operation's token creation, restoration, handler continuation, and referenced daemon-state lifetime before relying on this premise.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied documentation describes intended behavior but cannot verify the broad existing-capability claim; no mechanical correction is supported.",
+            "options": [
+              "Retain the premise pending implementation evidence for all four operation types and their state lifetimes.",
+              "Recast resumability as a requirement to validate for each operation rather than an established existing capability."
+            ]
+          }
+        },
+        {
+          "claimId": "p49",
+          "ref": "s5/ac3",
+          "kind": "external-contract",
+          "severity": "MED",
+          "premise": "Existing TUI and plugin consumers depend on daemon.status response fields retaining their current meanings.",
+          "evidence": "Unverifiable from the supplied truncated matches. README.md:215 describes TUI health displays, and design/indexer.html:324,369 documents daemon.status and its fields. docs/epics/build-insrc-vs-code-extension-v1-E20260921ad0d45c9/S001/LLD.md:58,67 describes an intended extension consumer returning the wire status unchanged. However, no actual TUI or plugin source reads were supplied to establish their dependencies on current field meanings. No concrete build-breaking contradiction is demonstrated.",
+          "action": "Gather targeted source evidence for the daemon.status producer and the TUI and plugin consumers, identifying the fields consumed and their expected meanings.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The documentation supports the compatibility concern, but does not verify existing consumer behavior.",
+            "options": [
+              "Verify the premise with targeted producer and consumer source probes.",
+              "Reword it as a compatibility requirement to preserve existing daemon.status field meanings, with consumer dependencies explicitly awaiting verification."
+            ]
+          }
+        },
+        {
+          "claimId": "p50",
+          "ref": "s5",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Existing stale-daemon checks can stop or restart a healthy daemon when busy execution prevents its liveness response.",
+          "evidence": "Unverifiable: the grep output is truncated at 50 matches and contains no stale-daemon check implementation or liveness-response handling. README.md:216 and README.md:233 list daemon lifecycle commands, but do not establish automatic stop/restart behavior. The camon restart matches concern mitmproxy, not the claimed insrc daemon behavior.",
+          "action": "Gather targeted evidence for daemon-ctl liveness checks, timeout handling, and the resulting stop/restart branches, plus evidence that busy execution can prevent the checked response.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither confirms nor contradicts the claimed causal path; no mechanical correction is supported.",
+            "options": [
+              "Supply targeted implementation reads tracing a missed liveness response to daemon stop or restart.",
+              "Reword the premise as an unverified hypothesis pending targeted investigation."
+            ]
+          }
+        },
+        {
+          "claimId": "p51",
+          "ref": "E2026102186197ac6:S002:FR001",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "The proposed classification assigns exactly one of admin, session or indexing to every RPC and stream request method.",
+          "evidence": "UNVERIFIABLE: The grep output is truncated at 50 matches and contains no rpcHandlers or streamHandlers definitions or method-to-category assignments. AGENTS.md:238 mentions indexing prerequisites; camon/src/camon/__pycache__/storage.cpython-312.pyc:11 references a sessions table. Neither establishes exhaustive, exclusive classification of RPC and stream methods. No concrete build-breaking contradiction is demonstrated.",
+          "action": "Gather the complete RPC and stream handler inventories and proposed classification rules, then verify that each method receives exactly one of admin, session or indexing.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence cannot establish coverage or exclusivity and supports no mechanical artifact correction.",
+            "options": [
+              "Provide complete handler inventories and classification rules for an exhaustiveness and exclusivity check.",
+              "Reword the premise as a requirement pending verification against complete handler inventories."
+            ]
+          }
+        },
+        {
+          "claimId": "p52",
+          "ref": "s2",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S002 depends on Story S001 providing consistent store access across daemon threads.",
+          "evidence": "No probes were run for this premise. No source matches or read lines establish that S001 provides consistent store access across daemon threads or that S002 depends on it; the ordering is unverifiable.",
+          "action": "Gather evidence for S001's store-access guarantee and S002's reliance on that guarantee before validating the dependency.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports neither confirming nor mechanically correcting the dependency.",
+            "options": [
+              "Verify both stories and their relevant source paths to establish the dependency.",
+              "Reassess the ordering after determining whether S002 requires S001's store-access changes."
+            ]
+          }
+        },
+        {
+          "claimId": "p53",
+          "ref": "s3",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S003 depends on Story S001 providing consistent store access across daemon threads.",
+          "evidence": "No probes were run; no matches or read lines were supplied to verify that S003 depends on S001 providing consistent store access across daemon threads.",
+          "action": "Verify S001's store-access guarantees and S003's reliance on them before accepting the dependency.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence cannot establish the ordering dependency or support a safe text correction.",
+            "options": [
+              "Gather evidence of S001's store-access guarantees and S003's dependency on them.",
+              "Review both story definitions to decide whether the dependency should be retained or revised."
+            ]
+          }
+        },
+        {
+          "claimId": "p54",
+          "ref": "s4",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S004 depends on both S001's store-access support and S002's admin-request isolation.",
+          "evidence": "No probes were run for this premise. No matches or read lines verify that S004 depends on S001's store-access support and S002's admin-request isolation.",
+          "action": "Gather dependency evidence for S004 against S001 and S002 before confirming the ordering.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence cannot establish the dependency ordering or support a safe text correction.",
+            "options": [
+              "Probe S004's requirements and both predecessor outputs to verify the dependencies.",
+              "Review the three story artifacts to determine and document the required ordering."
+            ]
+          }
+        },
+        {
+          "claimId": "p55",
+          "ref": "s5",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S005 depends on both S002's admin-request isolation and S004's per-session threads.",
+          "evidence": "No probes were run for this premise. No matches or read lines were provided to verify S005's dependencies on S002 and S004; the ordering claim is unverifiable.",
+          "action": "Gather evidence for S005's prerequisites and the outputs of S002 and S004 before confirming the dependency ordering.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports neither confirming nor changing the dependency claim.",
+            "options": [
+              "Verify that S005 requires both S002's admin-request isolation and S004's per-session threads.",
+              "Revise the dependency ordering only after evidence establishes S005's actual prerequisites."
+            ]
+          }
+        },
+        {
+          "claimId": "p56",
+          "ref": "s1",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Story S001's extension reference c7 resolves to the graph-store singleton implementation cited at src/db/graph/store.ts:528-531.",
+          "evidence": "DEF.md:188 defines [[c7]] as src/db/graph/store.ts:528-531 and describes the graph-store singleton. The source reads confirm getGraphStore(): Promise<GraphStore> at line 528 and reuse of the shared _initPromise at line 531. The reference resolves to the stated implementation.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied citation and source reads agree; no correction is needed."
+          }
+        },
+        {
+          "claimId": "p57",
+          "ref": "s2",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Story S002's extension references c1 and c2 resolve to the current daemon handler registration and IPC server implementation.",
+          "evidence": "DEF.md:182–183 defines c1 and c2 with the stated source ranges. Source matches confirm rpcHandlers at src/daemon/index.ts:507, streamHandlers at :1906, and their wiring into IpcServer at :1994–1997; src/daemon/server.ts:79 and :133 confirm the server class and constructor. However, no supplied match or read shows Story S002 (s2) or its extension references, so the cross-artifact link itself is unverifiable.",
+          "action": "Supply Story S002's s2 text and extension references to verify that they resolve to the evidenced c1 and c2 definitions.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The implementation targets are confirmed, but the supplied evidence omits the referencing story; no artifact correction is justified.",
+            "options": [
+              "Provide the S002/s2 excerpt containing its c1 and c2 extension references.",
+              "Limit the premise to the verified c1 and c2 implementation anchors, subject to human approval."
+            ]
+          }
+        },
+        {
+          "claimId": "p58",
+          "ref": "s3",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Story S003's extension reference c1 supplies evidence for the current index queue's integration with the main daemon thread.",
+          "evidence": "Unverifiable: src/daemon/index.ts:507 reads `const rpcHandlers: RpcHandlers = {`, and :2099 reads only `}`. Neither demonstrates queue integration or main-thread execution. The truncated grep results contain documentation references to the queue but do not supply Story S003's c1 or source demonstrating its claim.",
+          "action": "Provide S003's extension reference c1 and source reads showing queue construction and its daemon integration, including evidence of the execution thread.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither verifies nor contradicts the cross-artifact claim; no concrete build-breaking failure or safe mechanical correction is established.",
+            "options": [
+              "Supply S003's c1 and targeted source reads establishing queue integration and execution context.",
+              "Mark the premise unverified pending those cross-artifact and source checks."
+            ]
+          }
+        },
+        {
+          "claimId": "p59",
+          "ref": "s4",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Story S004's extension references c1 and c2 resolve to the current request registration and connection-dispatch implementation that session routing must preserve.",
+          "evidence": "src/daemon/index.ts:507 confirms `const rpcHandlers: RpcHandlers = {`, but line 2099 shows only `}`. src/daemon/server.ts:18 shows `readonly connectedAt: number;`, and line 220 is blank; neither establishes connection dispatch. The truncated grep supplies no relevant implementation matches or definitions of s4, c1, or c2. Thus the cross-artifact resolution and preservation claim are unverifiable; no concrete build-breaking contradiction is demonstrated.",
+          "action": "Provide S004's extension references and the definitions of c1/c2, plus source reads covering request registration and connection dispatch, to verify their resolution and preservation requirements.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The evidence partially confirms the registration concept but cannot establish the referenced artifact mappings or dispatch behavior, so no evidence-derived replacement anchor is available.",
+            "options": [
+              "Supply the referenced artifact sections and targeted implementation reads, then reassess the premise.",
+              "Reword the premise to mark c1/c2 resolution and connection-dispatch preservation as pending verification."
+            ]
+          }
+        },
+        {
+          "claimId": "p60",
+          "ref": "s5",
+          "kind": "cross-artifact",
+          "severity": "MED",
+          "premise": "Story S005's extension reference c2 supplies the existing IPC server behavior on which thread visibility and liveness reporting will build.",
+          "evidence": "Unverifiable: src/daemon/server.ts:18 shows only `readonly connectedAt: number;`, and line 220 is blank. The truncated grep results contain no IPC server implementation or S005/c2 artifact content. Documentation mentions daemon.status (design/indexer.html:369), but does not establish the claimed cross-artifact reference or server behavior.",
+          "action": "Supply S005 and c2 text plus the relevant IPC server implementation covering connection tracking and liveness/status handling; rerun the assessment against that evidence.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence neither verifies nor contradicts the premise and supports no safe artifact correction.",
+            "options": [
+              "Provide S005/c2 artifact excerpts and focused server implementation reads to verify the reference.",
+              "Reassess the premise after gathering targeted connection-tracking and liveness/status handler evidence."
+            ]
+          }
+        },
+        {
+          "claimId": "p61",
+          "ref": "8",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "Story S001's design must settle the store-access ownership model before dependent threading stories rely on it.",
+          "evidence": "No probes were run for this premise. No matches or read lines establish S001's ownership decision or the dependent stories' ordering requirements; the premise is unverifiable.",
+          "action": "Gather evidence for S001's store-access ownership decision and the threading stories' dependencies before validating the ordering requirement.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The supplied evidence supports neither verification nor a safe artifact correction.",
+            "options": [
+              "Provide S001's design and dependent story excerpts establishing the ownership dependency.",
+              "Probe the relevant store-access and threading code to establish whether this ordering is required."
+            ]
+          }
+        },
+        {
+          "claimId": "p62",
+          "ref": "8",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The artifact leaves session-end detection unresolved while assigning its design to Story S004.",
+          "evidence": "No probes were run, and no artifact excerpts or source reads were supplied. The claim that session-end detection remains unresolved and its design belongs to Story S004 is UNVERIFIABLE.",
+          "action": "Provide artifact excerpts for anchors 8, s4, E2026102186197ac6:FR007, and E2026102186197ac6:S004:FR001 to verify the unresolved decision and its assigned owner.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "Without supporting evidence or artifact markdown, no safe text correction can be derived.",
+            "options": [
+              "Supply the referenced artifact passages and reassess the premise.",
+              "Resolve the session-end detection design and ownership explicitly in the artifact, then reassess."
+            ]
+          }
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 52,
+        "low": 10
+      },
+      "reviewedAt": "2026-10-21T11:37:28.577Z",
+      "model": "cli-codex:gpt-6-astra",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-21T12:16:25.767Z",
+    "reviewOverride": {
+      "reason": "3 review rounds; HIGH resolved; remaining MEDs are unverifiable-evidence gaps (truncated probes, blank-line reads), with the load-bearing premises verified by hand. User approved option A on 2026-10-21; c3/c4 quotes replaced with the ISSUEs' verbatim text after round 3.",
+      "at": "2026-10-21T12:16:25.766Z"
+    }
+  },
+  "body": {
+    "title": "Multi-threaded daemon: sessions, admin, indexing",
+    "summary": {
+      "prose": "The daemon stays responsive to everyone no matter what one session is doing. Each client session runs its work on its own thread, administration (liveness, status, the TUI, daemon control) always answers, and indexing proceeds without blocking sessions. A slow or stuck task now costs only the session that started it.",
+      "audience": "product"
+    },
+    "flavor": "enhancement",
+    "problem": "The insrc daemon serves every client — each Claude/Codex session's MCP server, the IDE plugins, the TUI and daemon-ctl — from a single JavaScript thread, and the index queue and all graph, vector and data-store access run on that same thread [[c1]] [[c2]]. Any synchronous work on behalf of one session therefore stalls every other client: on 2026-10-21 a chunked code review held the thread for minutes, other sessions' requests and liveness pings went unanswered (the socket refused connections once its accept queue filled), and another session, seeing its connections refused, took the daemon for hung and restarted it with daemon-ctl (whose start and restart stop any running daemon before starting a new one), losing in-flight work [[c3]] [[c4]]. Fixing individual hot spots removes known stalls but not the exposure: the next slow path in any session, or a heavy indexing pass, again freezes the whole daemon for everyone.",
+    "nonGoals": [
+      {
+        "text": "Running work for one session in parallel (several of a session's requests at once).",
+        "rationale": "Stakeholder fixed: a session is serial on its own thread because intra-session cross-talk is problematic [[c5]]."
+      },
+      {
+        "text": "Splitting the daemon into several OS processes or a distributed service.",
+        "rationale": "Stakeholder asked for threads in the daemon; the daemon remains the single owner of the stores [[c5]] [[c6]]."
+      },
+      {
+        "text": "Changing the IPC wire protocol, socket path or method names, or removing or re-purposing any existing response field.",
+        "rationale": "The plugins and MCP server mirror the contract; a threading change must be invisible to them [[c8]]."
+      },
+      {
+        "text": "Reworking individual slow code paths (e.g. review material building).",
+        "rationale": "Those are fixed separately (ISSUE-e940023a, ISSUE-2f4cb54c); this Epic removes the cross-session exposure, not specific hot spots [[c4]]."
+      },
+      {
+        "text": "Changing how LLM provider calls are serialised or the model-tier routing.",
+        "rationale": "Provider-call discipline is a separate project rule [[c9]]; this Epic only changes which thread issues them."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "A 'session' is one client process. Every request carries a self-reported client label and process id, and clients open a new connection per request (the CLI/TUI per call, the MCP server per step call), so a session spans many connections and is identified by its client label and process id, not by a connection.",
+        "confidence": "med",
+        "source": "c12"
+      },
+      {
+        "text": "The stores in use (the LMDB graph, the Lance vector tables, and the in-memory DuckDB query engine behind the db_file_* tools) can be used safely from more than one thread of the same process, or can be fronted by one owning thread; which applies per store is to be settled in design.",
+        "confidence": "low",
+        "source": "c7"
+      },
+      {
+        "text": "The 189 handlers the daemon serves (173 RPC and 16 stream handlers: those registered in main() plus the understanding routes merged into them) can be grouped into admin, session and indexing classes without ambiguity for nearly all of them.",
+        "confidence": "med",
+        "source": "c1"
+      },
+      {
+        "text": "The number of concurrent sessions is small (single user, a handful of agent sessions plus IDE and TUI), so one thread per session is affordable.",
+        "confidence": "high",
+        "source": "c5"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "text": "One thread per client session; work within a session is serial and a session is blocked on its own thread while its long task runs.",
+        "type": "stakeholder",
+        "source": "c5"
+      },
+      {
+        "id": "k2",
+        "text": "One admin thread serves ping/daemon.status, the TUI, daemon-ctl and other admin RPCs.",
+        "type": "stakeholder",
+        "source": "c5"
+      },
+      {
+        "id": "k3",
+        "text": "One indexing thread runs the index queue.",
+        "type": "stakeholder",
+        "source": "c5"
+      },
+      {
+        "id": "k4",
+        "text": "The daemon remains the sole owner of all LMDB, Lance and DuckDB access; clients never open the stores.",
+        "type": "invariant",
+        "source": "c6"
+      },
+      {
+        "id": "k5",
+        "text": "The IPC contract (socket path, JSON-RPC method names, request shapes, and every existing response field with its meaning) is unchanged for existing clients; responses may gain new fields.",
+        "type": "contract",
+        "source": "c8"
+      },
+      {
+        "id": "k6",
+        "text": "Never Promise.all calls that reach an LLM provider; provider calls stay serial with sequential awaits.",
+        "type": "convention",
+        "source": "c9"
+      },
+      {
+        "id": "k7",
+        "text": "Accuracy is primary: no change may drop or reorder a session's results to gain throughput.",
+        "type": "convention",
+        "source": "c10"
+      }
+    ],
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Stores usable consistently from several daemon threads",
+        "userValue": "Admin, session and indexing threads can all read and write the graph, vector and data stores, the daemon stays their only owner, and no thread ever sees a torn or lost write, so splitting the work across threads costs no correctness.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the indexing thread is writing entities for a repo",
+            "when": "a session thread reads the same repo's graph at the same time",
+            "then": "the reader sees the graph either before or after each write transaction, never a partial one, neither thread errors, and the graph and vector stores keep today's ordering (vectors are written after the graph commit)",
+            "operationalizes": [
+              "k4",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "two session threads each write a different artifact or config entry",
+            "when": "both writes complete",
+            "then": "both writes are durable and readable from every thread, including the admin thread",
+            "operationalizes": [
+              "k4",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the daemon runs with several threads",
+            "when": "any client other than the daemon process tries to reach the stores",
+            "then": "it can do so only through daemon IPC, exactly as today",
+            "operationalizes": [
+              "k4",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a write on one thread fails part-way",
+            "when": "other threads read afterwards",
+            "then": "none of the failed write's changes are visible",
+            "operationalizes": [
+              "k7"
+            ]
+          }
+        ],
+        "localConstraints": [
+          {
+            "id": "lc1",
+            "text": "A failed write transaction must not commit partial changes (a previously seen store behaviour committed a throwing callback's writes).",
+            "type": "invariant",
+            "source": "c11"
+          }
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c7"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Every thread in the daemon can read and write the graph, vector and data stores with the same consistency guarantees a single thread has today."
+          },
+          {
+            "statement": "The daemon remains the only process that opens the stores."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Admin requests always answer",
+        "userValue": "Liveness pings, daemon status, the TUI and daemon-ctl get prompt answers even while sessions or the indexer are busy, so no client mistakes a busy daemon for a dead one and kills it.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "one session's request is doing minutes of synchronous work",
+            "when": "a client sends a ping or daemon status request",
+            "then": "the request is answered promptly with the daemon's current state",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "the indexer is processing a large indexing pass",
+            "when": "the TUI or daemon-ctl issues an admin request",
+            "then": "the request is answered promptly",
+            "operationalizes": [
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "an existing admin client built against today's IPC contract",
+            "when": "it connects and sends its usual admin requests",
+            "then": "it receives the same responses as before with no client change",
+            "operationalizes": [
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "the daemon's request methods",
+            "when": "a request arrives",
+            "then": "it is classified as admin, session or indexing work, and every admin-class method is served by the admin thread",
+            "operationalizes": [
+              "k2"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c2",
+          "c1"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Every request method has one declared class: admin, session or indexing."
+          },
+          {
+            "statement": "Admin-class requests are served by a dedicated admin thread that session and indexing work cannot block."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Indexing runs on its own thread",
+        "userValue": "Code indexing and document summaries proceed in the background without stalling any session or admin request, and a busy session does not stall indexing.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an indexing pass is in progress",
+            "when": "a session sends a request",
+            "then": "the session's request is handled without waiting for the indexing pass",
+            "operationalizes": [
+              "k3",
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a session thread is busy with a long task",
+            "when": "a file change enqueues indexing work",
+            "then": "the indexing work starts and completes without waiting for the session",
+            "operationalizes": [
+              "k3"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the index queue's existing lane ordering (document summaries yield to code indexing)",
+            "when": "the queue runs on the indexing thread",
+            "then": "the same ordering and the same indexed results are produced as today",
+            "operationalizes": [
+              "k3",
+              "k6",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a session or admin request that waits for indexing to become idle or reads queue status",
+            "when": "it runs on its own thread",
+            "then": "it gets the indexing thread's real state",
+            "operationalizes": [
+              "k3",
+              "k5"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c1"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "The index queue, with both its lanes, runs on one dedicated indexing thread."
+          },
+          {
+            "statement": "Queue status and idle-waiting remain available to other threads."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Each session runs on its own serial thread",
+        "userValue": "A long task in one Claude/Codex or IDE session no longer freezes other sessions; inside a session, requests still run one at a time in order, so there is no cross-talk between a session's own tasks.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "two sessions are connected and session A starts a request that runs for minutes",
+            "when": "session B sends a request",
+            "then": "session B's request is handled and answered without waiting for session A",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "session A has a long request running",
+            "when": "session A sends a second request",
+            "then": "the second request waits and runs only after the first completes, in arrival order",
+            "operationalizes": [
+              "k1",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a client process sends its first request",
+            "when": "that request and the client's later requests are handled",
+            "then": "they all run, in order, on one thread belonging to that client's session, whichever connection each arrived on, and the thread is released when the session ends",
+            "operationalizes": [
+              "k1"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "a session's request throws or its thread fails",
+            "when": "the failure happens",
+            "then": "that session receives an error, and the daemon, the admin thread, the indexer and every other session keep working",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "a session thread makes model calls",
+            "when": "the session's request runs",
+            "then": "its provider calls stay serial with sequential awaits, as today",
+            "operationalizes": [
+              "k6"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "an MCP step token (workflow, analyze, review, build) minted in an earlier turn",
+            "when": "the same session presents it in a later request",
+            "then": "the step resumes exactly as it does today",
+            "operationalizes": [
+              "k5",
+              "k7"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s1",
+          "s2"
+        ],
+        "sizeEstimate": "XL",
+        "existingCapabilityRefs": [
+          "c1",
+          "c2"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Each client session (one client process, identified by the client label and process id its requests carry) has its own thread, created on its first request and released when the session ends."
+          },
+          {
+            "statement": "A session's requests are handled serially in arrival order on that session's thread."
+          },
+          {
+            "statement": "A failure inside one session's thread is contained to that session."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "See what each daemon thread is doing",
+        "userValue": "Operators and clients can see which threads exist, which session each serves and what each is busy with, so a busy session is visible as busy instead of looking like a frozen daemon, and stale-daemon checks stop killing healthy daemons.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the daemon has an admin thread, an indexing thread and several session threads",
+            "when": "a client asks for daemon status",
+            "then": "the response lists each thread, its class, the session it serves, whether it is busy, the method it is running and for how long",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "one session thread has been busy for minutes",
+            "when": "a client or operator checks whether the daemon is alive",
+            "then": "the daemon answers that it is alive and reports the busy session, so the check gives no reason to stop or restart it",
+            "operationalizes": [
+              "k2"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "existing status consumers (TUI, plugins)",
+            "when": "they read daemon status",
+            "then": "every field they read today is still present with the same meaning",
+            "operationalizes": [
+              "k5"
+            ]
+          }
+        ],
+        "dependsOn": [
+          "s2",
+          "s4"
+        ],
+        "sizeEstimate": "M",
+        "existingCapabilityRefs": [
+          "c2"
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Daemon status reports every thread with its class, session, busy state, current method and elapsed time."
+          },
+          {
+            "statement": "The daemon's liveness check distinguishes a busy daemon from a dead one."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [
+      "Item a2: the low-confidence assumption that each store (LMDB graph, Lance tables, in-memory DuckDB) can be used from several threads of one process, or must be fronted by one owning thread, is to be settled in design (Story s1).",
+      "How a session's end is detected (its client process has exited, or it has been idle beyond a limit) is a design decision for Story s4."
+    ],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E2026102186197ac6:FR001",
+          "statement": "Admin requests (ping, daemon status, TUI queries, daemon-ctl control) are answered promptly while any session or the indexer is busy.",
+          "scope": "doc",
+          "rationale": "A daemon that does not answer looks dead, and a client that restarts it loses every session's in-flight work [[c3]]."
+        },
+        {
+          "id": "E2026102186197ac6:FR002",
+          "statement": "A long-running request in one session does not delay the handling of requests from any other session.",
+          "scope": "doc",
+          "rationale": "Stakeholder model: one thread per session [[c5]]."
+        },
+        {
+          "id": "E2026102186197ac6:FR003",
+          "statement": "Within one session, requests are handled one at a time in arrival order; a session's later request waits while its earlier long task runs.",
+          "scope": "doc",
+          "rationale": "Stakeholder: cross-talk inside a session is problematic, so a session is blocked on its own thread [[c5]]."
+        },
+        {
+          "id": "E2026102186197ac6:FR004",
+          "statement": "Index-queue work (code indexing and document summaries) runs without blocking session or admin requests, and session work does not block indexing.",
+          "scope": "doc",
+          "rationale": "Stakeholder model: one indexing thread [[c5]]; the queue runs on the shared thread today [[c1]]."
+        },
+        {
+          "id": "E2026102186197ac6:FR005",
+          "statement": "Graph, vector and data-store reads and writes remain consistent when issued from different threads, with the daemon still the sole owner of the stores.",
+          "scope": "doc",
+          "rationale": "Daemon-owns-all-DB-access rule [[c6]]; LMDB lock behaviour has bitten this daemon before [[c7]]."
+        },
+        {
+          "id": "E2026102186197ac6:FR006",
+          "statement": "A failure on a session's thread is reported to that session and does not take down the daemon, the admin thread, the indexer or other sessions.",
+          "scope": "doc",
+          "rationale": "Isolation is the point of the split; today one failure path affects all clients [[c3]]."
+        },
+        {
+          "id": "E2026102186197ac6:FR007",
+          "statement": "A session's thread is created on the session's first request and released when the session ends, and the daemon reports which threads exist and what each is doing.",
+          "scope": "doc",
+          "rationale": "Operators need to see a busy session rather than infer a frozen daemon [[c3]]."
+        },
+        {
+          "id": "E2026102186197ac6:FR008",
+          "statement": "Existing clients (MCP server, VS Code and JetBrains plugins, TUI, daemon-ctl) keep working without change.",
+          "scope": "doc",
+          "rationale": "The IPC contract is the only surface those clients consume [[c8]]."
+        },
+        {
+          "id": "E2026102186197ac6:S001:FR001",
+          "statement": "Every thread in the daemon can read and write the graph, vector and data stores with the same consistency guarantees a single thread has today.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E2026102186197ac6:S001:FR002",
+          "statement": "The daemon remains the only process that opens the stores.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E2026102186197ac6:S002:FR001",
+          "statement": "Every request method has one declared class: admin, session or indexing.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E2026102186197ac6:S002:FR002",
+          "statement": "Admin-class requests are served by a dedicated admin thread that session and indexing work cannot block.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E2026102186197ac6:S003:FR001",
+          "statement": "The index queue, with both its lanes, runs on one dedicated indexing thread.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E2026102186197ac6:S003:FR002",
+          "statement": "Queue status and idle-waiting remain available to other threads.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E2026102186197ac6:S004:FR001",
+          "statement": "Each client session (one client process, identified by the client label and process id its requests carry) has its own thread, created on its first request and released when the session ends.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E2026102186197ac6:S004:FR002",
+          "statement": "A session's requests are handled serially in arrival order on that session's thread.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E2026102186197ac6:S004:FR003",
+          "statement": "A failure inside one session's thread is contained to that session.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E2026102186197ac6:S005:FR001",
+          "statement": "Daemon status reports every thread with its class, session, busy state, current method and elapsed time.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E2026102186197ac6:S005:FR002",
+          "statement": "The daemon's liveness check distinguishes a busy daemon from a dead one.",
+          "scope": "item",
+          "itemRef": "s5"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/daemon/index.ts:507-2099",
+      "quotedText": "main() registers 166 RPC handlers (const rpcHandlers: RpcHandlers at line 507) and 15 stream handlers (const streamHandlers: StreamHandlers at line 1906), merges the understanding routes (7 RPC, 1 stream; lines 1994-1995) and serves them all through one IpcServer (line 1997) and instantiates the IndexQueue (line 269); no non-test source uses worker_threads, SharedArrayBuffer or Atomics, and the only Worker identifiers are test fixtures, so everything runs on one JavaScript thread"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/server.ts:18-220",
+      "quotedText": "exports RpcHandler, StreamHandler, RpcHandlers, StreamHandlers, failureMessage and class IpcServer (members listen, close, attachedClients, disconnectClients, flushPendingWrites); each attached connection records {id, connectedAt, label, pid}, label and pid taken from the request's client envelope"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/stop-code-review-s-material-building-E20261021e940023a/ISSUE.md:7",
+      "quotedText": "Observed on 2026-10-21: between the subject resolving (09:20:42) and the adherence review being divided (09:30:33) the daemon logged nothing, held 100% CPU and refused socket connections (ECONNREFUSED: the accept queue fills while the event loop is blocked)."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/build-each-review-adapter-s-material-E202610212f4cb54c/ISSUE.md:7",
+      "quotedText": "Observed on 2026-10-21: the daemon froze at 100% CPU and refused connections from 15:35 for over 10 minutes"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "user 2026-10-21",
+      "quotedText": "for the multi-threaded approach, one thread per session, one thread for admin (like ping, TUI, etc.), one thread for indexing. cross-talk within a session can be problematic hence a session is blocked on one thread if a long running task is underway"
+    },
+    {
+      "id": "c6",
+      "kind": "convention",
+      "ref": "CLAUDE.md#key-architectural-rules",
+      "quotedText": "Daemon owns all DB access — CLI, MCP, and the IDE workbench communicate via IPC only."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:528-531",
+      "quotedText": "getGraphStore() returns the module-level _instance once open, or the shared _initPromise while opening: one GraphStore per process, reached from config storage, daemon RPC routes and code tools"
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "CLAUDE.md",
+      "quotedText": "IPC method names, socket path (~/.insrc/daemon.sock), and payload shapes stay in lock-step across the two repos via mirrored types."
+    },
+    {
+      "id": "c9",
+      "kind": "convention",
+      "ref": "CLAUDE.md#llm-provider-abstraction",
+      "quotedText": "Never Promise.all anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial for...of with sequential awaits."
+    },
+    {
+      "id": "c10",
+      "kind": "convention",
+      "ref": "CLAUDE.md#project-principles",
+      "quotedText": "Accuracy is primary; cost is the least priority."
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-5437d6e5",
+      "quotedText": "lmdb-js root.transaction commits a throwing callback's writes; fixed via childTransaction"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts:46-55",
+      "quotedText": "rpc() opens a new socket per call (createConnection) and sends client: { label: 'cli', pid: process.pid }; src/mcp/forward-step.ts:115-121 likewise opens a socket per step.call with client: { label: 'mcp', pid: process.pid }"
+    }
+  ]
+}

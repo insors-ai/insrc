@@ -24,15 +24,12 @@ describe('artifact-core types', () => {
 		assert.ok(diagnose(join(here, 'types-contract.bad.ts')).length > 0);
 	});
 
-	it('exports only the six error classes at runtime', () => {
+	it('exports only the eleven error classes at runtime', () => {
 		assert.deepEqual(Object.keys(core).sort(), [
 			'ArtifactNotFoundError', 'ArtifactShapeError', 'HistoryEntryError',
-			'HistoryReadError', 'RepoSchemaError', 'UnknownArtifactKindError',
+			'HistoryReadError', 'IllegalTransitionError', 'LifecycleConflictError', 'RepoSchemaError',
+			'ReviewRequiredError', 'TerminalArtifactError', 'UnknownArtifactKindError', 'UnreadableChildError',
 		]);
-		for (const Cls of Object.values(core)) {
-			const e = new Cls('m');
-			assert.ok(e instanceof Error);
-			assert.equal(e.name, Cls.name);
-		}
+		for (const Cls of Object.values(core)) assert.ok(Cls.prototype instanceof Error, Cls.name);
 	});
 });

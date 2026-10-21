@@ -217,3 +217,41 @@ export class HistoryReadError extends Error {
 export class RepoSchemaError extends Error {
 	constructor(message: string) { super(message); this.name = 'RepoSchemaError'; }
 }
+
+// ---------------------------------------------------------------------------
+// Lifecycle errors (sc4)
+// ---------------------------------------------------------------------------
+
+/** Why a head and its history cannot be trusted to agree. */
+export type IntegrityReason = 'hash-mismatch' | 'head-ahead-of-log' | 'log-ahead-of-head';
+
+/** approve, review or complete was refused, or an ordinary write was refused, because the head conflicts with its own hash or log. */
+export class LifecycleConflictError extends Error {
+	constructor(readonly artifactId: string, readonly reason: IntegrityReason, message?: string) {
+		super(message ?? `${artifactId} is in conflict (${reason}); a person has to resolve it before this can proceed`);
+		this.name = 'LifecycleConflictError';
+	}
+}
+
+/** The operation is not a step of the closed transition table from the current status, or its required detail is missing. */
+export class IllegalTransitionError extends Error {
+	constructor(message: string) { super(message); this.name = 'IllegalTransitionError'; }
+}
+
+/** A content change was written to a completed, withdrawn or superseded artifact. */
+export class TerminalArtifactError extends Error {
+	constructor(message: string) { super(message); this.name = 'TerminalArtifactError'; }
+}
+
+/** approve on a design artifact with no review bound to its current revision. */
+export class ReviewRequiredError extends Error {
+	constructor(message: string) { super(message); this.name = 'ReviewRequiredError'; }
+}
+
+/** A child head could not be read while rolling up a unit. */
+export class UnreadableChildError extends Error {
+	constructor(readonly unreadable: readonly string[], message?: string) {
+		super(message ?? `cannot roll up: unreadable children ${unreadable.join(', ')}`);
+		this.name = 'UnreadableChildError';
+	}
+}

@@ -345,7 +345,7 @@ export class ArtifactStore {
 		if (replace && headHashOf(current) !== op.priorHeadHash) {
 			log.warn({ id, operationId: op.operationId, priorHeadHash: op.priorHeadHash, stagedHeadHash: headHashOf(op.bytes), currentHeadHash: headHashOf(current) },
 				'the head moved on after the write was staged; it is not overwritten');
-			throw new LifecycleConflictError(id, 'head-ahead-of-log', `${id} changed after a write was staged (operation ${op.operationId}); the staged write was not applied and a person has to resolve it`);
+			throw new LifecycleConflictError(id, 'head-changed-after-stage', `${id} changed after a write was staged (operation ${op.operationId}); the staged write was not applied and a person has to resolve it`);
 		}
 		const entries = await this.deps.history.log(id);
 		if (!entries.some(e => e.id === op.entry.id)) await this.deps.history.appendLog(id, op.entry);

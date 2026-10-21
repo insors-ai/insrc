@@ -99,14 +99,7 @@ export async function handleVerdicts(
 	if (!existsSync(state.jsonPath)) throw new Error(`insrc_review_step[verdicts]: no artifact json at ${state.jsonPath}`);
 	if (!existsSync(state.mdPath))   throw new Error(`insrc_review_step[verdicts]: no artifact md at ${state.mdPath}`);
 
-	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
-	// This phase stamps the CONTROLLER's review, so it does not stamp one on work
-	// the controller authored. `start` already sends such work to the daemon; this
-	// holds the rule at the point of the stamp, whatever led here.
-	if (authorPartyOf(artifact.meta) === 'controller') {
-		releaseState(input.state);
-		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
-	}
+	// The head is checked (and any write a crash left staged is finished) BEFORE it is read: everything below works on the head as it is afterwards.
 	// A head whose stored hash no longer matches its content, or that is out of step with its change log, is not stamped until a person resolves it.
 	const conflict = headConflict(state.jsonPath);
 	if (conflict !== undefined) throw new LifecycleConflictError(conflict.artifactId, conflict.reason);
@@ -115,6 +108,14 @@ export async function handleVerdicts(
 	if (lifecycle !== undefined) {
 		const seen = await lifecycle.inspect(artifactId);
 		if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(artifactId, seen.integrity.reason);
+	}
+	const artifact = JSON.parse(readFileSync(state.jsonPath, 'utf8')) as { meta: Record<string, unknown>; body: unknown };
+	// This phase stamps the CONTROLLER's review, so it does not stamp one on work
+	// the controller authored. `start` already sends such work to the daemon; this
+	// holds the rule at the point of the stamp, whatever led here.
+	if (authorPartyOf(artifact.meta) === 'controller') {
+		releaseState(input.state);
+		throw new SamePartyReviewError('controller', `this ${state.stage} artifact`);
 	}
 	const md = stripReviewSection(readFileSync(state.mdPath, 'utf8'));
 	// A reviewer who does not hold the stage reports findings but writes no fix (the review is never refused).

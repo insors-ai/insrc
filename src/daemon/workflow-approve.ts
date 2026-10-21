@@ -57,7 +57,7 @@ export async function handleWorkflowApprove(
 	// Post-approval bugfix seam: approveWorkflowTarget is awaited (its completion hook writes the BUILD ledger); the async
 	// advance/close run here over the artifacts it actually completed. A seam throw is captured as an `ok:false` followOn by
 	// the seam itself, never failing the approval. Skipped when there is nothing completed or no repo to resolve inference.
-	if (result.approved.length === 0 || repoPath.length === 0 || deps.followOn === undefined) return result;
-	const followOn = await deps.followOn(result.approved, repoPath);
+	if (result.approved.length === 0 || repoForStore.length === 0 || deps.followOn === undefined) return result;
+	const followOn = await deps.followOn(result.approved, repoForStore);
 	return followOn !== undefined && followOn.length > 0 ? { ...result, followOn } : result;
 }

@@ -223,7 +223,7 @@ export class RepoSchemaError extends Error {
 // ---------------------------------------------------------------------------
 
 /** Why a head and its history cannot be trusted to agree. */
-export type IntegrityReason = 'hash-mismatch' | 'head-ahead-of-log' | 'log-ahead-of-head';
+export type IntegrityReason = 'hash-mismatch' | 'head-ahead-of-log' | 'log-ahead-of-head' | 'head-changed-after-stage';
 
 /** approve, review or complete was refused, or an ordinary write was refused, because the head conflicts with its own hash or log. */
 export class LifecycleConflictError extends Error {

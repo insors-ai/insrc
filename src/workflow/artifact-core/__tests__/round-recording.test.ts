@@ -17,6 +17,10 @@ import type { BuildRecord } from '../../runners/build/standalone-record.js';
 import { persistTestRecordTask, testRecordPaths } from '../../runners/build/test-record.js';
 import type { TestRecordTask } from '../../runners/build/test-record.js';
 import type { RoundWriter } from '../../runners/build/round-writer.js';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { lifecycleFor, resetLifecycleRegistry, roundWriterFor } from '../../../daemon/lifecycle-registry.js';
+import { persistStandaloneBuildRecord } from '../../runners/build/standalone-record.js';
 import { H, alice, artifact } from './store-kit.js';
 import { durableKit } from './durable-kit.js';
 import type { DurableKit } from './durable-kit.js';
@@ -189,5 +193,23 @@ describe('round-recording', () => {
 			assert.equal(readFileSync(crJson(), 'utf8'), headBefore, 'no record was replaced');
 			assert.ok(existsSync(crJson()));
 		} finally { k.done(); }
+	});
+
+	it('the first BUILD round of a Trivial standalone build, with no earlier record in the work item, is created through the registry store on the record\'s own time', async () => {
+		const repo = mkdtempSync(join(tmpdir(), 'round-trivial-'));
+		try {
+			mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
+			const created = await persistStandaloneBuildRecord(repo, {
+				meta: { workflow: 'build', standalone: true, sizeClass: 'trivial', epicHash: H, storyId: 's1', createdAt: T1, authoredBy: 'controller' },
+				body: { focus: 'rename a flag', producesLld: false },
+			}, roundWriterFor(repo));
+			const stored = await lifecycleFor(repo).store.readWithHistory(BUILD);
+			assert.deepEqual(stored.changeLog.map(e => e.operation), ['create'], 'the first round is logged by the store');
+			const head = JSON.parse(readFileSync(created.json, 'utf8')) as { meta: { createdAt: string; standalone?: boolean } };
+			assert.equal(head.meta.createdAt, T1, 'the record keeps the time the build gave it, not the store\'s clock');
+			assert.equal(head.meta.standalone, true);
+			assert.ok(readFileSync(created.md, 'utf8').includes('BUILD'), 'the markdown is rendered');
+			assert.equal((await lifecycleFor(repo).service.inspect(BUILD))?.integrity.ok, true);
+		} finally { resetLifecycleRegistry(); rmSync(repo, { recursive: true, force: true }); }
 	});
 });

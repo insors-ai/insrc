@@ -408,7 +408,7 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 	assert.match(approve, /advanceApprovedBugfixes\(approved, \{/);
 	const approveSrc = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'workflow-approve.ts'), 'utf8');
 	assert.match(approveSrc, /await \(deps\.approve \?\? approveWorkflowTarget\)\(\{/);
-	assert.match(approveSrc, /const followOn = await deps\.followOn\(result\.approved, repoPath\);/);
+	assert.match(approveSrc, /const followOn = await deps\.followOn\(result\.approved, repoForStore\);/);
 	assert.equal(handlerSource(src, 'workflow.resolveComment'), [
 		`\t\t'workflow.resolveComment': async (params) => {`,
 		`\t\t\tconst { handleResolveComment } = await import('../workflow/resolve-comment.js');`,

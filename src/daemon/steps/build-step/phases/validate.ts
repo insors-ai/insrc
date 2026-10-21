@@ -527,7 +527,8 @@ async function runValidateTurn(
 		// completion has a real BUILD-<epicHash>-<storyId> record to approve without a
 		// hand-back-fill. Gated on a resolvable epic+story identity (never write a
 		// BUILD-undefined path); a persistence failure is swallowed so it can never
-		// convert a real verdict into an error (k5, fail-open).
+		// convert a real verdict into an error (k5, fail-open). The failure is named in the verdict's evidence.
+		let buildRecordNote: string | undefined;
 		const { epicHash, storyId, taskId } = ident;
 		if (epicHash.length > 0 && storyId.length > 0) {
 			try {
@@ -621,13 +622,15 @@ async function runValidateTurn(
 				}, roundWriterFor(repoPath));
 			} catch (err) {
 				if (err instanceof MissingAnchorError) throw err;
+				const message = err instanceof Error ? err.message : String(err);
 				log.warn(
-					{ storyId, taskId, err: err instanceof Error ? err.message : String(err) },
+					{ storyId, taskId, err: message },
 					'insrc_build_step[validate]: BUILD ledger persist failed; returning the verdict unchanged',
 				);
+				buildRecordNote = `the BUILD record was not written (${message}); the verdict is unchanged`;
 			}
 		}
-		return { next: 'done', verdict, passed };
+		return { next: 'done', verdict: buildRecordNote !== undefined ? { ...verdict, evidence: { ...verdict.evidence, buildRecordNote } } : verdict, passed };
 	});
 }
 

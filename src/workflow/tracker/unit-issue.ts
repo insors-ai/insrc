@@ -29,7 +29,7 @@ import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } fro
 import { ArtifactIds, InvalidArtifactKeyError, type ArtifactKey } from '../artifact-ids.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, readRevision } from '../storage.js';
 import { epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody } from './conventions.js';
-import type { IssueRef, PortFailureKind, PortResult, TrackerPort } from './port.js';
+import type { IssueRef, PortFailureKind, PortResult, TrackerComment, TrackerPort } from './port.js';
 import { bindArtifact, readBinding, recordPosted, setPendingLink, TRACKER_ISSUE_TYPE } from './binding.js';
 import type { PostedKind } from './binding.js';
 import { unitArtifactId } from './attach.js';
@@ -586,27 +586,42 @@ export type ExtraName = 'milestone' | 'taskList' | 'designComment' | 'reviewComm
 export interface ExtraStep {
 	readonly name: ExtraName;
 	readonly run:  () => PortResult<void>;
+	/**
+	 * A comment step names the marker its body carries ({@link postMarker}). Before an unrecorded comment step runs, the issue's
+	 * comments are read and one holding the marker is recorded as already posted instead of posting again. The milestone and the
+	 * task list are idempotent on the tracker already and carry none.
+	 */
+	readonly marker?: string | undefined;
 }
 
 /** A partial result is a normal outcome, not an exception. */
 export interface ExtrasOutcome {
-	readonly done:    string[];
-	readonly skipped: string[];
-	readonly failed:  Array<{ name: string; reason: string }>;
+	readonly done:       string[];
+	readonly skipped:    string[];
+	/** Comment steps found already on the issue (by their marker) and recorded without posting again. */
+	readonly reconciled: string[];
+	readonly failed:     Array<{ name: string; reason: string }>;
 }
 
 export interface ExtrasDeps {
 	readonly now?: ( () => string) | undefined;
-	/** Writes the step's mark (default: onto the unit's record through patchTrackerMeta). */
-	readonly mark?: ((unit: UnitRef, name: ExtraName, at: string) => void) | undefined;
+	/** Writes the step's mark (default: into the unit's binding); `externalId` is the id of a reconciled comment. */
+	readonly mark?: ((unit: UnitRef, name: ExtraName, at: string, externalId?: string) => void) | undefined;
+	/** Reads the issue's comments, for the steps that carry a marker; called at most once per run. */
+	readonly comments?: (() => PortResult<TrackerComment[]>) | undefined;
 }
 
 const POSTED_KIND: Readonly<Record<ExtraName, PostedKind>> = { milestone: 'milestone', taskList: 'task-list', designComment: 'design', reviewComment: 'review', planComment: 'plan' };
 
-/** The extras already posted for the unit, each with the time it was recorded: the binding's posted list for an Epic or Story. */
+/** The stable marker a comment of kind `name` carries on the unit's issue: '<!-- insrc:post:<artifactId>:<kind> -->'. */
+export function postMarker(unit: UnitRef, name: ExtraName): string {
+	return `<!-- insrc:post:${unitArtifactId(unit) ?? unitKey(unit)}:${POSTED_KIND[name]} -->`;
+}
+
+/** The extras already posted for the unit, each with the time it was recorded: the binding's posted list. A Task unit has none yet (s7). */
 function marksOf(unit: UnitRef): { readonly [K in ExtraName]?: string | undefined } {
 	const home = bindingHome(unit);
-	if (home === undefined) return readTrackerMeta(ownJson(unit))?.units?.[unitKey(unit)]?.extrasDone ?? {};
+	if (home === undefined) return {};
 	const out: { [K in ExtraName]?: string | undefined } = {};
 	for (const p of readBinding(home.repoPath, home.artifactId)?.posted ?? []) {
 		const name = (Object.keys(POSTED_KIND) as ExtraName[]).find(n => POSTED_KIND[n] === p.kind);
@@ -615,44 +630,56 @@ function marksOf(unit: UnitRef): { readonly [K in ExtraName]?: string | undefine
 	return out;
 }
 
-function markExtra(unit: UnitRef, name: ExtraName, at: string): void {
+function markExtra(unit: UnitRef, name: ExtraName, at: string, externalId?: string): void {
 	const home = bindingHome(unit);
-	if (home !== undefined) {
-		if (!recordPosted(home.repoPath, home.artifactId, POSTED_KIND[name], undefined, () => at)) throw new Error(`no binding on ${home.artifactId} to mark`);
-		return;
-	}
-	const path = ownJson(unit);
-	const key = unitKey(unit);
-	const record = readTrackerMeta(path)?.units?.[key];
-	if (record === undefined) throw new Error(`no unit record for ${key} to mark`);
-	patchTrackerMeta(path, { units: { [key]: { ...record, extrasDone: { ...(record.extrasDone ?? {}), [name]: at } } } });
+	if (home === undefined) throw new Error(`a ${unit.unit} unit has no binding to record a post on yet`);
+	if (!recordPosted(home.repoPath, home.artifactId, POSTED_KIND[name], externalId, () => at)) throw new Error(`no binding on ${home.artifactId} to mark`);
 }
 
 /**
- * Run each approve-time extra on its own. A step already marked in the unit's
- * `extrasDone` is skipped; a step that succeeds is marked before the next runs; a
- * step that fails is left unmarked and reported. Nothing goes through
- * `bestEffort`, so a failure is seen. The one residual repeat: the mark write
- * fails after a successful post, so the next run posts that step again.
+ * Run each approve-time extra on its own. A kind already in the unit's binding (`posted`) is skipped; a comment step that is not
+ * recorded is first looked for on the issue by its marker (one read of the comments shared by the unit's steps), and one found
+ * there is recorded without posting again; a step that succeeds is recorded before the next runs; a step that fails is left
+ * unrecorded and reported. A comment list that cannot be read fails the step and posts nothing: an uncertain post is never
+ * retried blind. A post whose record fails is reported, and the next run reconciles it by its marker instead of repeating it.
  */
 export function runUnitExtras(unit: UnitRef, steps: readonly ExtraStep[], deps: ExtrasDeps = {}): ExtrasOutcome {
 	const now = deps.now ?? (() => new Date().toISOString());
 	const mark = deps.mark ?? markExtra;
 	const marks = marksOf(unit);
-	const out: ExtrasOutcome = { done: [], skipped: [], failed: [] };
+	const out: ExtrasOutcome = { done: [], skipped: [], reconciled: [], failed: [] };
+	let comments: PortResult<TrackerComment[]> | undefined;
+	const commentsOnce = (): PortResult<TrackerComment[]> => {
+		comments ??= deps.comments !== undefined ? deps.comments() : { ok: false, kind: 'rejected', reason: 'no way to read the issue\'s comments' };
+		return comments;
+	};
 	for (const step of steps) {
 		if (marks[step.name] !== undefined) { out.skipped.push(step.name); continue; }
+		if (step.marker !== undefined) {
+			const listed = commentsOnce();
+			if (!listed.ok) {
+				log.warn({ unit: unitKey(unit), step: step.name, reason: listed.reason }, 'unit-issue: the issue\'s comments could not be read (the post is not made; the next approve retries it)');
+				out.failed.push({ name: step.name, reason: `cannot tell whether it was already posted: the comments could not be read (${listed.kind}): ${listed.reason}` });
+				continue;
+			}
+			const found = listed.value.find(c => c.text.includes(step.marker as string));
+			if (found !== undefined) {
+				try { mark(unit, step.name, now(), found.externalId); out.reconciled.push(step.name); }
+				catch (err) { out.failed.push({ name: step.name, reason: `already posted (comment ${found.externalId}), but its record was not written (${(err as Error).message}); the next approve records it` }); }
+				continue;
+			}
+		}
 		const r = step.run();
 		if (!r.ok) {
-			log.warn({ unit: unitKey(unit), step: step.name, reason: r.reason }, 'unit-issue: approve-time extra failed (left unmarked; the next approve retries it)');
+			log.warn({ unit: unitKey(unit), step: step.name, reason: r.reason }, 'unit-issue: approve-time extra failed (left unrecorded; the next approve retries it)');
 			out.failed.push({ name: step.name, reason: r.reason });
 			continue;
 		}
 		try { mark(unit, step.name, now()); }
 		catch (err) {
-			// Posted, but unmarked: reported as failed so the author sees it, and the next run posts it again (the stated residual).
-			log.warn({ unit: unitKey(unit), step: step.name, err: (err as Error).message }, 'unit-issue: extra posted but its mark was not written (the next approve may post it again)');
-			out.failed.push({ name: step.name, reason: `posted, but its completion mark was not written (${(err as Error).message}); the next approve may post it again` });
+			// Posted, but unrecorded: reported as failed so the author sees it; the next run finds the post by its marker and does not repeat it.
+			log.warn({ unit: unitKey(unit), step: step.name, err: (err as Error).message }, 'unit-issue: extra posted but its record was not written (the next approve reconciles it)');
+			out.failed.push({ name: step.name, reason: `posted, but its record was not written (${(err as Error).message}); the next approve finds the post and records it` });
 			continue;
 		}
 		out.done.push(step.name);

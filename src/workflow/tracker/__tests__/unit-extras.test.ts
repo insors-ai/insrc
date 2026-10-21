@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { artifactJsonPath, lldArtifactId } from '../../storage.js';
-import type { PortResult } from '../port.js';
+import type { PortResult, TrackerComment } from '../port.js';
 import type { UnitRef } from '../refs.js';
 import { runUnitExtras, type ExtraName, type ExtraStep } from '../unit-issue.js';
 
@@ -42,53 +42,98 @@ function withStory(fn: (unit: UnitRef, marks: () => Record<string, string>) => v
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 }
 
-function steps(posted: string[], failing: ExtraName[] = []): ExtraStep[] {
+const marker = (name: ExtraName): string => `<!-- insrc:post:LLD-${HASH}-s1:${name === 'designComment' ? 'design' : name === 'reviewComment' ? 'review' : 'task-list'} -->`;
+
+/** The unit's issue as a thread of comments: each comment step posts its marker into it, and the lister reads it back. */
+function thread() {
+	const comments: TrackerComment[] = [];
+	return { comments, lists: { n: 0, fail: false } };
+}
+
+function steps(posted: string[], failing: ExtraName[] = [], t = thread()): ExtraStep[] {
 	return (['taskList', 'designComment', 'reviewComment'] as ExtraName[]).map(name => ({
 		name,
+		...(name === 'taskList' ? {} : { marker: marker(name) }),
 		run: (): PortResult<void> => {
 			if (failing.includes(name)) return { ok: false, reason: `${name} rejected`, kind: 'rejected' };
-			posted.push(name); return OK;
+			posted.push(name);
+			if (name !== 'taskList') t.comments.push({ externalId: String(900 + t.comments.length), author: 'insrc', text: `${marker(name)}\nbody`, at: AT });
+			return OK;
 		},
 	}));
 }
+const lister = (t: ReturnType<typeof thread>) => (): PortResult<TrackerComment[]> => { t.lists.n += 1; return t.lists.fail ? { ok: false, reason: 'offline', kind: 'unreachable' } : { ok: true, value: t.comments }; };
 
-test('runUnitExtras marks, skips, reports failures, retries only missing steps and repeats only after a marker failure', () => {
+test('runUnitExtras skips a kind already in the binding, reconciles a comment step through its marker without posting, reads the comment list once for several steps, fails a step when the list cannot be read, and reports a post whose record failed so the next run reconciles it', () => {
 	withStory((unit, marks) => {
-		// each step runs on its own and is marked; a failed step is reported and unmarked
+		// each step runs on its own and is recorded; a failed step is reported and unrecorded
+		const t = thread();
 		const posted: string[] = [];
-		const first = runUnitExtras(unit, steps(posted, ['taskList']), { now: () => AT });
-		assert.deepEqual(first, { done: ['designComment', 'reviewComment'], skipped: [], failed: [{ name: 'taskList', reason: 'taskList rejected' }] });
+		const first = runUnitExtras(unit, steps(posted, ['taskList'], t), { now: () => AT, comments: lister(t) });
+		assert.deepEqual(first, { done: ['designComment', 'reviewComment'], skipped: [], reconciled: [], failed: [{ name: 'taskList', reason: 'taskList rejected' }] });
 		assert.deepEqual(marks(), { designComment: AT, reviewComment: AT });
+		assert.equal(t.lists.n, 1, 'the comment list is read once for the two comment steps');
 
-		// a second run posts only the missing extra; marked steps are skipped
+		// a kind already in the binding is skipped with no read; only the missing step posts
 		const again: string[] = [];
-		const second = runUnitExtras(unit, steps(again), { now: () => AT });
+		t.lists.n = 0;
+		const second = runUnitExtras(unit, steps(again, [], t), { now: () => AT, comments: lister(t) });
 		assert.deepEqual(again, ['taskList']);
-		assert.deepEqual(second, { done: ['taskList'], skipped: ['designComment', 'reviewComment'], failed: [] });
+		assert.deepEqual(second, { done: ['taskList'], skipped: ['designComment', 'reviewComment'], reconciled: [], failed: [] });
+		assert.equal(t.lists.n, 0, 'nothing to look for: no read');
 		assert.deepEqual(Object.keys(marks()).sort(), ['designComment', 'reviewComment', 'taskList']);
-
-		// a third run posts nothing
 		const third: string[] = [];
-		assert.deepEqual(runUnitExtras(unit, steps(third), { now: () => AT }).done, []);
+		assert.deepEqual(runUnitExtras(unit, steps(third, [], t), { now: () => AT, comments: lister(t) }).done, []);
 		assert.deepEqual(third, []);
 	});
 
 	withStory((unit, marks) => {
-		// the residual: the mark write fails after a successful post, so the next run posts that step again
+		// the design comment is already on the issue (a post whose record was lost): recorded as reconciled, not posted; the review is posted
+		const t = thread();
+		t.comments.push({ externalId: '555', author: 'insrc', text: `${marker('designComment')}\nearlier`, at: AT });
+		const posted: string[] = [];
+		const out = runUnitExtras(unit, steps(posted, [], t), { now: () => AT, comments: lister(t) });
+		assert.deepEqual(out, { done: ['taskList', 'reviewComment'], skipped: [], reconciled: ['designComment'], failed: [] });
+		assert.deepEqual(posted, ['taskList', 'reviewComment'], 'the design comment was not posted again');
+		assert.equal(t.lists.n, 1, 'one read for both comment steps');
+		assert.equal(marks()['designComment'], AT);
+	});
+
+	withStory((unit, marks) => {
+		// a list that cannot be read fails the comment steps and posts nothing for them; the task list still runs (it carries no marker)
+		const t = thread();
+		t.lists.fail = true;
+		const posted: string[] = [];
+		const out = runUnitExtras(unit, steps(posted, [], t), { now: () => AT, comments: lister(t) });
+		assert.deepEqual(posted, ['taskList']);
+		assert.deepEqual(out.done, ['taskList']);
+		assert.deepEqual(out.failed.map(f => f.name), ['designComment', 'reviewComment']);
+		assert.match(out.failed[0]!.reason, /could not be read \(unreachable\): offline/);
+		assert.deepEqual(Object.keys(marks()), ['taskList'], 'nothing was recorded for a post that was not made');
+		// no lister at all is the same: a comment step is never posted blind
+		const none = runUnitExtras(unit, steps([], [], t), { now: () => AT });
+		assert.deepEqual(none.failed.map(f => f.name), ['designComment', 'reviewComment']);
+	});
+
+	withStory((unit, marks) => {
+		// a post whose record failed is reported; the next run finds it by its marker and does not post it again
+		const t = thread();
 		const posted: string[] = [];
 		const failMark = (): void => { throw new Error('disk full'); };
-		const one = runUnitExtras(unit, steps(posted), { now: () => AT, mark: failMark });
+		const one = runUnitExtras(unit, steps(posted, [], t), { now: () => AT, mark: failMark, comments: lister(t) });
 		assert.deepEqual(one.done, []);
-		assert.deepEqual(one.failed.map(f => f.name), ['taskList', 'designComment', 'reviewComment'], 'posted but unmarked is reported, not success');
+		assert.deepEqual(one.failed.map(f => f.name), ['taskList', 'designComment', 'reviewComment'], 'posted but unrecorded is reported, not success');
 		assert.deepEqual(posted, ['taskList', 'designComment', 'reviewComment'], 'each was posted once');
 		assert.deepEqual(marks(), {});
 		const again: string[] = [];
-		runUnitExtras(unit, steps(again), { now: () => AT });
-		assert.deepEqual(again, ['taskList', 'designComment', 'reviewComment']);
-		assert.deepEqual(Object.keys(marks()).length, 3);
+		const two = runUnitExtras(unit, steps(again, [], t), { now: () => AT, comments: lister(t) });
+		assert.deepEqual(two.reconciled, ['designComment', 'reviewComment'], 'found by their markers and recorded');
+		assert.deepEqual(again, ['taskList'], 'only the step with no marker is run again (it is idempotent on the tracker)');
+		assert.deepEqual(Object.keys(marks()).sort(), ['designComment', 'reviewComment', 'taskList']);
 	});
 
 	// no step goes through bestEffort
 	const src = readFileSync(fileURLToPath(new URL('../unit-issue.js', import.meta.url).href.replace(/\.js$/, '.ts')), 'utf8');
 	assert.doesNotMatch(src, /import[^;]*\bbestEffort\b|\bbestEffort\s*\(/);
+	assert.doesNotMatch(src, /extrasDone/, 'extrasDone is gone');
 });

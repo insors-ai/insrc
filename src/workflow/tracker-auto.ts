@@ -39,13 +39,13 @@ import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactPat
 import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
 import { GhCommandError, ghAuthOk } from './tracker/github.js';
 import { createGithubTracker } from './tracker/github-adapter.js';
-import type { CreatedIssue, IssueOps, PortResult, TrackerPort } from './tracker/port.js';
+import type { CreatedIssue, IssueOps, PortResult, TrackerComment, TrackerPort } from './tracker/port.js';
 import {
 	allTrackerLabels, epicMembershipLabel, renderEpicBody, renderStoryBody, renderTaskBody,
 	renderTrackerHldSummary, renderTrackerLldSummary, updateEpicTaskList,
 } from './tracker/conventions.js';
 import { patchTrackerMeta, readTrackerMeta, type TrackerMeta, type UnitRef } from './tracker/refs.js';
-import { ensureUnitIssueDetailed, findExistingUnitIssue, findSingleIssue, runUnitExtras, unitLabel, type ExtraStep } from './tracker/unit-issue.js';
+import { ensureUnitIssueDetailed, findExistingUnitIssue, findSingleIssue, postMarker, runUnitExtras, unitLabel, type ExtraStep } from './tracker/unit-issue.js';
 import { policyReader } from './team/policy-reader.js';
 import type { PolicyReader } from './team/types.js';
 import { renderReviewReport } from './review/index.js';
@@ -486,14 +486,20 @@ function withExtras<T extends object>(base: T, failed: ExtrasFailed): T & { extr
 
 /** A step whose runner throws (a summary renderer on a malformed body) fails as a step instead of escaping. */
 function guarded(step: ExtraStep): ExtraStep {
-	return { name: step.name, run: () => { try { return step.run(); } catch (err) { return { ok: false, reason: (err as Error).message, kind: 'rejected' }; } } };
+	return { name: step.name, marker: step.marker, run: () => { try { return step.run(); } catch (err) { return { ok: false, reason: (err as Error).message, kind: 'rejected' }; } } };
 }
 
 /** The review comment step, only when the artifact carries a review. */
-function reviewStep(ops: IssueOps, ref: string, jsonPath: string): ExtraStep[] {
+function reviewStep(ops: IssueOps, ref: string, jsonPath: string, unit: UnitRef): ExtraStep[] {
 	const review = readReview(jsonPath);
-	return review === undefined ? [] : [{ name: 'reviewComment', run: () => ops.comment(ref, `<!-- insrc:review -->\n${renderReviewReport(review)}`) }];
+	if (review === undefined) return [];
+	const marker = postMarker(unit, 'reviewComment');
+	return [{ name: 'reviewComment', marker, run: () => ops.comment(ref, `${marker}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) }];
 }
+
+/** The unit's comment lister for runUnitExtras: the issue's comments, or a failure when the tracker cannot list them. */
+const commentsOf = (port: TrackerPort, issue: string) => (): PortResult<TrackerComment[]> =>
+	typeof port.listComments === 'function' ? port.listComments(issue) : { ok: false, kind: 'rejected', reason: 'this tracker cannot list comments' };
 
 function milestoneStep(ops: IssueOps, cfg: GithubCfg, ref: string, epicSlug: string): ExtraStep[] {
 	return cfg.useMilestones ? [{ name: 'milestone', run: () => { ops.ensureMilestone(epicSlug); return ops.attachMilestone(ref, epicSlug); } }] : [];
@@ -525,11 +531,12 @@ function teamPushEpic(hldJsonPath: string, meta: MetaShape, deps: AutoPushDeps):
 	relink(definePaths.md, () => { const a = readDefineArtifact(repoPath, epicHash); return withResolvedTail(a.meta, a.citations, renderDefineMarkdown(a)); });
 
 	const ops = port.issueOps;
+	const designMarker = postMarker(unit, 'designComment');
 	const out = runUnitExtras(unit, ([
 		...milestoneStep(ops, cfg, epicRef, epicSlug),
-		{ name: 'designComment', run: () => ops.comment(epicRef, renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))) },
-		...reviewStep(ops, epicRef, hldJsonPath),
-	] as ExtraStep[]).map(guarded));
+		{ name: 'designComment', marker: designMarker, run: () => ops.comment(epicRef, `${designMarker}\n${renderTrackerHldSummary(readHldArtifact(repoPath, epicHash))}`) },
+		...reviewStep(ops, epicRef, hldJsonPath, unit),
+	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, epicRef) });
 	return withExtras(ensured.value.created ? { status: 'created' as const, epicRef } : { status: 'already-exists' as const, epicRef }, out.failed);
 }
 
@@ -574,9 +581,9 @@ function teamPushStory(lldJsonPath: string, meta: MetaShape, deps: AutoPushDeps)
 				return updated === current.value ? { ok: true, value: undefined } : ops.writeBody(epicRef, updated);
 			},
 		},
-		{ name: 'designComment', run: () => ops.comment(storyRef, renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))) },
-		...reviewStep(ops, storyRef, lldJsonPath),
-	] as ExtraStep[]).map(guarded));
+		{ name: 'designComment', marker: postMarker(unit, 'designComment'), run: () => ops.comment(storyRef, `${postMarker(unit, 'designComment')}\n${renderTrackerLldSummary(readLldArtifact(repoPath, epicHash, storyId))}`) },
+		...reviewStep(ops, storyRef, lldJsonPath, unit),
+	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, storyRef) });
 	return withExtras(ensured.value.created ? { status: 'created' as const, storyRef } : { status: 'already-exists' as const, storyRef }, out.failed);
 }
 
@@ -612,8 +619,8 @@ function teamPushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDeps
 	const review = readReview(planJsonPath);
 	const ops = port.issueOps;
 	const out = runUnitExtras(storyUnit, (review === undefined ? [] : [
-		{ name: 'planComment', run: () => ops.comment(story.value.issue, `<!-- insrc:review -->\n${renderReviewReport(review)}`) },
-	] as ExtraStep[]).map(guarded));
+		{ name: 'planComment', marker: postMarker(storyUnit, 'planComment'), run: () => ops.comment(story.value.issue, `${postMarker(storyUnit, 'planComment')}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) },
+	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, story.value.issue) });
 	const taskRefs = readTrackerMeta(planJsonPath)?.taskRefs ?? {};
 	return withExtras(createdCount > 0 ? { status: 'created' as const, taskRefs } : { status: 'already-exists' as const, taskRefs }, out.failed);
 }

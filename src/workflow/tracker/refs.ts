@@ -21,8 +21,8 @@ import { readFileSync } from 'node:fs';
 import type { TrackerKind } from './port.js';
 import { carryTracker, writeArtifact } from '../storage.js';
 
-/** One stage unit and the issue that carries it (sc3). Stored under
- *  `meta.tracker.units`, in team mode. */
+/** A Task unit and the issue that carries it (sc3), stored under `meta.tracker.units` of its Plan until s7 gives each Task an
+ *  artifact of its own. An Epic and a Story are bound to their issue on their artifact's envelope instead (s6, ./binding.ts). */
 export interface UnitIssue {
 	readonly unit:      'epic' | 'story' | 'task';
 	readonly unitId:    string;
@@ -36,14 +36,6 @@ export interface UnitIssue {
 	 * `childId`, so rolling back past this field needs every `{ parent, child }` record resolved to a `childId` first.
 	 */
 	readonly pendingLink?: { readonly parent: string; readonly childId?: number | undefined; readonly child?: string | undefined } | undefined;
-	/** Per approve-time extra, the ISO time it succeeded; absent = still to run. */
-	readonly extrasDone?: {
-		readonly milestone?:     string | undefined;
-		readonly taskList?:      string | undefined;
-		readonly designComment?: string | undefined;
-		readonly reviewComment?: string | undefined;
-		readonly planComment?:   string | undefined;
-	};
 }
 
 /** Which unit needs an issue (the argument of the HLD's EnsureIssue). */

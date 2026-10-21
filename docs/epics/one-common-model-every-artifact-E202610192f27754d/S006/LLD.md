@@ -565,6 +565,8 @@ BindingService as in a1, plus a new receipts sidecar (append-only lines keyed by
   - **resolved**: Accept unpushed sha — Recommended answer, approved with the LLD. _(2026-10-21T15:36:41.535Z)_
 - `q5f82d762` — No step commits the build, review and test records: the TUI approve() commits only the Define for a BUILD, and the daemon workflow.approve commits nothing. s6 adds no commit. The BUILD approval's followOn calls attachDocuments for those records and the new tracker.attach method attaches them on demand, in each case only for files git reports clean (the build flow's controller commits the records before approval, as it does for the s4 and s5 BUILD and TESTS records). Resolve: accept (recommended), or add a commit of the Story's records to the BUILD completion path (a change to the build gate outside s6).
   - **resolved**: Accept: the controller commits, attach runs only on clean files — Recommended answer, approved with the LLD. _(2026-10-21T15:37:07.506Z)_
+- `q4f5dcf6e` — Individual mode currently has its own push functions (named legacy in src/workflow/tracker-auto.ts) with their own issue creation and unmarked best-effort comments. This LLD removes them and runs both modes through one path so both get the binding, once-only posts and attachments. Resolve: accept (recommended; the owner asked for both modes to be complete), or keep two paths and bind and mark in each.
+  - **resolved**: Accept: one unified path — The owner asked for team and individual mode to be complete. _(2026-10-21T15:37:20.983Z)_
 
 ## Citations
 

@@ -67,6 +67,11 @@ function validateFeedback(f: Feedback): void {
 		if (!isObject(reply)) throw new HistoryEntryError(`feedback ${f.id} has a reply that is not an entry`);
 		validateFeedback(reply as unknown as Feedback);
 	}
+	if (f.inReplyTo !== undefined) {
+		if (typeof f.inReplyTo !== 'string' || f.inReplyTo.trim().length === 0) throw new HistoryEntryError(`feedback ${f.id}: inReplyTo is not a non-empty string`);
+		if (f.inReplyTo === f.id) throw new HistoryEntryError(`feedback ${f.id} replies to itself`);
+		if (f.feedback.length > 0) throw new HistoryEntryError(`feedback ${f.id} is a reply and cannot carry replies of its own`);
+	}
 	if (f.revision !== undefined && !Number.isInteger(f.revision)) throw new HistoryEntryError(`feedback ${f.id}: the revision is not an integer`);
 	if (f.batchId !== undefined && typeof f.batchId !== 'string') throw new HistoryEntryError(`feedback ${f.id}: the batch id is not text`);
 	if (f.source !== undefined && !(isObject(f.source) && nonEmpty(f.source.system) && nonEmpty(f.source.externalId) && (f.source.url === undefined || typeof f.source.url === 'string'))) {

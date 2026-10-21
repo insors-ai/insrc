@@ -86,6 +86,8 @@ export interface Feedback {
 	readonly revision?: number | undefined;
 	readonly source?:   { readonly system: string; readonly externalId: string; readonly url?: string | undefined } | undefined;
 	readonly batchId?:  string | undefined;
+	/** The id of the root entry this entry replies to. A stored line is never rewritten, so a reply is its own line that names its parent; an entry without it is a thread root (AMD-2f27754d4ad00b8e-9). */
+	readonly inReplyTo?: string | undefined;
 }
 
 /** One persisted sidecar line: the entry and the artifact that owns it. */

@@ -27,7 +27,7 @@ export interface SetKit {
 
 export function setKit(): SetKit {
 	const k = durableKit();
-	const service = new LifecycleService({ store: k.store, evidence: createCompletionEvidence(k.repo) });
+	const service = new LifecycleService({ store: k.store, evidence: ctx => createCompletionEvidence(k.repo, { overrideReview: ctx.overrideReview }) });
 	const sets = new TaskSets({ repoPath: k.repo, store: k.store, service, history: new History(k.sidecar) });
 	const plan = async (rows: readonly PlanTask[]): Promise<void> => {
 		const existing = await k.store.read(`DEF-${H}`).catch(() => undefined);

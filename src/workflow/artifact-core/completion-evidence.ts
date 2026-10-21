@@ -5,13 +5,16 @@
 
 /**
  * The default CompletionEvidence (sc4, owned by s3): what the records say about a Task's build and a Story's code review.
- * It only reads. The Task side reads the BUILD record's per-task results until s7 gives a Task its own build rounds.
+ * It only reads. The Task side reads the latest build round on the Task's own log; the BUILD record's per-task results are read
+ * only for a Task that has no head (a Story planned before s7, until s9 gives it Task heads).
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 
 import { ArtifactIds } from '../artifact-ids.js';
 import { enforceCodeReviewGate } from '../code-review/gate.js';
+import { History } from './history.js';
+import { createFileSidecarStore } from './sidecar-store.js';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../storage.js';
 import type { CodeReviewEvidence, CompletionEvidence } from './lifecycle.js';
 
@@ -38,11 +41,18 @@ function storedOverride(head: Record<string, unknown> | undefined): string | und
 	return typeof reason === 'string' && reason.trim().length > 0 ? reason : undefined;
 }
 
+/** A build round carries the `build-round` marker of the Task set on its outcome data. */
+const isRound = (data: unknown): boolean => asRecord(data)?.['kind'] === 'build-round';
+
 export function createCompletionEvidence(repoPath: string, options: CompletionEvidenceOptions = {}): CompletionEvidence {
 	return {
 		async taskBuildPassed(taskId: string): Promise<boolean> {
 			const key = ArtifactIds.parse(taskId);
 			if (key?.kind !== 'TASK' || key.story === undefined || key.task === undefined) return false;
+			if (existsSync(artifactJsonPath(repoPath, taskId))) {
+				const rounds = (await new History(createFileSidecarStore(repoPath)).log(taskId)).filter(e => isRound(e.outcome?.data));
+				return rounds.at(-1)?.outcome?.result === 'pass';
+			}
 			const build = readJson(artifactJsonPath(repoPath, buildArtifactId(key.epicHash, key.story)));
 			const tasks = asRecord(build?.['body'])?.['tasks'];
 			if (!Array.isArray(tasks)) return false;

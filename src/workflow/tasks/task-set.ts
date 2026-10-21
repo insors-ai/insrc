@@ -10,6 +10,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { basename } from 'node:path';
 
 import { ArtifactIds } from '../artifact-ids.js';
 import { artifactJsonPath } from '../storage.js';
@@ -57,6 +58,19 @@ export interface ReconcileResult {
 
 /** Closes a tracker issue by its `owner/repo#N` ref; supplied by the caller that has a tracker. */
 export type CloseIssue = (issue: string) => { readonly ok: true } | { readonly ok: false; readonly reason: string };
+
+/** One build round of a Task, as the gate judged it. */
+export interface BuildRound {
+	readonly passed:  boolean;
+	readonly summary: string;
+	readonly data?:   unknown;
+}
+
+/** The marker that tells a build round from the other revision-less entries a Task's log holds. */
+export const BUILD_ROUND = 'build-round';
+
+/** What a plan approval did to the Task set, or why nothing was attempted. */
+export type SyncResult = (ReconcileResult & { readonly created: string[] }) | { readonly error: string };
 
 export interface ReconcileOptions { readonly closeIssue?: CloseIssue | undefined }
 export interface EditOptions {
@@ -332,6 +346,44 @@ export class TaskSets {
 			if (f !== undefined) failed.push(f);
 		}
 		return failed;
+	}
+
+	/**
+	 * Record one build round on a Task: a log entry that moves no revision (a round is not content, so a round never changes
+	 * what the Task says). It is appended under the Task's write queue, and `taskBuildPassed` answers from the latest one.
+	 * Refuses a Task that has no head.
+	 */
+	async recordBuildRound(taskId: string, round: BuildRound, by: Actor): Promise<void> {
+		if (ArtifactIds.parse(taskId)?.kind !== 'TASK') throw new TaskStructureError(`'${taskId}' is not a Task id`);
+		await this.deps.store.exclusive(taskId, async () => {
+			await this.deps.store.read(taskId);
+			await this.deps.history.appendLog(taskId, {
+				id: randomUUID(), actor: by, timestamp: (this.deps.now ?? (() => new Date()))().toISOString(), operation: 'update',
+				outcome: { result: round.passed ? 'pass' : 'fail', summary: round.summary, data: { kind: BUILD_ROUND, ...(round.data !== undefined ? { round: round.data } : {}) } },
+			});
+		});
+	}
+
+	/**
+	 * What the approval of a plan does to the Task set: create it for a plan that has none, reconcile a plan at a newer revision,
+	 * do nothing when they agree. Never throws: a plan that is not usable, or a write that fails, comes back as `{ error }` so the
+	 * approval it follows is never failed by it (repeating the call finishes a part-way run).
+	 */
+	async syncOnPlanApproval(planJsonPath: string, by: Actor, opts: ReconcileOptions = {}): Promise<SyncResult> {
+		try {
+			const planId = basename(planJsonPath).replace(/\.json$/, '');
+			const plan = await this.readPlan(planId);
+			const tasks = await this.readTasksHead(this.tasksId(plan));
+			if (tasks === undefined) {
+				const set = await this.createFromPlan(planId, by);
+				return { created: set.tasks.map(t => ArtifactIds.parse(t.id)?.task ?? t.id), changed: [], withdrawn: [], added: [], closeFailed: [] };
+			}
+			return { created: [], ...(await this.reconcile(planId, by, opts)) };
+		} catch (err) {
+			const reason = err instanceof Error ? err.message : String(err);
+			log.warn({ planJsonPath, reason }, 'tasks: the Task set was not brought into line with the approved plan');
+			return { error: reason };
+		}
 	}
 
 	private async readTasksHead(tasksId: string): Promise<TasksPayload | undefined> {

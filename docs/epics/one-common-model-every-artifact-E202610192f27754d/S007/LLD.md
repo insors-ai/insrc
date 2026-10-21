@@ -380,6 +380,8 @@ The TASKS head's body carries the ordered Task rows, each with its status, revis
   - **resolved**: Append a revision-less entry with History.appendLog under ArtifactStore.exclusive (recommended) — Approved with the LLD (owner chose A, recommended answers). _(2026-10-21T17:23:59.335Z)_
 - `qc3c527e2` — Until s9 creates Task heads for the Stories planned before this one, bindingHome falls back to the Plan's Task record and taskBuildPassed to the BUILD record for a Task with no head, which is compatibility code the Epic's no-compatibility rule discourages. Resolve: accept both fallbacks as s9-bound and record them in docs/plans/core-data-model.md for s9 to remove (recommended), or drop them and fail for a Task with no head (no Story planned before this one is still open to build).
   - **resolved**: Accept both fallbacks as s9-bound and record them in docs/plans/core-data-model.md for s9 to remove (recommended) — Approved with the LLD (owner chose A, recommended answers). _(2026-10-21T17:24:27.447Z)_
+- `qd77d79f5` — The daemon's workflow.approve path does not run the cli approve service, so the Task set would be missed when a plan is approved there. Resolve: add a 'tasks-sync' follow-on kind to FollowOnOutcome beside s6's 'tracker-attach' and call syncTasksOnPlanApproval from the same seam at both daemon sites (recommended), or call it from approveWorkflowTarget (a change to the gate s3 and s4 own).
+  - **resolved**: Add a 'tasks-sync' follow-on kind beside tracker-attach and call syncTasksOnPlanApproval from the same seam at both daemon sites (recommended) — Approved with the LLD (owner chose A, recommended answers). _(2026-10-21T17:24:43.195Z)_
 
 ## Citations
 

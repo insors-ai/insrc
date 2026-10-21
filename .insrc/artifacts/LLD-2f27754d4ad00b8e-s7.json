@@ -261,6 +261,13 @@
         "choice": "Accept both fallbacks as s9-bound and record them in docs/plans/core-data-model.md for s9 to remove (recommended)",
         "rationale": "Approved with the LLD (owner chose A, recommended answers).",
         "resolvedAt": "2026-10-21T17:24:27.447Z"
+      },
+      "qd77d79f5": {
+        "question": "The daemon's workflow.approve path does not run the cli approve service, so the Task set would be missed when a plan is approved there. Resolve: add a 'tasks-sync' follow-on kind to FollowOnOutcome beside s6's 'tracker-attach' and call syncTasksOnPlanApproval from the same seam at both daemon sites (recommended), or call it from approveWorkflowTarget (a change to the gate s3 and s4 own).",
+        "status": "resolved",
+        "choice": "Add a 'tasks-sync' follow-on kind beside tracker-attach and call syncTasksOnPlanApproval from the same seam at both daemon sites (recommended)",
+        "rationale": "Approved with the LLD (owner chose A, recommended answers).",
+        "resolvedAt": "2026-10-21T17:24:43.195Z"
       }
     }
   },

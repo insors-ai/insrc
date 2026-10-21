@@ -1,0 +1,870 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "2f27754d4ad00b8e",
+    "storyId": "s4",
+    "createdAt": "2026-10-21T09:28:45.059Z",
+    "updatedAt": "2026-10-21T10:22:30.559Z",
+    "epicCreatedAt": "2026-10-19T09:22:37.764Z",
+    "epicSlug": "one-common-model-every-artifact"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "2d43606c",
+        "ranAt": "2026-10-21T09:28:45.059Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sidecar-append.test.ts: appendRecord writes one framed line, counts bytes for multi-byte text, starts a new line after a torn one, and refuses an oversize entry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar-append.test.ts",
+                "title": "appendRecord writes one framed line, counts bytes for multi-byte text, starts a new line after a torn one, and refuses an oversize entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar.test.ts",
+                "title": "appendSidecarLine appends one framed JSON line per call to the path it is given",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/sidecar-append.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 550,
+            "titles": [
+              {
+                "title": "appendRecord writes one framed line, counts bytes for multi-byte text, starts a new line after a torn one, and refuses an oversize entry",
+                "result": "pass"
+              },
+              {
+                "title": "a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable",
+                "result": "pass"
+              },
+              {
+                "title": "sidecar-append",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/sidecar.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 769,
+            "titles": [
+              {
+                "title": "appendSidecarLine appends one framed JSON line per call to the path it is given",
+                "result": "pass"
+              },
+              {
+                "title": "appendSidecarLine",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "6cb5ab5d",
+        "ranAt": "2026-10-21T09:30:34.232Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sidecar-files.test.ts: filesOf maps an id to its head, log and feedback files and a TASK id to its Story's Tasks files, and mergeAttributes returns the two union rules",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar-files.test.ts",
+                "title": "filesOf maps an id to its head, log and feedback files and a TASK id to its Story's Tasks files, and mergeAttributes returns the two union rules",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sidecar-read.test.ts: readRecords filters by artifact id, collapses repeated entries, orders by timestamp then id, skips an abandoned fragment and merge debris, and refuses a complete frame with bad json and a conflicting duplicate",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar-read.test.ts",
+                "title": "readRecords filters by artifact id, collapses repeated entries, orders by timestamp then id, skips an abandoned fragment and merge debris, and refuses a complete frame with bad json and a conflicting duplicate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sidecar-append.test.ts: a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar-append.test.ts",
+                "title": "a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/sidecar-append.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 659,
+            "titles": [
+              {
+                "title": "appendRecord writes one framed line, counts bytes for multi-byte text, starts a new line after a torn one, and refuses an oversize entry",
+                "result": "pass"
+              },
+              {
+                "title": "a torn append, a later append, a re-read and a journal retry leave the entry once and the file readable",
+                "result": "pass"
+              },
+              {
+                "title": "sidecar-append",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/sidecar-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 606,
+            "titles": [
+              {
+                "title": "filesOf maps an id to its head, log and feedback files and a TASK id to its Story's Tasks files, and mergeAttributes returns the two union rules",
+                "result": "pass"
+              },
+              {
+                "title": "sidecar-files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/sidecar-read.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2230,
+            "titles": [
+              {
+                "title": "readRecords filters by artifact id, collapses repeated entries, orders by timestamp then id, skips an abandoned fragment and merge debris, and refuses a complete frame with bad json and a conflicting duplicate",
+                "result": "pass"
+              },
+              {
+                "title": "sidecar-read",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "0377a90b",
+        "ranAt": "2026-10-21T09:33:30.265Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "journal-durable.test.ts: the journal stages, reports and clears one file per artifact and refuses an invalid file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/journal-durable.test.ts",
+                "title": "the journal stages, reports and clears one file per artifact and refuses an invalid file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "journal-recovery-durable.test.ts: a staged write is finished at each crash point and refused with LifecycleConflictError when the head moved on, and the head is never overwritten",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts",
+                "title": "a staged write is finished at each crash point and refused with LifecycleConflictError when the head moved on, and the head is never overwritten",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifact-core/__tests__/journal.test.ts",
+                "title": "a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "journal-recovery-durable.test.ts: an oversized entry is rejected before it is staged and a later valid write of the artifact goes through",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts",
+                "title": "an oversized entry is rejected before it is staged and a later valid write of the artifact goes through",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/journal-durable.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 531,
+            "titles": [
+              {
+                "title": "the journal stages, reports and clears one file per artifact and refuses an invalid file",
+                "result": "pass"
+              },
+              {
+                "title": "journal-durable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 604,
+            "titles": [
+              {
+                "title": "a staged write is finished at each crash point and refused with LifecycleConflictError when the head moved on, and the head is never overwritten",
+                "result": "pass"
+              },
+              {
+                "title": "an oversized entry is rejected before it is staged and a later valid write of the artifact goes through",
+                "result": "pass"
+              },
+              {
+                "title": "journal-recovery-durable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/journal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 546,
+            "titles": [
+              {
+                "title": "a failure at stage, log append, head replace and clear each leaves the documented state and the next write completes the staged operation once",
+                "result": "pass"
+              },
+              {
+                "title": "a restart before the append, a retry by a different actor and an identical-head append failure all recover the original entry",
+                "result": "pass"
+              },
+              {
+                "title": "WriteJournal recovery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c158c75c",
+        "ranAt": "2026-10-21T09:37:20.030Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "history-order.test.ts: openFeedback orders a feedback entry and a log entry with the same timestamp by the shared rule",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/history-order.test.ts",
+                "title": "openFeedback orders a feedback entry and a log entry with the same timestamp by the shared rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "journal-recovery-durable.test.ts: LifecycleService.inspect finishes a staged write before it reads",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts",
+                "title": "LifecycleService.inspect finishes a staged write before it reads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "journal-recovery-durable.test.ts: an ordinary write on an artifact whose log is ahead of its head is refused and a conflict-resolved write is accepted",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts",
+                "title": "an ordinary write on an artifact whose log is ahead of its head is refused and a conflict-resolved write is accepted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/history-order.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 476,
+            "titles": [
+              {
+                "title": "openFeedback orders a feedback entry and a log entry with the same timestamp by the shared rule",
+                "result": "pass"
+              },
+              {
+                "title": "history-order",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 545,
+            "titles": [
+              {
+                "title": "a staged write is finished at each crash point and refused with LifecycleConflictError when the head moved on, and the head is never overwritten",
+                "result": "pass"
+              },
+              {
+                "title": "an oversized entry is rejected before it is staged and a later valid write of the artifact goes through",
+                "result": "pass"
+              },
+              {
+                "title": "LifecycleService.inspect finishes a staged write before it reads",
+                "result": "pass"
+              },
+              {
+                "title": "an ordinary write on an artifact whose log is ahead of its head is refused and a conflict-resolved write is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "journal-recovery-durable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "a5db745d",
+        "ranAt": "2026-10-21T09:39:13.167Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sidecar-files.test.ts: the ensure step adds only the missing lines to .gitattributes and .gitignore, is idempotent, and an unwritable file is a warning",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar-files.test.ts",
+                "title": "the ensure step adds only the missing lines to .gitattributes and .gitignore, is idempotent, and an unwritable file is a warning",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/sidecar-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 689,
+            "titles": [
+              {
+                "title": "filesOf maps an id to its head, log and feedback files and a TASK id to its Story's Tasks files, and mergeAttributes returns the two union rules",
+                "result": "pass"
+              },
+              {
+                "title": "the ensure step adds only the missing lines to .gitattributes and .gitignore, is idempotent, and an unwritable file is a warning",
+                "result": "pass"
+              },
+              {
+                "title": "sidecar-files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "79c90986",
+        "ranAt": "2026-10-21T09:40:22.861Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sidecar-merge.test.ts: two clones that append different log and feedback entries to one artifact merge with no conflict and a reader sees every entry once, in timestamp then id order",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar-merge.test.ts",
+                "title": "two clones that append different log and feedback entries to one artifact merge with no conflict and a reader sees every entry once, in timestamp then id order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sidecar-merge.test.ts: a head changed in two clones conflicts in git and the line files of the same merge still union",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/sidecar-merge.test.ts",
+                "title": "a head changed in two clones conflicts in git and the line files of the same merge still union",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/sidecar-merge.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 698,
+            "titles": [
+              {
+                "title": "two clones that append different log and feedback entries to one artifact merge with no conflict and a reader sees every entry once, in timestamp then id order",
+                "result": "pass"
+              },
+              {
+                "title": "a head changed in two clones conflicts in git and the line files of the same merge still union",
+                "result": "pass"
+              },
+              {
+                "title": "sidecar-merge",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "cc43483c",
+        "ranAt": "2026-10-21T09:42:18.237Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lifecycle-update-outcome.test.ts: updateContent with an outcome and references logs them with the new revision, an update without behaves as before, and an identical rewrite logs nothing",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-update-outcome.test.ts",
+                "title": "updateContent with an outcome and references logs them with the new revision, an update without behaves as before, and an identical rewrite logs nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/lifecycle-update-outcome.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 485,
+            "titles": [
+              {
+                "title": "updateContent with an outcome and references logs them with the new revision, an update without behaves as before, and an identical rewrite logs nothing",
+                "result": "pass"
+              },
+              {
+                "title": "lifecycle-update-outcome",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "a1c7ec30",
+        "ranAt": "2026-10-21T09:47:14.371Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lifecycle-wiring.test.ts: the daemon approve handler, the review-decision step and workflowReviewStart use the repository's durable LifecycleService, refuse a head ahead of its log, use the request's person actor or insrc:approval, and a repository whose registry entry cannot be created is refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/lifecycle-wiring.test.ts",
+                "title": "the daemon approve handler, the review-decision step and workflowReviewStart use the repository's durable LifecycleService, refuse a head ahead of its log, use the request's person actor or insrc:approval, and a repository whose registry entry cannot be created is refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/review-decision.test.ts",
+                "title": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/lifecycle-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 675,
+            "titles": [
+              {
+                "title": "the daemon approve handler, the review-decision step and workflowReviewStart use the repository's durable LifecycleService, refuse a head ahead of its log, use the request's person actor or insrc:approval, and a repository whose registry entry cannot be created is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/review-decision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 813,
+            "titles": [
+              {
+                "title": "review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a decision with no comments writes no feedback entry",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: a failing comment write after the decision took effect reports the outcome with commentsError",
+                "result": "pass"
+              },
+              {
+                "title": "review decision: the author is the one resolveReviewer gives and is never taken from the request",
+                "result": "pass"
+              },
+              {
+                "title": "daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "9ca3872c",
+        "ranAt": "2026-10-21T09:51:47.347Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "verdicts-lifecycle.test.ts: handleVerdicts with a service stores an applied fix through the service, stamps the review and records it on the lifecycle, and refuses a head that is ahead of its log",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts",
+                "title": "handleVerdicts with a service stores an applied fix through the service, stamps the review and records it on the lifecycle, and refuses a head that is ahead of its log",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts",
+                "title": "a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts",
+                "title": "the verdicts path bumps the revision only when auto-fixes change the body",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/review-step/__tests__/gate-review-fix.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3264,
+            "titles": [
+              {
+                "title": "a review of a stage held by someone else runs and reports findings, applies no auto-fix through verdicts.ts or run-artifact.ts, and leaves the revision unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/verdicts-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3586,
+            "titles": [
+              {
+                "title": "handleVerdicts with a service stores an applied fix through the service, stamps the review and records it on the lifecycle, and refuses a head that is ahead of its log",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/verdicts-revision.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3604,
+            "titles": [
+              {
+                "title": "the verdicts path bumps the revision only when auto-fixes change the body",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "a18861fa",
+        "ranAt": "2026-10-21T10:14:59.888Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "round-recording.test.ts: persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "round-recording.test.ts: a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "round-recording.test.ts: a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1296,
+            "titles": [
+              {
+                "title": "persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+                "result": "pass"
+              },
+              {
+                "title": "a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown",
+                "result": "pass"
+              },
+              {
+                "title": "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "round-recording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "bc83d24b",
+        "ranAt": "2026-10-21T10:19:22.844Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "round-recording.test.ts: runCodeReview with a RoundWriter stores the content through the service and logs the round on the daemon route and the controller route, and a failed store replaces no record",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+                "title": "runCodeReview with a RoundWriter stores the content through the service and logs the round on the daemon route and the controller route, and a failed store replaces no record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/round-recording.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1389,
+            "titles": [
+              {
+                "title": "persistBuildRecord and persistTestRecordTask with a RoundWriter store the content through the service and log the round, and the earlier round stays readable in the log",
+                "result": "pass"
+              },
+              {
+                "title": "a TESTS persist whose markdown fails after the content was stored keeps the committed content and entry, and the next persist renders the markdown",
+                "result": "pass"
+              },
+              {
+                "title": "a failed round log fails the persist, leaves the staged write in the journal, and the next update finishes it so the next approval is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "runCodeReview with a RoundWriter stores the content through the service and logs the round on the daemon route and the controller route, and a failed store replaces no record",
+                "result": "pass"
+              },
+              {
+                "title": "round-recording",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "9f5ee465",
+        "ranAt": "2026-10-21T10:22:30.559Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "artifact-write-inventory.test.ts: the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2478,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised",
+                "result": "pass"
+              },
+              {
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

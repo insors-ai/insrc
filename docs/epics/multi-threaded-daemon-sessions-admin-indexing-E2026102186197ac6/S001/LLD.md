@@ -555,3 +555,18 @@ Like a1, but each worker keeps a synchronous local cache of its session's step s
 ## 10. Open questions
 
 - If the gating worker open-and-release test fails, workers cannot open LMDB safely and the HLD's per-worker store handles do not hold for the graph; this goes back to the HLD before s3 or s4 starts.
+
+## Resolved questions
+
+- `qef5484d1` — If the gating worker open-and-release test fails, workers cannot open LMDB safely and the HLD's per-worker store handles do not hold for the graph; this goes back to the HLD before s3 or s4 starts.
+  - **resolved**: Single-owner process, graph direct: the daemon opens LMDB at start and keeps it open until exit; each worker opens it once and keeps its handle until the daemon exits; the semaphore rule applies wherever concurrent use needs it. Safety condition: no process other than the daemon ever opens the live store, enforced by the existing owner check (non-daemon processes are refused before touching the live path) and daemon-ctl stopping the old daemon fully before starting a new one. The gating test still runs, to document whether a worker's open drops the process's OS lock on graph.lmdb-lock, not to decide the design. — Stakeholder decision 2026-10-21: open LMDB at daemon start and keep it open until exit; nobody else should be using the DB. A dropped OS lock is only harmful when another process opens the store. Stakeholder asked for a small simulation before moving forward. _(2026-10-21T14:37:20.249Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `src/db/graph/store.ts:528-531` — "Store lifecycle is in src/db/graph/store.ts: LmdbStoreLocksLostError (159), declareLiveStoreOwner (352) / isLiveStoreOwnerDeclared (393), the module-scope health record `_health` (439), getGraphStore "
+- **[[c2]]** `analyze-bundle` `src/daemon/steps/code-review-step/state-store.ts:22-100` — "Each step state store keeps `const store = new Map<string, Entry>()` with a 22-char random token, MAX_ENTRIES = 100 with LRU eviction on save, TTL_MS = 1 hour swept on save, and a load that refreshes "
+- **[[c3]]** `analyze-bundle` `node_modules/lmdb/src/env.cpp:85-117` — "mdb_env_setup_locks first opens a NEW descriptor on the lock file and passes it to the callback, which matches dev/inode against a process-wide list of open environments and reuses the existing one by"
+- **[[c4]]** `analyze-bundle` `node_modules/@lancedb/lancedb/dist/native.d.ts:322-333` — "If None, then consistency is not checked. ... For strong consistency, set this to zero seconds. ... Write operations are always consistent."
+- **[[c5]]** `code` `src/db/graph/store.ts:439-461` — "let _health: StoreHealth = { state: 'ok' }; ... _health = { state: 'locks-lost', ... } (module-scope, per isolate)"
+- **[[c6]]** `code` `src/daemon/db/duckdb-pool.ts:168-177` — "withConnection: a fresh connection per call on the shared instance, with no serialisation"
+- **[[c7]]** `code` `src/db/graph/store.ts:370-374` — "Opening and closing a second descriptor on the lock file inside the daemon drops the daemon's lock on it (Story s4)."

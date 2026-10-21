@@ -214,6 +214,15 @@
     "reviewOverride": {
       "reason": "3 rounds; the HIGH (per-call-chain nesting) and all MEDs folded; the round-3 MEDs (every health reader on the shared word with the full record published via the hub; graph has no guarded mode, main-thread-only until the gate passes) are consistency fixes applied after the review. User approved option A on 2026-10-21.",
       "at": "2026-10-21T14:20:23.573Z"
+    },
+    "questionResolutions": {
+      "qef5484d1": {
+        "question": "If the gating worker open-and-release test fails, workers cannot open LMDB safely and the HLD's per-worker store handles do not hold for the graph; this goes back to the HLD before s3 or s4 starts.",
+        "status": "resolved",
+        "choice": "Single-owner process, graph direct: the daemon opens LMDB at start and keeps it open until exit; each worker opens it once and keeps its handle until the daemon exits; the semaphore rule applies wherever concurrent use needs it. Safety condition: no process other than the daemon ever opens the live store, enforced by the existing owner check (non-daemon processes are refused before touching the live path) and daemon-ctl stopping the old daemon fully before starting a new one. The gating test still runs, to document whether a worker's open drops the process's OS lock on graph.lmdb-lock, not to decide the design.",
+        "rationale": "Stakeholder decision 2026-10-21: open LMDB at daemon start and keep it open until exit; nobody else should be using the DB. A dropped OS lock is only harmful when another process opens the store. Stakeholder asked for a small simulation before moving forward.",
+        "resolvedAt": "2026-10-21T14:37:20.249Z"
+      }
     }
   },
   "body": {

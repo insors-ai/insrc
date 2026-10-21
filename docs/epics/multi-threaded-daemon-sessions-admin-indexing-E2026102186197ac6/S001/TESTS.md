@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -174,3 +174,31 @@ Run at 2026-10-21T15:41:11.904Z on commit `a43e7eeb`. Tests check: **passed**. 2
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/cross-thread-stores.test.ts` | 0 | 2 | 1.8 s |  |
+
+## t7
+
+Run at 2026-10-21T15:44:08.534Z on commit `8a608951`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | each step kind's token rule, 100-entry eviction, TTL with read refresh and release match today's stores | `src/daemon/threads/__tests__/step-state.test.ts` |
+
+**integration: a real payload of each step kind survives a structured clone through the hub**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a real payload of each step kind survives a structured clone through the hub | `src/daemon/threads/__tests__/step-state.test.ts` |
+
+**integration: step state minted in one worker is read in another after the first exits**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | step state minted in one worker is read in another after the first exits | `src/daemon/threads/__tests__/step-state.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/threads/__tests__/step-state.test.ts` | 0 | 3 | 0.8 s |  |

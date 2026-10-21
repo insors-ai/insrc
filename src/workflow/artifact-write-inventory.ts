@@ -65,6 +65,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/tracker/refs.ts', class: 'meta-only', via: 'writeArtifact', note: 'patchTrackerMeta' },
 	{ file: 'src/workflow/tracker/binding.ts', class: 'meta-only', via: 'writeArtifact', note: 'the tracker binding: the one writer of meta.envelope.binding after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },
 	{ file: 'src/workflow/tracker/attach.ts', class: 'meta-only', via: 'writeArtifact', note: 'recordAttachment: the one writer of meta.envelope.attachments after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },
+	{ file: 'src/workflow/tasks/task-set.ts', class: 'content', via: 'injected', note: 'the Task set: writes the TASKS and TASK heads through ArtifactStore.write and update (a Task\'s own content, so each change mints a revision), and a build round or a pending close as a revision-less log entry through History' },
 	{ file: 'src/workflow/bugfix/stamp.ts', class: 'meta-only', via: 'writeArtifact', note: 'single-field meta patch (meta.parentRef)' },
 	{ file: 'src/workflow/orchestrator.ts', class: 'meta-only', via: 'both', note: 'tracker push and sync patch the Define meta; the scope-analyze cache is not an artifact' },
 

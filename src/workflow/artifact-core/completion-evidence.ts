@@ -23,6 +23,8 @@ export interface CompletionEvidenceOptions {
 	readonly overrideReview?: string | undefined;
 	/** Overrides the `codeReview.enforce` flag, as for the gate itself. */
 	readonly enforce?: boolean | undefined;
+	/** Where a Task's build rounds are read from; the repository's own history files by default. */
+	readonly history?: Pick<History, 'log'> | undefined;
 }
 
 function readJson(path: string): Record<string, unknown> | undefined {
@@ -50,7 +52,7 @@ export function createCompletionEvidence(repoPath: string, options: CompletionEv
 			const key = ArtifactIds.parse(taskId);
 			if (key?.kind !== 'TASK' || key.story === undefined || key.task === undefined) return false;
 			if (existsSync(artifactJsonPath(repoPath, taskId))) {
-				const rounds = (await new History(createFileSidecarStore(repoPath)).log(taskId)).filter(e => isRound(e.outcome?.data));
+				const rounds = (await (options.history ?? new History(createFileSidecarStore(repoPath))).log(taskId)).filter(e => isRound(e.outcome?.data));
 				return rounds.at(-1)?.outcome?.result === 'pass';
 			}
 			const build = readJson(artifactJsonPath(repoPath, buildArtifactId(key.epicHash, key.story)));

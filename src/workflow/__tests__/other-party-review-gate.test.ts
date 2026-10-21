@@ -58,6 +58,17 @@ function blocked(fn: () => unknown, summary: RegExp, message?: RegExp): void {
 	});
 }
 
+/** {@link blocked} for a call that returns a promise (the terminal's approve service is async). */
+async function blockedAsync(fn: () => Promise<unknown>, summary: RegExp, message?: RegExp): Promise<void> {
+	await assert.rejects(fn(), (e: unknown) => {
+		assert.ok(e instanceof ReviewBlockedError, `got ${String(e)}`);
+		assert.match(e.summary, summary);
+		assert.match(e.message, /approve with an override reason/);
+		if (message !== undefined) assert.match(e.message, message);
+		return true;
+	});
+}
+
 const DESIGN = [['DEF', `DEF-${HASH}.json`, 'define'], ['HLD', `HLD-${HASH}.json`, 'design.epic'], ['LLD', `LLD-${HASH}-s1.json`, 'design.story']] as const;
 const NO_REVIEW_KINDS = [['ISSUE', `ISSUE-${HASH}.json`, 'issue'], ['SPEC', `SPEC-${HASH}.json`, 'brainstorm'], ['PLAN', `PLAN-${HASH}-s1.json`, 'plan']] as const;
 
@@ -251,22 +262,22 @@ test('T7 a code review that cannot be read is no code review', async () => {
 	} finally { r.cleanup(); }
 });
 
-test('T7 the TUI approve service applies the same rules: it calls the same function', () => {
+test('T7 the TUI approve service applies the same rules: it calls the same function', async () => {
 	const r = repo();
 	try {
 		const p = build(r.dir, 'controller');
-		blocked(() => tuiApprove(p, false), /completion requires a code review; none was run/, /Run insrc_code_review_step first/);
+		await blockedAsync(() => tuiApprove(p, false), /completion requires a code review; none was run/, /Run insrc_code_review_step first/);
 		writeCR(r.dir, 's1', { reviewedBy: 'controller' });
-		blocked(() => tuiApprove(p, false), /code review was done by the party that authored the work \(controller\)/, /insrc_code_review_step/);
+		await blockedAsync(() => tuiApprove(p, false), /code review was done by the party that authored the work \(controller\)/, /insrc_code_review_step/);
 		assert.ok(!isApproved(p));
-		const out = tuiApprove(p, false, 'approved from the TUI');
+		const out = await tuiApprove(p, false, 'approved from the TUI');
 		assert.equal(out.approval.path, p);
 		assert.equal((metaOf(p)['reviewOverride'] as { reason: string }).reason, 'approved from the TUI');
 
 		const def = write(r.dir, `DEF-${HASH}.json`, { workflow: 'define', authoredBy: 'controller' });
-		blocked(() => tuiApprove(def, false), /approval requires a review; none was run/);
+		await blockedAsync(() => tuiApprove(def, false), /approval requires a review; none was run/);
 		stampOtherPartyReview(def);
-		tuiApprove(def, false);
+		await tuiApprove(def, false);
 		assert.ok(isApproved(def));
 	} finally { r.cleanup(); }
 });

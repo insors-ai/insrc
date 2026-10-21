@@ -25,6 +25,7 @@ afterAll(async () => {
 
 import type { LLMMessage, LLMProvider, LLMResponse, StructuredCompletionOpts, StructuredSchema } from '../../shared/types.js';
 import { createCompletionEvidence } from '../artifact-core/completion-evidence.js';
+import { History } from '../artifact-core/history.js';
 import { LifecycleService } from '../artifact-core/lifecycle-service.js';
 import { LifecycleConflictError } from '../artifact-core/types.js';
 import { approveWorkflowTarget } from '../gates.js';
@@ -38,7 +39,7 @@ const CR = `CR-${H}-s1`;
 const PLAN = `PLAN-${H}-s2`;
 
 function serviceFor(k: ReturnType<typeof kit>): LifecycleService {
-	return new LifecycleService({ store: k.store, evidence: ctx => createCompletionEvidence(k.repo, { ...ctx, enforce: false }), now: clock() });
+	return new LifecycleService({ store: k.store, evidence: ctx => createCompletionEvidence(k.repo, { ...ctx, enforce: false, history: new History(k.sidecar) }), now: clock() });
 }
 const readHead = (k: ReturnType<typeof kit>, id: string) => JSON.parse(readFileSync(artifactJsonPath(k.repo, id), 'utf8')) as { meta: Record<string, unknown>; body: unknown };
 
@@ -49,6 +50,10 @@ test('with a service, an explicit override over an advisory-blocked code review 
 		// the BUILD record says both Tasks passed; the code review blocks, but enforcement is off, so the gate only advises
 		await k.store.write({ ...(await k.store.read(BUILD)), payload: { body: { tasks: [{ id: 't1', passed: true }, { id: 't2', passed: true }] }, citations: [] } }, alice);
 		await k.store.write({ ...(await k.store.read(CR)), payload: { body: { verdict: 'block', counts: { high: 1, med: 0, low: 0 } }, citations: [] } }, alice);
+		// each Task has its own head, so its build is judged by the rounds on its own log (s7)
+		for (const t of [T1, T2]) {
+			await new History(k.sidecar).appendLog(t, { id: `round-${t}`, actor: bob, timestamp: '2026-10-21T12:00:00.000Z', operation: 'update', outcome: { result: 'pass', summary: 'ok', data: { kind: 'build-round' } } });
+		}
 		const svc = serviceFor(k);
 		await svc.completeIfRolledUp(T1, bob);
 		await svc.completeIfRolledUp(T2, bob);

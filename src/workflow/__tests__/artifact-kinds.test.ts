@@ -180,8 +180,8 @@ test("approval of a TESTS record by its md path and by its json path through the
 		unchanged();
 
 		// The TUI's service, which calls them directly.
-		assert.throws(() => tuiApprove(md, false), (err: unknown) => err instanceof NotApprovableError && err.message.startsWith('not-approvable:'));
-		assert.throws(() => tuiApprove(json, false, 'because'), NotApprovableError);
+		await assert.rejects(tuiApprove(md, false), (err: unknown) => err instanceof NotApprovableError && err.message.startsWith('not-approvable:'));
+		await assert.rejects(tuiApprove(json, false, 'because'), NotApprovableError);
 		assert.throws(() => tuiReject(md, 'no'), NotApprovableError);
 		assert.throws(() => tuiReject(json, 'no'), NotApprovableError);
 		unchanged();

@@ -30,9 +30,12 @@ import { compareStage, pairStage } from './adapters/code-review-duplicates.js';
 import { codeReviewGather } from './adapters/code-review-gather.js';
 import type { DimensionObligations } from './adapters/code-review-obligations.js';
 import { runReviewJob } from './driver.js';
-import { createReviewJob, withCorrectionNote } from './job.js';
+import { getLogger } from '../../shared/logger.js';
+import { createReviewJob, pipelineCallsOf, withCorrectionNote } from './job.js';
 import { reviewLimitChars } from './limit.js';
-import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, StageAnswer } from './types.js';
+import type { AdapterStage, ReviewAdapter, ReviewMaterial, ReviewMaterialSnapshot, ReviewPath, ReviewPipelineJob, StageAnswer } from './types.js';
+
+const log = getLogger('review-pipeline:code-review');
 
 /** What a code-review job's snapshot holds as its grounding. */
 interface GroundingFacts {
@@ -247,5 +250,19 @@ export async function runDimensionJob(
 	// The core is written over ReviewAdapter<unknown>; merge's parameter makes R invariant.
 	const adapter = build(snapshot) as unknown as ReviewAdapter<unknown>;
 	const job = createReviewJob(adapter, 'daemon', snapshot, reviewLimitChars());
-	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal }) as DimensionResult;
+	// The plan, as one JSON object in the message (the daemon log is pretty-printed): once as
+	// prepared, so a job that fails still leaves its plan, and once as finished, after any
+	// refusal re-planning, with its calls per role (Story s3's smoke reads these lines).
+	logPlan('prepared', job, subject);
+	return await runReviewJob(job, adapter, provider, { signal: ctx?.signal, onDone: done => logPlan('finished', done, subject) }) as DimensionResult;
+}
+
+function logPlan(phase: 'prepared' | 'finished', job: ReviewPipelineJob, subject: CodeReviewSubject): void {
+	const plan = {
+		phase, epicHash: subject.epicHash, storyId: subject.storyId, dimension: job.dimension, reviewId: job.reviewId,
+		single: job.plan.single, limitChars: job.plan.limitChars,
+		chunks: job.plan.chunks.map(c => ({ id: c.id, atoms: c.atomIds.length, chars: c.chars })),
+		...(phase === 'finished' ? { pipelineCalls: pipelineCallsOf(job) ?? null } : {}),
+	};
+	log.info(`review pipeline: plan ${JSON.stringify(plan)}`);
 }

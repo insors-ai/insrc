@@ -34,6 +34,8 @@ export interface FeedbackInput {
 	readonly batchId?:   string | undefined;
 	/** A caller-chosen key: adding the same id with the same fields again returns the stored entry and appends nothing. */
 	readonly id?:        string | undefined;
+	/** Where the entry came from when it did not originate here (a tracker comment): the system, the id there and a link. */
+	readonly source?:    Feedback['source'] | undefined;
 }
 
 const same = (a: unknown, b: unknown): boolean => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -53,6 +55,10 @@ export class FeedbackService {
 		}
 		if (typeof input.text !== 'string' || input.text.trim() === '') throw new HistoryEntryError(`feedback on ${artifactId}: the text is blank`);
 		const kind = input.kind ?? 'comment';
+		const src = input.source;
+		if (src !== undefined && (typeof src.system !== 'string' || src.system.trim() === '' || typeof src.externalId !== 'string' || src.externalId.trim() === '')) {
+			throw new HistoryEntryError(`feedback on ${artifactId}: the source needs a system and an external id`);
+		}
 		return store.exclusive(artifactId, async () => {
 			const head = await store.read(artifactId);                  // ArtifactNotFoundError when there is no head
 			const existing = await history.feedback(artifactId);
@@ -67,7 +73,7 @@ export class FeedbackService {
 			const stored = existing.find(f => f.id === id);
 			if (stored !== undefined) {
 				const retry = stored.text === input.text && stored.kind === kind && same(stored.anchor, input.anchor)
-					&& stored.inReplyTo === input.inReplyTo && stored.batchId === input.batchId && stored.actor.id === actor.id;
+					&& same(stored.source, input.source) && stored.inReplyTo === input.inReplyTo && stored.batchId === input.batchId && stored.actor.id === actor.id;
 				if (!retry) throw new HistoryEntryError(`feedback on ${artifactId}: id '${id}' is already used with different content`);
 				return stored;
 			}
@@ -83,6 +89,7 @@ export class FeedbackService {
 				...(input.anchor !== undefined ? { anchor: input.anchor } : {}),
 				...(input.inReplyTo !== undefined ? { inReplyTo: input.inReplyTo } : {}),
 				...(input.batchId !== undefined ? { batchId: input.batchId } : {}),
+				...(src !== undefined ? { source: src } : {}),
 			};
 			await history.appendFeedback(artifactId, entry);
 			return entry;

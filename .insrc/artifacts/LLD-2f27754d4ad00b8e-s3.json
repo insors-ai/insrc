@@ -187,6 +187,13 @@
         "choice": "Amend according to contract impact",
         "rationale": "Keep AMD-8; amend only additions that change cross-story obligations.",
         "resolvedAt": "2026-10-21T05:11:18.174Z"
+      },
+      "q0dabad0a": {
+        "question": "The gates keep writing meta.approvedAt, rejectedAt, staleAckedAt and meta.review for the delivery board, so a head can carry both representations until s9 back-fills; decide whether and when those fields and their readers are retired (the owner's no-compatibility ruling disfavours keeping both indefinitely)",
+        "status": "resolved",
+        "choice": "Retire together in s9",
+        "rationale": "Gates keep the legacy meta fields until the s9 back-fill; then fields and readers go together.",
+        "resolvedAt": "2026-10-21T05:12:15.484Z"
       }
     }
   },

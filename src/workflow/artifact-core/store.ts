@@ -48,6 +48,12 @@ export interface ArtifactStoreDeps {
 	readonly writeHead?: ((path: string, bytes: string) => void) | undefined;
 }
 
+/** What `update`'s mutate hands back: the artifact to store and the options of its log entry. */
+export interface UpdateResult {
+	readonly next:     Artifact<HeadPayload>;
+	readonly options?: WriteOptions | undefined;
+}
+
 /** The prepared head text with its lifecycle status set to completed. */
 function completedBytes(bytes: string): string {
 	const head = JSON.parse(bytes) as { meta: { lifecycle: Record<string, unknown> } };
@@ -110,10 +116,20 @@ export class ArtifactStore {
 
 	/** The ids of every artifact whose parent link names `id`, sorted. An unreadable head is skipped and logged. */
 	async childrenOf(id: string): Promise<string[]> {
+		return (await this.scanChildren(id)).children;
+	}
+
+	/** The readable children of `id` and every head that could not be read, so a roll-up can refuse instead of counting it as absent. */
+	async childrenOfStrict(id: string): Promise<{ children: string[]; unreadable: string[] }> {
+		return this.scanChildren(id);
+	}
+
+	private async scanChildren(id: string): Promise<{ children: string[]; unreadable: string[] }> {
 		if (ArtifactIds.parse(id) === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
 		const dir = join(this.deps.repoPath, ARTIFACTS_DIR);
-		if (!existsSync(dir)) return [];
+		if (!existsSync(dir)) return { children: [], unreadable: [] };
 		const children: string[] = [];
+		const unreadable: string[] = [];
 		for (const name of readdirSync(dir).sort()) {
 			if (!name.endsWith('.json')) continue;
 			const childId = name.slice(0, -'.json'.length);
@@ -126,24 +142,53 @@ export class ArtifactStore {
 				const parent = isObject(envelope) ? envelope['parent'] : undefined;
 				if (isObject(parent) && typeof parent['type'] === 'string' && typeof parent['relation'] === 'string' && parent['entityId'] === id) children.push(childId);
 			} catch (err) {
+				unreadable.push(childId);
 				log.warn({ id: childId, err: (err as Error).message }, 'skipped an unreadable head while listing children');
 			}
 		}
-		return children.sort();
+		return { children: children.sort(), unreadable: unreadable.sort() };
 	}
+
 	/**
 	 * Store the whole envelope. Any operation the journal still holds for this id is completed first. Then the
 	 * head is prepared (the revision and exact bytes are known before a file changes), the operation is staged
 	 * with its change log entry, the entry is appended, the head replaced and the journal cleared.
 	 */
 	async write(a: Artifact<HeadPayload>, by: Actor, options: WriteOptions = {}): Promise<void> {
-		// One write at a time per artifact in this process: recovery, stage, append and replace must not interleave.
-		const lockKey = `${this.deps.repoPath}\0${a.id}`;
+		return this.enqueue(a.id, () => this.writeUnlocked(a, by, options));
+	}
+
+	/**
+	 * Read, change and write one artifact with no other write to it in between. The per-artifact queue is held across the
+	 * read, the (possibly asynchronous) `mutate` and the write; an operation the journal still holds is finished before
+	 * the head or the history is read. `mutate` returns the artifact to store (with the options of its log entry), or
+	 * undefined when there is nothing to do; when it throws, nothing is written. Answers whether a write was made.
+	 */
+	async update(
+		id: string, by: Actor,
+		mutate: (current: Artifact<HeadPayload> & { readonly changeLog: ChangeLogEntry[] }) => Promise<UpdateResult | undefined> | UpdateResult | undefined,
+		options: WriteOptions = {},
+	): Promise<boolean> {
+		if (ArtifactIds.parse(id) === undefined) throw new InvalidArtifactKeyError(`'${id}' is not an artifact id`);
+		return this.enqueue(id, async () => {
+			await this.completePending(id, artifactJsonPath(this.deps.repoPath, id));
+			const current = { ...(await this.read(id)), changeLog: await this.deps.history.log(id) };
+			const result = await mutate(current);
+			if (result === undefined) return false;
+			if (result.next.id !== id) throw new ArtifactShapeError(`update of ${id} was given the artifact ${result.next.id}`);
+			await this.writeUnlocked(result.next, by, { ...options, ...(result.options ?? {}) });
+			return true;
+		});
+	}
+
+	/** One write at a time per artifact in this process: recovery, stage, append and replace must not interleave. */
+	private async enqueue<T>(id: string, run: () => Promise<T>): Promise<T> {
+		const lockKey = `${this.deps.repoPath}\0${id}`;
 		const previous = WRITE_QUEUES.get(lockKey) ?? Promise.resolve();
-		const run = previous.then(() => this.writeUnlocked(a, by, options));
-		const tail = run.catch(() => undefined);
+		const next = previous.then(run);
+		const tail = next.catch(() => undefined);
 		WRITE_QUEUES.set(lockKey, tail);
-		try { await run; }
+		try { return await next; }
 		finally { if (WRITE_QUEUES.get(lockKey) === tail) WRITE_QUEUES.delete(lockKey); }
 	}
 
